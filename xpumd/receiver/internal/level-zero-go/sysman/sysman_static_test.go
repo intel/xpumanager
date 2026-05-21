@@ -655,12 +655,11 @@ func TestDeviceGetOverclockDomains(t *testing.T) {
 }
 
 func TestDeviceGetOverclockControls(t *testing.T) {
-	testDeviceGetterError(t,
-		func(d *Device) (OverclockControls, error) { return d.GetOverclockControls(0) },
-		withConfig(driverConfigDeviceErrs))
+	getOverclockControls := func(d *Device) (OverclockControls, error) { return d.GetOverclockControls(0) }
 
-	testDeviceGetterSuccess(t,
-		func(d *Device) (OverclockControls, error) { return d.GetOverclockControls(0) },
+	testDeviceGetterError(t, getOverclockControls, withConfig(driverConfigDeviceErrs))
+
+	testDeviceGetterSuccess(t, getOverclockControls,
 		checkValue(OverclockControls(OVERCLOCK_CONTROL_VF|OVERCLOCK_CONTROL_FREQ_OFFSET|OVERCLOCK_CONTROL_VMAX_OFFSET)),
 	)
 }
@@ -720,12 +719,12 @@ func TestDeviceGetEccState(t *testing.T) {
 }
 
 func TestDeviceSetEccState(t *testing.T) {
-	testDeviceGetterError(t,
-		func(d *Device) (DeviceEccProperties, error) { return d.SetEccState(DeviceEccDesc{}) },
+	setEccState := func(d *Device) (DeviceEccProperties, error) { return d.SetEccState(DeviceEccDesc{}) }
+
+	testDeviceGetterError(t, setEccState,
 		withConfig(driverConfigDeviceErrs),
 	)
-	testDeviceGetterSuccess(t,
-		func(d *Device) (DeviceEccProperties, error) { return d.SetEccState(DeviceEccDesc{}) },
+	testDeviceGetterSuccess(t, setEccState,
 		checkValue(DeviceEccProperties{
 			CurrentState: DEVICE_ECC_STATE_ENABLED,
 			PendingState: DEVICE_ECC_STATE_ENABLED,
@@ -818,13 +817,17 @@ func TestDeviceEnumDiagnosticTestSuites(t *testing.T) {
 }
 
 func TestDeviceFabricPortGetMultiPortThroughput(t *testing.T) {
+	fabricPortGetMultiPortThroughput := func(d *Device) ([]FabricPortThroughput, error) {
+		// Pass nil (count=0) to avoid the CGo restriction on Go pointer slices.
+		return d.FabricPortGetMultiPortThroughput(nil)
+	}
+
 	testDeviceGetterError(t,
-		func(d *Device) ([]FabricPortThroughput, error) { return d.FabricPortGetMultiPortThroughput(nil) },
+		fabricPortGetMultiPortThroughput,
 		withConfig(driverConfigComponentErrs), withError(core.RESULT_ERROR_NOT_AVAILABLE),
 	)
 	testDeviceGetterSuccess(t,
-		// Pass nil (count=0) to avoid the CGo restriction on Go pointer slices.
-		func(d *Device) ([]FabricPortThroughput, error) { return d.FabricPortGetMultiPortThroughput(nil) },
+		fabricPortGetMultiPortThroughput,
 		func(t *testing.T, results []FabricPortThroughput) { require.Empty(t, results) },
 	)
 }
@@ -858,7 +861,10 @@ func TestEngineGetProperties(t *testing.T) {
 func TestEngineGetActivity(t *testing.T) {
 	testComponentGetterError(t, getEngine, (*Engine).GetActivity, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getEngine, (*Engine).GetActivity,
-		checkValue(EngineStats{ActiveTime: 12345678, Timestamp: 87654321}),
+		checkValue(EngineStats{
+			ActiveTime: 12345678,
+			Timestamp:  87654321,
+		}),
 	)
 }
 
@@ -905,7 +911,10 @@ func TestFrequencyGetAvailableClocks(t *testing.T) {
 func TestFrequencyGetRange(t *testing.T) {
 	testComponentGetterError(t, getFrequency, (*Frequency).GetRange, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetRange,
-		checkValue(FreqRange{Min: 300.0, Max: 1600.0}),
+		checkValue(FreqRange{
+			Min: 300.0,
+			Max: 1600.0,
+		}),
 	)
 }
 
@@ -933,7 +942,10 @@ func TestFrequencyGetState(t *testing.T) {
 func TestFrequencyGetThrottleTime(t *testing.T) {
 	testComponentGetterError(t, getFrequency, (*Frequency).GetThrottleTime, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetThrottleTime,
-		checkValue(FreqThrottleTime{ThrottleTime: 5000, Timestamp: 100000}),
+		checkValue(FreqThrottleTime{
+			ThrottleTime: 5000,
+			Timestamp:    100000,
+		}),
 	)
 }
 
@@ -1031,14 +1043,21 @@ func TestPowerGetProperties(t *testing.T) {
 func TestPowerGetEnergyCounter(t *testing.T) {
 	testComponentGetterError(t, getPower, (*Power).GetEnergyCounter, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetEnergyCounter,
-		checkValue(PowerEnergyCounter{Energy: 5000000, Timestamp: 123456789}),
+		checkValue(PowerEnergyCounter{
+			Energy:    5000000,
+			Timestamp: 123456789,
+		}),
 	)
 }
 
 func TestPowerGetEnergyThreshold(t *testing.T) {
 	testComponentGetterError(t, getPower, (*Power).GetEnergyThreshold, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetEnergyThreshold,
-		checkValue(EnergyThreshold{Enable: 1, Threshold: 10.5, ProcessId: 4321}),
+		checkValue(EnergyThreshold{
+			Enable:    1,
+			Threshold: 10.5,
+			ProcessId: 4321,
+		}),
 	)
 }
 
@@ -1110,7 +1129,9 @@ func TestSchedulerGetTimeoutModeProperties(t *testing.T) {
 	testComponentGetterError(t, getScheduler, func(s *Scheduler) (SchedTimeoutProperties, error) { return s.GetTimeoutModeProperties(false) }, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (SchedTimeoutProperties, error) { return s.GetTimeoutModeProperties(false) },
-		checkValue(SchedTimeoutProperties{WatchdogTimeout: 5000000}),
+		checkValue(SchedTimeoutProperties{
+			WatchdogTimeout: 5000000,
+		}),
 	)
 }
 
@@ -1118,7 +1139,10 @@ func TestSchedulerGetTimesliceModeProperties(t *testing.T) {
 	testComponentGetterError(t, getScheduler, func(s *Scheduler) (SchedTimesliceProperties, error) { return s.GetTimesliceModeProperties(false) }, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (SchedTimesliceProperties, error) { return s.GetTimesliceModeProperties(false) },
-		checkValue(SchedTimesliceProperties{Interval: 2000, YieldTimeout: 500}),
+		checkValue(SchedTimesliceProperties{
+			Interval:     2000,
+			YieldTimeout: 500,
+		}),
 	)
 }
 
@@ -1230,7 +1254,10 @@ func TestFabricPortGetLinkType(t *testing.T) {
 func TestFabricPortGetConfig(t *testing.T) {
 	testComponentGetterError(t, getFabricPort, (*FabricPort).GetConfig, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetConfig,
-		checkValue(FabricPortConfig{Enabled: 1, Beaconing: 1}),
+		checkValue(FabricPortConfig{
+			Enabled:   1,
+			Beaconing: 1,
+		}),
 	)
 }
 
@@ -1264,7 +1291,11 @@ func TestFabricPortGetState(t *testing.T) {
 func TestFabricPortGetThroughput(t *testing.T) {
 	testComponentGetterError(t, getFabricPort, (*FabricPort).GetThroughput, withConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetThroughput,
-		checkValue(FabricPortThroughput{Timestamp: 777777, RxCounter: 111111, TxCounter: 222222}),
+		checkValue(FabricPortThroughput{
+			Timestamp: 777777,
+			RxCounter: 111111,
+			TxCounter: 222222,
+		}),
 	)
 }
 
