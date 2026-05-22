@@ -56,16 +56,6 @@
                                     "description": "Initial start delay for metrics collection, any non positive value is assumed to be immediately.",
                                     "type": "string"
                                 },
-                                "log_level": {
-                                    "description": "Log level (debug, info, warn, error)",
-                                    "type": "string",
-                                    "enum": [
-                                        "debug",
-                                        "info",
-                                        "warn",
-                                        "error"
-                                    ]
-                                },
                                 "metrics": {
                                     "description": "Configuration for enabling/disabling individual metrics.",
                                     "type": "object"

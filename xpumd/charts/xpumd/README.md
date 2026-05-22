@@ -132,7 +132,6 @@ And add following option to chart install:
 | config.receivers.intelxpu | object |   | Configuration for the Intel XPU receiver. |
 | config.receivers.intelxpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
 | config.receivers.intelxpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
-| config.receivers.intelxpu.log_level | string | `"info"` | Log level (debug, info, warn, error) |
 | config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |

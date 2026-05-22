@@ -11,14 +11,12 @@ import (
 
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 	"go.opentelemetry.io/collector/component"
-	"go.uber.org/zap/zapcore"
 )
 
 // Config defines configuration for the Sysman scraper.
 type Config struct {
 	metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	SamplingInterval              time.Duration `mapstructure:"sampling_interval"`
-	LogLevel                      zapcore.Level `mapstructure:"log_level"`
 
 	aggregatedMetricsBufferSize int
 }
@@ -27,7 +25,6 @@ type Config struct {
 func defaultConfig() component.Config {
 	return &Config{
 		MetricsBuilderConfig: metadata.NewDefaultMetricsBuilderConfig(),
-		LogLevel:             zapcore.InfoLevel,
 		SamplingInterval:     1 * time.Second,
 	}
 }
