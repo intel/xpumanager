@@ -707,7 +707,6 @@ std::vector<sysman *> device::zesFunctionTable()
 		// clang-format off
 		&pciInstance,
 		&processInstance,
-		&diagnosticInstance,
 		&eccInstance,
 		&enginegroupInstance,
 		&fabricInstance,

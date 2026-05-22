@@ -59,19 +59,12 @@ inline auto GET_PCIE_PATHS(const std::vector<std::string> &bdfs)
 typedef wchar_t TCHAR;
 #define GETLOGS(f) getLinLogs(f)
 #define GETDRMPATH(bdf) getDrmPath(bdf)
-#define CHECKPERMISSION() checkPermission()
-#define CHECKPROCESSEXCLUSIVE(processId) checkProcessExclusive(processId)
-#define CHECKCPUSTATUS() checkCPUStatus()
 #define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
 #define REMOVEVFS(deviceInfoPtr) removeAllVFs(deviceInfoPtr)
 #define LISTVFS(deviceInfoPtr, result) linListVFs(deviceInfoPtr, result)
 #define VMXSUPPORT() isVmxSupported()
 #define IOMMUSUPPORT() isIommuSupported()
 #define SRIOVSUPPORT(deviceInfoPtr) isSriovSupported(deviceInfoPtr)
-#define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult) checkMediaCodec(bdfStr, functionalCheck, finalResult)
-#define CHECKHOSTMEMORYSIZE(hostMemorySize) checkHostMemorySize(hostMemorySize)
-#define CHECKPCIELINKSTATUS(bdf) checkPCIeLinkStatus(bdf)
-#define GETDOWNGRADEDPCIEINFO(bdfStr) getDowngradedPCIeInfo(bdfStr);
 #define GETKERNELVERSION() getKernelVersion()
 #define GETPCISLOTLABEL(bdf) getPciSlotLabel(bdf)
 #define FINDRESOURCEFILE(relativePath) findResourceFile(relativePath)
@@ -108,9 +101,6 @@ std::string getCpuList(const std::string &bdf);
 int getTopology(bdfID bdf, std::string *switchDevicePath);
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 int getLinLogs(const std::string &fileName);
-bool checkPermission();
-std::string checkCPUStatus();
-bool checkProcessExclusive(uint32_t processId);
 std::string getDrmPath(const std::string &bdf);
 int linCreateVFs(DeviceSriovInfo *di);
 int removeAllVFs(DeviceSriovInfo *di);
@@ -118,12 +108,8 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result);
 bool isVmxSupported();
 bool isIommuSupported();
 bool isSriovSupported(DeviceSriovInfo *di);
-bool checkMediaCodec(std::string &bdfStr, bool functionalCheck, std::string &finalResult);
-bool checkHostMemorySize(uint64_t *hostMemorySize);
-bool checkPCIeLinkStatus(std::string &bdf);
 std::string getKernelVersion();
 std::string getPciSlotLabel(const std::string &bdf);
-std::string getDowngradedPCIeInfo(std::string &bdfStr);
 std::string findResourceFile(const std::string &relativePath);
 int coldResetViaSysfs(const std::string &gpuBdf);
 std::vector<uint32_t> getGpuProcessesByBdf(const std::string &gpuBdf);

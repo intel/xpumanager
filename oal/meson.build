@@ -22,7 +22,6 @@ if is_windows
 elif is_linux
   oal_sources = files(
     'lin/dbg_log.cpp',
-    'lin/diag_lin.cpp',
     'lin/dmi_reader.cpp',
     'lin/fs_lock.cpp',
     'lin/http_client.cpp',

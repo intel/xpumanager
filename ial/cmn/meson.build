@@ -14,7 +14,6 @@ ial_cmn_sources = files(
   'cmd_agentset.cpp',
   'cmd_amc.cpp',
   'cmd_config.cpp',
-  'cmd_diag.cpp',
   'cmd_discovery.cpp',
   'cmd_dump.cpp',
   'cmd_group.cpp',
