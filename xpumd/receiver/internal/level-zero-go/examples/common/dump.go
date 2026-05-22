@@ -13,7 +13,7 @@ import (
 	"os"
 	"reflect"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v4"
 )
 
 // DumpJSON prints an object in JSON format with with human-readable string

@@ -13,7 +13,7 @@ import (
 
 	"github.com/intel/level-zero-go/examples/common"
 	"github.com/intel/level-zero-go/sysman"
-	yaml "gopkg.in/yaml.v3"
+	yaml "go.yaml.in/yaml/v4"
 )
 
 func main() {
