@@ -112,11 +112,6 @@ struct option
 #define GET_TOPOLOGY(bdf, e) (UNUSED_VAR(bdf), UNUSED_VAR(e), 0)
 #define EXPORT_TOPOLOGY_XML(filename, gpuDevices) (UNUSED_VAR(filename), UNUSED_VAR(gpuDevices), 0)
 #define GETLOGS(f) 0
-#define CHECKPERMISSION() 0
-#define CHECKPROCESSEXCLUSIVE(processId) (UNUSED_VAR(processId), false)
-static constexpr std::string CHECKCPUSTATUS() { return std::string{"0"}; }
-#define CHECKMEDIACODEC(bdfStr, functionalCheck, finalResult)                                                          \
-	(UNUSED_VAR(bdfStr), UNUSED_VAR(functionalCheck), UNUSED_VAR(finalResult), false)
 #define GETDRMPATH(bdf) ""
 #define CREATEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define REMOVEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
@@ -124,12 +119,9 @@ static constexpr std::string CHECKCPUSTATUS() { return std::string{"0"}; }
 #define VMXSUPPORT() 0
 #define IOMMUSUPPORT() 0
 #define SRIOVSUPPORT(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
-#define CHECKHOSTMEMORYSIZE(hostMemorySize) (UNUSED_VAR(hostMemorySize), 0)
-#define CHECKPCIELINKSTATUS(bdf) (UNUSED_VAR(bdf), false)
 #define GETKERNELVERSION() std::string("")
 #define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
 static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relativePath) { return std::string{}; }
-static constexpr std::string GETDOWNGRADEDPCIEINFO(UNUSED const std::string &bdfStr) { return std::string{}; }
 static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -1; }
 static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
 static inline std::vector<std::string> getDevicesSharingSlotWith(UNUSED const std::string &gpuBdf) { return {}; }

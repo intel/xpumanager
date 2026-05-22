@@ -10,7 +10,6 @@
 #include <cmd_amc.h>
 #include <cmd_listgpu.h>
 #include <cmd_config.h>
-#include <cmd_diag.h>
 #include <cmd_discovery.h>
 #include <cmd_dump.h>
 #include <cmd_group.h>
@@ -209,7 +208,6 @@ int main(int argc, char *argv[])
 	std::vector<function_entry> functionTable = {
 		{createInstance<cmdDiscovery>, DAEMONCAP::BOTH, OSTYPE::BOTH},
 		{createInstance<cmdTopology>, DAEMONCAP::BOTH, OSTYPE::BOTH},
-		{createInstance<cmdDiag>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 		{createInstance<cmdHealth>, DAEMONCAP::BOTH, OSTYPE::LINUX},
 		{createInstance<cmdUpdateFW>, DAEMONCAP::BOTH, OSTYPE::BOTH},
 		{createInstance<cmdConfig>, DAEMONCAP::BOTH, OSTYPE::BOTH},

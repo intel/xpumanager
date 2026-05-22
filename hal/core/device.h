@@ -12,7 +12,6 @@
 #include <mutex>
 #include "sysman.h"
 #include "pci.h"
-#include "diagnostic.h"
 #include "ecc.h"
 #include "enginegroup.h"
 #include "fabric.h"
@@ -94,7 +93,6 @@ private:
 
 	pci pciInstance;
 	process processInstance;
-	diagnostic diagnosticInstance;
 	ecc eccInstance;
 	enginegroup enginegroupInstance;
 	fabric fabricInstance;
@@ -160,7 +158,6 @@ public:
 
 	pci *getPCI() { return &pciInstance; }
 	process *getProcess() { return &processInstance; }
-	diagnostic *getDiagnostic() { return &diagnosticInstance; }
 	ecc *getECC() { return &eccInstance; }
 	enginegroup *getEngineGroup() { return &enginegroupInstance; }
 	fabric *getFabric() { return &fabricInstance; }
