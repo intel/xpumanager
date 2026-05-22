@@ -124,10 +124,6 @@ config:
     # @default --  
     # @section -- XPUM Daemon Configuration
     intelxpu:
-      # @schema enum: [debug, info, warn, error]
-      # -- Log level (debug, info, warn, error)
-      # @section -- XPUM Daemon Configuration
-      log_level: info
       # -- Metrics data collection interval. Must be at least twice the sampling_interval.
       # @section -- XPUM Daemon Configuration
       collection_interval: 5s

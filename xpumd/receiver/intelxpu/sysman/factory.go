@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/scraper"
-	"go.uber.org/zap"
 )
 
 // Handle is a wrapper that provides access to both periodic scraper (metrics)
@@ -48,7 +47,7 @@ func makeMetricsScraper(p *sysmanProvider) scraper.CreateMetricsFunc {
 			return nil, fmt.Errorf("invalid config type: %T", scfg)
 		}
 
-		logger := settings.Logger.WithOptions(zap.IncreaseLevel(cfg.LogLevel)).Sugar()
+		logger := settings.Logger.Sugar()
 		devices, err := p.get(logger, cfg)
 		if err != nil {
 			return nil, err
@@ -69,7 +68,7 @@ func makeMetricsScraper(p *sysmanProvider) scraper.CreateMetricsFunc {
 
 // CreateLogsReceiver creates a sysman logs (events) receiver.
 func (f *Handle) CreateLogsReceiver(settings component.TelemetrySettings, cfg *Config, nextConsumer consumer.Logs) (component.Component, error) {
-	logger := settings.Logger.WithOptions(zap.IncreaseLevel(cfg.LogLevel)).Sugar()
+	logger := settings.Logger.Sugar()
 	devices, err := f.provider.get(logger, cfg)
 	if err != nil {
 		return nil, err

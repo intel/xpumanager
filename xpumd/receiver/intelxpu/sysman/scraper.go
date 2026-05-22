@@ -29,7 +29,7 @@ type sysmanMetricsScraper struct {
 }
 
 func newSysmanMetricsScraper(_ context.Context, settings scraper.Settings, cfg *Config, devices *deviceRegistry) (*sysmanMetricsScraper, error) {
-	logger := settings.Logger.WithOptions(zap.IncreaseLevel(cfg.LogLevel)).Sugar()
+	logger := settings.Logger.Sugar()
 
 	// Warn about potentially config issues.
 	// Cannot do in Config.Validate() as logger is not available there.
