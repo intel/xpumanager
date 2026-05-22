@@ -4,6 +4,13 @@
 		<add key="VerboseMode" value="Moderate"/>
 		<!-- <add key="PgpPublicKeyFileName" value="intelswprod.public" /> -->
 		<add key="DefaultCertificateName" value="INTEL_GRAPHICS_LINUX_PGP"/>
+    <!-- Additional requirements (base64 encoded) for Mac OS signing 
+    The MacServerRequirements value below should only be specified when using the Apple Certificate for signing.
+    If you are using an Intel issued internal/external certificate then please do not specify this value 
+    instead use : 
+    <add key="MacServerRequirements" value=""/>
+    -->
+		<add key="MacServerRequirements" value="+t4MAQAAACQAAAABAAAAAwAAABT63gwAAAAAEAAAAAEAAAAP"/>
 		<!-- Path to cross certificate for windows kernel mode driver signing (or if using the -a commandline option). The cross certificates for sha2 and sha1 certificates are available to download at the release location  
 		Use the sha2-cross.crt for sha2 certificates 
 		Use the sha1-cross.crt for sha1 certificates
@@ -17,13 +24,13 @@
 		<!-- If set to True will disable the sending of email notification in case a signing error occurs.--> 
 		<add key="DisableErrorEmail" value="False" />
 		
-		<add key="WebServiceURL" value="https://edss-api.intel.com;"/>
+		<add key="WebServiceURL" value="https://edss-next-api.intel.com;"/>
 		
 		<add key="AuthenticationServer" value="https://iamws-i.intel.com/api/v1"/>
 		<!--<add key="UserName" value="amr\swfactory"/>
 		<add key="Password" value=""/>-->
-		<add key="SoapRequestAttempts" value="5"/>
-		<add key="DelayBetweenRequestAttempts" value="60"/>
+		<add key="SoapRequestAttempts" value="3"/>
+		<add key="DelayBetweenRequestAttempts" value="30"/>
 		<add key="SoapRequestTimeout" value="180"/>
 		<add key="SkipSignedFiles" value="False"/>
 		<add key="WorkingThreads" value="Auto"/>
@@ -40,11 +47,12 @@
 		<!-- <add key="ApplicationRulesFileName" value="" /> -->
 		<add key="LogFileName" value="Log.txt"/>
 		<!-- <add key="UseAdditionalCertificate" value="True" /> -->
-		<add key="AlwaysSignKernelDriversWithAdditionalCertificate" value="True"/>
+		<add key="AlwaysSignKernelDriversWithAdditionalCertificate" value="False"/>
 		<add key="HashAlgorithm" value="SHA256"/>
 
     <add key="SimpleWFAttempts" value="250"/>
     <add key="DelayBetweenSimpleWFAttempts" value="15"/>
+	<!-- <add key="NvmBigEndian" value="False" /> -->
     <!--
     TimeStampServiceURL format multiple server entries separated by ;   
     Each server entry has the following format :  URL|OS1,OS2|Standard|IsExternal
@@ -53,12 +61,13 @@
     "http://timestamp.intel.com/TSS/AuthenticodeTS|Windows|Authenticode|0;http://timestamp.intel.com/TSS/HttpTspServer|Windows,Linux|rfc_3161|0"
     
     Windows
+		MacOS
 		Linux
 		CrossPlatform
 		FreeBSD
     -->
 
-    <add key="TimeStampServiceURL" value="http://timestamp.intel.com/TSS/AuthenticodeTS|Windows|AuthentiCode|0;http://timestamp.intel.com/TSS/HttpTspServer|Linux,Windows|rfc_3161|0;http://timestamp.verisign.com/scripts/timestamp.dll|Windows|Authenticode|1;http://timestamp.comodoca.com|Linux,Windows|rfc_3161|1"/>
+    <add key="TimeStampServiceURL" value="http://timestamp.apple.com/ts01|MacOS|rfc_3161|1;http://timestamp.intel.com/TSS/AuthenticodeTS|Windows|AuthentiCode|0;http://timestamp.intel.com/TSS/HttpTspServer|Linux,Windows|rfc_3161|0;http://timestamp.verisign.com/scripts/timestamp.dll|Windows|Authenticode|1;http://timestamp.comodoca.com|Linux,Windows|rfc_3161|1"/>
 
 <!-- 
 			The Time Stamp Hash algorithm that should be used if timestamping is enabled. For Windows + SHA1 an Authenticode TimeStamp Authority should be configured in the TimeStampServiceURL above
@@ -67,9 +76,9 @@
     <add key="TimeStampRetries" value="15" />
     <add key="TimeStampDelaySeconds" value="45" />
 	<!-- 
-	If an external timestamp server has to be used then this proxy setting will be used. The machine doing the signing should have access to the proxy server and its port (912) in order to get out to external time stamp servers
-	for e.g. http://timestamp.verisign.com/scripts/timestamp.dll
+	If an external timestamp server has to be used then this proxy setting will be used. The machine doing the signing should have access to the proxy server and its port (911) in order to get out to external time stamp servers 
+	for e.g. http://timestamp.apple.com/ts01  http://timestamp.verisign.com/scripts/timestamp.dll
 	-->
-    <add key="HttpProxy" value="proxy-chain.intel.com:912" />
+    <add key="HttpProxy" value="proxy-chain.intel.com:911" />
 	</appSettings>
 </configuration>
