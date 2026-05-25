@@ -1,6 +1,6 @@
 module github.com/intel/xpumanager/xpumd/receiver/intelxpu
 
-go 1.26
+go 1.26.0
 
 require (
 	github.com/google/go-cmp v0.7.0
