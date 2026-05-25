@@ -12,10 +12,11 @@
 #include "metrics/fan.h"
 #include "metrics/memory.h"
 #include "metrics/power.h"
+#include "metrics/ecc.h"
+#include "metrics/identity.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
-#include "metrics/identity.h"
 #include <enginegroup.h>
 #include <functional>
 #include <iterator>
@@ -29,6 +30,7 @@
 #include <array>
 #include <cctype>
 #include <chrono>
+#include <iterator>
 #include <numeric>
 #include <ranges>
 #include <span>
@@ -231,9 +233,10 @@ std::span<const QueryMetric> getQueryMetrics()
 		const auto fanMetrics = metrics::fan::getFanMetrics();
 		const auto memoryMetrics = metrics::memory::getMemoryMetrics();
 		const auto powerMetrics = metrics::power::getPowerMetrics();
-		const auto groups = std::to_array<std::span<const QueryMetric>>({identityMetrics, temperatureMetrics,
-																		 utilizationMetrics, pciMetrics, euArrayMetrics,
-																		 fanMetrics, memoryMetrics, powerMetrics});
+		const auto eccMetrics = metrics::ecc::getEccMetrics();
+		const auto groups = std::to_array<std::span<const QueryMetric>>(
+			{identityMetrics, temperatureMetrics, utilizationMetrics, pciMetrics, euArrayMetrics, fanMetrics,
+			 memoryMetrics, powerMetrics, eccMetrics});
 		std::vector<QueryMetric> v;
 		v.reserve(std::transform_reduce(groups.begin(), groups.end(), std::size_t{0}, std::plus<>{},
 										[](const auto &s) { return s.size(); }));
