@@ -1,6 +1,6 @@
 module github.com/intel/xpumanager/xpumd/tools
 
-go 1.26
+go 1.26.0
 
 tool (
 	github.com/golangci/golangci-lint/v2/cmd/golangci-lint
