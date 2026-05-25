@@ -26,6 +26,9 @@ receivers:
   - gomod: github.com/intel/xpumanager/xpumd/receiver/intelxpu v0.0.0
     path: ./receiver/intelxpu
     name: intelxpureceiver
+  - gomod: github.com/intel/xpumanager/xpumd/receiver/intelcrashlog v0.0.0
+    path: ./receiver/intelcrashlog
+    name: intelcrashlogreceiver
 
 processors:
   - gomod: github.com/intel/xpumanager/xpumd/processor/intelxpustatus v0.0.0
