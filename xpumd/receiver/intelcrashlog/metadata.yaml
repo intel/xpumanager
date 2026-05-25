@@ -1,0 +1,9 @@
+display_name: Intel Crashlog Receiver
+type: intel_crashlog
+
+status:
+  class: receiver
+  stability:
+    development: [logs]
+  codeowners:
+    active: [marquiz]
