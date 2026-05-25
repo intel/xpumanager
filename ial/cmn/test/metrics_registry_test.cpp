@@ -107,6 +107,7 @@ TEST_CASE("getQueryMetrics returns non-empty span")
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::FAN).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::MEMORY).size());
 	CHECK(all.size() >= getMetricsByGroup(MetricGroup::POWER).size());
+	CHECK(all.size() >= getMetricsByGroup(MetricGroup::ECC).size());
 }
 
 TEST_CASE("getMetricsByGroup ALL returns non-empty, NONE returns empty")
@@ -290,12 +291,32 @@ TEST_CASE("Memory group contains exactly 7 canonical entries")
 	CHECK(byMem.size() == 7); // 6 from memory.cpp + utilization.memory
 }
 
+TEST_CASE("findMetric resolves ECC metric names")
+{
+	CHECK(findMetric("ecc.mode.current").has_value());
+	CHECK(findMetric("ecc.errors.corrected.aggregate.total").has_value());
+	CHECK(findMetric("ecc.errors.uncorrected.aggregate.total").has_value());
+	CHECK(findMetric("ecc.errors.aggregate.total").has_value());
+	CHECK(findMetric("ras.reset").has_value());
+	CHECK(findMetric("ras.programming.errors").has_value());
+	CHECK(findMetric("ras.driver.errors").has_value());
+	CHECK(findMetric("ras.cache.errors.correctable").has_value());
+	CHECK(findMetric("ras.cache.errors.uncorrectable").has_value());
+	CHECK(findMetric("ras.non_compute.errors.total").has_value());
+}
+
+TEST_CASE("ECC group contains exactly 10 canonical entries")
+{
+	const auto byEcc = getMetricsByGroup(MetricGroup::ECC);
+	CHECK(byEcc.size() == 10);
+}
+
 TEST_CASE("findMetric returns nullopt for unregistered metrics")
 {
 	CHECK_FALSE(findMetric("__no_such_metric__").has_value());
 }
 
-TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Array, Fan, Memory, and POWER groups")
+TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Array, Fan, Memory, POWER, and ECC groups")
 {
 	CHECK_FALSE(resolveQuery("IDENTITY").empty());
 	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
@@ -318,13 +339,14 @@ TEST_CASE("resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Arra
 	CHECK_FALSE(resolveQuery("MEMORY").empty());
 	CHECK_FALSE(resolveQuery("m").empty()); // single-letter alias for MEMORY
 	CHECK_FALSE(resolveQuery("POWER").empty());
+	CHECK_FALSE(resolveQuery("ECC").empty());
+	CHECK_FALSE(resolveQuery("e").empty()); // single-letter alias for ECC
 }
 
 TEST_CASE("resolveQuery returns empty for group tokens with no registered metrics")
 {
-	// These groups are present in GROUP_TABLE but have no metrics registered yet.
+	// CLOCK group is in GROUP_TABLE but has no metrics registered in this PR.
 	CHECK(resolveQuery("CLOCK").empty());
-	CHECK(resolveQuery("ECC").empty());
 }
 
 TEST_CASE("resolveQuery TEMPERATURE returns registered metrics")
