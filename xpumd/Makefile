@@ -40,7 +40,7 @@ generate: generate-bindings generate-mods generate-proto
 .PHONY: generate-bindings
 # Generate Go bindings for Level-Zero
 generate-bindings:
-	make -C receiver/internal/level-zero-go generate
+	make -C level-zero-go generate
 
 .PHONY: generate-mods
 # Generate indicated Go modules code + Helm docs / validation schema
@@ -78,7 +78,7 @@ test-daemon:
 .PHONY: test-bindings
 test-bindings:
 	@echo "Running Level-Zero Go bindings tests..."
-	make -C receiver/internal/level-zero-go test
+	make -C level-zero-go test
 
 .PHONY: golint
 golint:

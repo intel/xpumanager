@@ -10,7 +10,7 @@ dist:
   cgo_enabled: true
 
 replaces:
-  - github.com/intel/level-zero-go => ../receiver/internal/level-zero-go
+  - github.com/intel/level-zero-go => ../level-zero-go
   - github.com/intel/xpumanager/xpumd => ../
   - github.com/intel/xpumanager/xpumd/common => ../common
 

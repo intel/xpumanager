@@ -18,7 +18,7 @@
 ## Building
 
 See the build requirements in Level-Zero Go Bindings
-[README](receiver/internal/level-zero-go/README.md#requirements).
+[README](level-zero-go/README.md#requirements).
 
 Clone the repository:
 
@@ -144,7 +144,7 @@ and point `SYSMAN_STUB_CONFIG` at that path:
 docker run -it --rm --user 0 \
   -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
   -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
-  --volume $PWD/receiver/internal/level-zero-go/level-zero-stub:/etc/xpumd/level-zero-stub:ro \
+  --volume $PWD/level-zero-go/level-zero-stub:/etc/xpumd/level-zero-stub:ro \
   --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config-example.yaml
 ```
