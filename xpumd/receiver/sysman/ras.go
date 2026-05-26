@@ -67,8 +67,10 @@ func newErrorSet(name string, ras *l0sysman.Ras, device *device) (*errorSet, err
 		return nil, fmt.Errorf("RAS GetProperties() failed: %w", err)
 	}
 
-	if _, err := ras.GetState(false); err != nil {
-		return nil, fmt.Errorf("RAS GetState() failed: %w", err)
+	if states, err := ras.GetStateExp(); err != nil {
+		return nil, fmt.Errorf("RAS GetStateExp() failed: %w", err)
+	} else if len(states) < 1 {
+		return nil, fmt.Errorf("no RAS error counters available")
 	}
 
 	var errType metadata.AttributeErrorType
@@ -101,22 +103,21 @@ func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 
-	state, err := es.GetState(false)
+	states, err := es.GetStateExp()
 	if err != nil {
-		es.logger.Errorw("RAS GetState() failed: error metrics disabled", zap.Error(err), "attributes", es.attributes)
+		es.logger.Errorw("RAS GetStateExp() failed: error metrics disabled", zap.Error(err), "attributes", es.attributes)
 		es.state.disabled = true
 		return
 	}
 
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-category-exp-t
-	for i, value := range state.Category {
+	for _, state := range states {
 		// Report zero values only for uncorrectable error metrics.
-		if value == 0 && es.attributes.errorType != metadata.AttributeErrorTypeUncorrectable {
+		if state.ErrorCounter == 0 && es.attributes.errorType != metadata.AttributeErrorTypeUncorrectable {
 			continue
 		}
 		// value is uint64, but OTel builder does not support uint64 metric type
-		value %= (math.MaxInt64 + 1)
-		cat := l0sysman.RasErrorCat(i).String()
+		value := state.ErrorCounter % (math.MaxInt64 + 1)
 		mb.RecordHwErrorsDataPoint(ts, int64(value),
 			es.attributes.hwID,
 			es.attributes.hwName,
@@ -124,7 +125,7 @@ func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			es.attributes.subdeviceId,
 			metadata.AttributeHwTypeGpu,
 			es.attributes.errorType,
-			strings.ToLower(cat),
+			strings.ToLower(state.Category.String()),
 		)
 	}
 }
