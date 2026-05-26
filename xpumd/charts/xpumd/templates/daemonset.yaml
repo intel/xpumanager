@@ -44,6 +44,7 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         args:
+        - "--config=/etc/xpumd/config-receiver-crashlog.yaml"
         - "--config=/etc/xpumd/config-processor-xpustatus.yaml"
         - "--config=/etc/xpumd/config-exporter-xpuinfo.yaml"
         - "--config=/etc/xpumd/config.yaml"
@@ -99,6 +100,9 @@ spec:
           readOnly: true
         - name: rundir
           mountPath: /run/xpumd
+        - name: crashlog
+          mountPath: /var/log/crashlog
+          readOnly: true
         {{- with .Values.extraVolumeMounts }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -122,6 +126,14 @@ spec:
         hostPath:
           path: /run/xpumd
           type: DirectoryOrCreate
+      - name: crashlog
+      {{- if .Values.crashlog.directory }}
+        hostPath:
+          path: {{ .Values.crashlog.directory }}
+          type: DirectoryOrCreate
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
       {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 6 }}
       {{- end }}

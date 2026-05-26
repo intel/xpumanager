@@ -128,6 +128,7 @@ And add following option to chart install:
 | config.processors | object | `{"intelxpustatus":{}}` | [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors) |
 | config.processors.intelxpustatus | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details. |
 | config.receivers | object |   | [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers) |
+| config.receivers.intel_crashlog | object | `{}` | Override configuration for the Intel Crashlog receiver. Should only be used for advanced use cases. See `intel_crashlog` README for details. |
 | config.receivers.intelxpu | object |   | Configuration for the Intel XPU receiver. |
 | config.receivers.intelxpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
 | config.receivers.intelxpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
@@ -135,13 +136,14 @@ And add following option to chart install:
 | config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"logs":{"exporters":["intelxpuinfo"],"receivers":["intelxpu"]},"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service | object | `{"pipelines":{"logs":{"exporters":["intelxpuinfo"],"receivers":["intelxpu","intel_crashlog"]},"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
+| crashlog.directory | string | `"/var/log/crashlog"` | Host directory to watch for collecting GPU crash logs. Use `*` to match all files. |
 | extraEnv | list | `[]` | Extra environment variables for the xpumd container |
 | extraVolumeMounts | list | `[]` | Additional volume mounts for the xpumd container |
 | extraVolumes | list | `[]` | Additional volumes for the xpumd pod |

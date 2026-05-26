@@ -105,6 +105,14 @@ tolerations: []
 # -- [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods
 affinity: {}
 
+
+# @schema additionalProperties:false
+crashlog:
+  # -- Host directory to watch for collecting GPU crash logs.
+  # Use `*` to match all files.
+  directory: /var/log/crashlog
+
+
 # @schema additionalProperties:false
 config:
   # -- [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers)
@@ -135,6 +143,10 @@ config:
       # -- Configuration for enabling/disabling individual metrics.
       # @section -- XPUM Daemon Configuration
       metrics: {}
+    # -- Override configuration for the Intel Crashlog receiver. Should only be used for advanced use cases.
+    # See `intel_crashlog` README for details.
+    # @section -- XPUM Daemon Configuration
+    intel_crashlog: {}
 
   # -- [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)
   # @section -- XPUM Daemon Configuration
@@ -174,5 +186,5 @@ config:
         processors: [intelxpustatus]
         exporters: [intelxpuinfo]
       logs:
-        receivers: [intelxpu]
+        receivers: [intelxpu, intel_crashlog]
         exporters: [intelxpuinfo]

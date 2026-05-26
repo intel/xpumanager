@@ -18,6 +18,18 @@ receivers:
 #      hw.memory.size:
 #        enabled: false
 
+  intel_crashlog:
+    # Directory to watch for new crashlog files.
+    directory: /var/log/crashlog
+    # Filename glob pattern (matched against the base name of each file).
+    glob: "*.bin"
+    # Ignore files whose modification time is older than this duration before
+    # startup. Zero means only files created after startup are processed.
+    ignore_older_than: 0s
+    # Static attributes added to every emitted log record (optional).
+    # add_attributes:
+    #   hw.vendor: "ACME"
+
 processors:
   intelxpustatus:
     rules:
@@ -137,5 +149,5 @@ service:
       processors: [intelxpustatus]
       exporters: [intelxpuinfo,prometheus]
     logs:
-      receivers: [intelxpu]
+      receivers: [intelxpu, intel_crashlog]
       exporters: [intelxpuinfo]

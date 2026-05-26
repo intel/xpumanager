@@ -5,6 +5,14 @@ metadata:
   labels:
     {{- include "xpumd.labels" . | nindent 4 }}
 data:
+  # Default configuration for the Intel Crashlog receiver. Can be overridden
+  # in config.yaml (via .Values.config).
+  config-receiver-crashlog.yaml: |-
+    receivers:
+      intel_crashlog:
+        directory: /var/log/crashlog
+        glob: "*.bin"
+        ignore_older_than: 0s
   # Default configuration for the Intel XPU status processor. Can be overridden
   # in config.yaml (via .Values.config).
   config-processor-xpustatus.yaml: |-
