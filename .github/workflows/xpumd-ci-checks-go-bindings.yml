@@ -29,6 +29,6 @@ jobs:
     - name: Build examples
       uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
       with:
-        context: ./xpumd/receiver/internal/level-zero-go
-        file: ./xpumd/receiver/internal/level-zero-go/examples/Dockerfile
+        context: ./xpumd/level-zero-go
+        file: ./xpumd/level-zero-go/examples/Dockerfile
         build-args: APP=${{ matrix.app }}
