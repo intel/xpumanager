@@ -51,13 +51,13 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \
     make build && \
-    make -C receiver/internal/level-zero-go/level-zero-stub clean test && \
+    make -C level-zero-go/level-zero-stub clean test && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
     install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
     install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
-    install -D receiver/internal/level-zero-go/level-zero-stub/libze_stub.so \
+    install -D level-zero-go/level-zero-stub/libze_stub.so \
                /out/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
-    install -D receiver/internal/level-zero-go/level-zero-stub/example-config.yaml \
+    install -D level-zero-go/level-zero-stub/example-config.yaml \
                /out/etc/xpumd/level-zero-stub/example-config.yaml && \
     go -C dist tool -modfile $(pwd)/tools/go.mod \
         go-licenses save . \

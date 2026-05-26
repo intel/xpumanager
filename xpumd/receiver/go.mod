@@ -64,7 +64,7 @@ require (
 )
 
 replace (
-	github.com/intel/level-zero-go => ./internal/level-zero-go
+	github.com/intel/level-zero-go => ../level-zero-go
 	github.com/intel/xpumanager/xpumd => ..
 	github.com/intel/xpumanager/xpumd/common => ../common
 )
