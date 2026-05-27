@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package receiver
+package intelxpu
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
-	"github.com/intel/xpumanager/xpumd/receiver/sysman"
+	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman"
 )
 
 // Config defines configuration for the receiver.

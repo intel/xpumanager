@@ -18,7 +18,7 @@ import (
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
 	"github.com/intel/xpumanager/xpumd/common"
-	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
 
 // allEventTypeFlags is the bitmask of all known Sysman event types.

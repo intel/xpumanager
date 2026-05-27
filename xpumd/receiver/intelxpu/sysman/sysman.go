@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
-	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
 
 const (
