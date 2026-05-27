@@ -83,6 +83,180 @@ func TestParseFirmwares(t *testing.T) {
 	}
 }
 
+func TestUpdateHealthStatus(t *testing.T) {
+	addStatusDP := func(dps pmetric.NumberDataPointSlice, hwParent, hwState string, active bool) {
+		dp := dps.AppendEmpty()
+		if active {
+			dp.SetIntValue(1)
+		} else {
+			dp.SetIntValue(0)
+		}
+		dp.Attributes().PutStr("hw.parent", hwParent)
+		dp.Attributes().PutStr("hw.state", hwState)
+	}
+
+	makeStateMapping := func(state, severity string) HwStateMapping {
+		return HwStateMapping{
+			Severity:      severity,
+			severityLevel: severityNames[severity],
+		}
+	}
+
+	makeStatusMapping := func(domain string, showAllStates bool, stateMapping map[string]HwStateMapping) HwStatusMapping {
+		return HwStatusMapping{
+			HealthDomain:     domain,
+			healthDomainTmpl: mustParseTemplate(domain),
+			ShowAllStates:    showAllStates,
+			StateMapping:     stateMapping,
+		}
+	}
+
+	tests := []struct {
+		name           string
+		statusMappings []HwStatusMapping
+		setup          func(pmetric.NumberDataPointSlice)
+		wantStatuses   map[string]healthStatuses
+	}{
+		{
+			name: "zero data points",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+				}),
+			},
+			setup:        func(dps pmetric.NumberDataPointSlice) {},
+			wantStatuses: nil,
+		},
+		{
+			name: "no mapping matches hw.state",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "unknown_state", true)
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {},
+			},
+		},
+		{
+			name: "multiple active states collapsed to worst severity",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+					"failed":   makeStateMapping("failed", "critical"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "degraded", true)
+				addStatusDP(dps, "gpu0", "failed", true)
+				addStatusDP(dps, "gpu0", "degraded", false) // inactive, should be skipped
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {
+					{domain: "gpu.health"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
+						Reason:   "failed"},
+				},
+			},
+		},
+		{
+			name: "inactive states are ignored",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+					"failed":   makeStateMapping("failed", "critical"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "degraded", true)
+				addStatusDP(dps, "gpu0", "failed", false) // inactive, should be skipped
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {
+					{domain: "gpu.health"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_WARNING,
+						Reason:   "degraded"},
+				},
+			},
+		},
+		{
+			name: "show_all_states: multiple active states",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", true, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+					"failed":   makeStateMapping("failed", "critical"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "degraded", true)
+				addStatusDP(dps, "gpu0", "failed", true)
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {
+					{domain: "gpu.health", state: "degraded"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_WARNING,
+						Reason:   "degraded"},
+					{domain: "gpu.health", state: "failed"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
+						Reason:   "failed"},
+				},
+			},
+		},
+		{
+			name: "show_all_states: single active state",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", true, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+					"failed":   makeStateMapping("failed", "critical"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "failed", true)
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {
+					{domain: "gpu.health", state: "failed"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
+						Reason:   "failed"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			translator := newMetricsTranslator(zap.NewNop().Sugar(), nil)
+			translator.mappings = tt.statusMappings
+
+			dps := pmetric.NewNumberDataPointSlice()
+			tt.setup(dps)
+
+			translator.updateHealthStatus("hw.status", dps)
+
+			require.Len(t, translator.health, len(tt.wantStatuses))
+			for devID, wantDevStatuses := range tt.wantStatuses {
+				gotDevStatuses := translator.health[devID]
+				require.Len(t, gotDevStatuses, len(wantDevStatuses), "unexpected number of health entries for device %q", devID)
+				for key, wantStatus := range wantDevStatuses {
+					gotStatus := gotDevStatuses[key]
+					require.NotNil(t, gotStatus, "expected health status for key %q not found", key)
+					if diff := cmp.Diff(wantStatus, gotStatus, protocmp.Transform()); diff != "" {
+						t.Errorf("unexpected health status for %q (-want +got):\n%s", key, diff)
+					}
+				}
+			}
+		})
+	}
+}
+
 func TestUpdateMemoryInfo(t *testing.T) {
 	addDataPoint := func(dps pmetric.NumberDataPointSlice, hwParent, memType, memLocation, subdeviceID string, size int64) {
 		dp := dps.AppendEmpty()
