@@ -1063,16 +1063,36 @@ func (z *Ras) GetState(resetCounters bool) (RasState, error) {
 
 // GetStateExp wraps the (experimental) zesRasGetStateExp function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesrasgetstateexp
+// and if that is not supported, it wraps (legacy) zesRasGetState instead.
 func (z *Ras) GetStateExp() ([]RasStateExp, error) {
-	if !z.device.extensions[RAS_GET_STATE_EXP_NAME] {
-		return nil, core.RESULT_ERROR_UNSUPPORTED_FEATURE
+	// experimental API supported by backend?
+	ret := core.RESULT_ERROR_UNSUPPORTED_FEATURE
+	if z.device.extensions[RAS_GET_STATE_EXP_NAME] {
+		count := uint32(0)
+		if ret = zesRasGetStateExp(z.handle, &count, nil); ret == core.RESULT_SUCCESS {
+			states := make([]RasStateExp, count)
+			if ret = zesRasGetStateExp(z.handle, &count, states); ret == core.RESULT_SUCCESS {
+				return states, ret.ToError()
+			}
+		}
 	}
-	count := uint32(0)
-	if ret := zesRasGetStateExp(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
+	if ret != core.RESULT_ERROR_UNSUPPORTED_FEATURE {
 		return nil, ret.ToError()
 	}
-	states := make([]RasStateExp, count)
-	ret := zesRasGetStateExp(z.handle, &count, states)
+
+	// no => convert legacy API result instead
+	var state RasState
+	if ret = zesRasGetState(z.handle, boolToByte(false), &state); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	states := make([]RasStateExp, len(state.Category))
+	for cat, value := range state.Category {
+		states[cat] = RasStateExp{
+			// RasErrorCategoryExp is superset of RasErrorCat
+			Category:     RasErrorCategoryExp(cat),
+			ErrorCounter: value,
+		}
+	}
 	return states, ret.ToError()
 }
 
