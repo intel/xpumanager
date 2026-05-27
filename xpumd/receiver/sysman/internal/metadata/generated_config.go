@@ -3,16 +3,32 @@
 package metadata
 
 import (
+	"fmt"
+
 	"go.opentelemetry.io/collector/confmap"
 )
 
-// MetricConfig provides common config for a particular metric.
-type MetricConfig struct {
+// HwEnergyMetricAttributeKey specifies the key of an attribute for the hw.energy metric.
+type HwEnergyMetricAttributeKey string
+
+const (
+	HwEnergyMetricAttributeKeyHwID                HwEnergyMetricAttributeKey = "hw.id"
+	HwEnergyMetricAttributeKeyHwName              HwEnergyMetricAttributeKey = "hw.name"
+	HwEnergyMetricAttributeKeyPciBdf              HwEnergyMetricAttributeKey = "pci.bdf"
+	HwEnergyMetricAttributeKeyComIntelSubdeviceID HwEnergyMetricAttributeKey = "com.intel.subdevice_id"
+	HwEnergyMetricAttributeKeyHwSensorLocation    HwEnergyMetricAttributeKey = "hw.sensor_location"
+)
+
+// HwEnergyMetricConfig provides config for the hw.energy metric.
+type HwEnergyMetricConfig struct {
 	Enabled          bool `mapstructure:"enabled"`
 	enabledSetByUser bool
+
+	AggregationStrategy string                       `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwEnergyMetricAttributeKey `mapstructure:"attributes"`
 }
 
-func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
+func (ms *HwEnergyMetricConfig) Unmarshal(parser *confmap.Conf) error {
 	if parser == nil {
 		return nil
 	}
@@ -26,111 +42,1449 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 	return nil
 }
 
+func (ms *HwEnergyMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwEnergyMetricAttributeKeyHwID, HwEnergyMetricAttributeKeyHwName, HwEnergyMetricAttributeKeyPciBdf, HwEnergyMetricAttributeKeyComIntelSubdeviceID, HwEnergyMetricAttributeKeyHwSensorLocation:
+		default:
+			return fmt.Errorf("metric hw.energy doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwErrorsMetricAttributeKey specifies the key of an attribute for the hw.errors metric.
+type HwErrorsMetricAttributeKey string
+
+const (
+	HwErrorsMetricAttributeKeyHwID                HwErrorsMetricAttributeKey = "hw.id"
+	HwErrorsMetricAttributeKeyHwName              HwErrorsMetricAttributeKey = "hw.name"
+	HwErrorsMetricAttributeKeyPciBdf              HwErrorsMetricAttributeKey = "pci.bdf"
+	HwErrorsMetricAttributeKeyComIntelSubdeviceID HwErrorsMetricAttributeKey = "com.intel.subdevice_id"
+	HwErrorsMetricAttributeKeyHwType              HwErrorsMetricAttributeKey = "hw.type"
+	HwErrorsMetricAttributeKeyErrorType           HwErrorsMetricAttributeKey = "error.type"
+	HwErrorsMetricAttributeKeyErrorCategory       HwErrorsMetricAttributeKey = "error.category"
+)
+
+// HwErrorsMetricConfig provides config for the hw.errors metric.
+type HwErrorsMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                       `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwErrorsMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwErrorsMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwErrorsMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory:
+		default:
+			return fmt.Errorf("metric hw.errors doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.type, error.type, error.category]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFrequencyMetricAttributeKey specifies the key of an attribute for the hw.frequency metric.
+type HwFrequencyMetricAttributeKey string
+
+const (
+	HwFrequencyMetricAttributeKeyHwID                HwFrequencyMetricAttributeKey = "hw.id"
+	HwFrequencyMetricAttributeKeyHwName              HwFrequencyMetricAttributeKey = "hw.name"
+	HwFrequencyMetricAttributeKeyPciBdf              HwFrequencyMetricAttributeKey = "pci.bdf"
+	HwFrequencyMetricAttributeKeyComIntelSubdeviceID HwFrequencyMetricAttributeKey = "com.intel.subdevice_id"
+	HwFrequencyMetricAttributeKeyHwFrequencyDomain   HwFrequencyMetricAttributeKey = "hw.frequency.domain"
+	HwFrequencyMetricAttributeKeyAggregation         HwFrequencyMetricAttributeKey = "aggregation"
+)
+
+// HwFrequencyMetricConfig provides config for the hw.frequency metric.
+type HwFrequencyMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                          `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFrequencyMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFrequencyMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFrequencyMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFrequencyMetricAttributeKeyHwID, HwFrequencyMetricAttributeKeyHwName, HwFrequencyMetricAttributeKeyPciBdf, HwFrequencyMetricAttributeKeyComIntelSubdeviceID, HwFrequencyMetricAttributeKeyHwFrequencyDomain, HwFrequencyMetricAttributeKeyAggregation:
+		default:
+			return fmt.Errorf("metric hw.frequency doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, aggregation]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFrequencyLimitMetricAttributeKey specifies the key of an attribute for the hw.frequency.limit metric.
+type HwFrequencyLimitMetricAttributeKey string
+
+const (
+	HwFrequencyLimitMetricAttributeKeyHwID                HwFrequencyLimitMetricAttributeKey = "hw.id"
+	HwFrequencyLimitMetricAttributeKeyHwName              HwFrequencyLimitMetricAttributeKey = "hw.name"
+	HwFrequencyLimitMetricAttributeKeyPciBdf              HwFrequencyLimitMetricAttributeKey = "pci.bdf"
+	HwFrequencyLimitMetricAttributeKeyComIntelSubdeviceID HwFrequencyLimitMetricAttributeKey = "com.intel.subdevice_id"
+	HwFrequencyLimitMetricAttributeKeyHwFrequencyDomain   HwFrequencyLimitMetricAttributeKey = "hw.frequency.domain"
+	HwFrequencyLimitMetricAttributeKeyHwLimitType         HwFrequencyLimitMetricAttributeKey = "hw.limit_type"
+)
+
+// HwFrequencyLimitMetricConfig provides config for the hw.frequency.limit metric.
+type HwFrequencyLimitMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                               `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFrequencyLimitMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFrequencyLimitMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFrequencyLimitMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFrequencyLimitMetricAttributeKeyHwID, HwFrequencyLimitMetricAttributeKeyHwName, HwFrequencyLimitMetricAttributeKeyPciBdf, HwFrequencyLimitMetricAttributeKeyComIntelSubdeviceID, HwFrequencyLimitMetricAttributeKeyHwFrequencyDomain, HwFrequencyLimitMetricAttributeKeyHwLimitType:
+		default:
+			return fmt.Errorf("metric hw.frequency.limit doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, hw.limit_type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFrequencyRequestMetricAttributeKey specifies the key of an attribute for the hw.frequency.request metric.
+type HwFrequencyRequestMetricAttributeKey string
+
+const (
+	HwFrequencyRequestMetricAttributeKeyHwID                HwFrequencyRequestMetricAttributeKey = "hw.id"
+	HwFrequencyRequestMetricAttributeKeyHwName              HwFrequencyRequestMetricAttributeKey = "hw.name"
+	HwFrequencyRequestMetricAttributeKeyPciBdf              HwFrequencyRequestMetricAttributeKey = "pci.bdf"
+	HwFrequencyRequestMetricAttributeKeyComIntelSubdeviceID HwFrequencyRequestMetricAttributeKey = "com.intel.subdevice_id"
+	HwFrequencyRequestMetricAttributeKeyHwFrequencyDomain   HwFrequencyRequestMetricAttributeKey = "hw.frequency.domain"
+)
+
+// HwFrequencyRequestMetricConfig provides config for the hw.frequency.request metric.
+type HwFrequencyRequestMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                 `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFrequencyRequestMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFrequencyRequestMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFrequencyRequestMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFrequencyRequestMetricAttributeKeyHwID, HwFrequencyRequestMetricAttributeKeyHwName, HwFrequencyRequestMetricAttributeKeyPciBdf, HwFrequencyRequestMetricAttributeKeyComIntelSubdeviceID, HwFrequencyRequestMetricAttributeKeyHwFrequencyDomain:
+		default:
+			return fmt.Errorf("metric hw.frequency.request doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFrequencySamplesMetricAttributeKey specifies the key of an attribute for the hw.frequency.samples metric.
+type HwFrequencySamplesMetricAttributeKey string
+
+const (
+	HwFrequencySamplesMetricAttributeKeyHwID                HwFrequencySamplesMetricAttributeKey = "hw.id"
+	HwFrequencySamplesMetricAttributeKeyHwName              HwFrequencySamplesMetricAttributeKey = "hw.name"
+	HwFrequencySamplesMetricAttributeKeyPciBdf              HwFrequencySamplesMetricAttributeKey = "pci.bdf"
+	HwFrequencySamplesMetricAttributeKeyComIntelSubdeviceID HwFrequencySamplesMetricAttributeKey = "com.intel.subdevice_id"
+	HwFrequencySamplesMetricAttributeKeyHwFrequencyDomain   HwFrequencySamplesMetricAttributeKey = "hw.frequency.domain"
+	HwFrequencySamplesMetricAttributeKeySampleStatus        HwFrequencySamplesMetricAttributeKey = "sample.status"
+)
+
+// HwFrequencySamplesMetricConfig provides config for the hw.frequency.samples metric.
+type HwFrequencySamplesMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                 `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFrequencySamplesMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFrequencySamplesMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFrequencySamplesMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFrequencySamplesMetricAttributeKeyHwID, HwFrequencySamplesMetricAttributeKeyHwName, HwFrequencySamplesMetricAttributeKeyPciBdf, HwFrequencySamplesMetricAttributeKeyComIntelSubdeviceID, HwFrequencySamplesMetricAttributeKeyHwFrequencyDomain, HwFrequencySamplesMetricAttributeKeySampleStatus:
+		default:
+			return fmt.Errorf("metric hw.frequency.samples doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, sample.status]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFrequencyThrottleStatusMetricAttributeKey specifies the key of an attribute for the hw.frequency.throttle_status metric.
+type HwFrequencyThrottleStatusMetricAttributeKey string
+
+const (
+	HwFrequencyThrottleStatusMetricAttributeKeyHwID                        HwFrequencyThrottleStatusMetricAttributeKey = "hw.id"
+	HwFrequencyThrottleStatusMetricAttributeKeyHwName                      HwFrequencyThrottleStatusMetricAttributeKey = "hw.name"
+	HwFrequencyThrottleStatusMetricAttributeKeyPciBdf                      HwFrequencyThrottleStatusMetricAttributeKey = "pci.bdf"
+	HwFrequencyThrottleStatusMetricAttributeKeyComIntelSubdeviceID         HwFrequencyThrottleStatusMetricAttributeKey = "com.intel.subdevice_id"
+	HwFrequencyThrottleStatusMetricAttributeKeyHwFrequencyDomain           HwFrequencyThrottleStatusMetricAttributeKey = "hw.frequency.domain"
+	HwFrequencyThrottleStatusMetricAttributeKeyComIntelSpeedThrottleReason HwFrequencyThrottleStatusMetricAttributeKey = "com.intel.speed.throttle_reason"
+)
+
+// HwFrequencyThrottleStatusMetricConfig provides config for the hw.frequency.throttle_status metric.
+type HwFrequencyThrottleStatusMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                        `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFrequencyThrottleStatusMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFrequencyThrottleStatusMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFrequencyThrottleStatusMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFrequencyThrottleStatusMetricAttributeKeyHwID, HwFrequencyThrottleStatusMetricAttributeKeyHwName, HwFrequencyThrottleStatusMetricAttributeKeyPciBdf, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSubdeviceID, HwFrequencyThrottleStatusMetricAttributeKeyHwFrequencyDomain, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSpeedThrottleReason:
+		default:
+			return fmt.Errorf("metric hw.frequency.throttle_status doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, com.intel.speed.throttle_reason]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwGpuBandwidthLimitMetricAttributeKey specifies the key of an attribute for the hw.gpu.bandwidth.limit metric.
+type HwGpuBandwidthLimitMetricAttributeKey string
+
+const (
+	HwGpuBandwidthLimitMetricAttributeKeyHwID   HwGpuBandwidthLimitMetricAttributeKey = "hw.id"
+	HwGpuBandwidthLimitMetricAttributeKeyHwName HwGpuBandwidthLimitMetricAttributeKey = "hw.name"
+	HwGpuBandwidthLimitMetricAttributeKeyPciBdf HwGpuBandwidthLimitMetricAttributeKey = "pci.bdf"
+)
+
+// HwGpuBandwidthLimitMetricConfig provides config for the hw.gpu.bandwidth.limit metric.
+type HwGpuBandwidthLimitMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                  `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuBandwidthLimitMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuBandwidthLimitMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuBandwidthLimitMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuBandwidthLimitMetricAttributeKeyHwID, HwGpuBandwidthLimitMetricAttributeKeyHwName, HwGpuBandwidthLimitMetricAttributeKeyPciBdf:
+		default:
+			return fmt.Errorf("metric hw.gpu.bandwidth.limit doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwGpuBandwidthUtilizationMetricAttributeKey specifies the key of an attribute for the hw.gpu.bandwidth.utilization metric.
+type HwGpuBandwidthUtilizationMetricAttributeKey string
+
+const (
+	HwGpuBandwidthUtilizationMetricAttributeKeyHwID   HwGpuBandwidthUtilizationMetricAttributeKey = "hw.id"
+	HwGpuBandwidthUtilizationMetricAttributeKeyHwName HwGpuBandwidthUtilizationMetricAttributeKey = "hw.name"
+	HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf HwGpuBandwidthUtilizationMetricAttributeKey = "pci.bdf"
+)
+
+// HwGpuBandwidthUtilizationMetricConfig provides config for the hw.gpu.bandwidth.utilization metric.
+type HwGpuBandwidthUtilizationMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                        `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuBandwidthUtilizationMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuBandwidthUtilizationMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuBandwidthUtilizationMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf:
+		default:
+			return fmt.Errorf("metric hw.gpu.bandwidth.utilization doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwGpuInfoMetricAttributeKey specifies the key of an attribute for the hw.gpu.info metric.
+type HwGpuInfoMetricAttributeKey string
+
+const (
+	HwGpuInfoMetricAttributeKeyHwID                   HwGpuInfoMetricAttributeKey = "hw.id"
+	HwGpuInfoMetricAttributeKeyHwName                 HwGpuInfoMetricAttributeKey = "hw.name"
+	HwGpuInfoMetricAttributeKeyPciBdf                 HwGpuInfoMetricAttributeKey = "pci.bdf"
+	HwGpuInfoMetricAttributeKeyPciVendorID            HwGpuInfoMetricAttributeKey = "pci.vendor_id"
+	HwGpuInfoMetricAttributeKeyPciDeviceID            HwGpuInfoMetricAttributeKey = "pci.device_id"
+	HwGpuInfoMetricAttributeKeyHwModel                HwGpuInfoMetricAttributeKey = "hw.model"
+	HwGpuInfoMetricAttributeKeyHwSerialNumber         HwGpuInfoMetricAttributeKey = "hw.serial_number"
+	HwGpuInfoMetricAttributeKeyHwVendor               HwGpuInfoMetricAttributeKey = "hw.vendor"
+	HwGpuInfoMetricAttributeKeyHwFirmwareVersion      HwGpuInfoMetricAttributeKey = "hw.firmware_version"
+	HwGpuInfoMetricAttributeKeyHwGpuType              HwGpuInfoMetricAttributeKey = "hw.gpu.type"
+	HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount HwGpuInfoMetricAttributeKey = "com.intel.subdevice_count"
+	HwGpuInfoMetricAttributeKeyPciLanes               HwGpuInfoMetricAttributeKey = "pci.lanes"
+	HwGpuInfoMetricAttributeKeyPciLinkGen             HwGpuInfoMetricAttributeKey = "pci.link_gen"
+	HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging   HwGpuInfoMetricAttributeKey = "hw.memory.demand_paging"
+	HwGpuInfoMetricAttributeKeyHwMemoryEcc            HwGpuInfoMetricAttributeKey = "hw.memory.ecc"
+)
+
+// HwGpuInfoMetricConfig provides config for the hw.gpu.info metric.
+type HwGpuInfoMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                        `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuInfoMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuInfoMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuInfoMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc:
+		default:
+			return fmt.Errorf("metric hw.gpu.info doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwGpuIoMetricAttributeKey specifies the key of an attribute for the hw.gpu.io metric.
+type HwGpuIoMetricAttributeKey string
+
+const (
+	HwGpuIoMetricAttributeKeyHwID               HwGpuIoMetricAttributeKey = "hw.id"
+	HwGpuIoMetricAttributeKeyHwName             HwGpuIoMetricAttributeKey = "hw.name"
+	HwGpuIoMetricAttributeKeyPciBdf             HwGpuIoMetricAttributeKey = "pci.bdf"
+	HwGpuIoMetricAttributeKeyNetworkIoDirection HwGpuIoMetricAttributeKey = "network.io.direction"
+)
+
+// HwGpuIoMetricConfig provides config for the hw.gpu.io metric.
+type HwGpuIoMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                      `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuIoMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuIoMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuIoMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuIoMetricAttributeKeyHwID, HwGpuIoMetricAttributeKeyHwName, HwGpuIoMetricAttributeKeyPciBdf, HwGpuIoMetricAttributeKeyNetworkIoDirection:
+		default:
+			return fmt.Errorf("metric hw.gpu.io doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, network.io.direction]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwGpuIoRateMetricAttributeKey specifies the key of an attribute for the hw.gpu.io.rate metric.
+type HwGpuIoRateMetricAttributeKey string
+
+const (
+	HwGpuIoRateMetricAttributeKeyHwID   HwGpuIoRateMetricAttributeKey = "hw.id"
+	HwGpuIoRateMetricAttributeKeyHwName HwGpuIoRateMetricAttributeKey = "hw.name"
+	HwGpuIoRateMetricAttributeKeyPciBdf HwGpuIoRateMetricAttributeKey = "pci.bdf"
+)
+
+// HwGpuIoRateMetricConfig provides config for the hw.gpu.io.rate metric.
+type HwGpuIoRateMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                          `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuIoRateMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuIoRateMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuIoRateMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuIoRateMetricAttributeKeyHwID, HwGpuIoRateMetricAttributeKeyHwName, HwGpuIoRateMetricAttributeKeyPciBdf:
+		default:
+			return fmt.Errorf("metric hw.gpu.io.rate doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwGpuUtilizationMetricAttributeKey specifies the key of an attribute for the hw.gpu.utilization metric.
+type HwGpuUtilizationMetricAttributeKey string
+
+const (
+	HwGpuUtilizationMetricAttributeKeyHwID                HwGpuUtilizationMetricAttributeKey = "hw.id"
+	HwGpuUtilizationMetricAttributeKeyHwName              HwGpuUtilizationMetricAttributeKey = "hw.name"
+	HwGpuUtilizationMetricAttributeKeyPciBdf              HwGpuUtilizationMetricAttributeKey = "pci.bdf"
+	HwGpuUtilizationMetricAttributeKeyComIntelSubdeviceID HwGpuUtilizationMetricAttributeKey = "com.intel.subdevice_id"
+	HwGpuUtilizationMetricAttributeKeyHwGpuTask           HwGpuUtilizationMetricAttributeKey = "hw.gpu.task"
+)
+
+// HwGpuUtilizationMetricConfig provides config for the hw.gpu.utilization metric.
+type HwGpuUtilizationMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                               `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuUtilizationMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuUtilizationMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuUtilizationMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuUtilizationMetricAttributeKeyHwID, HwGpuUtilizationMetricAttributeKeyHwName, HwGpuUtilizationMetricAttributeKeyPciBdf, HwGpuUtilizationMetricAttributeKeyComIntelSubdeviceID, HwGpuUtilizationMetricAttributeKeyHwGpuTask:
+		default:
+			return fmt.Errorf("metric hw.gpu.utilization doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.gpu.task]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryBandwidthLimitMetricAttributeKey specifies the key of an attribute for the hw.memory.bandwidth.limit metric.
+type HwMemoryBandwidthLimitMetricAttributeKey string
+
+const (
+	HwMemoryBandwidthLimitMetricAttributeKeyHwID                HwMemoryBandwidthLimitMetricAttributeKey = "hw.id"
+	HwMemoryBandwidthLimitMetricAttributeKeyHwName              HwMemoryBandwidthLimitMetricAttributeKey = "hw.name"
+	HwMemoryBandwidthLimitMetricAttributeKeyPciBdf              HwMemoryBandwidthLimitMetricAttributeKey = "pci.bdf"
+	HwMemoryBandwidthLimitMetricAttributeKeyComIntelSubdeviceID HwMemoryBandwidthLimitMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryLocation    HwMemoryBandwidthLimitMetricAttributeKey = "hw.memory.location"
+	HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryType        HwMemoryBandwidthLimitMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemoryBandwidthLimitMetricConfig provides config for the hw.memory.bandwidth.limit metric.
+type HwMemoryBandwidthLimitMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                     `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryBandwidthLimitMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryBandwidthLimitMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryBandwidthLimitMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryBandwidthLimitMetricAttributeKeyHwID, HwMemoryBandwidthLimitMetricAttributeKeyHwName, HwMemoryBandwidthLimitMetricAttributeKeyPciBdf, HwMemoryBandwidthLimitMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.bandwidth.limit doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryBandwidthUtilizationMetricAttributeKey specifies the key of an attribute for the hw.memory.bandwidth.utilization metric.
+type HwMemoryBandwidthUtilizationMetricAttributeKey string
+
+const (
+	HwMemoryBandwidthUtilizationMetricAttributeKeyHwID                HwMemoryBandwidthUtilizationMetricAttributeKey = "hw.id"
+	HwMemoryBandwidthUtilizationMetricAttributeKeyHwName              HwMemoryBandwidthUtilizationMetricAttributeKey = "hw.name"
+	HwMemoryBandwidthUtilizationMetricAttributeKeyPciBdf              HwMemoryBandwidthUtilizationMetricAttributeKey = "pci.bdf"
+	HwMemoryBandwidthUtilizationMetricAttributeKeyComIntelSubdeviceID HwMemoryBandwidthUtilizationMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryLocation    HwMemoryBandwidthUtilizationMetricAttributeKey = "hw.memory.location"
+	HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryType        HwMemoryBandwidthUtilizationMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemoryBandwidthUtilizationMetricConfig provides config for the hw.memory.bandwidth.utilization metric.
+type HwMemoryBandwidthUtilizationMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                           `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryBandwidthUtilizationMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryBandwidthUtilizationMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryBandwidthUtilizationMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryBandwidthUtilizationMetricAttributeKeyHwID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwName, HwMemoryBandwidthUtilizationMetricAttributeKeyPciBdf, HwMemoryBandwidthUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.bandwidth.utilization doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryFreeMetricAttributeKey specifies the key of an attribute for the hw.memory.free metric.
+type HwMemoryFreeMetricAttributeKey string
+
+const (
+	HwMemoryFreeMetricAttributeKeyHwID                HwMemoryFreeMetricAttributeKey = "hw.id"
+	HwMemoryFreeMetricAttributeKeyHwName              HwMemoryFreeMetricAttributeKey = "hw.name"
+	HwMemoryFreeMetricAttributeKeyPciBdf              HwMemoryFreeMetricAttributeKey = "pci.bdf"
+	HwMemoryFreeMetricAttributeKeyComIntelSubdeviceID HwMemoryFreeMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryFreeMetricAttributeKeyHwMemoryLocation    HwMemoryFreeMetricAttributeKey = "hw.memory.location"
+	HwMemoryFreeMetricAttributeKeyHwMemoryType        HwMemoryFreeMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemoryFreeMetricConfig provides config for the hw.memory.free metric.
+type HwMemoryFreeMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                           `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryFreeMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryFreeMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryFreeMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryFreeMetricAttributeKeyHwID, HwMemoryFreeMetricAttributeKeyHwName, HwMemoryFreeMetricAttributeKeyPciBdf, HwMemoryFreeMetricAttributeKeyComIntelSubdeviceID, HwMemoryFreeMetricAttributeKeyHwMemoryLocation, HwMemoryFreeMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.free doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryIoMetricAttributeKey specifies the key of an attribute for the hw.memory.io metric.
+type HwMemoryIoMetricAttributeKey string
+
+const (
+	HwMemoryIoMetricAttributeKeyHwID                HwMemoryIoMetricAttributeKey = "hw.id"
+	HwMemoryIoMetricAttributeKeyHwName              HwMemoryIoMetricAttributeKey = "hw.name"
+	HwMemoryIoMetricAttributeKeyPciBdf              HwMemoryIoMetricAttributeKey = "pci.bdf"
+	HwMemoryIoMetricAttributeKeyComIntelSubdeviceID HwMemoryIoMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryIoMetricAttributeKeyHwMemoryLocation    HwMemoryIoMetricAttributeKey = "hw.memory.location"
+	HwMemoryIoMetricAttributeKeyHwMemoryType        HwMemoryIoMetricAttributeKey = "hw.memory.type"
+	HwMemoryIoMetricAttributeKeyNetworkIoDirection  HwMemoryIoMetricAttributeKey = "network.io.direction"
+)
+
+// HwMemoryIoMetricConfig provides config for the hw.memory.io metric.
+type HwMemoryIoMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                         `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryIoMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryIoMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryIoMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryIoMetricAttributeKeyHwID, HwMemoryIoMetricAttributeKeyHwName, HwMemoryIoMetricAttributeKeyPciBdf, HwMemoryIoMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoMetricAttributeKeyHwMemoryLocation, HwMemoryIoMetricAttributeKeyHwMemoryType, HwMemoryIoMetricAttributeKeyNetworkIoDirection:
+		default:
+			return fmt.Errorf("metric hw.memory.io doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type, network.io.direction]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryIoRateMetricAttributeKey specifies the key of an attribute for the hw.memory.io.rate metric.
+type HwMemoryIoRateMetricAttributeKey string
+
+const (
+	HwMemoryIoRateMetricAttributeKeyHwID                HwMemoryIoRateMetricAttributeKey = "hw.id"
+	HwMemoryIoRateMetricAttributeKeyHwName              HwMemoryIoRateMetricAttributeKey = "hw.name"
+	HwMemoryIoRateMetricAttributeKeyPciBdf              HwMemoryIoRateMetricAttributeKey = "pci.bdf"
+	HwMemoryIoRateMetricAttributeKeyComIntelSubdeviceID HwMemoryIoRateMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryIoRateMetricAttributeKeyHwMemoryLocation    HwMemoryIoRateMetricAttributeKey = "hw.memory.location"
+	HwMemoryIoRateMetricAttributeKeyHwMemoryType        HwMemoryIoRateMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemoryIoRateMetricConfig provides config for the hw.memory.io.rate metric.
+type HwMemoryIoRateMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                             `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryIoRateMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryIoRateMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryIoRateMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryIoRateMetricAttributeKeyHwID, HwMemoryIoRateMetricAttributeKeyHwName, HwMemoryIoRateMetricAttributeKeyPciBdf, HwMemoryIoRateMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoRateMetricAttributeKeyHwMemoryLocation, HwMemoryIoRateMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.io.rate doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemorySizeMetricAttributeKey specifies the key of an attribute for the hw.memory.size metric.
+type HwMemorySizeMetricAttributeKey string
+
+const (
+	HwMemorySizeMetricAttributeKeyHwID                HwMemorySizeMetricAttributeKey = "hw.id"
+	HwMemorySizeMetricAttributeKeyHwName              HwMemorySizeMetricAttributeKey = "hw.name"
+	HwMemorySizeMetricAttributeKeyPciBdf              HwMemorySizeMetricAttributeKey = "pci.bdf"
+	HwMemorySizeMetricAttributeKeyComIntelSubdeviceID HwMemorySizeMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemorySizeMetricAttributeKeyHwMemoryLocation    HwMemorySizeMetricAttributeKey = "hw.memory.location"
+	HwMemorySizeMetricAttributeKeyHwMemoryType        HwMemorySizeMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemorySizeMetricConfig provides config for the hw.memory.size metric.
+type HwMemorySizeMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                           `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemorySizeMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemorySizeMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemorySizeMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemorySizeMetricAttributeKeyHwID, HwMemorySizeMetricAttributeKeyHwName, HwMemorySizeMetricAttributeKeyPciBdf, HwMemorySizeMetricAttributeKeyComIntelSubdeviceID, HwMemorySizeMetricAttributeKeyHwMemoryLocation, HwMemorySizeMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.size doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryUsageMetricAttributeKey specifies the key of an attribute for the hw.memory.usage metric.
+type HwMemoryUsageMetricAttributeKey string
+
+const (
+	HwMemoryUsageMetricAttributeKeyHwID                HwMemoryUsageMetricAttributeKey = "hw.id"
+	HwMemoryUsageMetricAttributeKeyHwName              HwMemoryUsageMetricAttributeKey = "hw.name"
+	HwMemoryUsageMetricAttributeKeyPciBdf              HwMemoryUsageMetricAttributeKey = "pci.bdf"
+	HwMemoryUsageMetricAttributeKeyComIntelSubdeviceID HwMemoryUsageMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryUsageMetricAttributeKeyHwMemoryLocation    HwMemoryUsageMetricAttributeKey = "hw.memory.location"
+	HwMemoryUsageMetricAttributeKeyHwMemoryType        HwMemoryUsageMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemoryUsageMetricConfig provides config for the hw.memory.usage metric.
+type HwMemoryUsageMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                            `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryUsageMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryUsageMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryUsageMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryUsageMetricAttributeKeyHwID, HwMemoryUsageMetricAttributeKeyHwName, HwMemoryUsageMetricAttributeKeyPciBdf, HwMemoryUsageMetricAttributeKeyComIntelSubdeviceID, HwMemoryUsageMetricAttributeKeyHwMemoryLocation, HwMemoryUsageMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.usage doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwMemoryUtilizationMetricAttributeKey specifies the key of an attribute for the hw.memory.utilization metric.
+type HwMemoryUtilizationMetricAttributeKey string
+
+const (
+	HwMemoryUtilizationMetricAttributeKeyHwID                HwMemoryUtilizationMetricAttributeKey = "hw.id"
+	HwMemoryUtilizationMetricAttributeKeyHwName              HwMemoryUtilizationMetricAttributeKey = "hw.name"
+	HwMemoryUtilizationMetricAttributeKeyPciBdf              HwMemoryUtilizationMetricAttributeKey = "pci.bdf"
+	HwMemoryUtilizationMetricAttributeKeyComIntelSubdeviceID HwMemoryUtilizationMetricAttributeKey = "com.intel.subdevice_id"
+	HwMemoryUtilizationMetricAttributeKeyHwMemoryLocation    HwMemoryUtilizationMetricAttributeKey = "hw.memory.location"
+	HwMemoryUtilizationMetricAttributeKeyHwMemoryType        HwMemoryUtilizationMetricAttributeKey = "hw.memory.type"
+)
+
+// HwMemoryUtilizationMetricConfig provides config for the hw.memory.utilization metric.
+type HwMemoryUtilizationMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                                  `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwMemoryUtilizationMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwMemoryUtilizationMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwMemoryUtilizationMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwMemoryUtilizationMetricAttributeKeyHwID, HwMemoryUtilizationMetricAttributeKeyHwName, HwMemoryUtilizationMetricAttributeKeyPciBdf, HwMemoryUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryUtilizationMetricAttributeKeyHwMemoryType:
+		default:
+			return fmt.Errorf("metric hw.memory.utilization doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwPowerMetricAttributeKey specifies the key of an attribute for the hw.power metric.
+type HwPowerMetricAttributeKey string
+
+const (
+	HwPowerMetricAttributeKeyHwID                HwPowerMetricAttributeKey = "hw.id"
+	HwPowerMetricAttributeKeyHwName              HwPowerMetricAttributeKey = "hw.name"
+	HwPowerMetricAttributeKeyPciBdf              HwPowerMetricAttributeKey = "pci.bdf"
+	HwPowerMetricAttributeKeyComIntelSubdeviceID HwPowerMetricAttributeKey = "com.intel.subdevice_id"
+	HwPowerMetricAttributeKeyHwSensorLocation    HwPowerMetricAttributeKey = "hw.sensor_location"
+)
+
+// HwPowerMetricConfig provides config for the hw.power metric.
+type HwPowerMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                      `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwPowerMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwPowerMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwPowerMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwPowerMetricAttributeKeyHwID, HwPowerMetricAttributeKeyHwName, HwPowerMetricAttributeKeyPciBdf, HwPowerMetricAttributeKeyComIntelSubdeviceID, HwPowerMetricAttributeKeyHwSensorLocation:
+		default:
+			return fmt.Errorf("metric hw.power doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwPowerLimitMetricAttributeKey specifies the key of an attribute for the hw.power.limit metric.
+type HwPowerLimitMetricAttributeKey string
+
+const (
+	HwPowerLimitMetricAttributeKeyHwID                     HwPowerLimitMetricAttributeKey = "hw.id"
+	HwPowerLimitMetricAttributeKeyHwName                   HwPowerLimitMetricAttributeKey = "hw.name"
+	HwPowerLimitMetricAttributeKeyPciBdf                   HwPowerLimitMetricAttributeKey = "pci.bdf"
+	HwPowerLimitMetricAttributeKeyComIntelSubdeviceID      HwPowerLimitMetricAttributeKey = "com.intel.subdevice_id"
+	HwPowerLimitMetricAttributeKeyHwSensorLocation         HwPowerLimitMetricAttributeKey = "hw.sensor_location"
+	HwPowerLimitMetricAttributeKeyComIntelPowerLimitLevel  HwPowerLimitMetricAttributeKey = "com.intel.power.limit.level"
+	HwPowerLimitMetricAttributeKeyComIntelPowerLimitSource HwPowerLimitMetricAttributeKey = "com.intel.power.limit.source"
+)
+
+// HwPowerLimitMetricConfig provides config for the hw.power.limit metric.
+type HwPowerLimitMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                           `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwPowerLimitMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwPowerLimitMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwPowerLimitMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwPowerLimitMetricAttributeKeyHwID, HwPowerLimitMetricAttributeKeyHwName, HwPowerLimitMetricAttributeKeyPciBdf, HwPowerLimitMetricAttributeKeyComIntelSubdeviceID, HwPowerLimitMetricAttributeKeyHwSensorLocation, HwPowerLimitMetricAttributeKeyComIntelPowerLimitLevel, HwPowerLimitMetricAttributeKeyComIntelPowerLimitSource:
+		default:
+			return fmt.Errorf("metric hw.power.limit doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, com.intel.power.limit.level, com.intel.power.limit.source]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwStatusMetricAttributeKey specifies the key of an attribute for the hw.status metric.
+type HwStatusMetricAttributeKey string
+
+const (
+	HwStatusMetricAttributeKeyHwID                HwStatusMetricAttributeKey = "hw.id"
+	HwStatusMetricAttributeKeyHwName              HwStatusMetricAttributeKey = "hw.name"
+	HwStatusMetricAttributeKeyPciBdf              HwStatusMetricAttributeKey = "pci.bdf"
+	HwStatusMetricAttributeKeyComIntelSubdeviceID HwStatusMetricAttributeKey = "com.intel.subdevice_id"
+	HwStatusMetricAttributeKeyHwState             HwStatusMetricAttributeKey = "hw.state"
+	HwStatusMetricAttributeKeyHwType              HwStatusMetricAttributeKey = "hw.type"
+)
+
+// HwStatusMetricConfig provides config for the hw.status metric.
+type HwStatusMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                       `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwStatusMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwStatusMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwStatusMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwStatusMetricAttributeKeyHwID, HwStatusMetricAttributeKeyHwName, HwStatusMetricAttributeKeyPciBdf, HwStatusMetricAttributeKeyComIntelSubdeviceID, HwStatusMetricAttributeKeyHwState, HwStatusMetricAttributeKeyHwType:
+		default:
+			return fmt.Errorf("metric hw.status doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.state, hw.type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwTemperatureMetricAttributeKey specifies the key of an attribute for the hw.temperature metric.
+type HwTemperatureMetricAttributeKey string
+
+const (
+	HwTemperatureMetricAttributeKeyHwID                HwTemperatureMetricAttributeKey = "hw.id"
+	HwTemperatureMetricAttributeKeyHwName              HwTemperatureMetricAttributeKey = "hw.name"
+	HwTemperatureMetricAttributeKeyPciBdf              HwTemperatureMetricAttributeKey = "pci.bdf"
+	HwTemperatureMetricAttributeKeyComIntelSubdeviceID HwTemperatureMetricAttributeKey = "com.intel.subdevice_id"
+	HwTemperatureMetricAttributeKeyHwSensorLocation    HwTemperatureMetricAttributeKey = "hw.sensor_location"
+	HwTemperatureMetricAttributeKeyStatistic           HwTemperatureMetricAttributeKey = "statistic"
+)
+
+// HwTemperatureMetricConfig provides config for the hw.temperature metric.
+type HwTemperatureMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                            `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwTemperatureMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwTemperatureMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwTemperatureMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwTemperatureMetricAttributeKeyHwID, HwTemperatureMetricAttributeKeyHwName, HwTemperatureMetricAttributeKeyPciBdf, HwTemperatureMetricAttributeKeyComIntelSubdeviceID, HwTemperatureMetricAttributeKeyHwSensorLocation, HwTemperatureMetricAttributeKeyStatistic:
+		default:
+			return fmt.Errorf("metric hw.temperature doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, statistic]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
 // MetricsConfig provides config for sysman metrics.
 type MetricsConfig struct {
-	HwEnergy                     MetricConfig `mapstructure:"hw.energy"`
-	HwErrors                     MetricConfig `mapstructure:"hw.errors"`
-	HwFrequency                  MetricConfig `mapstructure:"hw.frequency"`
-	HwFrequencyLimit             MetricConfig `mapstructure:"hw.frequency.limit"`
-	HwFrequencyRequest           MetricConfig `mapstructure:"hw.frequency.request"`
-	HwFrequencySamples           MetricConfig `mapstructure:"hw.frequency.samples"`
-	HwFrequencyThrottleStatus    MetricConfig `mapstructure:"hw.frequency.throttle_status"`
-	HwGpuBandwidthLimit          MetricConfig `mapstructure:"hw.gpu.bandwidth.limit"`
-	HwGpuBandwidthUtilization    MetricConfig `mapstructure:"hw.gpu.bandwidth.utilization"`
-	HwGpuInfo                    MetricConfig `mapstructure:"hw.gpu.info"`
-	HwGpuIo                      MetricConfig `mapstructure:"hw.gpu.io"`
-	HwGpuIoRate                  MetricConfig `mapstructure:"hw.gpu.io.rate"`
-	HwGpuUtilization             MetricConfig `mapstructure:"hw.gpu.utilization"`
-	HwMemoryBandwidthLimit       MetricConfig `mapstructure:"hw.memory.bandwidth.limit"`
-	HwMemoryBandwidthUtilization MetricConfig `mapstructure:"hw.memory.bandwidth.utilization"`
-	HwMemoryFree                 MetricConfig `mapstructure:"hw.memory.free"`
-	HwMemoryIo                   MetricConfig `mapstructure:"hw.memory.io"`
-	HwMemoryIoRate               MetricConfig `mapstructure:"hw.memory.io.rate"`
-	HwMemorySize                 MetricConfig `mapstructure:"hw.memory.size"`
-	HwMemoryUsage                MetricConfig `mapstructure:"hw.memory.usage"`
-	HwMemoryUtilization          MetricConfig `mapstructure:"hw.memory.utilization"`
-	HwPower                      MetricConfig `mapstructure:"hw.power"`
-	HwPowerLimit                 MetricConfig `mapstructure:"hw.power.limit"`
-	HwStatus                     MetricConfig `mapstructure:"hw.status"`
-	HwTemperature                MetricConfig `mapstructure:"hw.temperature"`
+	HwEnergy                     HwEnergyMetricConfig                     `mapstructure:"hw.energy"`
+	HwErrors                     HwErrorsMetricConfig                     `mapstructure:"hw.errors"`
+	HwFrequency                  HwFrequencyMetricConfig                  `mapstructure:"hw.frequency"`
+	HwFrequencyLimit             HwFrequencyLimitMetricConfig             `mapstructure:"hw.frequency.limit"`
+	HwFrequencyRequest           HwFrequencyRequestMetricConfig           `mapstructure:"hw.frequency.request"`
+	HwFrequencySamples           HwFrequencySamplesMetricConfig           `mapstructure:"hw.frequency.samples"`
+	HwFrequencyThrottleStatus    HwFrequencyThrottleStatusMetricConfig    `mapstructure:"hw.frequency.throttle_status"`
+	HwGpuBandwidthLimit          HwGpuBandwidthLimitMetricConfig          `mapstructure:"hw.gpu.bandwidth.limit"`
+	HwGpuBandwidthUtilization    HwGpuBandwidthUtilizationMetricConfig    `mapstructure:"hw.gpu.bandwidth.utilization"`
+	HwGpuInfo                    HwGpuInfoMetricConfig                    `mapstructure:"hw.gpu.info"`
+	HwGpuIo                      HwGpuIoMetricConfig                      `mapstructure:"hw.gpu.io"`
+	HwGpuIoRate                  HwGpuIoRateMetricConfig                  `mapstructure:"hw.gpu.io.rate"`
+	HwGpuUtilization             HwGpuUtilizationMetricConfig             `mapstructure:"hw.gpu.utilization"`
+	HwMemoryBandwidthLimit       HwMemoryBandwidthLimitMetricConfig       `mapstructure:"hw.memory.bandwidth.limit"`
+	HwMemoryBandwidthUtilization HwMemoryBandwidthUtilizationMetricConfig `mapstructure:"hw.memory.bandwidth.utilization"`
+	HwMemoryFree                 HwMemoryFreeMetricConfig                 `mapstructure:"hw.memory.free"`
+	HwMemoryIo                   HwMemoryIoMetricConfig                   `mapstructure:"hw.memory.io"`
+	HwMemoryIoRate               HwMemoryIoRateMetricConfig               `mapstructure:"hw.memory.io.rate"`
+	HwMemorySize                 HwMemorySizeMetricConfig                 `mapstructure:"hw.memory.size"`
+	HwMemoryUsage                HwMemoryUsageMetricConfig                `mapstructure:"hw.memory.usage"`
+	HwMemoryUtilization          HwMemoryUtilizationMetricConfig          `mapstructure:"hw.memory.utilization"`
+	HwPower                      HwPowerMetricConfig                      `mapstructure:"hw.power"`
+	HwPowerLimit                 HwPowerLimitMetricConfig                 `mapstructure:"hw.power.limit"`
+	HwStatus                     HwStatusMetricConfig                     `mapstructure:"hw.status"`
+	HwTemperature                HwTemperatureMetricConfig                `mapstructure:"hw.temperature"`
 }
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
-		HwEnergy: MetricConfig{
-			Enabled: true,
+		HwEnergy: HwEnergyMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwEnergyMetricAttributeKey{HwEnergyMetricAttributeKeyHwID, HwEnergyMetricAttributeKeyHwName, HwEnergyMetricAttributeKeyPciBdf, HwEnergyMetricAttributeKeyComIntelSubdeviceID, HwEnergyMetricAttributeKeyHwSensorLocation},
 		},
-		HwErrors: MetricConfig{
-			Enabled: true,
+		HwErrors: HwErrorsMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwErrorsMetricAttributeKey{HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory},
 		},
-		HwFrequency: MetricConfig{
-			Enabled: true,
+		HwFrequency: HwFrequencyMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFrequencyMetricAttributeKey{HwFrequencyMetricAttributeKeyHwID, HwFrequencyMetricAttributeKeyHwName, HwFrequencyMetricAttributeKeyPciBdf, HwFrequencyMetricAttributeKeyComIntelSubdeviceID, HwFrequencyMetricAttributeKeyHwFrequencyDomain, HwFrequencyMetricAttributeKeyAggregation},
 		},
-		HwFrequencyLimit: MetricConfig{
-			Enabled: true,
+		HwFrequencyLimit: HwFrequencyLimitMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFrequencyLimitMetricAttributeKey{HwFrequencyLimitMetricAttributeKeyHwID, HwFrequencyLimitMetricAttributeKeyHwName, HwFrequencyLimitMetricAttributeKeyPciBdf, HwFrequencyLimitMetricAttributeKeyComIntelSubdeviceID, HwFrequencyLimitMetricAttributeKeyHwFrequencyDomain, HwFrequencyLimitMetricAttributeKeyHwLimitType},
 		},
-		HwFrequencyRequest: MetricConfig{
-			Enabled: true,
+		HwFrequencyRequest: HwFrequencyRequestMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFrequencyRequestMetricAttributeKey{HwFrequencyRequestMetricAttributeKeyHwID, HwFrequencyRequestMetricAttributeKeyHwName, HwFrequencyRequestMetricAttributeKeyPciBdf, HwFrequencyRequestMetricAttributeKeyComIntelSubdeviceID, HwFrequencyRequestMetricAttributeKeyHwFrequencyDomain},
 		},
-		HwFrequencySamples: MetricConfig{
-			Enabled: true,
+		HwFrequencySamples: HwFrequencySamplesMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFrequencySamplesMetricAttributeKey{HwFrequencySamplesMetricAttributeKeyHwID, HwFrequencySamplesMetricAttributeKeyHwName, HwFrequencySamplesMetricAttributeKeyPciBdf, HwFrequencySamplesMetricAttributeKeyComIntelSubdeviceID, HwFrequencySamplesMetricAttributeKeyHwFrequencyDomain, HwFrequencySamplesMetricAttributeKeySampleStatus},
 		},
-		HwFrequencyThrottleStatus: MetricConfig{
-			Enabled: true,
+		HwFrequencyThrottleStatus: HwFrequencyThrottleStatusMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwFrequencyThrottleStatusMetricAttributeKey{HwFrequencyThrottleStatusMetricAttributeKeyHwID, HwFrequencyThrottleStatusMetricAttributeKeyHwName, HwFrequencyThrottleStatusMetricAttributeKeyPciBdf, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSubdeviceID, HwFrequencyThrottleStatusMetricAttributeKeyHwFrequencyDomain, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSpeedThrottleReason},
 		},
-		HwGpuBandwidthLimit: MetricConfig{
-			Enabled: true,
+		HwGpuBandwidthLimit: HwGpuBandwidthLimitMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwGpuBandwidthLimitMetricAttributeKey{HwGpuBandwidthLimitMetricAttributeKeyHwID, HwGpuBandwidthLimitMetricAttributeKeyHwName, HwGpuBandwidthLimitMetricAttributeKeyPciBdf},
 		},
-		HwGpuBandwidthUtilization: MetricConfig{
-			Enabled: true,
+		HwGpuBandwidthUtilization: HwGpuBandwidthUtilizationMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwGpuBandwidthUtilizationMetricAttributeKey{HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf},
 		},
-		HwGpuInfo: MetricConfig{
-			Enabled: true,
+		HwGpuInfo: HwGpuInfoMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc},
 		},
-		HwGpuIo: MetricConfig{
-			Enabled: true,
+		HwGpuIo: HwGpuIoMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwGpuIoMetricAttributeKey{HwGpuIoMetricAttributeKeyHwID, HwGpuIoMetricAttributeKeyHwName, HwGpuIoMetricAttributeKeyPciBdf, HwGpuIoMetricAttributeKeyNetworkIoDirection},
 		},
-		HwGpuIoRate: MetricConfig{
-			Enabled: true,
+		HwGpuIoRate: HwGpuIoRateMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwGpuIoRateMetricAttributeKey{HwGpuIoRateMetricAttributeKeyHwID, HwGpuIoRateMetricAttributeKeyHwName, HwGpuIoRateMetricAttributeKeyPciBdf},
 		},
-		HwGpuUtilization: MetricConfig{
-			Enabled: true,
+		HwGpuUtilization: HwGpuUtilizationMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwGpuUtilizationMetricAttributeKey{HwGpuUtilizationMetricAttributeKeyHwID, HwGpuUtilizationMetricAttributeKeyHwName, HwGpuUtilizationMetricAttributeKeyPciBdf, HwGpuUtilizationMetricAttributeKeyComIntelSubdeviceID, HwGpuUtilizationMetricAttributeKeyHwGpuTask},
 		},
-		HwMemoryBandwidthLimit: MetricConfig{
-			Enabled: true,
+		HwMemoryBandwidthLimit: HwMemoryBandwidthLimitMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwMemoryBandwidthLimitMetricAttributeKey{HwMemoryBandwidthLimitMetricAttributeKeyHwID, HwMemoryBandwidthLimitMetricAttributeKeyHwName, HwMemoryBandwidthLimitMetricAttributeKeyPciBdf, HwMemoryBandwidthLimitMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryType},
 		},
-		HwMemoryBandwidthUtilization: MetricConfig{
-			Enabled: true,
+		HwMemoryBandwidthUtilization: HwMemoryBandwidthUtilizationMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwMemoryBandwidthUtilizationMetricAttributeKey{HwMemoryBandwidthUtilizationMetricAttributeKeyHwID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwName, HwMemoryBandwidthUtilizationMetricAttributeKeyPciBdf, HwMemoryBandwidthUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryType},
 		},
-		HwMemoryFree: MetricConfig{
-			Enabled: true,
+		HwMemoryFree: HwMemoryFreeMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwMemoryFreeMetricAttributeKey{HwMemoryFreeMetricAttributeKeyHwID, HwMemoryFreeMetricAttributeKeyHwName, HwMemoryFreeMetricAttributeKeyPciBdf, HwMemoryFreeMetricAttributeKeyComIntelSubdeviceID, HwMemoryFreeMetricAttributeKeyHwMemoryLocation, HwMemoryFreeMetricAttributeKeyHwMemoryType},
 		},
-		HwMemoryIo: MetricConfig{
-			Enabled: true,
+		HwMemoryIo: HwMemoryIoMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwMemoryIoMetricAttributeKey{HwMemoryIoMetricAttributeKeyHwID, HwMemoryIoMetricAttributeKeyHwName, HwMemoryIoMetricAttributeKeyPciBdf, HwMemoryIoMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoMetricAttributeKeyHwMemoryLocation, HwMemoryIoMetricAttributeKeyHwMemoryType, HwMemoryIoMetricAttributeKeyNetworkIoDirection},
 		},
-		HwMemoryIoRate: MetricConfig{
-			Enabled: true,
+		HwMemoryIoRate: HwMemoryIoRateMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwMemoryIoRateMetricAttributeKey{HwMemoryIoRateMetricAttributeKeyHwID, HwMemoryIoRateMetricAttributeKeyHwName, HwMemoryIoRateMetricAttributeKeyPciBdf, HwMemoryIoRateMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoRateMetricAttributeKeyHwMemoryLocation, HwMemoryIoRateMetricAttributeKeyHwMemoryType},
 		},
-		HwMemorySize: MetricConfig{
-			Enabled: true,
+		HwMemorySize: HwMemorySizeMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwMemorySizeMetricAttributeKey{HwMemorySizeMetricAttributeKeyHwID, HwMemorySizeMetricAttributeKeyHwName, HwMemorySizeMetricAttributeKeyPciBdf, HwMemorySizeMetricAttributeKeyComIntelSubdeviceID, HwMemorySizeMetricAttributeKeyHwMemoryLocation, HwMemorySizeMetricAttributeKeyHwMemoryType},
 		},
-		HwMemoryUsage: MetricConfig{
-			Enabled: true,
+		HwMemoryUsage: HwMemoryUsageMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwMemoryUsageMetricAttributeKey{HwMemoryUsageMetricAttributeKeyHwID, HwMemoryUsageMetricAttributeKeyHwName, HwMemoryUsageMetricAttributeKeyPciBdf, HwMemoryUsageMetricAttributeKeyComIntelSubdeviceID, HwMemoryUsageMetricAttributeKeyHwMemoryLocation, HwMemoryUsageMetricAttributeKeyHwMemoryType},
 		},
-		HwMemoryUtilization: MetricConfig{
-			Enabled: true,
+		HwMemoryUtilization: HwMemoryUtilizationMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwMemoryUtilizationMetricAttributeKey{HwMemoryUtilizationMetricAttributeKeyHwID, HwMemoryUtilizationMetricAttributeKeyHwName, HwMemoryUtilizationMetricAttributeKeyPciBdf, HwMemoryUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryUtilizationMetricAttributeKeyHwMemoryType},
 		},
-		HwPower: MetricConfig{
-			Enabled: true,
+		HwPower: HwPowerMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwPowerMetricAttributeKey{HwPowerMetricAttributeKeyHwID, HwPowerMetricAttributeKeyHwName, HwPowerMetricAttributeKeyPciBdf, HwPowerMetricAttributeKeyComIntelSubdeviceID, HwPowerMetricAttributeKeyHwSensorLocation},
 		},
-		HwPowerLimit: MetricConfig{
-			Enabled: true,
+		HwPowerLimit: HwPowerLimitMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwPowerLimitMetricAttributeKey{HwPowerLimitMetricAttributeKeyHwID, HwPowerLimitMetricAttributeKeyHwName, HwPowerLimitMetricAttributeKeyPciBdf, HwPowerLimitMetricAttributeKeyComIntelSubdeviceID, HwPowerLimitMetricAttributeKeyHwSensorLocation, HwPowerLimitMetricAttributeKeyComIntelPowerLimitLevel, HwPowerLimitMetricAttributeKeyComIntelPowerLimitSource},
 		},
-		HwStatus: MetricConfig{
-			Enabled: true,
+		HwStatus: HwStatusMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwStatusMetricAttributeKey{HwStatusMetricAttributeKeyHwID, HwStatusMetricAttributeKeyHwName, HwStatusMetricAttributeKeyPciBdf, HwStatusMetricAttributeKeyComIntelSubdeviceID, HwStatusMetricAttributeKeyHwState, HwStatusMetricAttributeKeyHwType},
 		},
-		HwTemperature: MetricConfig{
-			Enabled: true,
+		HwTemperature: HwTemperatureMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwTemperatureMetricAttributeKey{HwTemperatureMetricAttributeKeyHwID, HwTemperatureMetricAttributeKeyHwName, HwTemperatureMetricAttributeKeyPciBdf, HwTemperatureMetricAttributeKeyComIntelSubdeviceID, HwTemperatureMetricAttributeKeyHwSensorLocation, HwTemperatureMetricAttributeKeyStatistic},
 		},
 	}
 }
