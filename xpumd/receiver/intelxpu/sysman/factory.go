@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/intel/xpumanager/xpumd/receiver/sysman/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/scraper"

@@ -1,4 +1,4 @@
-module github.com/intel/xpumanager/xpumd/receiver
+module github.com/intel/xpumanager/xpumd/receiver/intelxpu
 
 go 1.26
 
@@ -64,7 +64,7 @@ require (
 )
 
 replace (
-	github.com/intel/level-zero-go => ../level-zero-go
+	github.com/intel/level-zero-go => ../../level-zero-go
 	github.com/intel/xpumanager/xpumd => ..
-	github.com/intel/xpumanager/xpumd/common => ../common
+	github.com/intel/xpumanager/xpumd/common => ../../common
 )

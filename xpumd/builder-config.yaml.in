@@ -23,8 +23,8 @@ exporters:
     name: intelxpuinfoexporter
 
 receivers:
-  - gomod: github.com/intel/xpumanager/xpumd/receiver v0.0.0
-    path: ./receiver
+  - gomod: github.com/intel/xpumanager/xpumd/receiver/intelxpu v0.0.0
+    path: ./receiver/intelxpu
     name: intelxpureceiver
 
 processors:

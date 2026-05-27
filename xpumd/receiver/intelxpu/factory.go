@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package receiver
+package intelxpu
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/scraper/scraperhelper"
 
-	"github.com/intel/xpumanager/xpumd/receiver/internal/metadata"
-	"github.com/intel/xpumanager/xpumd/receiver/sysman"
+	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman"
 )
 
 var (
