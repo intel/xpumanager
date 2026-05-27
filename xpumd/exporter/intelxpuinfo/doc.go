@@ -3,6 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-package exporter
+package intelxpuinfo
 
-//go:generate go tool -modfile ../tools/go.mod mdatagen metadata.yaml
+//go:generate go tool -modfile ../../tools/go.mod mdatagen metadata.yaml

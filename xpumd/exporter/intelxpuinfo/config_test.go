@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package exporter
+package intelxpuinfo
 
 import (
 	"testing"

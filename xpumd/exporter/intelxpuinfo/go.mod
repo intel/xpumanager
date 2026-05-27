@@ -1,10 +1,8 @@
-module github.com/intel/xpumanager/xpumd/exporter
+module github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo
 
 go 1.26
 
-replace github.com/intel/xpumanager/xpumd => ..
-
-replace github.com/intel/xpumanager/xpumd/common => ../common
+replace github.com/intel/xpumanager/xpumd/common => ../../common
 
 require (
 	github.com/google/go-cmp v0.7.0

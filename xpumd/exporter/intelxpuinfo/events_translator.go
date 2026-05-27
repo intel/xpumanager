@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package exporter
+package intelxpuinfo
 
 import (
 	"strings"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/intel/xpumanager/xpumd/common"
-	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
 )
 
 // translateEvents converts OTel log records emitted by the sysman events

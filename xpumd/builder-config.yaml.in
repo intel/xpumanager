@@ -18,8 +18,8 @@ exporters:
   - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v@OTEL_VERSION@
   - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v@OTEL_VERSION@
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/prometheusexporter v@OTEL_VERSION@
-  - gomod: github.com/intel/xpumanager/xpumd/exporter v0.0.0
-    path: ./exporter
+  - gomod: github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo v0.0.0
+    path: ./exporter/intelxpuinfo
     name: intelxpuinfoexporter
 
 receivers:

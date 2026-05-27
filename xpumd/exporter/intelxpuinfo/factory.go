@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package exporter
+package intelxpuinfo
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/exporterhelper"
 
-	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/internal/metadata"
 )
 
 // NewFactory creates a factory for the exporter.
