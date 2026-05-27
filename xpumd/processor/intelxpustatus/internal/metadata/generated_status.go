@@ -10,7 +10,7 @@ import (
 
 var (
 	Type      = component.MustNewType("intelxpustatus")
-	ScopeName = "github.com/intel/xpumanager/xpumd/processor"
+	ScopeName = "github.com/intel/xpumanager/xpumd/processor/intelxpustatus"
 )
 
 const (

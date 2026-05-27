@@ -28,8 +28,8 @@ receivers:
     name: intelxpureceiver
 
 processors:
-  - gomod: github.com/intel/xpumanager/xpumd/processor v0.0.0
-    path: ./processor
+  - gomod: github.com/intel/xpumanager/xpumd/processor/intelxpustatus v0.0.0
+    path: ./processor/intelxpustatus
     name: intelxpustatus
 
 extensions:
