@@ -1,4 +1,4 @@
-module github.com/intel/xpumanager/xpumd/processor
+module github.com/intel/xpumanager/xpumd/processor/intelxpustatus
 
 go 1.26
 
@@ -56,4 +56,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/intel/xpumanager/xpumd/common => ../common
+replace github.com/intel/xpumanager/xpumd/common => ../../common

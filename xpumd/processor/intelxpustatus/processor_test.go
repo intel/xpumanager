@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package processor
+package intelxpustatus
 
 import (
 	"testing"

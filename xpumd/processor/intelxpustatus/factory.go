@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package processor
+package intelxpustatus
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.opentelemetry.io/collector/processor/processorhelper"
 
-	"github.com/intel/xpumanager/xpumd/processor/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/processor/intelxpustatus/internal/metadata"
 )
 
 // NewFactory returns a factory for the processor.
