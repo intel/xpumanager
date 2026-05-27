@@ -25,8 +25,8 @@ RUN mkdir -p /go/pkg && chmod 777 /go/pkg
 # Unzip needed for installing protoc, doxygen for generating Go bindings
 RUN apt-get update && apt-get install -y --no-install-recommends \
         unzip doxygen libyaml-dev libcyaml-dev jq && \
-    curl -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
-         -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
+    curl -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
+         -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     dpkg -i ./*.deb && \
     rm -f ./*.deb && rm -rf /var/lib/apt/lists/*
 EOF
