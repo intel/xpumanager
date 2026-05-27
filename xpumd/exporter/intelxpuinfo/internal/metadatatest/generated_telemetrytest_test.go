@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 
-	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/internal/metadata"
 	"go.opentelemetry.io/collector/component/componenttest"
 )
 

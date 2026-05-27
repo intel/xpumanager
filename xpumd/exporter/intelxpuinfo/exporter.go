@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package exporter
+package intelxpuinfo
 
 import (
 	"context"
@@ -22,8 +22,8 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
-	"github.com/intel/xpumanager/xpumd/exporter/internal/metadata"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
+	"github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/internal/metadata"
 )
 
 type xpuInfoExporter struct {

@@ -7,7 +7,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.0
 // - protoc             v6.33.4
-// source: exporter/api/deviceinfo/v1alpha1/deviceinfo.proto
+// source: exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto
 
 package v1alpha1
 
@@ -176,5 +176,5 @@ var DeviceInfo_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "exporter/api/deviceinfo/v1alpha1/deviceinfo.proto",
+	Metadata: "exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto",
 }

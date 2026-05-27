@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-package exporter
+package intelxpuinfo
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
 	"github.com/intel/xpumanager/xpumd/common"
-	pb "github.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
 )
 
 // severityNames maps configuration severity name strings to pb.SeverityLevel

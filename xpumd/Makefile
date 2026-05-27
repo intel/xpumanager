@@ -32,7 +32,7 @@ OTEL_VERSION ?= 0.153.0
 build:
 	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
 	go tool -modfile tools/go.mod builder --config=builder-config.yaml
-	go -C dist build github.com/intel/xpumanager/xpumd/exporter/xpuinfo-cli
+	go -C dist build github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
 .PHONY: generate
 generate: generate-bindings generate-mods generate-proto
@@ -52,7 +52,7 @@ generate-mods:
 generate-proto: install-protoc
 	PATH=tools/bin/ protoc --go_out=. --go_opt=paths=source_relative \
 	                       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-	                       exporter/api/deviceinfo/v1alpha1/deviceinfo.proto
+	                       exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto
 
 .PHONY: install-protoc
 install-protoc:

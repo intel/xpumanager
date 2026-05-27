@@ -13,11 +13,11 @@ import (
 )
 
 func Meter(settings component.TelemetrySettings) metric.Meter {
-	return settings.MeterProvider.Meter("github.com/intel/xpumanager/xpumd/exporter")
+	return settings.MeterProvider.Meter("github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo")
 }
 
 func Tracer(settings component.TelemetrySettings) trace.Tracer {
-	return settings.TracerProvider.Tracer("github.com/intel/xpumanager/xpumd/exporter")
+	return settings.TracerProvider.Tracer("github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo")
 }
 
 // TelemetryBuilder provides an interface for components to report telemetry
