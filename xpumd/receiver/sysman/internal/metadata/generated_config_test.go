@@ -26,80 +26,130 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					HwEnergy: MetricConfig{
-						Enabled: true,
+					HwEnergy: HwEnergyMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwEnergyMetricAttributeKey{HwEnergyMetricAttributeKeyHwID, HwEnergyMetricAttributeKeyHwName, HwEnergyMetricAttributeKeyPciBdf, HwEnergyMetricAttributeKeyComIntelSubdeviceID, HwEnergyMetricAttributeKeyHwSensorLocation},
 					},
-					HwErrors: MetricConfig{
-						Enabled: true,
+					HwErrors: HwErrorsMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwErrorsMetricAttributeKey{HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory},
 					},
-					HwFrequency: MetricConfig{
-						Enabled: true,
+					HwFrequency: HwFrequencyMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencyMetricAttributeKey{HwFrequencyMetricAttributeKeyHwID, HwFrequencyMetricAttributeKeyHwName, HwFrequencyMetricAttributeKeyPciBdf, HwFrequencyMetricAttributeKeyComIntelSubdeviceID, HwFrequencyMetricAttributeKeyHwFrequencyDomain, HwFrequencyMetricAttributeKeyAggregation},
 					},
-					HwFrequencyLimit: MetricConfig{
-						Enabled: true,
+					HwFrequencyLimit: HwFrequencyLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencyLimitMetricAttributeKey{HwFrequencyLimitMetricAttributeKeyHwID, HwFrequencyLimitMetricAttributeKeyHwName, HwFrequencyLimitMetricAttributeKeyPciBdf, HwFrequencyLimitMetricAttributeKeyComIntelSubdeviceID, HwFrequencyLimitMetricAttributeKeyHwFrequencyDomain, HwFrequencyLimitMetricAttributeKeyHwLimitType},
 					},
-					HwFrequencyRequest: MetricConfig{
-						Enabled: true,
+					HwFrequencyRequest: HwFrequencyRequestMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencyRequestMetricAttributeKey{HwFrequencyRequestMetricAttributeKeyHwID, HwFrequencyRequestMetricAttributeKeyHwName, HwFrequencyRequestMetricAttributeKeyPciBdf, HwFrequencyRequestMetricAttributeKeyComIntelSubdeviceID, HwFrequencyRequestMetricAttributeKeyHwFrequencyDomain},
 					},
-					HwFrequencySamples: MetricConfig{
-						Enabled: true,
+					HwFrequencySamples: HwFrequencySamplesMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencySamplesMetricAttributeKey{HwFrequencySamplesMetricAttributeKeyHwID, HwFrequencySamplesMetricAttributeKeyHwName, HwFrequencySamplesMetricAttributeKeyPciBdf, HwFrequencySamplesMetricAttributeKeyComIntelSubdeviceID, HwFrequencySamplesMetricAttributeKeyHwFrequencyDomain, HwFrequencySamplesMetricAttributeKeySampleStatus},
 					},
-					HwFrequencyThrottleStatus: MetricConfig{
-						Enabled: true,
+					HwFrequencyThrottleStatus: HwFrequencyThrottleStatusMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwFrequencyThrottleStatusMetricAttributeKey{HwFrequencyThrottleStatusMetricAttributeKeyHwID, HwFrequencyThrottleStatusMetricAttributeKeyHwName, HwFrequencyThrottleStatusMetricAttributeKeyPciBdf, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSubdeviceID, HwFrequencyThrottleStatusMetricAttributeKeyHwFrequencyDomain, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSpeedThrottleReason},
 					},
-					HwGpuBandwidthLimit: MetricConfig{
-						Enabled: true,
+					HwGpuBandwidthLimit: HwGpuBandwidthLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuBandwidthLimitMetricAttributeKey{HwGpuBandwidthLimitMetricAttributeKeyHwID, HwGpuBandwidthLimitMetricAttributeKeyHwName, HwGpuBandwidthLimitMetricAttributeKeyPciBdf},
 					},
-					HwGpuBandwidthUtilization: MetricConfig{
-						Enabled: true,
+					HwGpuBandwidthUtilization: HwGpuBandwidthUtilizationMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwGpuBandwidthUtilizationMetricAttributeKey{HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf},
 					},
-					HwGpuInfo: MetricConfig{
-						Enabled: true,
+					HwGpuInfo: HwGpuInfoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc},
 					},
-					HwGpuIo: MetricConfig{
-						Enabled: true,
+					HwGpuIo: HwGpuIoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuIoMetricAttributeKey{HwGpuIoMetricAttributeKeyHwID, HwGpuIoMetricAttributeKeyHwName, HwGpuIoMetricAttributeKeyPciBdf, HwGpuIoMetricAttributeKeyNetworkIoDirection},
 					},
-					HwGpuIoRate: MetricConfig{
-						Enabled: true,
+					HwGpuIoRate: HwGpuIoRateMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwGpuIoRateMetricAttributeKey{HwGpuIoRateMetricAttributeKeyHwID, HwGpuIoRateMetricAttributeKeyHwName, HwGpuIoRateMetricAttributeKeyPciBdf},
 					},
-					HwGpuUtilization: MetricConfig{
-						Enabled: true,
+					HwGpuUtilization: HwGpuUtilizationMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwGpuUtilizationMetricAttributeKey{HwGpuUtilizationMetricAttributeKeyHwID, HwGpuUtilizationMetricAttributeKeyHwName, HwGpuUtilizationMetricAttributeKeyPciBdf, HwGpuUtilizationMetricAttributeKeyComIntelSubdeviceID, HwGpuUtilizationMetricAttributeKeyHwGpuTask},
 					},
-					HwMemoryBandwidthLimit: MetricConfig{
-						Enabled: true,
+					HwMemoryBandwidthLimit: HwMemoryBandwidthLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryBandwidthLimitMetricAttributeKey{HwMemoryBandwidthLimitMetricAttributeKeyHwID, HwMemoryBandwidthLimitMetricAttributeKeyHwName, HwMemoryBandwidthLimitMetricAttributeKeyPciBdf, HwMemoryBandwidthLimitMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryBandwidthUtilization: MetricConfig{
-						Enabled: true,
+					HwMemoryBandwidthUtilization: HwMemoryBandwidthUtilizationMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwMemoryBandwidthUtilizationMetricAttributeKey{HwMemoryBandwidthUtilizationMetricAttributeKeyHwID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwName, HwMemoryBandwidthUtilizationMetricAttributeKeyPciBdf, HwMemoryBandwidthUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryFree: MetricConfig{
-						Enabled: true,
+					HwMemoryFree: HwMemoryFreeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryFreeMetricAttributeKey{HwMemoryFreeMetricAttributeKeyHwID, HwMemoryFreeMetricAttributeKeyHwName, HwMemoryFreeMetricAttributeKeyPciBdf, HwMemoryFreeMetricAttributeKeyComIntelSubdeviceID, HwMemoryFreeMetricAttributeKeyHwMemoryLocation, HwMemoryFreeMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryIo: MetricConfig{
-						Enabled: true,
+					HwMemoryIo: HwMemoryIoMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryIoMetricAttributeKey{HwMemoryIoMetricAttributeKeyHwID, HwMemoryIoMetricAttributeKeyHwName, HwMemoryIoMetricAttributeKeyPciBdf, HwMemoryIoMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoMetricAttributeKeyHwMemoryLocation, HwMemoryIoMetricAttributeKeyHwMemoryType, HwMemoryIoMetricAttributeKeyNetworkIoDirection},
 					},
-					HwMemoryIoRate: MetricConfig{
-						Enabled: true,
+					HwMemoryIoRate: HwMemoryIoRateMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwMemoryIoRateMetricAttributeKey{HwMemoryIoRateMetricAttributeKeyHwID, HwMemoryIoRateMetricAttributeKeyHwName, HwMemoryIoRateMetricAttributeKeyPciBdf, HwMemoryIoRateMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoRateMetricAttributeKeyHwMemoryLocation, HwMemoryIoRateMetricAttributeKeyHwMemoryType},
 					},
-					HwMemorySize: MetricConfig{
-						Enabled: true,
+					HwMemorySize: HwMemorySizeMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemorySizeMetricAttributeKey{HwMemorySizeMetricAttributeKeyHwID, HwMemorySizeMetricAttributeKeyHwName, HwMemorySizeMetricAttributeKeyPciBdf, HwMemorySizeMetricAttributeKeyComIntelSubdeviceID, HwMemorySizeMetricAttributeKeyHwMemoryLocation, HwMemorySizeMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryUsage: MetricConfig{
-						Enabled: true,
+					HwMemoryUsage: HwMemoryUsageMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryUsageMetricAttributeKey{HwMemoryUsageMetricAttributeKeyHwID, HwMemoryUsageMetricAttributeKeyHwName, HwMemoryUsageMetricAttributeKeyPciBdf, HwMemoryUsageMetricAttributeKeyComIntelSubdeviceID, HwMemoryUsageMetricAttributeKeyHwMemoryLocation, HwMemoryUsageMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryUtilization: MetricConfig{
-						Enabled: true,
+					HwMemoryUtilization: HwMemoryUtilizationMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwMemoryUtilizationMetricAttributeKey{HwMemoryUtilizationMetricAttributeKeyHwID, HwMemoryUtilizationMetricAttributeKeyHwName, HwMemoryUtilizationMetricAttributeKeyPciBdf, HwMemoryUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryUtilizationMetricAttributeKeyHwMemoryType},
 					},
-					HwPower: MetricConfig{
-						Enabled: true,
+					HwPower: HwPowerMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwPowerMetricAttributeKey{HwPowerMetricAttributeKeyHwID, HwPowerMetricAttributeKeyHwName, HwPowerMetricAttributeKeyPciBdf, HwPowerMetricAttributeKeyComIntelSubdeviceID, HwPowerMetricAttributeKeyHwSensorLocation},
 					},
-					HwPowerLimit: MetricConfig{
-						Enabled: true,
+					HwPowerLimit: HwPowerLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwPowerLimitMetricAttributeKey{HwPowerLimitMetricAttributeKeyHwID, HwPowerLimitMetricAttributeKeyHwName, HwPowerLimitMetricAttributeKeyPciBdf, HwPowerLimitMetricAttributeKeyComIntelSubdeviceID, HwPowerLimitMetricAttributeKeyHwSensorLocation, HwPowerLimitMetricAttributeKeyComIntelPowerLimitLevel, HwPowerLimitMetricAttributeKeyComIntelPowerLimitSource},
 					},
-					HwStatus: MetricConfig{
-						Enabled: true,
+					HwStatus: HwStatusMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwStatusMetricAttributeKey{HwStatusMetricAttributeKeyHwID, HwStatusMetricAttributeKeyHwName, HwStatusMetricAttributeKeyPciBdf, HwStatusMetricAttributeKeyComIntelSubdeviceID, HwStatusMetricAttributeKeyHwState, HwStatusMetricAttributeKeyHwType},
 					},
-					HwTemperature: MetricConfig{
-						Enabled: true,
+					HwTemperature: HwTemperatureMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwTemperatureMetricAttributeKey{HwTemperatureMetricAttributeKeyHwID, HwTemperatureMetricAttributeKeyHwName, HwTemperatureMetricAttributeKeyPciBdf, HwTemperatureMetricAttributeKeyComIntelSubdeviceID, HwTemperatureMetricAttributeKeyHwSensorLocation, HwTemperatureMetricAttributeKeyStatistic},
 					},
 				},
 			},
@@ -108,80 +158,130 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					HwEnergy: MetricConfig{
-						Enabled: false,
+					HwEnergy: HwEnergyMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwEnergyMetricAttributeKey{HwEnergyMetricAttributeKeyHwID, HwEnergyMetricAttributeKeyHwName, HwEnergyMetricAttributeKeyPciBdf, HwEnergyMetricAttributeKeyComIntelSubdeviceID, HwEnergyMetricAttributeKeyHwSensorLocation},
 					},
-					HwErrors: MetricConfig{
-						Enabled: false,
+					HwErrors: HwErrorsMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwErrorsMetricAttributeKey{HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory},
 					},
-					HwFrequency: MetricConfig{
-						Enabled: false,
+					HwFrequency: HwFrequencyMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencyMetricAttributeKey{HwFrequencyMetricAttributeKeyHwID, HwFrequencyMetricAttributeKeyHwName, HwFrequencyMetricAttributeKeyPciBdf, HwFrequencyMetricAttributeKeyComIntelSubdeviceID, HwFrequencyMetricAttributeKeyHwFrequencyDomain, HwFrequencyMetricAttributeKeyAggregation},
 					},
-					HwFrequencyLimit: MetricConfig{
-						Enabled: false,
+					HwFrequencyLimit: HwFrequencyLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencyLimitMetricAttributeKey{HwFrequencyLimitMetricAttributeKeyHwID, HwFrequencyLimitMetricAttributeKeyHwName, HwFrequencyLimitMetricAttributeKeyPciBdf, HwFrequencyLimitMetricAttributeKeyComIntelSubdeviceID, HwFrequencyLimitMetricAttributeKeyHwFrequencyDomain, HwFrequencyLimitMetricAttributeKeyHwLimitType},
 					},
-					HwFrequencyRequest: MetricConfig{
-						Enabled: false,
+					HwFrequencyRequest: HwFrequencyRequestMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencyRequestMetricAttributeKey{HwFrequencyRequestMetricAttributeKeyHwID, HwFrequencyRequestMetricAttributeKeyHwName, HwFrequencyRequestMetricAttributeKeyPciBdf, HwFrequencyRequestMetricAttributeKeyComIntelSubdeviceID, HwFrequencyRequestMetricAttributeKeyHwFrequencyDomain},
 					},
-					HwFrequencySamples: MetricConfig{
-						Enabled: false,
+					HwFrequencySamples: HwFrequencySamplesMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFrequencySamplesMetricAttributeKey{HwFrequencySamplesMetricAttributeKeyHwID, HwFrequencySamplesMetricAttributeKeyHwName, HwFrequencySamplesMetricAttributeKeyPciBdf, HwFrequencySamplesMetricAttributeKeyComIntelSubdeviceID, HwFrequencySamplesMetricAttributeKeyHwFrequencyDomain, HwFrequencySamplesMetricAttributeKeySampleStatus},
 					},
-					HwFrequencyThrottleStatus: MetricConfig{
-						Enabled: false,
+					HwFrequencyThrottleStatus: HwFrequencyThrottleStatusMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwFrequencyThrottleStatusMetricAttributeKey{HwFrequencyThrottleStatusMetricAttributeKeyHwID, HwFrequencyThrottleStatusMetricAttributeKeyHwName, HwFrequencyThrottleStatusMetricAttributeKeyPciBdf, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSubdeviceID, HwFrequencyThrottleStatusMetricAttributeKeyHwFrequencyDomain, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSpeedThrottleReason},
 					},
-					HwGpuBandwidthLimit: MetricConfig{
-						Enabled: false,
+					HwGpuBandwidthLimit: HwGpuBandwidthLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuBandwidthLimitMetricAttributeKey{HwGpuBandwidthLimitMetricAttributeKeyHwID, HwGpuBandwidthLimitMetricAttributeKeyHwName, HwGpuBandwidthLimitMetricAttributeKeyPciBdf},
 					},
-					HwGpuBandwidthUtilization: MetricConfig{
-						Enabled: false,
+					HwGpuBandwidthUtilization: HwGpuBandwidthUtilizationMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwGpuBandwidthUtilizationMetricAttributeKey{HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf},
 					},
-					HwGpuInfo: MetricConfig{
-						Enabled: false,
+					HwGpuInfo: HwGpuInfoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc},
 					},
-					HwGpuIo: MetricConfig{
-						Enabled: false,
+					HwGpuIo: HwGpuIoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuIoMetricAttributeKey{HwGpuIoMetricAttributeKeyHwID, HwGpuIoMetricAttributeKeyHwName, HwGpuIoMetricAttributeKeyPciBdf, HwGpuIoMetricAttributeKeyNetworkIoDirection},
 					},
-					HwGpuIoRate: MetricConfig{
-						Enabled: false,
+					HwGpuIoRate: HwGpuIoRateMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwGpuIoRateMetricAttributeKey{HwGpuIoRateMetricAttributeKeyHwID, HwGpuIoRateMetricAttributeKeyHwName, HwGpuIoRateMetricAttributeKeyPciBdf},
 					},
-					HwGpuUtilization: MetricConfig{
-						Enabled: false,
+					HwGpuUtilization: HwGpuUtilizationMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwGpuUtilizationMetricAttributeKey{HwGpuUtilizationMetricAttributeKeyHwID, HwGpuUtilizationMetricAttributeKeyHwName, HwGpuUtilizationMetricAttributeKeyPciBdf, HwGpuUtilizationMetricAttributeKeyComIntelSubdeviceID, HwGpuUtilizationMetricAttributeKeyHwGpuTask},
 					},
-					HwMemoryBandwidthLimit: MetricConfig{
-						Enabled: false,
+					HwMemoryBandwidthLimit: HwMemoryBandwidthLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryBandwidthLimitMetricAttributeKey{HwMemoryBandwidthLimitMetricAttributeKeyHwID, HwMemoryBandwidthLimitMetricAttributeKeyHwName, HwMemoryBandwidthLimitMetricAttributeKeyPciBdf, HwMemoryBandwidthLimitMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryBandwidthUtilization: MetricConfig{
-						Enabled: false,
+					HwMemoryBandwidthUtilization: HwMemoryBandwidthUtilizationMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwMemoryBandwidthUtilizationMetricAttributeKey{HwMemoryBandwidthUtilizationMetricAttributeKeyHwID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwName, HwMemoryBandwidthUtilizationMetricAttributeKeyPciBdf, HwMemoryBandwidthUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryFree: MetricConfig{
-						Enabled: false,
+					HwMemoryFree: HwMemoryFreeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryFreeMetricAttributeKey{HwMemoryFreeMetricAttributeKeyHwID, HwMemoryFreeMetricAttributeKeyHwName, HwMemoryFreeMetricAttributeKeyPciBdf, HwMemoryFreeMetricAttributeKeyComIntelSubdeviceID, HwMemoryFreeMetricAttributeKeyHwMemoryLocation, HwMemoryFreeMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryIo: MetricConfig{
-						Enabled: false,
+					HwMemoryIo: HwMemoryIoMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryIoMetricAttributeKey{HwMemoryIoMetricAttributeKeyHwID, HwMemoryIoMetricAttributeKeyHwName, HwMemoryIoMetricAttributeKeyPciBdf, HwMemoryIoMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoMetricAttributeKeyHwMemoryLocation, HwMemoryIoMetricAttributeKeyHwMemoryType, HwMemoryIoMetricAttributeKeyNetworkIoDirection},
 					},
-					HwMemoryIoRate: MetricConfig{
-						Enabled: false,
+					HwMemoryIoRate: HwMemoryIoRateMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwMemoryIoRateMetricAttributeKey{HwMemoryIoRateMetricAttributeKeyHwID, HwMemoryIoRateMetricAttributeKeyHwName, HwMemoryIoRateMetricAttributeKeyPciBdf, HwMemoryIoRateMetricAttributeKeyComIntelSubdeviceID, HwMemoryIoRateMetricAttributeKeyHwMemoryLocation, HwMemoryIoRateMetricAttributeKeyHwMemoryType},
 					},
-					HwMemorySize: MetricConfig{
-						Enabled: false,
+					HwMemorySize: HwMemorySizeMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemorySizeMetricAttributeKey{HwMemorySizeMetricAttributeKeyHwID, HwMemorySizeMetricAttributeKeyHwName, HwMemorySizeMetricAttributeKeyPciBdf, HwMemorySizeMetricAttributeKeyComIntelSubdeviceID, HwMemorySizeMetricAttributeKeyHwMemoryLocation, HwMemorySizeMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryUsage: MetricConfig{
-						Enabled: false,
+					HwMemoryUsage: HwMemoryUsageMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwMemoryUsageMetricAttributeKey{HwMemoryUsageMetricAttributeKeyHwID, HwMemoryUsageMetricAttributeKeyHwName, HwMemoryUsageMetricAttributeKeyPciBdf, HwMemoryUsageMetricAttributeKeyComIntelSubdeviceID, HwMemoryUsageMetricAttributeKeyHwMemoryLocation, HwMemoryUsageMetricAttributeKeyHwMemoryType},
 					},
-					HwMemoryUtilization: MetricConfig{
-						Enabled: false,
+					HwMemoryUtilization: HwMemoryUtilizationMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwMemoryUtilizationMetricAttributeKey{HwMemoryUtilizationMetricAttributeKeyHwID, HwMemoryUtilizationMetricAttributeKeyHwName, HwMemoryUtilizationMetricAttributeKeyPciBdf, HwMemoryUtilizationMetricAttributeKeyComIntelSubdeviceID, HwMemoryUtilizationMetricAttributeKeyHwMemoryLocation, HwMemoryUtilizationMetricAttributeKeyHwMemoryType},
 					},
-					HwPower: MetricConfig{
-						Enabled: false,
+					HwPower: HwPowerMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwPowerMetricAttributeKey{HwPowerMetricAttributeKeyHwID, HwPowerMetricAttributeKeyHwName, HwPowerMetricAttributeKeyPciBdf, HwPowerMetricAttributeKeyComIntelSubdeviceID, HwPowerMetricAttributeKeyHwSensorLocation},
 					},
-					HwPowerLimit: MetricConfig{
-						Enabled: false,
+					HwPowerLimit: HwPowerLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwPowerLimitMetricAttributeKey{HwPowerLimitMetricAttributeKeyHwID, HwPowerLimitMetricAttributeKeyHwName, HwPowerLimitMetricAttributeKeyPciBdf, HwPowerLimitMetricAttributeKeyComIntelSubdeviceID, HwPowerLimitMetricAttributeKeyHwSensorLocation, HwPowerLimitMetricAttributeKeyComIntelPowerLimitLevel, HwPowerLimitMetricAttributeKeyComIntelPowerLimitSource},
 					},
-					HwStatus: MetricConfig{
-						Enabled: false,
+					HwStatus: HwStatusMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwStatusMetricAttributeKey{HwStatusMetricAttributeKeyHwID, HwStatusMetricAttributeKeyHwName, HwStatusMetricAttributeKeyPciBdf, HwStatusMetricAttributeKeyComIntelSubdeviceID, HwStatusMetricAttributeKeyHwState, HwStatusMetricAttributeKeyHwType},
 					},
-					HwTemperature: MetricConfig{
-						Enabled: false,
+					HwTemperature: HwTemperatureMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwTemperatureMetricAttributeKey{HwTemperatureMetricAttributeKeyHwID, HwTemperatureMetricAttributeKeyHwName, HwTemperatureMetricAttributeKeyPciBdf, HwTemperatureMetricAttributeKeyComIntelSubdeviceID, HwTemperatureMetricAttributeKeyHwSensorLocation, HwTemperatureMetricAttributeKeyStatistic},
 					},
 				},
 			},
@@ -190,7 +290,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(MetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(HwEnergyMetricConfig{}, HwErrorsMetricConfig{}, HwFrequencyMetricConfig{}, HwFrequencyLimitMetricConfig{}, HwFrequencyRequestMetricConfig{}, HwFrequencySamplesMetricConfig{}, HwFrequencyThrottleStatusMetricConfig{}, HwGpuBandwidthLimitMetricConfig{}, HwGpuBandwidthUtilizationMetricConfig{}, HwGpuInfoMetricConfig{}, HwGpuIoMetricConfig{}, HwGpuIoRateMetricConfig{}, HwGpuUtilizationMetricConfig{}, HwMemoryBandwidthLimitMetricConfig{}, HwMemoryBandwidthUtilizationMetricConfig{}, HwMemoryFreeMetricConfig{}, HwMemoryIoMetricConfig{}, HwMemoryIoRateMetricConfig{}, HwMemorySizeMetricConfig{}, HwMemoryUsageMetricConfig{}, HwMemoryUtilizationMetricConfig{}, HwPowerMetricConfig{}, HwPowerLimitMetricConfig{}, HwStatusMetricConfig{}, HwTemperatureMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}

@@ -3,103 +3,230 @@ all_set:
   metrics:
     hw.energy:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
     hw.errors:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.type","error.type","error.category"]
     hw.frequency:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","aggregation"]
     hw.frequency.limit:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","hw.limit_type"]
     hw.frequency.request:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain"]
     hw.frequency.samples:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","sample.status"]
     hw.frequency.throttle_status:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","com.intel.speed.throttle_reason"]
     hw.gpu.bandwidth.limit:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf"]
     hw.gpu.bandwidth.utilization:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf"]
     hw.gpu.info:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","pci.vendor_id","pci.device_id","hw.model","hw.serial_number","hw.vendor","hw.firmware_version","hw.gpu.type","com.intel.subdevice_count","pci.lanes","pci.link_gen","hw.memory.demand_paging","hw.memory.ecc"]
     hw.gpu.io:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","network.io.direction"]
     hw.gpu.io.rate:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf"]
     hw.gpu.utilization:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.gpu.task"]
     hw.memory.bandwidth.limit:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.bandwidth.utilization:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.free:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.io:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type","network.io.direction"]
     hw.memory.io.rate:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.size:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.usage:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.utilization:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.power:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
     hw.power.limit:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location","com.intel.power.limit.level","com.intel.power.limit.source"]
     hw.status:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.state","hw.type"]
     hw.temperature:
       enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location","statistic"]
+reaggregate_set:
+  metrics:
+    hw.energy:
+      enabled: true
+      attributes: []
+    hw.errors:
+      enabled: true
+      attributes: []
+    hw.frequency:
+      enabled: true
+      attributes: []
+    hw.frequency.limit:
+      enabled: true
+      attributes: []
+    hw.frequency.request:
+      enabled: true
+      attributes: []
+    hw.frequency.samples:
+      enabled: true
+      attributes: []
+    hw.frequency.throttle_status:
+      enabled: true
+      attributes: []
+    hw.gpu.bandwidth.limit:
+      enabled: true
+      attributes: []
+    hw.gpu.bandwidth.utilization:
+      enabled: true
+      attributes: []
+    hw.gpu.info:
+      enabled: true
+      attributes: []
+    hw.gpu.io:
+      enabled: true
+      attributes: []
+    hw.gpu.io.rate:
+      enabled: true
+      attributes: []
+    hw.gpu.utilization:
+      enabled: true
+      attributes: []
+    hw.memory.bandwidth.limit:
+      enabled: true
+      attributes: []
+    hw.memory.bandwidth.utilization:
+      enabled: true
+      attributes: []
+    hw.memory.free:
+      enabled: true
+      attributes: []
+    hw.memory.io:
+      enabled: true
+      attributes: []
+    hw.memory.io.rate:
+      enabled: true
+      attributes: []
+    hw.memory.size:
+      enabled: true
+      attributes: []
+    hw.memory.usage:
+      enabled: true
+      attributes: []
+    hw.memory.utilization:
+      enabled: true
+      attributes: []
+    hw.power:
+      enabled: true
+      attributes: []
+    hw.power.limit:
+      enabled: true
+      attributes: []
+    hw.status:
+      enabled: true
+      attributes: []
+    hw.temperature:
+      enabled: true
+      attributes: []
 none_set:
   metrics:
     hw.energy:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
     hw.errors:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.type","error.type","error.category"]
     hw.frequency:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","aggregation"]
     hw.frequency.limit:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","hw.limit_type"]
     hw.frequency.request:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain"]
     hw.frequency.samples:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","sample.status"]
     hw.frequency.throttle_status:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","com.intel.speed.throttle_reason"]
     hw.gpu.bandwidth.limit:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf"]
     hw.gpu.bandwidth.utilization:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf"]
     hw.gpu.info:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","pci.vendor_id","pci.device_id","hw.model","hw.serial_number","hw.vendor","hw.firmware_version","hw.gpu.type","com.intel.subdevice_count","pci.lanes","pci.link_gen","hw.memory.demand_paging","hw.memory.ecc"]
     hw.gpu.io:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","network.io.direction"]
     hw.gpu.io.rate:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf"]
     hw.gpu.utilization:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.gpu.task"]
     hw.memory.bandwidth.limit:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.bandwidth.utilization:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.free:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.io:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type","network.io.direction"]
     hw.memory.io.rate:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.size:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.usage:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.memory.utilization:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.memory.location","hw.memory.type"]
     hw.power:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
     hw.power.limit:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location","com.intel.power.limit.level","com.intel.power.limit.source"]
     hw.status:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.state","hw.type"]
     hw.temperature:
       enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location","statistic"]

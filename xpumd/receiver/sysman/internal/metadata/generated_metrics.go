@@ -3,6 +3,7 @@
 package metadata
 
 import (
+	"slices"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -10,6 +11,13 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper"
 	conventions "go.opentelemetry.io/otel/semconv/v1.38.0"
+)
+
+const (
+	AggregationStrategySum = "sum"
+	AggregationStrategyAvg = "avg"
+	AggregationStrategyMin = "min"
+	AggregationStrategyMax = "max"
 )
 
 // AttributeAggregation specifies the value aggregation attribute.
@@ -355,9 +363,10 @@ type metricInfo struct {
 }
 
 type metricHwEnergy struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric       // data buffer for generated metric.
+	config        HwEnergyMetricConfig // metric config provided by user.
+	capacity      int                  // max observed number of data points added to the metric.
+	aggDataPoints []float64            // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.energy metric with initial data.
@@ -369,21 +378,60 @@ func (m *metricHwEnergy) init() {
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwEnergy) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwEnergyMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwEnergyMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwEnergyMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwEnergyMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwEnergyMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -396,13 +444,18 @@ func (m *metricHwEnergy) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwEnergy) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetDoubleValue(m.data.Sum().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwEnergy(cfg MetricConfig) metricHwEnergy {
+func newMetricHwEnergy(cfg HwEnergyMetricConfig) metricHwEnergy {
 	m := metricHwEnergy{config: cfg}
 
 	if cfg.Enabled {
@@ -413,9 +466,10 @@ func newMetricHwEnergy(cfg MetricConfig) metricHwEnergy {
 }
 
 type metricHwErrors struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric       // data buffer for generated metric.
+	config        HwErrorsMetricConfig // metric config provided by user.
+	capacity      int                  // max observed number of data points added to the metric.
+	aggDataPoints []int64              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.errors metric with initial data.
@@ -427,23 +481,66 @@ func (m *metricHwErrors) init() {
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwErrors) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwTypeAttributeValue string, errorTypeAttributeValue string, errorCategoryAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyHwType) {
+		dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyErrorType) {
+		dp.Attributes().PutStr("error.type", errorTypeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwErrorsMetricAttributeKeyErrorCategory) {
+		dp.Attributes().PutStr("error.category", errorCategoryAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
-	dp.Attributes().PutStr("error.type", errorTypeAttributeValue)
-	dp.Attributes().PutStr("error.category", errorCategoryAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -456,13 +553,18 @@ func (m *metricHwErrors) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwErrors) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwErrors(cfg MetricConfig) metricHwErrors {
+func newMetricHwErrors(cfg HwErrorsMetricConfig) metricHwErrors {
 	m := metricHwErrors{config: cfg}
 
 	if cfg.Enabled {
@@ -473,9 +575,10 @@ func newMetricHwErrors(cfg MetricConfig) metricHwErrors {
 }
 
 type metricHwFrequency struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric          // data buffer for generated metric.
+	config        HwFrequencyMetricConfig // metric config provided by user.
+	capacity      int                     // max observed number of data points added to the metric.
+	aggDataPoints []int64                 // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.frequency metric with initial data.
@@ -485,22 +588,63 @@ func (m *metricHwFrequency) init() {
 	m.data.SetUnit("Hz")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwFrequency) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, aggregationAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyMetricAttributeKeyHwFrequencyDomain) {
+		dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyMetricAttributeKeyAggregation) {
+		dp.Attributes().PutStr("aggregation", aggregationAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
-	dp.Attributes().PutStr("aggregation", aggregationAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -513,13 +657,18 @@ func (m *metricHwFrequency) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwFrequency) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwFrequency(cfg MetricConfig) metricHwFrequency {
+func newMetricHwFrequency(cfg HwFrequencyMetricConfig) metricHwFrequency {
 	m := metricHwFrequency{config: cfg}
 
 	if cfg.Enabled {
@@ -530,9 +679,10 @@ func newMetricHwFrequency(cfg MetricConfig) metricHwFrequency {
 }
 
 type metricHwFrequencyLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric               // data buffer for generated metric.
+	config        HwFrequencyLimitMetricConfig // metric config provided by user.
+	capacity      int                          // max observed number of data points added to the metric.
+	aggDataPoints []int64                      // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.frequency.limit metric with initial data.
@@ -542,22 +692,63 @@ func (m *metricHwFrequencyLimit) init() {
 	m.data.SetUnit("Hz")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwFrequencyLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, hwLimitTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyLimitMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyLimitMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyLimitMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyLimitMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyLimitMetricAttributeKeyHwFrequencyDomain) {
+		dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyLimitMetricAttributeKeyHwLimitType) {
+		dp.Attributes().PutStr("hw.limit_type", hwLimitTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
-	dp.Attributes().PutStr("hw.limit_type", hwLimitTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -570,13 +761,18 @@ func (m *metricHwFrequencyLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwFrequencyLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwFrequencyLimit(cfg MetricConfig) metricHwFrequencyLimit {
+func newMetricHwFrequencyLimit(cfg HwFrequencyLimitMetricConfig) metricHwFrequencyLimit {
 	m := metricHwFrequencyLimit{config: cfg}
 
 	if cfg.Enabled {
@@ -587,9 +783,10 @@ func newMetricHwFrequencyLimit(cfg MetricConfig) metricHwFrequencyLimit {
 }
 
 type metricHwFrequencyRequest struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        HwFrequencyRequestMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.frequency.request metric with initial data.
@@ -599,21 +796,60 @@ func (m *metricHwFrequencyRequest) init() {
 	m.data.SetUnit("Hz")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwFrequencyRequest) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyRequestMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyRequestMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyRequestMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyRequestMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyRequestMetricAttributeKeyHwFrequencyDomain) {
+		dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -626,13 +862,18 @@ func (m *metricHwFrequencyRequest) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwFrequencyRequest) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwFrequencyRequest(cfg MetricConfig) metricHwFrequencyRequest {
+func newMetricHwFrequencyRequest(cfg HwFrequencyRequestMetricConfig) metricHwFrequencyRequest {
 	m := metricHwFrequencyRequest{config: cfg}
 
 	if cfg.Enabled {
@@ -643,9 +884,10 @@ func newMetricHwFrequencyRequest(cfg MetricConfig) metricHwFrequencyRequest {
 }
 
 type metricHwFrequencySamples struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                 // data buffer for generated metric.
+	config        HwFrequencySamplesMetricConfig // metric config provided by user.
+	capacity      int                            // max observed number of data points added to the metric.
+	aggDataPoints []int64                        // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.frequency.samples metric with initial data.
@@ -655,22 +897,63 @@ func (m *metricHwFrequencySamples) init() {
 	m.data.SetUnit("{count}")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwFrequencySamples) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, sampleStatusAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencySamplesMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencySamplesMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencySamplesMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencySamplesMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencySamplesMetricAttributeKeyHwFrequencyDomain) {
+		dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencySamplesMetricAttributeKeySampleStatus) {
+		dp.Attributes().PutStr("sample.status", sampleStatusAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
-	dp.Attributes().PutStr("sample.status", sampleStatusAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -683,13 +966,18 @@ func (m *metricHwFrequencySamples) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwFrequencySamples) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwFrequencySamples(cfg MetricConfig) metricHwFrequencySamples {
+func newMetricHwFrequencySamples(cfg HwFrequencySamplesMetricConfig) metricHwFrequencySamples {
 	m := metricHwFrequencySamples{config: cfg}
 
 	if cfg.Enabled {
@@ -700,9 +988,10 @@ func newMetricHwFrequencySamples(cfg MetricConfig) metricHwFrequencySamples {
 }
 
 type metricHwFrequencyThrottleStatus struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                        // data buffer for generated metric.
+	config        HwFrequencyThrottleStatusMetricConfig // metric config provided by user.
+	capacity      int                                   // max observed number of data points added to the metric.
+	aggDataPoints []int64                               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.frequency.throttle_status metric with initial data.
@@ -714,22 +1003,63 @@ func (m *metricHwFrequencyThrottleStatus) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwFrequencyThrottleStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwFrequencyDomainAttributeValue string, comIntelSpeedThrottleReasonAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyThrottleStatusMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyThrottleStatusMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyThrottleStatusMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyThrottleStatusMetricAttributeKeyHwFrequencyDomain) {
+		dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFrequencyThrottleStatusMetricAttributeKeyComIntelSpeedThrottleReason) {
+		dp.Attributes().PutStr("com.intel.speed.throttle_reason", comIntelSpeedThrottleReasonAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.frequency.domain", hwFrequencyDomainAttributeValue)
-	dp.Attributes().PutStr("com.intel.speed.throttle_reason", comIntelSpeedThrottleReasonAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -742,13 +1072,18 @@ func (m *metricHwFrequencyThrottleStatus) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwFrequencyThrottleStatus) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwFrequencyThrottleStatus(cfg MetricConfig) metricHwFrequencyThrottleStatus {
+func newMetricHwFrequencyThrottleStatus(cfg HwFrequencyThrottleStatusMetricConfig) metricHwFrequencyThrottleStatus {
 	m := metricHwFrequencyThrottleStatus{config: cfg}
 
 	if cfg.Enabled {
@@ -759,9 +1094,10 @@ func newMetricHwFrequencyThrottleStatus(cfg MetricConfig) metricHwFrequencyThrot
 }
 
 type metricHwGpuBandwidthLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                  // data buffer for generated metric.
+	config        HwGpuBandwidthLimitMetricConfig // metric config provided by user.
+	capacity      int                             // max observed number of data points added to the metric.
+	aggDataPoints []int64                         // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.gpu.bandwidth.limit metric with initial data.
@@ -773,19 +1109,54 @@ func (m *metricHwGpuBandwidthLimit) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwGpuBandwidthLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuBandwidthLimitMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuBandwidthLimitMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuBandwidthLimitMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -798,13 +1169,18 @@ func (m *metricHwGpuBandwidthLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwGpuBandwidthLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwGpuBandwidthLimit(cfg MetricConfig) metricHwGpuBandwidthLimit {
+func newMetricHwGpuBandwidthLimit(cfg HwGpuBandwidthLimitMetricConfig) metricHwGpuBandwidthLimit {
 	m := metricHwGpuBandwidthLimit{config: cfg}
 
 	if cfg.Enabled {
@@ -815,9 +1191,10 @@ func newMetricHwGpuBandwidthLimit(cfg MetricConfig) metricHwGpuBandwidthLimit {
 }
 
 type metricHwGpuBandwidthUtilization struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                        // data buffer for generated metric.
+	config        HwGpuBandwidthUtilizationMetricConfig // metric config provided by user.
+	capacity      int                                   // max observed number of data points added to the metric.
+	aggDataPoints []float64                             // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.gpu.bandwidth.utilization metric with initial data.
@@ -827,19 +1204,54 @@ func (m *metricHwGpuBandwidthUtilization) init() {
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwGpuBandwidthUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuBandwidthUtilizationMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuBandwidthUtilizationMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -852,13 +1264,18 @@ func (m *metricHwGpuBandwidthUtilization) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwGpuBandwidthUtilization) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwGpuBandwidthUtilization(cfg MetricConfig) metricHwGpuBandwidthUtilization {
+func newMetricHwGpuBandwidthUtilization(cfg HwGpuBandwidthUtilizationMetricConfig) metricHwGpuBandwidthUtilization {
 	m := metricHwGpuBandwidthUtilization{config: cfg}
 
 	if cfg.Enabled {
@@ -869,9 +1286,10 @@ func newMetricHwGpuBandwidthUtilization(cfg MetricConfig) metricHwGpuBandwidthUt
 }
 
 type metricHwGpuInfo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric        // data buffer for generated metric.
+	config        HwGpuInfoMetricConfig // metric config provided by user.
+	capacity      int                   // max observed number of data points added to the metric.
+	aggDataPoints []int64               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.gpu.info metric with initial data.
@@ -883,31 +1301,90 @@ func (m *metricHwGpuInfo) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, pciVendorIDAttributeValue string, pciDeviceIDAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, hwGpuTypeAttributeValue string, comIntelSubdeviceCountAttributeValue int64, pciLanesAttributeValue string, pciLinkGenAttributeValue string, hwMemoryDemandPagingAttributeValue bool, hwMemoryEccAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyPciVendorID) {
+		dp.Attributes().PutStr("pci.vendor_id", pciVendorIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyPciDeviceID) {
+		dp.Attributes().PutStr("pci.device_id", pciDeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwModel) {
+		dp.Attributes().PutStr("hw.model", hwModelAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwSerialNumber) {
+		dp.Attributes().PutStr("hw.serial_number", hwSerialNumberAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwVendor) {
+		dp.Attributes().PutStr("hw.vendor", hwVendorAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwFirmwareVersion) {
+		dp.Attributes().PutStr("hw.firmware_version", hwFirmwareVersionAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwGpuType) {
+		dp.Attributes().PutStr("hw.gpu.type", hwGpuTypeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount) {
+		dp.Attributes().PutInt("com.intel.subdevice_count", comIntelSubdeviceCountAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyPciLanes) {
+		dp.Attributes().PutStr("pci.lanes", pciLanesAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyPciLinkGen) {
+		dp.Attributes().PutStr("pci.link_gen", pciLinkGenAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging) {
+		dp.Attributes().PutBool("hw.memory.demand_paging", hwMemoryDemandPagingAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwMemoryEcc) {
+		dp.Attributes().PutStr("hw.memory.ecc", hwMemoryEccAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("pci.vendor_id", pciVendorIDAttributeValue)
-	dp.Attributes().PutStr("pci.device_id", pciDeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.model", hwModelAttributeValue)
-	dp.Attributes().PutStr("hw.serial_number", hwSerialNumberAttributeValue)
-	dp.Attributes().PutStr("hw.vendor", hwVendorAttributeValue)
-	dp.Attributes().PutStr("hw.firmware_version", hwFirmwareVersionAttributeValue)
-	dp.Attributes().PutStr("hw.gpu.type", hwGpuTypeAttributeValue)
-	dp.Attributes().PutInt("com.intel.subdevice_count", comIntelSubdeviceCountAttributeValue)
-	dp.Attributes().PutStr("pci.lanes", pciLanesAttributeValue)
-	dp.Attributes().PutStr("pci.link_gen", pciLinkGenAttributeValue)
-	dp.Attributes().PutBool("hw.memory.demand_paging", hwMemoryDemandPagingAttributeValue)
-	dp.Attributes().PutStr("hw.memory.ecc", hwMemoryEccAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -920,13 +1397,18 @@ func (m *metricHwGpuInfo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwGpuInfo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwGpuInfo(cfg MetricConfig) metricHwGpuInfo {
+func newMetricHwGpuInfo(cfg HwGpuInfoMetricConfig) metricHwGpuInfo {
 	m := metricHwGpuInfo{config: cfg}
 
 	if cfg.Enabled {
@@ -937,9 +1419,10 @@ func newMetricHwGpuInfo(cfg MetricConfig) metricHwGpuInfo {
 }
 
 type metricHwGpuIo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric      // data buffer for generated metric.
+	config        HwGpuIoMetricConfig // metric config provided by user.
+	capacity      int                 // max observed number of data points added to the metric.
+	aggDataPoints []float64           // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.gpu.io metric with initial data.
@@ -951,20 +1434,57 @@ func (m *metricHwGpuIo) init() {
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwGpuIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, networkIoDirectionAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoMetricAttributeKeyNetworkIoDirection) {
+		dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -977,13 +1497,18 @@ func (m *metricHwGpuIo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwGpuIo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetDoubleValue(m.data.Sum().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwGpuIo(cfg MetricConfig) metricHwGpuIo {
+func newMetricHwGpuIo(cfg HwGpuIoMetricConfig) metricHwGpuIo {
 	m := metricHwGpuIo{config: cfg}
 
 	if cfg.Enabled {
@@ -994,9 +1519,10 @@ func newMetricHwGpuIo(cfg MetricConfig) metricHwGpuIo {
 }
 
 type metricHwGpuIoRate struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric          // data buffer for generated metric.
+	config        HwGpuIoRateMetricConfig // metric config provided by user.
+	capacity      int                     // max observed number of data points added to the metric.
+	aggDataPoints []float64               // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.gpu.io.rate metric with initial data.
@@ -1006,19 +1532,54 @@ func (m *metricHwGpuIoRate) init() {
 	m.data.SetUnit("By/s")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwGpuIoRate) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoRateMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoRateMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuIoRateMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1031,13 +1592,18 @@ func (m *metricHwGpuIoRate) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwGpuIoRate) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwGpuIoRate(cfg MetricConfig) metricHwGpuIoRate {
+func newMetricHwGpuIoRate(cfg HwGpuIoRateMetricConfig) metricHwGpuIoRate {
 	m := metricHwGpuIoRate{config: cfg}
 
 	if cfg.Enabled {
@@ -1048,9 +1614,10 @@ func newMetricHwGpuIoRate(cfg MetricConfig) metricHwGpuIoRate {
 }
 
 type metricHwGpuUtilization struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric               // data buffer for generated metric.
+	config        HwGpuUtilizationMetricConfig // metric config provided by user.
+	capacity      int                          // max observed number of data points added to the metric.
+	aggDataPoints []float64                    // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.gpu.utilization metric with initial data.
@@ -1060,21 +1627,60 @@ func (m *metricHwGpuUtilization) init() {
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwGpuUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwGpuTaskAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuUtilizationMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuUtilizationMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuUtilizationMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuUtilizationMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuUtilizationMetricAttributeKeyHwGpuTask) {
+		dp.Attributes().PutStr("hw.gpu.task", hwGpuTaskAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.gpu.task", hwGpuTaskAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1087,13 +1693,18 @@ func (m *metricHwGpuUtilization) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwGpuUtilization) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwGpuUtilization(cfg MetricConfig) metricHwGpuUtilization {
+func newMetricHwGpuUtilization(cfg HwGpuUtilizationMetricConfig) metricHwGpuUtilization {
 	m := metricHwGpuUtilization{config: cfg}
 
 	if cfg.Enabled {
@@ -1104,9 +1715,10 @@ func newMetricHwGpuUtilization(cfg MetricConfig) metricHwGpuUtilization {
 }
 
 type metricHwMemoryBandwidthLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                     // data buffer for generated metric.
+	config        HwMemoryBandwidthLimitMetricConfig // metric config provided by user.
+	capacity      int                                // max observed number of data points added to the metric.
+	aggDataPoints []float64                          // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.bandwidth.limit metric with initial data.
@@ -1118,22 +1730,63 @@ func (m *metricHwMemoryBandwidthLimit) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryBandwidthLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthLimitMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthLimitMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthLimitMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthLimitMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthLimitMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1146,13 +1799,18 @@ func (m *metricHwMemoryBandwidthLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryBandwidthLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetDoubleValue(m.data.Sum().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryBandwidthLimit(cfg MetricConfig) metricHwMemoryBandwidthLimit {
+func newMetricHwMemoryBandwidthLimit(cfg HwMemoryBandwidthLimitMetricConfig) metricHwMemoryBandwidthLimit {
 	m := metricHwMemoryBandwidthLimit{config: cfg}
 
 	if cfg.Enabled {
@@ -1163,9 +1821,10 @@ func newMetricHwMemoryBandwidthLimit(cfg MetricConfig) metricHwMemoryBandwidthLi
 }
 
 type metricHwMemoryBandwidthUtilization struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                           // data buffer for generated metric.
+	config        HwMemoryBandwidthUtilizationMetricConfig // metric config provided by user.
+	capacity      int                                      // max observed number of data points added to the metric.
+	aggDataPoints []float64                                // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.bandwidth.utilization metric with initial data.
@@ -1175,22 +1834,63 @@ func (m *metricHwMemoryBandwidthUtilization) init() {
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryBandwidthUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthUtilizationMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthUtilizationMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthUtilizationMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthUtilizationMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryBandwidthUtilizationMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1203,13 +1903,18 @@ func (m *metricHwMemoryBandwidthUtilization) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryBandwidthUtilization) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryBandwidthUtilization(cfg MetricConfig) metricHwMemoryBandwidthUtilization {
+func newMetricHwMemoryBandwidthUtilization(cfg HwMemoryBandwidthUtilizationMetricConfig) metricHwMemoryBandwidthUtilization {
 	m := metricHwMemoryBandwidthUtilization{config: cfg}
 
 	if cfg.Enabled {
@@ -1220,9 +1925,10 @@ func newMetricHwMemoryBandwidthUtilization(cfg MetricConfig) metricHwMemoryBandw
 }
 
 type metricHwMemoryFree struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric           // data buffer for generated metric.
+	config        HwMemoryFreeMetricConfig // metric config provided by user.
+	capacity      int                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.free metric with initial data.
@@ -1234,22 +1940,63 @@ func (m *metricHwMemoryFree) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryFree) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryFreeMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryFreeMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryFreeMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryFreeMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryFreeMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryFreeMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1262,13 +2009,18 @@ func (m *metricHwMemoryFree) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryFree) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryFree(cfg MetricConfig) metricHwMemoryFree {
+func newMetricHwMemoryFree(cfg HwMemoryFreeMetricConfig) metricHwMemoryFree {
 	m := metricHwMemoryFree{config: cfg}
 
 	if cfg.Enabled {
@@ -1279,9 +2031,10 @@ func newMetricHwMemoryFree(cfg MetricConfig) metricHwMemoryFree {
 }
 
 type metricHwMemoryIo struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric         // data buffer for generated metric.
+	config        HwMemoryIoMetricConfig // metric config provided by user.
+	capacity      int                    // max observed number of data points added to the metric.
+	aggDataPoints []float64              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.io metric with initial data.
@@ -1293,23 +2046,66 @@ func (m *metricHwMemoryIo) init() {
 	m.data.Sum().SetIsMonotonic(true)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryIo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string, networkIoDirectionAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoMetricAttributeKeyNetworkIoDirection) {
+		dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
-	dp.Attributes().PutStr("network.io.direction", networkIoDirectionAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1322,13 +2118,18 @@ func (m *metricHwMemoryIo) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryIo) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetDoubleValue(m.data.Sum().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryIo(cfg MetricConfig) metricHwMemoryIo {
+func newMetricHwMemoryIo(cfg HwMemoryIoMetricConfig) metricHwMemoryIo {
 	m := metricHwMemoryIo{config: cfg}
 
 	if cfg.Enabled {
@@ -1339,9 +2140,10 @@ func newMetricHwMemoryIo(cfg MetricConfig) metricHwMemoryIo {
 }
 
 type metricHwMemoryIoRate struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric             // data buffer for generated metric.
+	config        HwMemoryIoRateMetricConfig // metric config provided by user.
+	capacity      int                        // max observed number of data points added to the metric.
+	aggDataPoints []float64                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.io.rate metric with initial data.
@@ -1351,22 +2153,63 @@ func (m *metricHwMemoryIoRate) init() {
 	m.data.SetUnit("By/s")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryIoRate) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoRateMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoRateMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoRateMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoRateMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoRateMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryIoRateMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1379,13 +2222,18 @@ func (m *metricHwMemoryIoRate) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryIoRate) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryIoRate(cfg MetricConfig) metricHwMemoryIoRate {
+func newMetricHwMemoryIoRate(cfg HwMemoryIoRateMetricConfig) metricHwMemoryIoRate {
 	m := metricHwMemoryIoRate{config: cfg}
 
 	if cfg.Enabled {
@@ -1396,9 +2244,10 @@ func newMetricHwMemoryIoRate(cfg MetricConfig) metricHwMemoryIoRate {
 }
 
 type metricHwMemorySize struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric           // data buffer for generated metric.
+	config        HwMemorySizeMetricConfig // metric config provided by user.
+	capacity      int                      // max observed number of data points added to the metric.
+	aggDataPoints []int64                  // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.size metric with initial data.
@@ -1410,22 +2259,63 @@ func (m *metricHwMemorySize) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemorySize) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemorySizeMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemorySizeMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemorySizeMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemorySizeMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemorySizeMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemorySizeMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1438,13 +2328,18 @@ func (m *metricHwMemorySize) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemorySize) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemorySize(cfg MetricConfig) metricHwMemorySize {
+func newMetricHwMemorySize(cfg HwMemorySizeMetricConfig) metricHwMemorySize {
 	m := metricHwMemorySize{config: cfg}
 
 	if cfg.Enabled {
@@ -1455,9 +2350,10 @@ func newMetricHwMemorySize(cfg MetricConfig) metricHwMemorySize {
 }
 
 type metricHwMemoryUsage struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric            // data buffer for generated metric.
+	config        HwMemoryUsageMetricConfig // metric config provided by user.
+	capacity      int                       // max observed number of data points added to the metric.
+	aggDataPoints []int64                   // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.usage metric with initial data.
@@ -1469,22 +2365,63 @@ func (m *metricHwMemoryUsage) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryUsage) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUsageMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUsageMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUsageMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUsageMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUsageMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUsageMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1497,13 +2434,18 @@ func (m *metricHwMemoryUsage) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryUsage) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryUsage(cfg MetricConfig) metricHwMemoryUsage {
+func newMetricHwMemoryUsage(cfg HwMemoryUsageMetricConfig) metricHwMemoryUsage {
 	m := metricHwMemoryUsage{config: cfg}
 
 	if cfg.Enabled {
@@ -1514,9 +2456,10 @@ func newMetricHwMemoryUsage(cfg MetricConfig) metricHwMemoryUsage {
 }
 
 type metricHwMemoryUtilization struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric                  // data buffer for generated metric.
+	config        HwMemoryUtilizationMetricConfig // metric config provided by user.
+	capacity      int                             // max observed number of data points added to the metric.
+	aggDataPoints []float64                       // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.memory.utilization metric with initial data.
@@ -1526,22 +2469,63 @@ func (m *metricHwMemoryUtilization) init() {
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwMemoryUtilization) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwMemoryLocationAttributeValue string, hwMemoryTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUtilizationMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUtilizationMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUtilizationMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUtilizationMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUtilizationMetricAttributeKeyHwMemoryLocation) {
+		dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwMemoryUtilizationMetricAttributeKeyHwMemoryType) {
+		dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.memory.location", hwMemoryLocationAttributeValue)
-	dp.Attributes().PutStr("hw.memory.type", hwMemoryTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1554,13 +2538,18 @@ func (m *metricHwMemoryUtilization) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwMemoryUtilization) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwMemoryUtilization(cfg MetricConfig) metricHwMemoryUtilization {
+func newMetricHwMemoryUtilization(cfg HwMemoryUtilizationMetricConfig) metricHwMemoryUtilization {
 	m := metricHwMemoryUtilization{config: cfg}
 
 	if cfg.Enabled {
@@ -1571,9 +2560,10 @@ func newMetricHwMemoryUtilization(cfg MetricConfig) metricHwMemoryUtilization {
 }
 
 type metricHwPower struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric      // data buffer for generated metric.
+	config        HwPowerMetricConfig // metric config provided by user.
+	capacity      int                 // max observed number of data points added to the metric.
+	aggDataPoints []float64           // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.power metric with initial data.
@@ -1583,21 +2573,60 @@ func (m *metricHwPower) init() {
 	m.data.SetUnit("W")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwPower) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwPowerMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1610,13 +2639,18 @@ func (m *metricHwPower) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwPower) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwPower(cfg MetricConfig) metricHwPower {
+func newMetricHwPower(cfg HwPowerMetricConfig) metricHwPower {
 	m := metricHwPower{config: cfg}
 
 	if cfg.Enabled {
@@ -1627,9 +2661,10 @@ func newMetricHwPower(cfg MetricConfig) metricHwPower {
 }
 
 type metricHwPowerLimit struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric           // data buffer for generated metric.
+	config        HwPowerLimitMetricConfig // metric config provided by user.
+	capacity      int                      // max observed number of data points added to the metric.
+	aggDataPoints []float64                // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.power.limit metric with initial data.
@@ -1639,23 +2674,66 @@ func (m *metricHwPowerLimit) init() {
 	m.data.SetUnit("W")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwPowerLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, comIntelPowerLimitLevelAttributeValue string, comIntelPowerLimitSourceAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyComIntelPowerLimitLevel) {
+		dp.Attributes().PutStr("com.intel.power.limit.level", comIntelPowerLimitLevelAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwPowerLimitMetricAttributeKeyComIntelPowerLimitSource) {
+		dp.Attributes().PutStr("com.intel.power.limit.source", comIntelPowerLimitSourceAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
-	dp.Attributes().PutStr("com.intel.power.limit.level", comIntelPowerLimitLevelAttributeValue)
-	dp.Attributes().PutStr("com.intel.power.limit.source", comIntelPowerLimitSourceAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1668,13 +2746,18 @@ func (m *metricHwPowerLimit) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwPowerLimit) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwPowerLimit(cfg MetricConfig) metricHwPowerLimit {
+func newMetricHwPowerLimit(cfg HwPowerLimitMetricConfig) metricHwPowerLimit {
 	m := metricHwPowerLimit{config: cfg}
 
 	if cfg.Enabled {
@@ -1685,9 +2768,10 @@ func newMetricHwPowerLimit(cfg MetricConfig) metricHwPowerLimit {
 }
 
 type metricHwStatus struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric       // data buffer for generated metric.
+	config        HwStatusMetricConfig // metric config provided by user.
+	capacity      int                  // max observed number of data points added to the metric.
+	aggDataPoints []int64              // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.status metric with initial data.
@@ -1699,22 +2783,63 @@ func (m *metricHwStatus) init() {
 	m.data.Sum().SetIsMonotonic(false)
 	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
 	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwStatus) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwStateAttributeValue string, hwTypeAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Sum().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwStatusMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwStatusMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwStatusMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwStatusMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwStatusMetricAttributeKeyHwState) {
+		dp.Attributes().PutStr("hw.state", hwStateAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwStatusMetricAttributeKeyHwType) {
+		dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetIntValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.state", hwStateAttributeValue)
-	dp.Attributes().PutStr("hw.type", hwTypeAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1727,13 +2852,18 @@ func (m *metricHwStatus) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwStatus) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwStatus(cfg MetricConfig) metricHwStatus {
+func newMetricHwStatus(cfg HwStatusMetricConfig) metricHwStatus {
 	m := metricHwStatus{config: cfg}
 
 	if cfg.Enabled {
@@ -1744,9 +2874,10 @@ func newMetricHwStatus(cfg MetricConfig) metricHwStatus {
 }
 
 type metricHwTemperature struct {
-	data     pmetric.Metric // data buffer for generated metric.
-	config   MetricConfig   // metric config provided by user.
-	capacity int            // max observed number of data points added to the metric.
+	data          pmetric.Metric            // data buffer for generated metric.
+	config        HwTemperatureMetricConfig // metric config provided by user.
+	capacity      int                       // max observed number of data points added to the metric.
+	aggDataPoints []float64                 // slice containing number of aggregated datapoints at each index
 }
 
 // init fills hw.temperature metric with initial data.
@@ -1756,22 +2887,63 @@ func (m *metricHwTemperature) init() {
 	m.data.SetUnit("Cel")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
 func (m *metricHwTemperature) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, statisticAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
-	dp := m.data.Gauge().DataPoints().AppendEmpty()
+
+	dp := pmetric.NewNumberDataPoint()
 	dp.SetStartTimestamp(start)
 	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwTemperatureMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwTemperatureMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwTemperatureMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwTemperatureMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwTemperatureMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwTemperatureMetricAttributeKeyStatistic) {
+		dp.Attributes().PutStr("statistic", statisticAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
 	dp.SetDoubleValue(val)
-	dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
-	dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
-	dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
-	dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
-	dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
-	dp.Attributes().PutStr("statistic", statisticAttributeValue)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
 }
 
 // updateCapacity saves max length of data point slices that will be used for the slice capacity.
@@ -1784,13 +2956,18 @@ func (m *metricHwTemperature) updateCapacity() {
 // emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
 func (m *metricHwTemperature) emit(metrics pmetric.MetricSlice) {
 	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
 		m.updateCapacity()
 		m.data.MoveTo(metrics.AppendEmpty())
 		m.init()
 	}
 }
 
-func newMetricHwTemperature(cfg MetricConfig) metricHwTemperature {
+func newMetricHwTemperature(cfg HwTemperatureMetricConfig) metricHwTemperature {
 	m := metricHwTemperature{config: cfg}
 
 	if cfg.Enabled {
