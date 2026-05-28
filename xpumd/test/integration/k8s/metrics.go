@@ -31,13 +31,6 @@ const (
 // mutating the original.
 type labels map[string]string
 
-// with returns a new labels set that combines the original with the given extra entries.
-func (l labels) with(extra labels) labels {
-	result := maps.Clone(l)
-	maps.Copy(result, extra)
-	return result
-}
-
 func (l labels) String() string {
 	keys := slices.Sorted(maps.Keys(l))
 	parts := make([]string, len(keys))
@@ -48,16 +41,27 @@ func (l labels) String() string {
 }
 
 // metricAssertion describes a single expected Prometheus metric.
+// When Value is nil the value check is skipped (useful for metrics whose value
+// varies with timing).
 type metricAssertion struct {
-	name   string
-	labels labels
-	value  float64
-	// skip the value check, used for metrics whose value varies with timing
-	skipValue bool
+	Name   string   `yaml:"name"`
+	Labels labels   `yaml:"labels"`
+	Value  *float64 `yaml:"value"`
+}
+
+// metricAssertionList is a slice of metricAssertion values.
+type metricAssertionList []metricAssertion
+
+// assert runs every assertion in the list against the given metric families.
+func (l metricAssertionList) assert(t *testing.T, families map[string]*dto.MetricFamily) {
+	t.Helper()
+	for _, a := range l {
+		a.assert(t, families)
+	}
 }
 
 // assert is a test helper that looks up the metric and reports any errors.
-func (a *metricAssertion) assert(t *testing.T, families map[string]*dto.MetricFamily) {
+func (a metricAssertion) assert(t *testing.T, families map[string]*dto.MetricFamily) {
 	t.Helper()
 	if _, err := a.findMetric(families); err != nil {
 		t.Error(err)
@@ -65,36 +69,36 @@ func (a *metricAssertion) assert(t *testing.T, families map[string]*dto.MetricFa
 }
 
 // findMetric looks up the metric by name and labels and checks the value
-// (unless skipValue is set).
-func (a *metricAssertion) findMetric(families map[string]*dto.MetricFamily) (*dto.Metric, error) {
-	family := families[a.name]
+// (unless Value is nil).
+func (a metricAssertion) findMetric(families map[string]*dto.MetricFamily) (*dto.Metric, error) {
+	family := families[a.Name]
 	if family == nil {
-		return nil, fmt.Errorf("metric %q not found", a.name)
+		return nil, fmt.Errorf("metric %q not found", a.Name)
 	}
 
 	for _, metric := range family.Metric {
-		if !labelsMatch(metric.GetLabel(), a.labels) {
+		if !labelsMatch(metric.GetLabel(), a.Labels) {
 			continue
 		}
 		v := metricValue(metric)
-		if !a.skipValue && !floatAlmostEqual(v, a.value) {
-			return nil, fmt.Errorf("unexpected value %v (expected %v) for metric %s{%s}", v, a.value, a.name, a.labels)
+		if a.Value != nil && !floatAlmostEqual(v, *a.Value) {
+			return nil, fmt.Errorf("unexpected value %v (expected %v) for metric %s{%s}", v, *a.Value, a.Name, a.Labels)
 		}
 		return metric, nil
 	}
 
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "metric %s{%s} not found, %d candidate(s):",
-		a.name, a.labels, len(family.Metric))
+		a.Name, a.Labels, len(family.Metric))
 	for _, m := range family.Metric {
 		fmt.Fprintf(&sb, "\n  {%s}", labelPairsToLabels(m.GetLabel()))
 	}
 	return nil, fmt.Errorf("%s", sb.String())
 }
 
-// waitForMetric polls the metrics endpoint until the given assertion passes.
-// Returns all the metrics for further assertions.
-func waitForMetric(t *testing.T, endpoint string, wantMetric metricAssertion, timeout time.Duration) map[string]*dto.MetricFamily {
+// waitFor polls the metrics endpoint until the assertion passes.
+// Returns all fetched metrics for further assertions.
+func (a metricAssertion) waitFor(t *testing.T, endpoint string, timeout time.Duration) map[string]*dto.MetricFamily {
 	t.Helper()
 
 	var lastErr error
@@ -102,7 +106,7 @@ func waitForMetric(t *testing.T, endpoint string, wantMetric metricAssertion, ti
 	for time.Now().Before(deadline) {
 		families, err := fetchMetrics(endpoint)
 		if err == nil {
-			_, lastErr = wantMetric.findMetric(families)
+			_, lastErr = a.findMetric(families)
 			if lastErr == nil {
 				return families
 			}

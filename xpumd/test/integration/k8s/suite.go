@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 )
@@ -24,6 +25,9 @@ const (
 	defaultImageTag         = "latest"
 	defaultKindCluster      = "xpumd-integration-test"
 	defaultReleaseName      = "xpumd-integration-test"
+
+	helmValuesBasename       = "helm_values.yaml"
+	stubDriverConfigBasename = "stub_driver_config.yaml"
 )
 
 var (
@@ -81,9 +85,8 @@ func newSuiteConfig() (suiteConfig, error) {
 
 // testConfig holds test-case-specific settings that vary per test run.
 type testConfig struct {
-	namespace            string
-	releaseName          string
-	stubDriverConfigPath string
+	namespace   string
+	releaseName string
 
 	// Cached data populated in setup()
 	cleanupFuncs []func(*testing.T)
@@ -92,13 +95,13 @@ type testConfig struct {
 	podName      string
 }
 
-func newTestConfig(testdataDir, valuesFile, stubDriverConfigFile string) testConfig {
+func newTestConfig(t *testing.T) testConfig {
+	t.Helper()
 	ns := fmt.Sprintf("xpumd-integration-test-%d", time.Now().UnixNano())
 	return testConfig{
-		namespace:            ns,
-		releaseName:          defaultReleaseName,
-		stubDriverConfigPath: filepath.Join(testdataDir, stubDriverConfigFile),
-		helm:                 newHelmClient(ns, defaultReleaseName, filepath.Join(testdataDir, valuesFile)),
+		namespace:   ns,
+		releaseName: defaultReleaseName,
+		helm:        newHelmClient(ns, defaultReleaseName, suite.testdataFile(t, helmValuesBasename)),
 	}
 }
 
@@ -144,10 +147,9 @@ func (tc *testConfig) setup(t *testing.T) {
 
 func (tc *testConfig) createStubDriverConfig(t *testing.T) {
 	t.Helper()
-
-	data, err := os.ReadFile(tc.stubDriverConfigPath)
+	data, err := os.ReadFile(suite.testdataFile(t, stubDriverConfigBasename))
 	if err != nil {
-		t.Fatalf("failed to read stub driver config: %v", err)
+		t.Fatalf("failed to read initial stub driver config: %v", err)
 	}
 	if err := tc.k8sClient.createConfigMap(stubDriverConfigMapName, map[string]string{"stub.yaml": string(data)}); err != nil {
 		t.Fatalf("failed to create stub driver config map: %v", err)
@@ -160,15 +162,21 @@ func (tc *testConfig) cleanup(t *testing.T) {
 	}
 }
 
-// updateStubDriverConfig updates the stub driver config in the pod under test.
+// loadStubDriverConfigFrom updates the stub driver config in the pod under test.
 // It utilizes the config-writer sidecar to update the config file in-place (in
 // the shared emptyDir volume). ConfigMap is not used because the stub driver's
 // inotify watcher does not catch those, plus, the config map update to be
 // reflected in the pod's filesystem may take quite some time.
-func (tc testConfig) updateStubDriverConfig(t *testing.T, updatedPath string) {
+func (tc testConfig) loadStubDriverConfigFrom(t *testing.T, path string) {
 	t.Helper()
 	const stubConfigPath = "/etc/level-zero-stub/stub.yaml"
-	tc.k8sClient.copyFile(t, tc.podName, "stub-driver-config-writer", updatedPath, stubConfigPath)
+	tc.k8sClient.copyFile(t, tc.podName, "stub-driver-config-writer", path, stubConfigPath)
+}
+
+// loadStubDriverConfig is like loadStubDriverConfigFrom but derives the test name.
+func (tc testConfig) loadStubDriverConfig(t *testing.T) {
+	t.Helper()
+	tc.loadStubDriverConfigFrom(t, suite.testdataFile(t, stubDriverConfigBasename))
 }
 
 // forwardPort opens a port-forward tunnel to the xpumd pod.
@@ -186,4 +194,12 @@ func (s *suiteConfig) k8sClient(namespace string) (k8sClient, error) {
 		s.k8s = &kc
 	}
 	return s.k8s.withNamespace(namespace), nil
+}
+
+// testdataFile returns the path to a testdata file for the current test,
+// deriving the filename from the test name and the provided basename.
+func (s *suiteConfig) testdataFile(t *testing.T, basename string) string {
+	t.Helper()
+	name := strings.ReplaceAll(t.Name(), "/", "-")
+	return filepath.Join(s.testdataDir, name+"-"+basename)
 }

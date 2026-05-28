@@ -6,6 +6,7 @@ require (
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.67.5
+	go.yaml.in/yaml/v4 v4.0.0-rc.4
 	helm.sh/helm/v4 v4.1.4
 	k8s.io/api v0.35.5
 	k8s.io/apimachinery v0.35.5

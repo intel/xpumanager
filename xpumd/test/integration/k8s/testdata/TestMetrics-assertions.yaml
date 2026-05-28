@@ -1,0 +1,373 @@
+# SPDX-License-Identifier: MIT
+
+# Label sets used across assertions. Exists only to define common parts (with YAML
+# anchors) referenced by the assertions below.
+_templates:
+  pci_common_labels: &pci_common_labels
+    pci_bdf: "0000:05:00.0"
+    hw_id: "12345678-0000-0000-0000-000000000000"
+  dev_common_labels: &dev_common_labels
+    # YAML 1.1 merge semantics: https://yaml.org/type/merge.html
+    <<: *pci_common_labels
+    com_intel_subdevice_id: ""
+  freq_common_labels: &freq_common_labels
+    <<: *dev_common_labels
+    hw_frequency_domain: gpu
+    hw_name: freq-1
+  mem_common_labels: &mem_common_labels
+    <<: *dev_common_labels
+    hw_memory_location: device
+    hw_memory_type: hbm
+    hw_name: mem-1
+  gpu_io_common_labels: &gpu_io_common_labels
+    <<: *dev_common_labels
+    hw_name: gpu-1-pci
+  temp_status_common_labels: &temp_status_common_labels
+    <<: *pci_common_labels
+    hw_type: temperature
+
+# common covers metrics whose values are identical across all configurations/test cases.
+common:
+  metrics_assertions:
+    - name: hw_gpu_info
+      value: 1
+      labels:
+        <<: *pci_common_labels
+        com_intel_subdevice_count: "2"
+        hw_firmware_version: "0:gfx::1.2.3.4"
+        hw_gpu_type: integrated
+        hw_memory_demand_paging: "false"
+        hw_memory_ecc: configurable
+        hw_model: "Super 3000"
+        hw_name: gpu-1
+        hw_serial_number: SN-0001
+        hw_vendor: "ACME Inc."
+        pci_device_id: 0bd5
+        pci_lanes: "16"
+        pci_link_gen: "4"
+        pci_vendor_id: "8086"
+    - name: hw_memory_size_bytes
+      value: 17179869184
+      labels: *mem_common_labels
+
+InitialValues:
+  # metrics_sentinel is polled by waitFor. No value means any hw_frequency_hertz suffices.
+  metrics_sentinel:
+    name: hw_frequency_hertz
+  metrics_assertions:
+    # hw.energy
+    - name: hw_energy_joules_total
+      value: 5
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-1
+        hw_sensor_location: package
+
+    # hw.frequency
+    - name: hw_frequency_hertz
+      value: 1200000000
+      labels:
+        <<: *freq_common_labels
+        aggregation: avg
+    - name: hw_frequency_hertz
+      value: 1200000000
+      labels:
+        <<: *freq_common_labels
+        aggregation: max
+    - name: hw_frequency_hertz
+      value: 1200000000
+      labels:
+        <<: *freq_common_labels
+        aggregation: min
+
+    - name: hw_frequency_limit_hertz
+      value: 1600000000
+      labels:
+        <<: *freq_common_labels
+        hw_limit_type: max
+    - name: hw_frequency_limit_hertz
+      value: 300000000
+      labels:
+        <<: *freq_common_labels
+        hw_limit_type: min
+
+    - name: hw_frequency_request_hertz
+      value: 1400000000
+      labels: *freq_common_labels
+
+    - name: hw_frequency_samples
+      labels:
+        <<: *freq_common_labels
+        sample_status: collected
+    - name: hw_frequency_samples
+      value: 0
+      labels:
+        <<: *freq_common_labels
+        sample_status: dropped
+
+    # hw.status — no throttling or degraded state yet in the initial config
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: freq-1
+        hw_state: ok
+        hw_type: frequency
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: mem-1
+        hw_state: ok
+        hw_type: memory
+
+    # hw.status — ECC disabled in initial config
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: ecc_disabled
+        hw_type: gpu
+
+    # hw.gpu.io
+    - name: hw_gpu_io_bytes_total
+      value: 1000000
+      labels:
+        <<: *gpu_io_common_labels
+        network_io_direction: receive
+    - name: hw_gpu_io_bytes_total
+      value: 2000000
+      labels:
+        <<: *gpu_io_common_labels
+        network_io_direction: transmit
+
+    # hw.memory
+    - name: hw_memory_io_bytes_total
+      value: 1073741824
+      labels:
+        <<: *mem_common_labels
+        network_io_direction: receive
+    - name: hw_memory_io_bytes_total
+      value: 536870912
+      labels:
+        <<: *mem_common_labels
+        network_io_direction: transmit
+
+    - name: hw_memory_usage_bytes
+      value: 8589934592
+      labels: *mem_common_labels
+
+    # hw.temperature
+    - name: hw_temperature_celsius
+      value: 48
+      labels:
+        <<: *dev_common_labels
+        hw_name: temp-1
+        hw_sensor_location: global
+        statistic: max
+    - name: hw_temperature_celsius
+      value: 48
+      labels:
+        <<: *dev_common_labels
+        hw_name: temp-2
+        hw_sensor_location: gpu
+        statistic: max
+    - name: hw_temperature_celsius
+      value: 48
+      labels:
+        <<: *dev_common_labels
+        hw_name: temp-3
+        hw_sensor_location: memory
+        statistic: max
+
+    # hw.status — temperature ok in initial config
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *temp_status_common_labels
+        hw_name: temp-2
+        hw_sensor_location: gpu
+        hw_state: ok
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *temp_status_common_labels
+        hw_name: temp-3
+        hw_sensor_location: memory
+        hw_state: ok
+
+UpdatedValues:
+  # metrics_sentinel is also asserted (Value set → automatically included in
+  # the assertion run alongside the metrics_assertions list below).
+  metrics_sentinel:
+    name: hw_temperature_celsius
+    value: 75
+    labels:
+      <<: *dev_common_labels
+      hw_name: temp-1
+      hw_sensor_location: global
+      statistic: max
+  metrics_assertions:
+    # hw.energy
+    - name: hw_energy_joules_total
+      value: 10
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-1
+        hw_sensor_location: package
+
+    # hw.frequency
+    - name: hw_frequency_hertz
+      value: 800000000
+      labels:
+        <<: *freq_common_labels
+        aggregation: avg
+    - name: hw_frequency_hertz
+      value: 800000000
+      labels:
+        <<: *freq_common_labels
+        aggregation: max
+    - name: hw_frequency_hertz
+      value: 800000000
+      labels:
+        <<: *freq_common_labels
+        aggregation: min
+
+    - name: hw_frequency_limit_hertz
+      value: 1200000000
+      labels:
+        <<: *freq_common_labels
+        hw_limit_type: max
+    - name: hw_frequency_limit_hertz
+      value: 200000000
+      labels:
+        <<: *freq_common_labels
+        hw_limit_type: min
+
+    - name: hw_frequency_request_hertz
+      value: 1000000000
+      labels: *freq_common_labels
+
+    - name: hw_frequency_samples
+      labels:
+        <<: *freq_common_labels
+        sample_status: collected
+
+    # hw.status — frequency throttled by power cap; memory degraded; ECC enabled
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: freq-1
+        hw_state: throttled
+        hw_type: frequency
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *dev_common_labels
+        hw_name: freq-1
+        hw_state: ok
+        hw_type: frequency
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: mem-1
+        hw_state: degraded
+        hw_type: memory
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *dev_common_labels
+        hw_name: mem-1
+        hw_state: ok
+        hw_type: memory
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: ecc_enabled
+        hw_type: gpu
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: ecc_disabled
+        hw_type: gpu
+
+    # hw.gpu.io
+    - name: hw_gpu_io_bytes_total
+      value: 3000000
+      labels:
+        <<: *gpu_io_common_labels
+        network_io_direction: receive
+    - name: hw_gpu_io_bytes_total
+      value: 6000000
+      labels:
+        <<: *gpu_io_common_labels
+        network_io_direction: transmit
+
+    # hw.memory
+    - name: hw_memory_io_bytes_total
+      value: 2147483648
+      labels:
+        <<: *mem_common_labels
+        network_io_direction: receive
+    - name: hw_memory_io_bytes_total
+      value: 1073741824
+      labels:
+        <<: *mem_common_labels
+        network_io_direction: transmit
+
+    - name: hw_memory_usage_bytes
+      value: 12884901888
+      labels: *mem_common_labels
+
+    # hw.temperature — GPU above 105 °C threshold, memory above 85 °C threshold
+    - name: hw_temperature_celsius
+      value: 110
+      labels:
+        <<: *dev_common_labels
+        hw_name: temp-2
+        hw_sensor_location: gpu
+        statistic: max
+    - name: hw_temperature_celsius
+      value: 90
+      labels:
+        <<: *dev_common_labels
+        hw_name: temp-3
+        hw_sensor_location: memory
+        statistic: max
+
+    # hw.status — temperature warning for both GPU and memory
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *temp_status_common_labels
+        hw_name: temp-2
+        hw_sensor_location: gpu
+        hw_state: warning
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *temp_status_common_labels
+        hw_name: temp-2
+        hw_sensor_location: gpu
+        hw_state: ok
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *temp_status_common_labels
+        hw_name: temp-3
+        hw_sensor_location: memory
+        hw_state: warning
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *temp_status_common_labels
+        hw_name: temp-3
+        hw_sensor_location: memory
+        hw_state: ok
