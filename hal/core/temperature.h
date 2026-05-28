@@ -49,6 +49,9 @@ public:
 	void setShutdownMemoryTemperature(uint32_t deviceId, uint64_t value);
 };
 
+// LPDDR5 MR4 code is a 3-bit value (OP[2:0]); valid raw readings are 0..7.
+#define LPDDR5_MR4_MAX_CODE 7
+
 class LIBXPUM_API temperature : public sysman
 {
 private:
@@ -61,9 +64,15 @@ private:
 	uint64_t defaultCoreShutdownThreshold;
 	uint64_t defaultMemoryShutdownThreshold;
 
+	// LPDDR5 devices report memory temperature as an MR4 thermal refresh code
+	// (0-7) instead of a value in Celsius. Detected at init and used by the
+	// memory-temperature getters to convert MR4 -> max-of-range Celsius.
+	bool hasLpddr5Memory;
+
 	void loadTemperatureThresholds();
 	void loadThresholdSection(const nlohmann::json &thresholdsJson, const std::string &key,
 							  std::function<void(uint32_t, uint64_t)> setter);
+	ze_result_t detectLpddr5Memory(zes_device_handle_t device);
 
 public:
 	temperature();
@@ -87,5 +96,11 @@ public:
 
 	// Helper functions for JSON threshold loading
 	static uint32_t parseDeviceId(const std::string &hexKey);
+
+	// Convert a JEDEC LPDDR5 MR4 thermal refresh code (OP[2:0], 0..7) to the
+	// maximum temperature of its associated range, in Celsius. Codes outside
+	// [0, LPDDR5_MR4_MAX_CODE], non-finite values, and non-integer values are
+	// returned unchanged (treated as already-converted Celsius readings).
+	static double mr4CodeToCelsius(double rawValue);
 };
 #endif

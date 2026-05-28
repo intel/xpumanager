@@ -138,6 +138,19 @@ if get_option('with_tests')
     )
     test('logger_tests', logger_test)
     message('Logger unit tests enabled')
+
+    temperature_test = executable(
+        'temperature_test',
+        files('test/temperature_test.cpp'),
+        include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+        link_with: libxpum_static,
+        dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+        link_args: is_linux ? ['-pie'] : [],
+        build_by_default: true,
+        install: false,
+    )
+    test('temperature_tests', temperature_test)
+    message('Temperature unit tests enabled')
 else
     message('Skipping logger tests (pass -Dwith_tests=true to enable)')
 endif
