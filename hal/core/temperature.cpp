@@ -6,8 +6,10 @@
 
 #include "temperature.h"
 #include "debug.h"
+#include <cmath>
 #include <map>
 #include <memory>
+#include <vector>
 
 /**
  * @brief Helper function to parse device ID from hexadecimal string
@@ -111,7 +113,7 @@ temperature::temperature()
 	: temperatureCount(0), temperatureHandles(nullptr), thresholds(new TemperatureThresholds()),
 	  defaultCoreThrottleThreshold(CORE_THROTTLE_THRESHOLD_DEFAULT),
 	  defaultCoreShutdownThreshold(CORE_SHUTDOWN_THRESHOLD_DEFAULT),
-	  defaultMemoryShutdownThreshold(MEMORY_SHUTDOWN_THRESHOLD_DEFAULT)
+	  defaultMemoryShutdownThreshold(MEMORY_SHUTDOWN_THRESHOLD_DEFAULT), hasLpddr5Memory(false)
 {
 	loadTemperatureThresholds();
 }
@@ -411,6 +413,12 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 			continue;
 		}
 
+		// LPDDR5 reports memory temperature as an MR4 thermal code (0..7);
+		// convert to Celsius.
+		if (type == ZES_TEMP_SENSORS_MEMORY && hasLpddr5Memory) {
+			temp = mr4CodeToCelsius(temp);
+		}
+
 		// Filter abnormal temperatures
 		if (temp < MAX_REASONABLE_TEMP_CELSIUS) {
 			tileTemperatures[tileId] = temp;
@@ -451,7 +459,12 @@ ze_result_t temperature::getCoreTemp(double *coreTemp)
 ze_result_t temperature::getMemoryTemp(double *memTemp)
 {
 	TRACING();
-	return getTemp(ZES_TEMP_SENSORS_MEMORY, memTemp);
+	ze_result_t result = getTemp(ZES_TEMP_SENSORS_MEMORY, memTemp);
+	// LPDDR5 reports an MR4 thermal code (0..7); convert to Celsius.
+	if (result == ZE_RESULT_SUCCESS && hasLpddr5Memory && memTemp != nullptr) {
+		*memTemp = mr4CodeToCelsius(*memTemp);
+	}
+	return result;
 }
 
 /**
@@ -528,7 +541,14 @@ ze_result_t temperature::getMemoryThreshold(zes_device_handle_t device, uint32_t
 ze_result_t temperature::init(zes_device_handle_t device)
 {
 	TRACING();
-	return enumTemperatureDomains(device);
+	ze_result_t result = enumTemperatureDomains(device);
+	// Detect LPDDR5 memory so memory-temp getters can convert the MR4 thermal
+	// code reported by the device into a Celsius value. Best-effort: the result
+	// is intentionally ignored so a detection failure does not mask the
+	// enumeration result; on failure the LPDDR5 flag stays false and behavior
+	// is unchanged for non-LPDDR5 devices.
+	(void)detectLpddr5Memory(device);
+	return result;
 }
 
 /**
@@ -560,4 +580,100 @@ ze_result_t temperature::zesRun(UNUSED zes_device_handle_t device)
 	}
 
 	return result;
+}
+/**
+ * @brief Convert a JEDEC LPDDR5 MR4 thermal refresh code to Celsius.
+ *
+ * LPDDR5 devices expose temperature through Mode Register 4 (MR4) OP[2:0] as
+ * a 3-bit refresh-rate code (0..7) that maps to a temperature range rather
+ * than a single Celsius value. Per the JIRA, the agreed-upon convention for
+ * pcode and the software stack is to report the maximum temperature of the
+ * range associated with each code. This table follows the standard JEDEC
+ * JESD209-5 LPDDR5 MR4 thermal mapping.
+ *
+ *  MR4  Refresh Rate     Range (°C)        Reported (max of range)
+ *  ---  ---------------  ----------------  -----------------------
+ *   0   reserved/low     T < low limit                       0
+ *   1   4x               T <= 45                            45
+ *   2   2x               45 < T <= 85                       85
+ *   3   1x (nominal)     85 < T <= 95                       95
+ *   4   0.5x             95 < T <= 105                     105
+ *   5   0.25x           105 < T <= 110                     110
+ *   6   0.25x + derate  110 < T <= 125                     125
+ *   7   reserved/high    T > high limit                    125
+ *
+ * Values outside [0, LPDDR5_MR4_MAX_CODE] are returned unchanged so that
+ * callers passing an already-converted Celsius value are not double-mapped.
+ *
+ * @param rawValue The raw value returned by zesTemperatureGetState for an
+ *                 LPDDR5 memory sensor.
+ * @return Maximum temperature (Celsius) of the MR4 range, or rawValue if the
+ *         input is not a recognized MR4 code.
+ */
+double temperature::mr4CodeToCelsius(double rawValue)
+{
+	static const double kMr4ToCelsius[LPDDR5_MR4_MAX_CODE + 1] = {
+		0.0,   // 0: low temperature operating limit exceeded
+		45.0,  // 1: 4x refresh
+		85.0,  // 2: 2x refresh
+		95.0,  // 3: 1x refresh (nominal)
+		105.0, // 4: 0.5x refresh
+		110.0, // 5: 0.25x refresh
+		125.0, // 6: 0.25x refresh with derating
+		125.0, // 7: high temperature operating limit exceeded
+	};
+
+	// Only convert values that look like an MR4 code (integer 0..7).
+	if (!std::isfinite(rawValue) || rawValue < 0.0 || rawValue > (double)LPDDR5_MR4_MAX_CODE) {
+		return rawValue;
+	}
+	double rounded = std::round(rawValue);
+	if (std::fabs(rawValue - rounded) > 1e-9) {
+		return rawValue;
+	}
+	uint32_t code = (uint32_t)rounded;
+	return kMr4ToCelsius[code];
+}
+
+/**
+ * @brief Detect whether any memory module on the device is LPDDR5.
+ *
+ * When LPDDR5 memory is present, memory temperature readings arrive as MR4
+ * thermal codes rather than Celsius values and require conversion via
+ * mr4CodeToCelsius().
+ *
+ * @param device Sysman device handle
+ * @return ZE_RESULT_SUCCESS on successful enumeration; the LPDDR5 flag is
+ *         cleared on any failure so behavior remains unchanged for
+ *         non-LPDDR5 devices.
+ */
+ze_result_t temperature::detectLpddr5Memory(zes_device_handle_t device)
+{
+	hasLpddr5Memory = false;
+
+	uint32_t count = 0;
+	ze_result_t result = zesDeviceEnumMemoryModules(device, &count, nullptr);
+	if (result != ZE_RESULT_SUCCESS || count == 0) {
+		DBG("No memory modules to inspect for LPDDR5 (0x{:X})\n", result);
+		return result;
+	}
+
+	std::vector<zes_mem_handle_t> handles(count);
+	result = zesDeviceEnumMemoryModules(device, &count, handles.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to retrieve memory module handles (0x{:X})\n", result);
+		return result;
+	}
+
+	for (uint32_t i = 0; i < count; ++i) {
+		zes_mem_properties_t props = {};
+		props.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+		if (zesMemoryGetProperties(handles[i], &props) == ZE_RESULT_SUCCESS && props.type == ZES_MEM_TYPE_LPDDR5) {
+			hasLpddr5Memory = true;
+			DBG("LPDDR5 memory detected; MR4 -> Celsius conversion enabled\n");
+			break;
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
