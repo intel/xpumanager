@@ -9,6 +9,9 @@ IMAGE_REPO_BASE ?= registry.local/level-zero-go
 IMAGE_TAG ?= latest
 EXAMPLE_APPS := list-sysman events-sysman
 
+# PIE + full RELRO, drop all symbols
+GO_FLAGS := -buildmode=pie --ldflags="-bindnow -s -w"
+
 # --- Helper targets ---
 
 .PHONY: help
@@ -19,8 +22,8 @@ help:
 
 .PHONY: build
 build:
-	$(Q)go build -o bin/list-sysman ./list-sysman/.
-	$(Q)go build -o bin/events-sysman ./events-sysman/.
+	$(Q)go build $(GO_FLAGS) -o bin/list-sysman ./list-sysman/.
+	$(Q)go build $(GO_FLAGS) -o bin/events-sysman ./events-sysman/.
 
 .PHONY: images
 # "label=disable" is needed for Dockerfile "RUN --mount" on hosts using Podman + SELinux
