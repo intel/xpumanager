@@ -45,20 +45,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 EOF
 
 if [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
-    USER_FLAG="--user $(id -u):$(id -g)"
+    USER="$(id -u):$(id -g)"
 else
     echo "Probably running inside a container, running container as root"
+    USER="0"
 fi
 
 GOMODCACHE=$(go env GOMODCACHE 2>/dev/null || true)
 GOMODCACHE_MOUNT=()
-if [ -n "${GOMODCACHE}" -a -d "${GOMODCACHE}" ]; then
+if [ -n "${GOMODCACHE}" ] && [ -d "${GOMODCACHE}" ]; then
     echo "Mounting GOMODCACHE from host: ${GOMODCACHE}"
     GOMODCACHE_MOUNT=(-v "${GOMODCACHE}:/go/pkg/mod")
 fi
 
 docker run --rm \
-    ${USER_FLAG} \
+    --user "${USER}" \
     "${GOMODCACHE_MOUNT[@]}" \
     -e HOME=/go \
     -v "${SCRIPT_DIR}/../..:/go/src" \
