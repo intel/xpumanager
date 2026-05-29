@@ -14,6 +14,7 @@
     - [Kind cluster](#kind-cluster)
     - [Containerd-based cluster](#containerd-based-cluster)
   - [Deploy with Helm](#deploy-with-helm)
+- [Driver stack updates](#driver-stack-updates)
 
 ## Building
 
@@ -257,3 +258,11 @@ make test-integration-existing-cluster IMAGE_REPOSITORY=ghcr.io/intel/xpumanager
 
 > [!IMPORTANT]
 > Ensure that the container image is present in/reachable by the cluster.
+
+## Driver stack updates
+
+XPUMD [helper scripts](../scripts/README.md) and Docker files validate
+directly downloaded (driver) DEB and ZIP files against hard-coded
+checksums.  If DEB / ZIP file versions are changed, build will error
+out after outputting the new checksums (so they can be updated after
+validation).
