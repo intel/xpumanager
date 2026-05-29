@@ -142,6 +142,7 @@ Alternatively, the following dependencies can be manually cloned, built, and ins
 1. https://github.com/intel/igsc
 2. https://github.com/intel/metee
 3. https://github.com/oneapi-src/level-zero
+4. https://github.com/CLIUtils/CLI11 (v2.6.2 or later)
 
 ### Build steps (using Conan)
 
