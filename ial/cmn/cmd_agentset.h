@@ -13,7 +13,7 @@
 class cmdAgentSet : public cmds
 {
 public:
-	cmdAgentSet() { STRCPY_S(name, MAX_PATH, "agentset"); };
+	cmdAgentSet() { name = "agentset"; };
 	~cmdAgentSet(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);

@@ -31,6 +31,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 	static constexpr auto indexAliases = std::to_array<std::string_view>({"gpu_index"});
 	static constexpr auto uuidAliases = std::to_array<std::string_view>({"gpu_uuid"});
 	static constexpr auto serialAliases = std::to_array<std::string_view>({"gpu_serial"});
+	static constexpr auto pciBusIdAliases = std::to_array<std::string_view>({"gpu_bus_id"});
 	static constexpr auto metrics = std::to_array<QueryMetric>({
 		{
 			.name = "timestamp",
@@ -160,6 +161,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 		},
 		{
 			.name = "pci.bus_id",
+			.aliases = pciBusIdAliases,
 			.unit = "",
 			.description = "PCI bus address as 'domain:bus:device.function', in hex.",
 			.source = MetricSource::Static,

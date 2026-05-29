@@ -8,22 +8,19 @@
 #define _CLI_H
 
 #include <cmds.h>
-#include <functional>
+#include <memory>
 
-// Enum to represent OS types
 enum class OSTYPE
 {
 	WINDOWS,
 	LINUX,
-	BOTH,
+	BOTH
 };
 
-/* Structure to hold function and OS type */
 struct function_entry
 {
-	std::function<cmds *()> createFunc;
-	DAEMONCAP daemonCap;
-	OSTYPE osType;
+	std::unique_ptr<cmds> (*createFunc)(); // factory: returns a new command instance
+	OSTYPE osType;						   // LINUX, WINDOWS, or BOTH
 };
 
 #endif

@@ -47,7 +47,7 @@ struct listgpuCmdStruct
 class cmdListgpu : public cmds
 {
 public:
-	cmdListgpu() { STRCPY_S(name, MAX_PATH, "listgpu"); }
+	cmdListgpu() { name = "listgpu"; }
 	~cmdListgpu() {}
 	void help(HELP helpType = FULL_HELP) override;
 	int run(arg_struct *args) override;

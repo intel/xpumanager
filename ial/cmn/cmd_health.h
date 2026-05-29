@@ -58,7 +58,7 @@ class cmdHealth : public cmds
 {
 
 public:
-	cmdHealth() { STRCPY_S(name, MAX_PATH, "health"); };
+	cmdHealth() { name = "health"; };
 	~cmdHealth(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t getTemperatureHealth(devInfo *d, nlohmann::ordered_json *jsonObj, const std::string &jsonKey,

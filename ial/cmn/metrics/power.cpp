@@ -225,9 +225,13 @@ constexpr auto ENERGY_CONSUMED =
 // power.limit     = current enforced power limit (sustained, with fallback to best available)
 // power.max_limit = maximum configurable power limit from device properties
 
+constexpr auto POWER_LIMIT_ALIASES =
+	std::to_array<std::string_view>({"power.management.limit", "power.management.limit.default"});
+
 constexpr auto LIMIT = QueryMetric{
 	// NOLINT(readability-identifier-naming)
 	.name = "power.limit",
+	.aliases = POWER_LIMIT_ALIASES,
 	.unit = "W",
 	.description =
 		"Currently enforced power limit; reports the sustained limit when available, with fallback to burst or peak",

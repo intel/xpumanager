@@ -14,14 +14,6 @@
 #include <unordered_map>
 #include <vector>
 
-enum DAEMONCAP
-{
-	DAEMONLESS,
-	DAEMON,
-	BOTH,
-};
-
-extern DAEMONCAP curDaemonMode;
 extern std::string progName;
 
 enum GAP
@@ -74,11 +66,11 @@ struct arg_struct
 class cmds
 {
 protected:
-	char name[MAX_PATH];
+	std::string name;
 
 public:
 	cmds(){};
-	char *getName() { return name; }
+	const std::string &getName() { return name; }
 	virtual ~cmds(){};
 	void printHelp(std::vector<helpCmd> helpList, HELP helpType = FULL_HELP);
 	virtual void help(HELP helpType = FULL_HELP) = 0;

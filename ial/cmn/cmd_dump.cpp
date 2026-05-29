@@ -5,1975 +5,1159 @@
  */
 
 #include "cmd_dump.h"
-#include "debug.h"
+#include "cmds.h"
+#include "logger/logger.h"
+#include "device.h"
+#include "metrics_registry.h"
+#include "table_builder.h"
+#include "ze_api.h"
 #include <CLI/CLI.hpp>
-#include <assert.h>
-#include <temperature.h>
-#include <frequency.h>
-#include <memory.h>
-#include <power.h>
-#include <powerexp.h>
-#include <enginegroup.h>
-#include <ras.h>
-#include <pci.h>
-#include <format>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <thread>
-#include <atomic>
+#include <nlohmann/json.hpp>
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <charconv>
 #include <chrono>
-#include <unordered_set>
+#include <cstddef>
+#include <cstdint>
+#include <fstream>
+#include <format>
+#include <functional>
+#include <ios>
 #include <memory>
+#include <optional>
+#include <ranges>
+#include <span>
+#include <string>
+#include <string_view>
+#include <system_error>
+#include <thread>
+#include <unordered_map>
+#include <variant>
+#include <utility>
+#include <vector>
 
-static std::unordered_map<dumpCmdType, dumpCmdStruct> dumpCmds = {
-	{dumpCmdType::DUMP_HELP, {}},	  {dumpCmdType::DUMP_JSON, {}},	   {dumpCmdType::DUMP_DEVICE, {}},
-	{dumpCmdType::DUMP_TILE, {}},	  {dumpCmdType::DUMP_METRICS, {}}, {dumpCmdType::DUMP_FILE, {}},
-	{dumpCmdType::DUMP_IMS, {}},	  {dumpCmdType::DUMP_TIME, {}},	   {dumpCmdType::DUMP_DATE, {}},
-	{dumpCmdType::DUMP_INTERVAL, {}}, {dumpCmdType::DUMP_NUMBER, {}},
-};
+namespace {
 
-static std::unordered_map<int, dumpCmdSubStruct> dumpMetrics = {
-	{dumpCmdSubType::DUMP_GPU_UTILIZATION, {&cmdDump::gpuUtilization, "GPU Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_POWER, {&cmdDump::gpuPower, "GPU Power (W)", false}},
-	{dumpCmdSubType::DUMP_GPU_FREQUENCY, {&cmdDump::gpuFrequency, "GPU Frequency (MHz)", true}},
-	{dumpCmdSubType::DUMP_GPU_CORE_TEMPERATURE, {&cmdDump::gpuCoreTemperature, "GPU Core Temperature (C)", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_TEMPERATURE,
-	 {&cmdDump::gpuMemoryTemperature, "GPU Memory Temperature (C)", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_UTILIZATION,
-	 {&cmdDump::gpuMemoryUtilization, "GPU Memory Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_READ, {&cmdDump::gpuMemoryRead, "GPU Memory Read (kB/s)", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_WRITE, {&cmdDump::gpuMemoryWrite, "GPU Memory Write (kB/s)", false}},
-	{dumpCmdSubType::DUMP_GPU_ENERGY_CONSUMED, {&cmdDump::gpuEnergyConsumed, "GPU Energy Consumed (J)", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_ACTIVE, {&cmdDump::gpuEuArrayActive, "GPU EU Array Active (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_STALL, {&cmdDump::gpuEuArrayStall, "GPU EU Array Stall (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_IDLE, {&cmdDump::gpuEuArrayIdle, "GPU EU Array Idle (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_RESET_COUNTER,
-	 {&cmdDump::gpuEuArrayResetCounter, "GPU EU Array Reset Counter", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_PROGRAMMING_ERRORS,
-	 {&cmdDump::gpuEuArrayProgrammingErrors, "GPU EU Array Programming Errors", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_DRIVER_ERRORS,
-	 {&cmdDump::gpuEuArrayDriverErrors, "GPU EU Array Driver Errors", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_CORRECTABLE,
-	 {&cmdDump::gpuEuArrayCacheErrorsCorrectable, "GPU EU Array Cache Errors Correctable", false}},
-	{dumpCmdSubType::DUMP_GPU_EU_ARRAY_CACHE_ERRORS_UNCORRECTABLE,
-	 {&cmdDump::gpuEuArrayCacheErrorsUncorrectable, "GPU EU Array Cache Errors Uncorrectable", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_BANDWIDTH_UTILIZATION,
-	 {&cmdDump::gpuMemoryBandwidthUtilization, "GPU Memory Bandwidth Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_USED, {&cmdDump::gpuMemoryUsed, "GPU Memory Used (MB)", false}},
-	{dumpCmdSubType::DUMP_PCIE_READ, {&cmdDump::pcieRead, "PCIe Read (kB/s)", false}},
-	{dumpCmdSubType::DUMP_PCIE_WRITE, {&cmdDump::pcieWrite, "PCIe Write (kB/s)", false}},
-	{dumpCmdSubType::DUMP_UNSUPPORTED0, {&cmdDump::unsupported, "Unsupported", false}},
-	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_UTILIZATION,
-	 {&cmdDump::computeEngineUtilization, "Compute Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_UTILIZATION,
-	 {&cmdDump::renderEngineUtilization, "Render Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_MEDIA_DECODER_ENGINE_UTILIZATION,
-	 {&cmdDump::mediaDecoderEngineUtilization, "Media Decoder Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_MEDIA_ENCODER_ENGINE_UTILIZATION,
-	 {&cmdDump::mediaEncoderEngineUtilization, "Media Encoder Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_UTILIZATION,
-	 {&cmdDump::copyEngineUtilization, "Copy Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_MEDIA_ENHANCEMENT_ENGINE_UTILIZATION,
-	 {&cmdDump::mediaEnhancementEngineUtilization, "Media Enhancement Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_3D_ENGINE_UTILIZATION, {&cmdDump::engineUtilization, "3D Engine Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_CORRECTABLE,
-	 {&cmdDump::gpuMemoryErrorsCorrectable, "GPU Memory Errors Correctable", false}},
-	{dumpCmdSubType::DUMP_GPU_MEMORY_ERRORS_UNCORRECTABLE,
-	 {&cmdDump::gpuMemoryErrorsUncorrectable, "GPU Memory Errors Uncorrectable", false}},
-	{dumpCmdSubType::DUMP_COMPUTE_ENGINE_GROUP_UTILIZATION,
-	 {&cmdDump::computeEngineGroupUtilization, "Compute Engine Group Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_RENDER_ENGINE_GROUP_UTILIZATION,
-	 {&cmdDump::renderEngineGroupUtilization, "Render Engine Group Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_GROUP_UTILIZATION,
-	 {&cmdDump::mediaEngineGroupUtilization, "Media Engine Group Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_COPY_ENGINE_GROUP_UTILIZATION,
-	 {&cmdDump::copyEngineGroupUtilization, "Copy Engine Group Utilization (%)", false}},
-	{dumpCmdSubType::DUMP_THROTTLE_REASON, {&cmdDump::throttleReason, "Throttle Reason", false}},
-	{dumpCmdSubType::DUMP_MEDIA_ENGINE_FREQUENCY,
-	 {&cmdDump::mediaEngineFrequency, "Media Engine Frequency (MHz)", false}},
-};
+// Parsing utilities
 
 /**
- * @brief Adds help commands to the provided help list.
+ * @brief Parse an integer from a string_view using std::from_chars.
  *
- * @param helpType A enum to specify the type of help message to print.
+ * @tparam T      Integral type to parse into.
+ * @param[in] str Input string; must consist solely of the integer representation
+ *                with no leading or trailing whitespace.
+ * @retval std::optional<T>  The parsed value on success.
+ * @retval std::nullopt      When the string is not a valid integer or contains
+ *         unconsumed trailing characters after the number.
  */
-void cmdDump::help(HELP helpType)
+template <typename T> [[nodiscard]] std::optional<T> parseInteger(std::string_view str) noexcept
 {
-	TRACING();
-	std::vector<helpCmd> helpList;
-	int32_t i = 0;
-
-	helpList.push_back(helpCmd(TITLE, "Dump device statistics data"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: %s dump [Options]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s dump -d [deviceIds] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
-				progName.c_str()));
-	helpList.push_back(helpCmd(
-		HEADING, "%s dump -d [pciBdfAddress] -t [deviceTileIds] -m [metricsIds] -i [timeInterval] -n [dumpTimes]",
-		progName.c_str()));
-	helpList.push_back(helpCmd(
-		HEADING, "%s dump -d [deviceIds] -m [metricsIds] --file [filename] --ims [milliseconds] --time [seconds]",
-		progName.c_str()));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Options:"));
-	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
-	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device IDs or PCI BDF addresses to query. The "
-										"value of \"-1\" means all devices"));
-	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The device tile IDs to query. If the device has "
-										"only one tile, this parameter should not be specified"));
-	helpList.push_back(helpCmd(
-		HEADING, "-m,--metrics                Metrics type to collect raw data, options. Separated by a comma"));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU Utilization (%), GPU active time of the elapsed time, per tile or "
-							   "device.",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING2, "Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. GPU Power (W), per tile or device", i++));
-	helpList.push_back(helpCmd(
-		SUB_HEADING,
-		"%d. GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles",
-		i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU Core Temperature (Celsius Degree), per tile or device. "
-							   "Device-level is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU Memory Temperature (Celsius Degree), per tile or device. "
-							   "Device-level is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU Memory Utilization (%), per tile or device. Device-level is the "
-							   "average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(
-		SUB_HEADING,
-		"%d. GPU Memory Read (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
-	helpList.push_back(helpCmd(
-		SUB_HEADING,
-		"%d. GPU Memory Write (kB/s), per tile or device. Device-level is the sum value of tiles for multi-tiles",
-		i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. GPU Energy Consumed (J), per tile or device", i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING,
-				"%d. GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively "
-				"executing instructions.",
-				i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING2, "Per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during "
-							   "which the EUs were stalled",
-							   i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING2, "At least one thread is loaded, but the EU is stalled. Per tile or device."));
-	helpList.push_back(helpCmd(SUB_HEADING2, "Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(
-		helpCmd(SUB_HEADING,
-				"%d. GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were "
-				"scheduled on a core.",
-				i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING2, "Per tile or device. Device-level is the average value of tiles for multi-tiles"));
-	helpList.push_back(
-		helpCmd(SUB_HEADING,
-				"%d. Reset Counter, per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
-	helpList.push_back(helpCmd(
-		SUB_HEADING,
-		"%d. Programming Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING,
-				"%d. Driver Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Cache Errors Correctable, per tile or device. Device-level is the sum "
-							   "value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Cache Errors Uncorrectable, per tile or device. Device-level is the sum "
-							   "value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU Memory Bandwidth Utilization (%), per tile or device. "
-							   "Device-level is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(
-		SUB_HEADING,
-		"%d. GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Read (kB/s), per device", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. PCIe Write (kB/s), per device", i++));
-	helpList.push_back(
-		helpCmd(SUB_HEADING, "%d. Metric unsupported - when combined with other metrics it returns N/A", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Compute engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Render engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Media decoder engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Media encoder engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Copy engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Media enhancement engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. 3D engine utilizations (%), per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. GPU Memory Errors Correctable, per tile or device. Other non-compute correctable "
-							   "errors are also included.",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING2, "Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(
-		helpCmd(SUB_HEADING,
-				"%d. GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable "
-				"errors are also included.",
-				i++));
-	helpList.push_back(helpCmd(SUB_HEADING2, "Device-level is the sum value of tiles for multi-tiles"));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Compute engine group utilization (%), per tile or device. "
-							   "Device-level is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Render engine group utilization (%), per tile or device. Device-level "
-							   "is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Media engine group utilization (%), per tile or device. Device-level "
-							   "is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Copy engine group utilization (%), per tile or device. Device-level "
-							   "is the average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(SUB_HEADING, "%d. Throttle reason, per tile", i++));
-	helpList.push_back(helpCmd(SUB_HEADING,
-							   "%d. Media Engine Frequency (MHz), per tile or device. Device-level is the "
-							   "average value of tiles for multi-tiles",
-							   i++));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-i                          The interval (in seconds) to dump the device "
-										"statistics to screen. Default value: 1 second"));
-	helpList.push_back(helpCmd(HEADING, "-n                          Number of the device statistics dump to screen. "
-										"The dump will never be ended if this parameter is not specified"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "--file                      Dump the raw statistics to the file"));
-	helpList.push_back(helpCmd(HEADING,
-							   "--ims                       The interval (in milliseconds) to dump the device "
-							   "statistics to file for high-frequency monitoring. Its value should be 10 to 1000"));
-	helpList.push_back(helpCmd(SUB_HEADING, "The recommended metrics types for high-frequency sampling: GPU "
-											"power, GPU frequency, GPU utilization"));
-	helpList.push_back(helpCmd(SUB_HEADING, "GPU temperature, GPU memory read/write/bandwidth, GPU PCIe read/write, "
-											"GPU engine utilizations"));
-	helpList.push_back(helpCmd(HEADING, "--time                      Dump total time in seconds"));
-	helpList.push_back(helpCmd(HEADING, "--date                      Show date in timestamp"));
-	helpList.push_back(helpCmd(BLANK));
-
-	printHelp(helpList, helpType);
-	helpList.clear();
+	T value{};
+	const auto result = std::from_chars(str.data(), str.data() + str.size(), value);
+	if (result.ec == std::errc{} && result.ptr == str.data() + str.size()) {
+		return value;
+	}
+	return std::nullopt;
 }
 
 /**
- * @brief Executes the metrics command based on the provided arguments.
+ * @brief Extract a named flag and its value from an argv span in a single pass.
  *
- * @param d A pointer to the device information structure.
+ * Supports two syntactic forms:
+ *  - @c "--flag=value" / @c "-flag=value"  (equals-delimited)
+ *  - @c "--flag value" / @c "-flag value"  (space-separated)
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * @param[in] argv       Span of raw argv pointers (not including @c argv[0]).
+ * @param[in] flagShort  Short form of the flag (e.g. @c "-lms"); pass an empty
+ *                       string_view to ignore the short form.
+ * @param[in] flagLong   Long form of the flag (e.g. @c "--loop-ms"); pass an empty
+ *                       string_view to ignore the long form.
+ * @return A pair where:
+ *   - @c first:  The remaining argument strings with the matched flag and its value removed.
+ *   - @c second: The flag's value if found; std::nullopt otherwise.
  */
-THREAD_RET cmdDump::metrics(void *args)
+[[nodiscard]] std::pair<std::vector<std::string>, std::optional<std::string>>
+filterArgvAndExtract(std::span<char *const> argv, std::string_view flagShort, std::string_view flagLong)
 {
-	TRACING();
-	threadArgs *metricArgs = (threadArgs *)args;
-	cmdDump *cmdDumpInstance = metricArgs->cmdDumpInstance;
-	devInfo *d = metricArgs->d;
-	ze_result_t result = ZE_RESULT_SUCCESS;
-	UNUSED_VAR(result);
-	bool found = false;
+	std::vector<std::string> result;
+	std::optional<std::string> extracted;
 
-	// Iterate through the dump commands and execute the metrics function for each
-	for (const auto &cmd : dumpMetrics) {
-		if (cmd.first == stoi(metricArgs->cmdName) && cmd.second.func != nullptr) {
-			found = true;
-			/* Run the command only if this is not an iGPU or this command is available for iGPUs */
-			if (!d->dev->isIGPU() || cmd.second.availableForIGPU) {
-				result = (cmdDumpInstance->*cmd.second.func)(d, &metricArgs->outputLine, &metricArgs->td);
-			} else {
-				// If the command is not available for iGPUs, set outputLine to N/A
-				metricArgs->outputLine = "N/A";
+	for (std::size_t i = 0; i < argv.size(); ++i) {
+		const std::string_view arg{argv[i]};
+		bool skip = false;
+
+		// Check --flag=value or -flag=value
+		for (const auto flag : {flagLong, flagShort}) {
+			if (!flag.empty() && arg.starts_with(flag) && arg.size() > flag.size() && arg[flag.size()] == '=') {
+				extracted = std::string{arg.substr(flag.size() + 1)};
+				skip = true;
+				break;
 			}
+		}
+		if (skip) {
+			continue;
+		}
+
+		// Check --flag value or -flag value (space-separated)
+		if (arg == flagLong || arg == flagShort) {
+			if (i + 1 < argv.size()) {
+				extracted = std::string{argv[++i]};
+			}
+			continue;
+		}
+
+		result.emplace_back(arg);
+	}
+
+	return {result, extracted};
+}
+
+/**
+ * @brief Map from legacy numeric metric ID to canonical registry field name.
+ *
+ * Preserved for backward compatibility so that @c "dump -m 0,1,2" continues to work.
+ * Unsupported legacy IDs (21, 27, 28) are absent from the map and produce an error log
+ * entry in translateMetricQuery().
+ */
+const std::unordered_map<int, std::string_view> LEGACY_METRIC_NAMES = {
+	{0, "utilization.gpu"},					// GPU Utilization (%)
+	{1, "power.draw"},						// GPU Power (W)
+	{2, "clocks.current.graphics"},			// GPU Frequency (MHz)
+	{3, "temperature.gpu"},					// GPU Core Temperature (C)
+	{4, "temperature.memory"},				// GPU Memory Temperature (C)
+	{5, "utilization.memory"},				// GPU Memory Utilization (%)
+	{6, "memory.read.bandwidth"},			// GPU Memory Read (kB/s)
+	{7, "memory.write.bandwidth"},			// GPU Memory Write (kB/s)
+	{8, "energy.consumed"},					// GPU Energy Consumed (J)
+	{9, "eu.active"},						// EU Array Active (%)
+	{10, "eu.stall"},						// EU Array Stall (%)
+	{11, "eu.idle"},						// EU Array Idle (%)
+	{12, "ras.reset"},						// Reset Counter
+	{13, "ras.programming.errors"},			// Programming Errors
+	{14, "ras.driver.errors"},				// Driver Errors
+	{15, "ras.cache.errors.correctable"},	// Cache Errors Correctable
+	{16, "ras.cache.errors.uncorrectable"}, // Cache Errors Uncorrectable
+	{17, "memory.bandwidth.utilization"},	// Memory Bandwidth Utilization (%)
+	{18, "memory.used"},					// Memory Used (MiB)
+	{19, "pcie.rx.throughput.kbs"},			// PCIe Read (kB/s)
+	{20, "pcie.tx.throughput.kbs"},			// PCIe Write (kB/s)
+	// 21: Xe Link Throughput -- not supported
+	{22, "utilization.compute"}, // Compute Engine Utilization (%)
+	{23, "utilization.render"},	 // Render Engine Utilization (%)
+	{24, "utilization.media"},	 // Media Decoder Engine Utilization (%)
+	{25, "utilization.media"},	 // Media Encoder Engine Utilization (%)
+	{26, "utilization.copy"},	 // Copy Engine Utilization (%)
+	// 27: Media Enhancement Engine -- not supported
+	// 28: 3D Engine Utilization -- not supported
+	{29, "ras.non_compute.errors.correctable"},	  // Memory Errors Correctable
+	{30, "ras.non_compute.errors.uncorrectable"}, // Memory Errors Uncorrectable
+	{31, "utilization.compute"},				  // Compute Engine Group Utilization (%)
+	{32, "utilization.render"},					  // Render Engine Group Utilization (%)
+	{33, "utilization.media"},					  // Media Engine Group Utilization (%)
+	{34, "utilization.copy"},					  // Copy Engine Group Utilization (%)
+	{35, "clocks.throttle.reason"},				  // Throttle Reason
+	{36, "clocks.current.media"},				  // Media Engine Frequency (MHz)
+};
+
+/**
+ * @brief Translate a user-supplied metric query string into canonical registry group names.
+ *
+ * The input is a comma-separated list of tokens, each of which may be:
+ *  - A legacy numeric ID (0–36): mapped via LEGACY_METRIC_NAMES.
+ *  - A single-character alias (@c u, @c p, @c t, @c c, @c m, @c e, @c x): expanded to the
+ *    corresponding group name.
+ *  - A multi-character alias combination (e.g. @c "pu"): expanded to @c "POWER,UTILIZATION".
+ *  - A bare group name or registry field name: passed through unchanged.
+ *
+ * Unsupported legacy IDs produce an error log entry and are silently dropped.
+ *
+ * @param[in] query  Comma-separated metric query string supplied by the user.
+ * @return           Translated comma-separated query string suitable for metrics::resolveQuery().
+ *                   Returns an empty string if all tokens were invalid or the input was empty.
+ */
+std::string translateMetricQuery(const std::string &query)
+{
+	static constexpr auto charAliases = std::to_array<std::pair<char, std::string_view>>({
+		{'u', "UTILIZATION"},
+		{'p', "POWER"},
+		{'t', "TEMPERATURE"},
+		{'c', "CLOCK"},
+		{'m', "MEMORY"},
+		{'e', "ECC"},
+		{'x', "EU_ARRAY"},
+	});
+
+	std::string result;
+	for (auto &&rng : std::string_view{query} | std::views::split(',')) {
+		std::string_view sv{rng.begin(), rng.end()};
+		const auto b = sv.find_first_not_of(" \t");
+		if (b == std::string_view::npos) {
+			continue;
+		}
+		sv = sv.substr(b, sv.find_last_not_of(" \t") - b + 1);
+
+		std::string token;
+		if (const auto n = parseInteger<int>(sv); n.has_value()) {
+			const auto it = LEGACY_METRIC_NAMES.find(*n);
+			if (it == LEGACY_METRIC_NAMES.end()) {
+				ERR("Legacy metric {} is not supported; skipping.\n", *n);
+				continue;
+			}
+			token = it->second;
+		} else {
+			// Expand multi-char alias (e.g., "pu" = "POWER,UTILIZATION")
+			std::string expandedAlias;
+			for (const char ch : sv) {
+				auto it = std::ranges::find(charAliases, ch, &std::pair<char, std::string_view>::first);
+				if (it == charAliases.end()) {
+					expandedAlias.clear();
+					break;
+				}
+				if (!expandedAlias.empty()) {
+					expandedAlias += ',';
+				}
+				expandedAlias += it->second;
+			}
+			token = expandedAlias.empty() ? std::string{sv} : expandedAlias;
+		}
+
+		if (!result.empty()) {
+			result += ',';
+		}
+		result += token;
+	}
+	return result;
+}
+
+/**
+ * @brief Build aligned "Group:" / "Alias:" display lines for the dump help text.
+ *
+ * Uses TableBuilder with space-character borders to produce two auto-sized rows
+ * whose columns align across the full list of known metric groups:
+ * @verbatim
+ *   Group:  UTILIZATION  TEMPERATURE  POWER  CLOCK  MEMORY  PCI  ECC  EU_ARRAY  FAN  ALL
+ *   Alias:  u            t            p      c      m            e    x         f
+ * @endverbatim
+ *
+ * @return  Vector of non-blank strings, typically two elements (Group row then Alias row).
+ */
+std::vector<std::string> buildGroupAliasLines()
+{
+	static constexpr auto groups = std::to_array<std::pair<std::string_view, std::string_view>>({
+		{"UTILIZATION", "u"},
+		{"TEMPERATURE", "t"},
+		{"POWER", "p"},
+		{"CLOCK", "c"},
+		{"MEMORY", "m"},
+		{"PCI", ""},
+		{"ECC", "e"},
+		{"EU_ARRAY", "x"},
+		{"FAN", "f"},
+		{"ALL", ""},
+	});
+
+	TableBuilder tb;
+	tb.configure(TableBuilder::TableConfig{.borderChar = ' ', .cornerChar = ' ', .verticalChar = ' '})
+		.suppressHeaderSeparator()
+		.suppressHeaderColumnSeparators()
+		.suppressDataColumnSeparators()
+		.enableAutoSizing();
+
+	// One label column + one column per group (all with empty headers).
+	tb.addColumn("", Align::Left);
+	for (std::size_t i = 0; i < std::size(groups); ++i) {
+		tb.addColumn("", Align::Left);
+	}
+
+	{
+		std::vector<std::string> row{"Group:"};
+		for (const auto &[g, a] : groups) {
+			row.emplace_back(g);
+		}
+		tb.addRowFromContainer(row);
+	}
+	{
+		std::vector<std::string> row{"Alias:"};
+		for (const auto &[g, a] : groups) {
+			row.emplace_back(a);
+		}
+		tb.addRowFromContainer(row);
+	}
+
+	std::vector<std::string> lines;
+	for (const auto &rng : tb.toString() | std::views::split('\n')) {
+		const std::string_view line{rng.begin(), rng.end()};
+		if (line.find_first_not_of(' ') != std::string_view::npos) {
+			lines.emplace_back(line);
+		}
+	}
+	return lines;
+}
+
+/**
+ * @brief Parsed command-line options for the @c dump / @c dmon command.
+ *
+ * All @c std::optional fields are absent (@c std::nullopt) when the corresponding
+ * flag was not supplied on the command line.
+ */
+struct DumpOpts
+{
+	bool json = false;
+	bool date = false;
+	bool csvFormat = false; /**< --format=csv: force CSV output even on a TTY */
+	bool noheader = false;	/**< --format=...,noheader: suppress the header row */
+	bool nounits = false;	/**< --format=...,nounits: strip unit suffixes from column headers */
+	std::string device;
+	std::optional<std::string> tile;
+	std::optional<std::string> metrics;
+	std::optional<std::string> file;
+	std::optional<std::string> time;
+	std::optional<std::string> interval;
+	std::optional<std::string> number;
+};
+
+/**
+ * @brief Resolved sampling-timing parameters produced by parseSamplingTiming().
+ *
+ * Fields with a sentinel value of @c -1 indicate "unlimited / not specified".
+ */
+struct SamplingTiming
+{
+	std::chrono::milliseconds interval{DEFAULT_INTERVAL};
+	int64_t totalTimeSeconds = -1; // -1 = unlimited
+	int iterations = -1;		   // -1 = unlimited
+};
+
+/**
+ * @brief Validate, translate, and resolve a --metrics argument.
+ *
+ * Rejects dot-notation field names that belong to @c --query-gpu, then delegates to
+ * translateMetricQuery() followed by metrics::resolveQuery().
+ *
+ * @pre   @p metricsArg must not be empty.
+ * @param[in] metricsArg  Raw value of the --metrics option.
+ * @return  Non-owning pointers to the resolved QueryMetric descriptors, in query order.
+ *          Returns an empty vector on any validation or resolution failure (error already logged).
+ */
+std::vector<const metrics::QueryMetric *> resolveMetricsArg(const std::string &metricsArg)
+{
+	for (auto &&rng : std::string_view{metricsArg} | std::views::split(',')) {
+		std::string_view sv{rng.begin(), rng.end()};
+		const auto b = sv.find_first_not_of(" \t");
+		if (b == std::string_view::npos) {
+			continue;
+		}
+		sv = sv.substr(b, sv.find_last_not_of(" \t") - b + 1);
+		if (!parseInteger<int>(sv).has_value() && sv.find('.') != std::string_view::npos) {
+			ERR("'{}' looks like a field name. Use '--query-gpu={}' for field-name queries.\n", sv, metricsArg.c_str());
+			ERR("Use group names with --metrics (e.g. '--metrics POWER' or '--metrics pu').\n");
+			return {};
+		}
+	}
+	const std::string translated = translateMetricQuery(metricsArg);
+	if (translated.empty()) {
+		return {};
+	}
+	auto fields = metrics::resolveQuery(translated);
+	if (fields.empty()) {
+		ERR("No valid metrics matched: '{}'", metricsArg.c_str());
+		ERR("Use group names like 'POWER' or 'pu'. Run with --help for details.\n");
+	}
+	return fields;
+}
+
+/**
+ * @brief Parse and validate the sampling-timing options from DumpOpts.
+ *
+ * Validation rules applied in order:
+ *  - @c --number: positive integer.
+ *  - @c --interval: positive integer, at most MAX_INTERVAL seconds.
+ *  - @c --loop-ms (@p loopMs): positive integer in ms; overrides @c --interval when present.
+ *  - @c --time: total wall-clock duration in seconds; may not be combined with @c --number.
+ *
+ * @param[in] opts    Fully-parsed DumpOpts from parseDumpCLI().
+ * @param[in] loopMs  Optional value of the @c --loop-ms flag, pre-extracted
+ *                    by filterArgvAndExtract() before CLI11 parsing.
+ * @retval std::optional<SamplingTiming>  Populated timing struct on success.
+ * @retval std::nullopt  If any validation error is detected (error already logged).
+ */
+std::optional<SamplingTiming> parseSamplingTiming(const DumpOpts &opts, const std::optional<std::string> &loopMs)
+{
+	SamplingTiming t;
+	if (opts.number.has_value()) {
+		if (const auto n = parseInteger<int>(*opts.number); n && *n > 0) {
+			t.iterations = *n;
+		} else {
+			ERR("Invalid value for --number: '{}'", opts.number->c_str());
+			return std::nullopt;
+		}
+	}
+
+	if (opts.interval.has_value()) {
+		if (const auto sec = parseInteger<int>(*opts.interval);
+			sec && *sec > 0 && std::chrono::seconds{*sec} <= MAX_INTERVAL) {
+			t.interval = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds{*sec});
+		} else {
+			ERR("Invalid value for --interval: '{}'", opts.interval->c_str());
+			return std::nullopt;
+		}
+	}
+
+	if (loopMs.has_value()) {
+		if (const auto ms = parseInteger<int>(*loopMs); ms && *ms > 0) {
+			t.interval = std::chrono::milliseconds{*ms};
+		} else {
+			ERR("Invalid value for --loop-ms: '{}'", *loopMs);
+			return std::nullopt;
+		}
+	}
+
+	if (opts.time.has_value()) {
+		if (opts.number.has_value()) {
+			ERR("--time and --number cannot be used together.\n");
+			return std::nullopt;
+		}
+		if (const auto parsed = parseInteger<int64_t>(*opts.time);
+			parsed && *parsed >= 1 && *parsed <= MAX_DUMP_TIME_SECONDS) {
+			t.totalTimeSeconds = *parsed;
+		} else {
+			ERR("Invalid value for --time: '{}'", opts.time->c_str());
+			return std::nullopt;
+		}
+	}
+
+	return t;
+}
+
+/**
+ * @brief Aggregate return type for parseDumpCLI() on a successful parse.
+ */
+struct ParsedArgs
+{
+	DumpOpts opts;
+	std::optional<std::string> loopMs;
+};
+
+/**
+ * @brief Parse the @c dump / @c dmon command-line arguments using CLI11.
+ *
+ * Handles special cases before handing off to CLI11:
+ *  - Bare @c "help" keyword (e.g. @c "xpu-smi dump help"): calls @p showHelp and returns 0.
+ *  - @c --loop-ms (multi-character flag pre-extracted before CLI11 parsing): stored in
+ *    ParsedArgs::loopMs.
+ *
+ * @param[in] cmdName   The canonical command name (@c "dump" or @c "dmon"), used as the
+ *                      CLI11 app name for error messages.
+ * @param[in] showHelp  Callable invoked to display help text on @c -h / @c --help or the
+ *                      bare @c "help" keyword.
+ * @param[in] args      Raw argument vector from the command dispatcher.
+ * @retval std::variant<ParsedArgs, int>
+ *         - ParsedArgs                           on a successful parse.
+ *         - int (ZE_RESULT_SUCCESS)              when help was displayed.
+ *         - int (ZE_RESULT_ERROR_INVALID_ARGUMENT) on a CLI11 parse error.
+ */
+std::variant<ParsedArgs, int> parseDumpCLI(std::string_view cmdName, const std::function<void()> &showHelp,
+										   arg_struct *args)
+{
+	ParsedArgs parsed;
+
+	CLI::App sub{std::string{cmdName}};
+	sub.set_help_flag("-h,--help", "Display help");
+	sub.add_flag("-j,--json", parsed.opts.json, "Output in JSON format");
+	sub.add_option("--device,--id", parsed.opts.device, "Device index or PCI BDF address (-1 = all)")
+		->each([&](const std::string &val) {
+			if (const auto n = parseInteger<int>(val); n && *n == -1) {
+				parsed.opts.device.clear();
+			}
+		});
+	sub.add_option("--tile", parsed.opts.tile, "Tile ID");
+	sub.add_option("--metrics,--select", parsed.opts.metrics, "Metric query");
+	sub.add_option("-f,--file,--filename", parsed.opts.file, "Output file path");
+	sub.add_option("--time", parsed.opts.time, "Total dump duration in seconds");
+	sub.add_flag("--date", parsed.opts.date, "Include date in timestamp");
+	sub.add_option("--interval,--delay,--loop", parsed.opts.interval, "Sampling interval in seconds (default: 1)");
+	sub.add_option("--number,--count", parsed.opts.number, "Number of samples");
+	std::string formatStr;
+	sub.add_option("--format", formatStr, "Output format: [csv][,noheader][,nounits]");
+
+	// Skip command name (argv[1]) if it matches "dump" or "dmon" (our primary or alias name)
+	int argStart = 1;
+	if (args->argc > 1) {
+		std::string_view const cmd{args->argv[1]};
+		if (cmd == "dump" || cmd == "dmon") {
+			argStart = 2;
+		}
+	}
+
+	// Handle bare "help" keyword (e.g., "xpu-smi dump help" or "xpu-smi dmon help")
+	if (args->argc == argStart + 1) {
+		std::string_view const lastArg{args->argv[argStart]};
+		if (lastArg == "help") {
+			showHelp();
+			return static_cast<int>(ZE_RESULT_SUCCESS);
+		}
+	}
+
+	// Pre-extract and filter --loop-ms before CLI11 to avoid ambiguity with --loop
+	auto [filteredArgs, loopMsValue] =
+		filterArgvAndExtract(std::span{args->argv + 1, static_cast<std::size_t>(args->argc - 1)}, "", "--loop-ms");
+	parsed.loopMs = loopMsValue;
+
+	// Build argv pointers for CLI11 parsing (must use stable storage)
+	std::vector<char *> filteredArgv;
+	for (auto &arg : filteredArgs) {
+		filteredArgv.push_back(arg.data());
+	}
+
+	try {
+		sub.parse(static_cast<int>(filteredArgv.size()), filteredArgv.data());
+	} catch (const CLI::CallForHelp &) {
+		showHelp();
+		return static_cast<int>(ZE_RESULT_SUCCESS);
+	} catch (const CLI::ParseError &e) {
+		ERR("{}\n", e.what());
+		return static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT);
+	}
+
+	for (const auto tok : std::string_view{formatStr} | std::views::split(',')) {
+		const std::string_view t{tok.begin(), tok.end()};
+		if (t == "csv") {
+			parsed.opts.csvFormat = true;
+		} else if (t == "noheader") {
+			parsed.opts.noheader = true;
+		} else if (t == "nounits" || t == "nounit") {
+			parsed.opts.nounits = true;
+		}
+	}
+
+	return parsed;
+}
+
+/**
+ * @brief Format the current wall-clock time as a CSV-ready timestamp string.
+ *
+ * The time point is floored to millisecond precision before formatting.
+ *
+ * @param[in] showDate  When @c true, prefix the time component with @c "YYYY/MM/DD ".
+ * @return  Formatted string: @c "HH:MM:SS.mmm" or @c "YYYY/MM/DD HH:MM:SS.mmm".
+ */
+std::string getTimestamp(bool showDate)
+{
+	auto now = std::chrono::system_clock::now();
+	auto nowMs = std::chrono::floor<std::chrono::milliseconds>(now);
+	return showDate ? std::format("{:%Y/%m/%d %H:%M:%S}", nowMs) : std::format("{:%H:%M:%S}", nowMs);
+}
+
+/**
+ * @brief MetricOutput sink that formats and writes one CSV line per device per sample.
+ *
+ * Implements the MetricOutput concept expected by metrics::runMetricsWithCaches():
+ * @c onBegin, @c onBeginDevice, @c onMetric, @c onEndDevice, @c onEnd.
+ *
+ * Each row is flushed to disk immediately after @c onEndDevice() to support live file
+ * tailing. When @c useFile is @c false, output is sent to stdout via @c PRINT.
+ *
+ * @note  Set @c prependTimestamp = @c false and @c prependDeviceId = @c false when
+ *        those columns are provided as explicit metric fields (e.g. @c --query-gpu).
+ */
+struct DumpOutput
+{
+	bool showDate;
+	bool useFile;
+	std::ofstream *dumpFile;
+	bool json{false};			 // emit JSON Lines instead of CSV
+	bool prependTimestamp{true}; // false for --query-gpu (timestamp is an explicit field)
+	bool prependDeviceId{true};	 // false for --query-gpu (index is an explicit field)
+	bool aligned{false};		 // true when stdout is a TTY: use space-padded columns instead of CSV
+	bool noheader{false};		 // suppress header row entirely
+	bool nounits{false};		 // strip unit suffixes from column headers
+
+	DumpOutput(bool date, bool toFile, std::ofstream *file) : showDate{date}, useFile{toFile}, dumpFile{file} {}
+
+	void onBegin(std::span<const metrics::QueryMetric *> fields)
+	{
+		fieldDefs.assign(fields.begin(), fields.end());
+
+		// Build the column formatter for use in onEndDevice() regardless of header suppression.
+		if (!json) {
+			alignedFormatter.emplace();
+			if (prependTimestamp) {
+				alignedFormatter->addColumn("Timestamp", showDate ? 23 : 12, Align::Left);
+			}
+			if (prependDeviceId) {
+				alignedFormatter->addColumn("DeviceId", 8, Align::Right);
+			}
+			for (const auto *f : fieldDefs) {
+				const std::string label =
+					(!nounits && !f->unit.empty()) ? std::format("{} ({})", f->name, f->unit) : std::string{f->name};
+				alignedFormatter->addColumn(label, std::max(static_cast<int>(label.size()), 6), Align::Right);
+			}
+			alignedFormatter->lockWidths();
+		}
+
+		// Emit header unless suppressed (file headers written by run(); JSON has none).
+		if (json || noheader || headerEmitted || useFile) {
+			headerEmitted = true;
+			return;
+		}
+		headerEmitted = true;
+		emit(aligned ? alignedFormatter->headerLine() : alignedFormatter->headerLine(TableBuilder::LineStyle::Csv));
+	}
+
+	void onBeginDevice(devInfo &dev)
+	{
+		currentDev = &dev;
+		row.clear();
+	}
+
+	void onMetric([[maybe_unused]] const metrics::QueryMetric &f, const std::string &val) { row.push_back(val); }
+
+	void onEndDevice([[maybe_unused]] devInfo & /*unused*/)
+	{
+		if (json) {
+			nlohmann::ordered_json obj;
+			if (prependTimestamp) {
+				obj["timestamp"] = getTimestamp(showDate);
+			}
+			if (prependDeviceId) {
+				obj["device"] = currentDev->index;
+			}
+
+			const bool hasEnvelope = prependTimestamp || prependDeviceId;
+			nlohmann::ordered_json metricsHolder;
+			nlohmann::ordered_json &metricsTarget = hasEnvelope ? metricsHolder : obj;
+
+			for (auto i : std::views::iota(std::size_t{0}, std::min(row.size(), fieldDefs.size()))) {
+				metricsTarget[std::string{fieldDefs[i]->name}] = row[i];
+			}
+			if (hasEnvelope) {
+				obj["metrics"] = std::move(metricsHolder);
+			}
+			emit(obj.dump());
+			return;
+		}
+
+		std::vector<std::string> rowValues;
+		if (prependTimestamp) {
+			rowValues.push_back(getTimestamp(showDate));
+		}
+		if (prependDeviceId) {
+			rowValues.push_back(std::to_string(currentDev->index));
+		}
+		for (const auto &v : row) {
+			rowValues.push_back(v);
+		}
+		emit(aligned ? alignedFormatter->rowLine(rowValues)
+					 : alignedFormatter->rowLine(rowValues, TableBuilder::LineStyle::Csv));
+	}
+
+	void onEnd() {}
+
+private:
+	void emit(const std::string &line) const
+	{
+		if (useFile && (dumpFile != nullptr)) {
+			*dumpFile << line << "\n";
+			dumpFile->flush();
+		} else {
+			PRINT("{}", line);
+		}
+	}
+
+	std::vector<std::string> row;
+	std::vector<const metrics::QueryMetric *> fieldDefs;
+	std::optional<TableBuilder> alignedFormatter;
+	bool headerEmitted{false};
+	devInfo *currentDev{nullptr};
+};
+
+/**
+ * @brief Continuously re-sample metrics in loop mode for @c --query-gpu.
+ *
+ * The first sample has already been emitted by cmdDump::runQuery() before this function
+ * is called.  This function emits the second and subsequent samples at @p loopInterval
+ * intervals until @p count samples have been emitted in total, or the user presses
+ * @c q / @c Q / ESC / Ctrl-C.
+ *
+ * @pre   @p fields must be non-empty.
+ * @pre   @p deviceList and @p caches must have equal size and be pre-populated by the caller.
+ * @pre   @p count must be 0 (infinite) or a positive integer.
+ *
+ * @param[in]     out           Metric output sink (taken by value; owned by this function).
+ * @param[in]     fields        Span of resolved QueryMetric descriptors to sample.
+ * @param[in,out] deviceList    Device handles; mutated by populateMetricCacheContinuous().
+ * @param[in]     caches        Initial metric caches from the first sample (moved in).
+ * @param[in]     loopInterval  Delay between consecutive sample collections.
+ * @param[in]     count         Total number of samples to emit (0 = unlimited).
+ * @retval ZE_RESULT_SUCCESS  Always; per-metric errors are logged by the metric layer.
+ *
+ * @note  The keyboard-input thread uses the @c std::jthread stop token for cooperative
+ *        cancellation; the thread exits after the next key press once a stop is requested.
+ */
+ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetric *> fields,
+							 std::vector<devInfo> &deviceList, std::vector<metrics::MetricCache> caches,
+							 std::chrono::milliseconds loopInterval, int count)
+{
+	int remaining = count; // 0 = infinite
+	if (remaining == 1) {
+		return ZE_RESULT_SUCCESS; // already emitted the only sample
+	}
+	if (remaining > 1) {
+		--remaining; // first sample was already emitted
+	}
+
+	std::jthread inputThread([&](const std::stop_token &stoken) {
+		char ch = 0;
+		while (!stoken.stop_requested()) {
+			ch = GETCH();
+			if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
+				return;
+			}
+		}
+	});
+
+	const std::size_t numDevices = deviceList.size();
+	auto stoken = inputThread.get_stop_token();
+
+	while (!stoken.stop_requested()) {
+		std::this_thread::sleep_for(loopInterval);
+
+		for (std::size_t i = 0; i < numDevices; ++i) {
+			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i]);
+		}
+
+		metrics::runMetricsWithCaches(out, fields, std::span<devInfo>(deviceList),
+									  std::span<const metrics::MetricCache>(caches));
+
+		if (remaining > 0 && --remaining == 0) {
+			inputThread.request_stop();
 			break;
 		}
 	}
 
-	if (!found) {
-		ERR("The following metric ID was not expected: '{}'.\n", metricArgs->cmdName.c_str());
-		ERR("Run with --help for more information.\n");
-		// Error already reported
-		metricArgs->outputLine = "N/A";
-	}
-	return 0;
-}
-
-/**
- * @brief Converts GPU frequency throttle reason flags to human-readable string
- *
- * This function analyzes the frequency throttle reason flags from the Level Zero
- * Sysman API and returns a descriptive string explaining why the GPU frequency
- * is being throttled. It checks various throttle reasons including power limits,
- * thermal limits, current limits, and software/hardware constraints.
- *
- * @param flags Frequency throttle reason flags from zes_freq_throttle_reason_flags_t
- * @return std::string Human-readable description of the throttle reason
- */
-std::string cmdDump::getFreqThrottleString(zes_freq_throttle_reason_flags_t flags)
-{
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP)
-		return "frequency throttled due to average power excursion.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP) == ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP)
-		return "frequency throttled due to burst power excursion.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT) == ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT)
-		return "frequency throttled due to current excursion.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT) == ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT)
-		return "frequency throttled due to thermal excursion.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT) == ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT)
-		return "frequency throttled due to power supply assertion.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE)
-		return "frequency throttled due to software supplied frequency range.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE) == ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE)
-		return "frequency throttled due to a sub block that has a lower frequency.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL) == ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL)
-		return "frequency throttled due to thermal conditions.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_POWER) == ZES_FREQ_THROTTLE_REASON_FLAG_POWER)
-		return "frequency throttled due to power constraints.";
-	if ((flags & ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE) == ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE)
-		return "frequency throttled due to voltage excursion.";
-	return "Not Throttled";
-}
-
-/**
- * @brief Helper function to get the GPU power.
- *
- * @param d A pointer to the device information structure.
- * @param gpuPower A pointer to store the GPU power value.
- * @param timeStamp A pointer to store the timestamp of the power reading.
- * @param forGPU A boolean value to indicate if the power reading is for the GPU or the entire card.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuPowerIter(devInfo *d, uint64_t *gpuPower, uint64_t *timeStamp, bool forGPU)
-{
-	TRACING();
-	power *p = d->dev->getPower();
-	if (p == nullptr) {
-		ERR("Failed to get power handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = p->getEnergy(gpuPower, timeStamp, forGPU);
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get GPU power: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
+	// std::jthread automatically joins on destruction - no need to manually join/detach
+	RESTORE_TERMINAL();
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Helper function to get utilization on an engine type
+ * @brief Main continuous-sampling loop for the @c dump command.
  *
- * @param d A pointer to the device information structure.
- * @param typeTable Span of engine group types to search for utilization.
- * @param outputLine A pointer to store the formatted utilization percentage string.
- * @param td A pointer to thread-specific data holding utilization samples.
+ * Initialises metric caches, emits the first sample after one @p timing.interval window,
+ * then loops until a stop condition is met:
+ *  - @p timing.iterations samples have been emitted, or
+ *  - @p timing.totalTimeSeconds wall-clock seconds have elapsed, or
+ *  - The user presses @c q / @c Q / ESC / Ctrl-C (interactive TTY only).
  *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
+ * A keyboard-input thread is spawned only when appropriate: stdin is a TTY, no fixed
+ * sample count was requested, and no fixed total duration was set.
+ *
+ * @pre   @p fields must be non-empty.
+ * @pre   If @p useFile is @c true, @p dumpFile must already be open for writing.
+ *
+ * @param[in]     out        Metric output sink (taken by value; owned by this function).
+ * @param[in]     fields     Span of resolved QueryMetric descriptors to sample.
+ * @param[in,out] deviceList Device handles; mutated each iteration by the metric layer.
+ * @param[in]     timing     Resolved sampling-timing parameters (interval, count, duration).
+ * @param[in]     useFile    @c true when output is directed to @p dumpFile instead of stdout.
+ * @param[in,out] dumpFile   Output file stream; closed on function exit when @p useFile is @c true.
+ * @retval ZE_RESULT_SUCCESS  Always; per-metric errors are logged by the metric layer.
+ *
+ * @note  A keyboard-input thread is spawned only for interactive TTY sessions without a
+ *        fixed sample count or duration. The thread is detached rather than joined because
+ *        GETCH() blocks indefinitely; cooperative cancellation uses @c std::stop_source /
+ *        @c std::stop_token so the main loop and input thread share a single quit signal.
  */
-ze_result_t cmdDump::utilization(devInfo *d, std::span<const zes_engine_group_t> typeTable, std::string *outputLine,
-								 threadData *td)
+ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *> fields,
+						  std::vector<devInfo> &deviceList, const SamplingTiming &timing, bool useFile,
+						  std::ofstream &dumpFile)
 {
-	TRACING();
-	double utilizationDiff = 0.0;
-
-	enginegroup *eg = d->dev->getEngineGroup();
-	if (eg == nullptr) {
-		ERR("Failed to get engine group\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	const auto [result, activeTime, timestamp] = eg->getUtilization(typeTable);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	td->u[0].utilization = activeTime;
-	td->u[0].timeStamp = timestamp;
-
-	if (td->u[1].timeStamp) {
-		utilizationDiff = ((td->u[0].timeStamp - td->u[1].timeStamp) == 0)
-							  ? 0
-							  : (double)((double)td->u[0].utilization - (double)td->u[1].utilization) * 100 /
-									(double)(td->u[0].timeStamp - td->u[1].timeStamp);
-		*outputLine = std::format("{:.2f}", utilizationDiff);
-	}
-
-	memcpy(&td->u[1], &td->u[0], sizeof(utilData));
-
-	return ZE_RESULT_SUCCESS;
-}
-
-ze_result_t cmdDump::utilization(devInfo *d, zes_engine_group_t type, std::string *outputLine, threadData *td)
-{
-	return utilization(d, std::span<const zes_engine_group_t>(&type, 1), outputLine, td);
-}
-
-/**
- * @brief Executes the GPU utilization command when user requests dump -m 0
- *
- * GPU Utilization (%), GPU active time of the elapsed time, per tile or device. Device-level is the average value of
- * tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_ALL, outputLine, td);
-}
-
-/**
- * @brief Executes the GPU power command when user requests dump -m 1.
- *
- * GPU Power (W), per tile or device.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuPower(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-
-	powerExp *pwrExp = d->dev->getPowerExp();
-	if (pwrExp != nullptr && pwrExp->isPowerExpEnabled()) {
-		std::vector<power_usage_exp_t> powerUsages;
-		ze_result_t result = pwrExp->getPowerUsage(powerUsages);
-		if (result == ZE_RESULT_SUCCESS) {
-			for (const auto &usage : powerUsages) {
-				if (usage.domain == ZES_POWER_DOMAIN_CARD) {
-					*outputLine = std::format("{:.2f}", static_cast<double>(usage.averagePower) / 1000.0);
-					return ZE_RESULT_SUCCESS;
-				}
-			}
-		}
-	}
-
-	// Call gpuPowerIter to get the first power reading. The last parameter is false to indicate it's not for GPU,
-	// instead it is for the entire card
-	ze_result_t result = gpuPowerIter(d, &td->p[0].power, &td->p[0].timeStamp, false);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	if (td->p[1].timeStamp) {
-		// Calculate the power difference. First check if the time difference is zero to avoid division by zero
-		// Next, calculate the power difference by checking the current power (in gpuPower[0]) against
-		// the last power (in gpuPower[1]) and the time difference (in timeStamp[0] - timeStamp[1])
-		double gpuPowerDiff =
-			(td->p[0].timeStamp - td->p[1].timeStamp) == 0
-				? 0
-				: (double)(td->p[0].power - td->p[1].power) / (double)(td->p[0].timeStamp - td->p[1].timeStamp);
-
-		*outputLine = std::format("{:.2f}", gpuPowerDiff);
-	}
-
-	// Update the last power and timestamp values for the next iteration
-	memcpy(&td->p[1], &td->p[0], sizeof(powerData));
-
-	return result;
-}
-
-/**
- * @brief Executes the GPU frequency command when user requests dump -m 2.
- *
- * GPU Frequency (MHz), per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuFrequency(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	double curFreq = 0.0;
-
-	frequency *fq = d->dev->getFrequency();
-	if (fq == nullptr) {
-		ERR("Failed to get frequency handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = fq->getCurFreq(&curFreq, ZES_FREQ_DOMAIN_GPU);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU frequency: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::format("{:.2f}", curFreq);
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU core temperature command when user requests dump -m 3.
- *
- * GPU Core Temperature (C), per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuCoreTemperature(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	double coreTemp = 0.0;
-
-	temperature *t = d->dev->getTemperature();
-	if (t == nullptr) {
-		ERR("Failed to get temperature handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = t->getCoreTemp(&coreTemp);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get core temperature: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::format("{:.2f}", coreTemp);
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory temperature command when user requests dump -m 4.
- *
- * GPU Memory Temperature (C), per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuMemoryTemperature(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	double memoryTemp = 0.0;
-
-	temperature *t = d->dev->getTemperature();
-	if (t == nullptr) {
-		ERR("Failed to get temperature handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = t->getMemoryTemp(&memoryTemp);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory temperature: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::format("{:.2f}", memoryTemp);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory utilization command when user requests dump -m 5.
- *
- * GPU Memory Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuMemoryUtilization(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	double memoryUtilization = 0;
-
-	memory *mem = d->dev->getMemory();
-	if (mem == nullptr) {
-		ERR("Failed to get memory handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = mem->getMemoryUsed(nullptr, &memoryUtilization);
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::format("{:.2f}", memoryUtilization);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory read command when user requests dump -m 6.
- *
- * GPU Memory Read (kB/s), per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuMemoryRead(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-
-	memory *mem = d->dev->getMemory();
-	if (mem == nullptr) {
-		ERR("Failed to get memory handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = mem->getMemoryRW(&td->m[0].read, nullptr, nullptr, &td->m[0].timeStamp);
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	if (td->m[1].timeStamp) {
-		double memoryReadDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
-									? 0
-									: (double)(1000000 * (td->m[0].read - td->m[1].read)) /
-										  (double)(td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
-
-		*outputLine = std::format("{:d}", (int)memoryReadDiff);
-	}
-
-	// Update the last memory read and timestamp values for the next iteration
-	td->m[1] = td->m[0];
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory write command when user requests dump -m 7.
- *
- * GPU Memory Write (kB/s), per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuMemoryWrite(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-
-	memory *mem = d->dev->getMemory();
-	if (mem == nullptr) {
-		ERR("Failed to get memory handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = mem->getMemoryRW(nullptr, &td->m[0].write, nullptr, &td->m[0].timeStamp);
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get GPU memory write: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	if (td->m[1].timeStamp) {
-		double memoryWriteDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
-									 ? 0
-									 : (double)(1000000 * (td->m[0].write - td->m[1].write)) /
-										   (double)(td->m[0].timeStamp - td->m[1].timeStamp) / 1024;
-
-		*outputLine = std::format("{:d}", (int)memoryWriteDiff);
-	}
-
-	// Update the last memory write and timestamp values for the next iteration
-	td->m[1] = td->m[0];
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU energy consumed command when user requests dump -m 8.
- *
- * GPU Energy Consumed (J), per tile or device.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuEnergyConsumed(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t gpuPower1 = 0;
-	uint64_t timeStamp1 = 0;
-
-	// Call gpuPowerIter to get the energy consumed by the GPU. The last parameter is true to indicate it's for GPU
-	ze_result_t result = gpuPowerIter(d, &gpuPower1, &timeStamp1, true);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	double energyConsumed = (double)(gpuPower1) / 1000000;
-
-	*outputLine = std::format("{:.2f}", energyConsumed);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array active command when user requests dump -m 9.
- *
- * GPU EU Array Active (%), the normalized sum of all cycles on all EUs that were spent actively executing instructions.
- * Per tile or device. Device-level is the average value of tiles for multi-tiles.
- *
- * @param[in] d A pointer to the device information structure.
- * @param[out] outputLine A pointer to store the formatted output string.
- * @param[in,out] td A pointer to the thread data structure for maintaining state across iterations.
-
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuEuArrayActive(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	UNUSED_VAR(td);
-
-	// Initialize output to N/A in case of early return
-	*outputLine = "N/A";
-
-	metric *m = d->dev->getMetric();
-	if (m == nullptr) {
-		ERR("Failed to get metric handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	// Get EU metrics from the metric class
-	std::vector<EuMetricsData> metricsData;
-	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
-
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("getEuActiveStallIdle failed: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	if (metricsData.empty()) {
-		ERR("getEuActiveStallIdle returned no data\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	// For single device or when requesting device-level data, return the first entry
-	// For multi-tile, the calling code should handle tile iteration
-	double euActivePercent = static_cast<double>(metricsData[0].euActive) / metricsData[0].scaleFactor;
-	*outputLine = std::format("{:.2f}", euActivePercent);
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array stall command when user requests dump -m 10.
- *
- * GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. At least one
- * thread is loaded, but the EU is stalled. Per tile or device. Device-level is the average value of tiles for
- * multi-tiles.
- *
- * @param[in] d A pointer to the device information structure.
- * @param[out] outputLine A pointer to store the formatted output string
- * @param[in,out] td A pointer to the thread data structure for maintaining state across iterations
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuEuArrayStall(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	UNUSED_VAR(td);
-
-	// Initialize output to N/A in case of early return
-	*outputLine = "N/A";
-
-	metric *m = d->dev->getMetric();
-	if (m == nullptr) {
-		ERR("Failed to get metric handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	std::vector<EuMetricsData> metricsData;
-	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
-
-	if (result != ZE_RESULT_SUCCESS || metricsData.empty()) {
-		*outputLine = "N/A";
-		return result;
-	}
-
-	double euStallPercent = static_cast<double>(metricsData[0].euStall) / metricsData[0].scaleFactor;
-	*outputLine = std::format("{:.2f}", euStallPercent);
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array idle command when user requests dump -m 11.
- *
- * GPU EU Array Idle (%), the normalized sum of all cycles on all EUs during which the EUs were idle. Per tile or
- * device.
- *
- * @param[in] d A pointer to the device information structure.
- * @param[out] outputLine A pointer to store the formatted output string
- * @param[in,out] td A pointer to the thread data structure for maintaining state across iterations
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuEuArrayIdle(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	UNUSED_VAR(td);
-
-	// Initialize output to N/A in case of early return
-	*outputLine = "N/A";
-
-	metric *m = d->dev->getMetric();
-	if (m == nullptr) {
-		ERR("Failed to get metric handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	std::vector<EuMetricsData> metricsData;
-	ze_result_t result = m->getEuActiveStallIdle(d->deviceHdl, d->dev->getDriverHandle(), metricsData);
-
-	if (result != ZE_RESULT_SUCCESS || metricsData.empty()) {
-		*outputLine = "N/A";
-		return result;
-	}
-
-	double euIdlePercent = static_cast<double>(metricsData[0].euIdle) / metricsData[0].scaleFactor;
-	*outputLine = std::format("{:.2f}", euIdlePercent);
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array reset counter command when user requests dump -m 12.
- *
- * GPU EU Array Reset Counter, resets the EU array counters.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error code.
- */
-ze_result_t cmdDump::gpuEuArrayResetCounter(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS reset counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array programming errors command when user requests dump -m 13.
- *
- * GPU EU Array Programming Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuEuArrayProgrammingErrors(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result =
-		r->getErrors(ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS programming counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array driver errors command when user requests dump -m 14.
- *
- * GPU EU Array Driver Errors, per tile or device. Device-level is the sum value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuEuArrayDriverErrors(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS driver counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array cache errors correctable command when user requests dump -m 15.
- *
- * GPU EU Array Cache Errors Correctable, per tile or device. Device-level is the sum value of tiles for
- * multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsCorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS cache correctable counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU EU array cache errors uncorrectable command when user requests dump -m 16.
- *
- * GPU EU Array Cache Errors Uncorrectable, per tile or device. Device-level is the sum value of tiles for
- * multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuEuArrayCacheErrorsUncorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = r->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS cache uncorrectable counter: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory bandwidth utilization command when user requests dump -m 17.
- *
- * GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for
- * multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuMemoryBandwidthUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	uint64_t maxBandwidth = 0;
-	double memoryBW[2] = {0}, memoryBWDiff = 0;
-
-	memory *mem = d->dev->getMemory();
-	if (mem == nullptr) {
-		ERR("Failed to get memory handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = mem->getMemoryRW(&td->m[0].read, &td->m[0].write, &maxBandwidth, &td->m[0].timeStamp);
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get GPU memory read: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	if (td->m[1].timeStamp) {
-		// Calculate bandwidth utilization as a percentage of the maximum bandwidth
-		memoryBW[0] = (double)(100 * (td->m[0].read / 1000 + td->m[0].write / 1000) / (maxBandwidth / 1000) * 1000);
-		memoryBW[1] = (double)(100 * (td->m[1].read / 1000 + td->m[1].write / 1000) / (maxBandwidth / 1000) * 1000);
-
-		// Calculate the memory bandwidth difference
-		memoryBWDiff = (td->m[0].timeStamp - td->m[1].timeStamp) == 0
-						   ? 0
-						   : (memoryBW[0] - memoryBW[1]) / ((double)(td->m[0].timeStamp - td->m[1].timeStamp) / 1000.0);
-
-		*outputLine = std::format("{:d}", (uint32_t)memoryBWDiff);
-	}
-
-	// Update the last memory read, write, and timestamp values for the next iteration
-	memcpy(&td->m[1], &td->m[0], sizeof(memData));
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory used command when user requests dump -m 18.
- *
- * GPU Memory Used (MiB), per tile or device. Device-level is the sum value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuMemoryUsed(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t memoryUsed = 0;
-
-	memory *mem = d->dev->getMemory();
-	if (mem == nullptr) {
-		ERR("Failed to get memory handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = mem->getMemoryUsed(&memoryUsed, nullptr);
-	if (result != ZE_RESULT_SUCCESS) {
-		DBG("Failed to get GPU memory used: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::format("{:.2f}", (double)memoryUsed / (1024 * 1024));
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the PCIe read command when user requests dump -m 19.
- *
- * PCIe Read (kB/s), per device.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::pcieRead(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	uint64_t pciDiff = 0;
-
-	pci *p = d->dev->getPCI();
-	if (p == nullptr) {
-		ERR("Failed to get PCI handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = p->getStats(d->zesDeviceHdl, &td->pci[0].pciStats);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	if (td->pci[1].pciStats.timestamp) {
-
-		pciDiff = (td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp == 0)
-					  ? 0
-					  : 1000000 * (td->pci[0].pciStats.rxCounter - td->pci[1].pciStats.rxCounter) /
-							(td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp) / 1024;
-
-		*outputLine = std::to_string(pciDiff);
-	}
-
-	// Update the last pciStats for the next iteration
-	memcpy(&td->pci[1], &td->pci[0], sizeof(pciData));
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the PCIe write command when user requests dump -m 20.
- *
- * PCIe Write (kB/s), per device.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::pcieWrite(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	uint64_t pciDiff = 0;
-
-	pci *p = d->dev->getPCI();
-	if (p == nullptr) {
-		ERR("Failed to get PCI handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = p->getStats(d->zesDeviceHdl, &td->pci[0].pciStats);
-	if (result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-
-	if (td->pci[1].pciStats.timestamp) {
-
-		pciDiff = (td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp == 0)
-					  ? 0
-					  : 1000000 * (td->pci[0].pciStats.txCounter - td->pci[1].pciStats.txCounter) /
-							(td->pci[0].pciStats.timestamp - td->pci[1].pciStats.timestamp) / 1024;
-
-		*outputLine = std::to_string(pciDiff);
-	}
-
-	// Update the last pciStats for the next iteration
-	memcpy(&td->pci[1], &td->pci[0], sizeof(pciData));
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the unsupported command when user requests dump -m 21.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::unsupported(UNUSED devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	*outputLine = "N/A";
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the compute engine utilization command when user requests dump -m 22.
- *
- * Compute engine utilization (%), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::computeEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_COMPUTE_SINGLE, outputLine, td);
-}
-
-/**
- * @brief Executes the render engine utilization command when user requests dump -m 23.
- *
- * Render engine utilization (%), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::renderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_RENDER_SINGLE, outputLine, td);
-}
-
-/**
- * @brief Executes the media decoder engine utilization command when user requests dump -m 24.
- *
- * Media decoder engine utilizations (%), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::mediaDecoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, outputLine, td);
-}
-
-/**
- * @brief Executes the media encoder engine utilization command when user requests dump -m 25.
- *
- * Media encoder engine utilizations (%), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::mediaEncoderEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE, outputLine, td);
-}
-
-/**
- * @brief Executes the copy engine utilization command when user requests dump -m 26.
- *
- * Copy engine utilization (%), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::copyEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_COPY_SINGLE, outputLine, td);
-}
-
-/**
- * @brief Executes the media enhancement engine utilization command when user requests dump -m 27.
- *
- * Media enhancement engine utilization (%), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::mediaEnhancementEngineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	return utilization(d, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, outputLine, td);
-}
-
-/**
- * @brief Executes the 3D engine utilization command when user requests dump -m 28.
- *
- * 3D engine utilization (%), per tile.
- * Note: This metric may not be available on all platforms. If unsupported, "N/A" will be displayed.
- *
- * @param[in] d A pointer to the device information structure.
- * @param[out] outputLine A pointer to the string that will contain the output.
- * @param[in,out] td A pointer to the thread data structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-
-ze_result_t cmdDump::engineUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	ze_result_t result = utilization(d, ZES_ENGINE_GROUP_3D_ALL, outputLine, td);
-
-	// If 3D engine is not supported on this platform, return N/A
-	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-		*outputLine = "N/A";
-		return ZE_RESULT_SUCCESS;
-	}
-
-	if (result == ZE_RESULT_SUCCESS && outputLine && outputLine->empty()) {
-		*outputLine = "N/A";
-	}
-
-	return result;
-}
-
-/**
- * @brief Executes the GPU memory errors correctable command when user requests dump -m 29.
- *
- * GPU Memory Errors Correctable, per tile or device. Other non-compute correctable errors are also included.
- * Device-level is the sum value of tiles for multi-tiles.
- *
- * @param[in] d A pointer to the device information structure.
- * @param[out] outputLine A pointer to the string that will contain the output.
- * @param[in] td A pointer to the thread data structure (unused).
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuMemoryErrorsCorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result =
-		r->getErrors(ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS non-compute correctable errors: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the GPU memory errors uncorrectable command when user requests dump -m 30.
- *
- * GPU Memory Errors Uncorrectable, per tile or device. Other non-compute uncorrectable errors are also included.
- * Device-level is the sum value of tiles for multi-tiles.
- *
- * @param[in] d A pointer to the device information structure.
- * @param[out] outputLine A pointer to the string that will contain the output.
- * @param[in] td A pointer to the thread data structure (unused).
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::gpuMemoryErrorsUncorrectable(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	uint64_t rasCounter;
-	ras *r = (ras *)d->dev->getRAS();
-	if (r == nullptr) {
-		ERR("Failed to get RAS handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result =
-		r->getErrors(ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &rasCounter);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS non-compute uncorrectable errors: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(rasCounter);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the compute engine group utilization command when user requests dump -m 31.
- *
- * Compute engine group utilization (%), per tile.
- * Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::computeEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_COMPUTE_SINGLE, ZES_ENGINE_GROUP_COMPUTE_ALL};
-	return utilization(d, std::span(engineTable), outputLine, td);
-}
-
-/**
- * @brief Executes the render engine group utilization command when user requests dump -m 32.
- *
- * Render engine group utilization (%), per tile.
- * Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::renderEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_RENDER_SINGLE, ZES_ENGINE_GROUP_RENDER_ALL};
-	return utilization(d, std::span(engineTable), outputLine, td);
-}
-
-/**
- * @brief Executes the media engine group utilization command when user requests dump -m 33.
- *
- * Media engine group utilization (%), per tile.
- * Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::mediaEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE,
-											ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, ZES_ENGINE_GROUP_MEDIA_ALL};
-	return utilization(d, std::span(engineTable), outputLine, td);
-}
-
-/**
- * @brief Executes the copy engine group utilization command when user requests dump -m 34.
- *
- * Copy engine group utilization (%), per tile.
- * Device-level is the average value of tiles for multi-tiles.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::copyEngineGroupUtilization(devInfo *d, std::string *outputLine, threadData *td)
-{
-	TRACING();
-	constexpr auto engineTable = std::array{ZES_ENGINE_GROUP_COPY_SINGLE, ZES_ENGINE_GROUP_COPY_ALL};
-	return utilization(d, std::span(engineTable), outputLine, td);
-}
-
-/**
- * @brief Executes the throttle reason command when user requests dump -m 35.
- *
- * Throttle reason, per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::throttleReason(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	zes_freq_throttle_reason_flags_t throttleReasons;
-
-	frequency *fq = d->dev->getFrequency();
-	if (fq == nullptr) {
-		ERR("Failed to get frequency handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = fq->getThrottleReason(&throttleReasons);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get GPU frequency: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = getFreqThrottleString(throttleReasons);
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Executes the media engine frequency command when user requests dump -m 36.
- *
- * Media engine frequency (MHz), per tile.
- *
- * @param d A pointer to the device information structure.
- *
- * @return ze_result_t Returns ZE_RESULT_SUCCESS if the command executes successfully, otherwise returns an error
- * code.
- */
-ze_result_t cmdDump::mediaEngineFrequency(devInfo *d, std::string *outputLine, UNUSED threadData *td)
-{
-	TRACING();
-	double curFreq = 0.0;
-
-	frequency *fq = d->dev->getFrequency();
-	if (fq == nullptr) {
-		ERR("Failed to get frequency handle\n");
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	ze_result_t result = fq->getCurFreq(&curFreq, ZES_FREQ_DOMAIN_MEDIA);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get Media frequency: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::format("{:.2f}", curFreq);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Generates a timestamp string with optional date prefix
- *
- * @param showDate If true, includes date in YYYY-MM-DD format before time
- * @return std::string Formatted timestamp in ISO 8601 format with milliseconds
- */
-static std::string getTimestamp(bool showDate)
-{
-	auto now = std::chrono::system_clock::now();
-	auto nowMs = std::chrono::floor<std::chrono::milliseconds>(now);
-
-	if (showDate) {
-		// Format: YYYY-MM-DDTHH:MM:%S (with milliseconds)
-		return std::format("{:%Y-%m-%dT%H:%M:%S}", nowMs);
-	} else {
-		// Format: HH:MM:%S (with milliseconds)
-		return std::format("{:%H:%M:%S}", nowMs);
-	}
-}
-
-/**
- * @brief Executes the dump run. It processes command-line arguments, finds devices, and runs the specified dump
- * commands.
- *
- * @param args A pointer to the argument structure.
- *
- * @return int Returns 0 on success.
- */
-int cmdDump::run(arg_struct *args)
-{
-	TRACING();
-	std::vector<devInfo> deviceList;
-	ze_result_t result;
-	std::string header;
-	bool first = true;
-	auto running = std::make_shared<std::atomic<bool>>(true);
-	int total = 0, iter = -1;
-	std::chrono::milliseconds interval = DEFAULT_INTERVAL;
-	std::thread inputThread;
-	auto inputThreadExited = std::make_shared<std::atomic<bool>>(false);
-	bool showDate = false;
-
-	// If the user didn't provide any arguments, show help
-	if (args->argc == 2) {
-		help();
-		return ZE_RESULT_SUCCESS;
-	}
-
-	// Reset all cmd states before parsing
-	for (auto &[k, v] : dumpCmds) {
-		v.enabled = false;
-		v.val.clear();
-	}
-
-	CLI::App sub{"Dump raw GPU metric samples", "dump"};
-	sub.set_help_flag("-h,--help", "Print this help message and exit");
-	sub.add_flag("-j,--json", dumpCmds[dumpCmdType::DUMP_JSON].enabled, "Output in JSON format");
-	sub.add_option("-d,--device", dumpCmds[dumpCmdType::DUMP_DEVICE].val, "Device ID (-1 = all devices)")
-		->check(CLI::Number)
-		->each([&](const std::string &val) {
-			if (val == "-1")
-				dumpCmds[dumpCmdType::DUMP_DEVICE].val.clear();
-			dumpCmds[dumpCmdType::DUMP_DEVICE].enabled = true;
-		});
-	sub.add_option("-t,--tile", dumpCmds[dumpCmdType::DUMP_TILE].val, "Tile ID")->each([&](const std::string &) {
-		dumpCmds[dumpCmdType::DUMP_TILE].enabled = true;
-	});
-	sub.add_option("-m,--metrics", dumpCmds[dumpCmdType::DUMP_METRICS].val, "Comma-separated metric IDs")
-		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_METRICS].enabled = true; });
-	sub.add_option("-f,--file", dumpCmds[dumpCmdType::DUMP_FILE].val, "Output file path")
-		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_FILE].enabled = true; });
-	sub.add_option("--ims", dumpCmds[dumpCmdType::DUMP_IMS].val, "IMS value")->each([&](const std::string &) {
-		dumpCmds[dumpCmdType::DUMP_IMS].enabled = true;
-	});
-	sub.add_option("--time", dumpCmds[dumpCmdType::DUMP_TIME].val, "Time value")->each([&](const std::string &) {
-		dumpCmds[dumpCmdType::DUMP_TIME].enabled = true;
-	});
-	sub.add_flag("--date", dumpCmds[dumpCmdType::DUMP_DATE].enabled, "Include date in timestamp");
-	sub.add_option("-i,--interval", dumpCmds[dumpCmdType::DUMP_INTERVAL].val, "Sampling interval (s)")
-		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled = true; });
-	sub.add_option("-n,--number", dumpCmds[dumpCmdType::DUMP_NUMBER].val, "Number of samples")
-		->each([&](const std::string &) { dumpCmds[dumpCmdType::DUMP_NUMBER].enabled = true; });
-
-	try {
-		sub.parse(args->argc - 1, args->argv + 1);
-	} catch (const CLI::CallForHelp &) {
-		help();
-		return ZE_RESULT_SUCCESS;
-	} catch (const CLI::ParseError &e) {
-		ERR("{}\n", e.what());
-		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// --file requires --metrics
-	if (dumpCmds[dumpCmdType::DUMP_FILE].enabled && !dumpCmds[dumpCmdType::DUMP_METRICS].enabled) {
-		ERR("--file requires --metrics\n");
-		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Parse and validate metric IDs once, while preserving user-specified order.
-	std::vector<int> metricIds;
-	std::vector<std::string> dumpArgs;
-	if (dumpCmds[dumpCmdType::DUMP_METRICS].enabled) {
-		std::stringstream ss(dumpCmds[dumpCmdType::DUMP_METRICS].val.c_str());
-		std::string token;
-		std::unordered_set<int> seenMetricIds;
-		std::vector<int> duplicatedMetricIds;
-		std::unordered_set<int> reportedDuplicatedMetricIds;
-		std::vector<std::string> invalidMetricIds;
-
-		while (getline(ss, token, ',')) {
-			// Trim whitespaces around metric id token
-			auto begin = token.find_first_not_of(" \t\r\n");
-			auto end = token.find_last_not_of(" \t\r\n");
-			std::string trimmed = (begin == std::string::npos) ? "" : token.substr(begin, end - begin + 1);
-
-			int metricId;
-			try {
-				size_t pos = 0;
-				metricId = stoi(trimmed, &pos);
-				if (pos != trimmed.size()) {
-					throw std::invalid_argument("trailing characters");
-				}
-			} catch (const std::exception &) {
-				invalidMetricIds.push_back(trimmed);
-				continue;
-			}
-			// Check if metricId exists in dumpMetrics
-			if (dumpMetrics.find(metricId) == dumpMetrics.end()) {
-				invalidMetricIds.push_back(trimmed);
-				continue;
-			}
-
-			if (seenMetricIds.count(metricId)) {
-				if (reportedDuplicatedMetricIds.insert(metricId).second) {
-					duplicatedMetricIds.push_back(metricId);
-				}
-				continue;
-			}
-
-			seenMetricIds.insert(metricId);
-			dumpArgs.push_back(trimmed);
-			metricIds.push_back(metricId);
-		}
-
-		// Report all invalid metric IDs
-		if (!invalidMetricIds.empty()) {
-			for (const auto &invalidId : invalidMetricIds) {
-				ERR("The following metric ID was not expected: '{}'.\n", invalidId.c_str());
-			}
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-
-		if (!duplicatedMetricIds.empty()) {
-			for (const auto duplicateMetricId : duplicatedMetricIds) {
-				ERR("Duplicate metric ID: {}.\n", duplicateMetricId);
-			}
-			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	}
-
-	// If the user specified the -n /--number option, we need to check if it is a valid positive integer.
-	if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
-		try {
-			size_t pos = 0;
-			iter = stoi(dumpCmds[dumpCmdType::DUMP_NUMBER].val, &pos);
-			if (pos != dumpCmds[dumpCmdType::DUMP_NUMBER].val.size() || iter <= 0) {
-				ERR("Invalid value for -n/--number: '{}'. Must be a positive integer.\n",
-					dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-		} catch (const std::exception &) {
-			ERR("Invalid value for -n/--number: '{}'. Must be a positive integer.\n",
-				dumpCmds[dumpCmdType::DUMP_NUMBER].val.c_str());
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	}
-
-	// If the user specified an interval with -i / --interval, we need to check if it is a valid positive integer.
-	if (dumpCmds[dumpCmdType::DUMP_INTERVAL].enabled) {
-		try {
-			size_t pos = 0;
-			int intervalSecValue = stoi(dumpCmds[dumpCmdType::DUMP_INTERVAL].val, &pos);
-			if (pos != dumpCmds[dumpCmdType::DUMP_INTERVAL].val.size()) {
-				throw std::invalid_argument("trailing characters");
-			}
-			std::chrono::seconds intervalSec{intervalSecValue};
-
-			// intervalSec.count() now contains the parsed integer. Check for valid range
-			if (intervalSec.count() <= 0 || intervalSec > MAX_INTERVAL) {
-				ERR("Invalid value for -i/--interval: '{}'. Must be a positive integer and less than {}.\n",
-					dumpCmds[dumpCmdType::DUMP_INTERVAL].val.c_str(), static_cast<long long>(MAX_INTERVAL.count()));
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			interval = std::chrono::duration_cast<std::chrono::milliseconds>(intervalSec);
-		} catch (const std::exception &) {
-			ERR("Invalid value for -i/--interval: '{}'. Must be a positive integer.\n",
-				dumpCmds[dumpCmdType::DUMP_INTERVAL].val.c_str());
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	}
-
-	// If the user specified --ims option, we need to check if it is a valid integer between 10 and 1000
-	if (dumpCmds[dumpCmdType::DUMP_IMS].enabled) {
-		try {
-			size_t pos = 0;
-			int msIntervalValue = stoi(dumpCmds[dumpCmdType::DUMP_IMS].val, &pos);
-			if (pos != dumpCmds[dumpCmdType::DUMP_IMS].val.size()) {
-				throw std::invalid_argument("trailing characters");
-			}
-
-			if (msIntervalValue < 10 || msIntervalValue > 1000) {
-				ERR("Invalid value for --ims: '{}'. Must be an integer between 10 and 1000.\n",
-					dumpCmds[dumpCmdType::DUMP_IMS].val.c_str());
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-			interval = std::chrono::milliseconds{msIntervalValue};
-
-			// --ims requires --file option
-			if (!dumpCmds[dumpCmdType::DUMP_FILE].enabled) {
-				ERR("Error: --ims option requires --file option to be specified.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-		} catch (const std::exception &) {
-			ERR("Invalid value for --ims: '{}'. Must be an integer between 10 and 1000.\n",
-				dumpCmds[dumpCmdType::DUMP_IMS].val.c_str());
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	}
-
-	// If the user specified --time option, we need to check if it is a valid positive integer
-	int64_t dumpTotalTime = -1;
-	if (dumpCmds[dumpCmdType::DUMP_TIME].enabled) {
-		try {
-			size_t pos = 0;
-			dumpTotalTime = stoll(dumpCmds[dumpCmdType::DUMP_TIME].val, &pos);
-			if (pos != dumpCmds[dumpCmdType::DUMP_TIME].val.size()) {
-				throw std::invalid_argument("trailing characters");
-			}
-
-			if (dumpTotalTime < 1 || dumpTotalTime > MAX_DUMP_TIME_SECONDS) {
-				ERR("Invalid value for --time: '{}'. Must be an integer between 1 and {}.\n",
-					dumpCmds[dumpCmdType::DUMP_TIME].val.c_str(), (long long)MAX_DUMP_TIME_SECONDS);
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			// --time requires --ims option
-			if (!dumpCmds[dumpCmdType::DUMP_IMS].enabled) {
-				ERR("Error: --time option requires --ims option to be specified.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-
-			// --time and -n/--number cannot be used together
-			if (dumpCmds[dumpCmdType::DUMP_NUMBER].enabled) {
-				ERR("Error: --time and -n/--number options cannot be used together.\n");
-				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-			}
-		} catch (const std::exception &) {
-			ERR("Invalid value for --time: '{}'. Must be an integer between 1 and {}.\n",
-				dumpCmds[dumpCmdType::DUMP_TIME].val.c_str(), (long long)MAX_DUMP_TIME_SECONDS);
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-		}
-	}
-
-	showDate = dumpCmds[dumpCmdType::DUMP_DATE].enabled;
-
-	result = args->sm.findDevice(dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '{}'.\n", dumpCmds[dumpCmdType::DUMP_DEVICE].val.c_str());
-		return result;
-	}
-
-	// Check if only unsupported metric is requested
-	if (dumpArgs.size() == 1) {
-		try {
-			if (stoi(dumpArgs[0]) == dumpCmdSubType::DUMP_UNSUPPORTED0) {
-				ERR("Metric unsupported.\n");
-				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-			}
-		} catch (const std::exception &) {
-			// Not unsupported metric, continue normal processing
-		}
-	}
-	// If the unsupported metric is mixed with other metrics, it will return N/A
-	header = "Timestamp, DeviceId, ";
-	// First print the header which looks like this Timestamp, DeviceId, <heading>
-	for (const auto metricId : metricIds) {
-		auto it = dumpMetrics.find(metricId);
-		if (it != dumpMetrics.end() && it->second.func != nullptr) {
-			if (!first) {
-				header += ", ";
-			}
-			header += it->second.heading;
-			first = false;
-		}
-	}
-
-	// Open file for writing if --file option is specified
-	std::ofstream dumpFile;
-	bool useFile = dumpCmds[dumpCmdType::DUMP_FILE].enabled;
-	if (useFile) {
-		dumpFile.open(dumpCmds[dumpCmdType::DUMP_FILE].val, std::ios::out | std::ios::trunc);
-		if (!dumpFile.is_open()) {
-			ERR("Failed to open file '{}' for writing.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
-			return ZE_RESULT_ERROR_UNKNOWN;
-		}
-		// Write header to file
-		dumpFile << header << std::endl;
-		if (!dumpCmds[dumpCmdType::DUMP_TIME].enabled && STDIN_ISATTY()) {
-			PRINT("Dump data to file {}. Press 'q' or ESC to stop dumping. On some systems, Ctrl+C may terminate the "
-				  "program immediately.\n",
-				  dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
-		} else {
-			PRINT("Dump data to file {}.\n", dumpCmds[dumpCmdType::DUMP_FILE].val.c_str());
-		}
-	} else {
-		// Print header to screen
-		PRINT("{}\n", header.c_str());
-	}
-
-	if (dumpArgs.empty()) {
-		ERR("No metrics specified. Use -m/--metrics to select metrics to dump.\n");
-		ERR("Run with --help for more information.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	const std::size_t listSize = deviceList.size() * dumpArgs.size();
-	std::vector<std::unique_ptr<threadArgs>> argsList(listSize);
-	// TODO: tidList holds raw owning thread handles because wait_for_thread() is responsible for
-	// closing/freeing each handle internally. To use an owning pointer here, create_thread/wait_for_thread
-	// would need to be refactored to either return a RAII type or expose a matching deleter.
-	// The long-term fix is to replace the entire create_thread/wait_for_thread abstraction with
-	// std::jthread, which would also eliminate the input-thread detach/join dance above.
-	std::vector<thread_id *> tidList(listSize, nullptr);
-
-	// Start a thread to check for key presses to stop dumping
-	// Only start if: 1) no iteration count specified, 2) stdin is a terminal, and
-	// 3) not using --time option (which auto-terminates)
-	bool shouldStartInputThread =
-		STDIN_ISATTY() && ((iter < 0 && !useFile) || (useFile && !dumpCmds[dumpCmdType::DUMP_TIME].enabled));
-
+	// Shared quit signal: either the user presses q/ESC/Ctrl-C or the main loop
+	// exhausts its iteration/time budget. Both sides write to the same stop_source.
+	std::stop_source quitSource;
+	auto quitToken = quitSource.get_token();
+
+	int iter = timing.iterations;
+	const bool shouldStartInputThread =
+		STDIN_ISATTY() && ((iter < 0 && !useFile) || (useFile && timing.totalTimeSeconds < 0));
+
+	std::jthread inputThread;
 	if (shouldStartInputThread) {
-		inputThread = std::thread([running, inputThreadExited]() {
-			char ch;
-			while (running->load()) {
+		inputThread = std::jthread([quitSource, quitToken](const std::stop_token &ownStop) mutable {
+			char ch = 0;
+			while (!ownStop.stop_requested() && !quitToken.stop_requested()) {
 				ch = GETCH();
-				// Accept 'q', 'Q', ESC, or Ctrl+C key to stop dumping
 				if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
-					running->store(false);
-					break;
+					quitSource.request_stop();
+					return;
 				}
 			}
-			inputThreadExited->store(true);
 		});
 	}
 
-	// Track start time for --time option
-	auto startTime = std::chrono::steady_clock::now();
+	const auto startTime = std::chrono::steady_clock::now();
+	const std::size_t numDevices = deviceList.size();
+	std::vector<metrics::MetricCache> caches(numDevices);
 
-	// Perform an initial "warm-up" iteration to initialize baseline data for metrics that need two samples
-	// This prevents empty values in the first real iteration
-	// Always do warm-up iteration for all cases including -n 1
-	bool skipOutput = true;
+	for (std::size_t i = 0; i < numDevices; ++i) {
+		caches[i] = metrics::populateMetricCacheBegin(deviceList[i]);
+	}
+	std::this_thread::sleep_for(timing.interval);
+	for (std::size_t i = 0; i < numDevices; ++i) {
+		metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
+	}
 
-	while (running->load()) {
-		total = 0;
+	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>{fields}, std::span<devInfo>(deviceList),
+								  std::span<const metrics::MetricCache>{caches});
+	if (iter > 0 && --iter == 0) {
+		quitSource.request_stop();
+	}
 
-		// Iterate through the device list and create a thread called metrics for each device
-		for (auto &device : deviceList) {
-			for (const auto &arg : dumpArgs) {
-				threadData prevThreadData = {};
-				if (argsList[total]) {
-					// Copy any previous thread data before we replace the old argsList entry
-					prevThreadData = argsList[total]->td;
-				}
-				argsList[total].reset(new threadArgs{this, &device, arg, "", {}});
-				// Copy any previous thread data into the new argsList entry just in case the underlying functions
-				// need to access it to do comparison between old and new values
-				argsList[total]->td = prevThreadData;
-				tidList[total] = create_thread(metrics, argsList[total].get());
-				total++;
-			}
+	if (!quitToken.stop_requested() && iter != 0) {
+		std::this_thread::sleep_for(timing.interval);
+	}
+
+	while (!quitToken.stop_requested()) {
+		const auto cycleStartTime = std::chrono::steady_clock::now();
+
+		for (std::size_t i = 0; i < numDevices; ++i) {
+			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i]);
+		}
+		metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>{fields},
+									  std::span<devInfo>(deviceList), std::span<const metrics::MetricCache>{caches});
+
+		const auto collectionTimeMs =
+			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - cycleStartTime);
+		const auto remainingSleep = timing.interval - collectionTimeMs;
+		if (remainingSleep.count() > 0) {
+			std::this_thread::sleep_for(remainingSleep);
 		}
 
-		// Wait for all threads to complete
-		for (int i = 0; i < total; i++) {
-			if (tidList[i] != nullptr) {
-				wait_for_thread(tidList[i]);
-			}
+		if (iter > 0 && --iter == 0) {
+			quitSource.request_stop();
+			break;
 		}
 
-		// Skip printing output for the first (warm-up) iteration
-		if (!skipOutput) {
-			// Print the output
-			for (uint32_t i = 0; i < deviceList.size(); i++) {
-				std::string outputLine = "";
-				for (uint32_t j = 0; j < dumpArgs.size(); j++) {
-					// Construct a std::string which has comma separated values of all the output lines
-					outputLine += argsList[i * dumpArgs.size() + j]->outputLine;
-					if (j < dumpArgs.size() - 1) {
-						outputLine += ", ";
-					}
-				}
-				std::string timestampStr = getTimestamp(showDate);
-				if (useFile) {
-					// Write to file
-					dumpFile << timestampStr << ", " << std::setw(8) << argsList[i * dumpArgs.size()]->d->index << ", "
-							 << outputLine << std::endl;
-					dumpFile.flush(); // Ensure data is written immediately
-				} else {
-					// Print to screen
-					PRINT("{}, {:8}, {}\n", timestampStr.c_str(), argsList[i * dumpArgs.size()]->d->index,
-						  outputLine.c_str());
-				}
-			}
-
-			// If the user specified an iteration count, decrement it only after printing actual data
-			if (iter > 0) {
-				iter--;
-				if (iter == 0) {
-					running->store(false); // Stop the loop after the specified number of iterations
-				}
-			}
-		} else {
-			// Mark that we've completed the warm-up iteration
-			skipOutput = false;
-		}
-
-		std::this_thread::sleep_for(interval);
-
-		// Check if we've exceeded the total time limit
-		if (dumpTotalTime > 0) {
-			auto currentTime = std::chrono::steady_clock::now();
-			auto elapsedSeconds = std::chrono::duration_cast<std::chrono::seconds>(currentTime - startTime).count();
-			if (elapsedSeconds >= dumpTotalTime) {
-				running->store(false); // Stop the loop after the specified time
+		if (timing.totalTimeSeconds > 0) {
+			const auto elapsedMs =
+				std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime)
+					.count();
+			if (elapsedMs >= timing.totalTimeSeconds * 1000LL) {
+				quitSource.request_stop();
+				break;
 			}
 		}
 	}
 
-	// Close the file if it was opened
 	if (useFile) {
 		dumpFile.close();
 		PRINT("\nDumping is stopped.\n");
 	}
 
-	// Clean up input thread
-	// If the thread has already exited (user key press), join it.
-	// If it is still blocked on GETCH() (time limit or iteration count reached), detach it.
 	if (inputThread.joinable()) {
-		if (inputThreadExited->load()) {
-			inputThread.join();
-		} else {
-			inputThread.detach();
+		inputThread.detach();
+	}
+	RESTORE_TERMINAL();
+	return ZE_RESULT_SUCCESS;
+}
+
+} // namespace
+
+// -- runQuery ---------------------------------------------------------
+
+int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec, arg_struct *args, QueryFormat fmt)
+{
+	// --query-gpu accepts dot-notation field names and group aliases, not legacy numeric IDs.
+	for (auto &&rng : std::string_view{metrics} | std::views::split(',')) {
+		std::string_view sv{rng.begin(), rng.end()};
+		const auto b = sv.find_first_not_of(" \t");
+		if (b == std::string_view::npos) {
+			continue;
+		}
+		if (parseInteger<int>(sv.substr(b, sv.find_last_not_of(" \t") - b + 1)).has_value()) {
+			ERR("Numeric metric IDs are not supported by --query-gpu.\n");
+			ERR("Use field names like 'temperature.gpu,power.draw' or group aliases like 'pu'.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
 
-	// Restore terminal settings to ensure echo is re-enabled
-	// This is necessary when the input thread is detached and may have left the terminal in raw mode
-	RESTORE_TERMINAL();
+	auto fields = metrics::resolveQuery(metrics);
+	if (fields.empty()) {
+		ERR("No valid metrics matched: '{}'", metrics.c_str());
+		ERR("Use field names like 'temperature.gpu,power.draw' or aliases like 'pu' (POWER+UTILIZATION).\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 
-	return result;
+	std::vector<devInfo> deviceList;
+	ze_result_t const result = args->sm.findDevice(deviceSpec.c_str(), &deviceList);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Error: Device handle not found for device ID '{}'\n", deviceSpec.c_str());
+		return result;
+	}
+
+	std::string header;
+	for (const metrics::QueryMetric *const f : fields) {
+		if (!header.empty()) {
+			header += ", ";
+		}
+		header += (!fmt.nounits && !f->unit.empty()) ? std::format("{} ({})", f->name, f->unit) : std::string{f->name};
+	}
+	if (!fmt.noheader && !fmt.json) {
+		PRINT("{}\n", header.c_str());
+	}
+
+	DumpOutput out{false, false, nullptr};
+	out.json = fmt.json;
+	out.prependTimestamp = false;
+	out.prependDeviceId = false;
+
+	const std::size_t numDevices = deviceList.size();
+	std::vector<metrics::MetricCache> caches(numDevices);
+	for (std::size_t i = 0; i < numDevices; ++i) {
+		caches[i] = metrics::populateMetricCacheBegin(deviceList[i]);
+	}
+	std::this_thread::sleep_for(metrics::detail::SAMPLE_WINDOW);
+	for (std::size_t i = 0; i < numDevices; ++i) {
+		metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
+	}
+	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>(fields), std::span<devInfo>(deviceList),
+								  std::span<const metrics::MetricCache>(caches));
+
+	if (fmt.loopMs > 0) {
+		return runQueryLoopMode(std::move(out), fields, deviceList, std::move(caches),
+								std::chrono::milliseconds{fmt.loopMs}, fmt.count);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+// -- printQueryHelp -----------------------------------------------------------
+
+void cmdDump::printQueryHelp()
+{
+	std::vector<helpCmd> helpList;
+
+	helpList.emplace_back(TITLE, "Query individual per-GPU metric fields");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Usage: %s --query-gpu=<fields> [Options]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s --query-gpu=temperature.gpu,power.draw --id=0 --loop=5", progName.c_str());
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Options:");
+	helpList.emplace_back(HEADING, "--id=<n>                    Device index or PCI BDF (default: all)");
+	helpList.emplace_back(HEADING, "--loop[=<sec>]              Repeat every N seconds (default: 1)");
+	helpList.emplace_back(HEADING, "--loop-ms=<ms>              Repeat every N milliseconds");
+	helpList.emplace_back(HEADING, "--count=<n>                 Number of iterations (default: infinite)");
+	helpList.emplace_back(HEADING, "--format=csv[,noheader][,nounits]  Output format");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Available fields: (legacy ID in brackets)");
+	for (const metrics::QueryMetric &f : metrics::getQueryMetrics()) {
+		std::optional<int> legacyId;
+		for (const auto &[id, metricName] : LEGACY_METRIC_NAMES) {
+			if (metricName == f.name && (!legacyId.has_value() || id < *legacyId)) {
+				legacyId = id;
+			}
+		}
+		std::string fieldName = std::string(f.name);
+		if (legacyId.has_value()) {
+			fieldName += std::format(" [{}]", *legacyId);
+		}
+		if (f.unit.empty()) {
+			helpList.emplace_back(SUB_HEADING, "%-40s %s", fieldName.c_str(), f.description.data());
+		} else {
+			helpList.emplace_back(SUB_HEADING, "%-40s %s (%s)", fieldName.c_str(), f.description.data(), f.unit.data());
+		}
+	}
+	helpList.emplace_back(BLANK);
+
+	for (const auto &entry : helpList) {
+		PRINT("{0:<{1}}{2}\n", "", entry.char_gap, entry.line);
+	}
+}
+
+// -- listGpus ─────────────────────────────────────────────────────────────────
+
+int cmdDump::listGpus(arg_struct *args)
+{
+	TRACING();
+	std::vector<devInfo> deviceList;
+	const ze_result_t result = args->sm.findDevice("", &deviceList);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to enumerate GPU devices\n");
+		return result;
+	}
+	metrics::MetricCache const dummy{};
+	const auto nameMetric = metrics::findMetric("name");
+	const auto uuidMetric = metrics::findMetric("uuid");
+	const auto indexMetric = metrics::findMetric("index");
+	for (auto &dev : deviceList) {
+		std::string gpuName = "N/A";
+		std::string gpuUuid = "N/A";
+		std::string gpuIdx = "N/A";
+		if (nameMetric) {
+			nameMetric->getter(dev, gpuName, dummy);
+		}
+		if (uuidMetric) {
+			uuidMetric->getter(dev, gpuUuid, dummy);
+		}
+		if (indexMetric) {
+			indexMetric->getter(dev, gpuIdx, dummy);
+		}
+		PRINT("GPU {}: {} (UUID: GPU-{})\n", gpuIdx.c_str(), gpuName.c_str(), gpuUuid.c_str());
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+// -- help
+// ---------------------------------------------------------
+
+void cmdDump::help(HELP helpType)
+{
+	TRACING();
+	std::vector<helpCmd> helpList;
+
+	helpList.emplace_back(TITLE, "Dump device statistics data");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Usage: %s dump [Options]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s dump --device [id] --metrics [metrics] --interval [secs] --number [count]",
+						  progName.c_str());
+	helpList.emplace_back(HEADING,
+						  "%s dump --device [id] --metrics [metrics] -f [filename] --loop-ms [ms] --time [secs]",
+						  progName.c_str());
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Options:");
+	helpList.emplace_back(HEADING, "-h,--help                   Print this help message and exit");
+	helpList.emplace_back(HEADING, "-j,--json                   Print result in JSON format");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(HEADING, "--device,--id               Device index or PCI BDF address (-1 = all)");
+	helpList.emplace_back(HEADING, "--tile                      Tile IDs (omit for single-tile devices)");
+	helpList.emplace_back(HEADING, "--metrics,--select          Comma-separated group names or aliases:");
+	for (const auto &line : buildGroupAliasLines()) {
+		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
+	}
+	helpList.emplace_back(SUB_HEADING, "Multi-char aliases: e.g. \"pu\" = POWER+UTILIZATION");
+	helpList.emplace_back(SUB_HEADING, "For individual field names use --query-gpu instead.");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Available fields: (legacy ID in brackets)");
+	for (const metrics::QueryMetric &f : metrics::getQueryMetrics()) {
+		// Find the lowest legacy numeric ID for this field, if any
+		std::optional<int> legacyId;
+		for (const auto &[id, metricName] : LEGACY_METRIC_NAMES) {
+			if (metricName == f.name && (!legacyId.has_value() || id < *legacyId)) {
+				legacyId = id;
+			}
+		}
+
+		std::string fieldName = std::string(f.name);
+		if (legacyId.has_value()) {
+			fieldName += std::format(" [{}]", *legacyId);
+		}
+
+		if (f.unit.empty()) {
+			helpList.emplace_back(SUB_HEADING, "%-40s %s", fieldName.c_str(), f.description.data());
+		} else {
+			helpList.emplace_back(SUB_HEADING, "%-40s %s (%s)", fieldName.c_str(), f.description.data(), f.unit.data());
+		}
+	}
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(HEADING, "--interval,--delay          Sampling interval in seconds (default: 1)");
+	helpList.emplace_back(HEADING, "--number,--count            Number of samples (default: unlimited)");
+	helpList.emplace_back(HEADING,
+						  "--loop-ms                   Sampling interval in milliseconds (overrides --interval)");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(HEADING, "-f,--file,--filename        Write output to a file instead of stdout");
+	helpList.emplace_back(HEADING, "--time                      Total dump duration in seconds");
+	helpList.emplace_back(HEADING, "--date                      Prefix timestamps with date");
+	helpList.emplace_back(HEADING, "--format=csv[,noheader][,nounits]  Force CSV output; suppress header or units");
+	helpList.emplace_back(BLANK);
+
+	printHelp(helpList, helpType);
+}
+
+// -- run
+// -----------------------------------------------------------
+
+int cmdDump::run(arg_struct *args)
+{
+	TRACING();
+
+	if (args->argc == 2) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	}
+
+	auto parseResult = parseDumpCLI(name, [this] { help(); }, args);
+	if (const int *code = std::get_if<int>(&parseResult)) {
+		return *code;
+	}
+	auto &[opts, loopMs] = std::get<ParsedArgs>(parseResult);
+
+	if (opts.file.has_value() && !opts.metrics.has_value()) {
+		ERR("--file requires --metrics\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (!opts.metrics.has_value()) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	}
+
+	// dump -m accepts group names, aliases, and legacy numeric IDs only.
+	// Dot-notation field names (e.g. "temperature.gpu") belong to --query-gpu.
+	auto fields = resolveMetricsArg(*opts.metrics);
+	if (fields.empty()) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	const bool hasPowerMetrics = std::ranges::any_of(
+		fields, [](const metrics::QueryMetric *f) { return f->name == "power.draw" || f->name == "power.draw.gpu"; });
+
+	const auto timing = parseSamplingTiming(opts, loopMs);
+	if (!timing) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (hasPowerMetrics && timing->interval.count() < 50) {
+		PRINT("Warning: Power metrics are unreliable with sample windows < 50ms.\n");
+		PRINT("Recommend using at least 50ms (--loop-ms=50) for stable power.draw readings.\n");
+	}
+
+	std::vector<devInfo> deviceList;
+	ze_result_t const result = args->sm.findDevice(opts.device.c_str(), &deviceList);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Error: Device handle not found for device ID '{}'", opts.device.c_str());
+		return result;
+	}
+
+	std::ofstream dumpFile;
+	const bool useFile = opts.file.has_value();
+	if (useFile) {
+		dumpFile.open(*opts.file, std::ios::out | std::ios::trunc);
+		if (!dumpFile.is_open()) {
+			ERR("Failed to open file '{}'", opts.file->c_str());
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		if (!opts.json && !opts.noheader) {
+			std::string header = "Timestamp, DeviceId";
+			for (const metrics::QueryMetric *const f : fields) {
+				header += (!opts.nounits && !f->unit.empty()) ? std::format(", {} ({})", f->name, f->unit)
+															  : std::format(", {}", f->name);
+			}
+			dumpFile << header << "\n";
+		}
+		if (!opts.time.has_value() && STDIN_ISATTY()) {
+			PRINT("Dump data to file {}. Press q or ESC to stop.\n", opts.file->c_str());
+		} else {
+			PRINT("Dump data to file {}.\n", opts.file->c_str());
+		}
+	} else if (!opts.json) {
+		// TTY: aligned header emitted by DumpOutput::onBegin().
+	}
+
+	DumpOutput out{opts.date, useFile, useFile ? &dumpFile : nullptr};
+	out.json = opts.json;
+	out.noheader = opts.noheader;
+	out.nounits = opts.nounits;
+	out.aligned = !useFile && !opts.json && !opts.csvFormat && STDIN_ISATTY();
+	return runOutputLoop(out, fields, deviceList, *timing, useFile, dumpFile);
 }

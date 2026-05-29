@@ -35,7 +35,7 @@ struct policyCmdStruct;
 class cmdPolicy : public cmds
 {
 public:
-	cmdPolicy() { STRCPY_S(name, MAX_PATH, "policy"); };
+	cmdPolicy() { name = "policy"; };
 	~cmdPolicy(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t create(devInfo *d);

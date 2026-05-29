@@ -31,7 +31,7 @@ struct groupCmdStruct;
 class cmdGroup : public cmds
 {
 public:
-	cmdGroup() { STRCPY_S(name, MAX_PATH, "group"); };
+	cmdGroup() { name = "group"; };
 	~cmdGroup(){};
 	void help(HELP helpType = FULL_HELP);
 

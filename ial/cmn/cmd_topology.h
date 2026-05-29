@@ -144,7 +144,7 @@ private:
 
 public:
 	// NOLINTNEXTLINE(readability-identifier-naming) // camelBack for consistency
-	cmdTopology() { STRCPY_S(name, MAX_PATH, "topology"); };
+	cmdTopology() { name = "topology"; };
 	void help(HELP helpType = FULL_HELP) final;
 
 	// Public for unit testing

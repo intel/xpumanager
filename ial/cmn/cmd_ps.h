@@ -32,7 +32,7 @@ class cmdPs : public cmds
 {
 
 public:
-	cmdPs() { STRCPY_S(name, MAX_PATH, "ps"); };
+	cmdPs() { name = "ps"; };
 	~cmdPs(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);

@@ -28,7 +28,6 @@
 #include <pci.h>
 #include <power.h>
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <chrono>
 #include <iterator>
@@ -224,36 +223,31 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 
 // Each metrics/X.h owns one group and exposes getXMetrics() returning a span.
 
-std::vector<QueryMetric> getQueryMetrics()
+std::span<const QueryMetric> getQueryMetrics() noexcept
 {
-	const auto identity = identity::getIdentityMetrics();
-	const auto temperature = temperature::getTemperatureMetrics();
-	const auto utilization = utilization::getUtilizationMetrics();
-	const auto pci = pci::getPciMetrics();
-	const auto euArray = eu_array::getEuArrayMetrics();
-	const auto fan = fan::getFanMetrics();
-	const auto memory = memory::getMemoryMetrics();
-	const auto power = power::getPowerMetrics();
-	const auto ecc = ecc::getEccMetrics();
-	const auto clock = clock::getClockMetrics();
+	static const std::vector<QueryMetric> registry = [] {
+		const auto identity = identity::getIdentityMetrics();
+		const auto temperature = temperature::getTemperatureMetrics();
+		const auto utilization = utilization::getUtilizationMetrics();
+		const auto pci = pci::getPciMetrics();
+		const auto euArray = eu_array::getEuArrayMetrics();
+		const auto fan = fan::getFanMetrics();
+		const auto memory = memory::getMemoryMetrics();
+		const auto power = power::getPowerMetrics();
+		const auto ecc = ecc::getEccMetrics();
+		const auto clock = clock::getClockMetrics();
 
-	std::vector<QueryMetric> v;
-	v.reserve(identity.size() + temperature.size() + utilization.size() + pci.size() + euArray.size() + fan.size() +
-			  memory.size() + power.size() + ecc.size() + clock.size());
-	v.insert(v.end(), identity.begin(), identity.end());
-	v.insert(v.end(), temperature.begin(), temperature.end());
-	v.insert(v.end(), utilization.begin(), utilization.end());
-	v.insert(v.end(), pci.begin(), pci.end());
-	v.insert(v.end(), euArray.begin(), euArray.end());
-	v.insert(v.end(), fan.begin(), fan.end());
-	v.insert(v.end(), memory.begin(), memory.end());
-	v.insert(v.end(), power.begin(), power.end());
-	v.insert(v.end(), ecc.begin(), ecc.end());
-	v.insert(v.end(), clock.begin(), clock.end());
-	return v;
+		std::vector<QueryMetric> metricVec;
+		for (const std::span<const QueryMetric> s :
+			 {identity, temperature, utilization, pci, euArray, fan, memory, power, ecc, clock}) {
+			metricVec.insert(metricVec.end(), s.begin(), s.end());
+		}
+		return metricVec;
+	}();
+	return registry;
 }
 
-std::vector<QueryMetric> getMetricsByGroup(MetricGroup mask)
+std::vector<const QueryMetric *> getMetricsByGroup(MetricGroup mask)
 {
 	// MetricGroup::NONE matches nothing by definition.
 	if (mask == MetricGroup::NONE) {
@@ -264,15 +258,51 @@ std::vector<QueryMetric> getMetricsByGroup(MetricGroup mask)
 	// metrics whose groups == MetricGroup::NONE are included rather than excluded
 	// (NONE & ALL == NONE, which would fail the hasGroup test).
 	if (mask == MetricGroup::ALL) {
-		return all;
+		std::vector<const QueryMetric *> result;
+		result.reserve(all.size());
+		for (const auto &f : all) {
+			result.push_back(&f);
+		}
+		return result;
 	}
-	std::vector<QueryMetric> result;
+	std::vector<const QueryMetric *> result;
 	for (const auto &f : all) {
 		if (hasGroup(f.groups, mask)) {
-			result.push_back(f);
+			result.push_back(&f);
 		}
 	}
 	return result;
+}
+
+// Case-insensitive glob match against a metric name.
+//   '*' — matches zero or more characters (e.g. "power.*" matches "power.gpu.sustained")
+//   '?' — matches exactly one character  (e.g. "temperature.?pu" matches "temperature.gpu" but not "temperature.memory")
+// Uses the standard O(n*m) iterative backtracking algorithm.
+static bool globMatch(std::string_view pattern, std::string_view text) noexcept
+{
+	const auto toLower = [](char c) noexcept -> char {
+		return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + 32) : c;
+	};
+	size_t patternPos = 0, textPos = 0;
+	size_t lastStarPatternPos = std::string_view::npos, lastStarTextPos = 0;
+	while (textPos < text.size()) {
+		if (patternPos < pattern.size() && (pattern[patternPos] == '?' || toLower(pattern[patternPos]) == toLower(text[textPos]))) {
+			++patternPos;
+			++textPos;
+		} else if (patternPos < pattern.size() && pattern[patternPos] == '*') {
+			lastStarPatternPos = patternPos++;
+			lastStarTextPos = textPos;
+		} else if (lastStarPatternPos != std::string_view::npos) {
+			patternPos = lastStarPatternPos + 1;
+			textPos = ++lastStarTextPos;
+		} else {
+			return false;
+		}
+	}
+	while (patternPos < pattern.size() && pattern[patternPos] == '*') {
+		++patternPos;
+	}
+	return patternPos == pattern.size();
 }
 
 std::optional<QueryMetric> findMetric(std::string_view name)
@@ -287,14 +317,23 @@ std::optional<QueryMetric> findMetric(std::string_view name)
 	return it != allMetrics.end() ? std::optional<QueryMetric>{*it} : std::nullopt;
 }
 
-std::vector<QueryMetric> resolveQuery(std::string_view csv)
+std::vector<const QueryMetric *> resolveQuery(std::string_view csv)
 {
-	std::vector<QueryMetric> result;
+	const std::span<const QueryMetric> allMetrics = getQueryMetrics();
+	std::vector<const QueryMetric *> result;
 
 	const auto addUnique = [&](const QueryMetric &f) {
-		if (std::ranges::none_of(result, [&f](const QueryMetric &r) { return r.name == f.name; })) {
-			result.push_back(f);
+		if (std::ranges::none_of(result, [&f](const QueryMetric *r) { return r->name == f.name; })) {
+			result.push_back(&f);
 		}
+	};
+
+	const auto findInAll = [&](std::string_view name) -> const QueryMetric * {
+		auto it = std::ranges::find_if(allMetrics, [&](const QueryMetric &f) noexcept {
+			return iequal(f.name, name) ||
+				   std::ranges::any_of(f.aliases, [&](std::string_view a) noexcept { return iequal(a, name); });
+		});
+		return it != allMetrics.end() ? &*it : nullptr;
 	};
 
 	for (const auto tokenRange : csv | std::views::split(',')) {
@@ -302,21 +341,33 @@ std::vector<QueryMetric> resolveQuery(std::string_view csv)
 		if (token.empty()) {
 			continue;
 		}
-		if (token.find('.') != std::string_view::npos) {
+		if (token.find_first_of("*?") != std::string_view::npos) {
+			// Wildcard pattern: match against all metric names and aliases.
+			for (const QueryMetric &f : allMetrics) {
+				if (globMatch(token, f.name) ||
+						std::ranges::any_of(f.aliases,
+							[&](std::string_view a) noexcept { return globMatch(token, a); })) {
+					addUnique(f);
+				}
+			}
+		} else if (token.find('.') != std::string_view::npos) {
 			// Dotted token → individual metric lookup (canonical name or alias).
-			if (auto f = findMetric(token); f.has_value()) {
+			if (const auto *f = findInAll(token)) {
 				addUnique(*f);
 			}
 		} else {
 			// Group name / shortcut → expand via parseGroupMask (includes per-char expansion).
 			const MetricGroup mask = parseGroupMask(token);
 			if (mask != MetricGroup::NONE) {
-				for (const QueryMetric &f : getMetricsByGroup(mask)) {
-					addUnique(f);
+				const bool matchAll = (mask == MetricGroup::ALL);
+				for (const QueryMetric &f : allMetrics) {
+					if (matchAll || hasGroup(f.groups, mask)) {
+						addUnique(f);
+					}
 				}
 			} else {
 				// Fall back to individual lookup for dotless names like "timestamp", "name".
-				if (auto f = findMetric(token); f.has_value()) {
+				if (const auto *f = findInAll(token)) {
 					addUnique(*f);
 				}
 			}
