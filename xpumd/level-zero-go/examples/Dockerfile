@@ -6,10 +6,10 @@
 FROM golang:1.26-trixie AS builder
 
 ARG APP=list-sysman
-ARG IGC_CORE_VERSION=2.32.7+21184
-ARG COMPUTE_RUNTIME_RELEASE=26.14.37833.4
-ARG LIBIGDGMM12_VERSION=22.9.0
-ARG LEVEL_ZERO_VERSION=1.28.2
+ARG IGC_CORE_VERSION=2.34.4+21428
+ARG COMPUTE_RUNTIME_RELEASE=26.18.38308.1
+ARG LIBIGDGMM12_VERSION=22.10.0
+ARG LEVEL_ZERO_VERSION=1.28.6
 ARG IGSC_VERSION=0.9.6
 
 WORKDIR /go/src/work
@@ -20,13 +20,13 @@ RUN mkdir /debs && \
          -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
-         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/level-zero_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
+         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     for deb in /debs/*.deb; do \
         dpkg-deb -x "$deb" /out; \
     done
 
 RUN curl -fS --output-dir /debs/ \
-         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/level-zero-devel_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
+         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     dpkg -i /debs/*.deb
 
 # Install IGSC build dependencies
