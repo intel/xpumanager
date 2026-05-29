@@ -6,7 +6,7 @@
 # --- Helper targets ---
 
 # Skip the main module at the repo root as it's currently empty and makes some checks to fail.
-GO_MODULES := $(shell (git ls-files '*/go.mod' 2> /dev/null || find -mindepth 2 -name go.mod) | xargs dirname)
+GO_MODULES := $(shell (git ls-files '*/go.mod' 2> /dev/null || find -mindepth 2 -name go.mod -printf '%P\n') | xargs dirname)
 LEVEL_ZERO_GO_MODULES := $(foreach m,$(GO_MODULES),$(if $(findstring level-zero-go,$(m)),$(m)))
 # Filter out level-zero-go and test/
 XPUMD_GO_MODULES := $(filter-out $(LEVEL_ZERO_GO_MODULES) $(filter test/%,$(GO_MODULES)),$(GO_MODULES))
