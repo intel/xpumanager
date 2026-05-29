@@ -31,12 +31,15 @@ IMAGE_REPOSITORY ?= registry.local/xpumd
 IMAGE_TAG ?= latest
 IMAGE_PULL_POLICY ?= IfNotPresent
 
+# PIE + full RELRO, drop all symbols
+GO_FLAGS := -buildmode=pie -bindnow -s -w
+
 .PHONY: build
 # Build xpumd + xpuinfo-cli
 build:
 	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
-	go tool -modfile tools/go.mod builder --config=builder-config.yaml
-	go -C dist build github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
+	go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
+	go -C dist build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
 .PHONY: docker-build
 docker-build:
