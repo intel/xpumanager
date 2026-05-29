@@ -8,19 +8,21 @@ ARG BASE_IMAGE=scratch
 # The build stage
 FROM golang:1.26-trixie AS builder
 
-# DEB package versions
+# driver stack DEB package versions
 ARG IGC_CORE_VERSION=2.34.4+21428
 ARG COMPUTE_RUNTIME_RELEASE=26.18.38308.1
 ARG LIBIGDGMM12_VERSION=22.10.0
 ARG LEVEL_ZERO_VERSION=1.28.6
 
-# Git repo tags & matching commit hashes
+# SHA256 checksums for those
+ARG CHECKSUMS_LOADER=checksums-loader.txt
+ARG CHECKSUMS_BACKEND=checksums-backend.txt
+
+# Git repo tags & commit hashes to match against them
 ARG IGSC_VERSION=V0.9.6
 ARG IGSC_COMMIT=6abae21408bc36561baaade9fca9ae4a5173d2f0
 ARG METEE_VERSION=6.2.3
 ARG METEE_COMMIT=67ff323aead437557d9a7309803aae79cd5b2d56
-
-WORKDIR /go/src/work
 
 # Enable source packages and install IGSC build dependencies
 RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources && \
@@ -32,16 +34,28 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.s
     libudev-dev \
     pkg-config
 
+WORKDIR /debs/
+COPY level-zero-go/level-zero/$CHECKSUMS_LOADER level-zero-go/level-zero/$CHECKSUMS_BACKEND .
+
 # Download and install Level-Zero and its dependencies
-RUN mkdir /debs /out && \
-    IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
-    curl -fS --fail-early --output-dir /debs/ \
+RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
+    curl -fS --fail-early \
          -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
-    dpkg -i /debs/*.deb
+    if ! sha256sum --check $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
+	echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
+	cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
+	echo "--- Got: ---"; \
+	sha256sum *.deb; \
+	echo "=> ERROR"; \
+	exit 1; \
+    fi; \
+    dpkg -i *.deb
+
+WORKDIR /go/src/work
 
 # Build IGSC + its MeTee dependency
 # (with --depth 1, clone $TAG + checkout $COMMIT verifies that tags & hashes match)
@@ -62,6 +76,7 @@ RUN mkdir /src && \
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \
+    mkdir /out && \
     make build && \
     make -C level-zero-go/level-zero-stub clean test && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
