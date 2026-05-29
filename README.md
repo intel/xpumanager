@@ -37,10 +37,6 @@ Intel(R) XPU System Management Interface (XPU-SMI) is a command line interface (
 	* GPU telemetry – utilization, power, frequency, temperature, fabric speed, memory throughput, errors
 	* GPU health – memory, power, temperature, fabric port
 	* [GPU metric exporter daemon](xpumd/README.md)
-* Diagnostics:
-	* 3 levels of GPU diagnostic tests
-	* Pre-check GPU hardware and driver critical issues
-	* GPU log collection for the issue investigation
 * Configuration:
 	* GPU Settings - GPU power limits, frequency range, standby mode, scheduler mode, ECC On/Off, fabric port status
  
@@ -149,6 +145,7 @@ Dependency releases:
  - [LevelZero Loader](https://github.com/oneapi-src/level-zero/releases) (v1.27.0 or later) and [Intel Graphics Compute Runtime](https://github.com/intel/compute-runtime/releases)
  - [meetee](https://github.com/intel/metee/releases)
  - [IGSC](https://github.com/intel/igsc/releases)
+ - [CLI11](https://github.com/CLIUtils/CLI11/releases) (v2.6.2 or later)
 
  System packages:
 
