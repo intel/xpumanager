@@ -15,7 +15,7 @@ class cmdUpdateFW : public cmds
 {
 
 public:
-	cmdUpdateFW() { STRCPY_S(name, MAX_PATH, "updatefw"); };
+	cmdUpdateFW() { name = "updatefw"; };
 	~cmdUpdateFW(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);

@@ -19,6 +19,16 @@
 #include <string>
 
 /**
+ * @brief Configuration for FileStreamSink.
+ */
+struct FileStreamSinkConfig
+{
+	bool showTimestamp = true;					 ///< Prepend "[HH:MM:SS.mmm] " to every line
+	bool showThreadId = false;					 ///< Prepend "[<thread-id>] " after the timestamp
+	std::ios::openmode openMode = std::ios::app; ///< File open mode (default: append)
+};
+
+/**
  * @brief Sink that owns a std::ofstream opened at construction.
  *
  * Prefer OStreamSink(std::cout) / OStreamSink(std::cerr) for stdout/stderr.
@@ -27,17 +37,15 @@
  * @code
  *     Logger::instance().setSink(
  *         std::make_shared<FileStreamSink>("/var/log/xpu-smi.log"));
+ *
+ *     // Truncate on open, suppress thread ID:
+ *     Logger::instance().setSink(
+ *         std::make_shared<FileStreamSink>(path, FileStreamSinkConfig{
+ *             .openMode = std::ios::trunc}));
  * @endcode
  *
- * The file is opened in append mode so log lines survive process restarts.
  * emit() and sync() throw std::runtime_error on write/flush failure; the
- * exception is caught by Sink::log() and written directly to stderr
- * (Logger cannot safely be called from inside a sink).
- *
- * @param showTimestamp  Prepend "[HH:MM:SS.mmm] " to every line.
- *                       Default true (production file logging).
- * @param showThreadId   Prepend "[<thread-id>] " after the timestamp.
- *                       Default true (production file logging).
+ * exception is caught by Sink::log() and written directly to stderr.
  */
 class FileStreamSink final : public Sink
 {
@@ -46,12 +54,12 @@ class FileStreamSink final : public Sink
 	bool mShowThreadId;
 
 public:
-	explicit FileStreamSink(const char *path, bool showTimestamp = true, bool showThreadId = true)
-		: file(path, std::ios::app), mShowTimestamp(showTimestamp), mShowThreadId(showThreadId)
+	explicit FileStreamSink(const char *path, FileStreamSinkConfig cfg = {})
+		: file(path, cfg.openMode), mShowTimestamp(cfg.showTimestamp), mShowThreadId(cfg.showThreadId)
 	{}
 
-	explicit FileStreamSink(const std::string &path, bool showTimestamp = true, bool showThreadId = true)
-		: file(path, std::ios::app), mShowTimestamp(showTimestamp), mShowThreadId(showThreadId)
+	explicit FileStreamSink(const std::string &path, FileStreamSinkConfig cfg = {})
+		: file(path, cfg.openMode), mShowTimestamp(cfg.showTimestamp), mShowThreadId(cfg.showThreadId)
 	{}
 
 	[[nodiscard]] bool isOpen() const noexcept { return file.is_open(); }

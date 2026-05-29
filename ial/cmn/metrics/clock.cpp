@@ -218,8 +218,8 @@ ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache
 	return ZE_RESULT_SUCCESS;
 }
 
-constexpr auto GRAPHICS_ALIASES = std::to_array<std::string_view>({"clocks.current.sm"});
-constexpr auto MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.current.video"});
+constexpr auto GRAPHICS_ALIASES = std::to_array<std::string_view>({"clocks.current.sm", "clocks.gr"});
+constexpr auto MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.current.video", "clocks.mem"});
 constexpr auto MAX_GRAPHICS_ALIASES = std::to_array<std::string_view>({"clocks.max.sm"});
 constexpr auto MAX_MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.max.video"});
 

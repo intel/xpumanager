@@ -25,7 +25,7 @@ public:
 class cmdAmc : public cmds
 {
 public:
-	cmdAmc() { STRCPY_S(name, MAX_PATH, "amc"); }
+	cmdAmc() { name = "amc"; }
 	~cmdAmc() {}
 
 	void help(HELP helpType = FULL_HELP) override;

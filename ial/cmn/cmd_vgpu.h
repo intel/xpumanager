@@ -32,7 +32,7 @@ class cmdVgpu : public cmds
 {
 
 public:
-	cmdVgpu() { STRCPY_S(name, MAX_PATH, "vgpu"); };
+	cmdVgpu() { name = "vgpu"; };
 	~cmdVgpu(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t precheck(devInfo *d);

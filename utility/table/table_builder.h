@@ -103,7 +103,7 @@ public:
 		// GPU monitoring style features
 		std::vector<std::vector<std::string>> multiLineCells; // Multi-line cell content (overrides cells if non-empty)
 		std::optional<std::string> spanText;				  // Text spanning all columns
-		Align spanAlign = Align::Center;                      // Alignment for span text
+		Align spanAlign = Align::Center;					  // Alignment for span text
 		BorderStyle borderStyle = BorderStyle::Normal;		  // Custom border for this row
 		bool isSeparator = false;							  // Row is just a separator line
 
@@ -183,7 +183,8 @@ public:
 		char borderChar = '-';
 		char cornerChar = '+';
 		char verticalChar = '|';
-		std::string emptyCellText;
+		std::string emptyCellText{}; // NOLINT (readability-redundant-member-init) // Redundant default to empty in
+									 // order to use partial designated initializers
 		std::string noDataText = "No data";
 		bool showRowNumbers = false;
 		int maxCellWidth = 50; // Prevent extremely wide columns
@@ -212,9 +213,9 @@ private:
 	std::vector<Row> rows;
 	std::vector<Row> preHeaderRows; // Rendered inside the table border, before column headers
 	bool autoSize = false;
-	bool suppressHeaderSep = false; // Suppress the border line drawn after column headers
+	bool suppressHeaderSep = false;	   // Suppress the border line drawn after column headers
 	bool suppressHeaderColSep = false; // Suppress inner | between column headers
-	bool suppressDataColSep = false; // Suppress inner | between data cells
+	bool suppressDataColSep = false;   // Suppress inner | between data cells
 	mutable bool widthsCalculated = false;
 	OutputFormat outputFormat = OutputFormat::Table;
 	TableConfig config;
@@ -339,7 +340,8 @@ public:
 	 * @param style   Border style for the separator that follows the span row
 	 * @return Reference to this TableBuilder for chaining
 	 */
-	TableBuilder &addPreHeaderSpanRow(std::string_view text, BorderStyle style = BorderStyle::Normal, Align align = Align::Center);
+	TableBuilder &addPreHeaderSpanRow(std::string_view text, BorderStyle style = BorderStyle::Normal,
+									  Align align = Align::Center);
 	TableBuilder &suppressHeaderSeparator() noexcept;
 	TableBuilder &suppressHeaderColumnSeparators() noexcept;
 	TableBuilder &suppressDataColumnSeparators() noexcept;
@@ -582,6 +584,44 @@ public:
 	 * @brief Explicitly convert to JSON format
 	 */
 	[[nodiscard]] std::string asJson(bool compact = false) const;
+
+	/**
+	 * @brief Freeze column widths at their current values.
+	 *
+	 * Triggers auto-sizing if enabled. After this call, adding more rows will not
+	 * recalculate column widths, making the table safe for streaming append use.
+	 */
+	TableBuilder &lockWidths();
+
+	/**
+	 * @brief Controls whether @c headerLine() / @c rowLine() produce aligned or CSV output.
+	 */
+	enum class LineStyle
+	{
+		Aligned, ///< Pad each cell to its column width, separate with two spaces.
+		Csv,	 ///< Emit raw text with @c ", " separator (no padding).
+	};
+
+	/**
+	 * @brief Render only the header row as a plain string, without borders.
+	 *
+	 * @param style  @c LineStyle::Aligned (default) — padded/space-separated.
+	 *               @c LineStyle::Csv — raw text with @c ", " separator.
+	 * @return Formatted header string (no trailing newline).
+	 */
+	[[nodiscard]] std::string headerLine(LineStyle style = LineStyle::Aligned) const;
+
+	/**
+	 * @brief Render a single row of values as a plain string, without borders.
+	 *
+	 * @param values  Cell values in column order. Extra values are ignored;
+	 *                missing values use the configured @c emptyCellText.
+	 * @param style   @c LineStyle::Aligned (default) — padded/space-separated.
+	 *                @c LineStyle::Csv — raw text with @c ", " separator.
+	 * @return Formatted data row string (no trailing newline).
+	 */
+	[[nodiscard]] std::string rowLine(const std::vector<std::string> &values,
+									  LineStyle style = LineStyle::Aligned) const;
 
 	/**
 	 * @brief Get number of columns

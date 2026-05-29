@@ -43,7 +43,7 @@ class cmdConfig : public cmds
 {
 
 public:
-	cmdConfig() { STRCPY_S(name, MAX_PATH, "config"); }
+	cmdConfig() { name = "config"; }
 	~cmdConfig() {}
 	void help(HELP helpType = FULL_HELP);
 	void displayDeviceConfig(devInfo *d);

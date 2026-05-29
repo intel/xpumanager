@@ -103,7 +103,7 @@ class cmdDiscovery : public cmds
 {
 
 public:
-	cmdDiscovery() { STRCPY_S(name, MAX_PATH, "discovery"); };
+	cmdDiscovery() { name = "discovery"; };
 	~cmdDiscovery(){};
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t preCheck(std::vector<int> *dumpArgs);

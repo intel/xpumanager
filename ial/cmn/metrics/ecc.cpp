@@ -108,29 +108,10 @@ ze_result_t aggregateRasErrors(devInfo &d, zes_ras_error_type_t cacheErrorType, 
 	return res;
 }
 
-// Sum all categories without type filtering for the untyped grand total.
-/**
- * @brief Sums RAS errors across all error categories without type filtering.
- *
- * Iterates over @c CACHE_ERRORS, @c COMPUTE_ERRORS, @c NON_COMPUTE_ERRORS, and
- * @c DISPLAY_ERRORS, accumulating the total error count using
- * @c ZES_RAS_ERROR_TYPE_FORCE_UINT32 (no type filter). The result is the overall
- * grand total of all RAS errors on the device.
- *
- * @param[in]  d   Device to query. Returns @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
- *                 if the RAS HAL sub-object is @c nullptr.
- * @param[out] out On success, set to the decimal string representation of the total
- *                 error count. Unchanged on failure.
- *
- * @retval ZE_RESULT_SUCCESS               The total was accumulated and written to @p out.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The RAS HAL sub-object is @c nullptr.
- * @retval Other                           The first error code returned by a
- *                                         @c getErrors() call; remaining categories
- *                                         are not queried after the first failure.
- *
- * @throws None — all HAL calls return @c ze_result_t error codes; no exceptions
- *                are thrown by this function.
- */
+// Sum all categories for the untyped grand total, querying correctable and
+// uncorrectable separately to avoid the undefined ZES_RAS_ERROR_TYPE_FORCE_UINT32 sentinel.
+// Categories that return UNSUPPORTED_FEATURE for one type (e.g. RESET is always
+// uncorrectable) are treated as zero for that type so accumulation continues.
 ze_result_t aggregateAllRasErrors(devInfo &d, MetricValue &out)
 {
 	auto *ras = d.dev->getRAS();
@@ -142,12 +123,16 @@ ze_result_t aggregateAllRasErrors(devInfo &d, MetricValue &out)
 											ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS});
 	uint64_t total = 0;
 	for (const auto cat : cats) {
-		uint64_t n = 0;
-		auto const res = ras->getErrors(cat, ZES_RAS_ERROR_TYPE_FORCE_UINT32, &n);
-		if (res != ZE_RESULT_SUCCESS) {
-			return res;
+		uint64_t corr = 0, uncorr = 0;
+		const auto rc = ras->getErrors(cat, ZES_RAS_ERROR_TYPE_CORRECTABLE, &corr);
+		if (rc != ZE_RESULT_SUCCESS && rc != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			return rc;
 		}
-		total += n;
+		const auto ru = ras->getErrors(cat, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &uncorr);
+		if (ru != ZE_RESULT_SUCCESS && ru != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			return ru;
+		}
+		total += corr + uncorr;
 	}
 	out = std::format("{}", total);
 	return ZE_RESULT_SUCCESS;
@@ -201,36 +186,12 @@ ze_result_t errAggregateTotalGetter(devInfo &d, MetricValue &out, const MetricCa
 	return aggregateAllRasErrors(d, out);
 }
 
-// Generic getter for a single RAS error category / type pair.
-/**
- * @brief Generic getter for a single RAS error category and type combination.
- *
- * Queries the RAS HAL for the error count of the given (@p CAT, @p TYPE) pair.
- * Instantiated at compile time for each specific metric; the template parameters
- * select the category and type filter baked into the getter function pointer.
- *
- * @tparam CAT  The @c zes_ras_error_cat_t category to query
- *              (e.g. @c ZES_RAS_ERROR_CAT_RESET, @c ZES_RAS_ERROR_CAT_DRIVER_ERRORS).
- * @tparam TYPE The @c zes_ras_error_type_t type filter. Use
- *              @c ZES_RAS_ERROR_TYPE_FORCE_UINT32 for an unfiltered total.
- *
- * @param[in]  d      Device to query. Returns @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
- *                    if the RAS HAL sub-object is @c nullptr.
- * @param[out] out    On success, set to the decimal string of the error count.
- *                    Unchanged on failure.
- * @param      unused Unused metric cache parameter.
- *
- * @retval ZE_RESULT_SUCCESS               The count was read and written to @p out.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The RAS HAL sub-object is @c nullptr.
- * @retval Other                           Any error code propagated from the RAS HAL
- *                                         @c getErrors() call.
- *
- * @throws None — all HAL calls return @c ze_result_t error codes; no exceptions
- *                are thrown by this function.
- */
+// Generic getter for a single RAS error category and explicit type (CORRECTABLE or UNCORRECTABLE).
 template <zes_ras_error_cat_t CAT, zes_ras_error_type_t TYPE>
 ze_result_t rasErrorGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
 {
+	static_assert(TYPE == ZES_RAS_ERROR_TYPE_CORRECTABLE || TYPE == ZES_RAS_ERROR_TYPE_UNCORRECTABLE,
+				  "Use rasAllTypesGetter for unfiltered totals; do not pass FORCE_UINT32");
 	auto *r = d.dev->getRAS();
 	if (r == nullptr) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -241,6 +202,29 @@ ze_result_t rasErrorGetter(devInfo &d, MetricValue &out, const MetricCache & /*u
 		out = std::format("{}", n);
 	}
 	return res;
+}
+
+// Getter for an unfiltered per-category total: sums correctable + uncorrectable.
+// Categories that only define one type (e.g. RESET) return UNSUPPORTED for the
+// other type; that is treated as zero so the sum is still correct.
+template <zes_ras_error_cat_t CAT>
+ze_result_t rasAllTypesGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
+{
+	auto *r = d.dev->getRAS();
+	if (r == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	uint64_t corr = 0, uncorr = 0;
+	const auto rc = r->getErrors(CAT, ZES_RAS_ERROR_TYPE_CORRECTABLE, &corr);
+	if (rc != ZE_RESULT_SUCCESS && rc != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		return rc;
+	}
+	const auto ru = r->getErrors(CAT, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &uncorr);
+	if (ru != ZE_RESULT_SUCCESS && ru != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		return ru;
+	}
+	out = std::format("{}", corr + uncorr);
+	return ZE_RESULT_SUCCESS;
 }
 
 constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
@@ -282,7 +266,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "GPU reset count",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_RESET, ZES_RAS_ERROR_TYPE_FORCE_UINT32>,
+		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_RESET>,
 	},
 	{
 		.name = "ras.programming.errors",
@@ -290,7 +274,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Programming error count",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32>,
+		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS>,
 	},
 	{
 		.name = "ras.driver.errors",
@@ -298,7 +282,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Driver error count",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_DRIVER_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32>,
+		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_DRIVER_ERRORS>,
 	},
 	{
 		.name = "ras.cache.errors.correctable",
@@ -322,7 +306,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Non-compute error count (correctable + uncorrectable; HAL does not differentiate)",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_FORCE_UINT32>,
+		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS>,
 	},
 });
 } // namespace

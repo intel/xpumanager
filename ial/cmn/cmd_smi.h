@@ -73,7 +73,7 @@ struct SmiDeviceStats
 class cmdSmi : public cmds
 {
 public:
-	cmdSmi() { STRCPY_S(name, MAX_PATH, "smi"); }
+	cmdSmi() { name = "smi"; }
 	~cmdSmi() {}
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);

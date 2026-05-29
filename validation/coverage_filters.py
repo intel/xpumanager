@@ -19,8 +19,6 @@ Excluded categories
 - Hardware-state-dependent HAL (diagnostic, fabric, fan, vf, ras, standby,
   scheduler, performance, sysman, enginegroup, firmware, file_io, ecc,
   pci.cpp, metric) — needs specific HW / real GPU workloads
-- CLI orchestrators over excluded HAL (cmd_diag) that would otherwise
-  inflate the denominator without adding testable logic
 - OS-specific platform layer (Linux syscall / sysfs wrappers)
 - Infrastructure / template-instantiation artifacts in headers that gcov
   counts per-instantiation but which do not represent real uncovered
@@ -67,8 +65,6 @@ EXCLUDES = [
     r"hal/core/ecc\.",
     r"hal/core/pci\.cpp",
     r"hal/core/metric\.",
-    # ---- CLI orchestrators over excluded HAL ----
-    r"ial/cmn/cmd_diag\.",
     # ---- OS-specific platform layer (Linux syscall wrappers) ----
     r"oal/lin/lin\.cpp",
     r"oal/lin/lin\.h",

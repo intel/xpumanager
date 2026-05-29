@@ -271,7 +271,7 @@ class cmdStats : public cmds
 {
 
 public:
-	cmdStats() { STRCPY_S(name, MAX_PATH, "stats"); }
+	cmdStats() { name = "stats"; }
 	~cmdStats() {}
 	void help(HELP helpType = FULL_HELP);
 	ze_result_t eu(devInfo *d);

@@ -172,12 +172,12 @@ TEST_CASE("Power group contains all expected metric names")
 	const std::vector<std::string_view> expected = {"power.draw", "power.draw.gpu", "energy.consumed", "power.limit",
 													"power.max_limit"};
 	for (const auto name : expected) {
-		CHECK_MESSAGE(std::ranges::any_of(byPow, [name](const auto &m) { return m.name == name; }), name,
+		CHECK_MESSAGE(std::ranges::any_of(byPow, [name](const auto *m) { return m->name == name; }), name,
 					  " not found in POWER group");
 	}
 	// Relative order: power.draw before power.draw.gpu before energy.consumed
 	const auto pos = [&](std::string_view n) {
-		return std::ranges::find_if(byPow, [n](const auto &m) { return m.name == n; }) - byPow.begin();
+		return std::ranges::find_if(byPow, [n](const auto *m) { return m->name == n; }) - byPow.begin();
 	};
 	CHECK(pos("power.draw") < pos("power.draw.gpu"));
 	CHECK(pos("power.draw.gpu") < pos("energy.consumed"));
@@ -202,7 +202,7 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 	const auto byUtil = getMetricsByGroup(MetricGroup::UTILIZATION);
 	REQUIRE(byUtil.size() == canonicalNames.size());
 	for (std::size_t i = 0; i < canonicalNames.size(); ++i) {
-		CHECK(byUtil[i].name == canonicalNames[i]);
+		CHECK(byUtil[i]->name == canonicalNames[i]);
 	}
 }
 
@@ -211,7 +211,7 @@ TEST_CASE("getMetricsByGroup MEMORY includes utilization.memory")
 	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
 	// utilization.memory is registered first (before memory.cpp metrics)
 	REQUIRE_FALSE(byMem.empty());
-	CHECK(byMem[0].name == "utilization.memory");
+	CHECK(byMem[0]->name == "utilization.memory");
 }
 
 TEST_CASE("findMetric resolves Temperature metric names")
@@ -224,8 +224,8 @@ TEST_CASE("getMetricsByGroup TEMPERATURE matches getTemperatureMetrics")
 {
 	const auto byTemp = getMetricsByGroup(MetricGroup::TEMPERATURE);
 	REQUIRE(byTemp.size() == metrics::temperature::getTemperatureMetrics().size());
-	CHECK(byTemp[0].name == "temperature.gpu");
-	CHECK(byTemp[1].name == "temperature.memory");
+	CHECK(byTemp[0]->name == "temperature.gpu");
+	CHECK(byTemp[1]->name == "temperature.memory");
 }
 
 TEST_CASE("findMetric resolves clock metric names")
@@ -352,7 +352,7 @@ TEST_CASE(
 	const std::vector<std::string_view> expectedPower = {"power.draw", "power.draw.gpu", "energy.consumed",
 														 "power.limit", "power.max_limit"};
 	for (const auto name : expectedPower) {
-		CHECK_MESSAGE(std::ranges::any_of(byQuery, [name](const auto &m) { return m.name == name; }), name,
+		CHECK_MESSAGE(std::ranges::any_of(byQuery, [name](const auto *m) { return m->name == name; }), name,
 					  " not found in resolveQuery(\"POWER\")");
 	}
 	CHECK_FALSE(resolveQuery("CLOCK").empty());

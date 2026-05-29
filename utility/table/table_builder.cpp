@@ -962,6 +962,60 @@ std::string TableBuilder::asTable() const { return toTableString(); }
 
 std::string TableBuilder::asJson(bool compact) const { return toJsonString(compact); }
 
+TableBuilder &TableBuilder::lockWidths()
+{
+	calculateWidths();
+	widthsCalculated = true;
+	return *this;
+}
+
+std::string TableBuilder::headerLine(LineStyle style) const
+{
+	const bool pad = (style == LineStyle::Aligned);
+	const std::string_view sep = pad ? "  " : ", ";
+	calculateWidths();
+	if (columns.empty()) {
+		return {};
+	}
+	std::string result;
+	for (size_t i = 0; i < columns.size(); ++i) {
+		if (i > 0) {
+			result += sep;
+		}
+		if (pad) {
+			alignTextDirect(result, columns[i].header, columns[i].width, columns[i].alignment);
+		} else {
+			result += columns[i].header;
+		}
+	}
+	return result;
+}
+
+std::string TableBuilder::rowLine(const std::vector<std::string> &values, LineStyle style) const
+{
+	const bool pad = (style == LineStyle::Aligned);
+	const std::string_view sep = pad ? "  " : ", ";
+	calculateWidths();
+	if (columns.empty()) {
+		return {};
+	}
+	std::string result;
+	for (size_t i = 0; i < columns.size(); ++i) {
+		if (i > 0) {
+			result += sep;
+		}
+		const std::string_view cellContent = (i < values.size() && !values[i].empty())
+												 ? std::string_view{values[i]}
+												 : std::string_view{config.emptyCellText};
+		if (pad) {
+			alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
+		} else {
+			result += cellContent;
+		}
+	}
+	return result;
+}
+
 TableBuilder &TableBuilder::clearRows() noexcept
 {
 	rows.clear();

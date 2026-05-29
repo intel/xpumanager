@@ -362,10 +362,14 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 /**
  * Returns all registered metrics in declaration order.
  *
- * @return  Vector of all metrics assembled from the per-group headers,
+ * The returned span is valid for the lifetime of the program (backed by a
+ * static singleton built on first call).  Pointers into this span are stable
+ * and may be stored safely by callers.
+ *
+ * @return  Stable span of all metrics assembled from the per-group headers,
  *          in declaration order.
  */
-[[nodiscard]] std::vector<QueryMetric> getQueryMetrics();
+[[nodiscard]] std::span<const QueryMetric> getQueryMetrics() noexcept;
 
 /**
  * Returns pointers to all metrics whose group bitmask overlaps @p mask.
@@ -376,9 +380,10 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  *   membership (including metrics whose @c groups field is @c MetricGroup::NONE).
  *
  * @param mask  A @ref MetricGroup bitmask.
- * @return      Copies of all matching metrics, in declaration order.
+ * @return      Pointers into the stable metric registry, in declaration order.
+ *              Never contains null pointers.
  */
-[[nodiscard]] std::vector<QueryMetric> getMetricsByGroup(MetricGroup mask);
+[[nodiscard]] std::vector<const QueryMetric *> getMetricsByGroup(MetricGroup mask);
 
 /**
  * Case-insensitive lookup by metric name or alias.
@@ -402,10 +407,11 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  * Duplicate entries (matched by name) are removed; declaration order is preserved.
  *
  * @param csv  Comma-separated query string, e.g. @c "temperature.gpu,POWER" or @c "pu".
- * @return     Deduplicated, ordered list of matching metrics (by value).
- *             Unknown tokens are silently ignored.
+ * @return     Deduplicated, ordered list of pointers into the stable metric registry.
+ *             Unknown tokens are silently ignored.  Pointers remain valid for the
+ *             lifetime of the program.
  */
-[[nodiscard]] std::vector<QueryMetric> resolveQuery(std::string_view csv);
+[[nodiscard]] std::vector<const QueryMetric *> resolveQuery(std::string_view csv);
 
 /**
  * Format the canonical group names for the given bitmask as a comma-separated string.
@@ -449,9 +455,9 @@ void emitMetrics(Output &output, std::span<const QueryMetric *> fields, std::spa
 	for (std::size_t i = 0; i < devices.size(); ++i) {
 		output.onBeginDevice(devices[i]);
 		for (const QueryMetric *f : fields) {
-			std::string val{"[N/A]"};
+			std::string val{"N/A"};
 			if (f->getter(devices[i], val, caches[i]) != ZE_RESULT_SUCCESS) {
-				val = "[N/A]";
+				val = "N/A";
 			}
 			output.onMetric(*f, val);
 		}
@@ -470,7 +476,7 @@ void emitMetrics(Output &output, std::span<const QueryMetric *> fields, std::spa
  * This keeps the total blocking time constant regardless of device count.
  *
  * Metrics tagged @ref MetricSource::Static skip sampling entirely.
- * Metrics whose getter returns a non-success result emit @c "[N/A]".
+ * Metrics whose getter returns a non-success result emit @c "N/A".
  *
  * @tparam Output  Any type satisfying @ref MetricOutput.
  * @param output   Sink that receives the structured results.
