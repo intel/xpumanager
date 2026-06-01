@@ -63,14 +63,15 @@ xpum_result_t vgpuPrecheck(xpum_device_id_t deviceId,
         result->vmxFlag = false;
         std::string msg = "Command lscpu failed.";
         strncpy(result->vmxMessage, msg.c_str(), msg.size() + 1);
-    } else if (cmdRes.output().find("vmx") != std::string::npos) {
+    } else if (cmdRes.output().find("vmx") != std::string::npos ||
+               cmdRes.output().find("svm") != std::string::npos) {
         /*
-        *   VMX flag detected by lscpu
+        *   VMX/SVM flag detected by lscpu
         */
         result->vmxFlag = true;
     } else {
         result->vmxFlag = false;
-        std::string msg = "No VMX flag, Please ensure Intel VT enabled in BIOS";
+        std::string msg = "No VMX/SVM flag, Please ensure Intel VT or AMD-V enabled in BIOS";
         strncpy(result->vmxMessage, msg.c_str(), msg.size() + 1);
     }
 
