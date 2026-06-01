@@ -122,7 +122,7 @@ ze_result_t fabric::getFabricPorts(zes_device_handle_t device, std::vector<portI
 		}
 	}
 
-	if (portCount == 0) {
+	if (portCount == 0 || ports == nullptr) {
 		DBG("No fabric ports found\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
@@ -204,7 +204,7 @@ ze_result_t fabric::setFabricPorts(zes_device_handle_t device, const portInfoSet
 		}
 	}
 
-	if (portCount == 0) {
+	if (portCount == 0 || ports == nullptr) {
 		ERR("No fabric ports found\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
