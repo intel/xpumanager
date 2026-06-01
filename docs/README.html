@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Installation" href="installation.html" />
-    <link rel="prev" title="XPUM Documentation" href="xpum_index.html" /> 
+    <link rel="prev" title="XPUM V1.x Documentation" href="xpum_index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,7 +48,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM V1.x Documentation</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Intel(R) XPU Manager and XPU System Management Interface</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#intel-r-xpu-manager-features">Intel(R) XPU Manager features</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#cli-output-of-gpu-device-info-telemetries-and-firmware-update">CLI output of GPU device info, telemetries and firmware update</a></li>
@@ -62,12 +62,12 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel(R) XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel(R) XPU Manager V1.x  Command Line Interface User Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xpumdoc/rst/index.html">Core Library API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI V1.x  Linux Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
@@ -85,7 +85,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM Documentation</a></li>
+          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM V1.x Documentation</a></li>
       <li class="breadcrumb-item active">Intel(R) XPU Manager and XPU System Management Interface</li>
       <li class="wy-breadcrumbs-aside">
       </li>
@@ -166,7 +166,7 @@
 +-----------+--------------------------------------------------------------------------------------+
 
 xpumcli dump -d 0 -m 0,1,2,3
-Timestamp, DeviceId, GPU Utilization (%), GPU Power (W), GPU Frequency (MHz), GPU Core Temperature (Celsius Degree)
+Timestamp, DeviceId, Average % utilization of all GPU Engines, GPU Power (W), GPU Frequency (MHz), GPU Core Temperature (Celsius Degree)
 21:23:00.000,    0, 99.55, 119.61, 1800, 49.00
 21:23:01.000,    0, 99.45, 119.36, 1800, 50.00
 21:23:02.000,    0, 99.48, 119.55, 1750, 50.50
@@ -177,11 +177,11 @@ sudo xpumcli updatefw -d 0 -t GFX -f ATS_M150_512_C0_PVT_ES_032_gfx_fwupdate_SOC
 Device 0 FW version: DG02_1.3170
 Image FW version: DG02_1.3172
 Do you want to continue? (y/n) y
-Start to update firmware
+Starting to update firmware
 Firmware Name: GFX
 Image path: /home/dcm/ATS_M150_512_C0_PVT_ES_032_gfx_fwupdate_SOC1.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
 </pre></div>
 </div>
 </section>
@@ -269,6 +269,7 @@ Update firmware successfully.
 <ul class="simple">
 <li><p>Intel(R) Data Center Flex Series GPU (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
 <li><p>Intel(R) Data Center Max Series GPU (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
+<li><p>Intel(R) Arc(TM) B Series GPU (<a class="reference external" href="https://dgpu-docs.intel.com/installation-guides/index.html">GPU Driver Installation Guides</a>)</p></li>
 </ul>
 </section>
 <section id="supported-oses">
@@ -276,7 +277,7 @@ Update firmware successfully.
 <ul class="simple">
 <li><p>XPU Manager</p>
 <ul>
-<li><p>Ubuntu 20.04.3/22.04</p></li>
+<li><p>Ubuntu 20.04.3/22.04/24.04</p></li>
 <li><p>RHEL 8.8/9.2</p></li>
 <li><p>CentOS 8/9 Stream</p></li>
 <li><p>CentOS 7.4/7.9</p></li>
@@ -285,7 +286,7 @@ Update firmware successfully.
 </li>
 <li><p>XPU-SMI</p>
 <ul>
-<li><p>Ubuntu 20.04.3/22.04</p></li>
+<li><p>Ubuntu 20.04.3/22.04/24.04</p></li>
 <li><p>RHEL 8.8/9.2</p></li>
 <li><p>CentOS 8/9 Stream</p></li>
 <li><p>CentOS 7.4/7.9</p></li>
@@ -325,7 +326,7 @@ Update firmware successfully.
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="xpum_index.html" class="btn btn-neutral float-left" title="XPUM Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="xpum_index.html" class="btn btn-neutral float-left" title="XPUM V1.x Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

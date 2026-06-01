@@ -49,7 +49,6 @@
 
 namespace xpum {
 
-bool isZeinitRequired = true; 
 const char *getXpumDevicePropertyNameString(xpum_device_property_name_t name) {
     switch (name) {
         case XPUM_DEVICE_PROPERTY_DEVICE_TYPE:
@@ -290,8 +289,7 @@ std::vector<FabricCount> getDeviceAndTileFabricCount(xpum_device_id_t deviceId) 
     return res;
 }
 
-xpum_result_t xpumInit(bool zeinitDisable) {
-    if (zeinitDisable) isZeinitRequired = false;
+xpum_result_t xpumInit() {
     try {
         Logger::init();
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());
@@ -2709,26 +2707,24 @@ xpum_result_t xpumResetDevice(xpum_device_id_t deviceId, bool force) {
         return true;
     };
 
-    if (isZeinitRequired) {
-	std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
-        if (device == nullptr) {
-            return XPUM_RESULT_DEVICE_NOT_FOUND;
-        }
-        if (device->isUpgradingFw()) {
-            return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
-        }
+    std::shared_ptr<Device> device = Core::instance().getDeviceManager()->getDevice(std::to_string(deviceId));
+    if (device == nullptr) {
+        return XPUM_RESULT_DEVICE_NOT_FOUND;
+    }
+    if (device->isUpgradingFw()) {
+        return XPUM_UPDATE_FIRMWARE_TASK_RUNNING;
+    }
 
-        Property bdfProp;
-        device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, bdfProp);
-        int numVfs = 0;
-        if (!readSriovValue(bdfProp.getValue(), "sriov_numvfs", numVfs)) {
-            return XPUM_VGPU_SYSFS_ERROR;
-        }
-        if (numVfs > 0) {
-            auto removeRes = xpumRemoveAllVf(deviceId);
-            if (removeRes != XPUM_OK) {
-                return removeRes;
-            }
+    Property bdfProp;
+    device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, bdfProp);
+    int numVfs = 0;
+    if (!readSriovValue(bdfProp.getValue(), "sriov_numvfs", numVfs)) {
+        return XPUM_VGPU_SYSFS_ERROR;
+    }
+    if (numVfs > 0) {
+        auto removeRes = xpumRemoveAllVf(deviceId);
+        if (removeRes != XPUM_OK) {
+            return removeRes;
         }
     }
 

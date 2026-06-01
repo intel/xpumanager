@@ -1,9 +1,9 @@
 
-# Intel(R) XPU Manager Command Line Interface User Guide
+# Intel(R) XPU Manager V1.x  Command Line Interface User Guide
 This guide describes how to use XPU Manager Command Line Interface to manage Intel GPU devices. 
   
 
-## Intel(R) XPU Manager Command Line Interface main features 
+## Intel(R) XPU Manager V1.x Command Line Interface main features
 * Show the device info. 
 * Manage multiple devices by the group-level. 
 * Get lots of raw and aggregated device statistics. 
@@ -13,10 +13,10 @@ This guide describes how to use XPU Manager Command Line Interface to manage Int
 * Set some automatic action when some condition is met. 
 
 ## Help info
-Show the XPU Manager CLI help info. 
+Show the XPU Manager V1.x CLI help info. 
 ```
 xpumcli 
-Intel(R) XPU Manager Command Line Interface -- v1.0 
+Intel(R) XPU Manager Command Line Interface -- v1.x
 Intel(R) XPU Manager Command Line Interface provides the Intel data center GPU model and monitoring capabilities. It can also be used to change the Intel data center GPU settings and update the firmware.  
 Intel(R) XPU Manager is based on Intel(R) oneAPI Level Zero. Before using Intel(R) XPU Manager, the GPU driver and Intel(R) oneAPI Level Zero should be installed rightly.  
  
@@ -725,11 +725,11 @@ Device 0 FW version: DG02_2.2271
 Device 1 FW version: DG02_2.2271
 Image FW version: DG02_2.2277
 Do you want to continue? (y/n)
-Start to update firmware
+Starting to update firmware
 Firmware Name: GFX
 Image path: /home/test/ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
 ```
 
 Update GPU AMC firmware
@@ -737,11 +737,11 @@ Update GPU AMC firmware
 xpumcli updatefw -t AMC -f ats_m_amc_v_6_8_0_0.bin -y
 CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model.
 Please confirm to proceed (y/n)
-Start to update firmware
+Starting to update firmware
 Firmware Name: AMC
 Image path: /home/test/ats_m_amc_v_6_8_0_0.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
 
 ```
  

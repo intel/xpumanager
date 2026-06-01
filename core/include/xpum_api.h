@@ -87,7 +87,7 @@ extern "C" {
  * @return \ref xpum_result_t 
  * @note Support Platform: Linux, Windows
  */
-XPUM_API xpum_result_t xpumInit(bool zeinitDisable = false);
+XPUM_API xpum_result_t xpumInit(void);
 
 /**
  * @brief This method is used to shut down XPUM.

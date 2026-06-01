@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="enum xpum_policy_conditon_type_enum" href="enum_xpum_policy_conditon_type_enum.html" />
-    <link rel="prev" title="enum xpum_media_resolution_enum" href="enum_xpum_media_resolution_enum.html" /> 
+    <link rel="prev" title="enum xpum_pciedown_state_t" href="enum_xpum_pciedown_state_t.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -48,11 +48,11 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a><ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../xpum_index.html">XPUM V1.x Documentation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../smi_index.html">XPU-SMI V1.x  Linux Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../SMI_README.html">Intel XPU System Management Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../smi_install_guide.html">Intel(R) XPU-SMI Installation Guide</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../smi_user_guide.html">Intel(R) XPU System Management Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../smi_user_guide.html">Intel(R) XPU System Management Interface V1.x  User Guide</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
 <li class="toctree-l3"><a class="reference internal" href="group_DEVICE_API.html">Device API</a></li>
@@ -91,6 +91,8 @@
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_link_type_enum.html">enum xpum_link_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_media_format_enum.html">enum xpum_media_format_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_media_resolution_enum.html">enum xpum_media_resolution_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_pciedown_action_t.html">enum xpum_pciedown_action_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="enum_xpum_pciedown_state_t.html">enum xpum_pciedown_state_t</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">enum xpum_policy_action_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_conditon_type_enum.html">enum xpum_policy_conditon_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_policy_type_enum.html">enum xpum_policy_type_enum</a></li>
@@ -106,6 +108,7 @@
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_standby_type_t.html">enum xpum_standby_type_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_stats_type_enum.html">enum xpum_stats_type_enum</a></li>
 <li class="toctree-l4"><a class="reference internal" href="enum_xpum_version_enum.html">enum xpum_version_enum</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_Power_limit_ext_t.html">struct Power_limit_ext_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_parent_switch.html">struct parent_switch</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_amc_fw_version_t.html">struct xpum_amc_fw_version_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_device_basic_info.html">struct xpum_device_basic_info</a></li>
@@ -144,6 +147,8 @@
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_notify_callback_para_t.html">struct xpum_policy_notify_callback_para_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_policy_t.html">struct xpum_policy_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_burst_limit_t.html">struct xpum_power_burst_limit_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_domain_ext_t.html">struct xpum_power_domain_ext_t</a></li>
+<li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_limit_ext_t.html">struct xpum_power_limit_ext_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_limits_t.html">struct xpum_power_limits_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_peak_limit_t.html">struct xpum_power_peak_limit_t</a></li>
 <li class="toctree-l4"><a class="reference internal" href="struct_xpum_power_prop_data_t.html">struct xpum_power_prop_data_t</a></li>
@@ -191,7 +196,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../smi_index.html">XPU-SMI V1.x  Linux Documentation</a></li>
           <li class="breadcrumb-item"><a href="index.html">Core Library API</a></li>
           <li class="breadcrumb-item"><a href="global.html">Global Namespace</a></li>
       <li class="breadcrumb-item active">enum xpum_policy_action_type_enum</li>
@@ -218,7 +223,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="enum_xpum_media_resolution_enum.html" class="btn btn-neutral float-left" title="enum xpum_media_resolution_enum" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="enum_xpum_pciedown_state_t.html" class="btn btn-neutral float-left" title="enum xpum_pciedown_state_t" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="enum_xpum_policy_conditon_type_enum.html" class="btn btn-neutral float-right" title="enum xpum_policy_conditon_type_enum" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

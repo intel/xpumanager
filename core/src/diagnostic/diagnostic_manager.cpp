@@ -4,6 +4,7 @@
  *  @file diagnostic_manager.cpp
  */
 
+#define _XOPEN_SOURCE 500
 #include "diagnostic_manager.h"
 
 #include <algorithm>
@@ -25,8 +26,16 @@
 #include "api/device_model.h"
 #include <sys/stat.h>
 #include <sys/sysinfo.h>
+#include <ftw.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "helper.h"
 #define ALL_GPU_ID -1
+
+// Helper for recursive temp directory removal used in media diagnostics.
+static int removeFsEntry(const char* path, const struct stat*, int, struct FTW*) {
+    return remove(path);
+}
 
 namespace xpum {
 
@@ -615,7 +624,7 @@ void DiagnosticManager::doDiagnosticCore(xpum_device_id_t deviceId) {
                 case XPUM_DIAG_SOFTWARE_LIBRARY:
                     XPUM_LOG_INFO("device: {} - start libraries diagnostic", currentId);
                     try {
-                        doDiagnosticLibraries(devices, p_task_info);
+                        doDiagnosticLibraries(devices, p_task_info, currentId);
                     } catch (BaseException &e) {
                         doDiagnosticExceptionHandle(XPUM_DIAG_SOFTWARE_LIBRARY, e.what(), p_task_info);
                     }
@@ -781,11 +790,17 @@ void DiagnosticManager::doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_di
     component1.finished = true;
 }
 
-void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device>> devices, std::shared_ptr<xpum_diag_task_info_t> p_task_info) {
+void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device>> devices, std::shared_ptr<xpum_diag_task_info_t> p_task_info, xpum_device_id_t deviceId) {
     std::string details;
     // DIAGNOSTIC_SOFTWARE_LIBRARY
     xpum_diag_component_info_t &component2 = p_task_info->componentList[xpum_diag_task_type_t::XPUM_DIAG_SOFTWARE_LIBRARY];
     p_task_info->count += 1;
+    if (geteuid() != 0) {
+        component2.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+        updateMessage(component2.message, std::string("Fail to check libraries. Please run this command with root privilege."));
+        component2.finished = true;
+        return;
+    }
     updateMessage(component2.message, std::string("Running"));
     std::vector<std::string> libs;
     libs.push_back("libze_loader.so.1");
@@ -819,7 +834,17 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
     std::string fw_version_check_message;
     std::set<std::string> gfx_versions;
     std::set<std::string> amc_inband_versions;
+    bool isDiagnosingBMGDevice = false;
+
     for (auto device : devices) {
+        // Skip BMG devices that aren't the target device, but set flag if this is the target BMG device
+        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_BMG) {
+            if (std::stoi(device->getId()) != deviceId) {
+                continue;
+            } else {
+                isDiagnosingBMGDevice = true;
+            }
+        }
         Property property;
         if (device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_PCI_BDF_ADDRESS, property)) {
             XPUM_LOG_DEBUG("device: {}, bdf address: {}", device->getId(), property.getValue());
@@ -840,41 +865,50 @@ void DiagnosticManager::doDiagnosticLibraries(std::vector<std::shared_ptr<Device
             XPUM_LOG_DEBUG("device: {}, gfx version: {}", device->getId(), property.getValue());
         }
         gfx_version = property.getValue();
-        gfx_versions.insert(gfx_version);
-    
-        // amc version inband for PVC
-        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-            getAMCFirmwareVersionInBand(amc_inband_version, bdf);
-            XPUM_LOG_DEBUG("device: {}, amc version: {}", device->getId(), amc_inband_version);
-            if (amc_inband_version.compare("0.0.0.0") != 0) {
-                amc_inband_versions.insert(amc_inband_version);
+        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_BMG) {
+            // Validate BMG firmware version format: must start with "BMG_"
+            if (gfx_version.empty()) {
+                fw_version_check_message += " GPU " + device->getId() + ": GFX version is empty.";
+            } else if (gfx_version.size() < 4 || gfx_version.substr(0, 4) != "BMG_") {
+                fw_version_check_message += " GPU " + device->getId() + ": GFX version '" + gfx_version + "' does not start with 'BMG_'.";
             }
-        }
-
-        if (device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) { 
-            std::string minimum_gfx_version = device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 ? ATSM150_FW_MINIMUM_VERSION : ATSM75_FW_MINIMUM_VERSION;
-            XPUM_LOG_DEBUG("device: {}, gfx_version: {}, minimum_gfx_version: {}", device->getId(), gfx_version, minimum_gfx_version);
-            if (gfx_version < minimum_gfx_version) {
-                fw_version_check_message += " GPU " + device->getId() + ": GFX version: " + gfx_version + " Minimum version: " + minimum_gfx_version + ".";
-            }
-            
-        } else if (device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
-            XPUM_LOG_DEBUG("device: {}, gfx_version: {}, minimum_gfx_version: {}", device->getId(), gfx_version, PVC_FW_MINIMUM_VERSION);
-            if (gfx_version < PVC_FW_MINIMUM_VERSION) {
-                fw_version_check_message += " GPU " + device->getId() + ": GFX version: " + gfx_version + " Minimum version: " + PVC_FW_MINIMUM_VERSION + ".";
+        } else {
+            gfx_versions.insert(gfx_version);
+ 
+            // amc version inband for PVC
+            if (device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                getAMCFirmwareVersionInBand(amc_inband_version, bdf);
+                XPUM_LOG_DEBUG("device: {}, amc version: {}", device->getId(), amc_inband_version);
+                if (amc_inband_version.compare("0.0.0.0") != 0) {
+                    amc_inband_versions.insert(amc_inband_version);
+                }
             }
 
-            if (amc_inband_version.compare("0.0.0.0") != 0 && amc_inband_version < PVC_AMC_MINIMUM_VERSION) {
-                fw_version_check_message += " GPU " + device->getId() + ": AMC version: " + amc_inband_version + " Minimum version: " + PVC_AMC_MINIMUM_VERSION + ".";
+            if (device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 || device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_3) {
+                std::string minimum_gfx_version = device->getDeviceModel() == XPUM_DEVICE_MODEL_ATS_M_1 ? ATSM150_FW_MINIMUM_VERSION : ATSM75_FW_MINIMUM_VERSION;
+                XPUM_LOG_DEBUG("device: {}, gfx_version: {}, minimum_gfx_version: {}", device->getId(), gfx_version, minimum_gfx_version);
+                if (gfx_version < minimum_gfx_version) {
+                    fw_version_check_message += " GPU " + device->getId() + ": GFX version: " + gfx_version + " Minimum version: " + minimum_gfx_version + ".";
+                }
+ 
+            } else if (device->getDeviceModel() == XPUM_DEVICE_MODEL_PVC) {
+                XPUM_LOG_DEBUG("device: {}, gfx_version: {}, minimum_gfx_version: {}", device->getId(), gfx_version, PVC_FW_MINIMUM_VERSION);
+                if (gfx_version < PVC_FW_MINIMUM_VERSION) {
+                    fw_version_check_message += " GPU " + device->getId() + ": GFX version: " + gfx_version + " Minimum version: " + PVC_FW_MINIMUM_VERSION + ".";
+                }
+
+                if (amc_inband_version.compare("0.0.0.0") != 0 && amc_inband_version < PVC_AMC_MINIMUM_VERSION) {
+                    fw_version_check_message += " GPU " + device->getId() + ": AMC version: " + amc_inband_version + " Minimum version: " + PVC_AMC_MINIMUM_VERSION + ".";
+                }
             }
         }
     }
-    if (fw_version_check_message.size() > 0 || gfx_versions.size() > 1 || amc_inband_versions.size() > 1) {
+    if (fw_version_check_message.size() > 0 || (!isDiagnosingBMGDevice && gfx_versions.size() > 1) || amc_inband_versions.size() > 1) {
         std::string desc = "Fail to check libraries.";
         component2.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
         if (fw_version_check_message.size() > 0) 
             desc += fw_version_check_message;
-        if (gfx_versions.size() > 1) {
+        if (!isDiagnosingBMGDevice && gfx_versions.size() > 1) {
             desc += " All GPUs do not have the same GFX version.";            
         }
         if (amc_inband_versions.size() > 1) {
@@ -1104,7 +1138,20 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
         }
 
         bool h264_light_file_exist = std::ifstream(mediadata_folder + DiagnosticManager::MEDIA_CODEC_TOOLS_LIGHT_FILE).good();
-        
+
+        // Create a per-test randomly-named temp directory to avoid the predictable /tmp
+        char diagTmpTemplate[] = "/tmp/xpum-diag-XXXXXX";
+        std::string diagTmpDir;
+        if (!checkOnly && (h265_1080p_file_exist || h265_4k_file_exist)) {
+            if (mkdtemp(diagTmpTemplate) == nullptr) {
+                component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
+                updateMessage(component.message, std::string("Failed to create temp directory for media diagnostic."));
+                component.finished = true;
+                return;
+            }
+            diagTmpDir = std::string(diagTmpTemplate) + "/";
+        }
+
         std::atomic<bool> subtask_done(false);
         uint64_t max_temperature_value = 0;
         std::thread read_temperature_thread(readTemperatureTask, std::ref(subtask_done), std::ref(max_temperature_value), std::ref(ze_device), std::ref(zes_device));
@@ -1128,13 +1175,13 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
                 }
                 if (!checkOnly && h265_1080p_file_exist) {
                     test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
-                                            " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
+                                            " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_1080P_FILE + " -o::h265 " + diagTmpDir + MEDIA_CODER_TOOLS_1080P_FILE + " 2>&1";
                     XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
                     result += getCommandResult(test_command, fps);
                 }
                 if (!checkOnly && h265_4k_file_exist) {
                     test_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
-                                        " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 /tmp/test_stream_4K.265 2>&1";
+                                        " -hw -i::h265 " + mediadata_folder + DiagnosticManager::MEDIA_CODER_TOOLS_4K_FILE + " -o::h265 " + diagTmpDir + MEDIA_CODER_TOOLS_4K_FILE + " 2>&1";
                     XPUM_LOG_INFO("Transcoding capability check command: {}", test_command);
                     result += getCommandResult(test_command, fps);
                 }
@@ -1166,7 +1213,8 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
                             p_task_info->deviceId,
                             device_path,
                             h265_1080p_file_exist,
-                            h265_4k_file_exist
+                            h265_4k_file_exist,
+                            diagTmpDir
                         );
                     }
                     component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_PASS;
@@ -1180,6 +1228,11 @@ void DiagnosticManager::doDiagnosticMediaCodec(const ze_device_handle_t &ze_devi
         } else {
             component.result = xpum_diag_task_result_t::XPUM_DIAG_RESULT_FAIL;
             updateMessage(component.message, std::string("No sample_multi_transcode tool."));
+        }
+        if (!diagTmpDir.empty()) {
+            if (nftw(diagTmpDir.c_str(), removeFsEntry, 64, FTW_DEPTH | FTW_PHYS) != 0) {
+                XPUM_LOG_WARN("Failed to clean up media diagnostic temp directory: {}", diagTmpDir);
+            }
         }
         subtask_done.store(true);
         read_temperature_thread.join();
@@ -1225,7 +1278,7 @@ std::string DiagnosticManager::getCommandResult(std::string command, int& fps) {
     return result;
 }
 
-std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMetricsData(xpum_device_id_t deviceId, std::string device_path, bool h265_1080p_file_exist, bool h265_4k_file_exist) {
+std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMetricsData(xpum_device_id_t deviceId, std::string device_path, bool h265_1080p_file_exist, bool h265_4k_file_exist, const std::string& tmpDir) {
     
     std::map<xpum_media_format_t, std::string> format_to_filename_1080p = {{XPUM_MEDIA_FORMAT_H264,"test_stream_1080p.264"}, {XPUM_MEDIA_FORMAT_AV1,"test_stream_1080p.av1"}};
     std::map<xpum_media_format_t, std::string> format_to_filename_4k = {{XPUM_MEDIA_FORMAT_H264,"test_stream_4K.264"}, {XPUM_MEDIA_FORMAT_AV1, "test_stream_4K.av1"}};
@@ -1236,7 +1289,7 @@ std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMet
     if (h265_1080p_file_exist) {
         for (auto target : format_to_filename_1080p) {
             convert_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
-                            " -hw -i::h265 /tmp/" + MEDIA_CODER_TOOLS_1080P_FILE + " -o::" + (target.first == XPUM_MEDIA_FORMAT_H264 ? "h264":"av1") + " /tmp/" + target.second + " 2>&1";
+                            " -hw -i::h265 " + tmpDir + MEDIA_CODER_TOOLS_1080P_FILE + " -o::" + (target.first == XPUM_MEDIA_FORMAT_H264 ? "h264":"av1") + " " + tmpDir + target.second + " 2>&1";
             XPUM_LOG_DEBUG("Format convert command: {}", convert_command);
             result = getCommandResult(convert_command, fps);
             XPUM_LOG_DEBUG(result);
@@ -1245,7 +1298,7 @@ std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMet
     if (h265_4k_file_exist) {
         for (auto target : format_to_filename_4k) {
             convert_command = DiagnosticManager::MEDIA_CODER_TOOLS_PATH + "sample_multi_transcode -device " + device_path +
-                            " -hw -i::h265 /tmp/" + MEDIA_CODER_TOOLS_4K_FILE + " -o::" + (target.first == XPUM_MEDIA_FORMAT_H264 ? "h264":"av1") + " /tmp/" + target.second + " 2>&1";
+                            " -hw -i::h265 " + tmpDir + MEDIA_CODER_TOOLS_4K_FILE + " -o::" + (target.first == XPUM_MEDIA_FORMAT_H264 ? "h264":"av1") + " " + tmpDir + target.second + " 2>&1";
             XPUM_LOG_DEBUG("Format convert command: {}", convert_command);
             result = getCommandResult(convert_command, fps);
             XPUM_LOG_DEBUG("Format convert result: {}", result);
@@ -1271,11 +1324,11 @@ std::vector<xpum_diag_media_codec_metrics_t> DiagnosticManager::getMediaCodecMet
             std::string target_src_file;
             std::string target_dst_file;
             if (r == XPUM_MEDIA_RESOLUTION_1080P) {
-                target_src_file = "/tmp/" + format_to_filename_1080p[data.format];
-                target_dst_file = "/tmp/out_" + format_to_filename_1080p[data.format];
+                target_src_file = tmpDir + format_to_filename_1080p[data.format];
+                target_dst_file = tmpDir + "out_" + format_to_filename_1080p[data.format];
             } else {
-                target_src_file = "/tmp/" + format_to_filename_4k[data.format];
-                target_dst_file = "/tmp/out_" + format_to_filename_4k[data.format];
+                target_src_file = tmpDir + format_to_filename_4k[data.format];
+                target_dst_file = tmpDir + "out_" + format_to_filename_4k[data.format];
             }
 
             std::string format;

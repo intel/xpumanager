@@ -4,7 +4,7 @@ FROM quay.io/centos/centos:stream9
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/4.0.0.tar.gz
-ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.9.5.tar.gz
+ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V1.2.0.tar.gz
 ARG ZLIB_VERSION=v1.3.1
 ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_29_0
@@ -20,9 +20,7 @@ RUN dnf update -y && \
     libudev-devel \
     make \
     openssl-devel \
-    python3.9 \
-    python3.9-devel \
-    python3.9-pip \
+    zlib-devel \
     rpm-build && \
     dnf config-manager --set-enabled crb && \
     dnf -y install epel-release && \
@@ -32,6 +30,18 @@ RUN dnf update -y && \
     glibc-static \
     lua-devel && \
     dnf clean all
+
+RUN curl -s https://www.python.org/ftp/python/3.10.20/Python-3.10.20.tar.xz --output Python-3.10.20.tar.xz && \
+    tar -xf Python-3.10.20.tar.xz && \
+    cd /Python-3.10.20 && \
+    ./configure --enable-optimizations && \
+    make -j4 && \
+    make altinstall && \
+    rm -fr /Python-3.10.20
+
+COPY builder/requirements.txt /tmp/requirements.txt
+
+RUN python3.10 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
@@ -49,9 +59,6 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
       ../.. && \
     make -j4 && make install && \
     rm -fr /grpc
-
-COPY builder/requirements.txt /tmp/requirements.txt
-RUN python3 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN curl -s --location $METEE_URL | tar -xz && \
     cd /metee-* && \
@@ -79,4 +86,8 @@ RUN curl -s --location ${L0_SRC_URL} | tar -xz && \
     cmake --build . --config Release && \
     cmake --build . --config Release --target install && \
     rm -fr /level-zero-* && \
+    ldconfig
+
+RUN ln -sf $(which python3.10) /usr/bin/python && \
+    ln -sf $(which python3.10) /usr/bin/python3 && \
     ldconfig

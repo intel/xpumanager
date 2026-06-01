@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Intel(R) XPU Manager Installation Guide &mdash; XPU Manager  documentation</title>
+  <title>Intel(R) XPU Manager V1.x Installation Guide &mdash; XPU Manager  documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="_static/doxyrest-pygments.css?v=ff3f4257" />
@@ -48,10 +48,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="xpum_index.html">XPUM V1.x Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="README.html">Intel(R) XPU Manager and XPU System Management Interface</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="installation.html">Installation</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Intel(R) XPU Manager Installation Guide</a><ul>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Intel(R) XPU Manager V1.x  Installation Guide</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#requirements">Requirements</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deb-install-on-ubuntu">DEB install on Ubuntu</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#deb-uninstall">DEB uninstall</a></li>
@@ -69,12 +69,12 @@
 <li class="toctree-l3"><a class="reference internal" href="REST_README.html">XPUM REST API Setup Guide</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel(R) XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="CLI_user_guide.html">Intel(R) XPU Manager V1.x  Command Line Interface User Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="restful.html">Restful API</a></li>
 <li class="toctree-l2"><a class="reference internal" href="xpumdoc/rst/index.html">Core Library API</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="smi_index.html">XPU-SMI V1.x  Linux Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
@@ -92,9 +92,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM Documentation</a></li>
+          <li class="breadcrumb-item"><a href="xpum_index.html">XPUM V1.x Documentation</a></li>
           <li class="breadcrumb-item"><a href="installation.html">Installation</a></li>
-      <li class="breadcrumb-item active">Intel(R) XPU Manager Installation Guide</li>
+      <li class="breadcrumb-item active">Intel(R) XPU Manager V1.x  Installation Guide</li>
       <li class="wy-breadcrumbs-aside">
       </li>
   </ul>
@@ -103,8 +103,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="intel-r-xpu-manager-installation-guide">
-<h1>Intel(R) XPU Manager Installation Guide<a class="headerlink" href="#intel-r-xpu-manager-installation-guide" title="Permalink to this heading"></a></h1>
+  <section id="intel-r-xpu-manager-v1-x-installation-guide">
+<h1>Intel(R) XPU Manager V1.x  Installation Guide<a class="headerlink" href="#intel-r-xpu-manager-v1-x-installation-guide" title="Permalink to this heading"></a></h1>
 <section id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading"></a></h2>
 <ul class="simple">
@@ -177,7 +177,7 @@ ExecStart=/usr/bin/xpumd  -p /var/xpum_daemon.pid -d /usr/lib/xpum/dump -m 0,4-3
 </ol>
 <p>Metric types:</p>
 <ol class="arabic simple" start="0">
-<li><p>GPU Utilization (%), GPU active time of the elapsed time, per tile</p></li>
+<li><p>Average % utilization of all GPU Engines, GPU active time of the elapsed time, per tile</p></li>
 <li><p>GPU EU Array Active (%),  the normalized sum of all cycles on all EUs that were spent actively executing instructions, per tile (Disabled by default)</p></li>
 <li><p>GPU EU Array Stall (%), the normalized sum of all cycles on all EUs during which the EUs were stalled. Per tile. At least one thread is loaded, but the EU is stalled, per tile. (Disabled by default)</p></li>
 <li><p>GPU EU Array Idle (%), the normalized sum of all cycles on all cores when no threads were scheduled on a core. per tile.  (Disabled by default)</p></li>

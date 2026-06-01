@@ -5,7 +5,7 @@ FROM registry.suse.com/suse/sle15:15.4.27.8.1@sha256:996ee2bc5ae2301191053e33424
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz
 ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/4.0.0.tar.gz
-ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.9.5.tar.gz
+ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V1.2.0.tar.gz
 ARG ZLIB_VERSION=v1.3.1
 ARG GRPC_VERSION=v1.56.2
 ARG CARES_VERSION=cares-1_29_0
@@ -37,17 +37,17 @@ RUN mkdir cmake && \
 
 ENV PATH="/cmake/bin:${PATH}".
 
-RUN wget -qc --no-check-certificate https://www.python.org/ftp/python/3.8.9/Python-3.8.9.tar.xz && \
-    tar -xf Python-3.8.9.tar.xz && \
-    cd /Python-3.8.9 && \
+RUN wget -qc --no-check-certificate https://www.python.org/ftp/python/3.10.20/Python-3.10.20.tar.xz && \
+    tar -xf Python-3.10.20.tar.xz && \
+    cd /Python-3.10.20 && \
     ./configure --enable-optimizations && \
     make -j4 && \
     make altinstall && \
-    rm -fr /Python-3.8.9
+    rm -fr /Python-3.10.20
 
 COPY builder/requirements.txt /tmp/requirements.txt
 
-RUN python3.8 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
+RUN python3.10 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
@@ -90,8 +90,8 @@ RUN wget -qc --no-check-certificate $IGSC_URL -O - | tar -xz && \
     make -j4 && \
     make install
 
-RUN ln -sf $(which python3.8) /usr/bin/python && \
-    ln -sf $(which python3.8) /usr/bin/python3 && \
+RUN ln -sf $(which python3.10) /usr/bin/python && \
+    ln -sf $(which python3.10) /usr/bin/python3 && \
     ldconfig
 
 ENV ACLOCAL_PATH=/usr/share/aclocal

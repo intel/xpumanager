@@ -4,11 +4,11 @@ FROM centos:7.6.1810@sha256:62d9e1c2daa91166139b51577fe4f4f6b4cc41a3a2c7fc36bd89
 
 ARG L0_SRC_URL=https://github.com/oneapi-src/level-zero/archive/refs/tags/v1.19.2.tar.gz
 ARG CMAKE_INSTALLER_URL=https://cmake.org/files/v3.20/cmake-3.20.0-linux-x86_64.sh
-ARG AUTOMAKE_URL=https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
+ARG AUTOMAKE_URL=https://mirrors.kernel.org/gnu/automake/automake-1.16.5.tar.gz
 ARG METEE_URL=https://github.com/intel/metee/archive/refs/tags/4.0.0.tar.gz
-ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V0.9.5.tar.gz
+ARG IGSC_URL=https://github.com/intel/igsc/archive/refs/tags/V1.2.0.tar.gz
 ARG ZLIB_VERSION=v1.3.1
-ARG GRPC_VERSION=v1.56.2
+ARG GRPC_VERSION=v1.58.2
 ARG CARES_VERSION=cares-1_29_0
 
 RUN cd /etc/yum.repos.d/ && \
@@ -29,13 +29,12 @@ RUN yum install -y epel-release https://packages.endpointdev.com/rhel/7/os/x86_6
         make \
         openssl-devel \
         rpm-build \
-        which
+        which \
+        openssl11-devel
+
 RUN yum-config-manager --add-repo=http://vault.centos.org/centos/7/sclo/x86_64/rh/ && \
     sed -i '/\[vault.centos.org_centos_7_sclo_x86_64_rh_\]/a gpgcheck=0' /etc/yum.repos.d/vault.centos.org_centos_7_sclo_x86_64_rh_.repo && \
     yum install -y devtoolset-9-gcc* \
-        rh-python38 \
-        rh-python38-python-devel \
-        rh-python38-python-pip && \
     yum clean all && \
     rm -rf /var/cache/yum
 
@@ -51,6 +50,19 @@ RUN mkdir cmake && \
     rm -f cmake.sh
 
 ENV PATH="/cmake/bin:${PATH}".
+
+RUN curl -s https://www.python.org/ftp/python/3.10.20/Python-3.10.20.tar.xz --output Python-3.10.20.tar.xz && \
+    tar -xf Python-3.10.20.tar.xz && \
+    cd /Python-3.10.20 && \
+    export LDFLAGS="-L/usr/lib64/openssl11" && \
+    export CPPFLAGS="-I/usr/include/openssl11" && \
+    ./configure --enable-optimizations && \
+    make -j4 && \
+    make altinstall && \
+    rm -fr /Python-3.10.20
+
+COPY builder/requirements.txt /tmp/requirements.txt
+RUN python3.10 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com/grpc/grpc && \
     cd /grpc/third_party/zlib && \
@@ -69,11 +81,6 @@ RUN git clone --recurse-submodules --depth 1 -b $GRPC_VERSION https://github.com
       ../.. && \
     make -j4 && make install && \
     rm -fr /grpc
-
-ENV PATH="/cmake/bin:/opt/rh/rh-python38/root/usr/bin:/opt/rh/rh-python38/root/usr/local/bin:${PATH}".
-
-COPY builder/requirements.txt /tmp/requirements.txt
-RUN python3.8 -m pip --proxy=$http_proxy install -r /tmp/requirements.txt
 
 RUN curl -s --location $AUTOMAKE_URL | tar -xz && \
     cd automake-* && \
@@ -111,9 +118,9 @@ RUN curl -s --location ${L0_SRC_URL} | tar -xz && \
     cmake --build . --config Release --target install && \
     rm -fr /level-zero-*
 
-RUN echo $(which python3.8) && \
-    ln -sf $(which python3.8) /usr/bin/python && \
-    ln -sf $(which python3.8) /usr/bin/python3 && \
+RUN echo $(which python3.10) && \
+    ln -sf $(which python3.10) /usr/bin/python && \
+    ln -sf $(which python3.10) /usr/bin/python3 && \
     ldconfig
 
 ENV ACLOCAL_PATH=/usr/share/aclocal

@@ -1,14 +1,14 @@
 apispec-webframeworks==0.5.2
 apispec==5.1.1
-Flask-HTTPAuth==4.6.0
-Flask==2.2.5
+Flask-HTTPAuth==4.8.1
+Flask==3.1.3
 grpcio-tools==1.72.0
 grpcio==1.72.0
 marshmallow==3.26.2
 myst-parser==2.0.0
 prometheus-client==0.14.1
 protobuf==6.33.5
-requests==2.32.4
+requests==2.33.0
 sphinx-rtd-theme==2.0.0
 Sphinx==7.1.2
 sphinxcontrib-openapi==0.8.3
