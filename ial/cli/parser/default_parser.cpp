@@ -108,13 +108,23 @@ bool tryExtractFlag(const FlagSpec &spec, std::string_view a, int &i, int argc, 
 std::pair<PreArgs, std::vector<std::string>> extractPreArgs(arg_struct *args)
 {
 	PreArgs pre;
-	const std::array<FlagSpec, 6> flagSpecs{{
+	const auto flagSpecs = std::to_array<FlagSpec>({
 		{.longName = "--id",
 		 .shortFlag = "",
 		 .value = &pre.deviceSpec,
 		 .matchedFlag = std::nullopt,
 		 .defaultIfBare = ""},
+		{.longName = "--device",
+		 .shortFlag = "",
+		 .value = &pre.deviceSpec,
+		 .matchedFlag = std::nullopt,
+		 .defaultIfBare = ""},
 		{.longName = "--display",
+		 .shortFlag = "",
+		 .value = &pre.displayType,
+		 .matchedFlag = std::nullopt,
+		 .defaultIfBare = ""},
+		{.longName = "--metrics",
 		 .shortFlag = "",
 		 .value = &pre.displayType,
 		 .matchedFlag = std::nullopt,
@@ -139,7 +149,7 @@ std::pair<PreArgs, std::vector<std::string>> extractPreArgs(arg_struct *args)
 		 .value = &pre.logFilePath,
 		 .matchedFlag = std::nullopt,
 		 .defaultIfBare = ""},
-	}};
+	});
 
 	std::vector<std::string> argvVec;
 	constexpr std::string_view queryGpuEqPrefix = "--query-gpu=";

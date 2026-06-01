@@ -6,19 +6,15 @@
 
 #include "parser/default_parser.h"
 #include "version.h"
-#include <cmd_agentset.h>
 #include <cmd_amc.h>
 #include <cmd_listgpu.h>
 #include <cmd_config.h>
 #include <cmd_discovery.h>
 #include <cmd_dump.h>
-#include <cmd_group.h>
 #include <cmd_health.h>
 #include <cmd_log.h>
-#include <cmd_policy.h>
 #include <cmd_ps.h>
 #include <cmd_stats.h>
-#include <cmd_topdown.h>
 #include <cmd_topology.h>
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
@@ -85,11 +81,7 @@ std::vector<function_entry> defaultCommandTable()
 		{.createFunc = createInstance<cmdStats>, .osType = OSTYPE::BOTH},
 		{.createFunc = createInstance<cmdDump>, .osType = OSTYPE::BOTH},
 		{.createFunc = createInstance<cmdLogs>, .osType = OSTYPE::LINUX},
-		{.createFunc = createInstance<cmdGroup>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdHealth>, .osType = OSTYPE::LINUX},
-		{.createFunc = createInstance<cmdPolicy>, .osType = OSTYPE::LINUX},
-		{.createFunc = createInstance<cmdTopdown>, .osType = OSTYPE::LINUX},
-		{.createFunc = createInstance<cmdAgentSet>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdAmc>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdListgpu>, .osType = OSTYPE::LINUX},
 	};

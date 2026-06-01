@@ -14,7 +14,6 @@
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <charconv>
 #include <chrono>
@@ -24,7 +23,6 @@
 #include <format>
 #include <functional>
 #include <ios>
-#include <memory>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -161,14 +159,15 @@ const std::unordered_map<int, std::string_view> LEGACY_METRIC_NAMES = {
 };
 
 /**
- * @brief Translate a user-supplied metric query string into canonical registry group names.
+ * @brief Translate a user-supplied metric query string into canonical registry field names.
  *
  * The input is a comma-separated list of tokens, each of which may be:
  *  - A legacy numeric ID (0–36): mapped via LEGACY_METRIC_NAMES.
- *  - A single-character alias (@c u, @c p, @c t, @c c, @c m, @c e, @c x): expanded to the
- *    corresponding group name.
- *  - A multi-character alias combination (e.g. @c "pu"): expanded to @c "POWER,UTILIZATION".
- *  - A bare group name or registry field name: passed through unchanged.
+ *  - Any other token: passed through unchanged for metrics::resolveQuery() to handle
+ *    (group names, single- and multi-character shortcuts via parseGroupMask).
+ *
+ * Single/multi-character shortcuts follow the registry's GROUP_TABLE:
+ *  @c p = POWER+TEMPERATURE, @c u = UTILIZATION, @c t = PCI, etc.
  *
  * Unsupported legacy IDs produce an error log entry and are silently dropped.
  *
@@ -178,16 +177,6 @@ const std::unordered_map<int, std::string_view> LEGACY_METRIC_NAMES = {
  */
 std::string translateMetricQuery(const std::string &query)
 {
-	static constexpr auto charAliases = std::to_array<std::pair<char, std::string_view>>({
-		{'u', "UTILIZATION"},
-		{'p', "POWER"},
-		{'t', "TEMPERATURE"},
-		{'c', "CLOCK"},
-		{'m', "MEMORY"},
-		{'e', "ECC"},
-		{'x', "EU_ARRAY"},
-	});
-
 	std::string result;
 	for (auto &&rng : std::string_view{query} | std::views::split(',')) {
 		std::string_view sv{rng.begin(), rng.end()};
@@ -206,20 +195,7 @@ std::string translateMetricQuery(const std::string &query)
 			}
 			token = it->second;
 		} else {
-			// Expand multi-char alias (e.g., "pu" = "POWER,UTILIZATION")
-			std::string expandedAlias;
-			for (const char ch : sv) {
-				auto it = std::ranges::find(charAliases, ch, &std::pair<char, std::string_view>::first);
-				if (it == charAliases.end()) {
-					expandedAlias.clear();
-					break;
-				}
-				if (!expandedAlias.empty()) {
-					expandedAlias += ',';
-				}
-				expandedAlias += it->second;
-			}
-			token = expandedAlias.empty() ? std::string{sv} : expandedAlias;
+			token = std::string{sv}; // group names, shortcuts, and multi-char combos handled by resolveQuery
 		}
 
 		if (!result.empty()) {
@@ -233,29 +209,21 @@ std::string translateMetricQuery(const std::string &query)
 /**
  * @brief Build aligned "Group:" / "Alias:" display lines for the dump help text.
  *
- * Uses TableBuilder with space-character borders to produce two auto-sized rows
- * whose columns align across the full list of known metric groups:
- * @verbatim
- *   Group:  UTILIZATION  TEMPERATURE  POWER  CLOCK  MEMORY  PCI  ECC  EU_ARRAY  FAN  ALL
- *   Alias:  u            t            p      c      m            e    x         f
- * @endverbatim
+ * Derived from metrics::detail::GROUP_TABLE (excludes IDENTITY). Shortcuts match
+ * nvidia-smi dmon conventions: @c p = POWER+TEMPERATURE, @c t = PCI, etc.
  *
  * @return  Vector of non-blank strings, typically two elements (Group row then Alias row).
  */
 std::vector<std::string> buildGroupAliasLines()
 {
-	static constexpr auto groups = std::to_array<std::pair<std::string_view, std::string_view>>({
-		{"UTILIZATION", "u"},
-		{"TEMPERATURE", "t"},
-		{"POWER", "p"},
-		{"CLOCK", "c"},
-		{"MEMORY", "m"},
-		{"PCI", ""},
-		{"ECC", "e"},
-		{"EU_ARRAY", "x"},
-		{"FAN", "f"},
-		{"ALL", ""},
-	});
+	// Derived from metrics::detail::GROUP_TABLE; IDENTITY excluded (not a dump metric group).
+	using Entry = std::pair<std::string_view, std::string_view>;
+	std::vector<Entry> groups;
+	for (const auto &e : metrics::detail::GROUP_TABLE) {
+		if (e.group != metrics::MetricGroup::IDENTITY) {
+			groups.emplace_back(e.name, e.shortcut);
+		}
+	}
 
 	TableBuilder tb;
 	tb.configure(TableBuilder::TableConfig{.borderChar = ' ', .cornerChar = ' ', .verticalChar = ' '})
@@ -800,10 +768,11 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	const std::size_t numDevices = deviceList.size();
 	std::vector<metrics::MetricCache> caches(numDevices);
 
+	const auto firstSampleDeadline = startTime + timing.interval;
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		caches[i] = metrics::populateMetricCacheBegin(deviceList[i]);
 	}
-	std::this_thread::sleep_for(timing.interval);
+	std::this_thread::sleep_until(firstSampleDeadline);
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
 	}
@@ -896,28 +865,20 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 		return result;
 	}
 
-	std::string header;
-	for (const metrics::QueryMetric *const f : fields) {
-		if (!header.empty()) {
-			header += ", ";
-		}
-		header += (!fmt.nounits && !f->unit.empty()) ? std::format("{} ({})", f->name, f->unit) : std::string{f->name};
-	}
-	if (!fmt.noheader && !fmt.json) {
-		PRINT("{}\n", header.c_str());
-	}
-
 	DumpOutput out{false, false, nullptr};
 	out.json = fmt.json;
+	out.noheader = fmt.noheader;
+	out.nounits = fmt.nounits;
 	out.prependTimestamp = false;
 	out.prependDeviceId = false;
 
 	const std::size_t numDevices = deviceList.size();
 	std::vector<metrics::MetricCache> caches(numDevices);
+	const auto sampleDeadline = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		caches[i] = metrics::populateMetricCacheBegin(deviceList[i]);
 	}
-	std::this_thread::sleep_for(metrics::detail::SAMPLE_WINDOW);
+	std::this_thread::sleep_until(sampleDeadline);
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
 	}
@@ -1035,7 +996,7 @@ void cmdDump::help(HELP helpType)
 	for (const auto &line : buildGroupAliasLines()) {
 		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
 	}
-	helpList.emplace_back(SUB_HEADING, "Multi-char aliases: e.g. \"pu\" = POWER+UTILIZATION");
+	helpList.emplace_back(SUB_HEADING, "Multi-char aliases: e.g. \"pu\" = POWER+TEMPERATURE+UTILIZATION");
 	helpList.emplace_back(SUB_HEADING, "For individual field names use --query-gpu instead.");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Available fields: (legacy ID in brackets)");
