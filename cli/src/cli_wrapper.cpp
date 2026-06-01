@@ -33,7 +33,6 @@
 
 namespace xpum::cli {
 
-bool isConfigResetEnabled = false;
 static bool survivabilityModeModified = false;
 
 CLIWrapper::CLIWrapper(CLI::App &cliApp, bool privilege) : cliApp(cliApp) {
@@ -220,10 +219,6 @@ int CLIWrapper::printResult(std::ostream &out) {
                 }
                 this->coreStub = std::make_shared<LibCoreStub>();
             } else {
-		if (comlet->getCommand().compare("config") == 0) {
-		    std::shared_ptr<xpum::cli::ComletConfig> configPtr = std::dynamic_pointer_cast<xpum::cli::ComletConfig>(comlet);
-		    isConfigResetEnabled = configPtr->getResetOption();
-		}
                 this->coreStub = std::make_shared<LibCoreStub>();
             }
             comlet->coreStub = this->coreStub;

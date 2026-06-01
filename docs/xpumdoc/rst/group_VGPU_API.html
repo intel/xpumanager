@@ -48,10 +48,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../../xpum_index.html">XPUM Documentation</a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../xpum_index.html">XPUM V1.x Documentation</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../../README.html">Intel(R) XPU Manager and XPU System Management Interface</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../installation.html">Installation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../CLI_user_guide.html">Intel(R) XPU Manager Command Line Interface User Guide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../CLI_user_guide.html">Intel(R) XPU Manager V1.x  Command Line Interface User Guide</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../restful.html">Restful API</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Core Library API</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="group_BASIC_API.html">Basic API</a></li>
@@ -79,7 +79,7 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI Linux Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../smi_index.html">XPU-SMI V1.x  Linux Documentation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../win_index.html">XPU-SMI Windows Documentation</a></li>
 </ul>
 
@@ -97,7 +97,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../xpum_index.html">XPUM Documentation</a></li>
+          <li class="breadcrumb-item"><a href="../../xpum_index.html">XPUM V1.x Documentation</a></li>
           <li class="breadcrumb-item"><a href="index.html">Core Library API</a></li>
       <li class="breadcrumb-item active">VGPU management</li>
       <li class="wy-breadcrumbs-aside">
@@ -117,7 +117,10 @@
 <p>These APIs are for VGPU management <a class="reference internal" href="#details-group-vgpu-api"><span class="std std-ref">More…</span></a></p>
 <pre class="highlight doxyrest-overview-code-block literal-block"><span></span><span class="c1">// global functions</span>
 
-XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumDoVgpuPrecheck<span></span><span class="p">(</span><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span><span class="p">);</span>
+XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumDoVgpuPrecheck<span></span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">);</span>
 
 XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> xpumCreateVf<span></span><span class="p">(</span>
     <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
@@ -143,7 +146,10 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 <p>These APIs are for VGPU management</p>
 <section id="global-functions">
 <h3>Global Functions<a class="headerlink" href="#global-functions" title="Permalink to this heading"></a></h3>
-<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-vgpu-api-1ga10696ae4b13d2b4cf45640cce157cb32"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumDoVgpuPrecheck</span><span class="p">(</span><a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span><span class="p">)</span></pre>
+<pre class="highlight doxyrest-title-code-block literal-block" id="xpum-doxid-group-vgpu-api-1ga455002d1ad5979e99efac3a1013c3f86"><span id="index-1"></span>XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a7f390913f7464cf28a8eea0ab80a4db7"><span class="std std-ref">xpum_result_t</span></a><span></span> <span class="n">xpumDoVgpuPrecheck</span><span class="p">(</span>
+    <a class="reference internal" href="global.html#xpum-doxid-xpum-structs-8h-1a0ee19ebe1636506447ac807652054590"><span class="std std-ref">xpum_device_id_t</span></a><span></span> <span class="n">deviceId</span><span class="p">,</span>
+    <a class="reference internal" href="struct_xpum_vgpu_precheck_result_t.html#xpum-doxid-structxpum-vgpu-precheck-result-t"><span class="std std-ref">xpum_vgpu_precheck_result_t</span></a><span></span><span class="o">*</span> <span class="n">result</span>
+    <span class="p">)</span></pre>
 <p>Do SR-IOV prerequisite check and get result, including VMX flag check, IOMMU status check and SR-IOV status check.</p>
 <p>Support Platform: Linux</p>
 <p class="rubric">Parameters:</p>

@@ -1,4 +1,4 @@
-XPUM Documentation
+XPUM V1.x Documentation
 =========================
 
 .. toctree::

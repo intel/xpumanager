@@ -952,7 +952,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         setExitCodeByJson(*json);
         return;
     }
-    out << "Start to update firmware" << std::endl;
+    out << "Starting to update firmware" << std::endl;
     out << "Firmware Name: " << opts->firmwareType << std::endl;
     out << "Image path: " << opts->firmwarePath << std::endl;
 
@@ -980,7 +980,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         if (flashStatus.compare("OK") == 0) {
             printProgress(100, out);
             out << std::endl;
-            out << "Update firmware successfully." << std::endl;
+            out << "Firmware update successful." << std::endl;
             if (type == XPUM_DEVICE_FIRMWARE_GFX_DATA) {
                 out << "Please reboot OS to take effect." << std::endl;
             } else if (type == XPUM_DEVICE_FIRMWARE_AMC && getSysVendor() == "Supermicro") {

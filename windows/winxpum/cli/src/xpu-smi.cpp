@@ -51,6 +51,15 @@ std::wstring ReadRegValue(HKEY root, std::wstring key, std::wstring name) {
     return value;
 }
 
+void loadZeLoaderSafely() {
+    // Load ze_loader.dll with safe flags before any xpum API call.
+    // This pre-populates the module cache so the subsequent delay-load in xpum.dll
+    // resolves to this handle, bypassing the default search order (which includes
+    // the application directory and is vulnerable to DLL hijacking).
+    LoadLibraryExA("ze_loader.dll", nullptr,
+                   LOAD_LIBRARY_SEARCH_SYSTEM32 | LOAD_LIBRARY_SEARCH_USER_DIRS);
+}
+
 void initIGSCDllPath() {
     SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
     std::wstring igsc_path = ReadRegValue(HKEY_LOCAL_MACHINE, L"SYSTEM\\CurrentControlSet\\Services\\igfxnd", L"ImagePath");
@@ -72,6 +81,7 @@ void initIGSCDllPath() {
 
 int main(int argc, char** argv) {
 
+    loadZeLoaderSafely();
     initIGSCDllPath();
 
     CLI::App app{ xpum::cli::getResourceString("CLI_APP_DESC") };

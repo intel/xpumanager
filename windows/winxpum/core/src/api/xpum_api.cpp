@@ -18,6 +18,7 @@
 #include "core/core.h"
 
 #include <map>
+#include <shlobj.h>
 #include <fstream>
 #pragma warning(disable : 4996)
 
@@ -154,7 +155,7 @@ xpum_result_t validateDeviceIdAndTileId(xpum_device_id_t deviceId, xpum_device_t
     return XPUM_OK;
 }
 
-xpum_result_t xpumInit(bool zeinitDisable) {
+xpum_result_t xpumInit(void) {
     try {
         Logger::init();
         XPUM_LOG_INFO("XPU Manager:\t{}", Version::getVersion());
@@ -886,19 +887,98 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, const xpum_
         return xpumRunFirmwareFlashEx(deviceId, job, username, password, false);
     }
 
-    static xpum_result_t validateFwImagePath(xpum_firmware_flash_job * job) {
+    static xpum_result_t validateFwImagePath(xpum_firmware_flash_job * job, std::string& validatedPath) {
         if (job->filePath == nullptr)
             return XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND;
 
-        std::ifstream fwFile(job->filePath);
+        size_t pathLen = strlen(job->filePath);
+        if (pathLen == 0)
+            return XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND;
+
+        // Reject UNC paths. Two forms must be blocked:
+        //   \\server\share\...        — plain UNC (third char is not '?' or '.')
+        //   \\?\UNC\server\share\...  — extended-length UNC (third char is '?' but
+        //                               prefix is \\?\UNC\, still a network path)
+        // Win32 extended-length local (\\?\C:\...) and device paths (\\.\...) are
+        // allowed through.
+        if (pathLen >= 2 && job->filePath[0] == '\\' && job->filePath[1] == '\\') {
+            char third = (pathLen >= 3) ? job->filePath[2] : '\0';
+            if (third != '?' && third != '.') {
+                XPUM_LOG_INFO("validateFwImagePath: rejected UNC path");
+                return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            }
+            if (third == '?' && pathLen >= 8 && _strnicmp(job->filePath, "\\\\?\\UNC\\", 8) == 0) {
+                XPUM_LOG_INFO("validateFwImagePath: rejected extended-length UNC path");
+                return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            }
+        }
+
+        // Convert to wide string for Windows path APIs.
+        wchar_t widePath[MAX_PATH] = {};
+        if (MultiByteToWideChar(CP_ACP, 0, job->filePath, -1, widePath, MAX_PATH) == 0) {
+            return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+        }
+
+        // Make the path absolute: resolves .., ., redundant separators, and relative
+        // inputs (e.g. "Windows\System32\...") against the process CWD so that the
+        // system-directory checks below always operate on a full absolute path.
+        wchar_t absPath[MAX_PATH] = {};
+        DWORD fullPathLen = GetFullPathNameW(widePath, MAX_PATH, absPath, nullptr);
+        if (fullPathLen == 0 || fullPathLen >= MAX_PATH) {
+            return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+        }
+
+        // Reject paths inside Windows system directories.
+        // (e.g. C:\Windows\System32\ntdll.dll). This block stops a caller
+        // who supplies a direct absolute path to a system file.
+        {
+            wchar_t sysRoot[MAX_PATH] = {};
+            wchar_t progFiles[MAX_PATH] = {};
+            wchar_t progFilesX86[MAX_PATH] = {};
+
+            //   sysRoot      — e.g. C:\Windows
+            //   progFiles    — e.g. C:\Program Files
+            //   progFilesX86 — e.g. C:\Program Files (x86)
+            DWORD sysRootLen = GetWindowsDirectoryW(sysRoot, MAX_PATH);
+            HRESULT progFilesHr = SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILES, nullptr, SHGFP_TYPE_CURRENT, progFiles);
+            HRESULT progFilesX86Hr = SHGetFolderPathW(nullptr, CSIDL_PROGRAM_FILESX86, nullptr, SHGFP_TYPE_CURRENT, progFilesX86);
+            if (sysRootLen == 0 || sysRootLen >= MAX_PATH || FAILED(progFilesHr) || FAILED(progFilesX86Hr)) {
+                XPUM_LOG_INFO("validateFwImagePath: failed to resolve protected system directories (raw input: {})", job->filePath);
+                return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            }
+
+            auto startsWithDir = [](const wchar_t* path, const wchar_t* dir) -> bool {
+                size_t dirLen = wcslen(dir);
+                if (dirLen == 0) return false;
+                if (_wcsnicmp(path, dir, dirLen) != 0) return false;
+                // ensure it's a directory boundary, not just a prefix match
+                return path[dirLen] == L'\0' || path[dirLen] == L'\\';
+            };
+
+            if (startsWithDir(absPath, sysRoot) ||
+                startsWithDir(absPath, progFiles) ||
+                startsWithDir(absPath, progFilesX86)) {
+                XPUM_LOG_INFO("validateFwImagePath: rejected path inside system directory (raw input: {})", job->filePath);
+                return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+            }
+        }
+
+        std::ifstream fwFile(absPath);
         if (!fwFile.is_open()) {
             XPUM_LOG_INFO("invalid file");
             fwFile.close();
             return XPUM_UPDATE_FIRMWARE_IMAGE_FILE_NOT_FOUND;
         }
-
         fwFile.close();
 
+        char narrowPath[MAX_PATH] = {};
+        int convertedLength = WideCharToMultiByte(CP_ACP, 0, absPath, -1, narrowPath, MAX_PATH, nullptr, nullptr);
+        if (convertedLength == 0) {
+            XPUM_LOG_INFO("validateFwImagePath: failed to convert validated path to multibyte");
+            return XPUM_UPDATE_FIRMWARE_INVALID_FW_IMAGE;
+        }
+         narrowPath[MAX_PATH - 1] = '\0';
+        validatedPath = std::string(narrowPath);
         return XPUM_OK;
     }
 
@@ -920,7 +1000,8 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, const xpum_
                 return res;
             }
         }
-        res = validateFwImagePath(job);
+        std::string validatedPath;
+        res = validateFwImagePath(job, validatedPath);
         if (res != XPUM_OK) {
             return res;
         }
@@ -929,13 +1010,13 @@ xpum_result_t xpumSetDeviceFrequencyRange(xpum_device_id_t deviceId, const xpum_
         */
         switch (job->type) {
             case XPUM_DEVICE_FIRMWARE_GFX:
-                return fwMgr->runGSCFirmwareFlash(deviceId, job->filePath, force);
+                return fwMgr->runGSCFirmwareFlash(deviceId, validatedPath.c_str(), force);
                 break;
             case XPUM_DEVICE_FIRMWARE_GFX_DATA:
-                return fwMgr->runFwDataFlash(deviceId, job->filePath);
+                return fwMgr->runFwDataFlash(deviceId, validatedPath.c_str());
                 break;
             case XPUM_DEVICE_FIRMWARE_AMC:
-                return fwMgr->runAMCFlash(job->filePath, username, password);
+                return fwMgr->runAMCFlash(validatedPath.c_str(), username, password);
                 break;
             default:
                 return XPUM_GENERIC_ERROR;

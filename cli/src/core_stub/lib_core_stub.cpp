@@ -30,7 +30,6 @@
 using namespace xpum;
 
 namespace xpum::cli {
-extern bool isConfigResetEnabled;
 
 LibCoreStub::LibCoreStub(bool initCore) {
     char* env = std::getenv("SPDLOG_LEVEL");
@@ -39,7 +38,7 @@ LibCoreStub::LibCoreStub(bool initCore) {
     }
     this->initCore = initCore;
     if (this->initCore)
-        xpumInit(isConfigResetEnabled);
+        xpumInit();
 }
 
 LibCoreStub::~LibCoreStub() {

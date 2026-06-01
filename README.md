@@ -66,11 +66,11 @@ sudo xpumcli updatefw -d 0 -t GFX -f ATS_M150_512_C0_PVT_ES_032_gfx_fwupdate_SOC
 Device 0 FW version: DG02_1.3170
 Image FW version: DG02_1.3172
 Do you want to continue? (y/n) y
-Start to update firmware
+Starting to update firmware
 Firmware Name: GFX
 Image path: /home/dcm/ATS_M150_512_C0_PVT_ES_032_gfx_fwupdate_SOC1.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
 ```
 
  

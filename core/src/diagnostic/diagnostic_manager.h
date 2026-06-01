@@ -106,7 +106,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static void doDiagnosticEnvironmentVariables(std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
     static void doDiagnosticLibraries(std::vector<std::shared_ptr<Device>> devices,
-                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info);
+                                            std::shared_ptr<xpum_diag_task_info_t> p_task_info,
+                                            xpum_device_id_t deviceId);
 
     static void doDiagnosticPermission(int gpu_total_count, std::shared_ptr<xpum_diag_task_info_t> p_task_info);
 
@@ -224,7 +225,8 @@ class DiagnosticManager : public DiagnosticManagerInterface {
     static std::string getCommandResult(std::string command, int& fps);
 
     static std::vector<xpum_diag_media_codec_metrics_t> getMediaCodecMetricsData(xpum_device_id_t deviceId, std::string device_path,
-                                                                                bool h265_1080p_file_exist, bool h265_4k_file_exist);
+                                                                                bool h265_1080p_file_exist, bool h265_4k_file_exist,
+                                                                                const std::string& tmpDir);
 
     static void calculateBandwidthLatency(long double total_time_nsec, long double total_data_transfer,
                                           long double &total_bandwidth, long double &total_latency, std::size_t number_iterations);

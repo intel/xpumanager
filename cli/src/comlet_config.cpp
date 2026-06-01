@@ -456,7 +456,7 @@ std::unique_ptr<nlohmann::json> ComletConfig::run() {
             json = this->coreStub->setPCIeDowngradeState(this->opts->deviceId, enabled);
             if((*json)["status"] == "OK") {
                 std::string pendingAction = (*json)["pcie_downgrade_pending_action"];
-                std::string ret = "Successfully " + (enabled?std::string("enable"): std::string("disable")) + " PCIe Gen4 Downgrade on GPU " + std::to_string(this->opts->deviceId);
+                std::string ret = "Successfully " + (enabled?std::string("enabled"): std::string("disabled")) + " PCIe Gen4 Downgrade on GPU " + std::to_string(this->opts->deviceId);
                 if (pendingAction.compare("none") == 0) {
                     ret += ".";
                 } else {
@@ -615,9 +615,5 @@ void ComletConfig::getTableResult(std::ostream &out) {
     } else {
         showPureCommandOutput(out, json);
     }
-}
-
-bool ComletConfig::getResetOption(){
-    return this->opts->resetDevice;
 }
 } // end namespace xpum::cli

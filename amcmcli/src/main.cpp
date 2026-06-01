@@ -82,7 +82,7 @@ int updateAmcFw() {
     if (rc == 0) {
         printProgress(100);
         std::cout << std::endl;
-        std::cout << "Update firmware successfully." << std::endl;
+        std::cout << "Firmware update successful." << std::endl;
     } else {
         auto errMsg = xpum::getIpmiErrorString(rc);
         std::cout << std::endl;
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
         } else {
             std::cout << std::endl;
         }
-        std::cout << "Start to update firmware" << std::endl;
+        std::cout << "Starting to update firmware" << std::endl;
         std::cout << "Firmware Name: AMC" << std::endl;
         std::cout << "Image path: " << filePath << std::endl;
         return updateAmcFw();

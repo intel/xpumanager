@@ -1048,7 +1048,17 @@ static bool getVfId(uint32_t &vfIndex, const char *bdf, uint32_t szBdf,
 }
 
 static uint64_t getFreeLmemSize(const std::string& path) {
-    std::ifstream ifs(path + "/vram0_mm");
+    std::string vramPath;
+    //try new debugfs path for lmem
+    if (is_path_exist(path + "/tile0/vram_mm")) {
+        vramPath = path + "/tile0/vram_mm";
+    //fallback to old debugfs path for lmem
+    } else if (is_path_exist(path + "/vram0_mm")) {
+        vramPath = path + "/vram0_mm";
+    } else {
+        return 0;
+    }
+    std::ifstream ifs(vramPath);
     std::string line;
     uint64_t freeSize;
 

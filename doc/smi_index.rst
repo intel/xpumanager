@@ -1,4 +1,4 @@
-XPU-SMI Linux Documentation
+XPU-SMI V1.x  Linux Documentation
 ============================
 
 .. toctree::

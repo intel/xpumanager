@@ -359,14 +359,14 @@ namespace xpum {
 
     uint32_t GPUDeviceStub::toGetDeviceId(const zes_device_handle_t& device) noexcept {
         ze_result_t status;
-        ze_device_properties_t ze_device_properties = {};
-        ze_device_properties.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-        ze_device_properties.pNext = nullptr;
-        status = zeDeviceGetProperties(device, &ze_device_properties);
+        zes_device_properties_t zes_device_properties = {};
+        zes_device_properties.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+        zes_device_properties.pNext = nullptr;
+        status = zesDeviceGetProperties(device, &zes_device_properties);
         if (status != ZE_RESULT_SUCCESS) {
             return 0;
         }
-        return ze_device_properties.deviceId;
+        return zes_device_properties.core.deviceId;
     }
 
     xpum_result_t GPUDeviceStub::getPowerLimitsExt(const zes_device_handle_t& device,

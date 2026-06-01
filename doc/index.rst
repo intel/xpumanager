@@ -1,4 +1,4 @@
-XPU Manager Documentation
+XPU Manager V1.x Documentation
 =========================
 
 .. toctree::

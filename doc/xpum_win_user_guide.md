@@ -177,11 +177,11 @@ Device 0 FW version: DG02_1.3185
 Image FW version: DG02_1.3218
 Do you want to continue? (y/n)
 y
-Start to update firmware
+Starting to update firmware
 Firmware Name: GFX
 Image path: C:\Users\xxx\xxx\ATS_M150_512_C0_PVT_ES_065_gfx_fwupdate_SOC1.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
 ```
 
 ## Get and change the GPU settings

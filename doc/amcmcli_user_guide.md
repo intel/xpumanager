@@ -54,9 +54,9 @@ Update all AMC firmware to the specified version
 amcmcli updatefw -f ats_m_amc_v_6_1_0_0.bin
 CAUTION: it will update the AMC firmware of all cards and please make sure that you install the GPUs of the same model.
 Please confirm to proceed (y/n) y
-Start to update firmware
+Starting to update firmware
 Firmware Name: AMC
 Image path: /home/gta/ats_m_amc_v_6_1_0_0.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
 ```

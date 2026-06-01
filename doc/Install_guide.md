@@ -1,5 +1,5 @@
 
-# Intel(R) XPU Manager Installation Guide
+# Intel(R) XPU Manager V1.x  Installation Guide
 
 ## Requirements
 * Intel GPU driver ([GPU Driver Installation Guides](https://dgpu-docs.intel.com/installation-guides/index.html)). XPU-SMI is included in the GPU driver repository. If you want to use XPU Manager, please uninstall xpu-smi and install XPU Manager. 

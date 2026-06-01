@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <dlfcn.h>
 #include <regex>
 #include <stdio.h>
 #include <dirent.h>
@@ -30,6 +31,7 @@
 
 #include "api/api_types.h"
 #include "api/device_model.h"
+#include "ext-include/igsc_lib.h"
 #include "device/frequency.h"
 #include "device/memoryEcc.h"
 #include "device/pciedown.h"
@@ -53,8 +55,6 @@
 #define INTEL_VENDOR_ID 0x8086
 
 namespace xpum {
-
-extern bool isZeinitRequired;
 
 std::map<ze_device_handle_t, std::shared_ptr<std::vector<std::shared_ptr<DeviceMetricGroups_t>>>> GPUDeviceStub::device_perf_groups;
 const char* GPU_TIME_NAME = "GpuTime";
@@ -97,6 +97,77 @@ bool checkCapability(const char* device_name, const std::string& bdf_address, co
     }
     return false;
 }
+
+struct igsc_oem_serial_number_local {
+    uint16_t length;
+    uint8_t sn[512];
+};
+
+xpum_result_t getOemSerialNumber(const std::string& meiDevicePath, std::string& serialNumber) {
+    const std::string str_igscLibPath{"libigsc.so"};
+    const std::string str_igscLibPath0{"libigsc.so.0"}; //temporary workaround for missing symoblic link libigsc.so -> libigsc.so.0
+    const size_t max_oem_serial_number_length = 512;
+    serialNumber.clear();
+    if (meiDevicePath.empty()) {
+        XPUM_LOG_WARN("getOemSerialNumber::meiDevicePath is empty");
+        return XPUM_API_UNSUPPORTED;
+    }
+
+    void* libHandle = dlopen(str_igscLibPath.c_str(), RTLD_NOW);
+    if (libHandle == nullptr) {
+        libHandle = dlopen(str_igscLibPath0.c_str(), RTLD_NOW);
+    }
+    if (libHandle == nullptr) {
+        XPUM_LOG_WARN("getOemSerialNumber::Failed to load libigsc.so");
+        return XPUM_API_UNSUPPORTED;
+    }
+
+    auto igsc_device_init_by_device = reinterpret_cast<int (*)(struct igsc_device_handle* handle, const char* device_path)>(
+        dlsym(libHandle, "igsc_device_init_by_device"));
+    auto igsc_device_close = reinterpret_cast<int (*)(struct igsc_device_handle* handle)>(
+        dlsym(libHandle, "igsc_device_close"));
+    auto igsc_device_oem_serial_number = reinterpret_cast<int (*)(struct igsc_device_handle* handle, struct igsc_oem_serial_number_local* sn)>(
+        dlsym(libHandle, "igsc_device_oem_serial_number"));
+
+    if (igsc_device_init_by_device == nullptr || igsc_device_close == nullptr || igsc_device_oem_serial_number == nullptr) {
+        XPUM_LOG_WARN("getOemSerialNumber::Failed to load symbols from libigsc.so");
+        dlclose(libHandle);
+        return XPUM_API_UNSUPPORTED;
+    }
+
+    struct igsc_device_handle handle {};
+    int ret = igsc_device_init_by_device(&handle, meiDevicePath.c_str());
+    if (ret != IGSC_SUCCESS) {
+        XPUM_LOG_WARN("getOemSerialNumber::Failed to initialize IGSC device");
+        dlclose(libHandle);
+        return XPUM_API_UNSUPPORTED;
+    }
+
+    struct igsc_oem_serial_number_local serial {};
+    ret = igsc_device_oem_serial_number(&handle, &serial);
+    igsc_device_close(&handle);
+    dlclose(libHandle);
+
+    if (ret != IGSC_SUCCESS || serial.length == 0) {
+        XPUM_LOG_WARN("getOemSerialNumber::Failed to get OEM serial number");
+        return XPUM_API_UNSUPPORTED;
+    } 
+    
+     // Extract only first embedded serial number value till first non-printable character or end of string, and ensure it does not exceed max_oem_serial_number_length 
+    size_t actualLen = 0;
+    size_t maxLen = std::min<uint16_t>(serial.length, sizeof(serial.sn));
+    char oemSerialNumber[sizeof(serial.sn) + 1] = {0};
+    for (size_t i = 0; i < maxLen && actualLen < (max_oem_serial_number_length - 1); i++) {
+        if (serial.sn[i] == 0 || !isprint(serial.sn[i])) {
+            break;
+        }
+        oemSerialNumber[actualLen++] = static_cast<char>(serial.sn[i]);
+    }
+    oemSerialNumber[actualLen] = '\0';   
+    serialNumber.assign(oemSerialNumber, actualLen);
+    return serialNumber.empty() ? XPUM_API_UNSUPPORTED : XPUM_OK;
+}
+
 } // namespace
 
 GPUDeviceStub::GPUDeviceStub() : initialized(false) {
@@ -330,15 +401,12 @@ void GPUDeviceStub::init() {
         putenv(const_cast<char*>("ZET_ENABLE_METRICS=1"));
     }
 
-    ze_result_t ret;
-    if (isZeinitRequired) {
-	ret = zeInit(0);
-	GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
-	if (ret != ZE_RESULT_SUCCESS) {
-	    XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
-	    checkInitDependency();
-	    throw LevelZeroInitializationException("zeInit error");
-	}
+    ze_result_t ret = zeInit(0);
+    GPUDeviceStub::zeInitReturnCode = static_cast<int>(ret);
+    if (ret != ZE_RESULT_SUCCESS) {
+        XPUM_LOG_ERROR("GPUDeviceStub::init zeInit error: {0:x}", ret);
+        checkInitDependency();
+        throw LevelZeroInitializationException("zeInit error");
     }
 
     XPUM_LOG_INFO("GPUDeviceStub::init zesInit start...");
@@ -856,21 +924,6 @@ static std::string getI915Version() {
     return ret;
 }
 
-static std::string getXeVersion() {
-    std::string ret = "";
-    char buf[BUF_SIZE];
-
-    if (readStrSysFsFile(buf, "/sys/module/xe/srcversion") != true) {
-        return ret;
-    }
-    size_t bufLen = strlen(buf);
-    if (buf[bufLen - 1] == '\n') {
-        buf[bufLen - 1] = '\0';
-    }
-    ret.assign(buf);
-    return ret;
-}
-
 static std::string getDriverPackVersion() {
     std::string version;
     std::string release;
@@ -909,11 +962,12 @@ static std::string getDriverPackVersion() {
     return version;
 }
 
-static std::string getDriverVersion() {
+static std::string getDriverVersion(ze_driver_properties_t driver_prop) {
     std::string version;
+    // check if xe driver is loaded
     std::ifstream xe_version_file("/sys/module/xe/srcversion");
     if(xe_version_file.is_open()){
-        version = getXeVersion();
+        version = std::to_string(driver_prop.driverVersion);
         xe_version_file.close();
     }else {
         // Try to get i915 backported version from sysfs first
@@ -1405,7 +1459,7 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DEVICE_NAME, std::string(props.name)));
                 // p_gpu->addProperty(Property(DeviceProperty::BOARD_NUMBER,std::string(zes_props.boardNumber)));
                 // p_gpu->addProperty(Property(DeviceProperty::BRAND_NAME,std::string(zes_props.brandName)));
-                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion()));
+                p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_VERSION, getDriverVersion(driver_prop)));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_DRIVER_PACK_VERSION, getDriverPackVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_LINUX_KERNEL_VERSION, getKernelVersion()));
                 p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, std::string(zes_props.boardNumber)));
@@ -1560,6 +1614,13 @@ std::shared_ptr<std::vector<std::shared_ptr<Device>>> GPUDeviceStub::toDiscover(
                 
                 if (func_type == DEVICE_FUNCTION_TYPE_PHYSICAL) {
                     toSetMeiDevicePath(p_gpu, pciAddrMeiDevices);
+
+                    std::string oemSerialNumber;
+                    auto serialRet = getOemSerialNumber(p_gpu->getMeiDevicePath(), oemSerialNumber);
+                    if (serialRet == XPUM_OK) {
+                        p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SERIAL_NUMBER, oemSerialNumber));
+                    }
+
                     std::string sku_type = "";
                     p_gpu->addProperty(Property(XPUM_DEVICE_PROPERTY_INTERNAL_SKU_TYPE, sku_type));
                 }
@@ -3108,11 +3169,18 @@ void GPUDeviceStub::getDeviceProcessState(const zes_device_handle_t& device, std
     if (res == ZE_RESULT_SUCCESS) {
         std::vector<zes_process_state_t> procs(process_count);
         XPUM_ZE_HANDLE_LOCK(device, res = zesDeviceProcessesGetState(device, &process_count, procs.data()));
-        for (auto& proc : procs) {
-            std::string pn = getProcessName(proc.processId);
-            device_process dp(proc.processId, proc.memSize, proc.sharedSize, 
-                proc.engines, pn);
-            processes.push_back(dp);
+        if (res != ZE_RESULT_SUCCESS) {
+            return;
+        }
+        uint32_t valid_process_count = std::min<uint32_t>(process_count, static_cast<uint32_t>(procs.size()));
+        for (uint32_t i = 0; i < valid_process_count; ++i) {
+            auto& proc = procs[i];
+            if (proc.engines != 0 && proc.engines != ZES_ENGINE_TYPE_FLAG_OTHER) {
+                std::string pn = getProcessName(proc.processId);
+                device_process dp(proc.processId, proc.memSize, proc.sharedSize,
+                    proc.engines, pn);
+                processes.push_back(dp);
+            }
         }
     } else {
         return;

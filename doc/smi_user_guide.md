@@ -1,8 +1,8 @@
-# Intel(R) XPU System Management Interface User Guide
-This guide describes how to use Intel(R) XPU System Management Interface to manage Intel GPU devices. 
+# Intel(R) XPU System Management Interface V1.x  User Guide
+This guide describes how to use Intel(R) XPU System Management Interface V1.x  to manage Intel GPU devices.
   
 
-## Intel(R) XPU System Management Interface main features 
+## Intel(R) XPU System Management Interface V1.x  main features
 * Show the device info. 
 * Update the device firmware. 
 
@@ -10,7 +10,7 @@ This guide describes how to use Intel(R) XPU System Management Interface to mana
 Show the XPU System Management Interface help info. 
 ```
 xpu-smi 
-Intel(R) XPU System Management Interface -- v1.0 
+Intel(R) XPU System Management Interface -- v1.x
 Intel(R) XPU System Management Interface provides the Intel data center GPU device info. It can also be used to update the firmware.  
 Intel(R) XPU System Management Interface is based on Intel(R) oneAPI Level Zero. Before using XPU System Management Interface, the GPU driver and Intel(R) oneAPI Level Zero should be installed rightly.  
  
@@ -298,14 +298,66 @@ Device 0 FW version: DG02_2.2271
 Device 1 FW version: DG02_2.2271
 Image FW version: DG02_2.2277
 Do you want to continue? (y/n)
-Start to update firmware
+Starting to update firmware
 Firmware Name: GFX
 Image path: /home/test/ATS_M75_128_B0_PVT_ES_033_dg2_gfx_fwupdate_SOC2.bin
 [============================================================] 100 %
-Update firmware successfully.
+Firmware update successful.
+
+```
+
+Update GPU dynamic late binding fan table data
+```
+sudo xpu-smi updatefw -d 0 --type FAN_TABLE -f ./signed_fantable_8086_e211_8086_1115.bin
+Starting to update firmware
+Firmware Name: FAN_TABLE
+Image path: /home/test/signed_fantable_8086_e211_8086_1115.bin
+[============================================================] 100 %
+Firmware update successful.
+
+```
+
+Update GPU dynamic late binding VR config data
+```
+sudo xpu-smi updatefw -d 0 --type VR_CONFIG -f ./Signed_vrconfig_8086_e20b_8086_1100.bin
+Starting to update firmware
+Firmware Name: VR_CONFIG
+Image path: /home/test/Signed_vrconfig_8086_e20b_8086_1100.bin
+[============================================================] 100 %
+Firmware update successful.
+
+```
+
+Update GPU OPROM code
+```
+sudo xpu-smi updatefw -d 0 --type OPROM_CODE -f ./BMG_OpromCode.bin
+Device 0 FW version: 17 0 27 4 0 0 0 0
+Image FW version: 17 0 22 4 0 0 0 0
+Do you want to continue? (y/n) y
+Starting to update firmware
+Firmware Name: OPROM_CODE
+Image path: /home/test/BMG_OpromCode.bin
+[============================================================] 100 %
+Firmware update successful.
+
+```
+
+Device recovery in survivability mode through firmware update
+```
+sudo xpu-smi updatefw --type GFX -f ./bmg_g21_fwupdate.bin --recovery
+This operation will unload the GPU driver, make GPU to the recovery mode and update all GPU GFX firmware. Do you want to continue? (y/n)y
+Device /dev/mei1 FW version: BMG__21.1169
+Image FW version: BMG__21.1169
+Do you want to continue? (y/n) y
+Starting to update firmware
+Firmware Name: GFX
+Image path: /home/test/bmg_g21_fwupdate.bin
+[============================================================] 100 %
+Firmware update successful.
 
 ```
   
+
 ## Diagnose GPU with different test suites
 When running tests on GPU, GPU will be used exclusively. There will be obviously performance impact on the GPU. Some CPU performance may also be impacted. 
 
@@ -603,6 +655,18 @@ Change the Xe Link port beaconing status
 ```
 xpu-smi config -d 0 -t 0 --xelinkportbeaconing 0,1
 Succeed to change Xe Link port 0 beaconing to on.
+```
+
+Enable the PCIe Downgrade   
+```
+sudo xpu-smi config -d 0 --pciedowngrade 1
+Return: Successfully enabled PCIe Gen4 Downgrade on GPU 0. Please hard reset or power on/off the machine for the change to take effect!
+```
+
+Disable the PCIe Downgrade   
+```
+sudo xpu-smi config -d 0 --pciedowngrade 0
+Return: Successfully disabled PCIe Gen4 Downgrade on GPU 0. Please hard reset or power on/off the machine for the change to take effect!
 ```
 
 
