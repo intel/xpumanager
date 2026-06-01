@@ -39,21 +39,38 @@ if is_linux
   )
 
   test('topology_test', topology_test)
+
+  dump_test = executable(
+    'dump_test',
+    'dump_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: ial_cmn_lib,
+    dependencies: ial_cmn_test_deps,
+    cpp_args: ial_cmn_cpp_args,
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('dump_test', dump_test)
+
+  vgpu_test = executable(
+    'vgpu_test',
+    'vgpu_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: [ial_cmn_lib],
+    dependencies: ial_cmn_test_deps,
+    link_args: ['-pie'],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('vgpu_test', vgpu_test)
+
 endif
-
-dump_test = executable(
-  'dump_test',
-  'dump_test.cpp',
-  include_directories: [
-    global_inc,
-    ial_cmn_inc,
-  ],
-  link_with: ial_cmn_lib,
-  dependencies: ial_cmn_test_deps,
-  cpp_args: ial_cmn_cpp_args,
-  link_args: is_linux ? ['-pie'] : [],
-  build_by_default: true,
-  install: false,
-)
-
-test('dump_test', dump_test)

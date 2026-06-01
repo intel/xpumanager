@@ -37,36 +37,38 @@ void cmdVgpu::help(HELP helpType)
 	TRACING();
 	std::vector<helpCmd> helpList;
 
-	helpList.push_back(helpCmd(TITLE, "Create and remove virtual GPUs in SRIOV configuration"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: %s vgpu [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu --precheck", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s vgpu -d [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -c -n [vGpuNumber] --lmem [vGpuMemorySize]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -r", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -r", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -l", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [pciBdfAddress] -l", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s vgpu -d [deviceId] -s", progName.c_str()));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Options:"));
-	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
-	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
-	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "--device,--id               Device ID or PCI BDF address"));
-	helpList.push_back(
-		helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
-	helpList.push_back(helpCmd(HEADING, "-c,--create                 Create the virtual GPUs"));
-	helpList.push_back(helpCmd(HEADING, "-n                          The number of virtual GPUs to create"));
-	helpList.push_back(helpCmd(
-		HEADING, "--lmem                      The memory size of each virtual GPUs, in MiB. For example, --lmem 500"));
-	helpList.push_back(
-		helpCmd(HEADING, "-r,--remove                 Remove all virtual GPUs on the specified physical GPU"));
-	helpList.push_back(
-		helpCmd(HEADING, "-l,--list                   List all virtual GPUs on the specified physical GPU"));
-	helpList.push_back(helpCmd(HEADING, "-s,--stats                  Show statistics data of all virtual GPUs"));
+	helpList.emplace_back(TITLE, "Create and remove virtual GPUs in SRIOV configuration");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Usage: %s vgpu [Options]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --precheck", progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --device [deviceId] -c -n [vGpuNumber] --lmem [vGpuMemorySize]",
+						  progName.c_str());
+	helpList.emplace_back(HEADING,
+						  "%s vgpu --device [pciBdfAddress] -c -n [vGpuNumber] "
+						  "--lmem [vGpuMemorySize]",
+						  progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --device [deviceId] -r", progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --device [pciBdfAddress] -r", progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --device [deviceId] -l", progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --device [pciBdfAddress] -l", progName.c_str());
+	helpList.emplace_back(HEADING, "%s vgpu --device [deviceId] -s", progName.c_str());
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(TITLE, "Options:");
+	helpList.emplace_back(HEADING, "-h,--help                   Print this help message and exit");
+	helpList.emplace_back(HEADING, "-j,--json                   Print result in JSON format");
+	helpList.emplace_back(BLANK);
+	helpList.emplace_back(HEADING, "--device,--id               Device ID or PCI BDF address");
+	helpList.emplace_back(HEADING, "--precheck,--query          Check if BIOS "
+								   "settings are ready to create virtual GPUs");
+	helpList.emplace_back(HEADING, "-c,--create                 Create the virtual GPUs");
+	helpList.emplace_back(HEADING, "-n                          The number of virtual GPUs to create");
+	helpList.emplace_back(HEADING, "--lmem                      The memory size of each "
+								   "virtual GPUs, in MiB. For example, --lmem 500");
+	helpList.emplace_back(HEADING, "-r,--remove                 Remove all "
+								   "virtual GPUs on the specified physical GPU");
+	helpList.emplace_back(HEADING, "-l,--list,--supported       List all virtual "
+								   "GPUs on the specified physical GPU");
+	helpList.emplace_back(HEADING, "-s,--stats,--utilization    Show statistics data of all virtual GPUs");
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -356,13 +358,13 @@ int cmdVgpu::run(arg_struct *args)
 	sub.add_flag("-j,--json", vgpuCmds[VGPU_JSON].enabled, "Print result in JSON format");
 	sub.add_option("-d,--device,--id", vgpuCmds[VGPU_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { vgpuCmds[VGPU_DEVICE].enabled = true; });
-	sub.add_flag("--precheck", vgpuCmds[VGPU_PRECHECK].enabled, "Check vGPU readiness");
+	sub.add_flag("--precheck,--query", vgpuCmds[VGPU_PRECHECK].enabled, "Check vGPU readiness");
 	sub.add_option("-n,--number", vgpuCmds[VGPU_NUMBER].val, "Number of vGPUs to create")
 		->each([&](const std::string &) { vgpuCmds[VGPU_NUMBER].enabled = true; });
 	sub.add_flag("-c,--create", vgpuCmds[VGPU_CREATE].enabled, "Create vGPUs");
 	sub.add_flag("-r,--remove", vgpuCmds[VGPU_REMOVE].enabled, "Remove vGPUs");
-	sub.add_flag("-l,--list", vgpuCmds[VGPU_LIST].enabled, "List vGPUs");
-	sub.add_flag("-s,--stats", vgpuCmds[VGPU_STATS].enabled, "Show vGPU stats");
+	sub.add_flag("-l,--list,--supported", vgpuCmds[VGPU_LIST].enabled, "List vGPUs");
+	sub.add_flag("-s,--stats,--utilization", vgpuCmds[VGPU_STATS].enabled, "Show vGPU stats");
 	sub.add_option("--lmem", vgpuCmds[VGPU_LMEM].val, "Local memory size per vGPU (MB)")
 		->each([&](const std::string &) { vgpuCmds[VGPU_LMEM].enabled = true; });
 
