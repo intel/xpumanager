@@ -79,7 +79,7 @@ and the whole device PSU), so their aggregation will just mislead.
 As to `hw.status{hw.state=...}` state metrics (having values 0 and 1),
 summing them could be useful, but only if good and bad states can be
 differentiated from each other, and currently specification does not
-state how this should be done.
+explicitly state how this should be done.
 
 
 _Use inconsistent namespacing & linking_
@@ -111,7 +111,7 @@ Instead of bandwidth metrics being namespaced consistently e.g. under `hw.gpu.me
 
 Above `hw.<metric-type>` metrics require information about parent item, type and location, whereas `hw.<component>.<metric-type>` metrics need less of those.
 
-There's also no specific HW info metric type, that could act as parent when there are no metrics available from the parent component.
+There's also no specific "HW exists" info metric type, that could act as parent when there are no metrics available from the parent component.
 
 
 _Require tautological attribute(s)_
@@ -123,6 +123,15 @@ Spec requires `hw.type` attribute for following metric types to be identical to 
 Instead of it adding relevant information, e.g. to which component
 fan, memory, network, temperature, voltage metrics belong to (CPU,
 GPU...).
+
+All OTel HW metrics are supposed to carry all HW attributes. With the
+amount of attributes GPUs have / need, this means large amounts of
+both generated and manually maintained (basically duplicated) extra
+code.
+
+Majority of shared attributes (ones not relevant for differentiating
+metrics from each other) could instead be properties of a separate "HW
+exists" info metric.
 
 
 _Use inconsistent metric names_
@@ -317,8 +326,8 @@ stack below it.
 
 Current item linking uses [alternative 1](#alternative-1) for simplicity.
 
-For now, exporter HW metric types and their attributes are mix of OTel
-specified ones and Intel specific ones.
+For now, exporter uses a mix of OTel spec and Intel specific HW metric
+types / namespaces and their attributes.
 
 `hw.status` metrics:
 
