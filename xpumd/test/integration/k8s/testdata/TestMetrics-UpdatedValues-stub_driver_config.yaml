@@ -4,6 +4,8 @@ Drivers:
   - ExtensionProperties:
       - Name: "ZES_extension_power_limits"
         Version: 65536
+      - Name: "ZES_extension_ras_state"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -110,6 +112,24 @@ Drivers:
                 Interval: 1000
                 LimitValueLocked: false
                 Limit: 200000
+
+        RasErrorSets:
+          - Properties:
+              Type: 0  # ZES_RAS_ERROR_TYPE_CORRECTABLE
+              OnSubdevice: false
+              SubdeviceId: 0
+            StateExp:
+              - Category: 7  # ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS
+                ErrorCounter: 12
+          - Properties:
+              Type: 1  # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+              OnSubdevice: false
+              SubdeviceId: 0
+            StateExp:
+              - Category: 0  # ZES_RAS_ERROR_CATEGORY_EXP_RESET
+                ErrorCounter: 1
+              - Category: 3  # ZES_RAS_ERROR_CATEGORY_EXP_COMPUTE_ERRORS
+                ErrorCounter: 0
 
         TemperatureSensors:
           - Properties:

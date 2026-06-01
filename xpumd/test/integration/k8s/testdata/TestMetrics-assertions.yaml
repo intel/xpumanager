@@ -25,6 +25,9 @@ _templates:
   temp_status_common_labels: &temp_status_common_labels
     <<: *pci_common_labels
     hw_type: temperature
+  ras_common_labels: &ras_common_labels
+    <<: *dev_common_labels
+    hw_type: gpu
 
 # common covers metrics whose values are identical across all configurations/test cases.
 common:
@@ -158,6 +161,10 @@ InitialValues:
       value: 8589934592
       labels: *mem_common_labels
 
+    - name: hw_memory_utilization_ratio
+      value: 0.5
+      labels: *mem_common_labels
+
     # hw.temperature
     - name: hw_temperature_celsius
       value: 48
@@ -196,6 +203,29 @@ InitialValues:
         hw_name: temp-3
         hw_sensor_location: memory
         hw_state: ok
+
+    # hw.errors — correctable non-zero counter emitted; uncorrectable always emitted
+    - name: hw_errors_total
+      value: 5
+      labels:
+        <<: *ras_common_labels
+        hw_name: errorset-1
+        error_type: correctable
+        error_category: memory_errors
+    - name: hw_errors_total
+      value: 0
+      labels:
+        <<: *ras_common_labels
+        hw_name: errorset-2
+        error_type: uncorrectable
+        error_category: reset
+    - name: hw_errors_total
+      value: 0
+      labels:
+        <<: *ras_common_labels
+        hw_name: errorset-2
+        error_type: uncorrectable
+        error_category: compute_errors
 
 UpdatedValues:
   # metrics_sentinel is also asserted (Value set → automatically included in
@@ -271,6 +301,18 @@ UpdatedValues:
         <<: *freq_common_labels
         sample_status: collected
 
+    - name: hw_frequency_samples
+      labels:
+        <<: *freq_common_labels
+        sample_status: dropped
+
+    # hw.frequency.throttle_status — ave_pwr_cap first seen here
+    - name: hw_frequency_throttle_status
+      value: 1
+      labels:
+        <<: *freq_common_labels
+        com_intel_speed_throttle_reason: ave_pwr_cap
+
     # hw.status — frequency throttled by power cap; memory degraded; ECC enabled
     - name: hw_status
       value: 1
@@ -343,6 +385,10 @@ UpdatedValues:
       value: 12884901888
       labels: *mem_common_labels
 
+    - name: hw_memory_utilization_ratio
+      value: 0.75
+      labels: *mem_common_labels
+
     # hw.temperature — GPU above 105 °C threshold, memory above 85 °C threshold
     - name: hw_temperature_celsius
       value: 110
@@ -388,3 +434,26 @@ UpdatedValues:
         hw_name: temp-3
         hw_sensor_location: memory
         hw_state: ok
+
+    # hw.errors — correctable non-zero counter emitted; uncorrectable always emitted
+    - name: hw_errors_total
+      value: 12
+      labels:
+        <<: *ras_common_labels
+        hw_name: errorset-1
+        error_type: correctable
+        error_category: memory_errors
+    - name: hw_errors_total
+      value: 1
+      labels:
+        <<: *ras_common_labels
+        hw_name: errorset-2
+        error_type: uncorrectable
+        error_category: reset
+    - name: hw_errors_total
+      value: 0
+      labels:
+        <<: *ras_common_labels
+        hw_name: errorset-2
+        error_type: uncorrectable
+        error_category: compute_errors
