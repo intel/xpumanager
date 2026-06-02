@@ -18,7 +18,7 @@
 ## Building
 
 See the build requirements in Level-Zero Go Bindings
-[README](level-zero-go/README.md#requirements).
+[README](../level-zero-go/README.md#requirements).
 
 Clone the repository:
 
@@ -45,7 +45,7 @@ sudo ./dist/xpumd --config config-example.yaml
 ```
 
 (Extra privileges are required to get all the metrics, but some of them
-are available also without `sudo`, see [Metrics](README.md#metrics).)
+are available also without `sudo`, see [Metrics](../README.md#metrics).)
 
 ## Testing Prometheus exporter
 
@@ -226,14 +226,14 @@ helm install xpumd charts/xpumd --set image.repository=registry.local/xpumd --se
         --set securityContextOverride.runAsUser=0 --set securityContextOverride.privileged=true
 ```
 
-See [Helm chart README](charts/xpumd/README.md) for other deployment scenarios
+See [Helm chart README](../charts/xpumd/README.md) for other deployment scenarios
 and detailed configuration options.
 
 ## Integration tests
 
 The project includes a suite of Kubernetes integration tests that verify the
 deployment and basic functionality using the
-[stub Level-Zero driver](receiver/internal/level-zero-go/level-zero-stub).
+[stub Level-Zero driver](../level-zero-go/level-zero-stub).
 
 ### Kind cluster
 

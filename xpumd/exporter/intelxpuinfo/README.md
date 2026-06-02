@@ -21,7 +21,7 @@ information for all known XPU devices.
 ### Logs pipeline
 
 The exporter also consumes events (log records) produced by the
-[intelxpu](../receiver/README.md) receiver. Events with the `hw.id`
+[intelxpu](../../receiver/intelxpu/) receiver. Events with the `hw.id`
 attribute are translated into device events.
 
 ## Configuration

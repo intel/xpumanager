@@ -91,7 +91,7 @@ helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
 Alternatively, use the OTLP gRPC exporter (port 4317) instead of HTTP.
 
 > [!IMPORTANT]
-> See the [Chart README](charts/xpumd/README.md) for details on how to
+> See the [Chart README](../charts/xpumd/README.md) for details on how to
 > configure `xpumd` for the target cluster setup.
 
 ### Step 3: Validate the Setup
@@ -126,7 +126,7 @@ Look for Intel GPU metrics, e.g.:
 - `hw_memory_usage_bytes`
 
 > [!NOTE]
-> See the [`intelxpu` receiver documentation](receiver/sysman/documentation.md)
+> See the [`intelxpu` receiver documentation](../receiver/intelxpu/sysman/documentation.md)
 > for all available metrics.
 
 ## Visualization with Grafana

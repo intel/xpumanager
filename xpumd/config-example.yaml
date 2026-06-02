@@ -13,7 +13,7 @@ receivers:
     # Sampling interval for the high-frequency metrics.
     sampling_interval: 1s
     # Configuration for enabling/disabling individual metrics.
-    # See receiver/intelxpu/documentation.md for list of available metrics.
+    # See receiver/intelxpu/sysman/documentation.md for list of available metrics.
     metrics:
 #      hw.memory.size:
 #        enabled: false
