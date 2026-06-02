@@ -248,9 +248,9 @@ void cmdTopology::help(HELP helpType)
 	helpList.emplace_back(TITLE, "Get the system topology");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Usage: %s topology [Options]", progName.c_str());
-	helpList.emplace_back(HEADING, "%s topology -d [deviceId]", progName.c_str());
-	helpList.emplace_back(HEADING, "%s topology -d [pciBdfAddress]", progName.c_str());
-	helpList.emplace_back(HEADING, "%s topology -d [deviceId] -j", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology --device [deviceId]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology --device [pciBdfAddress]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s topology --device [deviceId] -j", progName.c_str());
 	helpList.emplace_back(HEADING, "%s topology -f [filename]", progName.c_str());
 	helpList.emplace_back(HEADING, "%s topology -m", progName.c_str());
 	helpList.emplace_back(BLANK);
@@ -258,7 +258,7 @@ void cmdTopology::help(HELP helpType)
 	helpList.emplace_back(HEADING, "-h,--help                   Print this help message and exit");
 	helpList.emplace_back(HEADING, "-j,--json                   Print result in JSON format");
 	helpList.emplace_back(BLANK);
-	helpList.emplace_back(HEADING, "-d,--device                 The device ID or PCI BDF address to query");
+	helpList.emplace_back(HEADING, "--device,--id               The device ID or PCI BDF address to query");
 	helpList.emplace_back(HEADING,
 						  "-f,--file                   Generate the system topology with the GPU info to a XML file");
 	helpList.emplace_back(HEADING, "-m,--matrix                 Print the CPU/GPU/NIC topology matrix");
@@ -706,7 +706,7 @@ ze_result_t cmdTopology::showMatrix(bool useJson)
  * Command line options:
  * - -h, --help: Display help information
  * - -j, --json: Output in JSON format instead of text
- * - -d, --device <id>: Query topology for specific device (by ID or PCI BDF)
+ * - --device,--id <id>: Query topology for specific device (by ID or PCI BDF)
  * - -f, --file <path>: Generate topology XML file
  * - -m, --matrix: Display topology connectivity matrix
  *
@@ -744,7 +744,7 @@ int cmdTopology::run(arg_struct *args)
 	CLI::App sub{"Show GPU topology information", "topology"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", topologyCmds[topologyCmdType::TOPOLOGY_JSON].enabled, "Output in JSON format");
-	sub.add_option("-d,--device", topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val, "Device ID")
+	sub.add_option("--device,--id", topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].val, "Device ID")
 		->each([&](const std::string &) { topologyCmds[topologyCmdType::TOPOLOGY_DEVICE].enabled = true; });
 	sub.add_option("-f,--file", topologyCmds[topologyCmdType::TOPOLOGY_FILE].val, "Output XML file path")
 		->each([&](const std::string &val) {

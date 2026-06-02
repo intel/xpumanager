@@ -626,42 +626,44 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "Get and change the GPU settings"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s config [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId]", progName.c_str()));
-	helpList.push_back(helpCmd(
-		HEADING, "%s config -d [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --powerlimit [powerValue]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --standby [standbyMode]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config -d [deviceId] -t [tileId] --scheduler [schedulerMode]", progName.c_str()));
-	helpList.push_back(helpCmd(
-		HEADING, "%s config -d [deviceId] -t [tileId] --performancefactor [engineType,factorValue]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config -d [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config -d [deviceId] --pciedowngrade [0|1] 0:disable; 1:enable", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING,
-							   "%s config -d [deviceId] [--fanid <id|-1>] --fanspeed [value] 0-100(percent);default",
+							   "%s config --device [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]",
+							   progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --powerlimit [powerValue]", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s config --device [deviceId] -t [tileId] --standby [standbyMode]", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s config --device [deviceId] -t [tileId] --scheduler [schedulerMode]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING,
+							   "%s config --device [deviceId] -t [tileId] --performancefactor [engineType,factorValue]",
 							   progName.c_str()));
 	helpList.push_back(
-		helpCmd(HEADING,
-				"%s config -d [deviceId] [--fanid <id|-1>] --fancurve [curve] temp:speed pairs, e.g. 40:25,60:50,80:90",
-				progName.c_str()));
+		helpCmd(HEADING, "%s config --device [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
 	helpList.push_back(
-		helpCmd(HEADING,
-				"%s config -d [deviceId] [--fanid <id|-1>] --fancurve-rpm [curve] temp:rpm pairs, e.g. 40:1200,70:2800",
+		helpCmd(HEADING, "%s config --device [deviceId] --pciedowngrade [0|1] 0:disable; 1:enable", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s config --device [deviceId] [--fanid <id|-1>] --fanspeed [value] 0-100(percent);default",
 				progName.c_str()));
+	helpList.push_back(helpCmd(
+		HEADING,
+		"%s config --device [deviceId] [--fanid <id|-1>] --fancurve [curve] temp:speed pairs, e.g. 40:25,60:50,80:90",
+		progName.c_str()));
+	helpList.push_back(helpCmd(
+		HEADING,
+		"%s config --device [deviceId] [--fanid <id|-1>] --fancurve-rpm [curve] temp:rpm pairs, e.g. 40:1200,70:2800",
+		progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "--fanid                     Fan target: -1 (all fans, default) or 0..N-1"));
 
-	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --reset", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s config -d [pciBdfAddress] --coldreset", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s config -d [deviceId] --clear-ras-errors", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --reset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [pciBdfAddress] --coldreset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --clear-ras-errors", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
+	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(HEADING, "--frequencyrange            GPU tile-level core frequency range"));
 	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));
@@ -1934,7 +1936,7 @@ int cmdConfig::run(arg_struct *args)
 	CLI::App sub{"Configure GPU settings", "config"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", configCmds[configCmdType::CONFIGJSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device", configCmds[configCmdType::CONFIGDEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("--device,--id", configCmds[configCmdType::CONFIGDEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { configCmds[configCmdType::CONFIGDEVICE].enabled = true; });
 	sub.add_option("-t,--tile", configCmds[configCmdType::TILE].val, "Tile ID")->each([&](const std::string &) {
 		configCmds[configCmdType::TILE].enabled = true;
@@ -2001,7 +2003,7 @@ int cmdConfig::run(arg_struct *args)
 				   "Target fan ID (-1 = all fans, 0..N-1 = specific fan)")
 		->each([&](const std::string &) { configCmds[configCmdType::FANID].enabled = true; });
 	sub.add_flag("--coldreset", configCmds[configCmdType::COLDRESET].enabled,
-				 "Cold-reset the device (requires PCI BDF address for -d, not a device index)");
+				 "Cold-reset the device (requires PCI BDF address for --device, not a device index)");
 	sub.add_flag("--ignore-gpu-user-processes", configCmds[configCmdType::IGNORE_GPU_USER_PROCESSES].enabled,
 				 "Skip check for running GPU user processes before reset");
 	sub.add_flag("--force-reset-gpus", configCmds[configCmdType::FORCE_RESET_GPUS].enabled,

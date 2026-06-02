@@ -55,7 +55,7 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 Device ID or PCI BDF address"));
+	helpList.push_back(helpCmd(HEADING, "--device,--id               Device ID or PCI BDF address"));
 	helpList.push_back(
 		helpCmd(HEADING, "--precheck                  Check if BIOS settings are ready to create virtual GPUs"));
 	helpList.push_back(helpCmd(HEADING, "-c,--create                 Create the virtual GPUs"));
@@ -356,7 +356,7 @@ int cmdVgpu::run(arg_struct *args)
 	CLI::App sub{"Manage virtual GPUs (vGPU)", "vgpu"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", vgpuCmds[VGPU_JSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device", vgpuCmds[VGPU_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("--device,--id", vgpuCmds[VGPU_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { vgpuCmds[VGPU_DEVICE].enabled = true; });
 	sub.add_flag("--precheck", vgpuCmds[VGPU_PRECHECK].enabled, "Check vGPU readiness");
 	sub.add_option("-n,--number", vgpuCmds[VGPU_NUMBER].val, "Number of vGPUs to create")

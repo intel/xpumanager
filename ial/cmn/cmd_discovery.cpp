@@ -399,7 +399,7 @@ void cmdDiscovery::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(
-		HEADING, "-d,--device                 Device ID or PCI BDF address to query. It will show more detailed info"));
+		HEADING, "--device,--id               Device ID or PCI BDF address to query. It will show more detailed info"));
 	helpList.push_back(helpCmd(HEADING, "--pf,--physicalFunction     Display the physical functions only"));
 	helpList.push_back(helpCmd(HEADING, "--vf,--virtualFunction      Display the virtual functions only"));
 	helpList.push_back(helpCmd(HEADING, "--dump                      Property ID to dump device properties in CSV "
@@ -2134,7 +2134,7 @@ int cmdDiscovery::run(arg_struct *args)
 	CLI::App sub{"Discover Intel GPU devices", "discovery"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", discCmds[discCmdType::DISC_JSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device", discCmds[discCmdType::DISC_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("--device,--id", discCmds[discCmdType::DISC_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { discCmds[discCmdType::DISC_DEVICE].enabled = true; });
 	sub.add_flag("--pf", discCmds[discCmdType::DISC_PF].enabled, "List physical function devices");
 	sub.add_flag("--physicalFunction", discCmds[discCmdType::DISC_PHYSICALFUNCTION].enabled,

@@ -65,7 +65,7 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address. If it is not "
+	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address. If it is not "
 										"specified, all devices will be updated"));
 	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, "
 										"FDO, GFX_CODE_DATA, GFX_PSCBIN, AMC, OP_CODE, OP_DATA."));
@@ -110,7 +110,7 @@ int cmdUpdateFW::run(arg_struct *args)
 	CLI::App sub{"Update GPU firmware", "updatefw"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", fwInfo.jsonOutput, "Print result in JSON format");
-	sub.add_option("-d,--device", fwInfo.deviceId,
+	sub.add_option("--device,--id", fwInfo.deviceId,
 				   "Device ID or PCI BDF address. If not specified, all devices are updated");
 	sub.add_option("-t,--type", fwInfo.firmwareType,
 				   "Firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC, OPCODE, OPDATA");
