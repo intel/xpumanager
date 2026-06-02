@@ -21,7 +21,7 @@ provides:
 * Intel GPU metric exporters
 * GPU status information for Kubernetes Intel GPU resource drivers
 
-[Changes](CHANGES.md) lists differences in corresponding functionality compared to XPUM v1.x.
+[Changes](docs/CHANGES.md) lists differences in corresponding functionality compared to XPUM v1.x.
 
 
 ## Architecture
@@ -112,7 +112,7 @@ docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
 
 For integration-style runs without a real Level Zero userspace driver, the
 image also ships a stub driver. See
-[`DEVELOPMENT.md`](DEVELOPMENT.md#testing-container-image-with-stub-driver)
+[`DEVELOPMENT.md`](docs/DEVELOPMENT.md#testing-container-image-with-stub-driver)
 for detailed instructions.
 
 See also [Testing container image](#testing-container-image).
@@ -123,15 +123,15 @@ See the [Helm chart](charts/xpumd/README.md) for deployment instructions.
 
 For an example of a more complete telemetry stack, see either:
 
-* [MONITORING.md](MONITORING.md) for using XPUM daemon with Prometheus + Grafana, or
-* [OTEL_STACK.md](OTEL_STACK.md) for deploying XPUM daemon with an OpenTelemetry collector backend
+* [MONITORING.md](docs/MONITORING.md) for using XPUM daemon with Prometheus + Grafana, or
+* [OTEL_STACK.md](docs/OTEL_STACK.md) for deploying XPUM daemon with an OpenTelemetry collector backend
 
 ### Grafana dashboard
 
 Helm chart installs Grafana dashboard, but one can also load manually
 [dashboard JSON version](charts/xpumd/json/) to Grafana.
 
-![GPU metrics dashboard](xpumd-dashboard.png)
+![GPU metrics dashboard](docs/xpumd-dashboard.png)
 
 
 ## Features
@@ -177,4 +177,4 @@ The device info exporter is enabled by the default configuration file
 
 ## Development
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for instructions on how to build, run and test the XPUM daemon.
+See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for instructions on how to build, run and test the XPUM daemon.

@@ -157,4 +157,4 @@ As explained in the [Grafana Helm chart documentation](https://github.com/grafan
 
 But if auto-loading does not work, restarting Grafana (by deleting Grafana pod from `$prom_ns` namespace) should load all the available dashboard configMaps.
 
-If even that fails, one can also load the [dashboard JSON version](charts/xpumd/json/) directly from Grafana.
+If even that fails, one can also load the [dashboard JSON version](../charts/xpumd/json/) directly from Grafana.
