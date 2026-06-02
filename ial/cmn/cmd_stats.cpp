@@ -1945,7 +1945,7 @@ void cmdStats::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address to query"));
+	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-e,--eu                     Show EU metrics"));
 	helpList.push_back(helpCmd(HEADING, "-r,--ras                    Show RAS error metrics"));
 	helpList.push_back(
@@ -2114,7 +2114,7 @@ int cmdStats::run(arg_struct *args)
 	CLI::App sub{"Show GPU statistics", "stats"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", statsCmds[STATS_JSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device", statsCmds[STATS_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("--device,--id", statsCmds[STATS_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { statsCmds[STATS_DEVICE].enabled = true; });
 	sub.add_flag("-e,--eu", statsCmds[STATS_EU].enabled, "Show EU statistics");
 	sub.add_flag("-r,--ras", statsCmds[STATS_RAS].enabled, "Show RAS error statistics");

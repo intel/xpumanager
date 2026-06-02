@@ -107,7 +107,7 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 Specify the device ID or PCI BDF address"));
+	helpList.push_back(helpCmd(HEADING, "--device,--id               Specify the device ID or PCI BDF address"));
 	helpList.push_back(helpCmd(HEADING, "--gpuReset                  Reset GPU(s) via AMC"));
 	helpList.push_back(helpCmd(HEADING, "--sensor                    Read AMC real-time sensor readings"));
 	helpList.push_back(
@@ -183,7 +183,7 @@ int cmdAmc::run(arg_struct *args)
 	sub.add_option("--filename", amcCmds[AMC_OP_FILENAME].val, "Output filename")->each([&](const std::string &) {
 		amcCmds[AMC_OP_FILENAME].enabled = true;
 	});
-	sub.add_option("-d,--device", amcCmds[AMC_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("--device,--id", amcCmds[AMC_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { amcCmds[AMC_DEVICE].enabled = true; });
 	sub.add_flag("-y,--yes", amcCmds[AMC_YES].enabled, "Assume yes to all questions");
 

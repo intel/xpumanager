@@ -46,7 +46,7 @@ void cmdPs::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "-d,--device                 The device ID or PCI BDF address"));
+	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -175,7 +175,7 @@ int cmdPs::run(arg_struct *args)
 	CLI::App sub{"List running GPU processes", "ps"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", psCmds[psCmdType::PS_JSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device", psCmds[psCmdType::PS_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("--device,--id", psCmds[psCmdType::PS_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { psCmds[psCmdType::PS_DEVICE].enabled = true; });
 
 	try {

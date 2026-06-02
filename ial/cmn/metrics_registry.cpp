@@ -276,17 +276,17 @@ std::vector<const QueryMetric *> getMetricsByGroup(MetricGroup mask)
 
 // Case-insensitive glob match against a metric name.
 //   '*' — matches zero or more characters (e.g. "power.*" matches "power.gpu.sustained")
-//   '?' — matches exactly one character  (e.g. "temperature.?pu" matches "temperature.gpu" but not "temperature.memory")
+//   '?' — matches exactly one character  (e.g. "temperature.?pu" matches "temperature.gpu" but not
+//   "temperature.memory")
 // Uses the standard O(n*m) iterative backtracking algorithm.
 static bool globMatch(std::string_view pattern, std::string_view text) noexcept
 {
-	const auto toLower = [](char c) noexcept -> char {
-		return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + 32) : c;
-	};
+	const auto toLower = [](char c) noexcept -> char { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + 32) : c; };
 	size_t patternPos = 0, textPos = 0;
 	size_t lastStarPatternPos = std::string_view::npos, lastStarTextPos = 0;
 	while (textPos < text.size()) {
-		if (patternPos < pattern.size() && (pattern[patternPos] == '?' || toLower(pattern[patternPos]) == toLower(text[textPos]))) {
+		if (patternPos < pattern.size() &&
+			(pattern[patternPos] == '?' || toLower(pattern[patternPos]) == toLower(text[textPos]))) {
 			++patternPos;
 			++textPos;
 		} else if (patternPos < pattern.size() && pattern[patternPos] == '*') {
@@ -345,8 +345,7 @@ std::vector<const QueryMetric *> resolveQuery(std::string_view csv)
 			// Wildcard pattern: match against all metric names and aliases.
 			for (const QueryMetric &f : allMetrics) {
 				if (globMatch(token, f.name) ||
-						std::ranges::any_of(f.aliases,
-							[&](std::string_view a) noexcept { return globMatch(token, a); })) {
+					std::ranges::any_of(f.aliases, [&](std::string_view a) noexcept { return globMatch(token, a); })) {
 					addUnique(f);
 				}
 			}
