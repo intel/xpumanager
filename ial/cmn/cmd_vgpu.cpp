@@ -65,9 +65,7 @@ void cmdVgpu::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(HEADING, "-r,--remove                 Remove all virtual GPUs on the specified physical GPU"));
 	helpList.push_back(
-		helpCmd(HEADING, "-l,--list                   List all virtual GPUs on the specified phytsical GPU"));
-	helpList.push_back(helpCmd(
-		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
+		helpCmd(HEADING, "-l,--list                   List all virtual GPUs on the specified physical GPU"));
 	helpList.push_back(helpCmd(HEADING, "-s,--stats                  Show statistics data of all virtual GPUs"));
 
 	printHelp(helpList, helpType);
