@@ -345,6 +345,10 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
 ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 {
 	TRACING();
+	if (temp == nullptr) {
+		ERR("Temperature output pointer is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_temp_properties_t properties;
 	*temp = 0.0; // Default value if no temperature found
