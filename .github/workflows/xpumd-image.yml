@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    runs-on: ${{ fromJson(vars.RUNS_ON_BUILD_AND_PUSH) }}
     permissions:
       contents: read
       packages: write
@@ -69,7 +69,7 @@ jobs:
         echo "CHART_APP_VERSION=${tag}" >> $GITHUB_ENV
 
     - name: Set up Docker Buildx
-      if: vars.NO_SETUP_BUILDX != 'true'
+      if: vars.NO_SETUP_BUILDX_BUILD_AND_PUSH != 'true'
       uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       with:
         driver-opts: |
