@@ -56,14 +56,17 @@ type sysmanProvider struct {
 // receive the cached result.
 func (p *sysmanProvider) get(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
 	p.once.Do(func() {
+		logger.Debug("Sysman init...")
 		if err := l0sysman.Init(0); err != nil {
 			p.err = fmt.Errorf("failed to initialize L0 Sysman API (likely a Level-Zero driver / device access issue): %w", err)
 			return
 		}
+		logger.Debug("Sysman drivers/devices/metrics enumeration starting")
 		p.devices, p.err = newDeviceRegistry(logger, cfg.aggregatedMetricsBufferSize)
 		if p.err != nil {
 			p.err = fmt.Errorf("failed to initialize device registry: %w", p.err)
 		}
+		logger.Debug("Sysman drivers/devices/metrics enumeration completed")
 	})
 	return p.devices, p.err
 }

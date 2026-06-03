@@ -91,6 +91,8 @@ func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize in
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES drivers: %w", err)
 	}
+	logger.Debugw("Sysman drivers", "enumerated", len(drivers))
+
 	for i, drv := range drivers {
 		devs, err := enumDevices(drv, logger, aggregatedMetricsBufferSize)
 		if err != nil {
@@ -132,6 +134,8 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES devices: %w", err)
 	}
+	logger.Infow("Sysman devices", "enumerated", len(zesDevs))
+
 	devs := make([]*device, len(zesDevs))
 	for i, d := range zesDevs {
 		name := fmt.Sprintf("gpu-%d", i+1) // match error log index
@@ -143,7 +147,6 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 		devs[i] = dev
 	}
 
-	logger.Infow("Sysman devices", "created", len(devs), "enumerated", len(zesDevs))
 	return devs, nil
 }
 
@@ -169,6 +172,9 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 // called multiple times for re-scanning. Transactional: on error the device is not altered.
 // Must be called with device lock held.
 func (d *device) init() error {
+	// Intermediate startup timings
+	d.logger.Debugw("Device init() called", "name", d.attributes.hwName)
+
 	props, err := d.GetProperties()
 	if err != nil {
 		return fmt.Errorf("device GetProperties() failed: %w", err)
@@ -203,12 +209,7 @@ func (d *device) init() error {
 		d.attributes.eccSupport = metadata.MapAttributeHwMemoryEcc[d.state.ecc.current]
 	}
 
-	// Get firmware info
-	fwInfos := []string{}
-	for i, fw := range enumFirmwares(d) {
-		fwInfos = append(fwInfos, fmt.Sprintf("%d:%s:%s:%s", i, fw.attributes.firmwareName, fw.attributes.subdeviceId, url.QueryEscape(fw.attributes.firmwareVersion)))
-	}
-	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
+	d.logger.Debugw("Device init() props + ECC done", "name", d.attributes.hwName)
 
 	// Get device PCI attributes
 	if pci, err := d.PciGetProperties(); err != nil {
@@ -250,10 +251,22 @@ func (d *device) init() error {
 	// TODO: report types & sizes of device PCI BARs?
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetbars
 
+	// After this, enumerations do enough logging for timing info to be available at adequate granularity
+	d.logger.Debugw("Device init() state + PCI props done", "name", d.attributes.hwName, "BDF", d.attributes.pciBDF)
+
+	// Enumerate device firmwares into versions attribute
+	fwInfos := []string{}
+	for i, fw := range enumFirmwares(d) {
+		fwInfos = append(fwInfos, fmt.Sprintf("%d:%s:%s:%s", i, fw.attributes.firmwareName, fw.attributes.subdeviceId, url.QueryEscape(fw.attributes.firmwareVersion)))
+	}
+	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
+
+	// Enumerate all device metrics
 	for _, s := range subsystems {
 		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
 	}
 
+	d.logger.Debugw("Device init() done", "name", d.attributes.hwName, "BDF", d.attributes.pciBDF)
 	return nil
 }
 
