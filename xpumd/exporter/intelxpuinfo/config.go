@@ -100,6 +100,7 @@ func (m *HwStatusMapping) healthDomainFor(attrs pcommon.Map) (string, error) {
 
 // Config defines configuration for the exporter.
 type Config struct {
+	// https://github.com/open-telemetry/opentelemetry-collector/tree/main/config/configgrpc/configgrpc.go
 	configgrpc.ServerConfig `mapstructure:",squash"`
 
 	// HwStatusMappings specifies hw.status to health status mappings.

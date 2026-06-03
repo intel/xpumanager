@@ -9,9 +9,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"go.opentelemetry.io/collector/component"
@@ -137,33 +139,50 @@ func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
 	pb.RegisterDeviceInfoServer(grpcServer, infoServer)
 
 	if e.cfg.NetAddr.Transport == confignet.TransportTypeUnix {
-		if e.cfg.NetAddr.Endpoint != "" {
-			dir := filepath.Dir(e.cfg.NetAddr.Endpoint)
-			if _, err := os.Stat(dir); err != nil {
-				// does not exist, can it be created?
-				if err := os.MkdirAll(dir, 0o755); err != nil {
-					return fmt.Errorf("failed to create directory for unix socket: %w", err)
-				}
-			}
-		} else {
-			// use runtime dir specified for the user?
+		endpoint := e.cfg.NetAddr.Endpoint
+		if endpoint == "" {
+			// Use runtime dir specified for the user?
 			name := metadata.Type.String() + ".sock"
 			if dir := os.Getenv("XDG_RUNTIME_DIR"); dir != "" {
-				e.cfg.NetAddr.Endpoint = filepath.Join(dir, name)
+				endpoint = filepath.Join(dir, name)
 			} else {
-				e.cfg.NetAddr.Endpoint = name
+				return fmt.Errorf("neither XDG_RUNTIME_DIR set, nor intelxpuinfo.endpoint configured")
 			}
+		}
+
+		dir := filepath.Dir(endpoint)
+		if stat, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
+			// Create dir if it does not exist
+			if err := os.MkdirAll(dir, 0o750); err != nil {
+				return fmt.Errorf("failed to create directory for unix socket: %w", err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("failed to stat unix socket directory: %w", err)
+		} else if !stat.IsDir() {
+			return fmt.Errorf("configured unix socket dir is not a directory: %s", dir)
 		}
 
 		// Remove the socket file if it already exists
-		if err := os.Remove(e.cfg.NetAddr.Endpoint); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("failed to remove existing unix socket file: %w", err)
+		if stat, err := os.Lstat(endpoint); err == nil {
+			if stat.Mode()&fs.ModeSocket == 0 {
+				// This is privileged process, remove only files of correct type
+				return fmt.Errorf("refusing to remove existing/stale endpoint, it's not a socket: %s", endpoint)
+			}
+			if err = os.Remove(endpoint); err != nil && !errors.Is(err, os.ErrNotExist) {
+				return fmt.Errorf("failed to remove existing/stale unix socket file: %w", err)
+			}
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("failed to stat existing unix socket endpoint: %w", err)
 		}
+		e.cfg.NetAddr.Endpoint = endpoint
 	}
 
+	// Socket writable by the same user or group ID (0o117 mask => 0o660 access)
+	umask := syscall.Umask(0o117)
 	lis, err := e.cfg.NetAddr.Listen(ctx)
+	syscall.Umask(umask)
 	if err != nil {
-		return fmt.Errorf("failed to listen on endpoint: %v", err)
+		return fmt.Errorf("failed to listen on endpoint: %w", err)
 	}
 
 	e.logger.Infow("gRPC server listening", "endpoint", e.cfg.NetAddr.Endpoint)
