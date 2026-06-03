@@ -443,6 +443,16 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 		const auto bdf = device.dev->getBDFStr();
 		std::map<uint32_t, std::vector<portInfo>> portsByTile;
 
+		// Read PCIe max bandwidth once per device; shared by all tiles on this device.
+		std::optional<int64_t> gpuMaxBwBps;
+		if (pci *const pciObj = device.dev->getPCI()) {
+			zes_pci_properties_t pciProps{};
+			if (pciObj->getProperties(device.zesDeviceHdl, &pciProps) == ZE_RESULT_SUCCESS &&
+				pciProps.maxSpeed.maxBandwidth > 0) {
+				gpuMaxBwBps = static_cast<int64_t>(pciProps.maxSpeed.maxBandwidth);
+			}
+		}
+
 		fabric *f = device.dev->getFabric();
 		if (f != nullptr) {
 			std::vector<portInfo> portInfoList;
@@ -459,12 +469,14 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 				TopoNode{.label = std::format("GPU {}/0", device.index),
 						 .cpuAffinity = cpuAffinity,
 						 .bdfAddress = bdf,
+						 .maxBandwidthBps = gpuMaxBwBps,
 						 .data = GpuData{.deviceId = static_cast<int>(device.index), .tileId = 0, .ports = {}}});
 		} else {
 			for (const auto &[tileId, ports] : portsByTile) {
 				allNodes.push_back(TopoNode{.label = std::format("GPU {}/{}", device.index, tileId),
 											.cpuAffinity = cpuAffinity,
 											.bdfAddress = bdf,
+											.maxBandwidthBps = gpuMaxBwBps,
 											.data = GpuData{.deviceId = static_cast<int>(device.index),
 															.tileId = static_cast<int>(tileId),
 															.ports = ports}});
@@ -535,14 +547,24 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 			const auto *rowGpu = std::get_if<GpuData>(&allNodes[row].data);
 			const auto *colGpu = std::get_if<GpuData>(&allNodes[col].data);
 			topoEntry["link_type"] = linkType;
+			topoEntry["local_node_type"] = rowGpu != nullptr ? "GPU" : "NIC";
 			topoEntry["local_cpu_affinity"] = allNodes[row].cpuAffinity;
-			topoEntry["local_device_id"] = (rowGpu != nullptr) ? rowGpu->deviceId : -1;
-			topoEntry["local_numa_index"] = allNodes[row].numaNode.value_or(-1);
+			topoEntry["local_device_id"] =
+				rowGpu != nullptr ? nlohmann::ordered_json(rowGpu->deviceId) : nlohmann::ordered_json(nullptr);
+			topoEntry["local_numa_index"] = allNodes[row].numaNode.has_value()
+												? nlohmann::ordered_json(*allNodes[row].numaNode)
+												: nlohmann::ordered_json(nullptr);
 			topoEntry["local_on_subdevice"] = (rowGpu != nullptr);
-			topoEntry["local_subdevice_id"] = (rowGpu != nullptr) ? rowGpu->tileId : -1;
-			topoEntry["max_bit_rate"] = -1;
-			topoEntry["remote_device_id"] = (colGpu != nullptr) ? colGpu->deviceId : -1;
-			topoEntry["remote_subdevice_id"] = (colGpu != nullptr) ? colGpu->tileId : -1;
+			topoEntry["local_subdevice_id"] =
+				rowGpu != nullptr ? nlohmann::ordered_json(rowGpu->tileId) : nlohmann::ordered_json(nullptr);
+			topoEntry["max_bit_rate"] = allNodes[row].maxBandwidthBps.has_value()
+											? nlohmann::ordered_json(*allNodes[row].maxBandwidthBps)
+											: nlohmann::ordered_json(nullptr);
+			topoEntry["remote_node_type"] = colGpu != nullptr ? "GPU" : "NIC";
+			topoEntry["remote_device_id"] =
+				colGpu != nullptr ? nlohmann::ordered_json(colGpu->deviceId) : nlohmann::ordered_json(nullptr);
+			topoEntry["remote_subdevice_id"] =
+				colGpu != nullptr ? nlohmann::ordered_json(colGpu->tileId) : nlohmann::ordered_json(nullptr);
 			topoList.push_back(topoEntry);
 		}
 		rowData["connections"] = connections;

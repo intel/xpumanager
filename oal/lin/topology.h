@@ -40,6 +40,8 @@ struct SysfsPaths
 {
 	std::filesystem::path netRoot{"/sys/class/net"};		  ///< Network interface directory
 	std::filesystem::path pciDevRoot{"/sys/bus/pci/devices"}; ///< PCI device directory
+	std::filesystem::path nodeRoot{
+		"/sys/devices/system/node"}; ///< NUMA node directory; "possible" file lists available nodes
 };
 
 /**
@@ -49,8 +51,11 @@ struct SysfsPaths
  * Distinguishes three cases:
  * - Key absent:              BDF device directory not found in sysfs
  * - Key present, nullopt:    Device exists but NUMA info unavailable
- *                            (numa_node file absent, value is -1, or UMA system)
- * - Key present, int value:  Resolved NUMA node index
+ *                            (numa_node file absent, value is -1 on multi-NUMA, or
+ *                            sysfs nodeRoot unreadable)
+ * - Key present, int value:  Resolved NUMA node index; on UMA systems
+ *                            (possible=="0", sysfs readable) numa_node = -1 is
+ *                            canonicalised to 0
  *
  * @param bdfs  List of PCI BDF strings (e.g. "0000:03:00.0")
  * @param paths Sysfs roots (defaults to live sysfs; override in tests)

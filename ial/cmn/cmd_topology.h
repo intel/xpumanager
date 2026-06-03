@@ -51,6 +51,8 @@ struct TopoNode
 
 	std::optional<int> numaNode{std::nullopt}; ///< sysfs NUMA node index (nullopt = unknown)
 	std::optional<PciePath> pciePath{}; ///< PCIe bridge chain from sysfs canonical path walk (nullopt = not resolved)
+	std::optional<int64_t> maxBandwidthBps{
+		std::nullopt}; ///< PCIe max bandwidth in bytes/sec from ZES (nullopt = unknown or NIC)
 
 	std::variant<GpuData, NicData> data; ///< Kind-specific payload; holds_alternative<GpuData> ↔ GPU
 };

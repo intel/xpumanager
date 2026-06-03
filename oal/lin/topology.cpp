@@ -29,13 +29,34 @@
  * @return Map from BDF string to optional NUMA node index:
  *   - Key absent:           BDF device directory not found in sysfs
  *   - Key present, nullopt: Device exists but NUMA info unavailable
- *                           (numa_node file absent, value is -1, or UMA system)
- *   - Key present, int:     Resolved NUMA node index
+ *                           (numa_node file absent, value is -1 on multi-NUMA,
+ *                           or sysfs nodeRoot unreadable)
+ *   - Key present, int:     Resolved NUMA node index; on UMA systems
+ *                           (possible=="0", sysfs readable) numa_node = -1 is
+ *                           canonicalised to 0
  */
 std::unordered_map<std::string, std::optional<int>> getNumaNodes(const std::vector<std::string> &bdfs,
 																 const SysfsPaths &paths)
 {
 	namespace fs = std::filesystem;
+
+	// Read /sys/devices/system/node/possible to determine if this is a UMA system.
+	// Checking for node1 is unreliable: it may be absent on kernels compiled without
+	// NUMA support (sysfs absent entirely) or before a CXL node hot-plugs in.
+	// "possible" is the authoritative source: "0" means only one node exists (UMA).
+	// If the file is absent or unreadable, leave isUma=false so -1 → nullopt (safe).
+	const bool isUma = [&] {
+		std::ifstream f{paths.nodeRoot / "possible"};
+		std::string line;
+		if (!f || !std::getline(f, line)) {
+			return false;
+		}
+		if (const auto pos = line.find_last_not_of(" \t\r\n"); pos != std::string::npos) {
+			line.resize(pos + 1);
+		}
+		return line == "0";
+	}();
+
 	std::unordered_map<std::string, std::optional<int>> result;
 	for (const auto &bdf : bdfs) {
 		const fs::path devDir = paths.pciDevRoot / bdf;
@@ -45,8 +66,16 @@ std::unordered_map<std::string, std::optional<int>> getNumaNodes(const std::vect
 		}
 		const fs::path numaPath = devDir / "numa_node";
 		if (std::ifstream ifs{numaPath}; ifs) {
-			int idx = -2;
-			result[bdf] = ((ifs >> idx) && idx >= 0) ? std::optional{idx} : std::nullopt;
+			int idx{};
+			if (!(ifs >> idx)) {
+				result[bdf] = std::nullopt;
+			} else if (idx >= 0) {
+				result[bdf] = idx;
+			} else if (idx == -1 && isUma) {
+				result[bdf] = 0; // UMA: canonicalise to node 0
+			} else {
+				result[bdf] = std::nullopt;
+			}
 		} else {
 			result[bdf] = std::nullopt; // device exists but NUMA info unavailable
 		}
