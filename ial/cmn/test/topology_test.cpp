@@ -375,14 +375,32 @@ TEST_SUITE("getNumaNodes")
 		CHECK_FALSE(result.at(bdf).has_value());
 	}
 
-	TEST_CASE("Returns nullopt when numa_node is -1 (UMA system)")
+	TEST_CASE("Canonicalises -1 to node 0 on UMA system")
 	{
 		const TempDir tmp;
 		const auto pciRoot = tmp.path / "pci";
+		const auto nodeRoot = tmp.path / "node";
+		// possible = "0" → only one node → UMA
+		writeFile(nodeRoot / "possible", "0");
 		const std::string bdf = "0000:03:00.0";
 		writeFile(pciRoot / bdf / "numa_node", "-1");
 
-		const auto result = getNumaNodes({bdf}, SysfsPaths{.pciDevRoot = pciRoot});
+		const auto result = getNumaNodes({bdf}, SysfsPaths{.pciDevRoot = pciRoot, .nodeRoot = nodeRoot});
+		REQUIRE(result.count(bdf));
+		CHECK(result.at(bdf) == std::optional{0});
+	}
+
+	TEST_CASE("Returns nullopt when numa_node is -1 on NUMA system")
+	{
+		const TempDir tmp;
+		const auto pciRoot = tmp.path / "pci";
+		const auto nodeRoot = tmp.path / "node";
+		// possible = "0-1" → two nodes → multi-NUMA; -1 means no affinity
+		writeFile(nodeRoot / "possible", "0-1");
+		const std::string bdf = "0000:03:00.0";
+		writeFile(pciRoot / bdf / "numa_node", "-1");
+
+		const auto result = getNumaNodes({bdf}, SysfsPaths{.pciDevRoot = pciRoot, .nodeRoot = nodeRoot});
 		REQUIRE(result.count(bdf));
 		CHECK_FALSE(result.at(bdf).has_value());
 	}
