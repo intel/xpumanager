@@ -23,12 +23,65 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from ..events.event_types import DeviceEvent
-from ..xpu_smi import XpuSmi
+from ..xpu_smi import XpuSmi, XpuSmiError
 
 if TYPE_CHECKING:
     from .engine import ActionFn
 
 log = logging.getLogger(__name__)
+
+
+class MissingInfrastructureError(RuntimeError):
+    """Raised when an action cannot run because required infra is missing
+    (e.g. xpu-smi binary not installed, firmware image not present on disk).
+
+    The policy engine records this as a failed firing; validators must
+    surface it as ERROR rather than silently passing.
+    """
+
+
+def _destructive_enabled() -> bool:
+    """Whether to actually execute destructive ops (resets, FW flashes).
+
+    Off by default — the validators verify the full call path
+    (binary present, BDF resolves, FW image readable) but do *not*
+    actually reset hardware or reflash firmware unless the operator
+    opts in by setting ``E2E_DESTRUCTIVE=1``.
+    """
+    return os.environ.get("E2E_DESTRUCTIVE", "").lower() in ("1", "true", "yes")
+
+
+def _require_smi(smi: Optional[XpuSmi], action: str, bdf: str) -> XpuSmi:
+    if smi is None:
+        raise MissingInfrastructureError(
+            f"{action} requested for {bdf} but xpu-smi is not available"
+        )
+    return smi
+
+
+def _bdf_to_device_index(smi: XpuSmi, bdf: str) -> int:
+    """Resolve a PCI BDF (e.g. ``0000:03:00.0``) to the xpu-smi device index."""
+    target = bdf.lower()
+    try:
+        devs = smi.discovery()
+    except XpuSmiError as exc:
+        raise MissingInfrastructureError(
+            f"xpu-smi discovery failed while resolving {bdf}: {exc}"
+        ) from exc
+    # `xpu-smi discovery -j` may return a list, a {"device_list": [...]}
+    # wrapper, or a single device dict.
+    if isinstance(devs, dict):
+        devs = devs.get("device_list") or devs.get("devices") or [devs]
+    for d in devs:
+        if not isinstance(d, dict):
+            continue
+        # xpu-smi field name is "pci_bdf_address"; tolerate "bdf" for older builds
+        dev_bdf = str(d.get("pci_bdf_address", d.get("bdf", ""))).lower()
+        if dev_bdf == target:
+            return int(d["device_id"])
+    raise MissingInfrastructureError(
+        f"BDF {bdf} not present in xpu-smi discovery output"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -58,29 +111,60 @@ def action_log_critical(event: DeviceEvent, smi: Optional[XpuSmi]) -> None:
 # ---------------------------------------------------------------------------
 
 
-def action_cold_reset(event: DeviceEvent, smi: Optional[XpuSmi]) -> None:
+def action_cold_reset(event: DeviceEvent, smi: Optional[XpuSmi]) -> bool:
     """Perform a forced device reset via xpu-smi.
 
     Used for Pcode error recovery (device wedged → cold reset).
+    By default this only *verifies* the call path (binary present,
+    BDF resolves to a device index). Set ``E2E_DESTRUCTIVE=1`` to
+    actually issue the reset.
+
+    Returns ``True`` when the reset (or, by default, the verified call
+    path) succeeds. Raises ``MissingInfrastructureError`` if xpu-smi is
+    unavailable or the BDF cannot be resolved, and ``XpuSmiError`` if a
+    destructive reset returns a non-zero exit code; both are recorded by
+    the engine as a failed firing.
     """
-    if smi is None:
-        log.error("Cannot perform cold reset: xpu-smi not available")
-        return
+    smi = _require_smi(smi, "cold reset", event.bdf)
+    idx = _bdf_to_device_index(smi, event.bdf)
+    if _destructive_enabled():
+        log.warning(
+            "Initiating COLD RESET on %s (idx=%d, reason: %s)",
+            event.bdf, idx, event.reason,
+        )
+        smi.reset_device(idx, force=True)
+    else:
+        log.warning(
+            "COLD RESET verified (not executed) on %s (idx=%d, reason: %s); "
+            "set E2E_DESTRUCTIVE=1 to actually reset",
+            event.bdf, idx, event.reason,
+        )
+    return True
 
-    log.warning("Initiating COLD RESET on %s (reason: %s)", event.bdf, event.reason)
-    # xpu-smi uses device index, not BDF. For E2E validation we log
-    # the intent; real execution requires BDF→index resolution.
-    log.info("Cold reset action recorded for device %s", event.bdf)
 
+def action_warm_reset(event: DeviceEvent, smi: Optional[XpuSmi]) -> bool:
+    """Perform a warm (non-forced) device reset.
 
-def action_warm_reset(event: DeviceEvent, smi: Optional[XpuSmi]) -> None:
-    """Perform a warm (non-forced) device reset."""
-    if smi is None:
-        log.error("Cannot perform warm reset: xpu-smi not available")
-        return
+    Verifies xpu-smi reachability and BDF resolution. Set
+    ``E2E_DESTRUCTIVE=1`` to actually issue the reset.
 
-    log.warning("Initiating WARM RESET on %s (reason: %s)", event.bdf, event.reason)
-    log.info("Warm reset action recorded for device %s", event.bdf)
+    Returns ``True`` on success; raises ``MissingInfrastructureError`` /
+    ``XpuSmiError`` on failure (recorded as a failed firing).
+    """
+    smi = _require_smi(smi, "warm reset", event.bdf)
+    idx = _bdf_to_device_index(smi, event.bdf)
+    if _destructive_enabled():
+        log.warning(
+            "Initiating WARM RESET on %s (idx=%d, reason: %s)",
+            event.bdf, idx, event.reason,
+        )
+        smi.reset_device(idx, force=False)
+    else:
+        log.warning(
+            "WARM RESET verified (not executed) on %s (idx=%d, reason: %s)",
+            event.bdf, idx, event.reason,
+        )
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -128,30 +212,46 @@ def _resolve_fw_path(event: DeviceEvent) -> str:
     return event.extra.get("fw_path", "")
 
 
-def action_firmware_update(event: DeviceEvent, smi: Optional[XpuSmi]) -> None:
+def action_firmware_update(event: DeviceEvent, smi: Optional[XpuSmi]) -> bool:
     """Trigger firmware update on the affected device.
 
     Used for device survivability mode (survivability event → FW update).
     The firmware image path is resolved from the PCI device ID using
     the mapping in ``firmware_config.json``; falls back to
     ``event.extra["fw_path"]`` for test overrides.
+
+    Returns ``True`` on success. Raises ``MissingInfrastructureError``
+    if xpu-smi is not available, if no firmware image is mapped for the
+    device, or if the resolved image file does not exist on disk, and
+    ``XpuSmiError`` if a destructive flash returns a non-zero exit code.
+    The engine records these as a failed firing so validators can
+    surface ERROR rather than PASS.
     """
+    smi = _require_smi(smi, "firmware update", event.bdf)
+
     fw_path = _resolve_fw_path(event)
     if not fw_path:
-        log.error(
-            "Firmware update requested for %s but cannot resolve firmware "
-            "image (pci_device_id=%s, no fw_path override)",
-            event.bdf,
-            event.extra.get("pci_device_id", "<unset>"),
+        raise MissingInfrastructureError(
+            f"firmware update requested for {event.bdf} but no firmware image "
+            f"is mapped (pci_device_id={event.extra.get('pci_device_id', '<unset>')!r}) "
+            f"and no fw_path override was provided"
         )
-        return
+    if not Path(fw_path).is_file():
+        raise MissingInfrastructureError(
+            f"firmware update requested for {event.bdf} but image not found on disk: {fw_path}"
+        )
 
-    log.warning(
-        "Initiating FIRMWARE UPDATE on %s with image %s",
-        event.bdf,
-        fw_path,
-    )
-    log.info("Firmware update action recorded for device %s", event.bdf)
+    idx = _bdf_to_device_index(smi, event.bdf)
+    if _destructive_enabled():
+        log.warning("Initiating FIRMWARE UPDATE on %s (idx=%d) with image %s",
+                    event.bdf, idx, fw_path)
+        smi.firmware_update(idx, fw_path)
+    else:
+        log.warning(
+            "FIRMWARE UPDATE verified (not executed) on %s (idx=%d) with image %s",
+            event.bdf, idx, fw_path,
+        )
+    return True
 
 
 # ---------------------------------------------------------------------------

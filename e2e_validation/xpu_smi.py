@@ -13,6 +13,7 @@ used by validators to cross-check gRPC stream data against the CLI output.
 import json
 import logging
 import shlex
+import shutil
 import subprocess
 from typing import Any, Optional
 
@@ -31,11 +32,36 @@ class XpuSmiError(Exception):
         super().__init__(f"xpu-smi failed (rc={returncode}): {stderr.strip()}")
 
 
+class XpuSmiNotFound(XpuSmiError):
+    """Raised when the xpu-smi binary cannot be located on $PATH."""
+
+    def __init__(self, binary: str):
+        self.binary = binary
+        super().__init__(binary, 127, f"xpu-smi binary {binary!r} not found on $PATH")
+
+
 class XpuSmi:
     """Typed wrapper around the xpu-smi CLI binary."""
 
     def __init__(self, config: Optional[XpuSmiConfig] = None) -> None:
         self._cfg = config or XpuSmiConfig()
+        resolved = shutil.which(self._cfg.binary)
+        if resolved is None:
+            raise XpuSmiNotFound(self._cfg.binary)
+        self._resolved_binary = resolved
+
+    @classmethod
+    def try_create(cls, config: Optional[XpuSmiConfig] = None) -> Optional["XpuSmi"]:
+        """Return an XpuSmi instance, or ``None`` if the binary is unavailable.
+
+        Quiet helper: the caller is responsible for logging the
+        missing-binary condition (see ``run.py``), so this does not log
+        to avoid duplicate warnings.
+        """
+        try:
+            return cls(config)
+        except XpuSmiNotFound:
+            return None
 
     # ------------------------------------------------------------------
     # Low-level runner
@@ -43,7 +69,7 @@ class XpuSmi:
 
     def _run(self, args: list[str], *, json_output: bool = True) -> Any:
         """Execute xpu-smi with the given arguments and return parsed output."""
-        cmd = [self._cfg.binary] + args
+        cmd = [self._resolved_binary] + args
         if json_output and self._cfg.json_output and "-j" not in args:
             cmd.append("-j")
 

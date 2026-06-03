@@ -32,8 +32,13 @@ from ..xpu_smi import XpuSmi
 
 log = logging.getLogger(__name__)
 
-# Type alias for action callables
-ActionFn = Callable[[DeviceEvent, Optional[XpuSmi]], None]
+# Type alias for action callables.
+#
+# An action returns ``True`` (or ``None`` for legacy log-only actions) when
+# the operation succeeded, and ``False`` when it ran but the underlying
+# operation failed.  Actions may also raise to signal failure; both a
+# ``False`` return and a raised exception are recorded as a failed firing.
+ActionFn = Callable[[DeviceEvent, Optional[XpuSmi]], Optional[bool]]
 
 
 @dataclass
@@ -144,7 +149,15 @@ class PolicyEngine:
 
         firing = PolicyFiring(rule_name=rule.name, event=event)
         try:
-            rule.action(event, self._smi)
+            outcome = rule.action(event, self._smi)
+            # Actions may return False to report a non-exceptional failure
+            # (e.g. xpu-smi returned a non-zero rc). None means "log-only,
+            # nothing to fail".
+            if outcome is False:
+                firing.success = False
+                firing.error = (
+                    f"action for rule {rule.name!r} reported failure"
+                )
         except Exception as exc:
             log.exception("Action for rule %r failed", rule.name)
             firing.success = False

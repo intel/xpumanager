@@ -207,7 +207,7 @@ def group_policy_rules() -> list[PolicyRule]:
         PolicyRule(
             name="group_thermal_throttle",
             event_types={EventType.THERMAL_THROTTLE},
-            action=action_throttle_frequency,
+            action=action_throttle_observed,
             cooldown_s=10.0,
         ),
         PolicyRule(

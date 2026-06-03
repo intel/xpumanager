@@ -17,12 +17,14 @@ These validators work by:
 """
 
 import logging
-from typing import Optional
+import os
+from pathlib import Path
+from typing import Iterable, Optional
 
 from .base import BaseValidator, ValidationResult, ValidationStatus
 from ..events.event_types import DeviceEvent, EventType, SeverityLevel
 from ..grpc_client import GrpcClient
-from ..policies.engine import PolicyEngine, PolicyRule
+from ..policies.engine import PolicyEngine, PolicyFiring, PolicyRule
 from ..policies.presets import (
     pcode_error_recovery_rules,
     device_survivability_rules,
@@ -34,6 +36,81 @@ from ..policies.presets import (
 from ..xpu_smi import XpuSmi
 
 log = logging.getLogger(__name__)
+
+
+def _first_real_bdf(smi: XpuSmi) -> Optional[str]:
+    """Return the BDF of the first device reported by ``xpu-smi discovery``.
+
+    Used by validators that need a real, resolvable BDF so the policy
+    action exercises the full call path (binary → discovery → idx).
+    Returns ``None`` only when discovery succeeds but reports no devices.
+
+    Discovery failures (timeout, non-zero rc, bad JSON) are allowed to
+    propagate; ``BaseValidator.run`` converts them into an ERROR result,
+    which is more accurate than the misleading "no devices reported".
+    """
+    devs = smi.discovery()
+    # `xpu-smi discovery -j` may return a list, a {"device_list": [...]}
+    # wrapper, or a single device dict.
+    if isinstance(devs, dict):
+        devs = devs.get("device_list") or devs.get("devices") or [devs]
+    for d in devs:
+        if not isinstance(d, dict):
+            continue
+        bdf = d.get("pci_bdf_address") or d.get("bdf")
+        if bdf:
+            return str(bdf)
+    return None
+
+
+def _check_firings(
+    firings: Iterable[PolicyFiring],
+    required_rules: Iterable[str],
+) -> Optional[ValidationResult]:
+    """Return None if every required rule fired *and* succeeded.
+
+    Otherwise return a populated ValidationResult (FAIL if a rule
+    didn't fire; ERROR if it fired but its action raised).
+    """
+    firings = list(firings)
+    by_rule: dict[str, list[PolicyFiring]] = {}
+    for f in firings:
+        by_rule.setdefault(f.rule_name, []).append(f)
+
+    failed_actions: list[PolicyFiring] = [
+        f for f in firings if not f.success
+    ]
+
+    for rule_name in required_rules:
+        instances = by_rule.get(rule_name, [])
+        if not instances:
+            return ValidationResult(
+                name="_pending_",
+                status=ValidationStatus.FAIL,
+                message=f"rule {rule_name!r} did not fire",
+            )
+        bad = [f for f in instances if not f.success]
+        if bad:
+            return ValidationResult(
+                name="_pending_",
+                status=ValidationStatus.ERROR,
+                message=(
+                    f"rule {rule_name!r} fired but action failed: "
+                    + "; ".join(b.error for b in bad)
+                ),
+            )
+
+    # Even non-required actions must not have raised
+    if failed_actions:
+        return ValidationResult(
+            name="_pending_",
+            status=ValidationStatus.ERROR,
+            message="; ".join(
+                f"{f.rule_name}: {f.error}" for f in failed_actions
+            ),
+        )
+
+    return None
 
 
 class PcodeErrorRecoveryValidator(BaseValidator):
@@ -58,6 +135,17 @@ class PcodeErrorRecoveryValidator(BaseValidator):
     def _run(self) -> ValidationResult:
         details: dict = {"policy_firings": [], "checks": []}
 
+        if self._smi is None:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message=(
+                    "xpu-smi binary is required for Pcode error recovery "
+                    "(cold reset) but was not found on $PATH"
+                ),
+                details=details,
+            )
+
         engine = PolicyEngine(self._smi)
         for rule in pcode_error_recovery_rules():
             engine.add_rule(rule)
@@ -66,10 +154,19 @@ class PcodeErrorRecoveryValidator(BaseValidator):
             f"Registered {len(pcode_error_recovery_rules())} pcode recovery rules"
         )
 
+        bdf = _first_real_bdf(self._smi)
+        if not bdf:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message="no devices reported by xpu-smi discovery",
+                details=details,
+            )
+
         # Simulate a pcode error event
         pcode_event = DeviceEvent(
             event_type=EventType.PCODE_ERROR,
-            bdf="0000:03:00.0",
+            bdf=bdf,
             uuid="test-pcode-uuid",
             domain="gpu_core",
             severity=SeverityLevel.CRITICAL,
@@ -81,7 +178,7 @@ class PcodeErrorRecoveryValidator(BaseValidator):
         # Simulate device wedged
         wedged_event = DeviceEvent(
             event_type=EventType.DEVICE_WEDGED,
-            bdf="0000:03:00.0",
+            bdf=bdf,
             uuid="test-pcode-uuid",
             domain="gpu_core",
             severity=SeverityLevel.FAILED,
@@ -93,7 +190,7 @@ class PcodeErrorRecoveryValidator(BaseValidator):
         # Simulate recovery
         recovery_event = DeviceEvent(
             event_type=EventType.HEALTH_RECOVERED,
-            bdf="0000:03:00.0",
+            bdf=bdf,
             uuid="test-pcode-uuid",
             domain="gpu_core",
             severity=SeverityLevel.OK,
@@ -110,38 +207,21 @@ class PcodeErrorRecoveryValidator(BaseValidator):
                 }
             )
 
-        # Verify expected firings
-        rule_names = [f.rule_name for f in engine.firings]
-
-        if "pcode_error_log" not in rule_names:
-            details["checks"].append("FAIL: pcode_error_log did not fire")
-            return ValidationResult(
-                name=self.name,
-                status=ValidationStatus.FAIL,
-                message="Pcode error logging rule did not fire",
-                details=details,
-            )
-
-        if "device_wedged_cold_reset" not in rule_names:
-            details["checks"].append("FAIL: device_wedged_cold_reset did not fire")
-            return ValidationResult(
-                name=self.name,
-                status=ValidationStatus.FAIL,
-                message="Device wedged cold reset rule did not fire",
-                details=details,
-            )
-
-        if "device_wedged_recovery_check" not in rule_names:
-            details["checks"].append("FAIL: recovery check did not fire")
-            return ValidationResult(
-                name=self.name,
-                status=ValidationStatus.FAIL,
-                message="Recovery check rule did not fire",
-                details=details,
-            )
+        problem = _check_firings(
+            engine.firings,
+            required_rules=[
+                "pcode_error_log",
+                "device_wedged_cold_reset",
+                "device_wedged_recovery_check",
+            ],
+        )
+        if problem is not None:
+            problem.name = self.name
+            problem.details = details
+            return problem
 
         details["checks"].append(
-            f"All expected rules fired ({len(engine.firings)} total firings)"
+            f"All expected rules fired and succeeded ({len(engine.firings)} firings)"
         )
 
         return ValidationResult(
@@ -169,32 +249,54 @@ class DeviceSurvivabilityValidator(BaseValidator):
     def _run(self) -> ValidationResult:
         details: dict = {"policy_firings": [], "checks": []}
 
+        if self._smi is None:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message=(
+                    "xpu-smi binary is required for survivability firmware "
+                    "update but was not found on $PATH"
+                ),
+                details=details,
+            )
+
+        # Preflight: at least one firmware image must be reachable on disk,
+        # otherwise the survivability flow cannot be validated.
+        fw_path = os.environ.get("E2E_SURVIVABILITY_FW_PATH", "")
+        if not fw_path or not Path(fw_path).is_file():
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message=(
+                    "survivability validation requires a firmware image; set "
+                    "E2E_SURVIVABILITY_FW_PATH to a readable .bin (none found)"
+                ),
+                details=details,
+            )
+
         engine = PolicyEngine(self._smi)
         for rule in device_survivability_rules():
             engine.add_rule(rule)
 
-        # Survivability event WITHOUT fw_path → should log but FW update errors
-        surv_event = DeviceEvent(
-            event_type=EventType.DEVICE_SURVIVABILITY,
-            bdf="0000:04:00.0",
-            uuid="test-surv-uuid",
-            domain="firmware",
-            severity=SeverityLevel.CRITICAL,
-            reason="survivability_mode",
-            message="Device entered survivability mode after FW corruption",
-        )
-        engine.handle_event(surv_event)
+        bdf = _first_real_bdf(self._smi)
+        if not bdf:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message="no devices reported by xpu-smi discovery",
+                details=details,
+            )
 
-        # Survivability event WITH fw_path
+        # Survivability event with an explicit fw_path override
         surv_event_with_fw = DeviceEvent(
             event_type=EventType.DEVICE_SURVIVABILITY,
-            bdf="0000:05:00.0",
+            bdf=bdf,
             uuid="test-surv-uuid-2",
             domain="firmware",
             severity=SeverityLevel.CRITICAL,
             reason="survivability_mode",
             message="Device entered survivability mode",
-            extra={"fw_path": "/opt/firmware/recovery.bin"},
+            extra={"fw_path": fw_path},
         )
         engine.handle_event(surv_event_with_fw)
 
@@ -208,26 +310,20 @@ class DeviceSurvivabilityValidator(BaseValidator):
                 }
             )
 
-        rule_names = [f.rule_name for f in engine.firings]
-
-        if "survivability_detected" not in rule_names:
-            return ValidationResult(
-                name=self.name,
-                status=ValidationStatus.FAIL,
-                message="Survivability detection rule did not fire",
-                details=details,
-            )
-
-        if "survivability_fw_update" not in rule_names:
-            return ValidationResult(
-                name=self.name,
-                status=ValidationStatus.FAIL,
-                message="Survivability FW update rule did not fire",
-                details=details,
-            )
+        problem = _check_firings(
+            engine.firings,
+            required_rules=[
+                "survivability_detected",
+                "survivability_fw_update",
+            ],
+        )
+        if problem is not None:
+            problem.name = self.name
+            problem.details = details
+            return problem
 
         details["checks"].append(
-            f"All expected rules fired ({len(engine.firings)} firings)"
+            f"All expected rules fired and succeeded ({len(engine.firings)} firings)"
         )
 
         return ValidationResult(
@@ -255,14 +351,34 @@ class RASEventValidator(BaseValidator):
     def _run(self) -> ValidationResult:
         details: dict = {"policy_firings": [], "checks": []}
 
+        if self._smi is None:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message=(
+                    "xpu-smi binary is required for RAS uncorrectable reset "
+                    "flow but was not found on $PATH"
+                ),
+                details=details,
+            )
+
         engine = PolicyEngine(self._smi)
         for rule in ras_event_rules():
             engine.add_rule(rule)
 
+        bdf = _first_real_bdf(self._smi)
+        if not bdf:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message="no devices reported by xpu-smi discovery",
+                details=details,
+            )
+
         # Correctable RAS error
         correctable = DeviceEvent(
             event_type=EventType.RAS_CORRECTABLE,
-            bdf="0000:06:00.0",
+            bdf=bdf,
             uuid="test-ras-uuid",
             domain="ras_cache",
             severity=SeverityLevel.WARNING,
@@ -274,7 +390,7 @@ class RASEventValidator(BaseValidator):
         # Uncorrectable RAS error - WARNING
         uncorrectable_warn = DeviceEvent(
             event_type=EventType.RAS_UNCORRECTABLE,
-            bdf="0000:06:00.0",
+            bdf=bdf,
             uuid="test-ras-uuid",
             domain="ras_cache",
             severity=SeverityLevel.WARNING,
@@ -286,7 +402,7 @@ class RASEventValidator(BaseValidator):
         # Uncorrectable RAS error - CRITICAL
         uncorrectable_crit = DeviceEvent(
             event_type=EventType.RAS_UNCORRECTABLE,
-            bdf="0000:07:00.0",
+            bdf=bdf,
             uuid="test-ras-uuid-2",
             domain="ras_memory",
             severity=SeverityLevel.CRITICAL,
@@ -302,27 +418,22 @@ class RASEventValidator(BaseValidator):
                     "event_type": f.event.event_type.value,
                     "severity": f.event.severity.name,
                     "success": f.success,
+                    "error": f.error,
                 }
             )
 
-        rule_names = [f.rule_name for f in engine.firings]
-
-        checks = {
-            "ras_correctable_log": "Correctable RAS logging",
-            "ras_uncorrectable_warm_reset": "Uncorrectable warm reset",
-            "ras_uncorrectable_cold_reset": "Uncorrectable cold reset (critical)",
-        }
-        for rule_name, desc in checks.items():
-            if rule_name in rule_names:
-                details["checks"].append(f"PASS: {desc}")
-            else:
-                details["checks"].append(f"FAIL: {desc}")
-                return ValidationResult(
-                    name=self.name,
-                    status=ValidationStatus.FAIL,
-                    message=f"{desc} rule did not fire",
-                    details=details,
-                )
+        problem = _check_firings(
+            engine.firings,
+            required_rules=[
+                "ras_correctable_log",
+                "ras_uncorrectable_warm_reset",
+                "ras_uncorrectable_cold_reset",
+            ],
+        )
+        if problem is not None:
+            problem.name = self.name
+            problem.details = details
+            return problem
 
         return ValidationResult(
             name=self.name,
@@ -491,12 +602,36 @@ class SeverityEscalationValidator(BaseValidator):
     def _run(self) -> ValidationResult:
         details: dict = {"policy_firings": [], "checks": []}
 
+        if self._smi is None:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message=(
+                    "xpu-smi binary is required for severity escalation "
+                    "(reset on CRITICAL) but was not found on $PATH"
+                ),
+                details=details,
+            )
+
         engine = PolicyEngine(self._smi)
         for rule in all_default_rules():
             engine.add_rule(rule)
 
-        bdf = "0000:09:00.0"
+        bdf = _first_real_bdf(self._smi)
+        if not bdf:
+            return ValidationResult(
+                name=self.name,
+                status=ValidationStatus.ERROR,
+                message="no devices reported by xpu-smi discovery",
+                details=details,
+            )
         uuid = "test-escalation-uuid"
+
+        # Use the thermal domain: in the default ruleset a CRITICAL thermal
+        # event escalates to a cold reset (thermal_critical_reset), so the
+        # xpu-smi requirement above actually exercises the reset call path.
+        # (The power domain only *logs* on CRITICAL and would never reset.)
+        domain = "core_thermal"
 
         # WARNING
         engine.handle_event(
@@ -504,23 +639,23 @@ class SeverityEscalationValidator(BaseValidator):
                 event_type=EventType.HEALTH_WARNING,
                 bdf=bdf,
                 uuid=uuid,
-                domain="power",
+                domain=domain,
                 severity=SeverityLevel.WARNING,
-                reason="power_limit",
-                message="Approaching power threshold",
+                reason="thermal_limit",
+                message="Approaching thermal threshold",
             )
         )
 
-        # Escalate to CRITICAL
+        # Escalate to CRITICAL → triggers thermal_critical_reset (cold reset)
         engine.handle_event(
             DeviceEvent(
                 event_type=EventType.HEALTH_CRITICAL,
                 bdf=bdf,
                 uuid=uuid,
-                domain="power",
+                domain=domain,
                 severity=SeverityLevel.CRITICAL,
-                reason="power_exceeded",
-                message="Power limit exceeded",
+                reason="thermal_exceeded",
+                message="Thermal limit exceeded",
             )
         )
 
@@ -530,10 +665,18 @@ class SeverityEscalationValidator(BaseValidator):
                     "rule": f.rule_name,
                     "severity": f.event.severity.name,
                     "success": f.success,
+                    "error": f.error,
                 }
             )
 
-        # Should have firings at both severity levels
+        # No required-rule list (the default rule set spans many domains),
+        # but every firing that did happen must have succeeded.
+        problem = _check_firings(engine.firings, required_rules=[])
+        if problem is not None:
+            problem.name = self.name
+            problem.details = details
+            return problem
+
         severities = {f.event.severity for f in engine.firings}
         if SeverityLevel.WARNING not in severities:
             return ValidationResult(

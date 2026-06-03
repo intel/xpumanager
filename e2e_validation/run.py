@@ -39,6 +39,7 @@ from typing import Optional
 
 from .config import ValidationConfig
 from .validators.base import ValidationResult, ValidationStatus
+from .xpu_smi import XpuSmi
 
 log = logging.getLogger(__name__)
 
@@ -48,8 +49,13 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _get_offline_validators():
-    """Return validators that work without a live gRPC connection."""
+def _get_offline_validators(smi: Optional[XpuSmi] = None):
+    """Return validators that work without a live gRPC connection.
+
+    *smi* is optional and is propagated to validators that exercise
+    remediation actions (cold-reset, firmware update, etc.).  If it is
+    ``None`` those validators will report ERROR rather than PASS.
+    """
     from .validators.use_cases import (
         PcodeErrorRecoveryValidator,
         DeviceSurvivabilityValidator,
@@ -63,22 +69,21 @@ def _get_offline_validators():
     )
 
     return [
-        PcodeErrorRecoveryValidator(),
-        DeviceSurvivabilityValidator(),
-        RASEventValidator(),
-        GroupPolicyValidator(),
-        ThermalThrottleValidator(),
-        SeverityEscalationValidator(),
-        DeviceLifecycleValidator(),
+        PcodeErrorRecoveryValidator(xpu_smi=smi),
+        DeviceSurvivabilityValidator(xpu_smi=smi),
+        RASEventValidator(xpu_smi=smi),
+        GroupPolicyValidator(xpu_smi=smi),
+        ThermalThrottleValidator(xpu_smi=smi),
+        SeverityEscalationValidator(xpu_smi=smi),
+        DeviceLifecycleValidator(xpu_smi=smi),
         PolicyCooldownValidator(),
         MaxFiresValidator(),
     ]
 
 
-def _get_live_validators(config: ValidationConfig):
+def _get_live_validators(config: ValidationConfig, smi: XpuSmi):
     """Return validators that require a live gRPC connection."""
     from .grpc_client import GrpcClient
-    from .xpu_smi import XpuSmi
     from .validators.discovery import DeviceDiscoveryValidator, DeviceInfoValidator
     from .validators.health import (
         HealthStreamValidator,
@@ -88,8 +93,6 @@ def _get_live_validators(config: ValidationConfig):
 
     client = GrpcClient(config.socket)
     client.connect()
-
-    smi = XpuSmi(config.xpu_smi)
 
     return [
         DeviceDiscoveryValidator(client, smi),
@@ -194,17 +197,30 @@ def main(argv: Optional[list[str]] = None) -> int:
     if args.sock_name:
         config.socket.sock_name = args.sock_name
 
+    # Try to locate xpu-smi for both offline (action targets) and live mode.
+    smi = XpuSmi.try_create(config.xpu_smi)
+    if smi is None:
+        log.warning(
+            "xpu-smi binary not found on $PATH; validators that require it "
+            "will report ERROR"
+        )
+
     # Collect validators
-    validators = _get_offline_validators()
+    validators = _get_offline_validators(smi=smi)
 
     client = None
     if args.live:
+        if smi is None:
+            log.error(
+                "--live requires xpu-smi but it was not found on $PATH; aborting"
+            )
+            return 2
         try:
-            live_validators, client = _get_live_validators(config)
+            live_validators, client = _get_live_validators(config, smi)
             validators.extend(live_validators)
         except Exception as exc:
             log.error("Cannot start live validators: %s", exc)
-            log.info("Continuing with offline validators only")
+            return 2
 
     # Filter by --only
     if args.only:
