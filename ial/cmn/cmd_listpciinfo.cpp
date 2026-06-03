@@ -4,33 +4,33 @@
  *
  */
 
-#include "cmd_listgpu.h"
+#include "cmd_listpciinfo.h"
 #include "debug.h"
 #include "table_builder.h"
 #include <CLI/CLI.hpp>
 #include <format>
 #include <memory>
 
-static std::unordered_map<listgpuCmdType, listgpuCmdStruct> listgpuCmds = {
-	{listgpuCmdType::LISTGPU_HELP, {}},
-	{listgpuCmdType::LISTGPU_BDF, {}},
-	{listgpuCmdType::LISTGPU_JSON, {}},
+static std::unordered_map<listpciinfoCmdType, listpciinfoCmdStruct> listpciinfoCmds = {
+	{listpciinfoCmdType::LISTPCIINFO_HELP, {}},
+	{listpciinfoCmdType::LISTPCIINFO_BDF, {}},
+	{listpciinfoCmdType::LISTPCIINFO_JSON, {}},
 };
 
 /**
- * @brief Prints help for the listgpu command
+ * @brief Prints help for the listpciinfo command
  */
-void cmdListgpu::help(HELP helpType)
+void cmdListpciinfo::help(HELP helpType)
 {
 	TRACING();
 	std::vector<helpCmd> helpList;
 
 	helpList.push_back(helpCmd(TITLE, "Query PCI properties for xe-bound GPU(s)"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "Usage: %s listgpu [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s listgpu", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s listgpu --bdf [BDF address]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s listgpu --bdf [BDF address] -j", progName.c_str()));
+	helpList.push_back(helpCmd(TITLE, "Usage: %s listpciinfo [Options]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s listpciinfo", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s listpciinfo --bdf [BDF address]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s listpciinfo --bdf [BDF address] -j", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "BDF:      PCI Bus:Device.Function address (e.g. 0000:03:00.0)"));
 	helpList.push_back(helpCmd(TITLE, "PCIe Gen: PCIe generation (1-6)"));
@@ -65,7 +65,7 @@ ListgpuTextPrinter::ListgpuTextPrinter() : TextPrinter() {}
 void ListgpuTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
 	if (jsonObj->contains("error")) {
-		PRINT("Error: %s\n", (*jsonObj)["error"].get<std::string>().c_str());
+		PRINT("Error: {}\n", (*jsonObj)["error"].get<std::string>().c_str());
 		return;
 	}
 
@@ -84,16 +84,19 @@ void ListgpuTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		.addColumn(headers[4], static_cast<int>(headers[4].size()));
 
 	for (auto &item : (*jsonObj)["bdf_device_list"]) {
-		table.addRow(item["bdf"].get<std::string>(), item["pci_slot"].get<std::string>(),
-					 item["pcie_generation"].get<int>(), item["max_link_width"].get<int>(),
-					 std::format("{:.2f}", item["max_bandwidth_gbps"].get<double>()));
+		const std::string slot = item["pci_slot"].get<std::string>();
+		const int gen = item["pcie_generation"].get<int>();
+		const int width = item["max_link_width"].get<int>();
+		const double bw = item["max_bandwidth_gbps"].get<double>();
+		table.addRow(item["bdf"].get<std::string>(), slot.empty() ? "N/A" : slot, gen > 0 ? std::to_string(gen) : "N/A",
+					 width > 0 ? std::to_string(width) : "N/A", bw > 0.0 ? std::format("{:.2f}", bw) : "N/A");
 	}
 
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString());
 }
 
 /**
- * @brief Runs the listgpu command
+ * @brief Runs the listpciinfo command
  *
  * Parses arguments, calls GET_XE_DEV_PCI_PROPS to enumerate all xe-bound
  * devices from sysfs, optionally filters by the requested BDF address, and
@@ -102,22 +105,23 @@ void ListgpuTextPrinter::print(nlohmann::ordered_json *jsonObj)
  * @param [in] args Pointer to arg_struct containing argc/argv
  * @return 0 on success, non-zero on error
  */
-int cmdListgpu::run(arg_struct *args)
+int cmdListpciinfo::run(arg_struct *args)
 {
 	TRACING();
 
 	// Reset state so the command is re-entrant if the instance is reused
-	for (auto &[k, v] : listgpuCmds) {
+	for (auto &[k, v] : listpciinfoCmds) {
 		v.enabled = false;
 		v.val.clear();
 	}
 
-	CLI::App sub{"Query PCI properties for xe-bound GPU(s)", "listgpu"};
+	CLI::App sub{"Query PCI properties for xe-bound GPU(s)", "listpciinfo"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
-	sub.add_option("-b,--bdf", listgpuCmds[listgpuCmdType::LISTGPU_BDF].val,
+	sub.add_option("-b,--bdf", listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_BDF].val,
 				   "PCI BDF address to query (e.g. 0000:03:00.0)")
-		->each([&](const std::string &) { listgpuCmds[listgpuCmdType::LISTGPU_BDF].enabled = true; });
-	sub.add_flag("-j,--json", listgpuCmds[listgpuCmdType::LISTGPU_JSON].enabled, "Print result in JSON format");
+		->each([&](const std::string &) { listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_BDF].enabled = true; });
+	sub.add_flag("-j,--json", listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_JSON].enabled,
+				 "Print result in JSON format");
 
 	try {
 		sub.parse(args->argc - 1, args->argv + 1);
@@ -140,8 +144,8 @@ int cmdListgpu::run(arg_struct *args)
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	nlohmann::ordered_json deviceArray = nlohmann::ordered_json::array();
 
-	const std::string &filterBdf = listgpuCmds[listgpuCmdType::LISTGPU_BDF].val;
-	bool filtered = listgpuCmds[listgpuCmdType::LISTGPU_BDF].enabled;
+	const std::string &filterBdf = listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_BDF].val;
+	bool filtered = listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_BDF].enabled;
 	bool found = false;
 
 	for (const auto &info : pciPropsList) {
@@ -165,7 +169,7 @@ int cmdListgpu::run(arg_struct *args)
 	}
 
 	std::unique_ptr<Printer> printer;
-	if (listgpuCmds[listgpuCmdType::LISTGPU_JSON].enabled) {
+	if (listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_JSON].enabled) {
 		printer = std::make_unique<JsonPrinter>();
 	} else {
 		printer = std::make_unique<ListgpuTextPrinter>();

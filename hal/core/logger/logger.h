@@ -21,6 +21,14 @@
 #include <string_view>
 #include <utility>
 
+namespace detail {
+#ifndef NDEBUG
+static constexpr bool DEBUG_ENABLED = true;
+#else
+static constexpr bool DEBUG_ENABLED = false;
+#endif
+} // namespace detail
+
 /**
  * @brief Singleton logger.  Routes diagnostic output through the active Sink.
  *
@@ -42,11 +50,7 @@ class Logger final
 
 	/// Current log level — relaxed ordering is sufficient: a momentarily
 	/// stale read can suppress or emit at most one extra line.
-#ifdef _DEBUG
-	std::atomic<LogLevel> level{LogLevel::DBG};
-#else
-	std::atomic<LogLevel> level{LogLevel::INFO};
-#endif
+	std::atomic<LogLevel> level{detail::DEBUG_ENABLED ? LogLevel::DBG : LogLevel::INFO};
 
 	/// Active error callback; nullptr → write to stderr.
 	std::atomic<std::shared_ptr<LogErrorCallback>> onError;
@@ -130,7 +134,13 @@ public:
 
 	[[nodiscard]] LogLevel getLevel() const noexcept { return level.load(std::memory_order_relaxed); }
 
-	[[nodiscard]] bool isEnabled(LogLevel lvl) const noexcept { return level.load(std::memory_order_relaxed) >= lvl; }
+	[[nodiscard]] bool isEnabled([[maybe_unused]] LogLevel lvl) const noexcept
+	{
+		if constexpr (!detail::DEBUG_ENABLED) {
+			return false;
+		}
+		return level.load(std::memory_order_relaxed) >= lvl;
+	}
 
 	void setFormatErrorPolicy(FormatErrorPolicy p) noexcept { fmtPolicy.store(p, std::memory_order_relaxed); }
 

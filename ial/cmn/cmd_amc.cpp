@@ -62,6 +62,8 @@ void AmcTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 		std::string value;
 		if (item.value().is_string()) {
 			value = item.value().get<std::string>();
+		} else if (item.value().is_number_integer() && item.value().get<int64_t>() == -1) {
+			value = "N/A";
 		} else {
 			value = item.value().dump();
 		}
@@ -183,7 +185,7 @@ int cmdAmc::run(arg_struct *args)
 	sub.add_option("--filename", amcCmds[AMC_OP_FILENAME].val, "Output filename")->each([&](const std::string &) {
 		amcCmds[AMC_OP_FILENAME].enabled = true;
 	});
-	sub.add_option("--device,--id", amcCmds[AMC_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", amcCmds[AMC_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { amcCmds[AMC_DEVICE].enabled = true; });
 	sub.add_flag("-y,--yes", amcCmds[AMC_YES].enabled, "Assume yes to all questions");
 

@@ -349,8 +349,7 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	constexpr int fanDisplayWidth = static_cast<int>(sizeof("100% (20000RPM)") - 1);
 	constexpr int tempDisplayWidth = 4;
 
-	TableBuilder table;
-	table.enableAutoSizing();
+	TableBuilder table = TableBuilder::bordered();
 	// Header text spacing mirrors the data format strings:
 	//   col1 line1: "{:>3}  {:<22}  Off" → "Persistence-M" must start at offset 3+2+22+2=29
 	//   col2 line1: "{:<16}  Off"         → "Disp.A"         must start at offset 16+2=18
@@ -374,11 +373,14 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	table.addPreHeaderSpanRow(banner);
 
 	for (const auto &s : devStats) {
-		// Truncate name to fit W1 column (leave room for "  0  " prefix and "  Off" suffix)
-		std::string name = s.name.size() > 22 ? s.name.substr(0, 22) : s.name;
+		// Build col-0 lines: name wraps in 22-char chunks rather than truncating.
+		constexpr size_t kNameWidth = 22;
+		std::vector<std::string> col0Lines;
+		col0Lines.push_back(std::format("{:>3}  {:<{}}  Off", s.devIndex, s.name.substr(0, kNameWidth), kNameWidth));
+		for (size_t off = kNameWidth; off < s.name.size(); off += kNameWidth) {
+			col0Lines.push_back(std::format("     {}", s.name.substr(off, kNameWidth)));
+		}
 
-		// Row 1: identity info per column
-		std::string gpuNameLine = std::format("{:>3}  {:<22}  Off", s.devIndex, name);
 		std::string bdfLine = std::format("{:<16}  Off", s.pciBdf);
 		std::string eccLine = s.eccEnabled ? "Enabled" : "Disabled";
 
@@ -388,17 +390,28 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 		std::string pwrStr = fmtPower(s.powerValid ? s.powerCurrentW : 0.0, s.powerTdpW);
 		std::string fanTempPwrLine =
 			std::format("{:<{}}  {:>{}}  {}", fanStr, fanDisplayWidth, tempStr, tempDisplayWidth, pwrStr);
+		col0Lines.push_back(fanTempPwrLine);
+
+		// Align memory/util on the same line as fan/temp/pwr by padding cols 1 & 2
+		// with empty strings for each name-overflow line.
+		const size_t numWraps = col0Lines.size() - 2;
 		std::string memLine = s.memValid ? fmtMem(s.memUsedMiB, s.memTotalMiB) : "N/A";
 		// Left-pad util% to 10 chars so "Default" aligns under "Compute M." in the header
 		// Header extra: "GPU-Util  Compute M." → "Compute M." starts at col 10
 		// Data:          "{:<10}Default"        → "Default"    starts at col 10
 		std::string utilStr = s.utilValid ? std::format("{:.0f}%", s.gpuUtilPercent) : "N/A";
 		std::string utilComputeLine = std::format("{:<10}{}", utilStr, "Default");
+		std::vector<std::string> col1Lines = {bdfLine};
+		col1Lines.insert(col1Lines.end(), numWraps, "");
+		col1Lines.push_back(memLine);
+		std::vector<std::string> col2Lines = {eccLine};
+		col2Lines.insert(col2Lines.end(), numWraps, "");
+		col2Lines.push_back(utilComputeLine);
 
 		table.addMultiLineRow({
-			{gpuNameLine, fanTempPwrLine},
-			{bdfLine, memLine},
-			{eccLine, utilComputeLine},
+			col0Lines,
+			col1Lines,
+			col2Lines,
 		});
 
 		if (&s != &devStats.back()) {
@@ -414,8 +427,7 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
  */
 TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList)
 {
-	TableBuilder procTable;
-	procTable.enableAutoSizing();
+	TableBuilder procTable = TableBuilder::bordered();
 	procTable.addColumn("GPU", Align::Right)
 		.addColumn("PID", Align::Right)
 		.addColumn("Type", Align::Center)

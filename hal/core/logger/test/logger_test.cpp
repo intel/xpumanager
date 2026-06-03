@@ -247,6 +247,8 @@ TEST_CASE("Logger: ERR suppressed when dbgLvl < ERR")
 
 TEST_CASE("Logger: ERR emits at dbgLvl == ERR")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 	auto cap = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(cap);
@@ -271,6 +273,8 @@ TEST_CASE("Logger: INFO suppressed when dbgLvl < INFO")
 
 TEST_CASE("Logger: INFO emits at dbgLvl >= INFO")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 	auto cap = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(cap);
@@ -295,6 +299,8 @@ TEST_CASE("Logger: DBG suppressed when dbgLvl < DBG")
 
 TEST_CASE("Logger: DBG emits at dbgLvl >= DBG")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 	auto cap = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(cap);
@@ -309,6 +315,8 @@ TEST_CASE("Logger: DBG emits at dbgLvl >= DBG")
 
 TEST_CASE("Logger: ERR embeds call-site file name and line number")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 	auto cap = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(cap);
@@ -327,6 +335,8 @@ TEST_CASE("Logger: ERR embeds call-site file name and line number")
 
 TEST_CASE("Logger: format arguments are substituted correctly")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 	auto cap = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(cap);
@@ -343,6 +353,8 @@ TEST_CASE("Logger: format arguments are substituted correctly")
 
 TEST_CASE("Thread safety: concurrent INFO calls are all received")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 
 	constexpr int kThreads = 8;
@@ -405,6 +417,8 @@ TEST_CASE("Thread safety: setSink during concurrent logging does not crash or da
 
 TEST_CASE("Thread safety: mixed levels from multiple threads")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 
 	constexpr int kThreads = 4;
@@ -759,6 +773,8 @@ TEST_CASE("AsyncSink: multiple flushNow() calls are safe")
 
 TEST_CASE("AsyncSink: via Logger integration")
 {
+	if constexpr (!detail::DEBUG_ENABLED)
+		return;
 	LoggerGuard const guard;
 
 	auto backend = std::make_shared<AsyncCaptureSink>();

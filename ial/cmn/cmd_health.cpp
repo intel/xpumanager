@@ -107,6 +107,8 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 			std::string value;
 			if (subitem.value().is_string()) {
 				value = subitem.value().get<std::string>();
+			} else if (subitem.value().is_number_integer() && subitem.value().get<int64_t>() == -1) {
+				value = "N/A";
 			} else {
 				value = subitem.value().dump();
 			}
@@ -723,7 +725,7 @@ int cmdHealth::run(arg_struct *args)
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", healthCmds[healthCmdType::HEALTH_JSON].enabled, "Print result in JSON format");
 	sub.add_flag("-l,--list", healthCmds[healthCmdType::HEALTH_LIST].enabled, "List all available components");
-	sub.add_option("--device,--id", healthCmds[healthCmdType::HEALTH_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", healthCmds[healthCmdType::HEALTH_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { healthCmds[healthCmdType::HEALTH_DEVICE].enabled = true; });
 	sub.add_option("-c,--component", healthCmds[healthCmdType::HEALTH_COMPONENT].val, "Component type ID")
 		->each([&](const std::string &) { healthCmds[healthCmdType::HEALTH_COMPONENT].enabled = true; });

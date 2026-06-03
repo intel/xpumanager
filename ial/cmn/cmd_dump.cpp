@@ -433,7 +433,7 @@ std::variant<ParsedArgs, int> parseDumpCLI(std::string_view cmdName, const std::
 	CLI::App sub{std::string{cmdName}};
 	sub.set_help_flag("-h,--help", "Display help");
 	sub.add_flag("-j,--json", parsed.opts.json, "Output in JSON format");
-	sub.add_option("--device,--id", parsed.opts.device, "Device index or PCI BDF address (-1 = all)")
+	sub.add_option("-d,--device,--id", parsed.opts.device, "Device index or PCI BDF address (-1 = all)")
 		->each([&](const std::string &val) {
 			if (const auto n = parseInteger<int>(val); n && *n == -1) {
 				parsed.opts.device.clear();

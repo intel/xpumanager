@@ -180,9 +180,9 @@ public:
 
 	struct TableConfig
 	{
-		char borderChar = '-';
-		char cornerChar = '+';
-		char verticalChar = '|';
+		char borderChar = ' ';
+		char cornerChar = ' ';
+		char verticalChar = ' ';
 		std::string emptyCellText{}; // NOLINT (readability-redundant-member-init) // Redundant default to empty in
 									 // order to use partial designated initializers
 		std::string noDataText = "No data";
@@ -212,10 +212,10 @@ private:
 	std::vector<Column> columns;
 	std::vector<Row> rows;
 	std::vector<Row> preHeaderRows; // Rendered inside the table border, before column headers
-	bool autoSize = false;
-	bool suppressHeaderSep = false;	   // Suppress the border line drawn after column headers
-	bool suppressHeaderColSep = false; // Suppress inner | between column headers
-	bool suppressDataColSep = false;   // Suppress inner | between data cells
+	bool autoSize = true;
+	bool suppressHeaderSep = true;    // Suppress the border line drawn after column headers
+	bool suppressHeaderColSep = true; // Suppress inner | between column headers
+	bool suppressDataColSep = true;   // Suppress inner | between data cells
 	mutable bool widthsCalculated = false;
 	OutputFormat outputFormat = OutputFormat::Table;
 	TableConfig config;
@@ -269,6 +269,15 @@ private:
 	static int countLines(const std::string &str);
 
 public:
+	/**
+	 * @brief Create a TableBuilder pre-configured with visible borders and separators.
+	 *
+	 * Use this for tables that need the classic bordered style ('+'/'-'/'|' borders,
+	 * header separator, and column separators). The default constructor produces a
+	 * clean borderless layout suitable for inline help text and aligned output.
+	 */
+	[[nodiscard]] static TableBuilder bordered();
+
 	TableBuilder()
 	{
 		columns.reserve(8);
@@ -351,7 +360,7 @@ public:
 	 * @param style Border style (Heavy for '=', Double for '═', etc.)
 	 * @return Reference to this TableBuilder for chaining
 	 */
-	TableBuilder &addSeparator(BorderStyle style = BorderStyle::Heavy);
+	TableBuilder &addSeparator(BorderStyle style = BorderStyle::Normal);
 
 	/**
 	 * @brief Get the last added row (for adding JSON metadata or modifying)
