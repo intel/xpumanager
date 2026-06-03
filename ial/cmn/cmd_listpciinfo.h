@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _CMD_LISTGPU_H
-#define _CMD_LISTGPU_H
+#ifndef _CMD_LISTPCIINFO_H
+#define _CMD_LISTPCIINFO_H
 
 #include "cmds.h"
 #include "printer.h"
@@ -13,7 +13,7 @@
 #include <string>
 
 /**
- * @brief Text printer for the listgpu command output
+ * @brief Text printer for the listpciinfo command output
  */
 class ListgpuTextPrinter : public TextPrinter
 {
@@ -22,14 +22,14 @@ public:
 	void print(nlohmann::ordered_json *jsonObj) override;
 };
 
-enum listgpuCmdType
+enum listpciinfoCmdType
 {
-	LISTGPU_HELP,
-	LISTGPU_BDF,
-	LISTGPU_JSON,
+	LISTPCIINFO_HELP,
+	LISTPCIINFO_BDF,
+	LISTPCIINFO_JSON,
 };
 
-struct listgpuCmdStruct
+struct listpciinfoCmdStruct
 {
 	bool enabled{false};
 	std::string val{};
@@ -40,17 +40,17 @@ struct listgpuCmdStruct
  *        GET_XE_DEV_PCI_PROPS.
  *
  * Usage:
- *   xpu-smi listgpu --bdf <BDF>  Query a single device by BDF address
- *   xpu-smi listgpu              List all xe-bound devices
- *   xpu-smi listgpu -j           JSON output
+ *   xpu-smi listpciinfo --bdf <BDF>  Query a single device by BDF address
+ *   xpu-smi listpciinfo              List all xe-bound devices
+ *   xpu-smi listpciinfo -j           JSON output
  */
-class cmdListgpu : public cmds
+class cmdListpciinfo : public cmds
 {
 public:
-	cmdListgpu() { name = "listgpu"; }
-	~cmdListgpu() {}
+	cmdListpciinfo() { name = "listpciinfo"; }
+	~cmdListpciinfo() {}
 	void help(HELP helpType = FULL_HELP) override;
 	int run(arg_struct *args) override;
 };
 
-#endif // _CMD_LISTGPU_H
+#endif // _CMD_LISTPCIINFO_H

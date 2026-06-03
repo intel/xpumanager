@@ -16,7 +16,7 @@ ial_cmn_sources = files(
   'cmd_discovery.cpp',
   'cmd_dump.cpp',
   'cmd_health.cpp',
-  'cmd_listgpu.cpp',
+  'cmd_listpciinfo.cpp',
   'cmd_log.cpp',
   'cmd_ps.cpp',
   'cmd_smi.cpp',

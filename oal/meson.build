@@ -6,6 +6,7 @@
 # Platform-specific source files
 oal_sources = []
 oal_inc_dirs = [include_directories('.')] # Include the oal folder itself
+oal_inc_dirs += [include_directories('../hal/core/logger')]
 oal_deps = [thread_dep, levelzero_dep, bdf_dep]
 
 if is_windows
@@ -17,7 +18,7 @@ if is_windows
     'win/thread.cpp',
     'win/win.cpp',
   )
-  oal_inc_dirs = [include_directories('win'), include_directories('.')]
+  oal_inc_dirs += [include_directories('win')]
   oal_deps += windows_deps
 elif is_linux
   oal_sources = files(
@@ -31,7 +32,7 @@ elif is_linux
     'lin/pci_database.cpp',
     'lin/topology.cpp',
   )
-  oal_inc_dirs = [include_directories('lin'), include_directories('.')]
+  oal_inc_dirs += [include_directories('lin')]
   # Add hwloc dependency for Linux topology functionality
   # Treat as system dependency to avoid warnings in hwloc headers
   hwloc_dep = dependency('hwloc', required: true, include_type: 'system')

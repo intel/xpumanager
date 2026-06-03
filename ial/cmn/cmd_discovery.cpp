@@ -189,6 +189,9 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		if (val.is_string()) {
 			return val.get<std::string>();
 		}
+		if (val.is_number_integer() && val.get<int64_t>() == -1) {
+			return "N/A";
+		}
 		return val.dump();
 	};
 
@@ -1098,7 +1101,7 @@ ze_result_t cmdDiscovery::pcieGeneration(devInfo *d, std::string *outputLine)
 		return result;
 	}
 
-	*outputLine = std::to_string(pciProps.maxSpeed.gen);
+	*outputLine = (pciProps.maxSpeed.gen == -1) ? "N/A" : std::to_string(pciProps.maxSpeed.gen);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1123,7 +1126,7 @@ ze_result_t cmdDiscovery::pcieMaxLinkWidth(devInfo *d, std::string *outputLine)
 		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	*outputLine = std::to_string(pciProps.maxSpeed.width);
+	*outputLine = (pciProps.maxSpeed.width == -1) ? "N/A" : std::to_string(pciProps.maxSpeed.width);
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -1799,9 +1802,10 @@ ze_result_t cmdDiscovery::pcieMaxBandwidth(devInfo *d, std::string *outputLine)
 		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	// If the PCI information is unavailable display -1
+	// If the PCI information is unavailable display N/A
 	if (pciProps.maxSpeed.width == -1) {
-		*outputLine = "-1";
+		*outputLine = "N/A";
+		return ZE_RESULT_SUCCESS;
 	}
 	// Calculate bandwidth based on PCIe generation and width
 	// Formula: (width * gen_rate) where gen_rate depends on PCIe generation
@@ -2134,7 +2138,7 @@ int cmdDiscovery::run(arg_struct *args)
 	CLI::App sub{"Discover Intel GPU devices", "discovery"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", discCmds[discCmdType::DISC_JSON].enabled, "Print result in JSON format");
-	sub.add_option("--device,--id", discCmds[discCmdType::DISC_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", discCmds[discCmdType::DISC_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { discCmds[discCmdType::DISC_DEVICE].enabled = true; });
 	sub.add_flag("--pf", discCmds[discCmdType::DISC_PF].enabled, "List physical function devices");
 	sub.add_flag("--physicalFunction", discCmds[discCmdType::DISC_PHYSICALFUNCTION].enabled,

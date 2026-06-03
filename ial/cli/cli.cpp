@@ -7,7 +7,7 @@
 #include "parser/default_parser.h"
 #include "version.h"
 #include <cmd_amc.h>
-#include <cmd_listgpu.h>
+#include <cmd_listpciinfo.h>
 #include <cmd_config.h>
 #include <cmd_discovery.h>
 #include <cmd_dump.h>
@@ -83,7 +83,7 @@ std::vector<function_entry> defaultCommandTable()
 		{.createFunc = createInstance<cmdLogs>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdHealth>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdAmc>, .osType = OSTYPE::LINUX},
-		{.createFunc = createInstance<cmdListgpu>, .osType = OSTYPE::LINUX},
+		{.createFunc = createInstance<cmdListpciinfo>, .osType = OSTYPE::LINUX},
 	};
 }
 

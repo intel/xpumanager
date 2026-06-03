@@ -337,7 +337,7 @@ TEST_CASE("TableBuilder print to stream") {
 }
 
 TEST_CASE("TableBuilder as_table vs as_json") {
-    TableBuilder table;
+    auto table = TableBuilder::bordered();
     table.addColumn("A").addRow("X");
 
     auto tableStr = table.asTable();
@@ -550,10 +550,10 @@ TEST_CASE("TableBuilder addPreHeaderSpanRow left alignment") {
 }
 
 TEST_CASE("TableBuilder addPreHeaderSpanRow BorderStyle::None omits inner separator") {
-    TableBuilder withSep;
+    auto withSep = TableBuilder::bordered();
     withSep.addColumn("A").addPreHeaderSpanRow("X", BorderStyle::Normal).addRow("v").enableAutoSizing();
 
-    TableBuilder noSep;
+    auto noSep = TableBuilder::bordered();
     noSep.addColumn("A").addPreHeaderSpanRow("X", BorderStyle::None).addRow("v").enableAutoSizing();
 
     auto countCorners = [](const std::string& s) {
@@ -564,10 +564,10 @@ TEST_CASE("TableBuilder addPreHeaderSpanRow BorderStyle::None omits inner separa
 }
 
 TEST_CASE("TableBuilder suppressHeaderSeparator removes border line after headers") {
-    TableBuilder normal;
+    auto normal = TableBuilder::bordered();
     normal.addColumn("A").addRow("X").enableAutoSizing();
 
-    TableBuilder suppressed;
+    auto suppressed = TableBuilder::bordered();
     suppressed.addColumn("A").addRow("X").suppressHeaderSeparator().enableAutoSizing();
 
     auto countLines = [](const std::string& s) {
@@ -578,10 +578,10 @@ TEST_CASE("TableBuilder suppressHeaderSeparator removes border line after header
 }
 
 TEST_CASE("TableBuilder suppressHeaderColumnSeparators reduces pipes on header line") {
-    TableBuilder normal;
+    auto normal = TableBuilder::bordered();
     normal.addColumn("Alpha").addColumn("Beta").addColumn("Gamma").addRow("1", "2", "3").enableAutoSizing();
 
-    TableBuilder suppressed;
+    auto suppressed = TableBuilder::bordered();
     suppressed.addColumn("Alpha").addColumn("Beta").addColumn("Gamma")
         .addRow("1", "2", "3").suppressHeaderColumnSeparators().enableAutoSizing();
 
@@ -592,10 +592,10 @@ TEST_CASE("TableBuilder suppressHeaderColumnSeparators reduces pipes on header l
 }
 
 TEST_CASE("TableBuilder suppressDataColumnSeparators reduces pipes on data line") {
-    TableBuilder normal;
+    auto normal = TableBuilder::bordered();
     normal.addColumn("A").addColumn("B").addColumn("C").addRow("foo", "bar", "baz").enableAutoSizing();
 
-    TableBuilder suppressed;
+    auto suppressed = TableBuilder::bordered();
     suppressed.addColumn("A").addColumn("B").addColumn("C")
         .addRow("foo", "bar", "baz").suppressDataColumnSeparators().enableAutoSizing();
 
@@ -606,7 +606,7 @@ TEST_CASE("TableBuilder suppressDataColumnSeparators reduces pipes on data line"
 }
 
 TEST_CASE("TableBuilder suppressDataColumnSeparators multiline row") {
-    TableBuilder suppressed;
+    auto suppressed = TableBuilder::bordered();
     suppressed.addColumn("A").addColumn("B")
         .addMultiLineRow({{"line1a", "line2a"}, {"line1b", "line2b"}})
         .suppressDataColumnSeparators()

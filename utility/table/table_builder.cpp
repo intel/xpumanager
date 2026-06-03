@@ -962,6 +962,16 @@ std::string TableBuilder::asTable() const { return toTableString(); }
 
 std::string TableBuilder::asJson(bool compact) const { return toJsonString(compact); }
 
+TableBuilder TableBuilder::bordered()
+{
+	TableBuilder tb;
+	tb.config = TableConfig{.borderChar = '-', .cornerChar = '+', .verticalChar = '|', .emptyCellText = {}};
+	tb.suppressHeaderSep = false;
+	tb.suppressHeaderColSep = false;
+	tb.suppressDataColSep = false;
+	return tb;
+}
+
 TableBuilder &TableBuilder::lockWidths()
 {
 	calculateWidths();

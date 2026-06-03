@@ -1428,11 +1428,10 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	}
 
 	table.addRow("Device ID", std::to_string(deviceIndex));
-	table.addSeparator();
+
 	table.addRow("PCI BDF", pciBdf);
 	table.addRow("Device Type", deviceType);
 
-	table.addSeparator();
 	table.addRow("Start Time", startTime);
 	table.addRow("End Time", endTime);
 	table.addRow("Elapsed Time (seconds)", std::format("{:.2f}", elapsedSeconds));
@@ -1457,72 +1456,56 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	}
 
 	if (deviceJson.contains("ras_errors")) {
-		table.addSeparator();
+
 		addRasCounterRows(table, deviceJson);
 	}
 
-	table.addSeparator();
-
 	addPerTileMetricRows(table, deviceJson, "GPU Power (W)", {"power", "gpu_power_w"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Frequency (MHz)", {"frequency", "gpu_frequency_mhz"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "Media Frequency (MHz)", {"frequency", "media_frequency_mhz"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Core Temperature", {"temperature", "gpu_core_celsius"}, 0);
 	table.addRow("(Degrees Celsius)", "");
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Temperature", {"temperature", "memory_celsius"}, 0);
 	table.addRow("(Degrees Celsius)", "");
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU VR Temperature", {"temperature", "vr_celsius"}, 0);
 	table.addRow("(Degrees Celsius)", "");
-	table.addSeparator();
 
 	addPerFanMetricRows(table, deviceJson, "Fan Speed (%)", {"fan", "speed_percent"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Read (kB/s)", {"memory", "read_kbps"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Write (kB/s)", {"memory", "write_kbps"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Bandwidth (%)", {"memory", "bandwidth_percent"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Used (MiB)", {"memory", "used_mib"}, 0);
-	table.addSeparator();
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Util (%)", {"memory", "util_percent"}, 0);
-	table.addSeparator();
 
 	if (deviceJson.contains("offline_page_count")) {
 		uint32_t offlineCount = deviceJson["offline_page_count"].get<uint32_t>();
 		table.addRow("Offline Memory Pages", std::to_string(offlineCount));
-		table.addSeparator();
 	}
 
 	addMetricRow(table, deviceJson, "PCIe Read (kB/s)", {"pcie", "read_kbps"});
-	table.addSeparator();
+
 	addMetricRow(table, deviceJson, "PCIe Write (kB/s)", {"pcie", "write_kbps"});
-	table.addSeparator();
 
 	addEngineInstanceRows(table, deviceJson, "Compute Engine Util (%)", {"utilization", "compute_engines"});
-	table.addSeparator();
+
 	addEngineInstanceRows(table, deviceJson, "Render Engine Util (%)", {"utilization", "render_engines"});
-	table.addSeparator();
+
 	addEngineInstanceRows(table, deviceJson, "Decoder Engine Util (%)", {"utilization", "decoder_engines"});
-	table.addSeparator();
+
 	addEngineInstanceRows(table, deviceJson, "Encoder Engine Util (%)", {"utilization", "encoder_engines"});
-	table.addSeparator();
+
 	addEngineInstanceRows(table, deviceJson, "Copy Engine Util (%)", {"utilization", "copy_engines"});
-	table.addSeparator();
+
 	addEngineInstanceRows(table, deviceJson, "Media EM Engine Util (%)", {"utilization", "media_em_engines"});
 
 	PRINT("{}", table.toString().c_str());
@@ -2114,7 +2097,7 @@ int cmdStats::run(arg_struct *args)
 	CLI::App sub{"Show GPU statistics", "stats"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", statsCmds[STATS_JSON].enabled, "Print result in JSON format");
-	sub.add_option("--device,--id", statsCmds[STATS_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", statsCmds[STATS_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { statsCmds[STATS_DEVICE].enabled = true; });
 	sub.add_flag("-e,--eu", statsCmds[STATS_EU].enabled, "Show EU statistics");
 	sub.add_flag("-r,--ras", statsCmds[STATS_RAS].enabled, "Show RAS error statistics");

@@ -354,7 +354,7 @@ int cmdVgpu::run(arg_struct *args)
 	CLI::App sub{"Manage virtual GPUs (vGPU)", "vgpu"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", vgpuCmds[VGPU_JSON].enabled, "Print result in JSON format");
-	sub.add_option("--device,--id", vgpuCmds[VGPU_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", vgpuCmds[VGPU_DEVICE].val, "Device ID or PCI BDF address")
 		->each([&](const std::string &) { vgpuCmds[VGPU_DEVICE].enabled = true; });
 	sub.add_flag("--precheck", vgpuCmds[VGPU_PRECHECK].enabled, "Check vGPU readiness");
 	sub.add_option("-n,--number", vgpuCmds[VGPU_NUMBER].val, "Number of vGPUs to create")

@@ -32,7 +32,6 @@ DmiReader::DmiReader()
 		loadDMIData();
 		mIsValid = true;
 	} catch (const std::exception &e) {
-		std::cerr << "DMI Reader initialization failed: " << e.what() << '\n';
 		mIsValid = false;
 		throw;
 	}
