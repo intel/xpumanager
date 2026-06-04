@@ -22,9 +22,10 @@ For stub-driver or other non-GPU test deployments, the chart can also run with
 
 Specify which type of Intel [GPU monitoring access](#other-values) is used in the cluster:
 
-* `i915`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
-* `xe`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
-* `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
+* `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring Intel GPUs
+* `plugin`: Intel GPU plugin[^1] (v0.36.0 or newer) resource for monitoring Intel GPUs
+* `i915`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `i915` kernel driver
+* `xe`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `none`: Do not request GPU resources. Useful for stub-driver testing on generic clusters.
 
 For example:
@@ -147,7 +148,7 @@ And add following option to chart install:
 | extraVolumeMounts | list | `[]` | Additional volume mounts for the xpumd container |
 | extraVolumes | list | `[]` | Additional volumes for the xpumd pod |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
-| gpuAccess | string | `"xe"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `i915` / `xe` (K8s GPU plugin), `none` (no GPU resource request, useful for stub-driver testing) |
+| gpuAccess | string | `"dra"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `plugin` (K8s GPU plugin), `i915` / `xe` (old K8s GPU plugin KMD-based resource names), `none` (no GPU resource request, useful for stub-driver testing) |
 | grafana.dashboards | bool | `false` | Install XPUMD dashboard(s) for Grafana |
 | grafana.namespace | string | `"monitoring"` | Namespace for Grafana install. Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used |
 | image.pullPolicy | string | `"Always"` | Image pull policy |

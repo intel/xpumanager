@@ -67,9 +67,10 @@ service:
   # -- Service port
   port: 8080
 
-# @schema enum: [dra, i915, xe, none]
-# -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `i915` / `xe` (K8s GPU plugin), `none` (no GPU resource request, useful for stub-driver testing)
-gpuAccess: xe
+# @schema enum: [dra, plugin, i915, xe, none]
+# -- method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `plugin` (K8s GPU plugin),
+# `i915` / `xe` (old K8s GPU plugin KMD-based resource names), `none` (no GPU resource request, useful for stub-driver testing)
+gpuAccess: dra
 
 # @schema additionalProperties:false
 prometheus:

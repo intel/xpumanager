@@ -46,7 +46,7 @@ helm repo update
 3. Verify that Grafana options for dashboard auto-loading:
 
 ```bash
-helm -n monitoring show values prometheus-community/kube-prometheus-stack | grep -B1 -A3 dashboards:
+helm -n $prom_ns show values prometheus-community/kube-prometheus-stack | grep -B1 -A3 dashboards:
 ```
 
 Are enabled (as they should by default):
