@@ -25,9 +25,10 @@ For stub-driver or other non-GPU test deployments, the chart can also run with
 
 Specify which type of Intel [GPU monitoring access](#other-values) is used in the cluster:
 
-* `i915`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `i915` kernel driver
-* `xe`: Intel GPU plugin[^1] resource for monitoring Intel GPUs supported by the `xe` kernel driver
-* `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring (both `xe` and `i915`) Intel GPUs
+* `dra`: Intel GPU (DRA) resource driver[^2] claim for monitoring Intel GPUs
+* `plugin`: Intel GPU plugin[^1] (v0.36.0 or newer) resource for monitoring Intel GPUs
+* `i915`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `i915` kernel driver
+* `xe`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `none`: Do not request GPU resources. Useful for stub-driver testing on generic clusters.
 
 For example:

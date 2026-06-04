@@ -91,6 +91,8 @@ spec:
             gpu.intel.com/i915_monitoring: 1
             {{- else if eq .Values.gpuAccess "xe" }}
             gpu.intel.com/xe_monitoring: 1
+            {{- else if eq .Values.gpuAccess "plugin" }}
+            gpu.intel.com/monitoring: 1
             {{- end }}
             memory: 2Gi
           {{- end }}
