@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: ${{ fromJson(vars.RUNS_ON_BUILD_AND_PUSH) }}
+    runs-on: ${{ fromJson(vars.RUNS_ON_BUILD_AND_PUSH || vars.RUNS_ON) }}
     permissions:
       contents: read
       packages: write
@@ -144,7 +144,7 @@ jobs:
       run: helm push xpumd-*.tgz oci://ghcr.io/${{ github.repository }}/charts/
 
   integration-test:
-    runs-on: ${{ fromJson(vars.RUNS_ON_INTEGRATION_TEST) }}
+    runs-on: ${{ fromJson(vars.RUNS_ON_INTEGRATION_TEST || vars.RUNS_ON) }}
     timeout-minutes: 20
     steps:
     - name: Check out code
