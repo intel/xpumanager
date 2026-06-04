@@ -23,20 +23,23 @@ for their daemon / exporter / remote API functionality.
 
 * Daemon and exporter in the same process
   * Implemented in Go on top of OpenTelemetry (OTel) packages and Level-Zero Go bindings
-* Provides OpenTelemetry and Prometheus metrics endpoints
+* Provides OpenTelemetry and Prometheus metrics exporting endpoints
   * Prometheus metric names (`hw_*`) and attributes follow OTel conventions
   * No "destructive" GPU operations supported, only GPU metric / status queries
+  * OpenTelemetry endpoint also provides events and logs in addition to metrics
 * Separate endpoint to provide GPU state information for Kubernetes DRA Intel GPU driver
 * Extensive configuration support through YAML configuration file
 
 
 #### Missing metrics
 
-Compared to XPUM 1.x, XPUM 2.x lacks support for the following GPU metrics:
+Compared to XPUM 1.x, XPUM 2.0 lacks support for the following GPU metrics:
 
-* EU active/stall/idle metrics - were disabled by default in 1.x
+* EU active/stall/idle metrics
+  * OA HW counter config is GPU-wide, and processing them can have noticeable
+    performance impact, so these were not enabled by default even in v1.x
+  * Use instead e.g. VTune for debugging performance issues
 * Fabric (XeLink) metrics - not relevant for BMG
-* RAS (error) counters - not relevant for BMG
 
 
 ### Summary
