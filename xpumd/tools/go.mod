@@ -20,7 +20,7 @@ require (
 	github.com/norwoodj/helm-docs v1.14.2
 	go.opentelemetry.io/collector/cmd/builder v0.153.0
 	go.opentelemetry.io/collector/cmd/mdatagen v0.153.0
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.2
 	google.golang.org/protobuf v1.36.11
 )
 
