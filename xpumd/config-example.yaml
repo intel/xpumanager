@@ -17,7 +17,7 @@ receivers:
 #        enabled: false
 
   intel_crashlog:
-    # Directory to watch for new crashlog files.
+    # Directory to watch for new crashlog files (must exist!).
     directory: /var/log/crashlog
     # Filename glob pattern (matched against the base name of each file).
     glob: "*.bin"
@@ -147,5 +147,6 @@ service:
       processors: [intelxpustatus]
       exporters: [intelxpuinfo,prometheus]
     logs:
-      receivers: [intelxpu, intel_crashlog]
+      # "intel_crashlog" receiver can be added when its dir is present
+      receivers: [intelxpu]
       exporters: [intelxpuinfo]
