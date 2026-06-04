@@ -130,6 +130,19 @@ jobs:
         name: trivy-xpumd-image-report
         path: trivy-xpumd-image-report.csv
 
+    - name: Generate SBOM
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      with:
+        image-ref: ${{ env.IMAGE_TAG }}
+        format: cyclonedx
+        output: sbom-xpumd-image.cdx.json
+
+    - name: Upload SBOM as artifact
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: sbom-xpumd-image
+        path: sbom-xpumd-image.cdx.json
+
     - name: Helm login
       if: github.event_name == 'push'
       run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
