@@ -91,42 +91,35 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
                 --ignore github.com/intel/xpumanager/xpumd \
                 --save_path /out/usr/share/doc/xpumd/licenses
 
-# (L)GPL compliance: store source packages stored in /sources
-# Copy licences for all installed packages
-RUN mkdir /out/sources && \
-    cd /out/sources && \
-    gpl_pkgs="libc6 libcap2 libudev1 libstdc++6 libgcc-s1" && \
-    apt-get source --download-only $gpl_pkgs && \
-    other_pkgs="libigdgmm12 libze-intel-gpu1 libcyaml1 libyaml-0-2" && \
-    for pkg in $gpl_pkgs $other_pkgs; do \
-        install -Dt /out/usr/share/doc/$pkg \
-                /usr/share/doc/$pkg/copyright; \
-    done && \
-    install -Dt /out/usr/share/doc/libigc-core-2 \
-            /usr/local/lib/igc2/NOTICES.txt && \
-    install -Dt /out/usr/share/common-licenses/ \
-            /usr/share/common-licenses/*
+# Copy runtime libraries and their package info.
+COPY scripts/copy-files-and-package-info.sh .
+RUN ./copy-files-and-package-info.sh /out \
+        /lib64/ld-linux-x86-64.so.2 \
+        /usr/lib/x86_64-linux-gnu/libc.so.6 \
+        /usr/lib/x86_64-linux-gnu/libcap.so.2 \
+        /usr/lib/x86_64-linux-gnu/libcyaml.so.1 \
+        /usr/lib/x86_64-linux-gnu/libyaml-0.so.2 \
+        /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
+        /usr/lib/x86_64-linux-gnu/libm.so.6 \
+        /usr/lib/x86_64-linux-gnu/libresolv.so.2 \
+        /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
+        /usr/lib/x86_64-linux-gnu/libudev.so.1 \
+        /usr/lib/x86_64-linux-gnu/libigdgmm.so.12 \
+        /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1 \
+        /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
+        /usr/local/lib/libigc.so.2
 
-# Copy dependencies for the final image
-RUN install -Dt /out/lib64 \
-            /lib64/ld-linux-x86-64.so.2 && \
-    install -Dt /out/lib/x86_64-linux-gnu \
-            /lib/x86_64-linux-gnu/libc.so.6 \
-            /lib/x86_64-linux-gnu/libcap.so.2 \
-            /lib/x86_64-linux-gnu/libcyaml.so.1 \
-            /lib/x86_64-linux-gnu/libyaml-0.so.2 && \
-    install -Dt /out/usr/lib/x86_64-linux-gnu \
-            /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
-            /usr/lib/x86_64-linux-gnu/libm.so.6 \
-            /usr/lib/x86_64-linux-gnu/libresolv.so.2 \
-            /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
-            /usr/lib/x86_64-linux-gnu/libudev.so.1 \
-            /usr/lib/x86_64-linux-gnu/libigdgmm.so.12 \
-            /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1 \
-            /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
-            /usr/lib/x86_64-linux-gnu/libigsc.so.0 && \
-    install -Dt /out/usr/local/lib \
-            /usr/local/lib/libigc.so.2
+# libigsc is source-built (not a DEB package): copy manually and add a synthetic dpkg status entry for scanners
+RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.0 \
+               /out/usr/lib/x86_64-linux-gnu/libigsc.so.0 && \
+    /usr/bin/echo -e "\
+Package: libigsc0\n\
+Status: install ok installed\n\
+Architecture: amd64\n\
+Version: ${IGSC_VERSION#V}\n\
+Homepage: https://github.com/intel/igsc\n\
+Description: Intel(R) Graphics System Controller Firmware Update Library\n\
+\n" >> /out/var/lib/dpkg/status
 
 # The final image
 FROM ${BASE_IMAGE} AS final
