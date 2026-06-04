@@ -9,9 +9,9 @@ set -o pipefail
 
 PB_REL="https://github.com/protocolbuffers/protobuf/releases"
 
-PB_VERSION="${PB_VERSION-33.4}"
+PB_VERSION="${PB_VERSION-35.0}"
 ZIP_FILE="protoc-$PB_VERSION-linux-x86_64.zip"
-CHECKSUM="${CHECKSUM-c0040ea9aef08fdeb2c74ca609b18d5fdbfc44ea0042fcfbfb38860d35f7dd66}"
+CHECKSUM="${CHECKSUM-a45cda0989c17dd950db55f6fbe1e5814c50fda08e87aa422980ac1f89dddbbc}"
 
 # We operate under the tools go module
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
