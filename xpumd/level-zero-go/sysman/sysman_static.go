@@ -1005,6 +1005,16 @@ func (z *Power) SetEnergyThreshold(threshold float64) error {
 	return ret.ToError()
 }
 
+// GetUsage wraps the zesPowerGetUsage function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetusage
+//
+// Returns the instantaneous and average power usage in milliwatts for the power domain.
+func (z *Power) GetUsage() (PowerUsage, error) {
+	var instant, average uint32
+	ret := zesPowerGetUsage(z.handle, &instant, &average)
+	return PowerUsage{InstantPower: instant, AveragePower: average}, ret.ToError()
+}
+
 // GetLimitsExt wraps the zesPowerGetLimitsExt function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetlimitsext
 func (z *Power) GetLimitsExt() ([]PowerLimitExtDesc, error) {
@@ -1022,6 +1032,23 @@ func (z *Power) GetLimitsExt() ([]PowerLimitExtDesc, error) {
 func (z *Power) SetLimitsExt(limits []PowerLimitExtDesc) error {
 	count := uint32(len(limits))
 	ret := zesPowerSetLimitsExt(z.handle, &count, limits)
+	return ret.ToError()
+}
+
+// GetLimitsExt2 wraps the zesPowerGetLimitsExt2 function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetlimitsext2
+// Returns the power limit in milliwatts for the power domain.
+func (z *Power) GetLimitsExt2() (uint32, error) {
+	var limit uint32
+	ret := zesPowerGetLimitsExt2(z.handle, &limit)
+	return limit, ret.ToError()
+}
+
+// SetLimitsExt2 wraps the zesPowerSetLimitsExt2 function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowersetlimitsext2
+// Sets the power limit in milliwatts for the power domain.
+func (z *Power) SetLimitsExt2(limitMw uint32) error {
+	ret := zesPowerSetLimitsExt2(z.handle, limitMw)
 	return ret.ToError()
 }
 

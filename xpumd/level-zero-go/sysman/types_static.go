@@ -287,6 +287,14 @@ type OverclockState struct {
 	PendingReset  bool
 }
 
+// PowerUsage wraps the power readings from zesPowerGetUsage.
+type PowerUsage struct {
+	// InstantPower is the instantaneous power consumption in milliwatts.
+	InstantPower uint32
+	// AveragePower is the average power consumption in milliwatts.
+	AveragePower uint32
+}
+
 // ExtendedDeviceProperties wraps the device property structures from the Sysman API.
 type DeviceProperties struct {
 	DeviceBaseProperties
