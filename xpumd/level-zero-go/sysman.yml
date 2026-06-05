@@ -31,6 +31,11 @@ TRANSLATOR:
       - {transform: unexport}
       # Ignore experimental (other than RAS)
       - {action: ignore, from: "^zes[^R].*Exp[2]?$"}
+      # Ignore new RAS experimental functions not yet supported
+      - {action: ignore, from: "^zesRasGetSupportedCategoriesExp$"}
+      - {action: ignore, from: "^zesRasGetStateExp2$"}
+      - {action: ignore, from: "^zesRasGetConfigExp$"}
+      - {action: ignore, from: "^zesRasSetConfigExp$"}
       - {action: ignore, from: "^zesDriverGetExtensionFunctionAddress$"}
       # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zesDeviceGetCardPowerDomain$"}

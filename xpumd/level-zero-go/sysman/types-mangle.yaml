@@ -203,6 +203,10 @@ structs:
     fields:
       - name: Category
         newType: RasErrorCategoryExp
+  - name: RasConfigExp
+    fields:
+      - name: Category
+        newType: RasErrorCategoryExp
   - name: ResetProperties
     fields:
       - name: ResetType
