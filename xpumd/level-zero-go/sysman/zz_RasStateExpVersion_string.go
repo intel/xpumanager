@@ -9,19 +9,25 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[RAS_STATE_EXP_VERSION_1_0-65536]
-	_ = x[RAS_STATE_EXP_VERSION_CURRENT-65536]
+	_ = x[RAS_STATE_EXP_VERSION_1_1-65537]
+	_ = x[RAS_STATE_EXP_VERSION_CURRENT-65537]
 	_ = x[RAS_STATE_EXP_VERSION_FORCE_UINT32-2147483647]
 }
 
 const (
-	_RasStateExpVersion_name_0 = "1_0"
+	_RasStateExpVersion_name_0 = "1_01_1"
 	_RasStateExpVersion_name_1 = "FORCE_UINT32"
+)
+
+var (
+	_RasStateExpVersion_index_0 = [...]uint8{0, 3, 6}
 )
 
 func (i RasStateExpVersion) String() string {
 	switch {
-	case i == 65536:
-		return _RasStateExpVersion_name_0
+	case 65536 <= i && i <= 65537:
+		i -= 65536
+		return _RasStateExpVersion_name_0[_RasStateExpVersion_index_0[i]:_RasStateExpVersion_index_0[i+1]]
 	case i == 2147483647:
 		return _RasStateExpVersion_name_1
 	default:

@@ -22,7 +22,7 @@ import (
 	"github.com/intel/level-zero-go/core"
 )
 
-// zesInit function as declared in level-zero/zes_api.h:642
+// zesInit function as declared in level-zero/zes_api.h:653
 func zesInit(Flags InitFlags) core.Result {
 	cFlags, _ := (C.zes_init_flags_t)(Flags), cgoAllocsUnknown
 	__ret := C.zesInit(cFlags)
@@ -30,7 +30,7 @@ func zesInit(Flags InitFlags) core.Result {
 	return __v
 }
 
-// zesDriverGet function as declared in level-zero/zes_api.h:676
+// zesDriverGet function as declared in level-zero/zes_api.h:687
 func zesDriverGet(PCount *uint32, PhDrivers []driverHandle) core.Result {
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
 	cPhDrivers, _ := (*C.zes_driver_handle_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PhDrivers)).Data)), cgoAllocsUnknown
@@ -39,7 +39,7 @@ func zesDriverGet(PCount *uint32, PhDrivers []driverHandle) core.Result {
 	return __v
 }
 
-// zesDriverGetExtensionProperties function as declared in level-zero/zes_api.h:729
+// zesDriverGetExtensionProperties function as declared in level-zero/zes_api.h:740
 func zesDriverGetExtensionProperties(HDriver driverHandle, PCount *uint32, PExtensionProperties []DriverExtensionProperties) core.Result {
 	cHDriver, _ := *(*C.zes_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -49,7 +49,7 @@ func zesDriverGetExtensionProperties(HDriver driverHandle, PCount *uint32, PExte
 	return __v
 }
 
-// zesDeviceGet function as declared in level-zero/zes_api.h:815
+// zesDeviceGet function as declared in level-zero/zes_api.h:826
 func zesDeviceGet(HDriver driverHandle, PCount *uint32, PhDevices []deviceHandle) core.Result {
 	cHDriver, _ := *(*C.zes_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -59,7 +59,7 @@ func zesDeviceGet(HDriver driverHandle, PCount *uint32, PhDevices []deviceHandle
 	return __v
 }
 
-// zesDeviceGetProperties function as declared in level-zero/zes_api.h:1023
+// zesDeviceGetProperties function as declared in level-zero/zes_api.h:1034
 func zesDeviceGetProperties(HDevice deviceHandle, PProperties *DeviceBaseProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_device_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -68,7 +68,7 @@ func zesDeviceGetProperties(HDevice deviceHandle, PProperties *DeviceBasePropert
 	return __v
 }
 
-// zesDeviceGetState function as declared in level-zero/zes_api.h:1055
+// zesDeviceGetState function as declared in level-zero/zes_api.h:1066
 func zesDeviceGetState(HDevice deviceHandle, PState *DeviceState) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_device_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -77,7 +77,7 @@ func zesDeviceGetState(HDevice deviceHandle, PState *DeviceState) core.Result {
 	return __v
 }
 
-// zesDeviceReset function as declared in level-zero/zes_api.h:1095
+// zesDeviceReset function as declared in level-zero/zes_api.h:1106
 func zesDeviceReset(HDevice deviceHandle, Force byte) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cForce, _ := (C.ze_bool_t)(Force), cgoAllocsUnknown
@@ -86,7 +86,7 @@ func zesDeviceReset(HDevice deviceHandle, Force byte) core.Result {
 	return __v
 }
 
-// zesDeviceResetExt function as declared in level-zero/zes_api.h:1138
+// zesDeviceResetExt function as declared in level-zero/zes_api.h:1149
 func zesDeviceResetExt(HDevice deviceHandle, PProperties *ResetProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_reset_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -95,7 +95,7 @@ func zesDeviceResetExt(HDevice deviceHandle, PProperties *ResetProperties) core.
 	return __v
 }
 
-// zesDeviceProcessesGetState function as declared in level-zero/zes_api.h:1199
+// zesDeviceProcessesGetState function as declared in level-zero/zes_api.h:1210
 func zesDeviceProcessesGetState(HDevice deviceHandle, PCount *uint32, PProcesses []ProcessState) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -105,7 +105,7 @@ func zesDeviceProcessesGetState(HDevice deviceHandle, PCount *uint32, PProcesses
 	return __v
 }
 
-// zesDevicePciGetProperties function as declared in level-zero/zes_api.h:1416
+// zesDevicePciGetProperties function as declared in level-zero/zes_api.h:1427
 func zesDevicePciGetProperties(HDevice deviceHandle, PProperties *PciBaseProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_pci_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -114,7 +114,7 @@ func zesDevicePciGetProperties(HDevice deviceHandle, PProperties *PciBasePropert
 	return __v
 }
 
-// zesDevicePciGetState function as declared in level-zero/zes_api.h:1447
+// zesDevicePciGetState function as declared in level-zero/zes_api.h:1458
 func zesDevicePciGetState(HDevice deviceHandle, PState *PciBaseState) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_pci_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -123,7 +123,7 @@ func zesDevicePciGetState(HDevice deviceHandle, PState *PciBaseState) core.Resul
 	return __v
 }
 
-// zesDevicePciGetBars function as declared in level-zero/zes_api.h:1478
+// zesDevicePciGetBars function as declared in level-zero/zes_api.h:1489
 func zesDevicePciGetBars(HDevice deviceHandle, PCount *uint32, PProperties []PciBarProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -133,7 +133,7 @@ func zesDevicePciGetBars(HDevice deviceHandle, PCount *uint32, PProperties []Pci
 	return __v
 }
 
-// zesDevicePciGetStats function as declared in level-zero/zes_api.h:1518
+// zesDevicePciGetStats function as declared in level-zero/zes_api.h:1529
 func zesDevicePciGetStats(HDevice deviceHandle, PStats *PciStats) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPStats, _ := (*C.zes_pci_stats_t)(unsafe.Pointer(PStats)), cgoAllocsUnknown
@@ -142,7 +142,7 @@ func zesDevicePciGetStats(HDevice deviceHandle, PStats *PciStats) core.Result {
 	return __v
 }
 
-// zesDeviceSetOverclockWaiver function as declared in level-zero/zes_api.h:1737
+// zesDeviceSetOverclockWaiver function as declared in level-zero/zes_api.h:1748
 func zesDeviceSetOverclockWaiver(HDevice deviceHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	__ret := C.zesDeviceSetOverclockWaiver(cHDevice)
@@ -150,7 +150,7 @@ func zesDeviceSetOverclockWaiver(HDevice deviceHandle) core.Result {
 	return __v
 }
 
-// zesDeviceGetOverclockDomains function as declared in level-zero/zes_api.h:1768
+// zesDeviceGetOverclockDomains function as declared in level-zero/zes_api.h:1779
 func zesDeviceGetOverclockDomains(HDevice deviceHandle, POverclockDomains *uint32) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPOverclockDomains, _ := (*C.uint32_t)(unsafe.Pointer(POverclockDomains)), cgoAllocsUnknown
@@ -159,7 +159,7 @@ func zesDeviceGetOverclockDomains(HDevice deviceHandle, POverclockDomains *uint3
 	return __v
 }
 
-// zesDeviceGetOverclockControls function as declared in level-zero/zes_api.h:1806
+// zesDeviceGetOverclockControls function as declared in level-zero/zes_api.h:1817
 func zesDeviceGetOverclockControls(HDevice deviceHandle, DomainType OverclockDomain, PAvailableControls *uint32) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cDomainType, _ := (C.zes_overclock_domain_t)(DomainType), cgoAllocsUnknown
@@ -169,7 +169,7 @@ func zesDeviceGetOverclockControls(HDevice deviceHandle, DomainType OverclockDom
 	return __v
 }
 
-// zesDeviceResetOverclockSettings function as declared in level-zero/zes_api.h:1840
+// zesDeviceResetOverclockSettings function as declared in level-zero/zes_api.h:1851
 func zesDeviceResetOverclockSettings(HDevice deviceHandle, OnShippedState byte) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cOnShippedState, _ := (C.ze_bool_t)(OnShippedState), cgoAllocsUnknown
@@ -178,7 +178,7 @@ func zesDeviceResetOverclockSettings(HDevice deviceHandle, OnShippedState byte) 
 	return __v
 }
 
-// zesDeviceReadOverclockState function as declared in level-zero/zes_api.h:1877
+// zesDeviceReadOverclockState function as declared in level-zero/zes_api.h:1888
 func zesDeviceReadOverclockState(HDevice deviceHandle, POverclockMode *OverclockMode, PWaiverSetting *byte, POverclockState *byte, PPendingAction *PendingAction, PPendingReset *byte) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPOverclockMode, _ := (*C.zes_overclock_mode_t)(unsafe.Pointer(POverclockMode)), cgoAllocsUnknown
@@ -191,7 +191,7 @@ func zesDeviceReadOverclockState(HDevice deviceHandle, POverclockMode *Overclock
 	return __v
 }
 
-// zesDeviceEnumOverclockDomains function as declared in level-zero/zes_api.h:1913
+// zesDeviceEnumOverclockDomains function as declared in level-zero/zes_api.h:1924
 func zesDeviceEnumOverclockDomains(HDevice deviceHandle, PCount *uint32, phDomainHandle []overclockHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -201,7 +201,7 @@ func zesDeviceEnumOverclockDomains(HDevice deviceHandle, PCount *uint32, phDomai
 	return __v
 }
 
-// zesOverclockGetDomainProperties function as declared in level-zero/zes_api.h:1955
+// zesOverclockGetDomainProperties function as declared in level-zero/zes_api.h:1966
 func zesOverclockGetDomainProperties(hDomainHandle overclockHandle, PDomainProperties *OverclockProperties) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cPDomainProperties, _ := (*C.zes_overclock_properties_t)(unsafe.Pointer(PDomainProperties)), cgoAllocsUnknown
@@ -210,7 +210,7 @@ func zesOverclockGetDomainProperties(hDomainHandle overclockHandle, PDomainPrope
 	return __v
 }
 
-// zesOverclockGetDomainVFProperties function as declared in level-zero/zes_api.h:1987
+// zesOverclockGetDomainVFProperties function as declared in level-zero/zes_api.h:1998
 func zesOverclockGetDomainVFProperties(hDomainHandle overclockHandle, PVFProperties *VfProperty) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cPVFProperties, _ := (*C.zes_vf_property_t)(unsafe.Pointer(PVFProperties)), cgoAllocsUnknown
@@ -219,7 +219,7 @@ func zesOverclockGetDomainVFProperties(hDomainHandle overclockHandle, PVFPropert
 	return __v
 }
 
-// zesOverclockGetDomainControlProperties function as declared in level-zero/zes_api.h:2022
+// zesOverclockGetDomainControlProperties function as declared in level-zero/zes_api.h:2033
 func zesOverclockGetDomainControlProperties(hDomainHandle overclockHandle, DomainControl OverclockControl, PControlProperties *ControlProperty) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cDomainControl, _ := (C.zes_overclock_control_t)(DomainControl), cgoAllocsUnknown
@@ -229,7 +229,7 @@ func zesOverclockGetDomainControlProperties(hDomainHandle overclockHandle, Domai
 	return __v
 }
 
-// zesOverclockGetControlCurrentValue function as declared in level-zero/zes_api.h:2058
+// zesOverclockGetControlCurrentValue function as declared in level-zero/zes_api.h:2069
 func zesOverclockGetControlCurrentValue(hDomainHandle overclockHandle, DomainControl OverclockControl, PValue *float64) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cDomainControl, _ := (C.zes_overclock_control_t)(DomainControl), cgoAllocsUnknown
@@ -239,7 +239,7 @@ func zesOverclockGetControlCurrentValue(hDomainHandle overclockHandle, DomainCon
 	return __v
 }
 
-// zesOverclockGetControlPendingValue function as declared in level-zero/zes_api.h:2094
+// zesOverclockGetControlPendingValue function as declared in level-zero/zes_api.h:2105
 func zesOverclockGetControlPendingValue(hDomainHandle overclockHandle, DomainControl OverclockControl, PValue *float64) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cDomainControl, _ := (C.zes_overclock_control_t)(DomainControl), cgoAllocsUnknown
@@ -249,7 +249,7 @@ func zesOverclockGetControlPendingValue(hDomainHandle overclockHandle, DomainCon
 	return __v
 }
 
-// zesOverclockSetControlUserValue function as declared in level-zero/zes_api.h:2131
+// zesOverclockSetControlUserValue function as declared in level-zero/zes_api.h:2142
 func zesOverclockSetControlUserValue(hDomainHandle overclockHandle, DomainControl OverclockControl, PValue float64, PPendingAction *PendingAction) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cDomainControl, _ := (C.zes_overclock_control_t)(DomainControl), cgoAllocsUnknown
@@ -260,7 +260,7 @@ func zesOverclockSetControlUserValue(hDomainHandle overclockHandle, DomainContro
 	return __v
 }
 
-// zesOverclockGetControlState function as declared in level-zero/zes_api.h:2170
+// zesOverclockGetControlState function as declared in level-zero/zes_api.h:2181
 func zesOverclockGetControlState(hDomainHandle overclockHandle, DomainControl OverclockControl, PControlState *ControlState, PPendingAction *PendingAction) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cDomainControl, _ := (C.zes_overclock_control_t)(DomainControl), cgoAllocsUnknown
@@ -271,7 +271,7 @@ func zesOverclockGetControlState(hDomainHandle overclockHandle, DomainControl Ov
 	return __v
 }
 
-// zesOverclockGetVFPointValues function as declared in level-zero/zes_api.h:2209
+// zesOverclockGetVFPointValues function as declared in level-zero/zes_api.h:2220
 func zesOverclockGetVFPointValues(hDomainHandle overclockHandle, VFType VfType, VFArrayType VfArrayType, PointIndex uint32, PointValue *uint32) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cVFType, _ := (C.zes_vf_type_t)(VFType), cgoAllocsUnknown
@@ -283,7 +283,7 @@ func zesOverclockGetVFPointValues(hDomainHandle overclockHandle, VFType VfType, 
 	return __v
 }
 
-// zesOverclockSetVFPointValues function as declared in level-zero/zes_api.h:2246
+// zesOverclockSetVFPointValues function as declared in level-zero/zes_api.h:2257
 func zesOverclockSetVFPointValues(hDomainHandle overclockHandle, VFType VfType, PointIndex uint32, PointValue uint32) core.Result {
 	chDomainHandle, _ := *(*C.zes_overclock_handle_t)(unsafe.Pointer(&hDomainHandle)), cgoAllocsUnknown
 	cVFType, _ := (C.zes_vf_type_t)(VFType), cgoAllocsUnknown
@@ -294,7 +294,7 @@ func zesOverclockSetVFPointValues(hDomainHandle overclockHandle, VFType VfType, 
 	return __v
 }
 
-// zesDeviceEnumDiagnosticTestSuites function as declared in level-zero/zes_api.h:2338
+// zesDeviceEnumDiagnosticTestSuites function as declared in level-zero/zes_api.h:2349
 func zesDeviceEnumDiagnosticTestSuites(HDevice deviceHandle, PCount *uint32, PhDiagnostics []diagHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -304,7 +304,7 @@ func zesDeviceEnumDiagnosticTestSuites(HDevice deviceHandle, PCount *uint32, PhD
 	return __v
 }
 
-// zesDiagnosticsGetProperties function as declared in level-zero/zes_api.h:2379
+// zesDiagnosticsGetProperties function as declared in level-zero/zes_api.h:2390
 func zesDiagnosticsGetProperties(HDiagnostics diagHandle, PProperties *DiagProperties) core.Result {
 	cHDiagnostics, _ := *(*C.zes_diag_handle_t)(unsafe.Pointer(&HDiagnostics)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_diag_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -313,7 +313,7 @@ func zesDiagnosticsGetProperties(HDiagnostics diagHandle, PProperties *DiagPrope
 	return __v
 }
 
-// zesDiagnosticsGetTests function as declared in level-zero/zes_api.h:2415
+// zesDiagnosticsGetTests function as declared in level-zero/zes_api.h:2426
 func zesDiagnosticsGetTests(HDiagnostics diagHandle, PCount *uint32, PTests []DiagTest) core.Result {
 	cHDiagnostics, _ := *(*C.zes_diag_handle_t)(unsafe.Pointer(&HDiagnostics)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -323,7 +323,7 @@ func zesDiagnosticsGetTests(HDiagnostics diagHandle, PCount *uint32, PTests []Di
 	return __v
 }
 
-// zesDiagnosticsRunTests function as declared in level-zero/zes_api.h:2464
+// zesDiagnosticsRunTests function as declared in level-zero/zes_api.h:2475
 func zesDiagnosticsRunTests(HDiagnostics diagHandle, StartIndex uint32, EndIndex uint32, PResult []DiagResult) core.Result {
 	cHDiagnostics, _ := *(*C.zes_diag_handle_t)(unsafe.Pointer(&HDiagnostics)), cgoAllocsUnknown
 	cStartIndex, _ := (C.uint32_t)(StartIndex), cgoAllocsUnknown
@@ -334,7 +334,7 @@ func zesDiagnosticsRunTests(HDiagnostics diagHandle, StartIndex uint32, EndIndex
 	return __v
 }
 
-// zesDeviceEccAvailable function as declared in level-zero/zes_api.h:2553
+// zesDeviceEccAvailable function as declared in level-zero/zes_api.h:2564
 func zesDeviceEccAvailable(HDevice deviceHandle, PAvailable *byte) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPAvailable, _ := (*C.ze_bool_t)(unsafe.Pointer(PAvailable)), cgoAllocsUnknown
@@ -343,7 +343,7 @@ func zesDeviceEccAvailable(HDevice deviceHandle, PAvailable *byte) core.Result {
 	return __v
 }
 
-// zesDeviceEccConfigurable function as declared in level-zero/zes_api.h:2584
+// zesDeviceEccConfigurable function as declared in level-zero/zes_api.h:2595
 func zesDeviceEccConfigurable(HDevice deviceHandle, PConfigurable *byte) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPConfigurable, _ := (*C.ze_bool_t)(unsafe.Pointer(PConfigurable)), cgoAllocsUnknown
@@ -352,7 +352,7 @@ func zesDeviceEccConfigurable(HDevice deviceHandle, PConfigurable *byte) core.Re
 	return __v
 }
 
-// zesDeviceGetEccState function as declared in level-zero/zes_api.h:2615
+// zesDeviceGetEccState function as declared in level-zero/zes_api.h:2626
 func zesDeviceGetEccState(HDevice deviceHandle, PState *DeviceEccProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_device_ecc_properties_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -361,7 +361,7 @@ func zesDeviceGetEccState(HDevice deviceHandle, PState *DeviceEccProperties) cor
 	return __v
 }
 
-// zesDeviceSetEccState function as declared in level-zero/zes_api.h:2654
+// zesDeviceSetEccState function as declared in level-zero/zes_api.h:2665
 func zesDeviceSetEccState(HDevice deviceHandle, NewState *DeviceEccDesc, PState *DeviceEccProperties) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cNewState, _ := (*C.zes_device_ecc_desc_t)(unsafe.Pointer(NewState)), cgoAllocsUnknown
@@ -371,7 +371,7 @@ func zesDeviceSetEccState(HDevice deviceHandle, NewState *DeviceEccDesc, PState 
 	return __v
 }
 
-// zesDeviceEnumEngineGroups function as declared in level-zero/zes_api.h:2781
+// zesDeviceEnumEngineGroups function as declared in level-zero/zes_api.h:2792
 func zesDeviceEnumEngineGroups(HDevice deviceHandle, PCount *uint32, PhEngine []engineHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -381,7 +381,7 @@ func zesDeviceEnumEngineGroups(HDevice deviceHandle, PCount *uint32, PhEngine []
 	return __v
 }
 
-// zesEngineGetProperties function as declared in level-zero/zes_api.h:2822
+// zesEngineGetProperties function as declared in level-zero/zes_api.h:2833
 func zesEngineGetProperties(HEngine engineHandle, PProperties *EngineBaseProperties) core.Result {
 	cHEngine, _ := *(*C.zes_engine_handle_t)(unsafe.Pointer(&HEngine)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_engine_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -390,7 +390,7 @@ func zesEngineGetProperties(HEngine engineHandle, PProperties *EngineBasePropert
 	return __v
 }
 
-// zesEngineGetActivity function as declared in level-zero/zes_api.h:2855
+// zesEngineGetActivity function as declared in level-zero/zes_api.h:2866
 func zesEngineGetActivity(HEngine engineHandle, PStats *EngineStats) core.Result {
 	cHEngine, _ := *(*C.zes_engine_handle_t)(unsafe.Pointer(&HEngine)), cgoAllocsUnknown
 	cPStats, _ := (*C.zes_engine_stats_t)(unsafe.Pointer(PStats)), cgoAllocsUnknown
@@ -399,7 +399,7 @@ func zesEngineGetActivity(HEngine engineHandle, PStats *EngineStats) core.Result
 	return __v
 }
 
-// zesDeviceEventRegister function as declared in level-zero/zes_api.h:2932
+// zesDeviceEventRegister function as declared in level-zero/zes_api.h:2943
 func zesDeviceEventRegister(HDevice deviceHandle, Events EventTypeFlags) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cEvents, _ := (C.zes_event_type_flags_t)(Events), cgoAllocsUnknown
@@ -408,7 +408,7 @@ func zesDeviceEventRegister(HDevice deviceHandle, Events EventTypeFlags) core.Re
 	return __v
 }
 
-// zesDriverEventListen function as declared in level-zero/zes_api.h:2967
+// zesDriverEventListen function as declared in level-zero/zes_api.h:2978
 func zesDriverEventListen(HDriver driverHandle, Timeout uint32, Count uint32, PhDevices []deviceHandle, PNumDeviceEvents *uint32, PEvents []EventTypeFlags) core.Result {
 	cHDriver, _ := *(*C.ze_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cTimeout, _ := (C.uint32_t)(Timeout), cgoAllocsUnknown
@@ -421,7 +421,7 @@ func zesDriverEventListen(HDriver driverHandle, Timeout uint32, Count uint32, Ph
 	return __v
 }
 
-// zesDriverEventListenEx function as declared in level-zero/zes_api.h:3018
+// zesDriverEventListenEx function as declared in level-zero/zes_api.h:3029
 func zesDriverEventListenEx(HDriver driverHandle, Timeout uint64, Count uint32, PhDevices []deviceHandle, PNumDeviceEvents *uint32, PEvents []EventTypeFlags) core.Result {
 	cHDriver, _ := *(*C.ze_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cTimeout, _ := (C.uint64_t)(Timeout), cgoAllocsUnknown
@@ -434,7 +434,7 @@ func zesDriverEventListenEx(HDriver driverHandle, Timeout uint64, Count uint32, 
 	return __v
 }
 
-// zesDeviceEnumFabricPorts function as declared in level-zero/zes_api.h:3263
+// zesDeviceEnumFabricPorts function as declared in level-zero/zes_api.h:3274
 func zesDeviceEnumFabricPorts(HDevice deviceHandle, PCount *uint32, PhPort []fabricPortHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -444,7 +444,7 @@ func zesDeviceEnumFabricPorts(HDevice deviceHandle, PCount *uint32, PhPort []fab
 	return __v
 }
 
-// zesFabricPortGetProperties function as declared in level-zero/zes_api.h:3304
+// zesFabricPortGetProperties function as declared in level-zero/zes_api.h:3315
 func zesFabricPortGetProperties(HPort fabricPortHandle, PProperties *FabricPortProperties) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_fabric_port_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -453,7 +453,7 @@ func zesFabricPortGetProperties(HPort fabricPortHandle, PProperties *FabricPortP
 	return __v
 }
 
-// zesFabricPortGetLinkType function as declared in level-zero/zes_api.h:3335
+// zesFabricPortGetLinkType function as declared in level-zero/zes_api.h:3346
 func zesFabricPortGetLinkType(HPort fabricPortHandle, PLinkType *FabricLinkType) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPLinkType, _ := (*C.zes_fabric_link_type_t)(unsafe.Pointer(PLinkType)), cgoAllocsUnknown
@@ -462,7 +462,7 @@ func zesFabricPortGetLinkType(HPort fabricPortHandle, PLinkType *FabricLinkType)
 	return __v
 }
 
-// zesFabricPortGetConfig function as declared in level-zero/zes_api.h:3367
+// zesFabricPortGetConfig function as declared in level-zero/zes_api.h:3378
 func zesFabricPortGetConfig(HPort fabricPortHandle, PConfig *FabricPortConfig) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_fabric_port_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -471,7 +471,7 @@ func zesFabricPortGetConfig(HPort fabricPortHandle, PConfig *FabricPortConfig) c
 	return __v
 }
 
-// zesFabricPortSetConfig function as declared in level-zero/zes_api.h:3399
+// zesFabricPortSetConfig function as declared in level-zero/zes_api.h:3410
 func zesFabricPortSetConfig(HPort fabricPortHandle, PConfig *FabricPortConfig) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_fabric_port_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -480,7 +480,7 @@ func zesFabricPortSetConfig(HPort fabricPortHandle, PConfig *FabricPortConfig) c
 	return __v
 }
 
-// zesFabricPortGetState function as declared in level-zero/zes_api.h:3431
+// zesFabricPortGetState function as declared in level-zero/zes_api.h:3442
 func zesFabricPortGetState(HPort fabricPortHandle, PState *FabricPortState) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_fabric_port_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -489,7 +489,7 @@ func zesFabricPortGetState(HPort fabricPortHandle, PState *FabricPortState) core
 	return __v
 }
 
-// zesFabricPortGetThroughput function as declared in level-zero/zes_api.h:3463
+// zesFabricPortGetThroughput function as declared in level-zero/zes_api.h:3474
 func zesFabricPortGetThroughput(HPort fabricPortHandle, PThroughput *FabricPortThroughput) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPThroughput, _ := (*C.zes_fabric_port_throughput_t)(unsafe.Pointer(PThroughput)), cgoAllocsUnknown
@@ -498,7 +498,7 @@ func zesFabricPortGetThroughput(HPort fabricPortHandle, PThroughput *FabricPortT
 	return __v
 }
 
-// zesFabricPortGetFabricErrorCounters function as declared in level-zero/zes_api.h:3498
+// zesFabricPortGetFabricErrorCounters function as declared in level-zero/zes_api.h:3509
 func zesFabricPortGetFabricErrorCounters(HPort fabricPortHandle, PErrors *FabricPortErrorCounters) core.Result {
 	cHPort, _ := *(*C.zes_fabric_port_handle_t)(unsafe.Pointer(&HPort)), cgoAllocsUnknown
 	cPErrors, _ := (*C.zes_fabric_port_error_counters_t)(unsafe.Pointer(PErrors)), cgoAllocsUnknown
@@ -507,7 +507,7 @@ func zesFabricPortGetFabricErrorCounters(HPort fabricPortHandle, PErrors *Fabric
 	return __v
 }
 
-// zesFabricPortGetMultiPortThroughput function as declared in level-zero/zes_api.h:3530
+// zesFabricPortGetMultiPortThroughput function as declared in level-zero/zes_api.h:3541
 func zesFabricPortGetMultiPortThroughput(HDevice deviceHandle, NumPorts uint32, PhPort []fabricPortHandle, PThroughput []*FabricPortThroughput) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cNumPorts, _ := (C.uint32_t)(NumPorts), cgoAllocsUnknown
@@ -518,7 +518,7 @@ func zesFabricPortGetMultiPortThroughput(HDevice deviceHandle, NumPorts uint32, 
 	return __v
 }
 
-// zesDeviceEnumFans function as declared in level-zero/zes_api.h:3669
+// zesDeviceEnumFans function as declared in level-zero/zes_api.h:3680
 func zesDeviceEnumFans(HDevice deviceHandle, PCount *uint32, PhFan []fanHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -528,7 +528,7 @@ func zesDeviceEnumFans(HDevice deviceHandle, PCount *uint32, PhFan []fanHandle) 
 	return __v
 }
 
-// zesFanGetProperties function as declared in level-zero/zes_api.h:3710
+// zesFanGetProperties function as declared in level-zero/zes_api.h:3721
 func zesFanGetProperties(HFan fanHandle, PProperties *FanProperties) core.Result {
 	cHFan, _ := *(*C.zes_fan_handle_t)(unsafe.Pointer(&HFan)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_fan_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -537,7 +537,7 @@ func zesFanGetProperties(HFan fanHandle, PProperties *FanProperties) core.Result
 	return __v
 }
 
-// zesFanGetConfig function as declared in level-zero/zes_api.h:3742
+// zesFanGetConfig function as declared in level-zero/zes_api.h:3753
 func zesFanGetConfig(HFan fanHandle, PConfig *FanConfig) core.Result {
 	cHFan, _ := *(*C.zes_fan_handle_t)(unsafe.Pointer(&HFan)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_fan_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -546,7 +546,7 @@ func zesFanGetConfig(HFan fanHandle, PConfig *FanConfig) core.Result {
 	return __v
 }
 
-// zesFanSetDefaultMode function as declared in level-zero/zes_api.h:3773
+// zesFanSetDefaultMode function as declared in level-zero/zes_api.h:3784
 func zesFanSetDefaultMode(HFan fanHandle) core.Result {
 	cHFan, _ := *(*C.zes_fan_handle_t)(unsafe.Pointer(&HFan)), cgoAllocsUnknown
 	__ret := C.zesFanSetDefaultMode(cHFan)
@@ -554,7 +554,7 @@ func zesFanSetDefaultMode(HFan fanHandle) core.Result {
 	return __v
 }
 
-// zesFanSetFixedSpeedMode function as declared in level-zero/zes_api.h:3806
+// zesFanSetFixedSpeedMode function as declared in level-zero/zes_api.h:3817
 func zesFanSetFixedSpeedMode(HFan fanHandle, Speed *FanSpeed) core.Result {
 	cHFan, _ := *(*C.zes_fan_handle_t)(unsafe.Pointer(&HFan)), cgoAllocsUnknown
 	cSpeed, _ := (*C.zes_fan_speed_t)(unsafe.Pointer(Speed)), cgoAllocsUnknown
@@ -563,7 +563,7 @@ func zesFanSetFixedSpeedMode(HFan fanHandle, Speed *FanSpeed) core.Result {
 	return __v
 }
 
-// zesFanSetSpeedTableMode function as declared in level-zero/zes_api.h:3841
+// zesFanSetSpeedTableMode function as declared in level-zero/zes_api.h:3852
 func zesFanSetSpeedTableMode(HFan fanHandle, SpeedTable *FanSpeedTable) core.Result {
 	cHFan, _ := *(*C.zes_fan_handle_t)(unsafe.Pointer(&HFan)), cgoAllocsUnknown
 	cSpeedTable, _ := (*C.zes_fan_speed_table_t)(unsafe.Pointer(SpeedTable)), cgoAllocsUnknown
@@ -572,7 +572,7 @@ func zesFanSetSpeedTableMode(HFan fanHandle, SpeedTable *FanSpeedTable) core.Res
 	return __v
 }
 
-// zesFanGetState function as declared in level-zero/zes_api.h:3876
+// zesFanGetState function as declared in level-zero/zes_api.h:3887
 func zesFanGetState(HFan fanHandle, Units FanSpeedUnits, PSpeed *int32) core.Result {
 	cHFan, _ := *(*C.zes_fan_handle_t)(unsafe.Pointer(&HFan)), cgoAllocsUnknown
 	cUnits, _ := (C.zes_fan_speed_units_t)(Units), cgoAllocsUnknown
@@ -582,7 +582,7 @@ func zesFanGetState(HFan fanHandle, Units FanSpeedUnits, PSpeed *int32) core.Res
 	return __v
 }
 
-// zesDeviceEnumFirmwares function as declared in level-zero/zes_api.h:3936
+// zesDeviceEnumFirmwares function as declared in level-zero/zes_api.h:3947
 func zesDeviceEnumFirmwares(HDevice deviceHandle, PCount *uint32, PhFirmware []firmwareHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -592,7 +592,7 @@ func zesDeviceEnumFirmwares(HDevice deviceHandle, PCount *uint32, PhFirmware []f
 	return __v
 }
 
-// zesFirmwareGetProperties function as declared in level-zero/zes_api.h:3977
+// zesFirmwareGetProperties function as declared in level-zero/zes_api.h:3988
 func zesFirmwareGetProperties(HFirmware firmwareHandle, PProperties *FirmwareProperties) core.Result {
 	cHFirmware, _ := *(*C.zes_firmware_handle_t)(unsafe.Pointer(&HFirmware)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_firmware_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -601,7 +601,7 @@ func zesFirmwareGetProperties(HFirmware firmwareHandle, PProperties *FirmwarePro
 	return __v
 }
 
-// zesFirmwareFlash function as declared in level-zero/zes_api.h:4014
+// zesFirmwareFlash function as declared in level-zero/zes_api.h:4025
 func zesFirmwareFlash(HFirmware firmwareHandle, PImage unsafe.Pointer, Size uint32) core.Result {
 	cHFirmware, _ := *(*C.zes_firmware_handle_t)(unsafe.Pointer(&HFirmware)), cgoAllocsUnknown
 	cPImage, _ := PImage, cgoAllocsUnknown
@@ -611,7 +611,7 @@ func zesFirmwareFlash(HFirmware firmwareHandle, PImage unsafe.Pointer, Size uint
 	return __v
 }
 
-// zesFirmwareGetFlashProgress function as declared in level-zero/zes_api.h:4046
+// zesFirmwareGetFlashProgress function as declared in level-zero/zes_api.h:4057
 func zesFirmwareGetFlashProgress(HFirmware firmwareHandle, PCompletionPercent *uint32) core.Result {
 	cHFirmware, _ := *(*C.zes_firmware_handle_t)(unsafe.Pointer(&HFirmware)), cgoAllocsUnknown
 	cPCompletionPercent, _ := (*C.uint32_t)(unsafe.Pointer(PCompletionPercent)), cgoAllocsUnknown
@@ -620,7 +620,7 @@ func zesFirmwareGetFlashProgress(HFirmware firmwareHandle, PCompletionPercent *u
 	return __v
 }
 
-// zesFirmwareGetConsoleLogs function as declared in level-zero/zes_api.h:4080
+// zesFirmwareGetConsoleLogs function as declared in level-zero/zes_api.h:4091
 func zesFirmwareGetConsoleLogs(HFirmware firmwareHandle, PSize *uint64, PFirmwareLog *byte) core.Result {
 	cHFirmware, _ := *(*C.zes_firmware_handle_t)(unsafe.Pointer(&HFirmware)), cgoAllocsUnknown
 	cPSize, _ := (*C.size_t)(unsafe.Pointer(PSize)), cgoAllocsUnknown
@@ -630,7 +630,7 @@ func zesFirmwareGetConsoleLogs(HFirmware firmwareHandle, PSize *uint64, PFirmwar
 	return __v
 }
 
-// zesDeviceEnumFrequencyDomains function as declared in level-zero/zes_api.h:4318
+// zesDeviceEnumFrequencyDomains function as declared in level-zero/zes_api.h:4329
 func zesDeviceEnumFrequencyDomains(HDevice deviceHandle, PCount *uint32, PhFrequency []freqHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -640,7 +640,7 @@ func zesDeviceEnumFrequencyDomains(HDevice deviceHandle, PCount *uint32, PhFrequ
 	return __v
 }
 
-// zesFrequencyGetProperties function as declared in level-zero/zes_api.h:4359
+// zesFrequencyGetProperties function as declared in level-zero/zes_api.h:4370
 func zesFrequencyGetProperties(HFrequency freqHandle, PProperties *FreqProperties) core.Result {
 	cHFrequency, _ := *(*C.zes_freq_handle_t)(unsafe.Pointer(&HFrequency)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_freq_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -649,7 +649,7 @@ func zesFrequencyGetProperties(HFrequency freqHandle, PProperties *FreqPropertie
 	return __v
 }
 
-// zesFrequencyGetAvailableClocks function as declared in level-zero/zes_api.h:4393
+// zesFrequencyGetAvailableClocks function as declared in level-zero/zes_api.h:4404
 func zesFrequencyGetAvailableClocks(HFrequency freqHandle, PCount *uint32, PhFrequency []float64) core.Result {
 	cHFrequency, _ := *(*C.zes_freq_handle_t)(unsafe.Pointer(&HFrequency)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -659,7 +659,7 @@ func zesFrequencyGetAvailableClocks(HFrequency freqHandle, PCount *uint32, PhFre
 	return __v
 }
 
-// zesFrequencyGetRange function as declared in level-zero/zes_api.h:4432
+// zesFrequencyGetRange function as declared in level-zero/zes_api.h:4443
 func zesFrequencyGetRange(HFrequency freqHandle, PLimits *FreqRange) core.Result {
 	cHFrequency, _ := *(*C.zes_freq_handle_t)(unsafe.Pointer(&HFrequency)), cgoAllocsUnknown
 	cPLimits, _ := (*C.zes_freq_range_t)(unsafe.Pointer(PLimits)), cgoAllocsUnknown
@@ -668,7 +668,7 @@ func zesFrequencyGetRange(HFrequency freqHandle, PLimits *FreqRange) core.Result
 	return __v
 }
 
-// zesFrequencySetRange function as declared in level-zero/zes_api.h:4468
+// zesFrequencySetRange function as declared in level-zero/zes_api.h:4479
 func zesFrequencySetRange(HFrequency freqHandle, PLimits *FreqRange) core.Result {
 	cHFrequency, _ := *(*C.zes_freq_handle_t)(unsafe.Pointer(&HFrequency)), cgoAllocsUnknown
 	cPLimits, _ := (*C.zes_freq_range_t)(unsafe.Pointer(PLimits)), cgoAllocsUnknown
@@ -677,7 +677,7 @@ func zesFrequencySetRange(HFrequency freqHandle, PLimits *FreqRange) core.Result
 	return __v
 }
 
-// zesFrequencyGetState function as declared in level-zero/zes_api.h:4501
+// zesFrequencyGetState function as declared in level-zero/zes_api.h:4512
 func zesFrequencyGetState(HFrequency freqHandle, PState *FreqState) core.Result {
 	cHFrequency, _ := *(*C.zes_freq_handle_t)(unsafe.Pointer(&HFrequency)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_freq_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -686,7 +686,7 @@ func zesFrequencyGetState(HFrequency freqHandle, PState *FreqState) core.Result 
 	return __v
 }
 
-// zesFrequencyGetThrottleTime function as declared in level-zero/zes_api.h:4532
+// zesFrequencyGetThrottleTime function as declared in level-zero/zes_api.h:4543
 func zesFrequencyGetThrottleTime(HFrequency freqHandle, PThrottleTime *FreqThrottleTime) core.Result {
 	cHFrequency, _ := *(*C.zes_freq_handle_t)(unsafe.Pointer(&HFrequency)), cgoAllocsUnknown
 	cPThrottleTime, _ := (*C.zes_freq_throttle_time_t)(unsafe.Pointer(PThrottleTime)), cgoAllocsUnknown
@@ -695,7 +695,7 @@ func zesFrequencyGetThrottleTime(HFrequency freqHandle, PThrottleTime *FreqThrot
 	return __v
 }
 
-// zesDeviceEnumLeds function as declared in level-zero/zes_api.h:5023
+// zesDeviceEnumLeds function as declared in level-zero/zes_api.h:5034
 func zesDeviceEnumLeds(HDevice deviceHandle, PCount *uint32, PhLed []ledHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -705,7 +705,7 @@ func zesDeviceEnumLeds(HDevice deviceHandle, PCount *uint32, PhLed []ledHandle) 
 	return __v
 }
 
-// zesLedGetProperties function as declared in level-zero/zes_api.h:5064
+// zesLedGetProperties function as declared in level-zero/zes_api.h:5075
 func zesLedGetProperties(HLed ledHandle, PProperties *LedProperties) core.Result {
 	cHLed, _ := *(*C.zes_led_handle_t)(unsafe.Pointer(&HLed)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_led_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -714,7 +714,7 @@ func zesLedGetProperties(HLed ledHandle, PProperties *LedProperties) core.Result
 	return __v
 }
 
-// zesLedGetState function as declared in level-zero/zes_api.h:5095
+// zesLedGetState function as declared in level-zero/zes_api.h:5106
 func zesLedGetState(HLed ledHandle, PState *LedState) core.Result {
 	cHLed, _ := *(*C.zes_led_handle_t)(unsafe.Pointer(&HLed)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_led_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -723,7 +723,7 @@ func zesLedGetState(HLed ledHandle, PState *LedState) core.Result {
 	return __v
 }
 
-// zesLedSetState function as declared in level-zero/zes_api.h:5125
+// zesLedSetState function as declared in level-zero/zes_api.h:5136
 func zesLedSetState(HLed ledHandle, Enable byte) core.Result {
 	cHLed, _ := *(*C.zes_led_handle_t)(unsafe.Pointer(&HLed)), cgoAllocsUnknown
 	cEnable, _ := (C.ze_bool_t)(Enable), cgoAllocsUnknown
@@ -732,7 +732,7 @@ func zesLedSetState(HLed ledHandle, Enable byte) core.Result {
 	return __v
 }
 
-// zesLedSetColor function as declared in level-zero/zes_api.h:5158
+// zesLedSetColor function as declared in level-zero/zes_api.h:5169
 func zesLedSetColor(HLed ledHandle, PColor *LedColor) core.Result {
 	cHLed, _ := *(*C.zes_led_handle_t)(unsafe.Pointer(&HLed)), cgoAllocsUnknown
 	cPColor, _ := (*C.zes_led_color_t)(unsafe.Pointer(PColor)), cgoAllocsUnknown
@@ -741,7 +741,7 @@ func zesLedSetColor(HLed ledHandle, PColor *LedColor) core.Result {
 	return __v
 }
 
-// zesDeviceEnumMemoryModules function as declared in level-zero/zes_api.h:5334
+// zesDeviceEnumMemoryModules function as declared in level-zero/zes_api.h:5345
 func zesDeviceEnumMemoryModules(HDevice deviceHandle, PCount *uint32, PhMemory []memHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -751,7 +751,7 @@ func zesDeviceEnumMemoryModules(HDevice deviceHandle, PCount *uint32, PhMemory [
 	return __v
 }
 
-// zesMemoryGetProperties function as declared in level-zero/zes_api.h:5375
+// zesMemoryGetProperties function as declared in level-zero/zes_api.h:5386
 func zesMemoryGetProperties(HMemory memHandle, PProperties *MemProperties) core.Result {
 	cHMemory, _ := *(*C.zes_mem_handle_t)(unsafe.Pointer(&HMemory)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_mem_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -760,7 +760,7 @@ func zesMemoryGetProperties(HMemory memHandle, PProperties *MemProperties) core.
 	return __v
 }
 
-// zesMemoryGetState function as declared in level-zero/zes_api.h:5406
+// zesMemoryGetState function as declared in level-zero/zes_api.h:5417
 func zesMemoryGetState(HMemory memHandle, PState *MemState) core.Result {
 	cHMemory, _ := *(*C.zes_mem_handle_t)(unsafe.Pointer(&HMemory)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_mem_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -769,7 +769,7 @@ func zesMemoryGetState(HMemory memHandle, PState *MemState) core.Result {
 	return __v
 }
 
-// zesMemoryGetBandwidth function as declared in level-zero/zes_api.h:5438
+// zesMemoryGetBandwidth function as declared in level-zero/zes_api.h:5449
 func zesMemoryGetBandwidth(HMemory memHandle, PBandwidth *MemBandwidth) core.Result {
 	cHMemory, _ := *(*C.zes_mem_handle_t)(unsafe.Pointer(&HMemory)), cgoAllocsUnknown
 	cPBandwidth, _ := (*C.zes_mem_bandwidth_t)(unsafe.Pointer(PBandwidth)), cgoAllocsUnknown
@@ -778,7 +778,7 @@ func zesMemoryGetBandwidth(HMemory memHandle, PBandwidth *MemBandwidth) core.Res
 	return __v
 }
 
-// zesDeviceEnumPerformanceFactorDomains function as declared in level-zero/zes_api.h:5494
+// zesDeviceEnumPerformanceFactorDomains function as declared in level-zero/zes_api.h:5505
 func zesDeviceEnumPerformanceFactorDomains(HDevice deviceHandle, PCount *uint32, PhPerf []perfHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -788,7 +788,7 @@ func zesDeviceEnumPerformanceFactorDomains(HDevice deviceHandle, PCount *uint32,
 	return __v
 }
 
-// zesPerformanceFactorGetProperties function as declared in level-zero/zes_api.h:5535
+// zesPerformanceFactorGetProperties function as declared in level-zero/zes_api.h:5546
 func zesPerformanceFactorGetProperties(HPerf perfHandle, PProperties *PerfProperties) core.Result {
 	cHPerf, _ := *(*C.zes_perf_handle_t)(unsafe.Pointer(&HPerf)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_perf_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -797,7 +797,7 @@ func zesPerformanceFactorGetProperties(HPerf perfHandle, PProperties *PerfProper
 	return __v
 }
 
-// zesPerformanceFactorGetConfig function as declared in level-zero/zes_api.h:5567
+// zesPerformanceFactorGetConfig function as declared in level-zero/zes_api.h:5578
 func zesPerformanceFactorGetConfig(HPerf perfHandle, PFactor *float64) core.Result {
 	cHPerf, _ := *(*C.zes_perf_handle_t)(unsafe.Pointer(&HPerf)), cgoAllocsUnknown
 	cPFactor, _ := (*C.double)(unsafe.Pointer(PFactor)), cgoAllocsUnknown
@@ -806,7 +806,7 @@ func zesPerformanceFactorGetConfig(HPerf perfHandle, PFactor *float64) core.Resu
 	return __v
 }
 
-// zesPerformanceFactorSetConfig function as declared in level-zero/zes_api.h:5602
+// zesPerformanceFactorSetConfig function as declared in level-zero/zes_api.h:5613
 func zesPerformanceFactorSetConfig(HPerf perfHandle, Factor float64) core.Result {
 	cHPerf, _ := *(*C.zes_perf_handle_t)(unsafe.Pointer(&HPerf)), cgoAllocsUnknown
 	cFactor, _ := (C.double)(Factor), cgoAllocsUnknown
@@ -815,7 +815,7 @@ func zesPerformanceFactorSetConfig(HPerf perfHandle, Factor float64) core.Result
 	return __v
 }
 
-// zesDeviceEnumPowerDomains function as declared in level-zero/zes_api.h:5811
+// zesDeviceEnumPowerDomains function as declared in level-zero/zes_api.h:5822
 func zesDeviceEnumPowerDomains(HDevice deviceHandle, PCount *uint32, PhPower []pwrHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -825,7 +825,7 @@ func zesDeviceEnumPowerDomains(HDevice deviceHandle, PCount *uint32, PhPower []p
 	return __v
 }
 
-// zesPowerGetProperties function as declared in level-zero/zes_api.h:5885
+// zesPowerGetProperties function as declared in level-zero/zes_api.h:5896
 func zesPowerGetProperties(HPower pwrHandle, PProperties *PowerBaseProperties) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_power_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -834,7 +834,7 @@ func zesPowerGetProperties(HPower pwrHandle, PProperties *PowerBaseProperties) c
 	return __v
 }
 
-// zesPowerGetEnergyCounter function as declared in level-zero/zes_api.h:5916
+// zesPowerGetEnergyCounter function as declared in level-zero/zes_api.h:5927
 func zesPowerGetEnergyCounter(HPower pwrHandle, PEnergy *PowerEnergyCounter) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cPEnergy, _ := (*C.zes_power_energy_counter_t)(unsafe.Pointer(PEnergy)), cgoAllocsUnknown
@@ -843,7 +843,7 @@ func zesPowerGetEnergyCounter(HPower pwrHandle, PEnergy *PowerEnergyCounter) cor
 	return __v
 }
 
-// zesPowerGetEnergyThreshold function as declared in level-zero/zes_api.h:6022
+// zesPowerGetEnergyThreshold function as declared in level-zero/zes_api.h:6033
 func zesPowerGetEnergyThreshold(HPower pwrHandle, PThreshold *EnergyThreshold) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cPThreshold, _ := (*C.zes_energy_threshold_t)(unsafe.Pointer(PThreshold)), cgoAllocsUnknown
@@ -852,7 +852,7 @@ func zesPowerGetEnergyThreshold(HPower pwrHandle, PThreshold *EnergyThreshold) c
 	return __v
 }
 
-// zesPowerSetEnergyThreshold function as declared in level-zero/zes_api.h:6069
+// zesPowerSetEnergyThreshold function as declared in level-zero/zes_api.h:6080
 func zesPowerSetEnergyThreshold(HPower pwrHandle, Threshold float64) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cThreshold, _ := (C.double)(Threshold), cgoAllocsUnknown
@@ -861,7 +861,17 @@ func zesPowerSetEnergyThreshold(HPower pwrHandle, Threshold float64) core.Result
 	return __v
 }
 
-// zesDeviceEnumPsus function as declared in level-zero/zes_api.h:6153
+// zesPowerGetUsage function as declared in level-zero/zes_api.h:6114
+func zesPowerGetUsage(HPower pwrHandle, PInstantPower *uint32, PAveragePower *uint32) core.Result {
+	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
+	cPInstantPower, _ := (*C.uint32_t)(unsafe.Pointer(PInstantPower)), cgoAllocsUnknown
+	cPAveragePower, _ := (*C.uint32_t)(unsafe.Pointer(PAveragePower)), cgoAllocsUnknown
+	__ret := C.zesPowerGetUsage(cHPower, cPInstantPower, cPAveragePower)
+	__v := (core.Result)(__ret)
+	return __v
+}
+
+// zesDeviceEnumPsus function as declared in level-zero/zes_api.h:6199
 func zesDeviceEnumPsus(HDevice deviceHandle, PCount *uint32, PhPsu []psuHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -871,7 +881,7 @@ func zesDeviceEnumPsus(HDevice deviceHandle, PCount *uint32, PhPsu []psuHandle) 
 	return __v
 }
 
-// zesPsuGetProperties function as declared in level-zero/zes_api.h:6194
+// zesPsuGetProperties function as declared in level-zero/zes_api.h:6240
 func zesPsuGetProperties(HPsu psuHandle, PProperties *PsuProperties) core.Result {
 	cHPsu, _ := *(*C.zes_psu_handle_t)(unsafe.Pointer(&HPsu)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_psu_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -880,7 +890,7 @@ func zesPsuGetProperties(HPsu psuHandle, PProperties *PsuProperties) core.Result
 	return __v
 }
 
-// zesPsuGetState function as declared in level-zero/zes_api.h:6225
+// zesPsuGetState function as declared in level-zero/zes_api.h:6271
 func zesPsuGetState(HPsu psuHandle, PState *PsuState) core.Result {
 	cHPsu, _ := *(*C.zes_psu_handle_t)(unsafe.Pointer(&HPsu)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_psu_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
@@ -889,7 +899,7 @@ func zesPsuGetState(HPsu psuHandle, PState *PsuState) core.Result {
 	return __v
 }
 
-// zesDeviceEnumRasErrorSets function as declared in level-zero/zes_api.h:6362
+// zesDeviceEnumRasErrorSets function as declared in level-zero/zes_api.h:6408
 func zesDeviceEnumRasErrorSets(HDevice deviceHandle, PCount *uint32, PhRas []rasHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -899,7 +909,7 @@ func zesDeviceEnumRasErrorSets(HDevice deviceHandle, PCount *uint32, PhRas []ras
 	return __v
 }
 
-// zesRasGetProperties function as declared in level-zero/zes_api.h:6405
+// zesRasGetProperties function as declared in level-zero/zes_api.h:6451
 func zesRasGetProperties(HRas rasHandle, PProperties *RasProperties) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_ras_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -908,7 +918,7 @@ func zesRasGetProperties(HRas rasHandle, PProperties *RasProperties) core.Result
 	return __v
 }
 
-// zesRasGetConfig function as declared in level-zero/zes_api.h:6445
+// zesRasGetConfig function as declared in level-zero/zes_api.h:6493
 func zesRasGetConfig(HRas rasHandle, PConfig *RasConfig) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_ras_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -917,7 +927,7 @@ func zesRasGetConfig(HRas rasHandle, PConfig *RasConfig) core.Result {
 	return __v
 }
 
-// zesRasSetConfig function as declared in level-zero/zes_api.h:6490
+// zesRasSetConfig function as declared in level-zero/zes_api.h:6540
 func zesRasSetConfig(HRas rasHandle, PConfig *RasConfig) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_ras_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -926,7 +936,7 @@ func zesRasSetConfig(HRas rasHandle, PConfig *RasConfig) core.Result {
 	return __v
 }
 
-// zesRasGetState function as declared in level-zero/zes_api.h:6525
+// zesRasGetState function as declared in level-zero/zes_api.h:6575
 func zesRasGetState(HRas rasHandle, Clear byte, PState *RasState) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cClear, _ := (C.ze_bool_t)(Clear), cgoAllocsUnknown
@@ -936,7 +946,7 @@ func zesRasGetState(HRas rasHandle, Clear byte, PState *RasState) core.Result {
 	return __v
 }
 
-// zesDeviceEnumSchedulers function as declared in level-zero/zes_api.h:6650
+// zesDeviceEnumSchedulers function as declared in level-zero/zes_api.h:6700
 func zesDeviceEnumSchedulers(HDevice deviceHandle, PCount *uint32, PhScheduler []schedHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -946,7 +956,7 @@ func zesDeviceEnumSchedulers(HDevice deviceHandle, PCount *uint32, PhScheduler [
 	return __v
 }
 
-// zesSchedulerGetProperties function as declared in level-zero/zes_api.h:6691
+// zesSchedulerGetProperties function as declared in level-zero/zes_api.h:6741
 func zesSchedulerGetProperties(HScheduler schedHandle, PProperties *SchedProperties) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_sched_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -955,7 +965,7 @@ func zesSchedulerGetProperties(HScheduler schedHandle, PProperties *SchedPropert
 	return __v
 }
 
-// zesSchedulerGetCurrentMode function as declared in level-zero/zes_api.h:6723
+// zesSchedulerGetCurrentMode function as declared in level-zero/zes_api.h:6773
 func zesSchedulerGetCurrentMode(HScheduler schedHandle, PMode *SchedMode) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cPMode, _ := (*C.zes_sched_mode_t)(unsafe.Pointer(PMode)), cgoAllocsUnknown
@@ -964,7 +974,7 @@ func zesSchedulerGetCurrentMode(HScheduler schedHandle, PMode *SchedMode) core.R
 	return __v
 }
 
-// zesSchedulerGetTimeoutModeProperties function as declared in level-zero/zes_api.h:6755
+// zesSchedulerGetTimeoutModeProperties function as declared in level-zero/zes_api.h:6805
 func zesSchedulerGetTimeoutModeProperties(HScheduler schedHandle, GetDefaults byte, PConfig *SchedTimeoutProperties) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cGetDefaults, _ := (C.ze_bool_t)(GetDefaults), cgoAllocsUnknown
@@ -974,7 +984,7 @@ func zesSchedulerGetTimeoutModeProperties(HScheduler schedHandle, GetDefaults by
 	return __v
 }
 
-// zesSchedulerGetTimesliceModeProperties function as declared in level-zero/zes_api.h:6789
+// zesSchedulerGetTimesliceModeProperties function as declared in level-zero/zes_api.h:6839
 func zesSchedulerGetTimesliceModeProperties(HScheduler schedHandle, GetDefaults byte, PConfig *SchedTimesliceProperties) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cGetDefaults, _ := (C.ze_bool_t)(GetDefaults), cgoAllocsUnknown
@@ -984,7 +994,7 @@ func zesSchedulerGetTimesliceModeProperties(HScheduler schedHandle, GetDefaults 
 	return __v
 }
 
-// zesSchedulerSetTimeoutMode function as declared in level-zero/zes_api.h:6830
+// zesSchedulerSetTimeoutMode function as declared in level-zero/zes_api.h:6880
 func zesSchedulerSetTimeoutMode(HScheduler schedHandle, PProperties *SchedTimeoutProperties, PNeedReload *byte) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_sched_timeout_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -994,7 +1004,7 @@ func zesSchedulerSetTimeoutMode(HScheduler schedHandle, PProperties *SchedTimeou
 	return __v
 }
 
-// zesSchedulerSetTimesliceMode function as declared in level-zero/zes_api.h:6870
+// zesSchedulerSetTimesliceMode function as declared in level-zero/zes_api.h:6920
 func zesSchedulerSetTimesliceMode(HScheduler schedHandle, PProperties *SchedTimesliceProperties, PNeedReload *byte) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_sched_timeslice_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -1004,7 +1014,7 @@ func zesSchedulerSetTimesliceMode(HScheduler schedHandle, PProperties *SchedTime
 	return __v
 }
 
-// zesSchedulerSetExclusiveMode function as declared in level-zero/zes_api.h:6909
+// zesSchedulerSetExclusiveMode function as declared in level-zero/zes_api.h:6959
 func zesSchedulerSetExclusiveMode(HScheduler schedHandle, PNeedReload *byte) core.Result {
 	cHScheduler, _ := *(*C.zes_sched_handle_t)(unsafe.Pointer(&HScheduler)), cgoAllocsUnknown
 	cPNeedReload, _ := (*C.ze_bool_t)(unsafe.Pointer(PNeedReload)), cgoAllocsUnknown
@@ -1013,7 +1023,7 @@ func zesSchedulerSetExclusiveMode(HScheduler schedHandle, PNeedReload *byte) cor
 	return __v
 }
 
-// zesDeviceEnumStandbyDomains function as declared in level-zero/zes_api.h:7022
+// zesDeviceEnumStandbyDomains function as declared in level-zero/zes_api.h:7072
 func zesDeviceEnumStandbyDomains(HDevice deviceHandle, PCount *uint32, PhStandby []standbyHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -1023,7 +1033,7 @@ func zesDeviceEnumStandbyDomains(HDevice deviceHandle, PCount *uint32, PhStandby
 	return __v
 }
 
-// zesStandbyGetProperties function as declared in level-zero/zes_api.h:7063
+// zesStandbyGetProperties function as declared in level-zero/zes_api.h:7113
 func zesStandbyGetProperties(HStandby standbyHandle, PProperties *StandbyProperties) core.Result {
 	cHStandby, _ := *(*C.zes_standby_handle_t)(unsafe.Pointer(&HStandby)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_standby_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -1032,7 +1042,7 @@ func zesStandbyGetProperties(HStandby standbyHandle, PProperties *StandbyPropert
 	return __v
 }
 
-// zesStandbyGetMode function as declared in level-zero/zes_api.h:7094
+// zesStandbyGetMode function as declared in level-zero/zes_api.h:7144
 func zesStandbyGetMode(HStandby standbyHandle, PMode *StandbyPromoMode) core.Result {
 	cHStandby, _ := *(*C.zes_standby_handle_t)(unsafe.Pointer(&HStandby)), cgoAllocsUnknown
 	cPMode, _ := (*C.zes_standby_promo_mode_t)(unsafe.Pointer(PMode)), cgoAllocsUnknown
@@ -1041,7 +1051,7 @@ func zesStandbyGetMode(HStandby standbyHandle, PMode *StandbyPromoMode) core.Res
 	return __v
 }
 
-// zesStandbySetMode function as declared in level-zero/zes_api.h:7127
+// zesStandbySetMode function as declared in level-zero/zes_api.h:7177
 func zesStandbySetMode(HStandby standbyHandle, Mode StandbyPromoMode) core.Result {
 	cHStandby, _ := *(*C.zes_standby_handle_t)(unsafe.Pointer(&HStandby)), cgoAllocsUnknown
 	cMode, _ := (C.zes_standby_promo_mode_t)(Mode), cgoAllocsUnknown
@@ -1050,7 +1060,7 @@ func zesStandbySetMode(HStandby standbyHandle, Mode StandbyPromoMode) core.Resul
 	return __v
 }
 
-// zesDeviceEnumTemperatureSensors function as declared in level-zero/zes_api.h:7235
+// zesDeviceEnumTemperatureSensors function as declared in level-zero/zes_api.h:7285
 func zesDeviceEnumTemperatureSensors(HDevice deviceHandle, PCount *uint32, PhTemperature []tempHandle) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -1060,7 +1070,7 @@ func zesDeviceEnumTemperatureSensors(HDevice deviceHandle, PCount *uint32, PhTem
 	return __v
 }
 
-// zesTemperatureGetProperties function as declared in level-zero/zes_api.h:7276
+// zesTemperatureGetProperties function as declared in level-zero/zes_api.h:7326
 func zesTemperatureGetProperties(HTemperature tempHandle, PProperties *TempProperties) core.Result {
 	cHTemperature, _ := *(*C.zes_temp_handle_t)(unsafe.Pointer(&HTemperature)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_temp_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
@@ -1069,7 +1079,7 @@ func zesTemperatureGetProperties(HTemperature tempHandle, PProperties *TempPrope
 	return __v
 }
 
-// zesTemperatureGetConfig function as declared in level-zero/zes_api.h:7311
+// zesTemperatureGetConfig function as declared in level-zero/zes_api.h:7361
 func zesTemperatureGetConfig(HTemperature tempHandle, PConfig *TempConfig) core.Result {
 	cHTemperature, _ := *(*C.zes_temp_handle_t)(unsafe.Pointer(&HTemperature)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_temp_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -1078,7 +1088,7 @@ func zesTemperatureGetConfig(HTemperature tempHandle, PConfig *TempConfig) core.
 	return __v
 }
 
-// zesTemperatureSetConfig function as declared in level-zero/zes_api.h:7361
+// zesTemperatureSetConfig function as declared in level-zero/zes_api.h:7411
 func zesTemperatureSetConfig(HTemperature tempHandle, PConfig *TempConfig) core.Result {
 	cHTemperature, _ := *(*C.zes_temp_handle_t)(unsafe.Pointer(&HTemperature)), cgoAllocsUnknown
 	cPConfig, _ := (*C.zes_temp_config_t)(unsafe.Pointer(PConfig)), cgoAllocsUnknown
@@ -1087,7 +1097,7 @@ func zesTemperatureSetConfig(HTemperature tempHandle, PConfig *TempConfig) core.
 	return __v
 }
 
-// zesTemperatureGetState function as declared in level-zero/zes_api.h:7392
+// zesTemperatureGetState function as declared in level-zero/zes_api.h:7442
 func zesTemperatureGetState(HTemperature tempHandle, PTemperature *float64) core.Result {
 	cHTemperature, _ := *(*C.zes_temp_handle_t)(unsafe.Pointer(&HTemperature)), cgoAllocsUnknown
 	cPTemperature, _ := (*C.double)(unsafe.Pointer(PTemperature)), cgoAllocsUnknown
@@ -1096,7 +1106,7 @@ func zesTemperatureGetState(HTemperature tempHandle, PTemperature *float64) core
 	return __v
 }
 
-// zesDevicePciLinkSpeedUpdateExt function as declared in level-zero/zes_api.h:7514
+// zesDevicePciLinkSpeedUpdateExt function as declared in level-zero/zes_api.h:7564
 func zesDevicePciLinkSpeedUpdateExt(HDevice deviceHandle, ShouldDowngrade byte, PendingAction *DeviceAction) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cShouldDowngrade, _ := (C.ze_bool_t)(ShouldDowngrade), cgoAllocsUnknown
@@ -1106,7 +1116,7 @@ func zesDevicePciLinkSpeedUpdateExt(HDevice deviceHandle, ShouldDowngrade byte, 
 	return __v
 }
 
-// zesPowerGetLimitsExt function as declared in level-zero/zes_api.h:7620
+// zesPowerGetLimitsExt function as declared in level-zero/zes_api.h:7670
 func zesPowerGetLimitsExt(HPower pwrHandle, PCount *uint32, PSustained []PowerLimitExtDesc) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -1116,7 +1126,7 @@ func zesPowerGetLimitsExt(HPower pwrHandle, PCount *uint32, PSustained []PowerLi
 	return __v
 }
 
-// zesPowerSetLimitsExt function as declared in level-zero/zes_api.h:7669
+// zesPowerSetLimitsExt function as declared in level-zero/zes_api.h:7719
 func zesPowerSetLimitsExt(HPower pwrHandle, PCount *uint32, PSustained []PowerLimitExtDesc) core.Result {
 	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -1126,7 +1136,25 @@ func zesPowerSetLimitsExt(HPower pwrHandle, PCount *uint32, PSustained []PowerLi
 	return __v
 }
 
-// zesEngineGetActivityExt function as declared in level-zero/zes_api.h:7749
+// zesPowerGetLimitsExt2 function as declared in level-zero/zes_api.h:7753
+func zesPowerGetLimitsExt2(HPower pwrHandle, PLimit *uint32) core.Result {
+	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
+	cPLimit, _ := (*C.uint32_t)(unsafe.Pointer(PLimit)), cgoAllocsUnknown
+	__ret := C.zesPowerGetLimitsExt2(cHPower, cPLimit)
+	__v := (core.Result)(__ret)
+	return __v
+}
+
+// zesPowerSetLimitsExt2 function as declared in level-zero/zes_api.h:7785
+func zesPowerSetLimitsExt2(HPower pwrHandle, Limit uint32) core.Result {
+	cHPower, _ := *(*C.zes_pwr_handle_t)(unsafe.Pointer(&HPower)), cgoAllocsUnknown
+	cLimit, _ := (C.uint32_t)(Limit), cgoAllocsUnknown
+	__ret := C.zesPowerSetLimitsExt2(cHPower, cLimit)
+	__v := (core.Result)(__ret)
+	return __v
+}
+
+// zesEngineGetActivityExt function as declared in level-zero/zes_api.h:7864
 func zesEngineGetActivityExt(HEngine engineHandle, PCount *uint32, PStats []EngineStats) core.Result {
 	cHEngine, _ := *(*C.zes_engine_handle_t)(unsafe.Pointer(&HEngine)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -1136,7 +1164,7 @@ func zesEngineGetActivityExt(HEngine engineHandle, PCount *uint32, PStats []Engi
 	return __v
 }
 
-// zesRasGetStateExp function as declared in level-zero/zes_api.h:7850
+// zesRasGetStateExp function as declared in level-zero/zes_api.h:7995
 func zesRasGetStateExp(HRas rasHandle, PCount *uint32, PState []RasStateExp) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -1146,7 +1174,7 @@ func zesRasGetStateExp(HRas rasHandle, PCount *uint32, PState []RasStateExp) cor
 	return __v
 }
 
-// zesRasClearStateExp function as declared in level-zero/zes_api.h:7896
+// zesRasClearStateExp function as declared in level-zero/zes_api.h:8041
 func zesRasClearStateExp(HRas rasHandle, Category RasErrorCategoryExp) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cCategory, _ := (C.zes_ras_error_category_exp_t)(Category), cgoAllocsUnknown
