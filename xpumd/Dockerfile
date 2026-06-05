@@ -109,7 +109,7 @@ RUN ./copy-files-and-package-info.sh /out \
         /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
         /usr/local/lib/libigc.so.2
 
-# libigsc is source-built (not a DEB package): copy manually and add a synthetic dpkg status entry for scanners
+# libigsc and libmetee are source-built (not DEB packages): copy manually and add synthetic dpkg status entries for scanners
 RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.0 \
                /out/usr/lib/x86_64-linux-gnu/libigsc.so.0 && \
     /usr/bin/echo -e "\
@@ -119,6 +119,13 @@ Architecture: amd64\n\
 Version: ${IGSC_VERSION#V}\n\
 Homepage: https://github.com/intel/igsc\n\
 Description: Intel(R) Graphics System Controller Firmware Update Library\n\
+\n\
+Package: libmetee0\n\
+Status: install ok installed\n\
+Architecture: amd64\n\
+Version: ${METEE_VERSION}\n\
+Homepage: https://github.com/intel/metee\n\
+Description: Intel(R) ME TEE Library (statically linked to libigsc)\n\
 \n" >> /out/var/lib/dpkg/status
 
 # The final image
