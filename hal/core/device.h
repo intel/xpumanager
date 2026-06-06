@@ -20,7 +20,6 @@
 #include "memory.h"
 #include "metric.h"
 #include "pci.h"
-#include "performance.h"
 #include "power.h"
 #include "sysprocess.h"
 #include "ras.h"
@@ -100,7 +99,6 @@ private:
 	firmware *firmwareInstance;
 	frequency frequencyInstance;
 	memory memoryInstance;
-	performance performanceInstance;
 	power powerInstance;
 	ras rasInstance;
 	scheduler schedulerInstance;
@@ -165,7 +163,6 @@ public:
 	firmware *getFirmware() { return firmwareInstance; }
 	frequency *getFrequency() { return &frequencyInstance; }
 	memory *getMemory() { return &memoryInstance; }
-	performance *getPerformance() { return &performanceInstance; }
 	power *getPower() { return &powerInstance; }
 	ras *getRAS() { return &rasInstance; }
 	scheduler *getScheduler() { return &schedulerInstance; }
