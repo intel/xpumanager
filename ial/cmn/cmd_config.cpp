@@ -21,7 +21,6 @@
 #include <power.h>
 #include <powerexp.h>
 #include <scheduler.h>
-#include <performance.h>
 #include <standby.h>
 #include <stdexcept>
 #include <sstream>
@@ -55,7 +54,6 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::POWERLIMIT, {.func = &cmdConfig::setPowerLimit}},
 	{configCmdType::STANDBYMODE, {.func = &cmdConfig::setStandby}},
 	{configCmdType::SCHEDULERMODE, {.func = &cmdConfig::setScheduler}},
-	{configCmdType::PERFORMANCEFACTOR, {.func = &cmdConfig::setPerformanceFactor}},
 	{configCmdType::MEMORYECC, {.func = &cmdConfig::setMemoryEcc}},
 	{configCmdType::PCIEDOWNGRADE, {.func = &cmdConfig::setPCIeGenUpdate}},
 	{configCmdType::RESET, {.func = &cmdConfig::resetDevice}},
@@ -627,16 +625,12 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s config [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING,
-							   "%s config --device [deviceId] -t [tileId] --frequencyrange [minFrequency,maxFrequency]",
-							   progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencyrange [minFrequency,maxFrequency]",
+				progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --powerlimit [powerValue]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config --device [deviceId] -t [tileId] --standby [standbyMode]", progName.c_str()));
-	helpList.push_back(
-		helpCmd(HEADING, "%s config --device [deviceId] -t [tileId] --scheduler [schedulerMode]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING,
-							   "%s config --device [deviceId] -t [tileId] --performancefactor [engineType,factorValue]",
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --standby [standbyMode]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --scheduler [schedulerMode]",
 							   progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] --memoryecc [0|1] 0:disable; 1:enable", progName.c_str()));
@@ -665,13 +659,15 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
-	helpList.push_back(helpCmd(HEADING, "--frequencyrange            GPU tile-level core frequency range"));
+	helpList.push_back(helpCmd(
+		HEADING, "--frequencyrange            Core frequency range (MHz). Applies to all tiles when -t is omitted"));
 	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));
-	helpList.push_back(
-		helpCmd(HEADING, "--standby                   Tile-level standby mode. Valid options: \"default\"; \"never\""));
-	helpList.push_back(
-		helpCmd(HEADING, "--scheduler                 Tile-level scheduler mode. Value options: "
-						 "\"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\""));
+	helpList.push_back(helpCmd(
+		HEADING, "--standby                   Standby mode (device-level). Valid options: \"default\"; \"never\""));
+	helpList.push_back(helpCmd(
+		HEADING,
+		"--scheduler                 Scheduler mode. Applies to all tiles when -t is omitted. "
+		"Value options: \"timeout\",timeoutValue (us); \"timeslice\",interval (us),yieldtimeout (us);\"exclusive\""));
 	helpList.push_back(helpCmd(SUB_HEADING, "The valid range of all time values (us) is from 5000 to 100,000,000."));
 	helpList.push_back(helpCmd(HEADING, "--reset                     Reset device by SBR (Secondary Bus Reset)"));
 	helpList.push_back(helpCmd(SUB_HEADING, "For Intel(R) Max Series GPU, when SR-IOV is enabled, please add "
@@ -690,12 +686,6 @@ void cmdConfig::help(HELP helpType)
 		helpCmd(HEADING, "--force-reset-gpus          Proceed with --coldreset even if other PCI devices share"));
 	helpList.push_back(helpCmd(SUB_HEADING, "the PCIe slot. All devices on the slot will be reset together."));
 	helpList.push_back(helpCmd(HEADING, "--clear-ras-errors          Clear all RAS error counters for the device"));
-	helpList.push_back(helpCmd(HEADING, "--performancefactor         Set the tile-level performance factor. Valid "
-										"options: \"compute/media\",factorValue. The factor value should be"));
-	helpList.push_back(helpCmd(SUB_HEADING, "between 0 to 100. 100 means that the workload is completely compute "
-											"bounded and requires very little support from the memory support"));
-	helpList.push_back(helpCmd(SUB_HEADING, "0 means that the workload is completely memory bounded and the "
-											"performance of the memory controller needs to be increased"));
 	helpList.push_back(
 		helpCmd(HEADING, "--memoryecc                 Enable/disable memory ECC setting. 0:disable; 1:enable"));
 	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));
@@ -1024,18 +1014,15 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 {
 	TRACING();
 
-	if (!configCmds[configCmdType::TILE].enabled) {
-		ERR("Error: Tile ID is required for frequency configuration. Use -t <tileId>.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	int32_t tileId = -1;
+	if (configCmds[configCmdType::TILE].enabled) {
+		uint32_t parsedTileId = 0;
+		if (!parseUint32NoThrow(configCmds[configCmdType::TILE].val, parsedTileId)) {
+			ERR("Error: Invalid tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		tileId = static_cast<int32_t>(parsedTileId);
 	}
-
-	// Validate tile ID is numeric
-	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
-	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
-		ERR("Error: Invalid tile ID.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-	uint32_t tileId = std::stoi(tileIdStr);
 
 	std::string rangeStr = configCmds[configCmdType::FREQUENCYRANGE].val;
 	size_t commaPos = rangeStr.find(',');
@@ -1078,8 +1065,13 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 	ze_result_t result = fq->setFrequencyRange(minFreq, maxFreq, tileId);
 
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing the core frequency range on GPU {} tile {} to {:.0f}-{:.0f} MHz.\n", d->index,
-			  tileId, minFreq, maxFreq);
+		if (tileId < 0) {
+			PRINT("Succeeded in changing the core frequency range on GPU {} (all tiles) to {:.0f}-{:.0f} MHz.\n",
+				  d->index, minFreq, maxFreq);
+		} else {
+			PRINT("Succeeded in changing the core frequency range on GPU {} tile {} to {:.0f}-{:.0f} MHz.\n", d->index,
+				  tileId, minFreq, maxFreq);
+		}
 	}
 
 	return result;
@@ -1196,18 +1188,15 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 {
 	TRACING();
 
-	if (!configCmds[configCmdType::TILE].enabled) {
-		ERR("Error: Tile ID is required for scheduler configuration. Use -t <tileId>.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	// Determine target tile(s): specific tile if -t given, all tiles otherwise
+	bool singleTile = configCmds[configCmdType::TILE].enabled;
+	uint32_t specificTileId = 0;
+	if (singleTile) {
+		if (!parseUint32NoThrow(configCmds[configCmdType::TILE].val, specificTileId)) {
+			ERR("Error: Invalid tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
 	}
-
-	// Validate tile ID is numeric
-	const std::string &tileIdStr = configCmds[configCmdType::TILE].val;
-	if (tileIdStr.empty() || !std::all_of(tileIdStr.begin(), tileIdStr.end(), ::isdigit)) {
-		ERR("Error: Invalid tile ID.\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-	uint32_t tileId = static_cast<uint32_t>(std::stoul(tileIdStr));
 
 	std::string schedulerMode = configCmds[configCmdType::SCHEDULERMODE].val;
 	std::vector<std::string> parts = split(schedulerMode, ',');
@@ -1217,139 +1206,98 @@ ze_result_t cmdConfig::setScheduler(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	frequency *fq = d->dev->getFrequency();
-	if (fq == nullptr) {
-		ERR("Error: Frequency pointer not found.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
 	std::string mode = parts[0];
 	std::transform(mode.begin(), mode.end(), mode.begin(),
 				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
-	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
+	// Validate mode and parameters before applying
+	uint64_t timeoutValue = 0;
+	uint64_t interval = 0;
+	uint64_t yieldTimeout = 0;
 
 	if (mode == "timeout") {
 		if (parts.size() != 2) {
 			ERR("Invalid timeout format. Expected: timeout,value\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
-		// Validate numeric value
 		const std::string &timeoutStr = parts[1];
 		if (timeoutStr.empty() || !std::all_of(timeoutStr.begin(), timeoutStr.end(), ::isdigit)) {
 			ERR("Error parsing timeout value: invalid numeric format\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
-		uint64_t timeoutValue = std::stoull(timeoutStr);
+		timeoutValue = std::stoull(timeoutStr);
 		if (timeoutValue < SCHEDULER_TIME_MIN || timeoutValue > SCHEDULER_TIME_MAX) {
 			ERR("Timeout value must be between {} and {} us\n", SCHEDULER_TIME_MIN, SCHEDULER_TIME_MAX);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-		result = fq->setSchedulerTimeoutMode(tileId, timeoutValue);
 	} else if (mode == "timeslice") {
 		if (parts.size() != 3) {
 			ERR("Invalid timeslice format. Expected: timeslice,interval,yieldTimeout\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
-		// Validate both numeric values
 		const std::string &intervalStr = parts[1];
 		const std::string &yieldStr = parts[2];
-
 		if (intervalStr.empty() || !std::all_of(intervalStr.begin(), intervalStr.end(), ::isdigit)) {
 			ERR("Error parsing timeslice values: invalid interval format\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
 		if (yieldStr.empty() || !std::all_of(yieldStr.begin(), yieldStr.end(), ::isdigit)) {
 			ERR("Error parsing timeslice values: invalid yield timeout format\n");
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
-		uint64_t interval = std::stoull(intervalStr);
-		uint64_t yieldTimeout = std::stoull(yieldStr);
-
+		interval = std::stoull(intervalStr);
+		yieldTimeout = std::stoull(yieldStr);
 		if (interval < SCHEDULER_TIME_MIN || interval > SCHEDULER_TIME_MAX || yieldTimeout < SCHEDULER_TIME_MIN ||
 			yieldTimeout > SCHEDULER_TIME_MAX) {
 			ERR("Time values must be between {} and {} us\n", SCHEDULER_TIME_MIN, SCHEDULER_TIME_MAX);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-		result = fq->setSchedulerTimesliceMode(tileId, interval, yieldTimeout);
 	} else if (mode == "exclusive") {
-		result = fq->setSchedulerExclusiveMode(tileId);
+		if (parts.size() != 1) {
+			ERR("Invalid exclusive format. Expected: exclusive\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
 	} else {
 		ERR("Invalid scheduler mode. Valid options: timeout, timeslice, exclusive\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in changing the scheduler mode on GPU {} tile {} to {}\n", d->index, tileId, mode.c_str());
-	}
+	ze_result_t result = ZE_RESULT_ERROR_UNKNOWN;
 
-	return result;
-}
-
-/**
- * @brief Sets the performance factor for the device.
- *
- * @param d Device information structure.
- *
- * @return ze_result_t Result of the operation.
- */
-ze_result_t cmdConfig::setPerformanceFactor(devInfo *d)
-{
-	TRACING();
-
-	std::string performanceFactor = configCmds[configCmdType::PERFORMANCEFACTOR].val;
-	std::vector<std::string> parts = split(performanceFactor, ',');
-
-	if (parts.size() != 2) {
-		ERR("Invalid performance factor format. Expected: engineType,factorValue\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	std::string engineType = parts[0];
-	std::transform(engineType.begin(), engineType.end(), engineType.begin(),
-				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-	if (engineType != "compute" && engineType != "media") {
-		ERR("Invalid engine type. Valid options: compute, media\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	// Validate factor value is numeric (can be decimal)
-	char *endPtr = nullptr;
-	double factorValue = std::strtod(parts[1].c_str(), &endPtr);
-	if (endPtr == parts[1].c_str() || *endPtr != '\0') {
-		ERR("Error parsing factor value: invalid numeric format\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	if (factorValue < 0 || factorValue > 100) {
-		ERR("Factor value must be between 0 and 100\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	performance *perf = d->dev->getPerformance();
-	if (perf == nullptr) {
-		ERR("Error: Performance pointer not found.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	zes_engine_type_flag_t engineTypeFlag =
-		(engineType == "compute") ? ZES_ENGINE_TYPE_FLAG_COMPUTE : ZES_ENGINE_TYPE_FLAG_MEDIA;
-
-	ze_result_t result = perf->setConfig(engineTypeFlag, factorValue);
-
-	if (result == ZE_RESULT_SUCCESS) {
-		if (configCmds[configCmdType::TILE].enabled) {
-			PRINT("Succeeded in changing the {} performance factor to {:.1f} on GPU {} tile {}\n", engineType.c_str(),
-				  factorValue, d->index, configCmds[configCmdType::TILE].val.c_str());
+	if (!singleTile) {
+		// All tiles: use scheduler HAL which iterates all scheduler controllers in one pass
+		scheduler *sched = d->dev->getScheduler();
+		if (sched == nullptr) {
+			ERR("Error: Scheduler pointer not found.\n");
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		if (mode == "timeout") {
+			result = sched->setTimeoutMode(timeoutValue);
+		} else if (mode == "timeslice") {
+			result = sched->setTimesliceMode(interval, yieldTimeout);
 		} else {
-			PRINT("Succeeded in changing the {} performance factor to {:.1f} on GPU {}\n", engineType.c_str(),
-				  factorValue, d->index);
+			result = sched->setExclusiveMode();
+		}
+		if (result == ZE_RESULT_SUCCESS) {
+			PRINT("Succeeded in changing the scheduler mode on GPU {} (all tiles) to {}\n", d->index, mode.c_str());
+		}
+	} else {
+		// Single tile: use frequency HAL which targets a specific subdevice's scheduler
+		frequency *fq = d->dev->getFrequency();
+		if (fq == nullptr) {
+			ERR("Error: Frequency pointer not found.\n");
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		if (mode == "timeout") {
+			result = fq->setSchedulerTimeoutMode(specificTileId, timeoutValue);
+		} else if (mode == "timeslice") {
+			result = fq->setSchedulerTimesliceMode(specificTileId, interval, yieldTimeout);
+		} else {
+			result = fq->setSchedulerExclusiveMode(specificTileId);
+		}
+		if (result == ZE_RESULT_SUCCESS) {
+			PRINT("Succeeded in changing the scheduler mode on GPU {} tile {} to {}\n", d->index, specificTileId,
+				  mode.c_str());
 		}
 	}
 
@@ -1960,11 +1908,6 @@ int cmdConfig::run(arg_struct *args)
 	sub.add_option("--scheduler", configCmds[configCmdType::SCHEDULERMODE].val, "Set scheduler mode")
 		->each([&](const std::string &) {
 			configCmds[configCmdType::SCHEDULERMODE].enabled = true;
-			isQueryMode = false;
-		});
-	sub.add_option("--performancefactor", configCmds[configCmdType::PERFORMANCEFACTOR].val, "Set performance factor")
-		->each([&](const std::string &) {
-			configCmds[configCmdType::PERFORMANCEFACTOR].enabled = true;
 			isQueryMode = false;
 		});
 	sub.add_option("--memoryecc", configCmds[configCmdType::MEMORYECC].val, "Enable (1) or disable (0) ECC")

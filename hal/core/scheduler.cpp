@@ -246,10 +246,12 @@ ze_result_t scheduler::getTimesliceProperties(zes_sched_handle_t schedulerHandle
  * @param timeoutValue Timeout value in microseconds for watchdog monitoring
  * @return ze_result_t ZE_RESULT_SUCCESS if timeout mode set successfully, error code otherwise
  */
-ze_result_t scheduler::setTimeoutMode(float timeoutValue)
+ze_result_t scheduler::setTimeoutMode(uint64_t timeoutValue)
 {
 	zes_sched_timeout_properties_t timeoutProperties = {};
-	timeoutProperties.watchdogTimeout = static_cast<uint64_t>(timeoutValue);
+	timeoutProperties.stype = ZES_STRUCTURE_TYPE_SCHED_TIMEOUT_PROPERTIES;
+	timeoutProperties.pNext = nullptr;
+	timeoutProperties.watchdogTimeout = timeoutValue;
 	ze_bool_t pNeedReload;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
@@ -281,11 +283,13 @@ ze_result_t scheduler::setTimeoutMode(float timeoutValue)
  * @param yieldTimeoutValue Yield timeout in microseconds for preemption control
  * @return ze_result_t ZE_RESULT_SUCCESS if timeslice mode set successfully, error code otherwise
  */
-ze_result_t scheduler::setTimesliceMode(float timesliceValue, float yieldTimeoutValue)
+ze_result_t scheduler::setTimesliceMode(uint64_t timesliceValue, uint64_t yieldTimeoutValue)
 {
 	zes_sched_timeslice_properties_t timesliceProperties = {};
-	timesliceProperties.interval = static_cast<uint64_t>(timesliceValue);
-	timesliceProperties.yieldTimeout = static_cast<uint64_t>(yieldTimeoutValue);
+	timesliceProperties.stype = ZES_STRUCTURE_TYPE_SCHED_TIMESLICE_PROPERTIES;
+	timesliceProperties.pNext = nullptr;
+	timesliceProperties.interval = timesliceValue;
+	timesliceProperties.yieldTimeout = yieldTimeoutValue;
 	ze_bool_t pNeedReload;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 

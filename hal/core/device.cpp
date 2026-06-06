@@ -714,7 +714,6 @@ std::vector<sysman *> device::zesFunctionTable()
 		firmwareInstance,
 		&frequencyInstance,
 		&memoryInstance,
-		&performanceInstance,
 		&powerInstance,
 		&rasInstance,
 		&schedulerInstance,

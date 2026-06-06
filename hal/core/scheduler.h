@@ -33,8 +33,8 @@ public:
 	uint32_t getSchedulerCount() const { return schedulerCount; }
 	zes_sched_handle_t *getSchedulerHandles() const { return schedulerHandles; }
 
-	ze_result_t setTimeoutMode(float timeoutValue);
-	ze_result_t setTimesliceMode(float timesliceValue, float yieldTimeoutValue);
+	ze_result_t setTimeoutMode(uint64_t timeoutValue);
+	ze_result_t setTimesliceMode(uint64_t timesliceValue, uint64_t yieldTimeoutValue);
 	ze_result_t setExclusiveMode();
 
 	ze_result_t init(zes_device_handle_t device) override;

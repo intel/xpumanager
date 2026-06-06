@@ -22,7 +22,6 @@ enum configCmdType
 	POWERTYPE,
 	STANDBYMODE,
 	SCHEDULERMODE,
-	PERFORMANCEFACTOR,
 	MEMORYECC,
 	RESET,
 	COLDRESET,
@@ -51,7 +50,6 @@ public:
 	ze_result_t setPowerLimit(devInfo *d);
 	ze_result_t setStandby(devInfo *d);
 	ze_result_t setScheduler(devInfo *d);
-	ze_result_t setPerformanceFactor(devInfo *d);
 	ze_result_t setMemoryEcc(devInfo *d);
 	ze_result_t setPCIeGenUpdate(devInfo *d);
 	ze_result_t resetDevice(devInfo *d);

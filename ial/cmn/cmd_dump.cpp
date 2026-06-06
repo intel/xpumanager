@@ -277,7 +277,6 @@ struct DumpOpts
 	bool noheader = false;	/**< --format=...,noheader: suppress the header row */
 	bool nounits = false;	/**< --format=...,nounits: strip unit suffixes from column headers */
 	std::string device;
-	std::optional<std::string> tile;
 	std::optional<std::string> metrics;
 	std::optional<std::string> file;
 	std::optional<std::string> time;
@@ -439,7 +438,6 @@ std::variant<ParsedArgs, int> parseDumpCLI(std::string_view cmdName, const std::
 				parsed.opts.device.clear();
 			}
 		});
-	sub.add_option("--tile", parsed.opts.tile, "Tile ID");
 	sub.add_option("--metrics,--select", parsed.opts.metrics, "Metric query");
 	sub.add_option("-f,--file,--filename", parsed.opts.file, "Output file path");
 	sub.add_option("--time", parsed.opts.time, "Total dump duration in seconds");
@@ -991,7 +989,6 @@ void cmdDump::help(HELP helpType)
 	helpList.emplace_back(HEADING, "-j,--json                   Print result in JSON format");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(HEADING, "--device,--id               Device index or PCI BDF address (-1 = all)");
-	helpList.emplace_back(HEADING, "--tile                      Tile IDs (omit for single-tile devices)");
 	helpList.emplace_back(HEADING, "--metrics,--select          Comma-separated group names or aliases:");
 	for (const auto &line : buildGroupAliasLines()) {
 		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());

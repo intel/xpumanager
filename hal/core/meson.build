@@ -16,7 +16,6 @@ hal_core_sources = files(
   'memory.cpp',
   'metric.cpp',
   'pci.cpp',
-  'performance.cpp',
   'power.cpp',
   'process.cpp',
   'ras.cpp',
