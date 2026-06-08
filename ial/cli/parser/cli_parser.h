@@ -109,12 +109,26 @@ template <CliParser P> int runCli(P &parser, arg_struct *args, OSTYPE currentOS)
 	std::ranges::transform(subcmd, subcmd.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
 	if (auto match = dispatchMap.find(subcmd); match != dispatchMap.end()) {
+		// A known subcommand ran but failed: rc 1 (runtime/command error).
 		return (match->second->run(args) != 0) ? 1 : 0;
 	}
 
-	// Unknown subcommand — show help and signal error.
+	// Unknown subcommand — emit a clear diagnostic, then show the full help so
+	// removed or mistyped subcommands fail loudly with a non-zero exit code
+	// instead of silently printing help with a success-ish exit code.
+	//
+	// This uses PRINT (stdout), not ERR (stderr), on purpose: the diagnostic is
+	// printed immediately above the full usage help, which is user-facing stdout
+	// output, so the two belong on the same stream.
+	//
+	// rc 2 (not 1) distinguishes a *usage* error — the input was never a valid
+	// command — from rc 1 above, where a valid command ran and failed. This
+	// matches the conventional shell meaning of exit code 2 (misuse / bad
+	// invocation, as used by CLI11, argparse, getopt) and lets scripts tell the
+	// two apart.
+	PRINT("'{}' is not a valid subcommand.\n\n", subcmd);
 	printFullHelp(parser, cmdList);
-	return 1;
+	return 2;
 }
 
 #endif // _CLI_PARSER_H

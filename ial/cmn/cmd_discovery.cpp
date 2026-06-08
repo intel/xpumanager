@@ -577,6 +577,27 @@ ze_result_t cmdDiscovery::dumpAll(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	*jsonObj = props;
 
+	// The property map stores every value as text, but several documented
+	// fields are JSON numbers in the schema. Promote the known-numeric keys
+	// from their string form to integers so the emitted JSON matches the
+	// documented shape (and ordered_json keeps their original position).
+	(*jsonObj)["device_id"] = d->index;
+	auto promoteToInteger = [&](const char *key) {
+		auto it = props.find(key);
+		if (it == props.end()) {
+			return;
+		}
+		const std::string &s = it->second;
+		long long value = 0;
+		const auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), value);
+		if (ec == std::errc{} && ptr == s.data() + s.size()) {
+			(*jsonObj)[key] = value;
+		}
+	};
+	promoteToInteger("number_of_tiles");
+	promoteToInteger("number_of_eus");
+	promoteToInteger("memory_physical_size_byte");
+
 	return result;
 }
 
@@ -2017,7 +2038,9 @@ ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *js
 	auto *const fw = d->dev->getFirmware();
 
 	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
-	jsonObj->push_back(version.data());
+	// Wrap the versions in the documented object shape
+	// ({"amc_fw_version": [...]}) instead of emitting a bare JSON array.
+	(*jsonObj)["amc_fw_version"].push_back(version.data());
 
 	return ZE_RESULT_SUCCESS;
 }

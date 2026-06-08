@@ -84,7 +84,12 @@ bool ecc::available(zes_device_handle_t device)
 	ze_bool_t eccAvailable;
 	result = zesDeviceEccAvailable(device, &eccAvailable);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to check ECC availability: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			// Device simply does not implement ECC; this is benign and expected.
+			DBG("ECC availability query unsupported on this device: 0x{:X}\n", result);
+		} else {
+			ERR("Failed to check ECC availability: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		}
 		return false;
 	}
 	return (bool)eccAvailable;
@@ -105,7 +110,12 @@ bool ecc::configurable(zes_device_handle_t device)
 	ze_bool_t eccConfigurable;
 	result = zesDeviceEccConfigurable(device, &eccConfigurable);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to check ECC configurability: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			// Device simply does not implement ECC; this is benign and expected.
+			DBG("ECC configurability query unsupported on this device: 0x{:X}\n", result);
+		} else {
+			ERR("Failed to check ECC configurability: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		}
 		return false;
 	}
 	return (bool)eccConfigurable;

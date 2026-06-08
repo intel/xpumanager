@@ -1934,7 +1934,8 @@ void cmdStats::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(HEADING, "--list-offline-pages        List offline memory pages (exclusive, no other stats)"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(HEADING, "--samples                   Number of samples to collect (default: 2)"));
+	helpList.push_back(
+		helpCmd(HEADING, "--samples                   Number of samples to collect (minimum 1, default: 2)"));
 	helpList.push_back(
 		helpCmd(HEADING, "--interval                  Sampling interval in milliseconds (default: 100)"));
 
@@ -2101,7 +2102,7 @@ int cmdStats::run(arg_struct *args)
 		->each([&](const std::string &) { statsCmds[STATS_DEVICE].enabled = true; });
 	sub.add_flag("-e,--eu", statsCmds[STATS_EU].enabled, "Show EU statistics");
 	sub.add_flag("-r,--ras", statsCmds[STATS_RAS].enabled, "Show RAS error statistics");
-	sub.add_option("--samples", statsCmds[STATS_SAMPLES].val, "Number of samples to collect (minimum 2)")
+	sub.add_option("--samples", statsCmds[STATS_SAMPLES].val, "Number of samples to collect (minimum 1, default: 2)")
 		->each([&](const std::string &) { statsCmds[STATS_SAMPLES].enabled = true; });
 	sub.add_option("--interval", statsCmds[STATS_INTERVAL].val, "Sampling interval in milliseconds")
 		->each([&](const std::string &) { statsCmds[STATS_INTERVAL].enabled = true; });
@@ -2149,8 +2150,14 @@ int cmdStats::run(arg_struct *args)
 	if (statsCmds[STATS_SAMPLES].enabled && !statsCmds[STATS_SAMPLES].val.empty()) {
 		try {
 			size_t parsed = static_cast<size_t>(std::stoull(statsCmds[STATS_SAMPLES].val));
-			if (parsed < 2) {
-				ERR("Sample count must be at least 2.\n");
+			// --samples is the number of user-requested readings; the documented
+			// minimum is 1. Delta-based metrics need two raw readings to form one
+			// utilization/bandwidth value, but that is an internal detail handled
+			// by clamping to >=2 in collectDeviceStats() (see actualSampleCount).
+			// Rejecting --samples 1 here would break the single-shot stats
+			// workflow that the api_stats_* validation tests rely on.
+			if (parsed < 1) {
+				ERR("Sample count must be at least 1.\n");
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
 			sampleCount = parsed;
