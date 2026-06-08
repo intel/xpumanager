@@ -460,7 +460,9 @@ xpumHealthStatus cmdHealth::getHealthStatus(zes_mem_health_t health)
  * It provides consistent string formatting across the health monitoring system.
  *
  * @param status The XPUM health status enumeration value to convert
- * @return std::string Human-readable health status string ("OK", "WARNING", "CRITICAL", "UNKNOWN")
+ * @return std::string Human-readable health status string ("OK", "Warning", "Critical", "Unknown").
+ *         TitleCase is intentional: it matches the documented health JSON
+ *         schema enum.
  */
 std::string cmdHealth::getHealthStatusString(xpumHealthStatus status)
 {
@@ -468,13 +470,13 @@ std::string cmdHealth::getHealthStatusString(xpumHealthStatus status)
 	case XPUM_HEALTH_STATUS_OK:
 		return "OK";
 	case XPUM_HEALTH_STATUS_WARNING:
-		return "WARNING";
+		return "Warning";
 	case XPUM_HEALTH_STATUS_CRITICAL:
-		return "CRITICAL";
+		return "Critical";
 	case XPUM_HEALTH_STATUS_UNKNOWN:
-		return "UNKNOWN";
+		return "Unknown";
 	default:
-		return "UNKNOWN";
+		return "Unknown";
 	}
 }
 

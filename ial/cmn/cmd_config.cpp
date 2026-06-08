@@ -1315,7 +1315,18 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 {
 	TRACING();
 	// Set memory ECC. Valid options are 0:disable; 1:enable
-	int memoryEcc = stoi(configCmds[configCmdType::MEMORYECC].val);
+	int memoryEcc = 0;
+	try {
+		size_t pos = 0;
+		memoryEcc = stoi(configCmds[configCmdType::MEMORYECC].val, &pos);
+		// Reject trailing garbage (e.g. "0,1") that stoi would otherwise ignore.
+		if (pos != configCmds[configCmdType::MEMORYECC].val.size()) {
+			throw std::invalid_argument("trailing characters");
+		}
+	} catch (const std::exception &) {
+		ERR("Invalid memory ECC value. Valid options are 0:disable; 1:enable\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 	if (memoryEcc != 0 && memoryEcc != 1) {
 		ERR("Invalid memory ECC value. Valid options are 0:disable; 1:enable\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
@@ -1329,6 +1340,20 @@ ze_result_t cmdConfig::setMemoryEcc(devInfo *d)
 
 	ecc_state_t state = {};
 	ze_result_t result = e->setState(d->zesDeviceHdl, memoryEcc, &state);
+	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		// ECC is not supported/configurable on this device.
+		if (memoryEcc == 0) {
+			// Disabling ECC on hardware without ECC support is effectively a
+			// no-op: the requested state (disabled) already holds, so report
+			// success instead of surfacing a confusing Level Zero error.
+			PRINT("Memory ECC is already disabled on GPU {} (ECC not supported).\n", d->index);
+			return ZE_RESULT_SUCCESS;
+		}
+		// Enabling ECC on hardware that does not support it cannot succeed;
+		// fail gracefully with a clear message and a non-zero exit code.
+		ERR("Memory ECC configuration is not supported on GPU {}.\n", d->index);
+		return result;
+	}
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to set memory ECC state: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
