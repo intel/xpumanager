@@ -1090,7 +1090,15 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 
 	// Parse the power limit from the option string - may include type
 	std::string powerLimitStr = configCmds[configCmdType::POWERLIMIT].val;
-	double powerLimit = std::stod(powerLimitStr);
+	double powerLimit = 0.0;
+	try {
+		powerLimit = std::stod(powerLimitStr);
+	} catch (const std::exception &) {
+		// std::stod throws on non-numeric / empty input; reject it cleanly
+		// instead of letting the exception abort the process.
+		ERR("Invalid power limit value. Power limit must be a non-negative number.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 
 	if (powerLimit < 0) {
 		ERR("Invalid power limit value. Power limit must be non-negative.\n");
@@ -1424,7 +1432,15 @@ ze_result_t cmdConfig::setPCIeGenUpdate(devInfo *d)
 {
 	TRACING();
 	// Set PCIe downgrade. Valid options are 0:disable; 1:enable
-	int pcieDowngrade = stoi(configCmds[configCmdType::PCIEDOWNGRADE].val);
+	int pcieDowngrade = 0;
+	try {
+		pcieDowngrade = stoi(configCmds[configCmdType::PCIEDOWNGRADE].val);
+	} catch (const std::exception &) {
+		// stoi throws on non-numeric / empty input; reject it cleanly instead
+		// of letting the exception abort the process.
+		ERR("Invalid PCIe downgrade value. Valid options are 0:disable; 1:enable\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
 	if (pcieDowngrade != 0 && pcieDowngrade != 1) {
 		ERR("Invalid PCIe downgrade value. Valid options are 0:disable; 1:enable\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
