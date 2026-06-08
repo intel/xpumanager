@@ -7,7 +7,7 @@ OpenTelemetry Collector to build a more complete observability stack. In this
 example setup:
 
 - [**Upstream OpenTelemetry Collector**](#step-1-deploy-upstream-opentelemetry-collector)
-  receives metrics from xpumd and provides Prometheus-compatible endpoints
+  receives metrics from `xpumd` and provides Prometheus-compatible endpoints
 - [**xpumd**](#step-2-deploy-xpumd)
   collects Intel GPU telemetry and exports metrics via OTLP (OpenTelemetry Protocol)
 - [**Prometheus/Grafana**](#visualization-with-grafana)
@@ -131,5 +131,37 @@ Look for Intel GPU metrics, e.g.:
 
 ## Visualization with Grafana
 
-TODO: add instructions on using Prometheus with OTel collector, instead
-of [monitoring XPUM daemon directly](MONITORING.md).
+Visualization requires metrics to be stored in a timeseries database, and Prometheus is a popular choice for that.
+
+The [MONITORING.md](MONITORING.md) document has instructions on installing Prometheus / Grafana, and
+the [Helm chart documentation](../charts/xpumd/README.md) explains how to enable `xpumd` dashboard for Grafana
+(`xpumd` Prometheus integration should not be enabled for this setup, only the Grafana dashboard).
+
+If a larger amount of data is collected, configuring OpenTelemetry Collector with
+the `prometheusremotewrite` instead of the `prometheus` exporter one may be preferred:
+https://grafana.com/blog/a-practical-guide-to-data-collection-with-opentelemetry-and-prometheus/#6-use-prometheus-remote-write-exporter
+
+```mermaid
+graph BT
+    grafana["Grafana<br/>(Visualization)"]
+    prometheus["Prometheus<br/>(Timeseries database)"]
+    other["Other viewers: OpenObserve, OpenSearch, VictoriaMetrics..."]
+    collector["OpenTelemetry Collector<br/>(data gateway)"]
+
+    subgraph node1["GPU node 1"]
+        xpumd1["XPUM Daemon<br/>(GPU info exporter)"]
+    end
+    subgraph node2["GPU node 2"]
+        xpumd2["XPUM Daemon<br/>(GPU info exporter)"]
+    end
+    subgraph node3["GPU node ..."]
+        xpumd3["XPUM Daemon<br/>(GPU info exporter)"]
+    end
+
+    xpumd1 -->|"metrics/logs/events"| collector
+    xpumd2 -->|"metrics/logs/events"| collector
+    xpumd3 -->|"metrics/logs/events"| collector
+    collector -->|"logs/events/traces"| other
+    collector -->|"metrics"| prometheus
+    prometheus -->|"metrics"| grafana
+```
