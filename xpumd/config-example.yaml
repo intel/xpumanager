@@ -131,7 +131,7 @@ exporters:
           "*":
             severity: warning
   prometheus:
-    endpoint: "0.0.0.0:8080"
+    endpoint: "127.0.0.1:8080"
 
 extensions:
 

@@ -72,7 +72,7 @@ RUN mkdir /src && \
     ninja -C build install && \
     ldconfig
 
-# Build xpumd
+# Build xpumd / xpuinfo-cli + stub driver & install them
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \
@@ -90,6 +90,10 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
         go-licenses save . \
                 --ignore github.com/intel/xpumanager/xpumd \
                 --save_path /out/usr/share/doc/xpumd/licenses
+
+# Endpoints cannot be limited to localhost in a container,
+# as then accessing them would require using host networking
+RUN sed -i 's/127.0.0.1:/0.0.0.0:/' /out/etc/xpumd/config-example.yaml
 
 # Copy runtime libraries and their package info.
 COPY scripts/copy-files-and-package-info.sh .
@@ -134,5 +138,8 @@ FROM ${BASE_IMAGE} AS final
 COPY --from=builder /out/ /
 
 USER 65534:65534
+
+# default "intelxpuinfo" socket dir
+ENV XDG_RUNTIME_DIR=/run/xpumd
 
 ENTRYPOINT ["/usr/local/bin/xpumd"]

@@ -45,8 +45,15 @@ make build
 sudo ./dist/xpumd --config config-example.yaml
 ```
 
-(Extra privileges are required to get all the metrics, but some of them
-are available also without `sudo`, see [Metrics](../README.md#metrics).)
+> [!NOTE]
+> Extra privileges are required to get all the metrics, but some metrics
+> are available also without `sudo`, see [Metrics](../README.md#metrics).
+
+> [!NOTE]
+> If not running this through normal user session, one may need to specify
+> `intelxpuinfo` exporter socket directory with e.g. `XDG_RUNTIME_DIR=$PWD`
+> environment variable (or full socket path with the
+> `exporters.intelxpuinfo.endpoint` config option).
 
 ## Testing Prometheus exporter
 
@@ -55,6 +62,11 @@ In another terminal:
 ```bash
 curl --no-progress-meter http://localhost:8080/metrics
 ```
+
+> [!NOTE]
+> Example config restricts access to localhost for security reasons.
+> If this is run on another host, `xpumd` needs to be started with
+> `--set exporters.prometheus.endpoint=0.0.0.0:8080` option.
 
 ## Testing device info exporter
 
