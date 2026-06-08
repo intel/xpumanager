@@ -10,6 +10,7 @@
 #include "printer.h"
 #include "table_builder.h"
 #include "amclib.h"
+#include <os.h>
 #include <array>
 #include <assert.h>
 #include <charconv>
@@ -899,12 +900,14 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 
 	zes_device_properties_t zesDevProp = {};
 
+	// L0 sysman route if available
 	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
 
+	// AMC route if exists
 	if (strcmp(zesDevProp.serialNumber, "unknown") == 0) {
 		std::string serialNumFromAMC = "";
 		const auto amcResult = querySerialNumberFromAMC(d, &serialNumFromAMC);
@@ -920,7 +923,49 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 		*outputLine = zesDevProp.serialNumber;
 	}
 
+	// OEM provided serial number via IGSC if available
+	if (*outputLine == "unknown") {
+		std::string meiPath;
+		gscupd gsc;
+		const std::string bdfStr = d->dev->getPCI()->getBDFStr();
+		for (const auto &dev : gsc.getPCIAddrAndMeiDevices()) {
+			auto devBdf =
+				std::format("{:04x}:{:02x}:{:02x}.{:01x}", dev.pciProps.address.domain, dev.pciProps.address.bus,
+							dev.pciProps.address.device, dev.pciProps.address.function);
+			if (devBdf == bdfStr) {
+				meiPath = dev.meiDevicePath;
+				break;
+			}
+		}
+
+		std::string serialNumFromIGSC = "";
+		const auto igscResult = getOemSerialNumber(meiPath, serialNumFromIGSC);
+		if (igscResult != ZE_RESULT_SUCCESS || (serialNumFromIGSC.size() == 0)) {
+			DBG("Failed to get OEM serial number from IGSC or No IGSC Available: 0x%X (%s)\n", igscResult,
+				l0_error_to_string(igscResult));
+		} else {
+			DBG("Successfully retrieved OEM serial number from IGSC: %s\n", serialNumFromIGSC.c_str());
+			*outputLine = serialNumFromIGSC;
+		}
+	}
+
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Retrieves OEM serial number via IGSC using the MEI device path.
+ *
+ * @param[in] meiDevicePath MEI device node path used by IGSC device initialization.
+ * @param[out] serialNumber Extracted printable OEM serial number.
+ *
+ * @retval ZE_RESULT_SUCCESS Successfully retrieved non-empty OEM serial number.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE IGSC library/symbols are unavailable,
+ *         device init/query fails, input path is empty, or extracted serial is empty.
+ */
+ze_result_t cmdDiscovery::getOemSerialNumber(const std::string &meiDevicePath, std::string &serialNumber)
+{
+	const int ret = getOemSerialNumberByMeiPath(meiDevicePath, serialNumber);
+	return (ret == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**

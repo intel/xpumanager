@@ -167,6 +167,7 @@ public:
 	ze_result_t opromDataFirmwareVersion(devInfo *d, std::string *outputLine);
 	void printDeviceInfo(std::vector<devInfo> &deviceList, std::vector<devInfo> &survDeviceList,
 						 std::unique_ptr<Printer> &printer, devFuncType type);
+	ze_result_t getOemSerialNumber(const std::string &meiDevicePath, std::string &serialNumber);
 	ze_result_t querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString);
 
 	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device, devFuncType funcType);
