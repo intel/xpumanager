@@ -39,6 +39,7 @@ graph TB
         subgraph XPUMD["XPUM Daemon - xpumd"]
             subgraph RECV["Receivers"]
                 RECV_XPU["Intel XPU Receiver<br/>(intelxpu)"]
+                RECV_LOG["Intel Crashlog<br/>(intel_crashlog)"]
             end
 
             subgraph PROC["Processor pipeline"]
@@ -46,6 +47,7 @@ graph TB
                 %% PROC_OTHERS["Standard Processors"] %%
             end
 
+            RECV -->|metrics| PROC_XPU
             %% PROC_XPU --> PROC_OTHERS %%
 
             subgraph EXP["Exporters"]
@@ -54,9 +56,10 @@ graph TB
                 EXP_OTEL["OpenTelemetry Exporter"]
             end
             %% change PROC_XPU => PROC_OTHERS if other processors added %%
-            PROC_XPU -->|processed metrics| EXP_INFO
             PROC_XPU -->|processed metrics| EXP_PROM
-            PROC_XPU -->|processed metrics| EXP_OTEL
+            PROC_XPU -->|GPU capabilities / status| EXP_INFO
+            PROC_XPU -->|processed metrics / events| EXP_OTEL
+            RECV_LOG -->|crash logs| EXP_OTEL
         end
     end
 
@@ -72,7 +75,6 @@ graph TB
     end
 
     SYSTEM_LIBRARIES --> RECV_XPU
-    RECV -->|metrics| PROC_XPU
 
     EXP_PROM -->|"HTTP(S)"| PROM
     EXP_OTEL -->|"OTLP<br/>gRPC/HTTP(S)"| OTEL_COL
@@ -115,7 +117,7 @@ image also ships a stub driver. See
 [`DEVELOPMENT.md`](docs/DEVELOPMENT.md#testing-container-image-with-stub-driver)
 for detailed instructions.
 
-See also [Testing container image](#testing-container-image).
+See also [Testing container image](docs/DEVELOPMENT.md#testing-container-image).
 
 ### Kubernetes
 
@@ -138,7 +140,7 @@ Helm chart installs Grafana dashboard, but one can also load manually
 
 ### Metrics
 
-See the [`intelxpu` receiver documentation](receiver/sysman/documentation.md)
+See the [`intelxpu` receiver documentation](receiver/intelxpu/sysman/documentation.md)
 for the list of supported GPU metrics and attributes.
 
 Metrics availability depends on the underlying host hardware,
@@ -167,9 +169,8 @@ metrics:
 
 ### Device info exporter
 
-The XPUM daemon implements a custom exporter that exposes GPU health
-information. It serves a custom gRPC API at local Unix socket
-(`/run/xpumd/intelxpuinfo.sock` by default).
+The XPUM daemon implements a custom exporter that exposes GPU capability and health information.
+It serves a custom gRPC API at local Unix socket (`/run/xpumd/intelxpuinfo.sock` by default).
 
 The device info exporter is enabled by the default configuration file
 ([`config-example.yaml`](config-example.yaml)) and the [Helm chart](charts/xpumd/README.md).
