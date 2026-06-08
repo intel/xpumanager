@@ -14,7 +14,7 @@ project('xpum', 'c', 'cpp',
   license : 'MIT',
   default_options : [
     'cpp_std=c++20',
-    'buildtype=debugoptimized',
+    'buildtype=release',
     'warning_level=3',
     'werror=true',
     'b_lto=true',
