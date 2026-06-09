@@ -1934,7 +1934,7 @@ type metricHwMemoryFree struct {
 // init fills hw.memory.free metric with initial data.
 func (m *metricHwMemoryFree) init() {
 	m.data.SetName("hw.memory.free")
-	m.data.SetDescription("Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.")
+	m.data.SetDescription("Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.")
 	m.data.SetUnit("By")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
@@ -2253,7 +2253,7 @@ type metricHwMemorySize struct {
 // init fills hw.memory.size metric with initial data.
 func (m *metricHwMemorySize) init() {
 	m.data.SetName("hw.memory.size")
-	m.data.SetDescription("Physical size of the memory.")
+	m.data.SetDescription("Memory size. If physical memory size info is unavailable, provides max allocatable size.")
 	m.data.SetUnit("By")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)

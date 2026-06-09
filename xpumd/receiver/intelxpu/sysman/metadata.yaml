@@ -281,7 +281,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.free:
     enabled: true
-    description: Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.
+    description: Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.
     stability: development
     unit: "By"
     sum:
@@ -310,7 +310,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.size:
     enabled: true
-    description: Physical size of the memory.
+    description: Memory size. If physical memory size info is unavailable, provides max allocatable size.
     stability: development
     unit: "By"
     sum:
