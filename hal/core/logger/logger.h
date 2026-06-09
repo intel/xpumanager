@@ -22,11 +22,7 @@
 #include <utility>
 
 namespace detail {
-#ifndef NDEBUG
 static constexpr bool DEBUG_ENABLED = true;
-#else
-static constexpr bool DEBUG_ENABLED = false;
-#endif
 } // namespace detail
 
 /**
@@ -50,7 +46,7 @@ class Logger final
 
 	/// Current log level — relaxed ordering is sufficient: a momentarily
 	/// stale read can suppress or emit at most one extra line.
-	std::atomic<LogLevel> level{detail::DEBUG_ENABLED ? LogLevel::DBG : LogLevel::INFO};
+	std::atomic<LogLevel> level{LogLevel::INFO};
 
 	/// Active error callback; nullptr → write to stderr.
 	std::atomic<std::shared_ptr<LogErrorCallback>> onError;
