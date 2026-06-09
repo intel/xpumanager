@@ -67,7 +67,7 @@ void cmdHealth::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING2, "2. GPU Memory Temperature"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "3. GPU Power"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "4. GPU Memory"));
-	helpList.push_back(helpCmd(SUB_HEADING2, "5. Unsupported"));
+	helpList.push_back(helpCmd(SUB_HEADING2, "5. Reserved"));
 	helpList.push_back(helpCmd(SUB_HEADING2, "6. GPU Frequency"));
 
 	printHelp(helpList, helpType);
