@@ -1,0 +1,63 @@
+{% extends "!layout.html" %}
+{% block extrahead %}
+{{ super() }}
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '<option value="1.x">1.x (legacy)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+{% endblock %}

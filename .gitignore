@@ -3,8 +3,8 @@
 *.a
 .vscode
 *.vs
-xpu-smi
-xpumcli
+/xpu-smi
+/xpumcli
 tags
 release
 x64
@@ -21,3 +21,4 @@ subprojects/level-zero
 **/.conan
 **__pycache__/
 **/*.pyc
+docs/sphinx/_build/
