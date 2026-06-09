@@ -1,0 +1,73 @@
+name: Deploy Docs to gh-pages
+
+on:
+  push:
+    branches: [main, dev, v1.3.x]
+    paths:
+      - 'docs/sphinx/**'
+      - '.github/workflows/docs-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout main/dev branch (2.x docs)
+        uses: actions/checkout@v4
+        with:
+          path: src/2.x
+
+      - name: Checkout v1.3.x branch (1.x docs)
+        id: checkout_1x
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          ref: v1.3.x
+          path: src/1.x
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r src/2.x/docs/sphinx/requirements.txt
+
+      - name: Strip 1.x from version switcher (no v1.3.x branch)
+        if: steps.checkout_1x.outcome != 'success'
+        run: |
+          sed -i "/'<option value=\"1.x\">/d" \
+            src/2.x/docs/sphinx/_templates/layout.html
+
+      - name: Build 2.x docs
+        run: make -C src/2.x/docs/sphinx build
+        # Output: src/2.x/docs/sphinx/_build/html/2.0/
+
+      - name: Build 1.x docs
+        if: steps.checkout_1x.outcome == 'success'
+        run: make -C src/1.x/docs/sphinx build
+        # Output: src/1.x/docs/sphinx/_build/html/1.x/
+
+      - name: Assemble combined site
+        run: |
+          mkdir -p _site
+          cp -r src/2.x/docs/sphinx/_build/html/2.0  _site/2.0
+          if [ -d src/1.x/docs/sphinx/_build/html/1.x ]; then
+            cp -r src/1.x/docs/sphinx/_build/html/1.x  _site/1.x
+          fi
+          cp src/2.x/docs/sphinx/root_index.html      _site/index.html
+          touch _site/.nojekyll
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _site
+          publish_branch: gh-pages
+          force_orphan: true
