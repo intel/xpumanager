@@ -16,6 +16,24 @@
 #include <fstream>
 #include <sys/stat.h>
 
+static const char *validFwTypes[] = {"GFX", "GFX_DATA", "FDO", "AMC", "OP_CODE", "OP_DATA"};
+
+/**
+ * @brief Returns a comma-separated string of valid firmware type names
+ *
+ * @return std::string Formatted list of supported firmware types
+ */
+static std::string validFwTypesStr()
+{
+	std::string s;
+	for (const auto &t : validFwTypes) {
+		if (!s.empty())
+			s += ", ";
+		s += t;
+	}
+	return s;
+}
+
 static ze_result_t validateFirmwareImageFile(const std::string &filePath)
 {
 	struct stat fileStat;
@@ -67,12 +85,8 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address. If it is not "
 										"specified, all devices will be updated"));
-	helpList.push_back(helpCmd(HEADING, "-t,--type                   The firmware name. Valid options: GFX, GFX_DATA, "
-										"FDO, GFX_CODE_DATA, GFX_PSCBIN, AMC, OP_CODE, OP_DATA."));
-	helpList.push_back(helpCmd(
-		SUB_HEADING, "AMC firmware update just works on Intel M50CYP server (BMC firmware version is 2.82 or newer)"));
-	helpList.push_back(
-		helpCmd(SUB_HEADING, "and Supermicro SYS-620C-TN12R server (BMC firmware version is 11.01 or newer)"));
+	std::string typeHelp = "-t,--type                   The firmware name. Valid options: " + validFwTypesStr() + ".";
+	helpList.push_back(helpCmd(HEADING, "%s", typeHelp.c_str()));
 	helpList.push_back(helpCmd(HEADING, "-f,--file                   The firmware image file path on this server"));
 	helpList.push_back(helpCmd(
 		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
@@ -112,8 +126,8 @@ int cmdUpdateFW::run(arg_struct *args)
 	sub.add_flag("-j,--json", fwInfo.jsonOutput, "Print result in JSON format");
 	sub.add_option("-d,--device,--id", fwInfo.deviceId,
 				   "Device ID or PCI BDF address. If not specified, all devices are updated");
-	sub.add_option("-t,--type", fwInfo.firmwareType,
-				   "Firmware name. Valid options: GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, AMC, OPCODE, OPDATA");
+	std::string typeDesc = "Firmware name. Valid options: " + validFwTypesStr();
+	sub.add_option("-t,--type", fwInfo.firmwareType, typeDesc);
 	sub.add_option("-f,--file", fwInfo.filePath, "Firmware image file path");
 	sub.add_flag("-y,--assumeyes", fwInfo.assumeYes, "Assume yes to all questions");
 	sub.add_flag("--force", fwInfo.forceUpdate, "Force GFX firmware update");
@@ -132,6 +146,19 @@ int cmdUpdateFW::run(arg_struct *args)
 	// Validate firmware type
 	if (fwInfo.firmwareType.empty()) {
 		ERR("Error: Missing required argument --type.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	bool validType = false;
+	for (const auto &t : validFwTypes) {
+		if (STRCASECMP(fwInfo.firmwareType.c_str(), t) == 0) {
+			validType = true;
+			break;
+		}
+	}
+	if (!validType) {
+		ERR("Error: Invalid firmware type '{}'. Valid options: {}.\n", fwInfo.firmwareType.c_str(),
+			validFwTypesStr().c_str());
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
