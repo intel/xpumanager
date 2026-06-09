@@ -1311,7 +1311,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.free"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.", mi.Description())
+						assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1343,7 +1343,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.free"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.", mi.Description())
+						assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1519,7 +1519,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.size"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Physical size of the memory.", mi.Description())
+						assert.Equal(t, "Memory size. If physical memory size info is unavailable, provides max allocatable size.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1551,7 +1551,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.size"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Physical size of the memory.", mi.Description())
+						assert.Equal(t, "Memory size. If physical memory size info is unavailable, provides max allocatable size.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())

@@ -71,6 +71,10 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 	if err != nil {
 		return nil, fmt.Errorf("memory GetProperties() failed: %w", err)
 	}
+	state, err := mem.GetState()
+	if err != nil {
+		return nil, fmt.Errorf("memory GetState() failed: %w", err)
+	}
 
 	m := &memory{
 		Memory: mem,
@@ -88,6 +92,14 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 			memoryLocation: strings.ToLower(props.Location.String()),
 			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
+	}
+
+	if props.PhysicalSize == 0 {
+		if state.Size > 0 {
+			device.logger.Infow("Memory size unavailable => allocatable size used as fallback", "attributes", m.attributes)
+		} else {
+			device.logger.Infow("Memory size unavailable => free memory metric replaces usage / ratio ones", "attributes", m.attributes)
+		}
 	}
 
 	// initial / previous counter value
@@ -112,8 +124,12 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 
-	if m.attributes.physicalSize > 0 {
-		mb.RecordHwMemorySizeDataPoint(ts, m.attributes.physicalSize,
+	size := m.attributes.physicalSize
+	if size == 0 {
+		size = int64(state.Size)
+	}
+	if size > 0 {
+		mb.RecordHwMemorySizeDataPoint(ts, size,
 			m.attributes.hwID,
 			m.attributes.hwName,
 			m.attributes.pciBDF,
@@ -122,7 +138,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			m.attributes.memoryType,
 		)
 
-		usage := m.attributes.physicalSize - int64(state.Free)
+		usage := size - int64(state.Free)
 		mb.RecordHwMemoryUsageDataPoint(ts, usage,
 			m.attributes.hwID,
 			m.attributes.hwName,
@@ -132,7 +148,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			m.attributes.memoryType,
 		)
 
-		ratio := float64(usage) / float64(m.attributes.physicalSize)
+		ratio := float64(usage) / float64(size)
 		mb.RecordHwMemoryUtilizationDataPoint(ts, ratio,
 			m.attributes.hwID,
 			m.attributes.hwName,

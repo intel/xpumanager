@@ -295,7 +295,7 @@ Memory bandwidth (read+write) utilization ratio.
 
 ### hw.memory.free
 
-Free memory. Reported only when `hw.memory.size` (and memory usage metrics) are unavailable.
+Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
@@ -353,7 +353,7 @@ Current memory bandwidth (read+write) usage in bytes/sec.
 
 ### hw.memory.size
 
-Physical size of the memory.
+Memory size. If physical memory size info is unavailable, provides max allocatable size.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
