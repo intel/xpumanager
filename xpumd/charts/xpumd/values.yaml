@@ -174,7 +174,6 @@ config:
     telemetry:
       logs:
         level: info
-        # TODO: enable before release
         #disable_stacktrace: true
     # @schema hidden
     pipelines:

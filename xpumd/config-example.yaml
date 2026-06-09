@@ -139,7 +139,6 @@ service:
   telemetry:
     logs:
       level: info
-      # TODO: enable before release
       #disable_stacktrace: true
   pipelines:
     metrics:
