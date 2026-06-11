@@ -7,6 +7,11 @@ on:
       - 'docs/sphinx/**'
       - '.github/workflows/docs-deploy.yml'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-run (build + assemble, skip push to gh-pages)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -17,12 +22,13 @@ concurrency:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJson(vars.RUNS_ON || '"ubuntu-latest"') }}
     steps:
-      - name: Checkout main/dev branch (2.x docs)
+      - name: Checkout main branch (2.x docs, with full history for worktree)
         uses: actions/checkout@v4
         with:
-          path: src/2.x
+          ref: main
+          fetch-depth: 0
 
       - name: Checkout v1.3.x branch (1.x docs)
         id: checkout_1x
@@ -37,37 +43,86 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: pip install -r src/2.x/docs/sphinx/requirements.txt
+        run: pip install -r docs/sphinx/requirements.txt
+
+      - name: Set up gh-pages worktree
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          REMOTE="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git ls-remote --exit-code origin gh-pages > /dev/null 2>&1 && LS_RC=0 || LS_RC=$?
+          if [ $LS_RC -eq 0 ]; then
+            # Branch exists remotely — fetch into a local tracking branch
+            git fetch origin gh-pages:gh-pages
+          elif [ $LS_RC -eq 2 ]; then
+            # Branch does not exist — create empty orphan and push
+            git push "$REMOTE" \
+              "$(git commit-tree $(git hash-object -t tree /dev/null) \
+                 -m 'chore: init gh-pages branch')":refs/heads/gh-pages
+            git fetch origin gh-pages:gh-pages
+          else
+            echo "ERROR: git ls-remote failed (exit $LS_RC) — network or auth issue"
+            exit $LS_RC
+          fi
+          git worktree add _site gh-pages
+          # Clean worktree so stale files from prior deploys don't linger
+          if [ -n "$(git -C _site ls-files)" ]; then
+            git -C _site rm --quiet -rf .
+          fi
+          git -C _site clean -fd --quiet
 
       - name: Strip 1.x from version switcher (no v1.3.x branch)
         if: steps.checkout_1x.outcome != 'success'
         run: |
           sed -i "/'<option value=\"1.x\">/d" \
-            src/2.x/docs/sphinx/_templates/layout.html
+            docs/sphinx/_templates/layout.html
 
       - name: Build 2.x docs
-        run: make -C src/2.x/docs/sphinx build
-        # Output: src/2.x/docs/sphinx/_build/html/2.0/
+        run: |
+          sphinx-build -b html -d /tmp/doctrees/2.0 \
+            docs/sphinx \
+            _site/2.0
 
       - name: Build 1.x docs
         if: steps.checkout_1x.outcome == 'success'
-        run: make -C src/1.x/docs/sphinx build
-        # Output: src/1.x/docs/sphinx/_build/html/1.x/
-
-      - name: Assemble combined site
+        continue-on-error: true
+        id: build_1x
         run: |
-          mkdir -p _site
-          cp -r src/2.x/docs/sphinx/_build/html/2.0  _site/2.0
-          if [ -d src/1.x/docs/sphinx/_build/html/1.x ]; then
-            cp -r src/1.x/docs/sphinx/_build/html/1.x  _site/1.x
-          fi
-          cp src/2.x/docs/sphinx/root_index.html      _site/index.html
+          sphinx-build -b html -d /tmp/doctrees/1.x \
+            src/1.x/docs/sphinx \
+            _site/1.x
+
+      - name: Remove partial 1.x output and strip switcher (1.x build failed)
+        if: steps.checkout_1x.outcome == 'success' && steps.build_1x.outcome != 'success'
+        run: |
+          rm -rf _site/1.x
+          find _site/2.0 -name "*.html" -exec \
+            sed -i "/'<option value=\"1.x\">/d" {} +
+
+      - name: Assemble site root
+        run: |
+          cp docs/sphinx/root_index.html _site/index.html
           touch _site/.nojekyll
 
-      - name: Deploy to gh-pages branch
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: _site
-          publish_branch: gh-pages
-          force_orphan: true
+      - name: Show assembled site (dry-run)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true'
+        run: |
+          echo "=== Dry-run: _site structure ==="
+          find _site -type f | sort
+
+      - name: Commit and push to gh-pages
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd _site
+          git add -A
+          if [ -z "$(git status --short)" ]; then
+            echo "No changes to deploy"
+            exit 0
+          fi
+          git commit -m "docs: deploy site from ${GITHUB_SHA::8}"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
