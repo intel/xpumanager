@@ -145,3 +145,12 @@ go-fix:
 		echo "Running go fix in '$$module'"; \
 		go -C $$module fix ./... || exit 1; \
 	done
+
+.PHONY: clean
+clean:
+	$(MAKE) -C level-zero-go clean
+	rm -f builder-config.yaml \
+	  tools/include/google/protobuf/compiler/plugin.proto \
+	  tools/include/google/protobuf/*.proto \
+	  tools/bin/* \
+	  dist/*
