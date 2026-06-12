@@ -16,6 +16,11 @@ import (
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
 
+const (
+	// largest GPUs can take >1 kW, but not (yet) this much
+	bogusPowerThreshold = 2000
+)
+
 func init() {
 	registerSubsystem("power", enumPower)
 }
@@ -144,14 +149,24 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 
 	watts := float64(ediff) / float64(tdiff)
-	mb.RecordHwPowerDataPoint(
-		ts, watts,
-		power.attributes.hwID,
-		power.attributes.hwName,
-		power.attributes.pciBDF,
-		power.attributes.subdeviceId,
-		power.attributes.sensorLocation,
-	)
+	// Warn & filter out completely unrealistic GPU power values that
+	// would mess up graphs and unduly alert admins. These could happen
+	// due to unexpected counter resets & wrapping, possibly coupled
+	// with reset value being restored e.g. on GPU unsuspend
+	if watts < bogusPowerThreshold {
+		mb.RecordHwPowerDataPoint(
+			ts, watts,
+			power.attributes.hwID,
+			power.attributes.hwName,
+			power.attributes.pciBDF,
+			power.attributes.subdeviceId,
+			power.attributes.sensorLocation,
+		)
+	} else {
+		// unexpected wrapping & resets should be rare, report all
+		power.logger.Warnw("Invalid power value skipped", "watts", watts,
+			"intervalSeconds", float64(tdiff)/1e6, "attributes", power.attributes)
+	}
 
 	// log only once
 	if !power.state.hasLimits {
