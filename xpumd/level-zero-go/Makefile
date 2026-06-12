@@ -24,7 +24,7 @@ stats:
 # --- Build targets ---
 
 .PHONY: generate
-generate: clean generate-stub
+generate: clean-generated generate-stub
 	go mod download
 	$(Q)for pkg in $(PACKAGES); do \
 	    hack/generate.sh $$pkg || exit 1; \
@@ -35,20 +35,26 @@ generate-stub:
 	$(MAKE) -C level-zero-stub generate
 
 .PHONY: generate-dockerized
-generate-dockerized: clean
+generate-dockerized: clean-generated
 	$(Q)docker build --target artifacts \
 	    --output type=local,dest=. \
 	    --build-arg PACKAGES="$(PACKAGES)" \
 	    -f hack/Dockerfile.generate .
 
-.PHONY: clean
-clean: clean-coverage
+.PHONY: clean-generated
+clean-generated:
 	for pkg in $(PACKAGES); do \
 	    rm -f $$pkg/cgo_helpers.go $$pkg/cgo_helpers.h $$pkg/cgo_helpers.c; \
 	    rm -f $$pkg/const.go $$pkg/doc.go $$pkg/types.go; \
 	    rm -f $$pkg/$$pkg.go; \
 	    rm -f $$pkg/zz_*; \
 	done
+
+.PHONY: clean
+clean: clean-coverage
+	$(MAKE) -C examples clean
+	$(MAKE) -C level-zero-stub clean
+	for pkg in $(PACKAGES); do rm -f $$pkg/*.o; done
 
 # --- Test targets ---
 

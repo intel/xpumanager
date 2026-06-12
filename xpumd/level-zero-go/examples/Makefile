@@ -35,3 +35,7 @@ images:
 	                 --progress=plain \
 	                 -f Dockerfile .. ; \
 	done
+
+.PHONY: clean
+clean:
+	rm -f bin/*
