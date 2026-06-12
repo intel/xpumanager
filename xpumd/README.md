@@ -145,7 +145,8 @@ for the list of supported GPU metrics and attributes.
 
 Metrics availability depends on the underlying host hardware,
 firmware, kernel and its GPU driver version, and the user-space
-Level-Zero driver (included in the container image).
+Level-Zero driver (included in the container image, [driver release
+notes](https://github.com/intel/compute-runtime/releases)).
 
 That set is further constrained by the host kernel, depending on the
 privileges given to the (XPUM daemon) container / process querying the

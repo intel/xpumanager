@@ -8,7 +8,9 @@
 
 ## Pre-conditions
 
-Kubernetes cluster with either Intel GPU plugin[^1] or Intel GPU (DRA) resource driver[^2] installed.
+Kubernetes cluster with either Intel GPU plugin[^1] or Intel GPU (DRA) resource driver[^2] installed
+and node(s) with Intel GPUs supported by the XPUMD image driver stack
+([Level-Zero driver release notes](https://github.com/intel/compute-runtime/releases)).
 
 NOTE: Enable NFD ([Node Feature Discovery](https://kubernetes-sigs.github.io/node-feature-discovery/))
 / GPU node labeling when installing either GPU plugin or DRA driver, to avoid `Pending` daemon
