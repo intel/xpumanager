@@ -86,6 +86,15 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 		memcpy(record, pbuf, offset_of(fwDevRecord, compImageSetVerStr));
 		pbuf += offset_of(fwDevRecord, compImageSetVerStr);
 
+		if (record->descCount > PLDM_FWU_MAX_RECORD_DESCRIPTORS) {
+			ERR("Record descriptor count exceeds maximum limit\n");
+			free(pkg);
+			pkg = NULL;
+			fclose(mCompFp);
+			mCompFp = NULL;
+			return PLDM_ERROR;
+		}
+
 		memcpy(record->compImageSetVerStr, pbuf, record->compImageSetVerStrLen);
 		pbuf += record->compImageSetVerStrLen;
 
