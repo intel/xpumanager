@@ -7,6 +7,7 @@ package sysman
 
 import (
 	"fmt"
+	"runtime/debug"
 	"sync"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -56,6 +57,9 @@ type sysmanProvider struct {
 // receive the cached result.
 func (p *sysmanProvider) get(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
 	p.once.Do(func() {
+		if bi, ok := debug.ReadBuildInfo(); ok {
+			logger.Infow("build info", "settings", bi.Settings)
+		}
 		logger.Debug("Sysman init...")
 		if err := l0sysman.Init(0); err != nil {
 			p.err = fmt.Errorf("failed to initialize L0 Sysman API (likely a Level-Zero driver / device access issue): %w", err)
