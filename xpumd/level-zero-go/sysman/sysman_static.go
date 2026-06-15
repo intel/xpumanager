@@ -970,6 +970,7 @@ func (z *Power) GetProperties() (PowerProperties, error) {
 
 		pinner := runtime.Pinner{}
 		pinner.Pin(props.ExtendedProperties)
+		pinner.Pin(props.ExtendedProperties.DefaultLimit)
 		defer pinner.Unpin()
 
 		//nolint:staticcheck // could remove embedded field from selector
