@@ -41,6 +41,14 @@ build:
 	go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
 	go -C dist build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
+.PHONY: race
+# Build race detector versions (incompatible with PIE mode)
+# Log errors to file with: GORACE=log_path=xpumd-races
+race:
+	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
+	GOFLAGS=-race go tool -modfile tools/go.mod builder --config=builder-config.yaml
+	go -C dist build -race github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
+
 .PHONY: docker-build
 docker-build:
 	docker build -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
