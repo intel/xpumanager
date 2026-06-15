@@ -14,7 +14,7 @@ Contents:
 * [Current Intel GPU metrics](#current-intel-gpu-metrics)
   * [Overall approach](#overall-approach)
   * [Details](#details)
-* [Other OTel HW semantics users][#other-otel-hw-semantics-users]
+* [Other OTel HW semantics users](#other-otel-hw-semantics-users)
 * [Related upstream issues](#related-upstream-issues)
 
 
