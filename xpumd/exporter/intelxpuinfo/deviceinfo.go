@@ -121,11 +121,12 @@ func (s *deviceInfoServer) broadcastEvents(ld plog.Logs) {
 }
 
 func (s *deviceInfoServer) updateHealthData(md pmetric.Metrics) {
-	s.healthDataLock.Lock()
-	defer s.healthDataLock.Unlock()
-
 	mt := newMetricsTranslator(s.logger, s.cfg)
-	s.healthData = mt.translate(md)
+	data := mt.translate(md)
+
+	s.healthDataLock.Lock()
+	s.healthData = data
+	s.healthDataLock.Unlock()
 
 	s.broadcastHealthData()
 }
@@ -150,10 +151,12 @@ func (s *deviceInfoServer) broadcastHealthData() {
 	})
 }
 
-// sendHealthData sends the cached health data to the given stream. Expects
-// the caller to hold the appropriate locks.
+// sendHealthData sends the cached health data to the given stream, and does locking for it.
 func (s *deviceInfoServer) sendHealthData(stream pb.DeviceInfo_WatchDeviceHealthServer) error {
 	s.logger.Info("sending device health data")
+	s.healthDataLock.RLock()
+	defer s.healthDataLock.RUnlock()
+
 	if err := stream.Send(s.healthData); err != nil {
 		s.logger.Errorw("failed to send health data to client", "error", err)
 		s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
