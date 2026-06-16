@@ -658,8 +658,9 @@ private:
  * @param[in]     count         Total number of samples to emit (0 = unlimited).
  * @retval ZE_RESULT_SUCCESS  Always; per-metric errors are logged by the metric layer.
  *
- * @note  The keyboard-input thread uses the @c std::jthread stop token for cooperative
- *        cancellation; the thread exits after the next key press once a stop is requested.
+ * @note  The keyboard-input thread is started only for unlimited runs (@p count == 0)
+ *        in interactive terminals. Finite-count runs skip the input thread so completion
+ *        does not depend on keyboard input.
  */
 ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetric *> fields,
 							 std::vector<devInfo> &deviceList, std::vector<metrics::MetricCache> caches,
@@ -673,20 +674,27 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 		--remaining; // first sample was already emitted
 	}
 
-	std::jthread inputThread([&](const std::stop_token &stoken) {
-		char ch = 0;
-		while (!stoken.stop_requested()) {
-			ch = GETCH();
-			if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
-				return;
+	std::stop_source quitSource;
+	auto quitToken = quitSource.get_token();
+	const bool shouldStartInputThread = (count == 0) && STDIN_ISATTY();
+
+	std::jthread inputThread;
+	if (shouldStartInputThread) {
+		inputThread = std::jthread([quitSource, quitToken](const std::stop_token &ownStop) mutable {
+			char ch = 0;
+			while (!ownStop.stop_requested() && !quitToken.stop_requested()) {
+				ch = GETCH();
+				if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
+					quitSource.request_stop();
+					return;
+				}
 			}
-		}
-	});
+		});
+	}
 
 	const std::size_t numDevices = deviceList.size();
-	auto stoken = inputThread.get_stop_token();
 
-	while (!stoken.stop_requested()) {
+	while (!quitToken.stop_requested()) {
 		std::this_thread::sleep_for(loopInterval);
 
 		for (std::size_t i = 0; i < numDevices; ++i) {
@@ -697,7 +705,6 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 									  std::span<const metrics::MetricCache>(caches));
 
 		if (remaining > 0 && --remaining == 0) {
-			inputThread.request_stop();
 			break;
 		}
 	}
