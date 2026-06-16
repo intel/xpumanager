@@ -49,8 +49,8 @@ func (s *deviceInfoServer) WatchDeviceHealth(req *pb.WatchDeviceHealthRequest, s
 		return err
 	}
 
-	err := make(chan error)
-	s.deviceHealthClients.Store(stream, err)
+	errChan := make(chan error)
+	s.deviceHealthClients.Store(stream, errChan)
 	defer s.deviceHealthClients.Delete(stream)
 
 	select {
@@ -60,7 +60,7 @@ func (s *deviceInfoServer) WatchDeviceHealth(req *pb.WatchDeviceHealthRequest, s
 	case <-stream.Context().Done():
 		s.logger.Infow("stream closed", "error", stream.Context().Err())
 		return stream.Context().Err()
-	case e := <-err:
+	case e := <-errChan:
 		s.logger.Infow("stopping DeviceHealth stream", "error", e)
 		return e
 	}
@@ -73,8 +73,8 @@ func (s *deviceInfoServer) stop() {
 func (s *deviceInfoServer) WatchDeviceEvents(req *pb.WatchDeviceEventsRequest, stream pb.DeviceInfo_WatchDeviceEventsServer) error {
 	s.logger.Info("new DeviceEvents client connected")
 
-	errCh := make(chan error, 1)
-	s.deviceEventClients.Store(stream, errCh)
+	errChan := make(chan error, 1)
+	s.deviceEventClients.Store(stream, errChan)
 	defer s.deviceEventClients.Delete(stream)
 
 	select {
@@ -84,7 +84,7 @@ func (s *deviceInfoServer) WatchDeviceEvents(req *pb.WatchDeviceEventsRequest, s
 	case <-stream.Context().Done():
 		s.logger.Infow("stream closed", "error", stream.Context().Err())
 		return stream.Context().Err()
-	case e := <-errCh:
+	case e := <-errChan:
 		s.logger.Infow("stopping DeviceEvents stream", "error", e)
 		return e
 	}
@@ -100,7 +100,7 @@ func (s *deviceInfoServer) broadcastEvents(ld plog.Logs) {
 		if !ok {
 			panic("invalid type assertion for device event client stream")
 		}
-		errCh, ok := value.(chan error)
+		errChan, ok := value.(chan error)
 		if !ok {
 			panic("invalid type assertion for device event client stop channel")
 		}
@@ -109,7 +109,7 @@ func (s *deviceInfoServer) broadcastEvents(ld plog.Logs) {
 				s.logger.Errorw("failed to send event to client", "error", err)
 				s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
 				select {
-				case errCh <- err:
+				case errChan <- err:
 				default:
 				}
 				return true
