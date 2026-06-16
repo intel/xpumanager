@@ -56,10 +56,6 @@ struct DeviceSriovInfo
 #define PCI_CAPABILITY_LIST 0x34
 #endif
 
-#ifndef PCI_CAP_ID_SRIOV
-#define PCI_CAP_ID_SRIOV 0x10
-#endif
-
 /**
  * @brief PCI device information structure with SRIOV support
  */

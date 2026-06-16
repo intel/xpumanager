@@ -39,6 +39,8 @@ static constexpr std::string_view VGPU_CONF_FILE = "resources/config/vgpu.conf";
 #define OFFSET_VF_DEVICE_ID 0x1A
 #define OFFSET_FIRST_VF_OFFSET 0x18
 #define OFFSET_VF_BAR 0x24
+#define PCI_EXT_CAP_START 0x100
+#define PCI_EXT_CAP_ID_SRIOV 0x0010
 
 /**
  * @brief Initialize PCI access system
@@ -65,22 +67,25 @@ static bool initializePciSystem()
  */
 static void readSriovCapability(struct pci_device *dev, PciDeviceInfo &info)
 {
-	uint8_t capPtr = 0;
-	uint8_t capId = 0;
+	uint16_t capPtr = PCI_EXT_CAP_START;
 	uint16_t capReg = 0;
+	uint32_t capHeader = 0;
+	int maxExtCapWalk = 256;
 
-	// Find capabilities pointer
-	if (pci_device_cfg_read_u8(dev, &capPtr, PCI_CAPABILITY_LIST) != 0) {
-		return;
-	}
-
-	// Walk through capability list looking for SRIOV (0x10)
-	while (capPtr != 0) {
-		if (pci_device_cfg_read_u8(dev, &capId, capPtr) != 0) {
+	// Walk PCIe extended capability list (starting from 0x100) looking for SR-IOV capability.
+	while (capPtr != 0 && capPtr < 0x1000 && maxExtCapWalk-- > 0) {
+		if (pci_device_cfg_read_u32(dev, &capHeader, capPtr) != 0) {
 			break;
 		}
 
-		if (capId == PCI_CAP_ID_SRIOV) { // SRIOV capability
+		if (capHeader == 0 || capHeader == 0xFFFFFFFF) {
+			break;
+		}
+
+		uint16_t capId = static_cast<uint16_t>(capHeader & 0xFFFF);
+		uint16_t nextCapPtr = static_cast<uint16_t>((capHeader >> 20) & 0x0FFF);
+
+		if (capId == PCI_EXT_CAP_ID_SRIOV) {
 			info.isSriovCapable = true;
 
 			// Read SRIOV capabilities
@@ -128,10 +133,11 @@ static void readSriovCapability(struct pci_device *dev, PciDeviceInfo &info)
 			break;
 		}
 
-		// Move to next capability
-		if (pci_device_cfg_read_u8(dev, &capPtr, capPtr + 1) != 0) {
+		if (nextCapPtr == capPtr || nextCapPtr == 0 || nextCapPtr < PCI_EXT_CAP_START) {
 			break;
 		}
+
+		capPtr = nextCapPtr;
 	}
 }
 
