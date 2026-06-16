@@ -49,7 +49,7 @@ func (s *deviceInfoServer) WatchDeviceHealth(req *pb.WatchDeviceHealthRequest, s
 		return err
 	}
 
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 	s.deviceHealthClients.Store(stream, errChan)
 	defer s.deviceHealthClients.Delete(stream)
 
@@ -141,7 +141,10 @@ func (s *deviceInfoServer) broadcastHealthData() {
 			panic("invalid type assertion for device health client stop channel")
 		}
 		if err := s.sendHealthData(stream); err != nil {
-			errChan <- err
+			select {
+			case errChan <- err:
+			default:
+			}
 		}
 		return true
 	})
