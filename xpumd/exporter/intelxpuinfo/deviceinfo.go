@@ -153,10 +153,14 @@ func (s *deviceInfoServer) broadcastHealthData() {
 
 // sendHealthData sends the cached health data to the given stream, and does locking for it.
 func (s *deviceInfoServer) sendHealthData(stream pb.DeviceInfo_WatchDeviceHealthServer) error {
-	s.logger.Info("sending device health data")
 	s.healthDataLock.RLock()
 	defer s.healthDataLock.RUnlock()
+	if s.healthData == nil {
+		// initial data not yet available
+		return nil
+	}
 
+	s.logger.Info("sending device health data")
 	if err := stream.Send(s.healthData); err != nil {
 		s.logger.Errorw("failed to send health data to client", "error", err)
 		s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
