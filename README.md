@@ -18,7 +18,7 @@ Intel(R) XPU System Management Interface (XPU-SMI) is a command line interface (
   - [Default xpu-smi output](#default-xpu-smi-output)
   - [Running xpu-smi discovery](#running-xpu-smi-discovery)
 - [How to get XPU Manager](#how-to-get-xpu-manager)
-  - [Linux CLI tools (xpu-smi)](#linux-cli-tools-xpu-smi)
+  - [Install XPUM](#install-xpum)
   - [Windows CLI tools](#windows-cli-tools)
   - [GPU info exporter (xpumd)](#gpu-info-exporter-xpumd)
 - [Supported Devices](#supported-devices)
@@ -117,8 +117,43 @@ $ xpu-smi discovery -d 0
  
 ## How to get XPU Manager
 
-### Linux CLI tools (xpu-smi)
-`xpu-smi` package is available from the [Intel package repositories](https://dgpu-docs.intel.com/). One can also manually download / install the latest `xpu-smi` binary package from the XPUM [release page](https://github.com/intel/xpumanager/releases).
+### Install XPUM
+
+The following instructions apply to Ubuntu (using APT).
+
+First, configure the Intel GPU driver package repository as explained at [Intel GPU driver documentation](https://dgpu-docs.intel.com/installation-guides/installing-packages-from-the-intel-ppa.html).
+
+**Option 1: Install from Intel package repository**
+
+Install `xpu-smi` and its (driver) dependencies:
+```
+sudo apt install xpu-smi
+```
+
+**Option 2: Install from releases page**
+
+Install `xpu-smi` dependencies:
+```
+sudo apt install libhwloc15 libpciaccess0 libigsc1 libze1 libze-intel-gpu1
+```
+
+Download XPUM packages (relevant for the host distro) from the [releases page](https://github.com/intel/xpumanager/releases).
+
+Install them:
+```
+sudo apt install ./libxpum2_*.deb ./xpu-smi_*.deb
+```
+
+**Troubleshooting**
+
+Installation may fail if the driver packages are too old for this version of XPUM. A newer version may be available from the [Kobuk staging repository](https://launchpad.net/~kobuk-team/+archive/ubuntu/intel-graphics-staging).
+
+If that does not help, run the following to fix broken dependencies:
+```
+sudo apt --fix-broken install
+```
+
+File a ticket: https://github.com/intel/xpumanager/issues
 
 ### Windows CLI tools
 Latest installers / binaries can be downloaded from the XPUM [release page](https://github.com/intel/xpumanager/releases).
