@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ fromJson(vars.RUNS_ON || '"ubuntu-latest"') }}
     steps:
       - name: Checkout main branch (2.x docs, with full history for worktree)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
@@ -33,7 +33,7 @@ jobs:
       - name: Checkout v1.3.x branch (1.x docs)
         id: checkout_1x
         continue-on-error: true
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: v1.3.x
           path: src/1.x
