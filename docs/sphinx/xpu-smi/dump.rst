@@ -46,6 +46,7 @@ Options
 .. option:: --interval <seconds>, --delay <seconds>, --loop <seconds>
 
    Sampling interval in seconds between dumps. Default: ``1``. Maximum: ``20``.
+   ``--delay`` and ``--loop`` are aliases for ``--interval``.
 
 .. option:: --number <count>, --count <count>
 
@@ -62,7 +63,7 @@ Options
       A warning is emitted when ``--loop-ms`` is below 50 ms and power metrics are selected,
       as the power measurement window may be too short for accurate readings.
 
-.. option:: --file <filename>, -f <filename>
+.. option:: -f <filename>, --file <filename>, --filename <filename>
 
    Write output to a file instead of stdout.
 
@@ -136,34 +137,36 @@ Metrics Reference
    * - 20
      - PCIe Write (kB/s), per device
    * - 21
-     - Compute engine utilizations (%), per tile
+     - Unsupported
    * - 22
-     - Render engine utilizations (%), per tile
+     - Compute Engine Utilization (%), per tile
    * - 23
-     - Media decoder engine utilizations (%), per tile
+     - Render Engine Utilization (%), per tile
    * - 24
-     - Media encoder engine utilizations (%), per tile
+     - Media Decoder Engine Utilization (%), per tile
    * - 25
-     - Copy engine utilizations (%), per tile
+     - Media Encoder Engine Utilization (%), per tile
    * - 26
-     - Media enhancement engine utilizations (%), per tile
+     - Copy Engine Utilization (%), per tile
    * - 27
-     - 3D engine utilizations (%), per tile
+     - Unsupported
    * - 28
-     - GPU Memory Errors Correctable. Device-level is the sum value of tiles for multi-tile devices.
+     - Unsupported
    * - 29
-     - GPU Memory Errors Uncorrectable. Device-level is the sum value of tiles for multi-tile devices.
+     - GPU Memory Errors Correctable. Device-level is the sum value of tiles for multi-tile devices.
    * - 30
-     - Compute Engine Group Utilization (%), per tile
+     - GPU Memory Errors Uncorrectable. Device-level is the sum value of tiles for multi-tile devices.
    * - 31
-     - Render Engine Group Utilization (%), per tile
+     - Compute Engine Group Utilization (%), per tile
    * - 32
-     - Media Engine Group Utilization (%), per tile
+     - Render Engine Group Utilization (%), per tile
    * - 33
-     - Copy Engine Group Utilization (%), per tile
+     - Media Engine Group Utilization (%), per tile
    * - 34
-     - Throttle reason, per tile
+     - Copy Engine Group Utilization (%), per tile
    * - 35
+     - Throttle reason, per tile
+   * - 36
      - Media Engine Frequency (MHz), per tile or device
 
 Examples
