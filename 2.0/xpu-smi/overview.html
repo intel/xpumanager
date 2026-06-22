@@ -1,0 +1,673 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; Intel XPU Manager 2.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=60dbed4a"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Discovery" href="discovery.html" />
+    <link rel="prev" title="Intel(R) XPU Manager Documentation" href="../index.html" />
+ 
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Intel XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#global-options">Global Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#command-categories">Command Categories</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#output-formats">Output Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#device-identification">Device Identification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#query-gpu-field-reference">–query-gpu Field Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="discovery.html">Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updatefw.html">UpdateFW</a></li>
+<li class="toctree-l1"><a class="reference internal" href="amc.html">AMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vgpu.html">vGPU</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Intel XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/xpu-smi/overview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> is the command-line interface for Intel(R) XPU Manager.
+It is built on top of the Intel Level-Zero driver stack and provides local GPU
+management for Intel(R) Arc Pro Series GPUs.</p>
+<section id="global-options">
+<h2>Global Options<a class="headerlink" href="#global-options" title="Link to this heading"></a></h2>
+<p>These options are available at the top level (without a subcommand):</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-h">
+<span id="cmdoption-help"></span><span class="sig-name descname"><span class="pre">-h</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--help</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-h" title="Link to this definition"></a></dt>
+<dd><p>Print the help message and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-v">
+<span id="cmdoption-version"></span><span class="sig-name descname"><span class="pre">-v</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--version</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-v" title="Link to this definition"></a></dt>
+<dd><p>Display version information, including CLI version, build ID, and Level Zero version.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-list-gpus">
+<span class="sig-name descname"><span class="pre">--list-gpus</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-list-gpus" title="Link to this definition"></a></dt>
+<dd><p>Print one line per GPU (index, name, UUID) and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-query-gpu">
+<span class="sig-name descname"><span class="pre">--query-gpu</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;fields&gt;</span></span><a class="headerlink" href="#cmdoption-query-gpu" title="Link to this definition"></a></dt>
+<dd><p>Single-shot or looping per-field query. <code class="docutils literal notranslate"><span class="pre">&lt;fields&gt;</span></code> is a comma-separated list of
+field names (e.g. <code class="docutils literal notranslate"><span class="pre">temperature.gpu,power.draw</span></code>). Run <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">--query-gpu</span></code> with
+no fields to list all available field names.</p>
+<p>Related options used with <code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code>:</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-id">
+<span id="cmdoption-device"></span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;n&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;n&gt;</span></span><a class="headerlink" href="#cmdoption-id" title="Link to this definition"></a></dt>
+<dd><p>Select GPU by index or PCI BDF address.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-loop">
+<span class="sig-name descname"><span class="pre">--loop</span></span><span class="sig-prename descclassname"><span class="pre">[=&lt;sec&gt;]</span></span><a class="headerlink" href="#cmdoption-loop" title="Link to this definition"></a></dt>
+<dd><p>Repeat query every <code class="docutils literal notranslate"><span class="pre">&lt;sec&gt;</span></code> seconds (default: <code class="docutils literal notranslate"><span class="pre">1</span></code>).</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-loop-ms">
+<span class="sig-name descname"><span class="pre">--loop-ms</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;ms&gt;</span></span><a class="headerlink" href="#cmdoption-loop-ms" title="Link to this definition"></a></dt>
+<dd><p>Repeat query every <code class="docutils literal notranslate"><span class="pre">&lt;ms&gt;</span></code> milliseconds. Takes precedence over <code class="docutils literal notranslate"><span class="pre">--loop</span></code>.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-count">
+<span id="cmdoption-c"></span><span class="sig-name descname"><span class="pre">--count</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;n&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;n&gt;</span></span><a class="headerlink" href="#cmdoption-count" title="Link to this definition"></a></dt>
+<dd><p>Cap the number of loop iterations. Default: infinite.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-format">
+<span class="sig-name descname"><span class="pre">--format</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;spec&gt;</span></span><a class="headerlink" href="#cmdoption-format" title="Link to this definition"></a></dt>
+<dd><p>Output format: <code class="docutils literal notranslate"><span class="pre">csv[,noheader][,nounits]</span></code>.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-f">
+<span id="cmdoption-file"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;path&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--file</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;path&gt;</span></span><a class="headerlink" href="#cmdoption-f" title="Link to this definition"></a></dt>
+<dd><p>Redirect output to a file instead of stdout.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi [Options]
+xpu-smi -v
+xpu-smi -h
+xpu-smi --list-gpus
+xpu-smi --query-gpu=&lt;fields&gt; [--id &lt;n&gt;] [--loop[=&lt;sec&gt;]|--loop-ms=&lt;ms&gt;] [--count=&lt;n&gt;] [--format=csv[,...]]
+xpu-smi &lt;command&gt; [command-options]
+</pre></div>
+</div>
+<p>Running <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> with no arguments displays a GPU status summary of all detected devices.</p>
+</section>
+<section id="command-categories">
+<h2>Command Categories<a class="headerlink" href="#command-categories" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 15.0%" />
+<col style="width: 15.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Command</p></th>
+<th class="head"><p>Linux</p></th>
+<th class="head"><p>Windows</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference internal" href="discovery.html"><span class="doc">Discovery</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Discover GPU devices and display device properties</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="topology.html"><span class="doc">Topology</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Display system topology and CPU/GPU connectivity</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stats.html"><span class="doc">Stats</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Display GPU performance statistics</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="dump.html"><span class="doc">Dump</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Continuously dump raw GPU telemetry to stdout or file</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="health.html"><span class="doc">Health</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>Check GPU component health status</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="config.html"><span class="doc">Config</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Get and change GPU settings</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="updatefw.html"><span class="doc">UpdateFW</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>Yes</p></td>
+<td><p>Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="amc.html"><span class="doc">AMC</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>AMC (Add-in Card Management Controller) operations</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="vgpu.html"><span class="doc">vGPU</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>Create and manage virtual GPUs (SR-IOV)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="ps.html"><span class="doc">PS</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>List processes using GPU resources</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="log.html"><span class="doc">Log</span></a></p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>Collect GPU debug logs</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="output-formats">
+<h2>Output Formats<a class="headerlink" href="#output-formats" title="Link to this heading"></a></h2>
+<p>Most commands support two output formats:</p>
+<ul class="simple">
+<li><p><strong>Text</strong> (default): Human-readable tabular output</p></li>
+<li><p><strong>JSON</strong> (<code class="docutils literal notranslate"><span class="pre">-j</span></code> / <code class="docutils literal notranslate"><span class="pre">--json</span></code>): Machine-readable JSON, suitable for scripting and automation</p></li>
+<li><p><strong>XML</strong> (<code class="docutils literal notranslate"><span class="pre">topology</span> <span class="pre">-f</span> <span class="pre">&lt;file&gt;</span></code>): System topology exported as an XML file (see <a class="reference internal" href="topology.html"><span class="doc">Topology</span></a>)</p></li>
+</ul>
+</section>
+<section id="device-identification">
+<h2>Device Identification<a class="headerlink" href="#device-identification" title="Link to this heading"></a></h2>
+<p>Most commands accept a device identifier via <code class="docutils literal notranslate"><span class="pre">-d</span></code> / <code class="docutils literal notranslate"><span class="pre">--device</span></code> / <code class="docutils literal notranslate"><span class="pre">--id</span></code> (subcommands) or <code class="docutils literal notranslate"><span class="pre">--device</span></code> / <code class="docutils literal notranslate"><span class="pre">--id</span></code> (<code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code>). Devices can be
+addressed by either:</p>
+<ul class="simple">
+<li><p><strong>Device ID</strong>: An integer index assigned by the driver (e.g., <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
+<li><p><strong>PCI BDF address</strong>: Bus/Device/Function notation (e.g., <code class="docutils literal notranslate"><span class="pre">0000:4d:00.0</span></code>)</p></li>
+</ul>
+</section>
+<section id="query-gpu-field-reference">
+<h2>–query-gpu Field Reference<a class="headerlink" href="#query-gpu-field-reference" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code> accepts a comma-separated list of field names. Fields are grouped by
+metric category. Run <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">--query-gpu</span></code> with no argument to print the live list.</p>
+<p><strong>Metric Groups (for</strong> <code class="docutils literal notranslate"><span class="pre">--metrics</span></code> <strong>)</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18.0%" />
+<col style="width: 10.0%" />
+<col style="width: 72.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Group Name</p></th>
+<th class="head"><p>Shortcut</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IDENTITY</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Device identity fields (name, index, UUID, serial, driver/vbios version, PCI IDs)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MEMORY</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">m</span></code></p></td>
+<td><p>Memory total/used/free, read/write bandwidth, bandwidth utilization</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">UTILIZATION</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">u</span></code></p></td>
+<td><p>GPU, compute, render, media, copy engine utilization (%)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEMPERATURE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
+<td><p>GPU core and memory temperatures. Shortcut <code class="docutils literal notranslate"><span class="pre">p</span></code> also enables POWER.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POWER</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
+<td><p>Power draw, per-tile power, energy consumed, power limits. Shortcut <code class="docutils literal notranslate"><span class="pre">p</span></code> also enables TEMPERATURE.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CLOCK</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">c</span></code></p></td>
+<td><p>Current and max graphics/media clock frequencies, throttle reason</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PCI</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">t</span></code></p></td>
+<td><p>PCIe link gen/width (max and current), TX/RX throughput, replay counter</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ECC</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">e</span></code></p></td>
+<td><p>ECC mode, corrected/uncorrected error counts, RAS error categories</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">x</span></code></p></td>
+<td><p>EU active/stall/idle percentages (Intel Xe only)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FAN</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">f</span></code></p></td>
+<td><p>Fan speed (%)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
+<td><p>—</p></td>
+<td><p>All metrics from all groups</p></td>
+</tr>
+</tbody>
+</table>
+<p>Multi-char combos expand character-by-character (e.g. <code class="docutils literal notranslate"><span class="pre">pu</span></code> = POWER + TEMPERATURE + UTILIZATION, <code class="docutils literal notranslate"><span class="pre">put</span></code> adds PCI, <code class="docutils literal notranslate"><span class="pre">pum</span></code> adds MEMORY).</p>
+<p><strong>Available Field Names</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 42.0%" />
+<col style="width: 12.0%" />
+<col style="width: 46.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">timestamp</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Sample timestamp</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">name</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">gpu_name</span></code>)</p></td>
+<td><p>—</p></td>
+<td><p>GPU device name</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">index</span></code></p></td>
+<td><p>—</p></td>
+<td><p>GPU device index</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">uuid</span></code></p></td>
+<td><p>—</p></td>
+<td><p>GPU UUID</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">serial</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Serial number</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">driver_version</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Driver version string</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vbios_version</span></code></p></td>
+<td><p>—</p></td>
+<td><p>VBIOS version string</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.bus_id</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCI BDF address</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.device_id</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCI device ID</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.sub_device_id</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCI sub-device ID</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.gpu</span></code></p></td>
+<td><p>C</p></td>
+<td><p>GPU core temperature</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.memory</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Memory temperature</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Total GPU power draw</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Per-tile GPU power draw</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Current power limit</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.max_limit</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Maximum power limit</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code></p></td>
+<td><p>J</p></td>
+<td><p>Total energy consumed</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.gpu</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Overall GPU utilization</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.compute</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Compute engine utilization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.render</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Render engine utilization</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.media</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Media engine utilization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.copy</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Copy engine utilization</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.memory</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Memory bandwidth utilization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.total</span></code></p></td>
+<td><p>MiB</p></td>
+<td><p>Total memory</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.used</span></code></p></td>
+<td><p>MiB</p></td>
+<td><p>Used memory</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.free</span></code></p></td>
+<td><p>MiB</p></td>
+<td><p>Free memory</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.read.bandwidth</span></code></p></td>
+<td><p>kB/s</p></td>
+<td><p>Memory read bandwidth</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.write.bandwidth</span></code></p></td>
+<td><p>kB/s</p></td>
+<td><p>Memory write bandwidth</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.bandwidth.utilization</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Memory bandwidth utilization</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.current.graphics</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.current.sm</span></code>)</p></td>
+<td><p>MHz</p></td>
+<td><p>Current graphics/SM clock</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.current.media</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.current.video</span></code>)</p></td>
+<td><p>MHz</p></td>
+<td><p>Current media/video clock</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.max.graphics</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.max.sm</span></code>)</p></td>
+<td><p>MHz</p></td>
+<td><p>Max graphics clock</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.max.media</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.max.video</span></code>)</p></td>
+<td><p>MHz</p></td>
+<td><p>Max media clock</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.throttle.reason</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Active clock throttle reason flags</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.gen.max</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Maximum PCIe generation</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.gen.current</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Current PCIe generation</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.width.max</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Maximum PCIe link width</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.width.current</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Current PCIe link width</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.tx.throughput</span></code></p></td>
+<td><p>MB/s</p></td>
+<td><p>PCIe transmit throughput</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.rx.throughput</span></code></p></td>
+<td><p>MB/s</p></td>
+<td><p>PCIe receive throughput</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.tx.throughput.kbs</span></code></p></td>
+<td><p>kB/s</p></td>
+<td><p>PCIe transmit throughput (kB/s)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.rx.throughput.kbs</span></code></p></td>
+<td><p>kB/s</p></td>
+<td><p>PCIe receive throughput (kB/s)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.replay.counter</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe replay error counter</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.mode.current</span></code></p></td>
+<td><p>—</p></td>
+<td><p>ECC mode (enabled/disabled)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.corrected.aggregate.total</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Total corrected ECC errors</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.uncorrected.aggregate.total</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Total uncorrected ECC errors</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.aggregate.total</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Total ECC errors (corrected + uncorrected)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.reset</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS reset error counter</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.programming.errors</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS programming error counter</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.driver.errors</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS driver error counter</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable cache error counter</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable cache error counter</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.total</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS non-compute (memory) error counter</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.active</span></code></p></td>
+<td><p>%</p></td>
+<td><p>EU array active percentage (Intel Xe only)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.stall</span></code></p></td>
+<td><p>%</p></td>
+<td><p>EU array stall percentage (Intel Xe only)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.idle</span></code></p></td>
+<td><p>%</p></td>
+<td><p>EU array idle percentage (Intel Xe only)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fan.speed</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Fan speed percentage</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Intel(R) XPU Manager Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="discovery.html" class="btn btn-neutral float-right" title="Discovery" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Intel Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

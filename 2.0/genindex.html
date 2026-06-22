@@ -1,0 +1,881 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Index &mdash; Intel XPU Manager 2.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=60dbed4a"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+ 
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Intel XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/discovery.html">Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/stats.html">Stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/health.html">Health</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/updatefw.html">UpdateFW</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/amc.html">AMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/vgpu.html">vGPU</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/log.html">Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Intel XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Index</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#Symbols"><strong>Symbols</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ 
+</div>
+<h2 id="Symbols">Symbols</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    --assumeyes
+
+      <ul>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-y">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --clear-ras-errors
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-clear-ras-errors">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --coldreset
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-coldreset">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --component
+
+      <ul>
+        <li><a href="xpu-smi/health.html#cmdoption-c">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --count
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-number">command line option</a>, <a href="xpu-smi/overview.html#cmdoption-count">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --create
+
+      <ul>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-c">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --date
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-date">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --delay
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-interval">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --device
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+</li>
+      </ul></li>
+      <li>
+    --dump
+
+      <ul>
+        <li><a href="xpu-smi/discovery.html#cmdoption-dump">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --eu
+
+      <ul>
+        <li><a href="xpu-smi/stats.html#cmdoption-e">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --fancurve
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-fancurve">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --fancurve-rpm
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-fancurve-rpm">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --fanid
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-fanid">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --fanspeed
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-fanspeed">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --file
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-file">command line option</a>, <a href="xpu-smi/dump.html#cmdoption-file">[1]</a>, <a href="xpu-smi/log.html#cmdoption-f">[2]</a>, <a href="xpu-smi/overview.html#cmdoption-f">[3]</a>, <a href="xpu-smi/topology.html#cmdoption-f">[4]</a>, <a href="xpu-smi/updatefw.html#cmdoption-f">[5]</a>
+</li>
+      </ul></li>
+      <li>
+    --filename
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-filename">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --filetype
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-filetype">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --force
+
+      <ul>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-force">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --force-reset-gpus
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-force-reset-gpus">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --format
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-format">command line option</a>, <a href="xpu-smi/overview.html#cmdoption-format">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --frequencyrange
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-frequencyrange">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --gpureset
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-gpureset">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --help
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">command line option</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+</li>
+      </ul></li>
+      <li>
+    --id
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+</li>
+      </ul></li>
+      <li>
+    --ignore-gpu-user-processes
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-ignore-gpu-user-processes">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --interval
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-interval">command line option</a>, <a href="xpu-smi/stats.html#cmdoption-interval">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --json
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">command line option</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+</li>
+      </ul></li>
+      <li>
+    --list
+
+      <ul>
+        <li><a href="xpu-smi/health.html#cmdoption-l">command line option</a>, <a href="xpu-smi/vgpu.html#cmdoption-l">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --list-gpus
+
+      <ul>
+        <li><a href="xpu-smi/overview.html#cmdoption-list-gpus">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --list-offline-pages
+
+      <ul>
+        <li><a href="xpu-smi/stats.html#cmdoption-list-offline-pages">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --listamcversions
+
+      <ul>
+        <li><a href="xpu-smi/discovery.html#cmdoption-listamcversions">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --lmem
+
+      <ul>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-lmem">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --loop
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-interval">command line option</a>, <a href="xpu-smi/overview.html#cmdoption-loop">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --loop-ms
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-loop-ms">command line option</a>, <a href="xpu-smi/overview.html#cmdoption-loop-ms">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --matrix
+
+      <ul>
+        <li><a href="xpu-smi/topology.html#cmdoption-m">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --memoryecc
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-memoryecc">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --metrics
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-metrics">command line option</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    --number
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-number">command line option</a>, <a href="xpu-smi/vgpu.html#cmdoption-n">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    --pciedowngrade
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-pciedowngrade">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --pf
+
+      <ul>
+        <li><a href="xpu-smi/discovery.html#cmdoption-pf">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --physicalFunction
+
+      <ul>
+        <li><a href="xpu-smi/discovery.html#cmdoption-pf">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --powerlimit
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-powerlimit">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --powertype
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-powertype">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --precheck
+
+      <ul>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-precheck">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --query-gpu
+
+      <ul>
+        <li><a href="xpu-smi/overview.html#cmdoption-query-gpu">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --ras
+
+      <ul>
+        <li><a href="xpu-smi/stats.html#cmdoption-r">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --remove
+
+      <ul>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-r">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --reset
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-reset">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --samples
+
+      <ul>
+        <li><a href="xpu-smi/stats.html#cmdoption-samples">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --scheduler
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-scheduler">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --select
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-metrics">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --sensor
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-sensor">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --sensorid
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-s">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --standby
+
+      <ul>
+        <li><a href="xpu-smi/config.html#cmdoption-standby">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --stats
+
+      <ul>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-s">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --time
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-time">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --type
+
+      <ul>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-t">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --version
+
+      <ul>
+        <li><a href="xpu-smi/overview.html#cmdoption-v">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --vf
+
+      <ul>
+        <li><a href="xpu-smi/discovery.html#cmdoption-vf">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --virtualFunction
+
+      <ul>
+        <li><a href="xpu-smi/discovery.html#cmdoption-vf">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --yes
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-y">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -c
+
+      <ul>
+        <li><a href="xpu-smi/health.html#cmdoption-c">command line option</a>, <a href="xpu-smi/overview.html#cmdoption-count">[1]</a>, <a href="xpu-smi/vgpu.html#cmdoption-c">[2]</a>
+</li>
+      </ul></li>
+      <li>
+    -d
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[9]</a>
+</li>
+      </ul></li>
+      <li>
+    -e
+
+      <ul>
+        <li><a href="xpu-smi/stats.html#cmdoption-e">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -f
+
+      <ul>
+        <li><a href="xpu-smi/dump.html#cmdoption-file">command line option</a>, <a href="xpu-smi/log.html#cmdoption-f">[1]</a>, <a href="xpu-smi/overview.html#cmdoption-f">[2]</a>, <a href="xpu-smi/topology.html#cmdoption-f">[3]</a>, <a href="xpu-smi/updatefw.html#cmdoption-f">[4]</a>
+</li>
+      </ul></li>
+      <li>
+    -h
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">command line option</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+</li>
+      </ul></li>
+      <li>
+    -j
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">command line option</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+</li>
+      </ul></li>
+      <li>
+    -l
+
+      <ul>
+        <li><a href="xpu-smi/health.html#cmdoption-l">command line option</a>, <a href="xpu-smi/vgpu.html#cmdoption-l">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    -m
+
+      <ul>
+        <li><a href="xpu-smi/topology.html#cmdoption-m">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -n
+
+      <ul>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-n">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -r
+
+      <ul>
+        <li><a href="xpu-smi/stats.html#cmdoption-r">command line option</a>, <a href="xpu-smi/vgpu.html#cmdoption-r">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    -s
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-s">command line option</a>, <a href="xpu-smi/vgpu.html#cmdoption-s">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    -t
+
+      <ul>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-t">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -v
+
+      <ul>
+        <li><a href="xpu-smi/overview.html#cmdoption-v">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -y
+
+      <ul>
+        <li><a href="xpu-smi/amc.html#cmdoption-y">command line option</a>, <a href="xpu-smi/updatefw.html#cmdoption-y">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    command line option
+
+      <ul>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-y">--assumeyes</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-clear-ras-errors">--clear-ras-errors</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-coldreset">--coldreset</a>
+</li>
+        <li><a href="xpu-smi/health.html#cmdoption-c">--component</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-number">--count</a>, <a href="xpu-smi/overview.html#cmdoption-count">[1]</a>
+</li>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-c">--create</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-date">--date</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-interval">--delay</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">--device</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+</li>
+        <li><a href="xpu-smi/discovery.html#cmdoption-dump">--dump</a>
+</li>
+        <li><a href="xpu-smi/stats.html#cmdoption-e">--eu</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-fancurve">--fancurve</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-fancurve-rpm">--fancurve-rpm</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-fanid">--fanid</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-fanspeed">--fanspeed</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-file">--file</a>, <a href="xpu-smi/dump.html#cmdoption-file">[1]</a>, <a href="xpu-smi/log.html#cmdoption-f">[2]</a>, <a href="xpu-smi/overview.html#cmdoption-f">[3]</a>, <a href="xpu-smi/topology.html#cmdoption-f">[4]</a>, <a href="xpu-smi/updatefw.html#cmdoption-f">[5]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-filename">--filename</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-filetype">--filetype</a>
+</li>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-force">--force</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-force-reset-gpus">--force-reset-gpus</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-format">--format</a>, <a href="xpu-smi/overview.html#cmdoption-format">[1]</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-frequencyrange">--frequencyrange</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-gpureset">--gpureset</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">--help</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">--id</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-ignore-gpu-user-processes">--ignore-gpu-user-processes</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-interval">--interval</a>, <a href="xpu-smi/stats.html#cmdoption-interval">[1]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">--json</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+</li>
+        <li><a href="xpu-smi/health.html#cmdoption-l">--list</a>, <a href="xpu-smi/vgpu.html#cmdoption-l">[1]</a>
+</li>
+        <li><a href="xpu-smi/overview.html#cmdoption-list-gpus">--list-gpus</a>
+</li>
+        <li><a href="xpu-smi/stats.html#cmdoption-list-offline-pages">--list-offline-pages</a>
+</li>
+        <li><a href="xpu-smi/discovery.html#cmdoption-listamcversions">--listamcversions</a>
+</li>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-lmem">--lmem</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-interval">--loop</a>, <a href="xpu-smi/overview.html#cmdoption-loop">[1]</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-loop-ms">--loop-ms</a>, <a href="xpu-smi/overview.html#cmdoption-loop-ms">[1]</a>
+</li>
+        <li><a href="xpu-smi/topology.html#cmdoption-m">--matrix</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-memoryecc">--memoryecc</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-metrics">--metrics</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-number">--number</a>, <a href="xpu-smi/vgpu.html#cmdoption-n">[1]</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-pciedowngrade">--pciedowngrade</a>
+</li>
+        <li><a href="xpu-smi/discovery.html#cmdoption-pf">--pf</a>
+</li>
+        <li><a href="xpu-smi/discovery.html#cmdoption-pf">--physicalFunction</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-powerlimit">--powerlimit</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-powertype">--powertype</a>
+</li>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-precheck">--precheck</a>
+</li>
+        <li><a href="xpu-smi/overview.html#cmdoption-query-gpu">--query-gpu</a>
+</li>
+        <li><a href="xpu-smi/stats.html#cmdoption-r">--ras</a>
+</li>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-r">--remove</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-reset">--reset</a>
+</li>
+        <li><a href="xpu-smi/stats.html#cmdoption-samples">--samples</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-scheduler">--scheduler</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-metrics">--select</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-sensor">--sensor</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-s">--sensorid</a>
+</li>
+        <li><a href="xpu-smi/config.html#cmdoption-standby">--standby</a>
+</li>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-s">--stats</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-time">--time</a>
+</li>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-t">--type</a>
+</li>
+        <li><a href="xpu-smi/overview.html#cmdoption-v">--version</a>
+</li>
+        <li><a href="xpu-smi/discovery.html#cmdoption-vf">--vf</a>
+</li>
+        <li><a href="xpu-smi/discovery.html#cmdoption-vf">--virtualFunction</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-y">--yes</a>
+</li>
+        <li><a href="xpu-smi/health.html#cmdoption-c">-c</a>, <a href="xpu-smi/overview.html#cmdoption-count">[1]</a>, <a href="xpu-smi/vgpu.html#cmdoption-c">[2]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">-d</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[9]</a>
+</li>
+        <li><a href="xpu-smi/stats.html#cmdoption-e">-e</a>
+</li>
+        <li><a href="xpu-smi/dump.html#cmdoption-file">-f</a>, <a href="xpu-smi/log.html#cmdoption-f">[1]</a>, <a href="xpu-smi/overview.html#cmdoption-f">[2]</a>, <a href="xpu-smi/topology.html#cmdoption-f">[3]</a>, <a href="xpu-smi/updatefw.html#cmdoption-f">[4]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">-h</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">-j</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+</li>
+        <li><a href="xpu-smi/health.html#cmdoption-l">-l</a>, <a href="xpu-smi/vgpu.html#cmdoption-l">[1]</a>
+</li>
+        <li><a href="xpu-smi/topology.html#cmdoption-m">-m</a>
+</li>
+        <li><a href="xpu-smi/vgpu.html#cmdoption-n">-n</a>
+</li>
+        <li><a href="xpu-smi/stats.html#cmdoption-r">-r</a>, <a href="xpu-smi/vgpu.html#cmdoption-r">[1]</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-s">-s</a>, <a href="xpu-smi/vgpu.html#cmdoption-s">[1]</a>
+</li>
+        <li><a href="xpu-smi/updatefw.html#cmdoption-t">-t</a>
+</li>
+        <li><a href="xpu-smi/overview.html#cmdoption-v">-v</a>
+</li>
+        <li><a href="xpu-smi/amc.html#cmdoption-y">-y</a>, <a href="xpu-smi/updatefw.html#cmdoption-y">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Intel Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

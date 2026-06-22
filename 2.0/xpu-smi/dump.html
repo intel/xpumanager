@@ -1,0 +1,437 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dump &mdash; Intel XPU Manager 2.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=60dbed4a"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Health" href="health.html" />
+    <link rel="prev" title="Stats" href="stats.html" />
+ 
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Intel XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="discovery.html">Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Dump</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#metrics-reference">Metrics Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updatefw.html">UpdateFW</a></li>
+<li class="toctree-l1"><a class="reference internal" href="amc.html">AMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vgpu.html">vGPU</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Intel XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Dump</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/xpu-smi/dump.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dump">
+<h1>Dump<a class="headerlink" href="#dump" title="Link to this heading"></a></h1>
+<p>Dump device statistics data continuously at a configurable interval. Suitable for
+time-series data collection and high-frequency sampling.</p>
+<section id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi dump -d [deviceIds] --metrics [metricsSpec] --interval [seconds] --number [count]
+xpu-smi dump --device [deviceIds] --metrics [metricsSpec] --interval [seconds] --number [count]
+xpu-smi dump --device [deviceIds] --metrics [metricsSpec] --file [filename] --loop-ms [milliseconds] --time [seconds]
+</pre></div>
+</div>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading"></a></h2>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-h">
+<span id="cmdoption-help"></span><span class="sig-name descname"><span class="pre">-h</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--help</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-h" title="Link to this definition"></a></dt>
+<dd><p>Print this help message and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-j">
+<span id="cmdoption-json"></span><span class="sig-name descname"><span class="pre">-j</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--json</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-j" title="Link to this definition"></a></dt>
+<dd><p>Print result in JSON format.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-d">
+<span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceIds&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceIds&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceIds&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
+<dd><p>Device IDs or PCI BDF addresses to query. Use <code class="docutils literal notranslate"><span class="pre">-1</span></code> to select all devices.
+Multiple IDs can be separated by a comma.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-metrics">
+<span id="cmdoption-select"></span><span class="sig-name descname"><span class="pre">--metrics</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;metricsSpec&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--select</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;metricsSpec&gt;</span></span><a class="headerlink" href="#cmdoption-metrics" title="Link to this definition"></a></dt>
+<dd><p>Metrics to collect. Accepts any of the following forms, or a comma-separated mix:</p>
+<ul class="simple">
+<li><p><strong>Legacy numeric IDs</strong>: <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">0,1,2</span></code> (see Metrics Reference below)</p></li>
+<li><p><strong>Group names</strong>: <code class="docutils literal notranslate"><span class="pre">POWER</span></code>, <code class="docutils literal notranslate"><span class="pre">UTILIZATION</span></code>, <code class="docutils literal notranslate"><span class="pre">TEMPERATURE</span></code>, <code class="docutils literal notranslate"><span class="pre">MEMORY</span></code>, <code class="docutils literal notranslate"><span class="pre">CLOCK</span></code>, <code class="docutils literal notranslate"><span class="pre">PCI</span></code>, <code class="docutils literal notranslate"><span class="pre">ECC</span></code>, <code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code>, <code class="docutils literal notranslate"><span class="pre">FAN</span></code>, <code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></li>
+<li><p><strong>Single-char shortcuts</strong>: <code class="docutils literal notranslate"><span class="pre">p</span></code> (Power + Temperature), <code class="docutils literal notranslate"><span class="pre">u</span></code> (Utilization), <code class="docutils literal notranslate"><span class="pre">m</span></code> (Memory), <code class="docutils literal notranslate"><span class="pre">c</span></code> (Clock), <code class="docutils literal notranslate"><span class="pre">t</span></code> (PCI), <code class="docutils literal notranslate"><span class="pre">e</span></code> (ECC), <code class="docutils literal notranslate"><span class="pre">x</span></code> (EU_ARRAY), <code class="docutils literal notranslate"><span class="pre">f</span></code> (Fan)</p></li>
+<li><p><strong>Multi-char combos</strong>: <code class="docutils literal notranslate"><span class="pre">pu</span></code> (Power + Temperature + Utilization), <code class="docutils literal notranslate"><span class="pre">pum</span></code> (Power + Temperature + Utilization + Memory)</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Dot-notation field names (e.g. <code class="docutils literal notranslate"><span class="pre">temperature.gpu</span></code>) are not accepted by <code class="docutils literal notranslate"><span class="pre">--metrics</span></code>.
+Use <code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code> at the top level for field-name queries.</p>
+</div>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-interval">
+<span id="cmdoption-delay"></span><span id="cmdoption-loop"></span><span class="sig-name descname"><span class="pre">--interval</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--delay</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--loop</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><a class="headerlink" href="#cmdoption-interval" title="Link to this definition"></a></dt>
+<dd><p>Sampling interval in seconds between dumps. Default: <code class="docutils literal notranslate"><span class="pre">1</span></code>. Maximum: <code class="docutils literal notranslate"><span class="pre">20</span></code>.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-number">
+<span id="cmdoption-count"></span><span class="sig-name descname"><span class="pre">--number</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;count&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--count</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;count&gt;</span></span><a class="headerlink" href="#cmdoption-number" title="Link to this definition"></a></dt>
+<dd><p>Number of samples to dump. If omitted, dumps continuously until the user
+terminates the operation (Ctrl-C).</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-loop-ms">
+<span class="sig-name descname"><span class="pre">--loop-ms</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;milliseconds&gt;</span></span><a class="headerlink" href="#cmdoption-loop-ms" title="Link to this definition"></a></dt>
+<dd><p>Millisecond-precision sampling interval. Overrides <code class="docutils literal notranslate"><span class="pre">--interval</span></code> when present.
+Use for sub-second sampling. Recommend pairing with <code class="docutils literal notranslate"><span class="pre">--file</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A warning is emitted when <code class="docutils literal notranslate"><span class="pre">--loop-ms</span></code> is below 50 ms and power metrics are selected,
+as the power measurement window may be too short for accurate readings.</p>
+</div>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-file">
+<span id="cmdoption-f"></span><span class="sig-name descname"><span class="pre">--file</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><a class="headerlink" href="#cmdoption-file" title="Link to this definition"></a></dt>
+<dd><p>Write output to a file instead of stdout.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-time">
+<span class="sig-name descname"><span class="pre">--time</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><a class="headerlink" href="#cmdoption-time" title="Link to this definition"></a></dt>
+<dd><p>Total dump duration in seconds. Cannot be combined with <code class="docutils literal notranslate"><span class="pre">--number</span></code>.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-date">
+<span class="sig-name descname"><span class="pre">--date</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-date" title="Link to this definition"></a></dt>
+<dd><p>Include date (<code class="docutils literal notranslate"><span class="pre">YYYY/MM/DD</span></code>) prefix in each timestamp column.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-format">
+<span class="sig-name descname"><span class="pre">--format</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;spec&gt;</span></span><a class="headerlink" href="#cmdoption-format" title="Link to this definition"></a></dt>
+<dd><p>Output format for CSV output. Comma-separated flags:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">csv</span></code> — CSV output (default when <code class="docutils literal notranslate"><span class="pre">--file</span></code> is used)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">noheader</span></code> — suppress the header row</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nounits</span></code> — omit unit suffixes (e.g. <code class="docutils literal notranslate"><span class="pre">(W)</span></code>, <code class="docutils literal notranslate"><span class="pre">(C)</span></code>) from headers</p></li>
+</ul>
+<p>Example: <code class="docutils literal notranslate"><span class="pre">--format</span> <span class="pre">csv,noheader,nounits</span></code></p>
+</dd></dl>
+
+</section>
+<section id="metrics-reference">
+<h2>Metrics Reference<a class="headerlink" href="#metrics-reference" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 8.0%" />
+<col style="width: 92.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Metric</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>GPU Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>GPU Power (W), per tile or device</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>GPU Frequency (MHz), per tile or device</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>GPU Core Temperature (Celsius), per tile or device</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>GPU Memory Temperature (Celsius), per tile or device</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>GPU Memory Utilization (%), per tile or device</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>GPU Memory Read (kB/s), per tile or device</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>GPU Memory Write (kB/s), per tile or device</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>GPU Energy Consumed (J), per tile or device</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>GPU EU Array Active (%), per tile or device. At least one thread is active. Device-level is the average value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>GPU EU Array Stall (%), per tile or device. At least one thread is loaded but the EU is stalled. Device-level is the average value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>GPU EU Array Idle (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>Reset Counter</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>Programming Errors</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>Driver Errors</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>Cache Errors Correctable</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>Cache Errors Uncorrectable</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>GPU Memory Used (MiB), per tile or device</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>PCIe Read (kB/s), per device</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>PCIe Write (kB/s), per device</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>Compute engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>Render engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>Media decoder engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>Media encoder engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>Copy engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>Media enhancement engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>3D engine utilizations (%), per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>GPU Memory Errors Correctable. Device-level is the sum value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>GPU Memory Errors Uncorrectable. Device-level is the sum value of tiles for multi-tile devices.</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>Compute Engine Group Utilization (%), per tile</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>Render Engine Group Utilization (%), per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>Media Engine Group Utilization (%), per tile</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>Copy Engine Group Utilization (%), per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>Throttle reason, per tile</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>Media Engine Frequency (MHz), per tile or device</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>Dump GPU utilization and power for all devices every second, 10 times:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>dump<span class="w"> </span>--device<span class="w"> </span>-1<span class="w"> </span>--metrics<span class="w"> </span><span class="m">0</span>,1<span class="w"> </span>--interval<span class="w"> </span><span class="m">1</span><span class="w"> </span>--number<span class="w"> </span><span class="m">10</span>
+</pre></div>
+</div>
+<p>Dump using group name shortcuts:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>dump<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>--metrics<span class="w"> </span>pu<span class="w"> </span>--interval<span class="w"> </span><span class="m">1</span>
+</pre></div>
+</div>
+<p>Dump frequency and temperature for device 0 every 2 seconds:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>dump<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>--metrics<span class="w"> </span>CLOCK,TEMPERATURE<span class="w"> </span>--interval<span class="w"> </span><span class="m">2</span>
+</pre></div>
+</div>
+<p>Millisecond-precision dump to file:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>dump<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>--metrics<span class="w"> </span>POWER,UTILIZATION<span class="w"> </span>--file<span class="w"> </span>metrics.csv<span class="w"> </span>--loop-ms<span class="w"> </span><span class="m">100</span><span class="w"> </span>--time<span class="w"> </span><span class="m">60</span>
+</pre></div>
+</div>
+<p>Dump with date in timestamp, CSV with no header or units:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>dump<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>--metrics<span class="w"> </span><span class="m">0</span>,1<span class="w"> </span>--date<span class="w"> </span>--format<span class="w"> </span>csv,noheader,nounits
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="stats.html" class="btn btn-neutral float-left" title="Stats" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="health.html" class="btn btn-neutral float-right" title="Health" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Intel Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

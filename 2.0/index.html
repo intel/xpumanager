@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intel(R) XPU Manager Documentation &mdash; Intel XPU Manager 2.0</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=60dbed4a"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="xpu-smi/overview.html" />
+ 
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            Intel XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/discovery.html">Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/stats.html">Stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/health.html">Health</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/updatefw.html">UpdateFW</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/amc.html">AMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/vgpu.html">vGPU</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/log.html">Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Intel XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Intel(R) XPU Manager Documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="intel-r-xpu-manager-documentation">
+<h1>Intel(R) XPU Manager Documentation<a class="headerlink" href="#intel-r-xpu-manager-documentation" title="Link to this heading"></a></h1>
+<p>Intel(R) XPU Manager is a tool for monitoring and managing Intel Data Center GPUs.
+It provides a command-line interface (<code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code>) for local GPU management.</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/overview.html">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/overview.html#global-options">Global Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/overview.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/overview.html#command-categories">Command Categories</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/overview.html#output-formats">Output Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/overview.html#device-identification">Device Identification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/overview.html#query-gpu-field-reference">–query-gpu Field Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/discovery.html">Discovery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/discovery.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/discovery.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/discovery.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/topology.html">Topology</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/topology.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/topology.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/topology.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/stats.html">Stats</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/stats.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/stats.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/stats.html#output-metrics">Output Metrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/stats.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/dump.html">Dump</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/dump.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/dump.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/dump.html#metrics-reference">Metrics Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/dump.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/health.html">Health</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/health.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/health.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/health.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/config.html">Config</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/config.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/config.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/config.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/updatefw.html">UpdateFW</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/updatefw.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/updatefw.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/updatefw.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/amc.html">AMC</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/amc.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/amc.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/amc.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/vgpu.html">vGPU</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/vgpu.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/vgpu.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/vgpu.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/ps.html">PS</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/ps.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/ps.html#output-columns">Output Columns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/ps.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/ps.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/log.html">Log</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/log.html#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/log.html#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/log.html#collected-information">Collected Information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xpu-smi/log.html#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="xpu-smi/overview.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Intel Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

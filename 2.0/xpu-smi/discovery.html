@@ -1,0 +1,423 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Discovery &mdash; Intel XPU Manager 2.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=60dbed4a"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Topology" href="topology.html" />
+    <link rel="prev" title="Overview" href="overview.html" />
+ 
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Intel XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Discovery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updatefw.html">UpdateFW</a></li>
+<li class="toctree-l1"><a class="reference internal" href="amc.html">AMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vgpu.html">vGPU</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Intel XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Discovery</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/xpu-smi/discovery.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="discovery">
+<h1>Discovery<a class="headerlink" href="#discovery" title="Link to this heading"></a></h1>
+<p>Discover the GPU devices installed on this machine and provide device information.</p>
+<section id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi discovery
+xpu-smi discovery -d [deviceId]
+xpu-smi discovery --device [deviceId]
+xpu-smi discovery --device [pciBdfAddress]
+xpu-smi discovery --device [deviceId] -j
+xpu-smi discovery --dump [propertyIds]
+</pre></div>
+</div>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading"></a></h2>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-h">
+<span id="cmdoption-help"></span><span class="sig-name descname"><span class="pre">-h</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--help</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-h" title="Link to this definition"></a></dt>
+<dd><p>Print this help message and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-j">
+<span id="cmdoption-json"></span><span class="sig-name descname"><span class="pre">-j</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--json</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-j" title="Link to this definition"></a></dt>
+<dd><p>Print result in JSON format.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-d">
+<span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
+<dd><p>Device ID or PCI BDF address to query. When specified, displays more detailed
+information about the given device.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-pf">
+<span id="cmdoption-physicalFunction"></span><span class="sig-name descname"><span class="pre">--pf</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--physicalFunction</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-pf" title="Link to this definition"></a></dt>
+<dd><p>Display the physical functions only.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-vf">
+<span id="cmdoption-virtualFunction"></span><span class="sig-name descname"><span class="pre">--vf</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--virtualFunction</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-vf" title="Link to this definition"></a></dt>
+<dd><p>Display the virtual functions only.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-dump">
+<span class="sig-name descname"><span class="pre">--dump</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;propertyIds&gt;</span></span><a class="headerlink" href="#cmdoption-dump" title="Link to this definition"></a></dt>
+<dd><p>Dump one or more device properties in CSV format. Accepts a comma-separated list
+of property IDs. Use <code class="docutils literal notranslate"><span class="pre">-1</span></code> to dump all properties.</p>
+<table class="docutils align-default" id="id1">
+<caption><span class="caption-text">Property IDs</span><a class="headerlink" href="#id1" title="Link to this table"></a></caption>
+<colgroup>
+<col style="width: 10.0%" />
+<col style="width: 90.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>ID</p></th>
+<th class="head"><p>Property</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>1</p></td>
+<td><p>Device ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>2</p></td>
+<td><p>Device Name</p></td>
+</tr>
+<tr class="row-even"><td><p>3</p></td>
+<td><p>Vendor Name</p></td>
+</tr>
+<tr class="row-odd"><td><p>4</p></td>
+<td><p>SOC UUID</p></td>
+</tr>
+<tr class="row-even"><td><p>5</p></td>
+<td><p>Serial Number</p></td>
+</tr>
+<tr class="row-odd"><td><p>6</p></td>
+<td><p>Core Clock Rate</p></td>
+</tr>
+<tr class="row-even"><td><p>7</p></td>
+<td><p>Stepping</p></td>
+</tr>
+<tr class="row-odd"><td><p>8</p></td>
+<td><p>Driver Version</p></td>
+</tr>
+<tr class="row-even"><td><p>9</p></td>
+<td><p>GFX Firmware Version</p></td>
+</tr>
+<tr class="row-odd"><td><p>10</p></td>
+<td><p>GFX Data Firmware Version</p></td>
+</tr>
+<tr class="row-even"><td><p>11</p></td>
+<td><p>PCI BDF Address</p></td>
+</tr>
+<tr class="row-odd"><td><p>12</p></td>
+<td><p>PCI Slot</p></td>
+</tr>
+<tr class="row-even"><td><p>13</p></td>
+<td><p>PCIe Generation</p></td>
+</tr>
+<tr class="row-odd"><td><p>14</p></td>
+<td><p>PCIe Max Link Width</p></td>
+</tr>
+<tr class="row-even"><td><p>15</p></td>
+<td><p>OAM Socket ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>16</p></td>
+<td><p>Memory Physical Size</p></td>
+</tr>
+<tr class="row-even"><td><p>17</p></td>
+<td><p>Number of Memory Channels</p></td>
+</tr>
+<tr class="row-odd"><td><p>18</p></td>
+<td><p>Memory Bus Width</p></td>
+</tr>
+<tr class="row-even"><td><p>19</p></td>
+<td><p>Number of EUs</p></td>
+</tr>
+<tr class="row-odd"><td><p>20</p></td>
+<td><p>Number of Media Engines</p></td>
+</tr>
+<tr class="row-even"><td><p>21</p></td>
+<td><p>Number of Media Enhancement Engines</p></td>
+</tr>
+<tr class="row-odd"><td><p>22</p></td>
+<td><p>GFX Firmware Status</p></td>
+</tr>
+<tr class="row-even"><td><p>23</p></td>
+<td><p>PCI Vendor ID</p></td>
+</tr>
+<tr class="row-odd"><td><p>24</p></td>
+<td><p>PCI Device ID</p></td>
+</tr>
+<tr class="row-even"><td><p>25</p></td>
+<td><p>Number of Tiles</p></td>
+</tr>
+<tr class="row-odd"><td><p>26</p></td>
+<td><p>Number of Slices</p></td>
+</tr>
+<tr class="row-even"><td><p>27</p></td>
+<td><p>Number of Sub-slices per Slice</p></td>
+</tr>
+<tr class="row-odd"><td><p>28</p></td>
+<td><p>Number of EUs per Sub-slice</p></td>
+</tr>
+<tr class="row-even"><td><p>29</p></td>
+<td><p>Number of Threads per EU</p></td>
+</tr>
+<tr class="row-odd"><td><p>30</p></td>
+<td><p>Physical EU SIMD Width</p></td>
+</tr>
+<tr class="row-even"><td><p>31</p></td>
+<td><p>Max Command Queue Priority</p></td>
+</tr>
+<tr class="row-odd"><td><p>32</p></td>
+<td><p>Max Hardware Contexts</p></td>
+</tr>
+<tr class="row-even"><td><p>33</p></td>
+<td><p>Max Memory Alloc Size</p></td>
+</tr>
+<tr class="row-odd"><td><p>34</p></td>
+<td><p>Memory Free Size</p></td>
+</tr>
+<tr class="row-even"><td><p>35</p></td>
+<td><p>Memory ECC State</p></td>
+</tr>
+<tr class="row-odd"><td><p>36</p></td>
+<td><p>Kernel Version</p></td>
+</tr>
+<tr class="row-even"><td><p>37</p></td>
+<td><p>DRM Device</p></td>
+</tr>
+<tr class="row-odd"><td><p>38</p></td>
+<td><p>Device Type</p></td>
+</tr>
+<tr class="row-even"><td><p>39</p></td>
+<td><p>SKU Type</p></td>
+</tr>
+<tr class="row-odd"><td><p>40</p></td>
+<td><p>PCIe Max Bandwidth</p></td>
+</tr>
+<tr class="row-even"><td><p>41</p></td>
+<td><p>AMC Firmware Name</p></td>
+</tr>
+<tr class="row-odd"><td><p>42</p></td>
+<td><p>AMC Firmware Version</p></td>
+</tr>
+<tr class="row-even"><td><p>43</p></td>
+<td><p>OPROM Code Firmware Name</p></td>
+</tr>
+<tr class="row-odd"><td><p>44</p></td>
+<td><p>OPROM Code Firmware Version</p></td>
+</tr>
+<tr class="row-even"><td><p>45</p></td>
+<td><p>OPROM Data Firmware Name</p></td>
+</tr>
+<tr class="row-odd"><td><p>46</p></td>
+<td><p>OPROM Data Firmware Version</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-listamcversions">
+<span class="sig-name descname"><span class="pre">--listamcversions</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-listamcversions" title="Link to this definition"></a></dt>
+<dd><p>Show all AMC firmware versions.</p>
+</dd></dl>
+
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>List all GPUs:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>discovery
+</pre></div>
+</div>
+<p>Show detailed info for device 0:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>discovery<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+<p>Show detailed info in JSON format:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>discovery<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-j
+</pre></div>
+</div>
+<p>Dump device name and PCI BDF for all devices in CSV format:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>discovery<span class="w"> </span>--dump<span class="w"> </span><span class="m">2</span>,11
+</pre></div>
+</div>
+<p>Dump all properties in CSV format:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>discovery<span class="w"> </span>--dump<span class="w"> </span>-1
+</pre></div>
+</div>
+<p>List all AMC firmware versions:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>discovery<span class="w"> </span>--listamcversions
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topology.html" class="btn btn-neutral float-right" title="Topology" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Intel Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
