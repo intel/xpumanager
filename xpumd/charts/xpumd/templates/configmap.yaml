@@ -91,6 +91,14 @@ data:
               "*":
                 severity: warning
                 message: "Unexpected memory health state, mapped to warning"
+          # Filter out (by using empty state_mapping) ECC states that are not indicative of device health
+          - health_domain: "gpu"
+            filters:
+              - key: hw.type
+                values: [gpu]
+              - key: hw.state
+                values: [ecc_disabled, ecc_enabled, ecc_available, ecc_unavailable]
+            state_mapping: {}
           # Default mapping (empty filters matches any data point not matched above):
           - health_domain: {{`"{{ .hw_type }}"`}}
             state_mapping:
