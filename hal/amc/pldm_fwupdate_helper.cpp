@@ -9,6 +9,9 @@
 #include "pldm.h"
 #include <string>
 
+static_assert(sizeof(i2cdataPldmInfo::respPayload) <= 256, "respPayload must fit a uint8_t command length");
+static_assert(PLDM_FWU_COMP_VER_STR_SIZE_MAX >= 256, "version string buffer must exceed max uint8_t length");
+
 /**
  * @brief Print firmware update command information
  *
@@ -60,8 +63,15 @@ uint8_t pldm::fwReqUpdate()
 	memcpy(mReqUpdate.compImgSetVerStr, pkg->compImagesInfo.compImages[mCurComp].verStr,
 		   mReqUpdate.compImgSetVerStrLen);
 
-	mFwuCmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwuRequestUpdate) - sizeof(mReqUpdate.compImgSetVerStr) +
-				 mReqUpdate.compImgSetVerStrLen;
+	size_t cmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwuRequestUpdate) - sizeof(mReqUpdate.compImgSetVerStr) +
+					mReqUpdate.compImgSetVerStrLen;
+	// +1 for the CRC byte written at respPayload[cmdLen].
+	if (cmdLen + 1 > sizeof(mI2cPldmWrite->respPayload)) {
+		ERR("REQUEST_UPDATE payload too large ({} bytes incl. CRC, max {})\n", cmdLen + 1,
+			sizeof(mI2cPldmWrite->respPayload));
+		return PLDM_ERROR;
+	}
+	mFwuCmdLen = static_cast<uint8_t>(cmdLen);
 	memcpy(&mI2cPldmWrite->respPayload[BYTE_0], &mReqUpdate, mFwuCmdLen);
 	mI2cPldmWrite->respPayload[mFwuCmdLen] = crc8Smbus(mI2cPldmWrite->respPayload, mFwuCmdLen);
 
@@ -101,8 +111,15 @@ uint8_t pldm::fwupdPassCompTable()
 	mPassCompTable.verStrLen = pkg->compImagesInfo.compImages[mCurComp].verStrLen;
 	memcpy(mPassCompTable.verStr, pkg->compImagesInfo.compImages[mCurComp].verStr, mPassCompTable.verStrLen);
 
-	mFwuCmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwuPassCompTable) - sizeof(mPassCompTable.verStr) +
-				 mPassCompTable.verStrLen;
+	size_t cmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwuPassCompTable) - sizeof(mPassCompTable.verStr) +
+					mPassCompTable.verStrLen;
+	// +1 for the CRC byte written at respPayload[cmdLen].
+	if (cmdLen + 1 > sizeof(mI2cPldmWrite->respPayload)) {
+		ERR("PASS_COMPONENT_TABLE payload too large ({} bytes incl. CRC, max {})\n", cmdLen + 1,
+			sizeof(mI2cPldmWrite->respPayload));
+		return PLDM_ERROR;
+	}
+	mFwuCmdLen = static_cast<uint8_t>(cmdLen);
 
 	memcpy(&mI2cPldmWrite->respPayload[BYTE_0], &mPassCompTable, mFwuCmdLen);
 	mI2cPldmWrite->respPayload[mFwuCmdLen] = crc8Smbus(mI2cPldmWrite->respPayload, mFwuCmdLen);
@@ -146,7 +163,14 @@ uint8_t pldm::fwUpdComp()
 	mUpdComp.verStrLen = pkg->compImagesInfo.compImages[mCurComp].verStrLen;
 	memcpy(mUpdComp.verStr, pkg->compImagesInfo.compImages[mCurComp].verStr, mUpdComp.verStrLen);
 
-	mFwuCmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwUpdComp) - sizeof(mUpdComp.verStr) + mUpdComp.verStrLen;
+	size_t cmdLen = FWU_COMMAND_BASE_SIZE + sizeof(struct fwUpdComp) - sizeof(mUpdComp.verStr) + mUpdComp.verStrLen;
+	// +1 for the CRC byte written at respPayload[cmdLen].
+	if (cmdLen + 1 > sizeof(mI2cPldmWrite->respPayload)) {
+		ERR("UPDATE_COMPONENT payload too large ({} bytes incl. CRC, max {})\n", cmdLen + 1,
+			sizeof(mI2cPldmWrite->respPayload));
+		return PLDM_ERROR;
+	}
+	mFwuCmdLen = static_cast<uint8_t>(cmdLen);
 
 	memcpy(&mI2cPldmWrite->respPayload[BYTE_0], &mUpdComp, mFwuCmdLen);
 	mI2cPldmWrite->respPayload[mFwuCmdLen] = crc8Smbus(mI2cPldmWrite->respPayload, mFwuCmdLen);
