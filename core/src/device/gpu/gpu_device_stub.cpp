@@ -104,8 +104,8 @@ struct igsc_oem_serial_number_local {
 };
 
 xpum_result_t getOemSerialNumber(const std::string& meiDevicePath, std::string& serialNumber) {
-    const std::string str_igscLibPath{"libigsc.so"};
-    const std::string str_igscLibPath0{"libigsc.so.0"}; //temporary workaround for missing symoblic link libigsc.so -> libigsc.so.0
+    const std::string str_igscLibPath{"libigsc.so.1"};// serial number support exists here, so try to load the version with .so.1 first. If not exist, then try libigsc.so
+    const std::string str_igscLibPath0{"libigsc.so"}; 
     const size_t max_oem_serial_number_length = 512;
     serialNumber.clear();
     if (meiDevicePath.empty()) {
