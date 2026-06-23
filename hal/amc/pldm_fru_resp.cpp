@@ -69,13 +69,6 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
 			// Extract FRU Table Data from response payload
 			// Payload format: completionCode(1) + nextDataXferHandle(4) + xferFlag(1) +
 			// fruTableData(variable)
-			mFruTableResponse.completionCode = mI2cPldmRead->respPayload[0];
-
-			mFruTableResponse.nextDataXferHandle =
-				(uint32_t)mI2cPldmRead->respPayload[1] | ((uint32_t)mI2cPldmRead->respPayload[2] << 8) |
-				((uint32_t)mI2cPldmRead->respPayload[3] << 16) | ((uint32_t)mI2cPldmRead->respPayload[4] << 24);
-
-			mFruTableResponse.xferFlag = mI2cPldmRead->respPayload[5];
 
 			// Calculate actual data length from total message size
 			/**
@@ -89,9 +82,37 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
 			unsigned int headerSize = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
 									  sizeof(mFruTableResponse.completionCode) +
 									  sizeof(mFruTableResponse.nextDataXferHandle) + sizeof(mFruTableResponse.xferFlag);
-			mFruCurrentDataLength = static_cast<uint16_t>(totalSize - headerSize);
 
-			memcpy(mFruTableResponse.fruTableData, &mI2cPldmRead->respPayload[6], mFruCurrentDataLength);
+			// Reject short/truncated frames before parsing fields, so we never read stale payload
+			// bytes (and the subtraction below can't underflow).
+			if (totalSize < headerSize) {
+				ERR("PLDM FRU response too small (byteCount=0x{:02x})\n", mI2cPldmRead->mctpSmbusHdr.byteCount);
+				ret = PLDM_ERROR;
+				break;
+			}
+
+			mFruTableResponse.completionCode = mI2cPldmRead->respPayload[0];
+
+			mFruTableResponse.nextDataXferHandle =
+				(uint32_t)mI2cPldmRead->respPayload[1] | ((uint32_t)mI2cPldmRead->respPayload[2] << 8) |
+				((uint32_t)mI2cPldmRead->respPayload[3] << 16) | ((uint32_t)mI2cPldmRead->respPayload[4] << 24);
+
+			mFruTableResponse.xferFlag = mI2cPldmRead->respPayload[5];
+
+			unsigned int dataLength = totalSize - headerSize;
+			const unsigned int fruDataOffset = sizeof(mFruTableResponse.completionCode) +
+											   sizeof(mFruTableResponse.nextDataXferHandle) +
+											   sizeof(mFruTableResponse.xferFlag);
+			const unsigned int maxSrc = sizeof(mI2cPldmRead->respPayload) - fruDataOffset;
+			const unsigned int maxDst = sizeof(mFruTableResponse.fruTableData);
+			if (dataLength > maxSrc || dataLength > maxDst) {
+				ERR("PLDM FRU data length out of range ({} bytes)\n", dataLength);
+				ret = PLDM_ERROR;
+				break;
+			}
+			mFruCurrentDataLength = static_cast<uint16_t>(dataLength);
+
+			memcpy(mFruTableResponse.fruTableData, &mI2cPldmRead->respPayload[fruDataOffset], mFruCurrentDataLength);
 
 			DBG("FRU Table Data received: {} bytes\n", mFruCurrentDataLength);
 			DBG("Transfer flag: 0x{:02X} ", mFruTableResponse.xferFlag);
