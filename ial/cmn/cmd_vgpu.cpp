@@ -238,7 +238,6 @@ ze_result_t cmdVgpu::remove(devInfo *d) // NOLINT(readability-convert-member-fun
 
 	deviceInfo.isIGPU = d->dev->isIGPU();
 	deviceInfo.bdfAddress = pciHandle->getBDFStr();
-	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
 	// Remove the VFs
 	result = vfHandle->removeVFs(&deviceInfo);

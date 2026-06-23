@@ -10,28 +10,10 @@
 #include <fstream>
 #include "lin.h"
 #include <sstream>
-#include <iomanip>
 #include <pciaccess.h>
-#include <filesystem>
-#include <map>
-#include <algorithm>
-#include <cerrno>
-#include <cctype>
-#include <cstdint>
-#include <ios>
-#include <string>
-#include <system_error>
 #include <dirent.h>
 #include <file_io.h>
 
-static constexpr std::string_view VGPU_CONF_FILE = "resources/config/vgpu.conf";
-#define XPUM_MAX_VF_NUM 128
-#define PF_EXEC_QUANTUM_MS 64
-#define PF_PREEMPT_TIMEOUT_US 128000
-#define VF_EXEC_QUANTUM_US 2000
-#define MAX_VF_EXEC_QUANTUM_MS 50
-#define VF_EXEC_RATIO 0.5
-#define ONE_MS_IN_US 1000
 #define OFFSET_TOTAL_VF 0x0E
 #define OFFSET_INITIAL_VF 0x0C
 #define OFFSET_NUM_VF 0x10
@@ -279,11 +261,7 @@ static PciDeviceInfo queryPciDeviceByBdf(const std::string &bdfString)
 /**
  * @brief Get the sysfs SR-IOV admin path for a device
  *
- * Checks if the sysfs sriov_admin directory exists for the device.
- * Returns the sysfs path if present, otherwise returns an empty string
- * to signal callers to use the legacy debugfs paths instead.
- *
- * @param[in] drmCardName The DRM card name (e.g., "card0")
+ * @param[in] drmCardName DRM card name (e.g., "card0")
  * @return std::string The sriov_admin sysfs base path, or empty string if not available
  */
 static std::string getSriovAdminPath(const std::string &drmCardName)
@@ -293,130 +271,109 @@ static std::string getSriovAdminPath(const std::string &drmCardName)
 		DBG("Using sysfs SR-IOV admin path: %s\n", sysfsPath.c_str());
 		return sysfsPath;
 	}
-	INFO("sysfs sriov_admin not found, callers will use debugfs\n");
+	INFO("sysfs sriov_admin not found for %s\n", drmCardName.c_str());
 	return "";
 }
 
 /**
- * @brief Write VF scheduling parameters to the given directory
+ * @brief Round a positive integer down to the nearest power of two
  *
- * Writes exec_quantum_ms and preempt_timeout_us. The caller is responsible
- * for passing either the sysfs or debugfs path.
- *
- * @param[in] dir The target directory (sysfs profile or debugfs VF path)
- * @param[in] attrs Configuration attributes
- * @return int 0 on success, -1 on failure
+ * @param[in] value Value to round down
+ * @return uint64_t Rounded power-of-two value, or 0 when value is 0
  */
-static int writeVfSchedParams(const std::string &dir, const AttrFromConfigFile &attrs)
+static uint64_t roundDownPowOfTwo(uint64_t value)
 {
-	if (writeFile(dir + "/exec_quantum_ms", std::to_string(attrs.vfExec)) != 0) {
-		return -1;
+	uint64_t rounded = 0;
+	while (value != 0) {
+		rounded = value;
+		value &= (value - 1);
 	}
-	if (writeFile(dir + "/preempt_timeout_us", std::to_string(attrs.vfPreempt)) != 0) {
-		return -1;
-	}
-	return 0;
+	return rounded;
 }
 
 /**
- * @brief Write PF scheduling parameters to the given directory
+ * @brief Parse a VRAM debugfs line into bytes
  *
- * Writes exec_quantum_ms, preempt_timeout_us, and the scheduling policy
- * attribute. When using sysfs, writes sched_priority derived from
- * attrs.schedIfIdle (true="low", false="normal"). When using debugfs,
- * writes sched_if_idle as a boolean ("1" or "0").
+ * Accepts raw byte values as well as KiB, MiB, or GiB suffixed values.
  *
- * @param[in] dir The target PF directory (sysfs profile or debugfs PF path)
- * @param[in] attrs Configuration attributes
- * @param[in] useSysfs true to write sched_priority (sysfs), false for sched_if_idle (debugfs)
- * @return int 0 on success, -1 on failure
+ * @param[in] line Debugfs line containing a numeric VRAM value
+ * @return uint64_t Parsed size in bytes, or 0 on failure
  */
-static int writePfSchedParams(const std::string &dir, const AttrFromConfigFile &attrs, bool useSysfs)
+static uint64_t parseVramValueInBytes(const std::string &line)
 {
-	if (writeFile(dir + "/exec_quantum_ms", std::to_string(attrs.pfExec)) != 0) {
-		return -1;
+	size_t valueStart = line.find_first_of("0123456789");
+	if (valueStart == std::string::npos) {
+		return 0;
 	}
-	if (writeFile(dir + "/preempt_timeout_us", std::to_string(attrs.pfPreempt)) != 0) {
-		return -1;
+
+	size_t valueEnd = line.find_first_not_of("0123456789", valueStart);
+	uint64_t value = 0;
+	try {
+		value = std::stoull(line.substr(valueStart, valueEnd - valueStart));
+	} catch (const std::exception &) {
+		return 0;
 	}
-	if (useSysfs) {
-		if (writeFile(dir + "/sched_priority", attrs.schedIfIdle ? "low" : "normal") != 0) {
-			return -1;
-		}
-	} else {
-		if (writeFile(dir + "/sched_if_idle", attrs.schedIfIdle ? "1" : "0") != 0) {
-			return -1;
-		}
+
+	if (line.find("GiB") != std::string::npos) {
+		return value * 1024ULL * ONE_MB_IN_BYTES;
 	}
-	return 0;
+	if (line.find("MiB") != std::string::npos) {
+		return value * ONE_MB_IN_BYTES;
+	}
+	if (line.find("KiB") != std::string::npos) {
+		return value * 1024ULL;
+	}
+	return value;
 }
 
 /**
- * @brief Write resource provisioning attributes for a VF
+ * @brief Read available VRAM size from xe debugfs
  *
- * Writes lmem_quota, ggtt_quota, doorbells_quota, and contexts_quota
- * to the given directory. The caller is responsible for passing the
- * correct path (currently debugfs, sysfs in future).
+ * Reads the "size" entry from tile0/vram_mm and returns the parsed value.
  *
- * @param[in] dir The target VF directory containing resource quota files
- * @param[in] attrs Configuration attributes
- * @param[in] lmem Local memory quota to assign in bytes
- * @return int 0 on success, -1 on failure
+ * @param[in] bdfAddress PCI BDF address (e.g., "0000:03:00.0")
+ * @return uint64_t Available VRAM size in bytes, or 0 on failure
  */
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
-static int writeVfResourceParams(const std::string &dir, const AttrFromConfigFile &attrs, uint64_t lmem, bool isIGPU)
+static uint64_t readAvailableVram(const std::string &bdfAddress)
 {
-	const std::string lmemPath = dir + "/lmem_quota";
-	std::error_code ec;
-	if (std::filesystem::exists(lmemPath, ec)) {
-		if (writeFile(lmemPath, std::to_string(lmem)) != 0) {
-			return -1;
+	std::string mmPath = "/sys/kernel/debug/dri/" + bdfAddress + "/tile0/vram_mm";
+	std::ifstream ifs(mmPath);
+	std::string line;
+
+	if (!ifs.is_open()) {
+		ERR("{} {}\n", errno == EACCES ? "Permission denied opening" : "Failed to open", mmPath.c_str());
+		return 0;
+	}
+
+	while (std::getline(ifs, line)) {
+		if (line.length() >= MAX_PATH) {
+			break;
 		}
-	} else if (!isIGPU) {
-		// dGPU: lmem_quota must be present when the VF debugfs dir exists.
-		ERR("lmem_quota not found at {}\n", lmemPath.c_str());
-		return -1;
+		if (line.find("size") == std::string::npos) {
+			continue;
+		}
+
+		return parseVramValueInBytes(line);
 	}
-	if (writeFile(dir + "/ggtt_quota", std::to_string(attrs.vfGgtt)) != 0) {
-		return -1;
-	}
-	if (writeFile(dir + "/doorbells_quota", std::to_string(attrs.vfDoorbells)) != 0) {
-		return -1;
-	}
-	if (writeFile(dir + "/contexts_quota", std::to_string(attrs.vfContexts)) != 0) {
-		return -1;
-	}
+
+	ERR("Failed to parse available VRAM from %s\n", mmPath.c_str());
 	return 0;
 }
 
 /**
  * @brief Get the amount of free local memory (LMEM) available on the device
  *
- * Reads the vram_mm file(vram0_mm for older kernels) from the debugfs path to determine the
+ * Reads the visible_avail entry from tile0/vram_mm to determine the
  * amount of visible available memory on the GPU device.
  *
  * @param[in] path The debugfs path for the device (e.g., /sys/kernel/debug/dri/0000:03:00.0)
  * @return uint64_t Free LMEM size in bytes, or 0 if unable to read or parse the information
  */
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static uint64_t getFreeLmemSize(const std::string &path, bool isIGPU)
 {
 	std::string mmPath = path + "/tile0/vram_mm";
-	std::error_code ec;
-	if (!std::filesystem::exists(mmPath, ec)) {
-		if (ec && ec == std::errc::permission_denied) {
-			if (isIGPU) {
-				DBG("Permission denied accessing {}, continuing with LMEM=0.\n", mmPath.c_str());
-			} else {
-				ERR("Permission denied accessing {}\n", mmPath.c_str());
-			}
-			return 0;
-		}
-		mmPath = path + "/vram0_mm";
-	}
 	std::ifstream ifs(mmPath);
 	std::string line;
-	uint64_t freeSize = 0;
 
 	if (!ifs.is_open()) {
 		if (isIGPU) {
@@ -432,102 +389,53 @@ static uint64_t getFreeLmemSize(const std::string &path, bool isIGPU)
 		if (line.length() >= MAX_PATH) {
 			break;
 		}
-		if (strstr(line.c_str(), "visible_avail") == NULL) {
+		if (line.find("visible_avail") == std::string::npos) {
 			continue;
 		}
-		sscanf(line.c_str(), "%*[^0-9]%lu", &freeSize);
-		freeSize = freeSize * ONE_MB_IN_BYTES; // MiB to bytes
-		break;
-	}
-	ifs.close();
-	return freeSize;
-}
 
-/**
- * @brief Write VF (Virtual Function) attributes to sysfs and debugfs
- *
- * Configures a specific VF by writing scheduling parameters via sysfs
- * (with debugfs fallback) and resource quotas via debugfs.
- *
- * @param[in] sysfsVfProfileDir sysfs VF profile path (empty string to skip sysfs scheduling)
- * @param[in] debugfsVfDir debugfs VF directory path for resource provisioning and fallback scheduling
- * @param[in] attrs Configuration attributes from the config file
- * @param[in] lmem Local memory quota to assign to this VF in bytes
- * @return int 0 on success, -1 on failure
- */
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
-static int writeVfAttr(const std::string &sysfsVfProfileDir, const std::string &debugfsVfDir,
-					   const AttrFromConfigFile &attrs, uint64_t lmem, bool isIGPU)
-{
-	std::error_code ec;
-	const std::string schedDir = !sysfsVfProfileDir.empty() ? sysfsVfProfileDir : debugfsVfDir;
-	if (!schedDir.empty() && std::filesystem::exists(schedDir, ec)) {
-		if (writeVfSchedParams(schedDir, attrs) != 0) {
-			return -1;
-		}
+		return parseVramValueInBytes(line);
 	}
 
-	// Write resource provisioning only when debugfs VF path is available.
-	if (!debugfsVfDir.empty() && std::filesystem::exists(debugfsVfDir, ec)) {
-		if (writeVfResourceParams(debugfsVfDir, attrs, lmem, isIGPU) != 0) {
-			return -1;
-		}
-	}
+	ERR("Failed to parse visible_avail from %s\n", mmPath.c_str());
 	return 0;
 }
 
 /**
  * @brief Internal function to create SRIOV Virtual Functions
  *
- * Performs the actual VF creation by:
- * 1. Setting PF (Physical Function) scheduling parameters
- * 2. Configuring each VF with resource quotas
- * 3. Enabling driver autoprobe if configured
- * 4. Setting the number of VFs to create
+ * Performs the actual VF creation by programming vfN/profile/vram_quota
+ * for each requested VF and then enabling the VF count.
  *
- * @param[in] drmPath DRM device path (e.g., "card0")
- * @param[in] bdfAddress PCI Bus:Device.Function address (e.g., "0000:03:00.0")
- * @param[in,out] attrs Configuration attributes from config file
+ * @param[in] drmPath DRM card name (e.g., "card0")
  * @param[in] numVfs Number of Virtual Functions to create
  * @param[in] lmem Local memory size per VF in bytes
+ * @param[in] isIGPU true if the device is an integrated GPU
  * @return bool true on success, false on failure
  */
-// NOLINTNEXTLINE(misc-use-anonymous-namespace,bugprone-easily-swappable-parameters)
-static bool createVfInternal(const std::string &drmPath, const std::string &bdfAddress, AttrFromConfigFile &attrs,
-							 uint32_t numVfs, uint64_t lmem, bool isIGPU)
+static bool createVfInternal(const std::string drmPath, uint32_t numVfs, uint64_t lmem, bool isIGPU)
 {
-	const std::string devicePathString = std::string("/sys/class/drm/") + drmPath;
-	const std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + bdfAddress;
-	const std::string sriovAdminPath = getSriovAdminPath(drmPath);
-	const std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
-	std::error_code ec;
-
-	const bool useSysfs = !sriovAdminPath.empty();
-	const std::string pfSchedDir = useSysfs ? sriovAdminPath + "/pf/profile" : debugfsPath + "/gt" + gtNum + "/pf";
-	if (std::filesystem::exists(pfSchedDir, ec)) {
-		if (writePfSchedParams(pfSchedDir, attrs, useSysfs) != 0) {
-			return false;
-		}
-	} else if (ec) {
-		DBG("PF scheduling interface at {} is inaccessible: {}, skipping PF scheduler programming.\n",
-			pfSchedDir.c_str(), ec.message().c_str());
-	} else {
-		DBG("PF scheduling interface not found at {}, skipping PF scheduler programming.\n", pfSchedDir.c_str());
-	}
-
-	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
-		const std::string sysfsVfProfile =
-			!sriovAdminPath.empty() ? sriovAdminPath + "/vf" + std::to_string(vfNum) + "/profile" : "";
-		const std::string debugfsVfPath = debugfsPath + "/gt" + gtNum + "/vf" +
-										  std::to_string(vfNum); // NOLINT(performance-inefficient-string-concatenation)
-		if (writeVfAttr(sysfsVfProfile, debugfsVfPath, attrs, lmem, isIGPU) != 0) {
-			return false;
-		}
-	}
-	if (writeFile(devicePathString + "/device/sriov_drivers_autoprobe", attrs.driversAutoprobe ? "1" : "0") != 0) {
+	std::string devicePathString = std::string("/sys/class/drm/") + drmPath + "/device";
+	std::string sriovAdminPath = getSriovAdminPath(drmPath);
+	if (sriovAdminPath.empty()) {
 		return false;
 	}
-	if (writeFile(devicePathString + "/device/sriov_numvfs", std::to_string(numVfs)) != 0) {
+
+	if (writeFile(sriovAdminPath + "/pf/profile/sched_priority", "normal") != 0) {
+		return false;
+	}
+	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+		if (!isIGPU) {
+			std::string quotaPath = sriovAdminPath + "/vf" + std::to_string(vfNum) + "/profile/vram_quota";
+			if (writeFile(quotaPath, std::to_string(lmem)) != 0) {
+				return false;
+			}
+		}
+	}
+
+	if (writeFile(devicePathString + "/sriov_drivers_autoprobe", "0") != 0) {
+		return false;
+	}
+	if (writeFile(devicePathString + "/sriov_numvfs", std::to_string(numVfs)) != 0) {
 		return false;
 	}
 	return true;
@@ -543,19 +451,14 @@ static bool createVfInternal(const std::string &drmPath, const std::string &bdfA
  * @param[in,out] data Pointer to DeviceSriovInfo structure to populate with resource information
  * @return bool true on success, false if unable to read resource files
  */
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static bool loadSriovData(DeviceSriovInfo *data)
 {
-	std::string lmem;
-	std::string ggtt;
-	std::string doorbell;
-	std::string context;
-	const std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + data->bdfAddress;
+	std::string lmem, ggtt, doorbell, context;
+	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + data->bdfAddress;
 	data->lmemSizeFree = getFreeLmemSize(debugfsPath, data->isIGPU);
 
-	const std::string pfIovPath = debugfsPath + "/gt" + std::to_string(0) + "/pf/";
+	std::string pfIovPath = debugfsPath + "/gt" + std::to_string(0) + "/pf/";
 	if (data->isIGPU) {
-		// iGPU may not expose LMEM accounting; read quietly without emitting error logs.
 		lmem = "0";
 		std::ifstream lmemFile(pfIovPath + "lmem_spare");
 		if (lmemFile.is_open()) {
@@ -583,171 +486,6 @@ static bool loadSriovData(DeviceSriovInfo *data)
 	data->doorbellFree += static_cast<uint32_t>(std::stoul(doorbell));
 	DBG("   lmemSizeFree: {}\n   ggttSizeFree: {}\n   contextFree: {}\n   doorbellFree: {}\n", data->lmemSizeFree,
 		data->ggttSizeFree, data->contextFree, data->doorbellFree);
-
-	return true;
-}
-
-/**
- * @brief Update VGPU scheduler configuration parameters based on device type
- *
- * Sets device-specific scheduling parameters (execution quantum, preemption timeout,
- * etc.) based on the GPU device ID and requested scheduler type. Different
- * configurations are applied for different Intel GPU generations.
- *
- * @param[in] numVfs Number of Virtual Functions being configured
- * @param[in,out] data Reference to map containing configuration data to update
- */
-static void updateVgpuSchedulerConfigParameters(int numVfs, std::map<uint32_t, AttrFromConfigFile> &data)
-{
-
-	data[numVfs].pfExec = PF_EXEC_QUANTUM_MS;
-	data[numVfs].pfPreempt = PF_PREEMPT_TIMEOUT_US;
-	data[numVfs].schedIfIdle = false;
-	data[numVfs].vfExec =
-		std::min(int(VF_EXEC_QUANTUM_US / std::max(numVfs - 1, 1) * VF_EXEC_RATIO), MAX_VF_EXEC_QUANTUM_MS);
-	data[numVfs].vfPreempt =
-		(VF_EXEC_QUANTUM_US / std::max(numVfs - 1, 1) -
-		 std::min(int((VF_EXEC_QUANTUM_US / std::max(numVfs - 1, 1)) * VF_EXEC_RATIO), MAX_VF_EXEC_QUANTUM_MS)) *
-		ONE_MS_IN_US;
-}
-
-/*
- * @brief Combine and finalize VF configuration attributes
- *
- * Merges device-specific and default configuration attributes for the requested
- * number of VFs. Calculates per-VF resource quotas based on total available
- * resources and updates scheduling parameters based on device type.
- *
- * @param[in] data Map of configuration attributes indexed by number of VFs
- * @param[in] numVfs Number of Virtual Functions being configured
- * @return AttrFromConfigFile Finalized configuration attributes for the specified number of VFs
- */
-static AttrFromConfigFile combineAttrConfig(std::map<uint32_t, AttrFromConfigFile> data, uint32_t numVfs)
-{
-	if (data.size() == 1)
-		return data.begin()->second;
-	if (data.find(numVfs) == data.end()) {
-		data[numVfs].driversAutoprobe = data[XPUM_MAX_VF_NUM].driversAutoprobe;
-		data[numVfs].schedIfIdle = data[XPUM_MAX_VF_NUM].schedIfIdle;
-	}
-	if (data[numVfs].vfLmem == 0 && data[XPUM_MAX_VF_NUM].vfLmem != 0)
-		data[numVfs].vfLmem = data[XPUM_MAX_VF_NUM].vfLmem / static_cast<uint64_t>(numVfs);
-	if (data[numVfs].vfLmemEcc == 0 && data[XPUM_MAX_VF_NUM].vfLmemEcc != 0)
-		data[numVfs].vfLmemEcc = data[XPUM_MAX_VF_NUM].vfLmemEcc / static_cast<uint64_t>(numVfs);
-	if (data[numVfs].vfContexts == 0)
-		data[numVfs].vfContexts = data[XPUM_MAX_VF_NUM].vfContexts;
-	if (data[numVfs].vfDoorbells == 0 && data[XPUM_MAX_VF_NUM].vfDoorbells != 0)
-		data[numVfs].vfDoorbells = data[XPUM_MAX_VF_NUM].vfDoorbells / static_cast<uint64_t>(numVfs);
-	if (data[numVfs].vfGgtt == 0 && data[XPUM_MAX_VF_NUM].vfGgtt != 0)
-		data[numVfs].vfGgtt = data[XPUM_MAX_VF_NUM].vfGgtt / static_cast<uint64_t>(numVfs);
-	updateVgpuSchedulerConfigParameters(numVfs, data);
-	return data[numVfs];
-}
-
-/**
- * @brief Read VF configuration from the vgpu.conf file
- *
- * Parses the VGPU configuration file to extract device-specific settings
- * for the requested number of VFs. Handles both device-specific configurations
- * and default fallback values.
- *
- * @param[in] deviceId PCI device ID to look up configuration for
- * @param[in] numVfs Number of VFs being configured
- * @param[out] attrs Reference to structure to populate with configuration
- * @return bool true if configuration was successfully read, false on error
- */
-static bool readVfConfigFromFile(uint32_t deviceId, uint32_t numVfs, AttrFromConfigFile &attrs)
-{
-	TRACING();
-
-	std::string line;
-	std::map<uint32_t, AttrFromConfigFile> data;
-	uint32_t currentNameId = 0;
-	std::string defaultVgpuScheduler;
-
-	std::string fileName = findResourceFile(std::string(VGPU_CONF_FILE));
-	if (!fileExists(fileName)) {
-		ERR("{} file does not exist\n", fileName.c_str());
-		return false;
-	}
-
-	std::ostringstream oss;
-	oss << std::hex << std::setw(4) << std::setfill('0') << deviceId;
-	std::string deviceIdStr = oss.str();
-
-	std::ifstream ifs(fileName);
-	if (ifs.fail()) {
-		ERR("Unable to open {}\n", fileName.c_str());
-		return false;
-	}
-
-	while (std::getline(ifs, line)) {
-		line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
-		if (line[0] == '#' || line.empty()) {
-			continue;
-		}
-
-		std::istringstream lineStream(line);
-		std::string key, value;
-		if (std::getline(lineStream, key, '=') && std::getline(lineStream, value)) {
-			if (strcmp(key.c_str(), "NAME") == 0) {
-				char s[16];
-				uint32_t i;
-				auto nameList = split(value, ',');
-				for (auto nameItem : nameList) {
-					if (nameItem.find("DEF") != std::string::npos) {
-						// Parse format: "56c0DEF" -> extract first 4 chars before "DEF"
-						if (nameItem.length() >= 7 && nameItem.substr(4, 3) == "DEF") {
-							strncpy(s, nameItem.c_str(), 4);
-							s[4] = '\0';
-							if (strcmp(s, deviceIdStr.c_str()) == 0) {
-								currentNameId = XPUM_MAX_VF_NUM;
-								break;
-							}
-						}
-						currentNameId = 0;
-					} else {
-						// Parse format: "56c0N4" -> extract device ID and number
-						size_t nPos = nameItem.find('N');
-						if (nPos != std::string::npos && nPos == 4) {
-							strncpy(s, nameItem.c_str(), 4);
-							s[4] = '\0';
-							i = std::stoi(nameItem.substr(nPos + 1));
-							if (strcmp(s, deviceIdStr.c_str()) == 0 && i == numVfs) {
-								currentNameId = i;
-								break;
-							}
-						}
-						currentNameId = 0;
-					}
-				}
-			} else if (strcmp(key.c_str(), "VF_LMEM") == 0 && currentNameId) {
-				data[currentNameId].vfLmem = std::stoul(value);
-			} else if (strcmp(key.c_str(), "VF_LMEM_ECC") == 0 && currentNameId) {
-				data[currentNameId].vfLmemEcc = std::stoul(value);
-			} else if (strcmp(key.c_str(), "VF_CONTEXTS") == 0 && currentNameId) {
-				data[currentNameId].vfContexts = std::stoi(value);
-			} else if (strcmp(key.c_str(), "VF_DOORBELLS") == 0 && currentNameId) {
-				data[currentNameId].vfDoorbells = std::stoi(value);
-			} else if (strcmp(key.c_str(), "VF_GGTT") == 0 && currentNameId) {
-				data[currentNameId].vfGgtt = std::stoul(value);
-			} else if (strcmp(key.c_str(), "VGPU_SCHEDULER") == 0 && currentNameId) {
-				updateVgpuSchedulerConfigParameters(currentNameId, data);
-				if (currentNameId == XPUM_MAX_VF_NUM)
-					defaultVgpuScheduler = value;
-			} else if (strcmp(key.c_str(), "DRIVERS_AUTOPROBE") == 0 && currentNameId) {
-				data[currentNameId].driversAutoprobe = (bool)std::stoi(value);
-				if (currentNameId != XPUM_MAX_VF_NUM) {
-					DBG("Found predefined vgpu configuration from vgpu.conf\n");
-					break;
-				}
-			}
-		}
-	}
-
-	if (data.size()) {
-		attrs = combineAttrConfig(data, numVfs);
-	}
 
 	return true;
 }
@@ -783,15 +521,16 @@ static std::string getCardNameFromDrmPath(const std::string &drmPath)
  *                      information including BDF address, DRM path, and VF requirements
  * @return int 0 on success, -1 on failure
  */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 int linCreateVFs(DeviceSriovInfo *di)
 {
 	TRACING();
 	std::string numVfsString;
 	std::string numVfsPath;
+	uint64_t availableVram = 0;
+	uint64_t maxVfLmem = 0;
 	std::string cardName = getCardNameFromDrmPath(di->drmPath);
 
-	DBG("Creating {} VFs with {} MB memory\n", di->vGpuNumber, di->vGpuMemorySize);
+	DBG("Creating {} VFs with {} MiB memory\n", di->vGpuNumber, di->vGpuMemorySize);
 	di->vGpuMemorySize *= ONE_MB_IN_BYTES;
 
 	const bool sriovDataLoaded = loadSriovData(di);
@@ -805,7 +544,6 @@ int linCreateVFs(DeviceSriovInfo *di)
 	}
 
 	numVfsPath = "/sys/class/drm/" + cardName + "/device/sriov_numvfs";
-
 	if (readFile(numVfsPath, numVfsString) != 0) {
 		return -1;
 	}
@@ -820,7 +558,6 @@ int linCreateVFs(DeviceSriovInfo *di)
 	// Query a specific PCI device by BDF for SRIOV info
 	PciDeviceInfo info = {};
 	if (di->isIGPU) {
-		// iGPU: libpci cannot enumerate integrated devices; use sysfs sriov_totalvfs directly.
 		std::string totalVfsString;
 		const std::string totalVfsPath = "/sys/bus/pci/devices/" + di->bdfAddress + "/sriov_totalvfs";
 		if (readFile(totalVfsPath, totalVfsString) == 0) {
@@ -832,7 +569,6 @@ int linCreateVFs(DeviceSriovInfo *di)
 			}
 		}
 	} else {
-		// dGPU: use libpci to read SRIOV capability from PCI config space.
 		info = queryPciDeviceByBdf(di->bdfAddress);
 		if (info.valid) {
 			if (info.isSriovCapable) {
@@ -848,34 +584,21 @@ int linCreateVFs(DeviceSriovInfo *di)
 		}
 	}
 
-	AttrFromConfigFile attrs = {};
-	const bool readFlag = readVfConfigFromFile(info.deviceId, di->vGpuNumber, attrs);
-	if (!readFlag) {
-		return -1;
+	if (!di->isIGPU) {
+		availableVram = readAvailableVram(di->bdfAddress);
+		if (availableVram == 0) {
+			return -1;
+		}
+
+		maxVfLmem = roundDownPowOfTwo(availableVram / (1 + di->vGpuNumber));
+		if (maxVfLmem == 0 || di->vGpuMemorySize > maxVfLmem) {
+			ERR("Requested VF LMEM {} exceeds the maximum allowed {} for {} VFs\n", di->vGpuMemorySize, maxVfLmem,
+				di->vGpuNumber);
+			return -1;
+		}
 	}
 
-	if (di->isIGPU) {
-		// iGPU has no dedicated LMEM; LMEM and ECC checks do not apply.
-		DBG("No LMEM quota configured for {} VFs; continuing without LMEM requirement.\n", di->vGpuNumber);
-	} else if (attrs.vfLmem == 0) {
-		ERR("Configuration item for {} VFs not found\n", di->vGpuNumber);
-		return -1;
-	}
-
-	uint64_t lmemToUse = 0;
-	if (di->vGpuMemorySize > 0) {
-		lmemToUse = di->vGpuMemorySize;
-	} else if (di->eccState == ZES_DEVICE_ECC_STATE_ENABLED) {
-		lmemToUse = attrs.vfLmemEcc;
-	} else {
-		lmemToUse = attrs.vfLmem;
-	}
-
-	if ((!di->isIGPU) && (lmemToUse > 0) && sriovDataLoaded && (di->lmemSizeFree < (lmemToUse * di->vGpuNumber))) {
-		ERR("LMEM size too large\n");
-		return -1;
-	}
-	return createVfInternal(cardName, di->bdfAddress, attrs, di->vGpuNumber, di->vGpuMemorySize, di->isIGPU) ? 0 : -1;
+	return createVfInternal(cardName, di->vGpuNumber, di->vGpuMemorySize, di->isIGPU) ? 0 : -1;
 }
 
 /**
@@ -890,9 +613,8 @@ int linCreateVFs(DeviceSriovInfo *di)
 int removeAllVFs(DeviceSriovInfo *devInfo)
 {
 	TRACING();
-	std::stringstream iovPath, numvfsPath;
+	std::stringstream numvfsPath;
 	std::string numVfsString;
-	AttrFromConfigFile zeroAttr = {};
 
 	// Disable all VFs by setting sriov_numvfs to 0
 	numvfsPath << "/sys/bus/pci/devices/" << devInfo->bdfAddress << "/sriov_numvfs";
@@ -900,22 +622,6 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
 		return -1;
 	}
 	if (writeFile(numvfsPath.str(), "0") != 0) {
-		return -1;
-	}
-
-	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + devInfo->bdfAddress;
-	std::string cardName = getCardNameFromDrmPath(devInfo->drmPath);
-	std::string sriovAdminPath = getSriovAdminPath(cardName);
-	int numVfs = std::stoi(numVfsString);
-
-	try {
-		for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
-			const std::string sysfsVfProfile =
-				!sriovAdminPath.empty() ? sriovAdminPath + "/vf" + std::to_string(functionIndex) + "/profile" : "";
-			const std::string debugfsVfPath = debugfsPath + "/gt0/vf" + std::to_string(functionIndex);
-			writeVfAttr(sysfsVfProfile, debugfsVfPath, zeroAttr, 0, devInfo->isIGPU);
-		}
-	} catch (std::ios::failure &) {
 		return -1;
 	}
 
@@ -932,13 +638,13 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
  * @param[out] result Reference to vector to populate with DeviceSriovInfo for each VF
  * @return int 0 on success, -1 on failure
  */
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 {
 	TRACING();
 	std::string numVfsString;
 	std::string cardName = getCardNameFromDrmPath(di->drmPath);
 	std::string devicePath = std::string("/sys/class/drm/") + cardName;
+	std::string sriovAdminPath = getSriovAdminPath(cardName);
 	std::stringstream numvfsPath;
 	const std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
 	int numVfs = 0;
@@ -966,23 +672,18 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 	 *  Put PF info into index 0, and VF1..n into index 1..n respectively
 	 */
 	for (int functionIndex = 0; functionIndex <= numVfs; functionIndex++) {
-		std::string lmemString, uevent, lmemPath, ueventPath;
+		std::string lmemString, lmemPath, ueventPath;
 		DeviceSriovInfo info = {};
 
 		if (functionIndex == 0) {
-			lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" +
-					   "lmem_spare"; // NOLINT(performance-inefficient-string-concatenation)
+			lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" + "lmem_spare";
+		} else if (!sriovAdminPath.empty()) {
+			lmemPath = sriovAdminPath + "/vf" + std::to_string(functionIndex) + "/profile/vram_quota";
 		} else {
-			lmemPath = debugfsPath;
-			lmemPath += "/gt";
-			lmemPath += gtNum;
-			lmemPath += "/vf";
-			lmemPath += std::to_string(functionIndex);
-			lmemPath += "/lmem_quota";
+			lmemPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(functionIndex) + "/lmem_quota";
 		}
 
-		// iGPU platforms may not expose LMEM quota in debugfs. For dGPU, debugfs was already
-		// confirmed accessible by loadSriovData above, so the file must be present.
+		// iGPU platforms may not expose LMEM quota. Default to 0 unless a value is readable.
 		lmemString = "0";
 		{
 			std::ifstream lmemFile(lmemPath);
@@ -1014,6 +715,7 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 				return -1;
 			}
 			char bdfBuffer[MAX_PATH] = {0};
+			// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) // sscanf is required for PCI_SLOT_NAME parsing
 			sscanf(line.c_str(), "PCI_SLOT_NAME=%s", bdfBuffer);
 			if (bdfBuffer[0] != 0) {
 				info.bdfAddress = bdfBuffer;

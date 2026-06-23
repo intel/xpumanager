@@ -21,21 +21,6 @@ enum devFuncType : std::uint8_t
 	DEVICE_FUNCTION_TYPE_ALL,
 };
 
-struct AttrFromConfigFile
-{
-	bool driversAutoprobe;
-	bool schedIfIdle;
-	uint64_t vfLmem;
-	uint64_t vfLmemEcc;
-	uint32_t vfContexts;
-	uint32_t vfDoorbells;
-	uint64_t vfGgtt;
-	uint64_t vfExec;
-	uint64_t vfPreempt;
-	uint64_t pfExec;
-	uint64_t pfPreempt;
-};
-
 struct DeviceSriovInfo
 {
 	uint32_t vGpuNumber;
