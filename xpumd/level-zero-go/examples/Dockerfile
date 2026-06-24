@@ -38,14 +38,14 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
 
 RUN curl -fS --output-dir /debs/ \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
-    if ! sha256sum --check $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
-	echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
-	cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
-	echo "--- Got: ---"; \
-	sha256sum *.deb; \
-	echo "=> ERROR"; \
-	exit 1; \
-    fi; \
+    if ! sha256sum --check --strict $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
+        echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
+        cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
+        echo "--- Got: ---"; \
+        sha256sum *.deb; \
+        echo "=> ERROR"; \
+        exit 1; \
+    fi && \
     dpkg -i /debs/*.deb
 
 # Install IGSC build dependencies
