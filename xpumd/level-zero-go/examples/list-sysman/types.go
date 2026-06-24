@@ -149,6 +149,8 @@ type PowerDomainInfo struct {
 	EnergyCounter   *sysman.PowerEnergyCounter
 	EnergyThreshold *sysman.EnergyThreshold
 	Limits          []sysman.PowerLimitExtDesc
+	Usage           *sysman.PowerUsage
+	Limit           *uint32
 }
 
 type PsuInfo struct {

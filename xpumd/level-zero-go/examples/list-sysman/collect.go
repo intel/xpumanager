@@ -542,6 +542,16 @@ func (d *DeviceInfo) collectPowerInfo(device *sysman.Device) {
 		} else {
 			result[i].Limits = limits
 		}
+		if usage, err := domain.GetUsage(); err != nil {
+			d.recordError("PowerDomain.GetUsage", err)
+		} else {
+			result[i].Usage = &usage
+		}
+		if limit, err := domain.GetLimitsExt2(); err != nil {
+			d.recordError("PowerDomain.GetLimitsExt2", err)
+		} else {
+			result[i].Limit = &limit
+		}
 	}
 
 	d.PowerDomains = result
