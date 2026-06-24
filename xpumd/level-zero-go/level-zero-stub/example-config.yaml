@@ -23,6 +23,10 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_engine_activity"
         Version: 65536
+      - Name: "ZES_extension_pci_link_speed_downgrade"
+        Version: 65536
+      - Name: "ZES_extension_ras_state"
+        Version: 65536
 
     # Function-level return-value overrides for driver-scoped calls.
     # Set a non-zero ze_result_t value to inject an error.
@@ -721,10 +725,23 @@ Drivers:
           # zesRasGetState (nullable)
           State:
             Category: [5, 6, 7, 8, 9, 10, 11]
+          # zesRasGetStateExp (nullable)
+          StateExp:
+          - Category: 0  # ZES_RAS_ERROR_CATEGORY_EXP_RESET
+            ErrorCounter: 1
+          - Category: 2  # ZES_RAS_ERROR_CATEGORY_EXP_DRIVER_ERRORS
+            ErrorCounter: 3
+          - Category: 3  # ZES_RAS_ERROR_CATEGORY_EXP_COMPUTE_ERRORS
+            ErrorCounter: 12
+          - Category: 5  # ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS
+            ErrorCounter: 2
           ReturnValues:
             zesRasGetProperties: 0
             zesRasGetConfig: 0
+            zesRasSetConfig: 0
             zesRasGetState: 0
+            zesRasGetStateExp: 0
+            zesRasClearStateExp: 0
 
         # -----------------------------------------------------------------
         # Schedulers (zesDeviceEnumSchedulers)
