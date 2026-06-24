@@ -85,9 +85,34 @@ class GrpcClient:
         if self._stub is None:
             raise RuntimeError("Not connected – call connect() first")
 
-        effective_timeout = timeout or self._cfg.stream_timeout_s
+        effective_timeout = (
+            timeout if timeout is not None else self._cfg.stream_timeout_s
+        )
         request = pb2.WatchDeviceHealthRequest()
         stream = self._stub.WatchDeviceHealth(request, timeout=effective_timeout)
+        yield from stream
+
+    def watch_device_events(
+        self,
+        timeout: Optional[float] = None,
+    ) -> Iterator[pb2.DeviceEventResponse]:
+        """Start the WatchDeviceEvents server-stream.
+
+        Yields ``DeviceEventResponse`` messages — discrete hardware events
+        (survivability, RAS, reset-required, thermal, …) as they occur —
+        until the stream ends, the *timeout* expires, or the caller breaks
+        out of the loop.  Unlike WatchDeviceHealth (periodic health-domain
+        status), this stream has no replay: only events that arrive after
+        connecting are delivered.
+        """
+        if self._stub is None:
+            raise RuntimeError("Not connected – call connect() first")
+
+        effective_timeout = (
+            timeout if timeout is not None else self._cfg.stream_timeout_s
+        )
+        request = pb2.WatchDeviceEventsRequest()
+        stream = self._stub.WatchDeviceEvents(request, timeout=effective_timeout)
         yield from stream
 
     # ------------------------------------------------------------------

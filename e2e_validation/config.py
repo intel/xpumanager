@@ -10,8 +10,11 @@ Central configuration for socket paths, timeouts, thresholds, xpu-smi
 binary location, and policy defaults used across all validators.
 """
 
+import logging
 import os
 from dataclasses import dataclass, field
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -24,6 +27,9 @@ class SocketConfig:
     sock_name: str = "intelxpuinfo.sock"
     connect_timeout_s: float = 10.0
     stream_timeout_s: float = 300.0
+    # How long an event-driven live validator waits for a real event from
+    # the gRPC stream before reporting FAIL.  Defaults to 5 minutes.
+    live_event_timeout_s: float = 300.0
 
     @property
     def socket_path(self) -> str:
@@ -92,4 +98,15 @@ class ValidationConfig:
         sock_name = os.environ.get("E2E_SOCK_NAME")
         if sock_name:
             cfg.socket.sock_name = sock_name
+        live_timeout = os.environ.get("E2E_LIVE_EVENT_TIMEOUT")
+        if live_timeout:
+            try:
+                cfg.socket.live_event_timeout_s = float(live_timeout)
+            except ValueError:
+                log.warning(
+                    "Ignoring invalid E2E_LIVE_EVENT_TIMEOUT=%r (not a number); "
+                    "using default %.0fs",
+                    live_timeout,
+                    cfg.socket.live_event_timeout_s,
+                )
         return cfg

@@ -29,32 +29,40 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x64\x65viceinfo.proto\x12\ndeviceinfo\"\x1a\n\x18WatchDeviceHealthRequest\"A\n\x14\x44\x65viceHealthResponse\x12)\n\x07\x64\x65vices\x18\x01 \x03(\x0b\x32\x18.deviceinfo.DeviceHealth\"e\n\x0c\x44\x65viceHealth\x12+\n\x04info\x18\x01 \x01(\x0b\x32\x1d.deviceinfo.DeviceInformation\x12(\n\x06health\x18\x02 \x03(\x0b\x32\x18.deviceinfo.HealthStatus\"\xa7\x01\n\x11\x44\x65viceInformation\x12\x0c\n\x04uuid\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12 \n\x03pci\x18\x03 \x01(\x0b\x32\x13.deviceinfo.PciInfo\x12+\n\tfirmwares\x18\x04 \x03(\x0b\x32\x18.deviceinfo.FirmwareInfo\x12&\n\x06memory\x18\x05 \x03(\x0b\x32\x16.deviceinfo.MemoryInfo\"<\n\x07PciInfo\x12\x0b\n\x03\x62\x64\x66\x18\x01 \x01(\t\x12\x11\n\tdevice_id\x18\x02 \x01(\t\x12\x11\n\tvendor_id\x18\x03 \x01(\t\"C\n\x0c\x46irmwareInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x14\n\x0csubdevice_id\x18\x03 \x01(\t\">\n\nMemoryInfo\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x14\n\x0csubdevice_id\x18\x02 \x01(\t\x12\x0c\n\x04size\x18\x03 \x01(\x04\"j\n\x0cHealthStatus\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x08severity\x18\x02 \x01(\x0e\x32\x19.deviceinfo.SeverityLevel\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t*\x96\x01\n\rSeverityLevel\x12\x1a\n\x16SEVERITY_LEVEL_UNKNOWN\x10\x00\x12\x15\n\x11SEVERITY_LEVEL_OK\x10\x01\x12\x1a\n\x16SEVERITY_LEVEL_WARNING\x10\x02\x12\x1b\n\x17SEVERITY_LEVEL_CRITICAL\x10\x03\x12\x19\n\x15SEVERITY_LEVEL_FAILED\x10\x04\x32k\n\nDeviceInfo\x12]\n\x11WatchDeviceHealth\x12$.deviceinfo.WatchDeviceHealthRequest\x1a .deviceinfo.DeviceHealthResponse0\x01\x42>Z<github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10\x64\x65viceinfo.proto\x12\ndeviceinfo\"\x1a\n\x18WatchDeviceHealthRequest\"\x1a\n\x18WatchDeviceEventsRequest\"A\n\x14\x44\x65viceHealthResponse\x12)\n\x07\x64\x65vices\x18\x01 \x03(\x0b\x32\x18.deviceinfo.DeviceHealth\"\x9a\x01\n\x13\x44\x65viceEventResponse\x12\x30\n\x06\x64\x65vice\x18\x01 \x01(\x0b\x32 .deviceinfo.DeviceIdentification\x12\x0e\n\x06reason\x18\x02 \x01(\t\x12\x0f\n\x07message\x18\x03 \x01(\t\x12\x30\n\x08severity\x18\x04 \x01(\x0e\x32\x1e.deviceinfo.EventSeverityLevel\"e\n\x0c\x44\x65viceHealth\x12+\n\x04info\x18\x01 \x01(\x0b\x32\x1d.deviceinfo.DeviceInformation\x12(\n\x06health\x18\x02 \x03(\x0b\x32\x18.deviceinfo.HealthStatus\"\xa7\x01\n\x11\x44\x65viceInformation\x12\x0c\n\x04uuid\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12 \n\x03pci\x18\x03 \x01(\x0b\x32\x13.deviceinfo.PciInfo\x12+\n\tfirmwares\x18\x04 \x03(\x0b\x32\x18.deviceinfo.FirmwareInfo\x12&\n\x06memory\x18\x05 \x03(\x0b\x32\x16.deviceinfo.MemoryInfo\"U\n\x14\x44\x65viceIdentification\x12\x0c\n\x04uuid\x18\x01 \x01(\t\x12\r\n\x05model\x18\x02 \x01(\t\x12 \n\x03pci\x18\x03 \x01(\x0b\x32\x13.deviceinfo.PciInfo\"<\n\x07PciInfo\x12\x0b\n\x03\x62\x64\x66\x18\x01 \x01(\t\x12\x11\n\tdevice_id\x18\x02 \x01(\t\x12\x11\n\tvendor_id\x18\x03 \x01(\t\"C\n\x0c\x46irmwareInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12\x14\n\x0csubdevice_id\x18\x03 \x01(\t\">\n\nMemoryInfo\x12\x0c\n\x04type\x18\x01 \x01(\t\x12\x14\n\x0csubdevice_id\x18\x02 \x01(\t\x12\x0c\n\x04size\x18\x03 \x01(\x04\"j\n\x0cHealthStatus\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x08severity\x18\x02 \x01(\x0e\x32\x19.deviceinfo.SeverityLevel\x12\x0e\n\x06reason\x18\x03 \x01(\t\x12\x0f\n\x07message\x18\x04 \x01(\t*\x96\x01\n\rSeverityLevel\x12\x1a\n\x16SEVERITY_LEVEL_UNKNOWN\x10\x00\x12\x15\n\x11SEVERITY_LEVEL_OK\x10\x01\x12\x1a\n\x16SEVERITY_LEVEL_WARNING\x10\x02\x12\x1b\n\x17SEVERITY_LEVEL_CRITICAL\x10\x03\x12\x19\n\x15SEVERITY_LEVEL_FAILED\x10\x04*\xf8\x01\n\x12\x45ventSeverityLevel\x12$\n EVENT_SEVERITY_LEVEL_UNSPECIFIED\x10\x00\x12\x1e\n\x1a\x45VENT_SEVERITY_LEVEL_TRACE\x10\x01\x12\x1e\n\x1a\x45VENT_SEVERITY_LEVEL_DEBUG\x10\x02\x12\x1d\n\x19\x45VENT_SEVERITY_LEVEL_INFO\x10\x03\x12\x1d\n\x19\x45VENT_SEVERITY_LEVEL_WARN\x10\x04\x12\x1e\n\x1a\x45VENT_SEVERITY_LEVEL_ERROR\x10\x05\x12\x1e\n\x1a\x45VENT_SEVERITY_LEVEL_FATAL\x10\x06\x32\xc9\x01\n\nDeviceInfo\x12]\n\x11WatchDeviceHealth\x12$.deviceinfo.WatchDeviceHealthRequest\x1a .deviceinfo.DeviceHealthResponse0\x01\x12\\\n\x11WatchDeviceEvents\x12$.deviceinfo.WatchDeviceEventsRequest\x1a\x1f.deviceinfo.DeviceEventResponse0\x01\x42\x44ZBgithub.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'deviceinfo_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
-  _globals['DESCRIPTOR']._serialized_options = b'Z<github.com/intel/xpumanager/exporter/api/deviceinfo/v1alpha1'
-  _globals['_SEVERITYLEVEL']._serialized_start=704
-  _globals['_SEVERITYLEVEL']._serialized_end=854
+  _globals['DESCRIPTOR']._serialized_options = b'ZBgithub.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1'
+  _globals['_SEVERITYLEVEL']._serialized_start=976
+  _globals['_SEVERITYLEVEL']._serialized_end=1126
+  _globals['_EVENTSEVERITYLEVEL']._serialized_start=1129
+  _globals['_EVENTSEVERITYLEVEL']._serialized_end=1377
   _globals['_WATCHDEVICEHEALTHREQUEST']._serialized_start=32
   _globals['_WATCHDEVICEHEALTHREQUEST']._serialized_end=58
-  _globals['_DEVICEHEALTHRESPONSE']._serialized_start=60
-  _globals['_DEVICEHEALTHRESPONSE']._serialized_end=125
-  _globals['_DEVICEHEALTH']._serialized_start=127
-  _globals['_DEVICEHEALTH']._serialized_end=228
-  _globals['_DEVICEINFORMATION']._serialized_start=231
-  _globals['_DEVICEINFORMATION']._serialized_end=398
-  _globals['_PCIINFO']._serialized_start=400
-  _globals['_PCIINFO']._serialized_end=460
-  _globals['_FIRMWAREINFO']._serialized_start=462
-  _globals['_FIRMWAREINFO']._serialized_end=529
-  _globals['_MEMORYINFO']._serialized_start=531
-  _globals['_MEMORYINFO']._serialized_end=593
-  _globals['_HEALTHSTATUS']._serialized_start=595
-  _globals['_HEALTHSTATUS']._serialized_end=701
-  _globals['_DEVICEINFO']._serialized_start=856
-  _globals['_DEVICEINFO']._serialized_end=963
+  _globals['_WATCHDEVICEEVENTSREQUEST']._serialized_start=60
+  _globals['_WATCHDEVICEEVENTSREQUEST']._serialized_end=86
+  _globals['_DEVICEHEALTHRESPONSE']._serialized_start=88
+  _globals['_DEVICEHEALTHRESPONSE']._serialized_end=153
+  _globals['_DEVICEEVENTRESPONSE']._serialized_start=156
+  _globals['_DEVICEEVENTRESPONSE']._serialized_end=310
+  _globals['_DEVICEHEALTH']._serialized_start=312
+  _globals['_DEVICEHEALTH']._serialized_end=413
+  _globals['_DEVICEINFORMATION']._serialized_start=416
+  _globals['_DEVICEINFORMATION']._serialized_end=583
+  _globals['_DEVICEIDENTIFICATION']._serialized_start=585
+  _globals['_DEVICEIDENTIFICATION']._serialized_end=670
+  _globals['_PCIINFO']._serialized_start=672
+  _globals['_PCIINFO']._serialized_end=732
+  _globals['_FIRMWAREINFO']._serialized_start=734
+  _globals['_FIRMWAREINFO']._serialized_end=801
+  _globals['_MEMORYINFO']._serialized_start=803
+  _globals['_MEMORYINFO']._serialized_end=865
+  _globals['_HEALTHSTATUS']._serialized_start=867
+  _globals['_HEALTHSTATUS']._serialized_end=973
+  _globals['_DEVICEINFO']._serialized_start=1380
+  _globals['_DEVICEINFO']._serialized_end=1581
 # @@protoc_insertion_point(module_scope)

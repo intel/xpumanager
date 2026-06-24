@@ -13,9 +13,13 @@ Can operate in two modes:
   events to verify policy wiring and logic.  No live gRPC connection
   or xpu-smi binary required.
 
-  **Live mode** (``--live``): Connects to the xpuinfo exporter socket
-  and validates device discovery, health streaming, and cross-checks
-  against xpu-smi.
+  **Live mode** (``--live``): Runs *only* live validators.  Connects to
+  the xpuinfo exporter socket and validates device discovery, health
+  streaming, and cross-checks against xpu-smi, then waits for *real*
+  KMD-sourced events on the stream (Pcode/RAS/survivability/thermal/
+  health).  Event-driven validators FAIL if no real event arrives within
+  ``--live-timeout`` seconds.  No synthetic events are produced in this
+  mode.
 
 Usage::
 
@@ -82,7 +86,23 @@ def _get_offline_validators(smi: Optional[XpuSmi] = None):
 
 
 def _get_live_validators(config: ValidationConfig, smi: XpuSmi):
-    """Return validators that require a live gRPC connection."""
+    """Return validators that require a live gRPC connection.
+
+    These consume **only real events/data** from the live stream — they
+    never synthesize events.  They fall into two groups:
+
+      * *Snapshot* validators (discovery, device-info, health-stream,
+        smi cross-check) inspect the current device inventory/health,
+        which the daemon always reports.
+      * *Event-driven* validators (:mod:`validators.live_events`) wait up
+        to ``live_event_timeout_s`` for a real KMD-sourced event and FAIL
+        if none arrives.  They share a single background stream session
+        so the run is bounded by one timeout window, not one per check.
+
+    Returns ``(validators, client, session)`` where *session* is the
+    shared :class:`LiveStreamSession` (or ``None``) and must be stopped
+    by the caller.
+    """
     from .grpc_client import GrpcClient
     from .validators.discovery import DeviceDiscoveryValidator, DeviceInfoValidator
     from .validators.health import (
@@ -90,17 +110,41 @@ def _get_live_validators(config: ValidationConfig, smi: XpuSmi):
         HealthWatcherValidator,
         HealthSmiCrossCheckValidator,
     )
+    from .validators.live_events import (
+        LiveStreamSession,
+        LiveHealthEventValidator,
+        LivePcodeErrorValidator,
+        LiveRASValidator,
+        LiveSurvivabilityValidator,
+        LiveThermalThrottleValidator,
+    )
 
     client = GrpcClient(config.socket)
     client.connect()
 
-    return [
-        DeviceDiscoveryValidator(client, smi),
-        DeviceInfoValidator(client),
-        HealthStreamValidator(client),
-        HealthWatcherValidator(client),
-        HealthSmiCrossCheckValidator(client, smi),
-    ], client
+    # If anything below raises (session/validator construction), close the
+    # channel we just opened so the connected client is not leaked.
+    try:
+        session = LiveStreamSession(client, config.socket.live_event_timeout_s)
+
+        validators = [
+            # Snapshot validators — inspect real inventory/health, no synthesis.
+            DeviceDiscoveryValidator(client, smi),
+            DeviceInfoValidator(client),
+            HealthStreamValidator(client),
+            HealthWatcherValidator(client),
+            HealthSmiCrossCheckValidator(client, smi),
+            # Event-driven validators — wait for real KMD events, FAIL on timeout.
+            LiveHealthEventValidator(session),
+            LivePcodeErrorValidator(session),
+            LiveRASValidator(session),
+            LiveSurvivabilityValidator(session),
+            LiveThermalThrottleValidator(session),
+        ]
+    except Exception:
+        client.close()
+        raise
+    return validators, client, session
 
 
 # ---------------------------------------------------------------------------
@@ -157,13 +201,33 @@ def _parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--live",
         action="store_true",
-        help="Run live validators (requires xpumd + xpu-smi)",
+        help=(
+            "Run live validators only (requires running xpumd + xpu-smi). "
+            "Live validators consume real events from the gRPC stream and "
+            "never synthesize events. Offline/synthetic validators are NOT "
+            "run in this mode."
+        ),
+    )
+    parser.add_argument(
+        "--live-timeout",
+        type=float,
+        metavar="SECONDS",
+        default=None,
+        help=(
+            "How long event-driven live validators wait for a real event "
+            "before reporting FAIL (default: 300s). Only meaningful with "
+            "--live."
+        ),
     )
     parser.add_argument(
         "--only",
         nargs="*",
         metavar="NAME",
-        help="Run only validators whose names contain these substrings",
+        help=(
+            "Run only validators whose names contain these substrings "
+            "(per-test-case selection). Works in both offline and --live "
+            "modes, e.g. '--live --only live_pcode_error'."
+        ),
     )
     parser.add_argument(
         "--sock-dir",
@@ -196,6 +260,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         config.socket.sock_dir = args.sock_dir
     if args.sock_name:
         config.socket.sock_name = args.sock_name
+    if args.live_timeout is not None:
+        config.socket.live_event_timeout_s = args.live_timeout
 
     # Try to locate xpu-smi for both offline (action targets) and live mode.
     smi = XpuSmi.try_create(config.xpu_smi)
@@ -205,38 +271,70 @@ def main(argv: Optional[list[str]] = None) -> int:
             "will report ERROR"
         )
 
-    # Collect validators
-    validators = _get_offline_validators(smi=smi)
-
     client = None
+    session = None
     if args.live:
+        # Live mode is exclusive: run ONLY live validators, which consume
+        # real events from the stream. Offline/synthetic validators are not
+        # run here — they belong to the default (offline) mode.
         if smi is None:
             log.error(
                 "--live requires xpu-smi but it was not found on $PATH; aborting"
             )
             return 2
         try:
-            live_validators, client = _get_live_validators(config, smi)
-            validators.extend(live_validators)
+            validators, client, session = _get_live_validators(config, smi)
         except Exception as exc:
             log.error("Cannot start live validators: %s", exc)
             return 2
+    else:
+        # Offline mode: synthetic-event validators that exercise policy
+        # wiring without a live connection.
+        validators = _get_offline_validators(smi=smi)
 
-    # Filter by --only
+    # Filter by --only (per-test-case selection, both modes)
     if args.only:
         validators = [v for v in validators if any(sub in v.name for sub in args.only)]
         if not validators:
             log.error("No validators match --only %s", args.only)
+            if session is not None:
+                session.stop()
+            if client is not None:
+                client.close()
             return 1
 
     # Run
     results: list[ValidationResult] = []
-    for v in validators:
-        results.append(v.run())
+    try:
+        if session is not None:
+            # Live mode: run the snapshot validators first (some, e.g.
+            # health_watcher, block for ~30s), then arm the shared event
+            # stream immediately *before* the event-driven validators so
+            # they get the full --live-timeout window rather than having it
+            # eaten by the snapshot checks.
+            from .validators.live_events import EventDrivenValidator
 
-    # Cleanup
-    if client is not None:
-        client.close()
+            event_validators = [
+                v for v in validators if isinstance(v, EventDrivenValidator)
+            ]
+            snapshot_validators = [
+                v for v in validators if not isinstance(v, EventDrivenValidator)
+            ]
+            for v in snapshot_validators:
+                results.append(v.run())
+            if event_validators:
+                session.start()
+                for v in event_validators:
+                    results.append(v.run())
+        else:
+            for v in validators:
+                results.append(v.run())
+    finally:
+        # Cleanup
+        if session is not None:
+            session.stop()
+        if client is not None:
+            client.close()
 
     return _print_report(results)
 

@@ -21,18 +21,18 @@ except ImportError:
     _version_not_supported = True
 
 if _version_not_supported:
-    warnings.warn(
+    raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
         + ' but the generated code in deviceinfo_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
-        + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.',
-        stacklevel=2,
+        + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
     )
 
 
 class DeviceInfoStub(object):
-    """DeviceInfo service provides info for XPU devices."""
+    """DeviceInfo service provides info for XPU devices.
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -45,13 +45,28 @@ class DeviceInfoStub(object):
                 request_serializer=deviceinfo__pb2.WatchDeviceHealthRequest.SerializeToString,
                 response_deserializer=deviceinfo__pb2.DeviceHealthResponse.FromString,
                 _registered_method=True)
+        self.WatchDeviceEvents = channel.unary_stream(
+                '/deviceinfo.DeviceInfo/WatchDeviceEvents',
+                request_serializer=deviceinfo__pb2.WatchDeviceEventsRequest.SerializeToString,
+                response_deserializer=deviceinfo__pb2.DeviceEventResponse.FromString,
+                _registered_method=True)
 
 
 class DeviceInfoServicer(object):
-    """DeviceInfo service provides info for XPU devices."""
+    """DeviceInfo service provides info for XPU devices.
+    """
 
     def WatchDeviceHealth(self, request, context):
-        """WatchDeviceHealth returns a stream of health metrics for all devices."""
+        """WatchDeviceHealth returns a stream of health metrics for all devices.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def WatchDeviceEvents(self, request, context):
+        """WatchDeviceEvents returns a stream of hardware events as they occur.
+        Clients only receive events that arrive after connecting; there is no replay.
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -64,8 +79,73 @@ def add_DeviceInfoServicer_to_server(servicer, server):
                     request_deserializer=deviceinfo__pb2.WatchDeviceHealthRequest.FromString,
                     response_serializer=deviceinfo__pb2.DeviceHealthResponse.SerializeToString,
             ),
+            'WatchDeviceEvents': grpc.unary_stream_rpc_method_handler(
+                    servicer.WatchDeviceEvents,
+                    request_deserializer=deviceinfo__pb2.WatchDeviceEventsRequest.FromString,
+                    response_serializer=deviceinfo__pb2.DeviceEventResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
             'deviceinfo.DeviceInfo', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
     server.add_registered_method_handlers('deviceinfo.DeviceInfo', rpc_method_handlers)
+
+
+ # This class is part of an EXPERIMENTAL API.
+class DeviceInfo(object):
+    """DeviceInfo service provides info for XPU devices.
+    """
+
+    @staticmethod
+    def WatchDeviceHealth(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/deviceinfo.DeviceInfo/WatchDeviceHealth',
+            deviceinfo__pb2.WatchDeviceHealthRequest.SerializeToString,
+            deviceinfo__pb2.DeviceHealthResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def WatchDeviceEvents(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/deviceinfo.DeviceInfo/WatchDeviceEvents',
+            deviceinfo__pb2.WatchDeviceEventsRequest.SerializeToString,
+            deviceinfo__pb2.DeviceEventResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)

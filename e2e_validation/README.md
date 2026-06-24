@@ -17,7 +17,8 @@ e2e_validation/
 ├── deviceinfo_pb2_grpc.py    # Generated gRPC stubs
 ├── events/
 │   ├── event_types.py        # Event & severity definitions
-│   └── health_watcher.py     # Background health stream watcher
+│   ├── health_watcher.py     # Background WatchDeviceHealth stream watcher
+│   └── event_watcher.py      # Background WatchDeviceEvents stream watcher
 ├── policies/
 │   ├── engine.py             # Policy engine (event → action mapping)
 │   ├── actions.py            # Built-in remediation actions
@@ -70,16 +71,41 @@ python -m e2e_validation -v
 
 ### Live Validation (requires running xpumd + xpu-smi)
 
-Connects to the xpuinfo exporter gRPC socket and cross-checks against
-xpu-smi:
+`--live` runs **only** live validators — the offline/synthetic validators
+are *not* run in this mode. Live validators consume **real** data and
+events from the gRPC stream and never synthesize events. They are of two
+kinds:
+
+- **Snapshot validators** (`device_discovery`, `device_info_fields`,
+  `health_stream`, `health_watcher`, `health_smi_crosscheck`) inspect the
+  current device inventory / health that the daemon always reports.
+- **Event-driven validators** (`live_health_event`, `live_pcode_error`,
+  `live_ras_events`, `live_survivability`, `live_thermal_throttle`) wait
+  for a *real* KMD-sourced event to arrive on the gRPC streams
+  (`KMD → sysman → xpumd → gRPC`). They consume **both** server streams —
+  `WatchDeviceHealth` (periodic health-domain status) and
+  `WatchDeviceEvents` (discrete hardware events: survivability, RAS,
+  reset/wedge, thermal). Fault events arrive on `WatchDeviceEvents`, so
+  both streams must be consumed. If no qualifying event arrives within the
+  timeout (default **300s / 5 min**), the validator reports **FAIL**.
 
 ```bash
-# Default socket location
-python -m e2e_validation --live
+# Common xpumd socket location, 5-minute event wait
+python -m e2e_validation --live --sock-dir /run/xpumd --sock-name intelxpuinfo.sock
 
-# Custom socket
-python -m e2e_validation --live --sock-dir /run/xpumd --sock-name xpuinfo.sock
+# Shorter event wait (e.g. when driving a fault from another shell)
+python -m e2e_validation --live --live-timeout 60 --sock-dir /run/xpumd
+
+# Run a single live test case
+python -m e2e_validation --live --only live_pcode_error --sock-dir /run/xpumd
 ```
+
+> **Note:** On healthy hardware, fault events (Pcode, RAS, survivability,
+> thermal throttle) do not occur spontaneously, so those event-driven
+> validators will FAIL on timeout unless a real fault is induced (e.g. via
+> fault injection) during the wait window. See
+> [docs/live-events-design.md](docs/live-events-design.md)
+> for the event-generation plan.
 
 ### Run Unit Tests
 
@@ -174,3 +200,4 @@ action = make_external_action(
 | `E2E_VERBOSE` | `false` | Enable verbose logging |
 | `E2E_SOCK_DIR` | `$XDG_RUNTIME_DIR` | Override socket directory |
 | `E2E_SOCK_NAME` | `intelxpuinfo.sock` | Override socket filename |
+| `E2E_LIVE_EVENT_TIMEOUT` | `300` | Seconds an event-driven `--live` validator waits for a real event before FAIL (also `--live-timeout`) |
