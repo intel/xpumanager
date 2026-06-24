@@ -8,6 +8,7 @@
 #include "pldm.h"
 #include "pldm_constants.h"
 #include <sstream>
+#include <cstddef>
 #include <cstring>
 
 /**
@@ -196,6 +197,14 @@ uint8_t pldm::pfPdrRespPayload()
 	pfPdrResp.responseCount = resp->responseCount;
 
 	uint16_t respCount = resp->responseCount;
+
+	// responseCount is AMC-controlled; bound it to the buffer so it can't drive an out-of-bounds read.
+	const size_t maxRecordData = sizeof(mI2cPldmRead->respPayload) - offsetof(pdrRespPayload, recordData);
+	if (respCount > maxRecordData) {
+		ERR("PLDM Platform: PDR responseCount {} exceeds payload capacity {}\n", respCount, maxRecordData);
+		return PLDM_ERROR;
+	}
+
 	mPdrManager.appendPdrData(resp->recordData, respCount);
 
 	return PLDM_SUCCESS;
