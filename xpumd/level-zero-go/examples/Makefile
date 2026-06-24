@@ -25,6 +25,14 @@ build:
 	$(Q)go build $(GO_FLAGS) -o bin/list-sysman ./list-sysman/.
 	$(Q)go build $(GO_FLAGS) -o bin/events-sysman ./events-sysman/.
 
+.PHONY: build-stub
+build-stub:
+	$(Q)PKG_CONFIG_PATH=$(CURDIR)/../level-zero-stub go build $(GO_FLAGS) -o bin/list-sysman ./list-sysman/.
+	$(Q)PKG_CONFIG_PATH=$(CURDIR)/../level-zero-stub go build $(GO_FLAGS) -o bin/events-sysman ./events-sysman/.
+	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
+	@echo "  SYSMAN_STUB_CONFIG=../level-zero-stub/example-config.yaml ./bin/list-sysman"
+	@echo ""
+
 .PHONY: images
 # "label=disable" is needed for Dockerfile "RUN --mount" on hosts using Podman + SELinux
 images:
