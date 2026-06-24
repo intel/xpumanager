@@ -166,6 +166,9 @@ typedef struct
 	ze_result_t zesPowerSetLimitsExt;
 	ze_result_t zesPowerGetEnergyThreshold;
 	ze_result_t zesPowerSetEnergyThreshold;
+	ze_result_t zesPowerGetUsage;
+	ze_result_t zesPowerGetLimitsExt2;
+	ze_result_t zesPowerSetLimitsExt2;
 } sysman_power_rv_t;
 
 typedef struct
@@ -367,6 +370,9 @@ typedef enum
 	UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT,			  // gen: key=PowerDomain.SetLimitsExt
 	UNSUPPORTED_FEATURE_POWER_GET_ENERGY_THRESHOLD,		  // gen: key=PowerDomain.GetEnergyThreshold
 	UNSUPPORTED_FEATURE_POWER_SET_ENERGY_THRESHOLD,		  // gen: key=PowerDomain.SetEnergyThreshold
+	UNSUPPORTED_FEATURE_POWER_GET_USAGE,				  // gen: key=PowerDomain.GetUsage
+	UNSUPPORTED_FEATURE_POWER_GET_LIMITS_EXT2,			  // gen: key=PowerDomain.GetLimitsExt2
+	UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT2,			  // gen: key=PowerDomain.SetLimitsExt2
 	UNSUPPORTED_FEATURE_PSU_GET_PROPERTIES,				  // gen: key=Psu.GetProperties
 	UNSUPPORTED_FEATURE_PSU_GET_STATE,					  // gen: key=Psu.GetState
 	UNSUPPORTED_FEATURE_RAS_GET_PROPERTIES,				  // gen: key=RasErrorSet.GetProperties
@@ -554,6 +560,12 @@ typedef struct
 
 typedef struct
 {
+	uint32_t instant_power;
+	uint32_t average_power;
+} sysman_power_usage_t;
+
+typedef struct
+{
 	zes_power_domain_t domain;
 	zes_power_limit_ext_desc_t default_limit;
 } sysman_power_ext_properties_t;
@@ -572,6 +584,8 @@ typedef struct
 	uint32_t limits_count;
 	zes_power_limit_ext_desc_t *limits;
 	zes_energy_threshold_t *energy_threshold;
+	sysman_power_usage_t *usage;
+	uint32_t *limit;
 } sysman_power_t;
 
 typedef struct

@@ -120,13 +120,12 @@ static const cyaml_schema_field_t sysman_perf_rv_fields[] = {
 	RV(sysman_perf_rv_t, zesPerformanceFactorGetProperties), RV(sysman_perf_rv_t, zesPerformanceFactorGetConfig),
 	RV(sysman_perf_rv_t, zesPerformanceFactorSetConfig), CYAML_FIELD_END};
 
-static const cyaml_schema_field_t sysman_power_rv_fields[] = {RV(sysman_power_rv_t, zesPowerGetProperties),
-															  RV(sysman_power_rv_t, zesPowerGetEnergyCounter),
-															  RV(sysman_power_rv_t, zesPowerGetLimitsExt),
-															  RV(sysman_power_rv_t, zesPowerSetLimitsExt),
-															  RV(sysman_power_rv_t, zesPowerGetEnergyThreshold),
-															  RV(sysman_power_rv_t, zesPowerSetEnergyThreshold),
-															  CYAML_FIELD_END};
+static const cyaml_schema_field_t sysman_power_rv_fields[] = {
+	RV(sysman_power_rv_t, zesPowerGetProperties),	   RV(sysman_power_rv_t, zesPowerGetEnergyCounter),
+	RV(sysman_power_rv_t, zesPowerGetLimitsExt),	   RV(sysman_power_rv_t, zesPowerSetLimitsExt),
+	RV(sysman_power_rv_t, zesPowerGetEnergyThreshold), RV(sysman_power_rv_t, zesPowerSetEnergyThreshold),
+	RV(sysman_power_rv_t, zesPowerGetUsage),		   RV(sysman_power_rv_t, zesPowerGetLimitsExt2),
+	RV(sysman_power_rv_t, zesPowerSetLimitsExt2),	   CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sysman_psu_rv_fields[] = {RV(sysman_psu_rv_t, zesPsuGetProperties),
 															RV(sysman_psu_rv_t, zesPsuGetState), CYAML_FIELD_END};
@@ -261,6 +260,9 @@ static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"PowerDomain.SetLimitsExt", UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT},
 	{"PowerDomain.GetEnergyThreshold", UNSUPPORTED_FEATURE_POWER_GET_ENERGY_THRESHOLD},
 	{"PowerDomain.SetEnergyThreshold", UNSUPPORTED_FEATURE_POWER_SET_ENERGY_THRESHOLD},
+	{"PowerDomain.GetUsage", UNSUPPORTED_FEATURE_POWER_GET_USAGE},
+	{"PowerDomain.GetLimitsExt2", UNSUPPORTED_FEATURE_POWER_GET_LIMITS_EXT2},
+	{"PowerDomain.SetLimitsExt2", UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT2},
 	{"Psu.GetProperties", UNSUPPORTED_FEATURE_PSU_GET_PROPERTIES},
 	{"Psu.GetState", UNSUPPORTED_FEATURE_PSU_GET_STATE},
 	{"RasErrorSet.GetProperties", UNSUPPORTED_FEATURE_RAS_GET_PROPERTIES},
@@ -931,6 +933,12 @@ static const cyaml_schema_field_t zes_energy_threshold_fields[] = {
 static const cyaml_schema_value_t zes_energy_threshold_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_energy_threshold_t, zes_energy_threshold_fields)};
 
+static const cyaml_schema_field_t sysman_power_usage_fields[] = {
+	CYAML_FIELD_UINT("InstantPower", CYAML_FLAG_OPTIONAL, sysman_power_usage_t, instant_power),
+	CYAML_FIELD_UINT("AveragePower", CYAML_FLAG_OPTIONAL, sysman_power_usage_t, average_power), CYAML_FIELD_END};
+static const cyaml_schema_value_t sysman_power_usage_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_power_usage_t, sysman_power_usage_fields)};
+
 static const cyaml_schema_field_t sysman_power_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_power_t, return_values, sysman_power_rv_fields),
 	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, properties,
@@ -941,6 +949,8 @@ static const cyaml_schema_field_t sysman_power_fields[] = {
 							   &zes_power_limit_ext_desc_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_MAPPING_PTR("EnergyThreshold", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, energy_threshold,
 							zes_energy_threshold_fields),
+	CYAML_FIELD_MAPPING_PTR("Usage", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, usage, sysman_power_usage_fields),
+	CYAML_FIELD_UINT_PTR("Limit", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, limit),
 	CYAML_FIELD_END};
 static const cyaml_schema_value_t sysman_power_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_power_t, sysman_power_fields)};

@@ -2178,6 +2178,57 @@ ze_result_t zesPowerSetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
+ze_result_t zesPowerGetUsage(zes_pwr_handle_t hPower, uint32_t *pInstantPower, uint32_t *pAveragePower)
+{
+	sysman_state_lock();
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	if (!pw)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_GET_USAGE))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (pw->return_values.zesPowerGetUsage)
+		return sysman_unlock_and_return(pw->return_values.zesPowerGetUsage);
+	if (!(pw->usage))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (!pInstantPower || !pAveragePower)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	*pInstantPower = pw->usage->instant_power;
+	*pAveragePower = pw->usage->average_power;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesPowerGetLimitsExt2(zes_pwr_handle_t hPower, uint32_t *pLimit)
+{
+	sysman_state_lock();
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	if (!pw)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_GET_LIMITS_EXT2))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (pw->return_values.zesPowerGetLimitsExt2)
+		return sysman_unlock_and_return(pw->return_values.zesPowerGetLimitsExt2);
+	if (!(pw->limit))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (!pLimit)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	*pLimit = *pw->limit;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesPowerSetLimitsExt2(zes_pwr_handle_t hPower, const uint32_t limit)
+{
+	sysman_state_lock();
+	(void)limit;
+	sysman_power_t *pw = (sysman_power_t *)resolve_handle(hPower, STUB_HANDLE_PWR);
+	if (!pw)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hPower, UNSUPPORTED_FEATURE_POWER_SET_LIMITS_EXT2))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (pw->return_values.zesPowerSetLimitsExt2)
+		return sysman_unlock_and_return(pw->return_values.zesPowerSetLimitsExt2);
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
 ze_result_t zesPowerGetEnergyThreshold(zes_pwr_handle_t hPower, zes_energy_threshold_t *pThreshold)
 {
 	sysman_state_lock();

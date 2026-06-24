@@ -1020,6 +1020,12 @@ static void test_error_cases(void)
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesPowerSetEnergyThreshold: NULL handle", zesPowerSetEnergyThreshold(bad_pwr, 0.0),
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesPowerGetUsage: NULL handle", zesPowerGetUsage(bad_pwr, NULL, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesPowerGetLimitsExt2: NULL handle", zesPowerGetLimitsExt2(bad_pwr, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesPowerSetLimitsExt2: NULL handle", zesPowerSetLimitsExt2(bad_pwr, 0),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 
 	// PSUs
 	{

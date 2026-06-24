@@ -354,6 +354,9 @@ Drivers:
         #   - PowerDomain.SetLimitsExt
         #   - PowerDomain.GetEnergyThreshold
         #   - PowerDomain.SetEnergyThreshold
+        #   - PowerDomain.GetUsage
+        #   - PowerDomain.GetLimitsExt2
+        #   - PowerDomain.SetLimitsExt2
         #   - Psus
         #   - Psu.GetProperties
         #   - Psu.GetState
@@ -682,11 +685,20 @@ Drivers:
             Interval: 0
             LimitValueLocked: false
             Limit: 250000
+          # zesPowerGetUsage (nullable)
+          Usage:
+            InstantPower: 180000
+            AveragePower: 160000
+          # zesPowerGetLimitsExt2 (nullable)
+          Limit: 200000
           ReturnValues:
             zesPowerGetProperties: 0
             zesPowerGetEnergyCounter: 0
             zesPowerGetEnergyThreshold: 0
             zesPowerGetLimitsExt: 0
+            zesPowerGetUsage: 0
+            zesPowerGetLimitsExt2: 0
+            zesPowerSetLimitsExt2: 0
 
         # -----------------------------------------------------------------
         # PSUs (zesDeviceEnumPsus)
