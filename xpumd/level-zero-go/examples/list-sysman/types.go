@@ -64,15 +64,15 @@ type ECCInfo struct {
 }
 
 type OverclockInfo struct {
-	DomainTypes sysman.OverclockDomains
-	State       *sysman.OverclockState
-	Controls    []OverclockControlsInfo
-	Domains     []OverclockDomainInfo
+	DomainsBitmask sysman.OverclockDomains
+	State          *sysman.OverclockState
+	Controls       []OverclockControlsInfo
+	Domains        []OverclockDomainInfo
 }
 
 type OverclockControlsInfo struct {
-	DomainType   sysman.OverclockDomain
-	ControlTypes sysman.OverclockControls
+	DomainType      sysman.OverclockDomain
+	ControlsBitmask sysman.OverclockControls
 }
 
 type OverclockDomainControlsInfo struct {

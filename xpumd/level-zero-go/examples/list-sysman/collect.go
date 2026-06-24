@@ -147,7 +147,7 @@ func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 		d.recordError("OverclockDomains", err)
 		return
 	}
-	ocInfo.DomainTypes = domainTypes
+	ocInfo.DomainsBitmask = domainTypes
 
 	for _, flag := range domainTypes.Bits() {
 		domainType := sysman.OverclockDomain(flag)
@@ -155,8 +155,8 @@ func (d *DeviceInfo) collectOverclockInfo(device *sysman.Device) {
 			d.recordError("Device.GetOverclockControls", err)
 		} else {
 			ocInfo.Controls = append(ocInfo.Controls, OverclockControlsInfo{
-				DomainType:   domainType,
-				ControlTypes: controlTypes,
+				DomainType:      domainType,
+				ControlsBitmask: controlTypes,
 			})
 		}
 	}
