@@ -11,8 +11,7 @@
 #include "parser/cli_parser.h"
 #include "cmds.h"
 #include "os.h"
-#include <CLI/App.hpp>
-#include <CLI/Error.hpp>
+#include <CLI/CLI.hpp>
 #include <algorithm>
 #include <cmd_smi.h>
 #include <cmd_dump.h>
