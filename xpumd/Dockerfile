@@ -45,14 +45,14 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
-    if ! sha256sum --check $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
-	echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
-	cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
-	echo "--- Got: ---"; \
-	sha256sum *.deb; \
-	echo "=> ERROR"; \
-	exit 1; \
-    fi; \
+    if ! sha256sum --check --strict $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
+        echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
+        cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
+        echo "--- Got: ---"; \
+        sha256sum *.deb; \
+        echo "=> ERROR"; \
+        exit 1; \
+    fi && \
     dpkg -i *.deb
 
 WORKDIR /go/src/work
