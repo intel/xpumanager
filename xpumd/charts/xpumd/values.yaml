@@ -174,7 +174,7 @@ config:
     telemetry:
       logs:
         level: info
-        #disable_stacktrace: true
+        disable_stacktrace: true
     # @schema hidden
     pipelines:
       metrics:

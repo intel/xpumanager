@@ -139,7 +139,7 @@ service:
   telemetry:
     logs:
       level: info
-      #disable_stacktrace: true
+      disable_stacktrace: true
   pipelines:
     metrics:
       receivers: [intelxpu]
