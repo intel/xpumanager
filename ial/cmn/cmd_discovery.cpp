@@ -244,6 +244,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 
 			addField("device_name", "Device Name");
 			addField("device_state", "Device State");
+			addField("recovery_action", "Recovery Action");
 			addField("vendor_name", "Vendor Name");
 			addField("uuid", "SOC UUID");
 			addField("pci_bdf_address", "PCI BDF Address");
@@ -269,6 +270,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("device_type", "Device Type");
 		addField("device_name", "Device Name");
 		addField("device_state", "Device State");
+		addField("recovery_action", "Recovery Action");
 		addField("pci_device_id", "PCI Device ID");
 		addField("vendor_name", "Vendor Name");
 		addField("uuid", "SOC UUID");
@@ -634,6 +636,9 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	props["device_name"] = outputLine;
 
 	props["device_state"] = d->dev->isInSurvMode() ? DEVICE_STATE_SURV_MODE : DEVICE_STATE_NORMAL;
+	if (d->dev->isInSurvMode()) {
+		props["recovery_action"] = "Firmware update and GPU reset";
+	}
 	vendorName(d, &outputLine);
 	props["vendor_name"] = outputLine;
 
@@ -2098,15 +2103,15 @@ ze_result_t cmdDiscovery::querySerialNumberFromAMC(devInfo *d, std::string *seri
 /**
  * @brief Prints device information.
  *
- * @param deviceList A list of device information structures.
- * @param type The type of device function to filter by.
- * @return ze_result_t Returns ZE_RESULT_SUCCESS on success.
+ * @param [in] deviceList A list of device information structures.
+ * @param [in] survDeviceList A list of survivability device information structures.
+ * @param [in] printer Unique pointer to the Printer object for output formatting.
+ * @param [in] type The type of device function to filter by.
  */
-ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer,
-										  devFuncType type)
+void cmdDiscovery::printDeviceInfo(std::vector<devInfo> &deviceList, std::vector<devInfo> &survDeviceList,
+								   std::unique_ptr<Printer> &printer, devFuncType type)
 {
 	TRACING();
-	std::string outputLine = "";
 	bool found = false;
 	devFuncType foundType;
 
@@ -2124,9 +2129,19 @@ ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::
 		deviceListJson->push_back(*deviceJson);
 	}
 
+	// Append survivability devices as a sequential continuation in the same table
+	for (auto &survDevice : survDeviceList) {
+		auto survEntry = std::make_unique<nlohmann::ordered_json>();
+		(*survEntry)["device_id"] = survDevice.index;
+		(*survEntry)["device_state"] = DEVICE_STATE_SURV_MODE;
+		(*survEntry)["recovery_action"] = "Firmware update and GPU reset";
+		(*survEntry)["pci_bdf_address"] = std::string(survDevice.dev->getPCI()->getBDFStr());
+		deviceListJson->push_back(*survEntry);
+		found = true;
+	}
+
 	auto devicesJson = std::make_unique<nlohmann::ordered_json>();
 	if (!found) {
-		// Check if JSON output is enabled
 		if (discCmds[discCmdType::DISC_JSON].enabled) {
 			(*devicesJson)["device_list"] = nullptr;
 		} else {
@@ -2136,8 +2151,6 @@ ze_result_t cmdDiscovery::printDeviceInfo(std::vector<devInfo> deviceList, std::
 		(*devicesJson)["device_list"] = *deviceListJson;
 	}
 	printer->print(devicesJson.get());
-
-	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -2149,6 +2162,7 @@ int cmdDiscovery::run(arg_struct *args)
 {
 	TRACING();
 	std::vector<devInfo> deviceList;
+	std::vector<devInfo> survDeviceList;
 	bool headingFirst = true;
 	std::unique_ptr<Printer> printer;
 
@@ -2190,12 +2204,15 @@ int cmdDiscovery::run(arg_struct *args)
 		printer = std::make_unique<DiscoveryTextPrinter>();
 	}
 
-	auto result = args->sm.findDevice(discCmds[discCmdType::DISC_DEVICE].val.c_str(), &deviceList);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Error: Device handle not found for device ID '{}'.\n", discCmds[discCmdType::DISC_DEVICE].val.c_str());
+	const std::string bdf = discCmds[discCmdType::DISC_DEVICE].val;
+	auto result = args->sm.findDevice(bdf.c_str(), &deviceList);
+	if (bdf.empty() || deviceList.empty()) {
+		args->sm.findSurvDevice(bdf.c_str(), &survDeviceList);
+	}
+	if (result != ZE_RESULT_SUCCESS && !bdf.empty() && survDeviceList.empty()) {
+		ERR("Error: Device handle not found for device ID '{}'.\n", bdf);
 		return result;
 	}
-
 	// If no args were provided, then we need to print out this info:
 	//| 0   | Device Name: Intel(R) Graphics [0xe216]                                              |
 	//      | Vendor Name: Intel(R) Corporation                                                    |
@@ -2204,17 +2221,15 @@ int cmdDiscovery::run(arg_struct *args)
 	//      | DRM Device: /dev/dri/card1                                                           |
 	//      | Function Type: physical                                                              |
 	if (args->argc == 2 || (args->argc == 3 && discCmds[discCmdType::DISC_JSON].enabled)) {
-		// Print all device information
-		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_ALL);
+		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_ALL);
 	} else if (discCmds[discCmdType::DISC_PF].enabled || discCmds[discCmdType::DISC_PHYSICALFUNCTION].enabled) {
-		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_PHYSICAL);
+		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_PHYSICAL);
 	} else if (discCmds[discCmdType::DISC_VF].enabled || discCmds[discCmdType::DISC_VIRTUALFUNCTION].enabled) {
-		printDeviceInfo(deviceList, printer, DEVICE_FUNCTION_TYPE_VIRTUAL);
-	} else {
+		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_VIRTUAL);
+	} else if (!deviceList.empty()) {
 		// Iterate through the device list and execute the command
 		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 		for (auto &device : deviceList) {
-
 			// Call the appropriate command function based on the command type
 			for (const auto &cmd : discCmds) {
 				if (cmd.second.enabled && cmd.second.func != nullptr) {
@@ -2237,6 +2252,13 @@ int cmdDiscovery::run(arg_struct *args)
 			}
 		}
 		printer->print(jsonObj.get());
+	} else if (!survDeviceList.empty()) {
+		// Only survivability devices found — render them through the same device_list path
+		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_ALL);
+	} else {
+		ERR("Error: No devices found.\n");
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
+
 	return 0;
 }

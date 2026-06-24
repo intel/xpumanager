@@ -489,15 +489,14 @@ ze_result_t driver::getLogs(UNUSED std::string fileName)
  * This function searches for a device based on its BDF address. If no BDF is provided,
  * it adds all devices to the list.
  *
- * @param bdf The BDF address of the device to find. If nullptr or empty, all devices are added.
- * @param devList A pointer to a vector to store the device information.
+ * @param [in] bdf The BDF address of the device to find. If nullptr or empty, all devices are added.
+ * @param [out] devList A pointer to a vector to store the device information.
  * @return ze_result_t indicating success or failure.
  */
 ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 {
 	uint32_t deviceIndex = 0;
 
-	// Parse bdf as a numeric device index; empty optional means it's a BDF string (or absent)
 	const std::string_view bdfView{bdf ? bdf : ""};
 	std::optional<uint32_t> numericId;
 	if (!bdfView.empty()) {
@@ -508,38 +507,24 @@ ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 		}
 	}
 
-	auto processDevice = [&](device &dev) -> ze_result_t {
-		if (bdfView.empty()) {
-			// If no BDF is provided, add all devices to the list
-			DBG("No BDF provided, adding all devices.\n");
-			dev.addInfo(devList, deviceIndex);
-		} else {
-			if (dev.isBDF(bdf)) {
-				dev.addInfo(devList, deviceIndex);
-				return ZE_RESULT_SUCCESS;
-			} else if (numericId && *numericId == deviceIndex) {
-				DBG("Found device with index: {}\n", *numericId);
-				dev.addInfo(devList, deviceIndex);
-				return ZE_RESULT_SUCCESS;
-			}
-		}
-		deviceIndex++;
-		return ZE_RESULT_NOT_READY;
-	};
-
 	for (uint32_t i = 0; i < driverCount; i++) {
 		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
-			ze_result_t res = processDevice(devs[i].dev[j]);
-			if (res != ZE_RESULT_NOT_READY)
-				return res;
+			device &dev = devs[i].dev[j];
+			if (bdfView.empty()) {
+				DBG("No BDF provided, adding all devices.\n");
+				dev.addInfo(devList, deviceIndex);
+			} else {
+				if (dev.isBDF(bdf)) {
+					dev.addInfo(devList, deviceIndex);
+					return ZE_RESULT_SUCCESS;
+				} else if (numericId && *numericId == deviceIndex) {
+					DBG("Found device with index: {}\n", *numericId);
+					dev.addInfo(devList, deviceIndex);
+					return ZE_RESULT_SUCCESS;
+				}
+			}
+			deviceIndex++;
 		}
-	}
-
-	// If there are any survivability devices add them to the device list
-	for (uint32_t k = 0; k < svZesDevs.survDevCount; k++) {
-		ze_result_t res = processDevice(svZesDevs.survDevices[k]);
-		if (res != ZE_RESULT_NOT_READY)
-			return res;
 	}
 
 	// If a specific device was requested but nothing matched, return an error
@@ -548,4 +533,48 @@ ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
 	}
 
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Finds a survivability device based on its BDF address or index.
+ *
+ * This function searches for a survivability device based on its BDF address. If no BDF is
+ * provided, it adds all survivability devices to the list.
+ *
+ * @param [in] bdf The BDF address of the device to find. If nullptr or empty, all survivability devices are added.
+ * @param [out] survDevList A pointer to a vector to store the survivability device information.
+ */
+void driver::findSurvDevice(const char *bdf, std::vector<devInfo> *survDevList)
+{
+	// Surv device indices continue sequentially after all normal devices
+	uint32_t deviceIndex = 0;
+	for (uint32_t i = 0; i < driverCount; i++) {
+		deviceIndex += devs[i].totalDevicesCount;
+	}
+
+	const std::string_view bdfView{bdf ? bdf : ""};
+	std::optional<uint32_t> numericId;
+	if (!bdfView.empty()) {
+		uint32_t val{};
+		auto [ptr, ec] = std::from_chars(bdfView.data(), bdfView.data() + bdfView.size(), val);
+		if (ec == std::errc{} && ptr == bdfView.data() + bdfView.size()) {
+			numericId = val;
+		}
+	}
+
+	for (uint32_t k = 0; k < svZesDevs.survDevCount; k++) {
+		device &dev = svZesDevs.survDevices[k];
+		if (bdfView.empty()) {
+			dev.addInfo(survDevList, deviceIndex);
+		} else {
+			if (dev.isBDF(bdf)) {
+				dev.addInfo(survDevList, deviceIndex);
+				return;
+			} else if (numericId && *numericId == deviceIndex) {
+				dev.addInfo(survDevList, deviceIndex);
+				return;
+			}
+		}
+		deviceIndex++;
+	}
 }

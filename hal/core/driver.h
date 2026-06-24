@@ -54,6 +54,7 @@ public:
 	ze_result_t getExtensionProperties(ze_driver_handle_t drvr);
 	void getLoaderVersion(std::string *lzVersion);
 	ze_result_t findDevice(const char *bdf, std::vector<devInfo> *dev);
+	void findSurvDevice(const char *bdf, std::vector<devInfo> *survDev);
 	ze_result_t getLogs(std::string fileName);
 	ze_result_t run();
 };

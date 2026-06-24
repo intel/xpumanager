@@ -13,8 +13,7 @@
 #include <map>
 #include <string_view>
 
-inline constexpr char DEVICE_STATE_SURV_MODE[] =
-	"survivability mode (firmware update and cold reset are recommended for device recovery)";
+inline constexpr char DEVICE_STATE_SURV_MODE[] = "survivability mode";
 inline constexpr char DEVICE_STATE_NORMAL[] = "normal";
 
 /**
@@ -166,7 +165,8 @@ public:
 	ze_result_t opromCodeFirmwareVersion(devInfo *d, std::string *outputLine);
 	ze_result_t opromDataFirmwareName(devInfo *d, std::string *outputLine);
 	ze_result_t opromDataFirmwareVersion(devInfo *d, std::string *outputLine);
-	ze_result_t printDeviceInfo(std::vector<devInfo> deviceList, std::unique_ptr<Printer> &printer, devFuncType type);
+	void printDeviceInfo(std::vector<devInfo> &deviceList, std::vector<devInfo> &survDeviceList,
+						 std::unique_ptr<Printer> &printer, devFuncType type);
 	ze_result_t querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString);
 
 	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device, devFuncType funcType);
