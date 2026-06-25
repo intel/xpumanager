@@ -1261,7 +1261,7 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	uint32_t channels = 0;
+	int32_t channels = 0;
 
 	auto *const m = d->dev->getMemory();
 
@@ -1271,7 +1271,9 @@ ze_result_t cmdDiscovery::memoryChannels(devInfo *d, std::string *outputLine)
 		return result;
 	}
 
-	*outputLine = std::to_string(channels);
+	// -1 value is the Level Zero "unknown" sentinel
+	// Render it as N/A instead of a raw -1.
+	*outputLine = (channels == -1) ? "N/A" : std::to_string(channels);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1288,7 +1290,7 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	uint32_t busWidth = 0;
+	int32_t busWidth = 0;
 
 	auto *const m = d->dev->getMemory();
 
@@ -1297,7 +1299,9 @@ ze_result_t cmdDiscovery::memoryBusWidth(devInfo *d, std::string *outputLine)
 		return result;
 	}
 
-	*outputLine = std::to_string(busWidth);
+	// -1 value is the Level Zero "unknown" sentinel
+	// Render it as N/A instead of a raw -1.
+	*outputLine = (busWidth == -1) ? "N/A" : std::to_string(busWidth);
 	return ZE_RESULT_SUCCESS;
 }
 

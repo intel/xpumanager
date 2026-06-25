@@ -50,8 +50,8 @@ public:
 	ze_result_t getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t *bandwidth);
 	ze_result_t getMemorySize(uint64_t *size);
 	ze_result_t getMemoryHealth(zes_mem_health_t *health);
-	ze_result_t getMemoryChannels(uint32_t *channels);
-	ze_result_t getMemoryBusWidth(uint32_t *busWidth);
+	ze_result_t getMemoryChannels(int32_t *channels);
+	ze_result_t getMemoryBusWidth(int32_t *busWidth);
 	ze_result_t getMemoryUsed(uint64_t *used, double *utilization);
 	ze_result_t getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBandwidth, uint64_t *timeStamp);
 	ze_result_t getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidthData> &tileBandwidth);

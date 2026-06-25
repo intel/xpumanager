@@ -325,10 +325,11 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
  * memory modules. Memory channels represent parallel data paths that
  * affect memory bandwidth and performance characteristics.
  *
- * @param channels Pointer to variable that will receive number of memory channels
+ * @param channels Pointer to variable that will receive number of memory channels.
+ *                 Set to -1 by the driver when the number of channels is unknown
  * @return ze_result_t ZE_RESULT_SUCCESS on successful channel retrieval, error code otherwise
  */
-ze_result_t memory::getMemoryChannels(uint32_t *channels)
+ze_result_t memory::getMemoryChannels(int32_t *channels)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_mem_properties_t properties;
@@ -358,10 +359,11 @@ ze_result_t memory::getMemoryChannels(uint32_t *channels)
  * Bus width determines the amount of data that can be transferred per clock
  * cycle and directly affects memory bandwidth performance.
  *
- * @param busWidth Pointer to variable that will receive memory bus width in bits
+ * @param busWidth Pointer to variable that will receive memory bus width in bits.
+ *                 Set to -1 by the driver when the bus width is unknown
  * @return ze_result_t ZE_RESULT_SUCCESS on successful bus width retrieval, error code otherwise
  */
-ze_result_t memory::getMemoryBusWidth(uint32_t *busWidth)
+ze_result_t memory::getMemoryBusWidth(int32_t *busWidth)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_mem_properties_t properties;
