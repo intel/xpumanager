@@ -50,7 +50,11 @@ endif
 # Set correct CRT flags for Windows with override capability
 oal_cpp_args = []
 if is_windows
-  oal_cpp_args += ['-DLIBXPUM_EXPORTS']
+  if get_option('shared_library')
+    oal_cpp_args += ['-DLIBXPUM_EXPORTS']
+  else
+    oal_cpp_args += ['-DLIBXPUM_STATIC']
+  endif
   if get_option('buildtype').startswith('debug')
     # Use /FORCE to override any previous /MD settings from dependencies
     oal_cpp_args += ['/MDd', '/D_DEBUG']

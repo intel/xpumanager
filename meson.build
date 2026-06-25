@@ -93,7 +93,10 @@ if is_windows
 
   if get_option('shared_library')
     compile_args += ['-DLIBXPUM_EXPORTS']
+  else
+    compile_args += ['-DLIBXPUM_STATIC']
   endif
+
 elif is_linux
   compile_args += [
     '-pedantic',
@@ -209,6 +212,8 @@ if is_windows
   compile_args += ['-DWIN32', '-D_WINDOWS']
   if get_option('shared_library')
     compile_args += ['-DLIBXPUM_EXPORTS']
+  else
+    compile_args += ['-DLIBXPUM_STATIC']
   endif
 elif is_linux
   compile_args += ['-fPIC']

@@ -19,6 +19,8 @@
 
 #ifdef LIBXPUM_EXPORTS
 #define LIBXPUM_API __declspec(dllexport)
+#elif defined(LIBXPUM_STATIC)
+#define LIBXPUM_API
 #else
 #define LIBXPUM_API __declspec(dllimport)
 #endif

@@ -66,7 +66,8 @@ libxpum_shared = shared_library('xpum',
   ] + windows_deps,
   version : xpum_version,
   soversion : xpum_version.split('.')[0],
-  install : true,
+  build_by_default : get_option('shared_library'),
+  install : get_option('shared_library'),
   install_dir : get_option('libdir'),
 )
 
