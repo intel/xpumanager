@@ -1747,7 +1747,7 @@ ze_result_t cmdDiscovery::drmDevice(devInfo *d, std::string *outputLine)
  * @brief Prints the device type for a device.
  *
  * @param[in] d Pointer to the device info structure
- * @param[out] outputLine Pointer to the output line string ("GPU", etc.)
+ * @param[out] outputLine Pointer to the output line string ("Integrated GPU", "Discrete GPU", etc.)
  *
  * @retval ZE_RESULT_SUCCESS Successfully retrieved device type
  * @retval ZE_RESULT_ERROR_* Failed to get device properties
@@ -1763,7 +1763,7 @@ ze_result_t cmdDiscovery::deviceType(devInfo *d, std::string *outputLine)
 	}
 	switch (zeDevProp.type) {
 	case ZE_DEVICE_TYPE_GPU:
-		*outputLine = "GPU";
+		*outputLine = d->dev->isIGPU() ? "Integrated GPU" : "Discrete GPU";
 		break;
 	case ZE_DEVICE_TYPE_CPU:
 		*outputLine = "CPU";
