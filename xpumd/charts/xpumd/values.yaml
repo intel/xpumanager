@@ -137,6 +137,9 @@ config:
       # -- Sampling interval for the high-frequency metrics.
       # @section -- XPUM Daemon Configuration
       sampling_interval: 1s
+      # -- Whether to fail collector startup if the L0 Sysman API cannot be
+      # initialized (e.g. no GPU driver or device access).
+      fail_on_sysman_init_error: false
       # -- Configuration for enabling/disabling individual metrics.
       # @section -- XPUM Daemon Configuration
       metrics: {}

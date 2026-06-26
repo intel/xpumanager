@@ -145,6 +145,7 @@ And add following option to chart install:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
+| config.receivers.intelxpu.fail_on_sysman_init_error | bool | `false` | Whether to fail collector startup if the L0 Sysman API cannot be initialized (e.g. no GPU driver or device access). |
 | crashlog.directory | string | `"/var/log/crashlog"` | Host directory to watch for collecting GPU crash logs. Use `*` to match all files. |
 | extraEnv | list | `[]` | Extra environment variables for the xpumd container |
 | extraVolumeMounts | list | `[]` | Additional volume mounts for the xpumd container |

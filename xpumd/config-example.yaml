@@ -10,6 +10,9 @@ receivers:
     timeout: 0
     # Sampling interval for the high-frequency metrics.
     sampling_interval: 1s
+    # Whether to fail collector startup if the L0 Sysman API cannot be
+    # initialized (e.g. no GPU driver or device access). Defaults to false.
+    fail_on_sysman_init_error: false
     # Configuration for enabling/disabling individual metrics.
     # See receiver/intelxpu/sysman/documentation.md for list of available metrics.
     metrics:

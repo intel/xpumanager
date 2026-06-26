@@ -120,6 +120,26 @@ func (a metricAssertion) waitFor(t *testing.T, endpoint string, timeout time.Dur
 	return nil
 }
 
+// waitForMetricsEndpoint polls the metrics endpoint until it responds successfully,
+// then returns all fetched metric families.
+func waitForMetricsEndpoint(t *testing.T, endpoint string, timeout time.Duration) map[string]*dto.MetricFamily {
+	t.Helper()
+
+	var lastErr error
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		families, err := fetchMetrics(endpoint)
+		if err == nil {
+			return families
+		}
+		lastErr = err
+		time.Sleep(metricPollInterval)
+	}
+
+	t.Fatalf("timed out after %v waiting for metrics endpoint to become ready: %v", timeout, lastErr)
+	return nil
+}
+
 func fetchMetrics(endpoint string) (map[string]*dto.MetricFamily, error) {
 	client := http.Client{Timeout: metricFetchTimeout}
 	resp, err := client.Get(fmt.Sprintf("http://%s/metrics", endpoint))

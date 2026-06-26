@@ -52,6 +52,10 @@
                                     "description": "Metrics data collection interval. Must be at least twice the sampling_interval.",
                                     "type": "string"
                                 },
+                                "fail_on_sysman_init_error": {
+                                    "description": "Whether to fail collector startup if the L0 Sysman API cannot be initialized (e.g. no GPU driver or device access).",
+                                    "type": "boolean"
+                                },
                                 "initial_delay": {
                                     "description": "Initial start delay for metrics collection, any non positive value is assumed to be immediately.",
                                     "type": "string"

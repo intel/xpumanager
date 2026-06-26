@@ -17,6 +17,10 @@ import (
 type Config struct {
 	metadata.MetricsBuilderConfig `mapstructure:",squash"`
 	SamplingInterval              time.Duration `mapstructure:"sampling_interval"`
+	// FailOnSysmanInitError controls whether a failure to initialize the L0
+	// Sysman API (e.g. no GPU driver or device access) causes the collector to
+	// fail at startup.
+	FailOnSysmanInitError bool `mapstructure:"fail_on_sysman_init_error"`
 
 	aggregatedMetricsBufferSize int
 }

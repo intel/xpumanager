@@ -18,6 +18,32 @@ func TestMain(m *testing.M) {
 	os.Exit(runMain(m))
 }
 
+// TestNoSysman verifies that xpumd starts successfully even when the L0 Sysman
+// API cannot be initialized (e.g. no GPU driver or device access). This
+// exercises the default fail_on_sysman_init_error: false behaviour.
+//
+// The test deploys xpumd with a stub driver configured to return an error from
+// zesInit. The pod should still reach Running state and the Prometheus endpoint
+// should be reachable (with no GPU-specific metrics).
+func TestNoSysman(t *testing.T) {
+	tc := newTestConfig(t)
+	t.Cleanup(func() { tc.cleanup(t) })
+	tc.setup(t)
+
+	tunnel := tc.forwardPort(t, servicePort)
+	t.Cleanup(tunnel.stop)
+	endpoint := tunnel.endpoint()
+
+	families := waitForMetricsEndpoint(t, endpoint, 30*time.Second)
+
+	// No GPU metrics should be present — the registry is empty.
+	for _, name := range []string{"hw_gpu_info", "hw_frequency_hertz"} {
+		if _, ok := families[name]; ok {
+			t.Errorf("expected no %q metrics with no GPU, but they were present", name)
+		}
+	}
+}
+
 func runMain(m *testing.M) (exitCode int) {
 	flag.Parse()
 

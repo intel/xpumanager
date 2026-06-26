@@ -9,9 +9,13 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/consumer"
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper"
 )
 
@@ -50,7 +54,16 @@ func makeMetricsScraper(p *sysmanProvider) scraper.CreateMetricsFunc {
 		logger := settings.Logger.Sugar()
 		devices, err := p.get(logger, cfg)
 		if err != nil {
-			return nil, err
+			if cfg.FailOnSysmanInitError {
+				return nil, err
+			}
+			logger.Warnw("Sysman initialization failed, running without GPU monitoring "+
+				"(set fail_on_sysman_init_error: true to fail startup instead)",
+				zap.Error(err))
+			// Return a no-op scraper
+			return scraper.NewMetrics(func(context.Context) (pmetric.Metrics, error) {
+				return pmetric.NewMetrics(), nil
+			})
 		}
 
 		s, err := newSysmanMetricsScraper(ctx, settings, cfg, devices)
@@ -71,7 +84,16 @@ func (f *Handle) CreateLogsReceiver(settings component.TelemetrySettings, cfg *C
 	logger := settings.Logger.Sugar()
 	devices, err := f.provider.get(logger, cfg)
 	if err != nil {
-		return nil, err
+		if cfg.FailOnSysmanInitError {
+			return nil, err
+		}
+		logger.Warnw("Sysman initialization failed, running without GPU event monitoring "+
+			"(set fail_on_sysman_init_error: true to fail startup instead)",
+			zap.Error(err))
+		// Return a no-op receiver
+		return scraper.NewLogs(func(context.Context) (plog.Logs, error) {
+			return plog.NewLogs(), nil
+		})
 	}
 	return newSysmanEventsReceiver(devices, logger, nextConsumer)
 }

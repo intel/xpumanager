@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+
+ReturnValues:
+  zesInit: 0x78000001  # ZE_RESULT_ERROR_UNINITIALIZED
