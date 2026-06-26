@@ -2,10 +2,14 @@ module github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo
 
 go 1.26.0
 
-replace github.com/intel/xpumanager/xpumd/common => ../../common
+replace (
+	github.com/intel/xpumanager/xpumd/common => ../../common
+	github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api => ./api
+)
 
 require (
 	github.com/google/go-cmp v0.7.0
+	github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api v0.0.0
 	github.com/stretchr/testify v1.11.1
 	go.opentelemetry.io/collector/component v1.59.0
 	go.opentelemetry.io/collector/component/componenttest v0.153.0

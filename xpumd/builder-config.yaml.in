@@ -13,6 +13,7 @@ replaces:
   - github.com/intel/level-zero-go => ../level-zero-go
   - github.com/intel/xpumanager/xpumd => ../
   - github.com/intel/xpumanager/xpumd/common => ../common
+  - github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api => ../exporter/intelxpuinfo/api
 
 exporters:
   - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v@OTEL_VERSION@
