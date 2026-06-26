@@ -29,13 +29,14 @@
 #include <iomanip>
 #include <algorithm>
 #include <cinttypes>
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
 
 // Conversion helpers between watts and milliwatts
 constexpr inline int mwToW(int32_t mw) { return static_cast<int>(mw / 1000); }
-constexpr inline uint32_t wToMw(double w) { return static_cast<uint32_t>(w * 1000.0); }
+constexpr inline uint32_t wToMw(int w) { return static_cast<uint32_t>(w) * 1000U; }
 
 // Fan curve input limits
 constexpr uint32_t FAN_CURVE_TEMP_MIN_C = 0;
@@ -630,7 +631,6 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencyrange [minFrequency,maxFrequency]",
 				progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --powerlimit [powerValue]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --standby [standbyMode]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --scheduler [schedulerMode]",
 							   progName.c_str()));
@@ -663,7 +663,6 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(
 		HEADING, "--frequencyrange            Core frequency range (MHz). Applies to all tiles when -t is omitted"));
-	helpList.push_back(helpCmd(HEADING, "--powerlimit                Device-level power limit"));
 	helpList.push_back(helpCmd(
 		HEADING, "--standby                   Standby mode (device-level). Valid options: \"default\"; \"never\""));
 	helpList.push_back(helpCmd(
@@ -1092,20 +1091,19 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 
 	// Parse the power limit from the option string - may include type
 	std::string powerLimitStr = configCmds[configCmdType::POWERLIMIT].val;
-	double powerLimit = 0.0;
-	try {
-		powerLimit = std::stod(powerLimitStr);
-	} catch (const std::exception &) {
-		// std::stod throws on non-numeric / empty input; reject it cleanly
-		// instead of letting the exception abort the process.
-		ERR("Invalid power limit value. Power limit must be a non-negative number.\n");
+	int powerLimit = 0;
+	if (powerLimitStr.empty() || !std::all_of(powerLimitStr.begin(), powerLimitStr.end(), ::isdigit)) {
+		ERR("Invalid power limit value. Power limit must be a non-negative integer.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (powerLimit < 0) {
-		ERR("Invalid power limit value. Power limit must be non-negative.\n");
+	uint32_t parsedPowerLimit = 0;
+	if (!parseUint32NoThrow(powerLimitStr, parsedPowerLimit) ||
+		parsedPowerLimit > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+		ERR("Invalid power limit value. Power limit must be a non-negative integer.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+	powerLimit = static_cast<int>(parsedPowerLimit);
 
 	power *pwr = d->dev->getPower();
 	if (pwr == nullptr) {
@@ -1120,28 +1118,101 @@ ze_result_t cmdConfig::setPowerLimit(devInfo *d)
 	if (pwrExp != nullptr && pwrExp->isPowerExpEnabled()) {
 		result = pwrExp->setPowerLimit(limitMw);
 		if (result == ZE_RESULT_SUCCESS) {
-			PRINT("Succeeded in setting the power limit to {:.1f} W on GPU {}\n", powerLimit, d->index);
+			PRINT("Succeeded in setting the power limit to {} W on GPU {}\n", powerLimit, d->index);
 		}
 		return result;
 	}
 
-	// Determine power type if specified
-	std::string powerType = configCmds[configCmdType::POWERTYPE].val;
-	if (powerType.empty() || powerType == "sustain") {
-		// Default to sustained power limit
-		result = pwr->setLimitsExt(-1, ZES_POWER_LEVEL_SUSTAINED, limitMw);
-	} else if (powerType == "burst") {
-		result = pwr->setLimitsExt(-1, ZES_POWER_LEVEL_BURST, limitMw);
-	} else if (powerType == "peak") {
-		result = pwr->setLimitsExt(-1, ZES_POWER_LEVEL_PEAK, limitMw);
-	} else {
-		ERR("Invalid power type. Valid options: sustain, burst, peak\n");
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	// Query available power domains and levels
+	std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> domainLimits;
+	pwr->getDomainLimits(domainLimits);
+
+	if (domainLimits.empty()) {
+		ERR("Error: No power domains available on device.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
+	// Determine power type if specified
+	std::string powerType = configCmds[configCmdType::POWERTYPE].val;
+	auto levelToText = [](zes_power_level_t level) -> const char * {
+		switch (level) {
+		case ZES_POWER_LEVEL_SUSTAINED:
+			return "sustain";
+		case ZES_POWER_LEVEL_BURST:
+			return "burst";
+		case ZES_POWER_LEVEL_PEAK:
+			return "peak";
+		default:
+			return "unknown";
+		}
+	};
+
+	zes_power_level_t targetLevel = ZES_POWER_LEVEL_SUSTAINED;
+
+	if (!powerType.empty()) {
+		if (powerType == "sustain") {
+			targetLevel = ZES_POWER_LEVEL_SUSTAINED;
+		} else if (powerType == "burst") {
+			targetLevel = ZES_POWER_LEVEL_BURST;
+		} else if (powerType == "peak") {
+			targetLevel = ZES_POWER_LEVEL_PEAK;
+		} else {
+			ERR("Invalid power type. Valid options: sustain, burst, peak\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	} else {
+		// Auto-select available level: prefer sustained, then burst, then peak
+		const std::array<zes_power_level_t, 3> preferredLevels = {
+			ZES_POWER_LEVEL_SUSTAINED,
+			ZES_POWER_LEVEL_BURST,
+			ZES_POWER_LEVEL_PEAK,
+		};
+
+		targetLevel = ZES_POWER_LEVEL_SUSTAINED;
+		bool levelFound = false;
+
+		for (const auto level : preferredLevels) {
+			// Check if this level exists in any domain
+			for (const auto &[domain, levels] : domainLimits) {
+				if (levels.find(level) != levels.end()) {
+					targetLevel = level;
+					levelFound = true;
+					break;
+				}
+			}
+			if (levelFound) {
+				break;
+			}
+		}
+
+		if (!levelFound) {
+			ERR("Error: No supported power level found on device.\n");
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+	}
+
+	// Call setLimitsExt with tile ID -1 (device-level)
+	result = pwr->setLimitsExt(-1, targetLevel, limitMw);
+
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in setting the {} power limit to {:.1f} W on GPU {}\n",
-			  powerType.empty() ? "sustain" : powerType.c_str(), powerLimit, d->index);
+		// Verify the value was actually set by reading it back immediately
+		std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> readbackLimits;
+		pwr->getDomainLimits(readbackLimits);
+		for (const auto &[domain, levels] : readbackLimits) {
+			auto it = levels.find(targetLevel);
+			if (it != levels.end()) {
+				int readbackW = mwToW(it->second);
+				if (readbackW != powerLimit) {
+					PRINT("Requested {}W is larger than this GPU maximum for {} level which is {}W.\n", powerLimit,
+						  levelToText(targetLevel), readbackW);
+					powerLimit = readbackW;
+				}
+				break;
+			}
+		}
+
+		PRINT("Succeeded in setting the {} power limit to {} W on GPU {}\n", levelToText(targetLevel), powerLimit,
+			  d->index);
 	}
 
 	return result;
