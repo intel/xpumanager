@@ -11,9 +11,9 @@
 #include <string>
 #include <zes_api.h>
 
-#define ONE_MB_IN_BYTES (1024 * 1024)
+#define ONE_MB_IN_BYTES (1024ULL * 1024ULL)
 
-enum devFuncType
+enum devFuncType : std::uint8_t
 {
 	DEVICE_FUNCTION_TYPE_UNKNOWN,
 	DEVICE_FUNCTION_TYPE_VIRTUAL,
@@ -40,6 +40,7 @@ struct DeviceSriovInfo
 {
 	uint32_t vGpuNumber;
 	uint64_t vGpuMemorySize;
+	bool isIGPU{false};
 	zes_device_ecc_state_t eccState;
 	std::string drmPath;
 	std::string bdfAddress;

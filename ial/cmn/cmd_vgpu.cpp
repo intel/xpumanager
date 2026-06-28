@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <assert.h>
 #include <cinttypes>
+#include <format>
+#include <stdexcept>
 
 static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
 	{VGPU_HELP, {}},
@@ -62,8 +64,8 @@ void cmdVgpu::help(HELP helpType)
 								   "settings are ready to create virtual GPUs");
 	helpList.emplace_back(HEADING, "-c,--create                 Create the virtual GPUs");
 	helpList.emplace_back(HEADING, "-n                          The number of virtual GPUs to create");
-	helpList.emplace_back(HEADING, "--lmem                      The memory size of each "
-								   "virtual GPUs, in MiB. For example, --lmem 500");
+	helpList.emplace_back(HEADING, "--lmem                      Memory size per virtual GPU, in MiB "
+								   "(discrete GPUs only). Example: --lmem 500");
 	helpList.emplace_back(HEADING, "-r,--remove                 Remove all "
 								   "virtual GPUs on the specified physical GPU");
 	helpList.emplace_back(HEADING, "-l,--list,--supported       List all virtual "
@@ -136,6 +138,12 @@ ze_result_t cmdVgpu::create(devInfo *d)
 {
 	TRACING();
 
+	// Check for elevated privileges early
+	if (!PRIVILEGECHECK()) {
+		ERR("Creating virtual GPUs requires elevated privileges. Run with sudo.\n");
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	}
+
 	ze_result_t result;
 	DeviceSriovInfo deviceInfo = {};
 	zes_device_ecc_properties_t eccState = {};
@@ -152,7 +160,10 @@ ze_result_t cmdVgpu::create(devInfo *d)
 			deviceInfo.vGpuMemorySize = stoi(vgpuCmds[vgpuCmdType::VGPU_LMEM].val);
 		}
 	} catch (std::invalid_argument &) {
-		ERR("Error: Invalid argument provided for virtual GPU number.\n");
+		ERR("Error: Invalid argument provided for virtual GPU number or local memory size.\n"); // NOLINT(misc-include-cleaner)
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	} catch (std::out_of_range &) {
+		ERR("Error: Argument out of range for virtual GPU number or local memory size.\n"); // NOLINT(misc-include-cleaner)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -162,7 +173,8 @@ ze_result_t cmdVgpu::create(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (deviceInfo.vGpuMemorySize == 0) {
+	const bool isIntegratedGpu = d->dev->isIGPU();
+	if (!isIntegratedGpu && deviceInfo.vGpuMemorySize == 0) {
 		ERR("Error: The memory size of each virtual GPU must be greater than zero.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -174,6 +186,7 @@ ze_result_t cmdVgpu::create(devInfo *d)
 	}
 
 	// Fill in some info in deviceInfo that is needed by lower level functions
+	deviceInfo.isIGPU = isIntegratedGpu;
 	deviceInfo.bdfAddress = p->getBDFStr();
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 	if (e->getState(d->zesDeviceHdl, &eccState) == ZE_RESULT_SUCCESS) {
@@ -184,9 +197,17 @@ ze_result_t cmdVgpu::create(devInfo *d)
 	result = v->createVFs(&deviceInfo);
 
 	if (result == 0) {
-		PRINT("Successfully created {} virtual GPUs with {} MiB memory each on device {}.\n", deviceInfo.vGpuNumber,
-			  deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
+		if (isIntegratedGpu) {
+			PRINT("Successfully created {} virtual GPUs on device {}.\n", deviceInfo.vGpuNumber,
+				  p->getBDFStr().c_str());
+		} else {
+			PRINT("Successfully created {} virtual GPUs with {} MiB memory each on device {}.\n", deviceInfo.vGpuNumber,
+				  deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
+		}
 	} else {
+		if (!PRIVILEGECHECK()) {
+			ERR("Creating virtual GPUs requires elevated privileges to write SR-IOV control files.\n");
+		}
 		ERR("Failed to create virtual GPUs on device {}.\n", p->getBDFStr().c_str());
 	}
 
@@ -205,11 +226,19 @@ ze_result_t cmdVgpu::create(devInfo *d)
 ze_result_t cmdVgpu::remove(devInfo *d)
 {
 	TRACING();
+
+	// Check for elevated privileges early
+	if (!PRIVILEGECHECK()) {
+		ERR("Removing virtual GPUs requires elevated privileges. Run with sudo.\n");
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	}
+
 	int result;
 	DeviceSriovInfo deviceInfo = {};
 	vf *vfHandle = d->dev->getVF();
 	pci *pciHandle = d->dev->getPCI();
 
+	deviceInfo.isIGPU = d->dev->isIGPU();
 	deviceInfo.bdfAddress = pciHandle->getBDFStr();
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
@@ -241,6 +270,7 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 	vf *v = d->dev->getVF();
 	pci *p = d->dev->getPCI();
 
+	deviceInfo.isIGPU = d->dev->isIGPU();
 	deviceInfo.bdfAddress = p->getBDFStr();
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
@@ -256,7 +286,11 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 
 		table.addRow("PCI BDF Address", vfInfo.bdfAddress);
 		table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
-		table.addRow("Memory Physical Size", std::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
+		if (vfInfo.vGpuMemorySize > 0) {
+			table.addRow("Memory Physical Size", std::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
+		} else {
+			table.addRow("Memory Physical Size", "N/A (shared memory / iGPU)");
+		}
 
 		PRINT("{}", table.toString().c_str());
 	}
@@ -281,6 +315,7 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 	pci *pciHandle = d->dev->getPCI();
 
 	DeviceSriovInfo deviceInfo = {};
+	deviceInfo.isIGPU = d->dev->isIGPU();
 	deviceInfo.bdfAddress = pciHandle->getBDFStr();
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
@@ -293,6 +328,13 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 	if (vfStatsList.empty()) {
 		PRINT("No virtual GPUs found on device {}.\n", pciHandle->getBDFStr().c_str());
 		return ZE_RESULT_SUCCESS;
+	}
+
+	// If all VFs show N/A for engine utilization, hint about privileges
+	bool allEngineNA = std::all_of(vfStatsList.begin(), vfStatsList.end(),
+								   [](const VFStatsInfo &s) { return s.gpuUtilization < 0.0; });
+	if (allEngineNA && !PRIVILEGECHECK()) {
+		ERR("Engine utilization requires elevated privileges. Run with sudo for full stats.\n");
 	}
 
 	for (const auto &vfStats : vfStatsList) {

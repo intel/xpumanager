@@ -15,9 +15,13 @@
 #include <filesystem>
 #include <map>
 #include <algorithm>
+#include <cerrno>
 #include <cctype>
+#include <cstdint>
+#include <ios>
+#include <string>
+#include <system_error>
 #include <dirent.h>
-#include <cinttypes>
 #include <file_io.h>
 
 static constexpr std::string_view VGPU_CONF_FILE = "resources/config/vgpu.conf";
@@ -353,9 +357,18 @@ static int writePfSchedParams(const std::string &dir, const AttrFromConfigFile &
  * @param[in] lmem Local memory quota to assign in bytes
  * @return int 0 on success, -1 on failure
  */
-static int writeVfResourceParams(const std::string &dir, const AttrFromConfigFile &attrs, uint64_t lmem)
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
+static int writeVfResourceParams(const std::string &dir, const AttrFromConfigFile &attrs, uint64_t lmem, bool isIGPU)
 {
-	if (writeFile(dir + "/lmem_quota", std::to_string(lmem)) != 0) {
+	const std::string lmemPath = dir + "/lmem_quota";
+	std::error_code ec;
+	if (std::filesystem::exists(lmemPath, ec)) {
+		if (writeFile(lmemPath, std::to_string(lmem)) != 0) {
+			return -1;
+		}
+	} else if (!isIGPU) {
+		// dGPU: lmem_quota must be present when the VF debugfs dir exists.
+		ERR("lmem_quota not found at {}\n", lmemPath.c_str());
 		return -1;
 	}
 	if (writeFile(dir + "/ggtt_quota", std::to_string(attrs.vfGgtt)) != 0) {
@@ -379,13 +392,18 @@ static int writeVfResourceParams(const std::string &dir, const AttrFromConfigFil
  * @param[in] path The debugfs path for the device (e.g., /sys/kernel/debug/dri/0000:03:00.0)
  * @return uint64_t Free LMEM size in bytes, or 0 if unable to read or parse the information
  */
-static uint64_t getFreeLmemSize(const std::string &path)
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
+static uint64_t getFreeLmemSize(const std::string &path, bool isIGPU)
 {
 	std::string mmPath = path + "/tile0/vram_mm";
 	std::error_code ec;
 	if (!std::filesystem::exists(mmPath, ec)) {
 		if (ec && ec == std::errc::permission_denied) {
-			ERR("Permission denied accessing {}\n", mmPath.c_str());
+			if (isIGPU) {
+				DBG("Permission denied accessing {}, continuing with LMEM=0.\n", mmPath.c_str());
+			} else {
+				ERR("Permission denied accessing {}\n", mmPath.c_str());
+			}
 			return 0;
 		}
 		mmPath = path + "/vram0_mm";
@@ -395,7 +413,12 @@ static uint64_t getFreeLmemSize(const std::string &path)
 	uint64_t freeSize = 0;
 
 	if (!ifs.is_open()) {
-		ERR("{} {}\n", errno == EACCES ? "Permission denied opening" : "Failed to open", mmPath.c_str());
+		if (isIGPU) {
+			DBG("{} {}, continuing with LMEM=0.\n", errno == EACCES ? "Permission denied opening" : "Failed to open",
+				mmPath.c_str());
+		} else {
+			ERR("{} {}\n", errno == EACCES ? "Permission denied opening" : "Failed to open", mmPath.c_str());
+		}
 		return 0;
 	}
 
@@ -426,17 +449,23 @@ static uint64_t getFreeLmemSize(const std::string &path)
  * @param[in] lmem Local memory quota to assign to this VF in bytes
  * @return int 0 on success, -1 on failure
  */
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static int writeVfAttr(const std::string &sysfsVfProfileDir, const std::string &debugfsVfDir,
-					   const AttrFromConfigFile &attrs, uint64_t lmem)
+					   const AttrFromConfigFile &attrs, uint64_t lmem, bool isIGPU)
 {
-	std::string schedDir = !sysfsVfProfileDir.empty() ? sysfsVfProfileDir : debugfsVfDir;
-	if (writeVfSchedParams(schedDir, attrs) != 0) {
-		return -1;
+	std::error_code ec;
+	const std::string schedDir = !sysfsVfProfileDir.empty() ? sysfsVfProfileDir : debugfsVfDir;
+	if (!schedDir.empty() && std::filesystem::exists(schedDir, ec)) {
+		if (writeVfSchedParams(schedDir, attrs) != 0) {
+			return -1;
+		}
 	}
 
-	// Write resource provisioning: debugfs only (not yet in sysfs)
-	if (writeVfResourceParams(debugfsVfDir, attrs, lmem) != 0) {
-		return -1;
+	// Write resource provisioning only when debugfs VF path is available.
+	if (!debugfsVfDir.empty() && std::filesystem::exists(debugfsVfDir, ec)) {
+		if (writeVfResourceParams(debugfsVfDir, attrs, lmem, isIGPU) != 0) {
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -457,25 +486,35 @@ static int writeVfAttr(const std::string &sysfsVfProfileDir, const std::string &
  * @param[in] lmem Local memory size per VF in bytes
  * @return bool true on success, false on failure
  */
-static bool createVfInternal(std::string drmPath, std::string bdfAddress, AttrFromConfigFile &attrs, uint32_t numVfs,
-							 uint64_t lmem)
+// NOLINTNEXTLINE(misc-use-anonymous-namespace,bugprone-easily-swappable-parameters)
+static bool createVfInternal(const std::string &drmPath, const std::string &bdfAddress, AttrFromConfigFile &attrs,
+							 uint32_t numVfs, uint64_t lmem, bool isIGPU)
 {
-	std::string devicePathString = std::string("/sys/class/drm/") + drmPath;
-	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + bdfAddress;
-	std::string sriovAdminPath = getSriovAdminPath(drmPath);
-	std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
+	const std::string devicePathString = std::string("/sys/class/drm/") + drmPath;
+	const std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + bdfAddress;
+	const std::string sriovAdminPath = getSriovAdminPath(drmPath);
+	const std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
+	std::error_code ec;
 
-	bool useSysfs = !sriovAdminPath.empty();
-	std::string pfSchedDir = useSysfs ? sriovAdminPath + "/pf/profile" : debugfsPath + "/gt" + gtNum + "/pf";
-	if (writePfSchedParams(pfSchedDir, attrs, useSysfs) != 0) {
-		return false;
+	const bool useSysfs = !sriovAdminPath.empty();
+	const std::string pfSchedDir = useSysfs ? sriovAdminPath + "/pf/profile" : debugfsPath + "/gt" + gtNum + "/pf";
+	if (std::filesystem::exists(pfSchedDir, ec)) {
+		if (writePfSchedParams(pfSchedDir, attrs, useSysfs) != 0) {
+			return false;
+		}
+	} else if (ec) {
+		DBG("PF scheduling interface at {} is inaccessible: {}, skipping PF scheduler programming.\n",
+			pfSchedDir.c_str(), ec.message().c_str());
+	} else {
+		DBG("PF scheduling interface not found at {}, skipping PF scheduler programming.\n", pfSchedDir.c_str());
 	}
 
 	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
-		std::string sysfsVfProfile =
+		const std::string sysfsVfProfile =
 			!sriovAdminPath.empty() ? sriovAdminPath + "/vf" + std::to_string(vfNum) + "/profile" : "";
-		std::string debugfsVfPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(vfNum);
-		if (writeVfAttr(sysfsVfProfile, debugfsVfPath, attrs, lmem) != 0) {
+		const std::string debugfsVfPath = debugfsPath + "/gt" + gtNum + "/vf" +
+										  std::to_string(vfNum); // NOLINT(performance-inefficient-string-concatenation)
+		if (writeVfAttr(sysfsVfProfile, debugfsVfPath, attrs, lmem, isIGPU) != 0) {
 			return false;
 		}
 	}
@@ -498,14 +537,28 @@ static bool createVfInternal(std::string drmPath, std::string bdfAddress, AttrFr
  * @param[in,out] data Pointer to DeviceSriovInfo structure to populate with resource information
  * @return bool true on success, false if unable to read resource files
  */
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static bool loadSriovData(DeviceSriovInfo *data)
 {
-	std::string lmem, ggtt, doorbell, context;
-	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + data->bdfAddress;
-	data->lmemSizeFree = getFreeLmemSize(debugfsPath);
+	std::string lmem;
+	std::string ggtt;
+	std::string doorbell;
+	std::string context;
+	const std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + data->bdfAddress;
+	data->lmemSizeFree = getFreeLmemSize(debugfsPath, data->isIGPU);
 
-	std::string pfIovPath = debugfsPath + "/gt" + std::to_string(0) + "/pf/";
-	if (readFile(pfIovPath + "lmem_spare", lmem) != 0) {
+	const std::string pfIovPath = debugfsPath + "/gt" + std::to_string(0) + "/pf/";
+	if (data->isIGPU) {
+		// iGPU may not expose LMEM accounting; read quietly without emitting error logs.
+		lmem = "0";
+		std::ifstream lmemFile(pfIovPath + "lmem_spare");
+		if (lmemFile.is_open()) {
+			std::string tmp;
+			if (std::getline(lmemFile, tmp) && !tmp.empty()) {
+				lmem = tmp;
+			}
+		}
+	} else if (readFile(pfIovPath + "lmem_spare", lmem) != 0) {
 		return false;
 	}
 	if (readFile(pfIovPath + "ggtt_spare", ggtt) != 0) {
@@ -517,10 +570,11 @@ static bool loadSriovData(DeviceSriovInfo *data)
 	if (readFile(pfIovPath + "contexts_spare", context) != 0) {
 		return false;
 	}
-	data->lmemSizeFree -= std::stoul(lmem);
+	const uint64_t lmemValue = std::stoul(lmem);
+	data->lmemSizeFree = (data->lmemSizeFree >= lmemValue) ? (data->lmemSizeFree - lmemValue) : 0;
 	data->ggttSizeFree += std::stoul(ggtt);
-	data->contextFree += std::stoi(context);
-	data->doorbellFree += std::stoi(doorbell);
+	data->contextFree += static_cast<uint32_t>(std::stoul(context));
+	data->doorbellFree += static_cast<uint32_t>(std::stoul(doorbell));
 	DBG("   lmemSizeFree: {}\n   ggttSizeFree: {}\n   contextFree: {}\n   doorbellFree: {}\n", data->lmemSizeFree,
 		data->ggttSizeFree, data->contextFree, data->doorbellFree);
 
@@ -723,6 +777,7 @@ static std::string getCardNameFromDrmPath(const std::string &drmPath)
  *                      information including BDF address, DRM path, and VF requirements
  * @return int 0 on success, -1 on failure
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 int linCreateVFs(DeviceSriovInfo *di)
 {
 	TRACING();
@@ -733,9 +788,14 @@ int linCreateVFs(DeviceSriovInfo *di)
 	DBG("Creating {} VFs with {} MB memory\n", di->vGpuNumber, di->vGpuMemorySize);
 	di->vGpuMemorySize *= ONE_MB_IN_BYTES;
 
-	if (!loadSriovData(di)) {
-		ERR("Failed to load SRIOV data. Is this system in SRIOV mode?\n");
-		return -1;
+	const bool sriovDataLoaded = loadSriovData(di);
+	if (!sriovDataLoaded) {
+		if (!di->isIGPU) {
+			ERR("Failed to load SRIOV data. Is this system in SRIOV mode?\n");
+			return -1;
+		} else {
+			DBG("SR-IOV resource telemetry unavailable; continuing with minimal VF creation checks.\n");
+		}
 	}
 
 	numVfsPath = "/sys/class/drm/" + cardName + "/device/sriov_numvfs";
@@ -744,35 +804,58 @@ int linCreateVFs(DeviceSriovInfo *di)
 		return -1;
 	}
 
-	if (std::stoi(numVfsString) > 0) {
+	const int currentNumVfs = std::stoi(numVfsString);
+	if (currentNumVfs > 0) {
+		ERR("VFs are already enabled (sriov_numvfs={}). Remove existing VFs before creating {} VFs.\n", currentNumVfs,
+			di->vGpuNumber);
 		return -1;
 	}
 
 	// Query a specific PCI device by BDF for SRIOV info
-	PciDeviceInfo info = queryPciDeviceByBdf(di->bdfAddress);
-	if (info.valid) {
-		if (info.isSriovCapable) {
-			if (di->vGpuNumber == 0 || di->vGpuNumber > info.totalVFs) {
-				ERR("Number of VFs specified ({}) are out of range. Total permitted for this device is {}\n",
-					di->vGpuNumber, info.totalVFs);
+	PciDeviceInfo info = {};
+	if (di->isIGPU) {
+		// iGPU: libpci cannot enumerate integrated devices; use sysfs sriov_totalvfs directly.
+		std::string totalVfsString;
+		const std::string totalVfsPath = "/sys/bus/pci/devices/" + di->bdfAddress + "/sriov_totalvfs";
+		if (readFile(totalVfsPath, totalVfsString) == 0) {
+			const int totalVfs = std::stoi(totalVfsString);
+			if (di->vGpuNumber == 0 || static_cast<int>(di->vGpuNumber) > totalVfs) {
+				ERR("Number of VFs specified ({}) out of range. Maximum permitted for this device is {}\n",
+					di->vGpuNumber, totalVfs);
 				return -1;
 			}
-		} else {
-			ERR("Device does not support SRIOV\n");
-			return -1;
+		}
+	} else {
+		// dGPU: use libpci to read SRIOV capability from PCI config space.
+		info = queryPciDeviceByBdf(di->bdfAddress);
+		if (info.valid) {
+			if (info.isSriovCapable) {
+				if (di->vGpuNumber == 0 || di->vGpuNumber > info.totalVFs) {
+					ERR("Number of VFs specified ({}) are out of range. Total permitted for this device is {}\n",
+						di->vGpuNumber, info.totalVFs);
+					return -1;
+				}
+			} else {
+				ERR("Device does not support SRIOV\n");
+				return -1;
+			}
 		}
 	}
 
 	AttrFromConfigFile attrs = {};
-	bool readFlag = readVfConfigFromFile(info.deviceId, di->vGpuNumber, attrs);
+	const bool readFlag = readVfConfigFromFile(info.deviceId, di->vGpuNumber, attrs);
 	if (!readFlag) {
 		return -1;
 	}
 
-	if (attrs.vfLmem == 0) {
+	if (di->isIGPU) {
+		// iGPU has no dedicated LMEM; LMEM and ECC checks do not apply.
+		DBG("No LMEM quota configured for {} VFs; continuing without LMEM requirement.\n", di->vGpuNumber);
+	} else if (attrs.vfLmem == 0) {
 		ERR("Configuration item for {} VFs not found\n", di->vGpuNumber);
 		return -1;
 	}
+
 	uint64_t lmemToUse = 0;
 	if (di->vGpuMemorySize > 0) {
 		lmemToUse = di->vGpuMemorySize;
@@ -782,11 +865,11 @@ int linCreateVFs(DeviceSriovInfo *di)
 		lmemToUse = attrs.vfLmem;
 	}
 
-	if (di->lmemSizeFree < lmemToUse * di->vGpuNumber) {
+	if ((!di->isIGPU) && (lmemToUse > 0) && sriovDataLoaded && (di->lmemSizeFree < (lmemToUse * di->vGpuNumber))) {
 		ERR("LMEM size too large\n");
 		return -1;
 	}
-	return createVfInternal(cardName, di->bdfAddress, attrs, di->vGpuNumber, di->vGpuMemorySize) ? 0 : -1;
+	return createVfInternal(cardName, di->bdfAddress, attrs, di->vGpuNumber, di->vGpuMemorySize, di->isIGPU) ? 0 : -1;
 }
 
 /**
@@ -821,10 +904,10 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
 
 	try {
 		for (int functionIndex = 1; functionIndex <= numVfs; functionIndex++) {
-			std::string sysfsVfProfile =
+			const std::string sysfsVfProfile =
 				!sriovAdminPath.empty() ? sriovAdminPath + "/vf" + std::to_string(functionIndex) + "/profile" : "";
-			std::string debugfsVfPath = debugfsPath + "/gt0/vf" + std::to_string(functionIndex);
-			writeVfAttr(sysfsVfProfile, debugfsVfPath, zeroAttr, 0);
+			const std::string debugfsVfPath = debugfsPath + "/gt0/vf" + std::to_string(functionIndex);
+			writeVfAttr(sysfsVfProfile, debugfsVfPath, zeroAttr, 0, devInfo->isIGPU);
 		}
 	} catch (std::ios::failure &) {
 		return -1;
@@ -843,6 +926,7 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
  * @param[out] result Reference to vector to populate with DeviceSriovInfo for each VF
  * @return int 0 on success, -1 on failure
  */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 {
 	TRACING();
@@ -850,10 +934,12 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 	std::string cardName = getCardNameFromDrmPath(di->drmPath);
 	std::string devicePath = std::string("/sys/class/drm/") + cardName;
 	std::stringstream numvfsPath;
-	std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
-	int numVfs;
+	const std::string gtNum = std::to_string(0); // Assuming single GT (gt0)
+	int numVfs = 0;
 
-	if (!loadSriovData(di)) {
+	if (!di->isIGPU && !loadSriovData(di)) {
+		ERR("Failed to load SRIOV data for listing VFs. Check: debugfs mounted, SR-IOV enabled, sufficient "
+			"privileges.\n");
 		return -1;
 	}
 
@@ -878,16 +964,34 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 		DeviceSriovInfo info = {};
 
 		if (functionIndex == 0) {
-			lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" + "lmem_spare";
+			lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" +
+					   "lmem_spare"; // NOLINT(performance-inefficient-string-concatenation)
 		} else {
-			lmemPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(functionIndex) + "/lmem_quota";
+			lmemPath = debugfsPath;
+			lmemPath += "/gt";
+			lmemPath += gtNum;
+			lmemPath += "/vf";
+			lmemPath += std::to_string(functionIndex);
+			lmemPath += "/lmem_quota";
 		}
 
-		if (readFile(lmemPath.c_str(), lmemString) != 0) {
-			return -1;
+		// iGPU platforms may not expose LMEM quota in debugfs. For dGPU, debugfs was already
+		// confirmed accessible by loadSriovData above, so the file must be present.
+		lmemString = "0";
+		{
+			std::ifstream lmemFile(lmemPath);
+			if (lmemFile.is_open()) {
+				std::string tmp;
+				if (std::getline(lmemFile, tmp) && !tmp.empty()) {
+					lmemString = tmp;
+				}
+			} else if (!di->isIGPU) {
+				ERR("Failed to read LMEM quota for function {}: {}\n", functionIndex, lmemPath.c_str());
+				return -1;
+			}
 		}
 		info.functionType = (functionIndex == 0) ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL;
-		info.vGpuNumber = functionIndex;
+		info.vGpuNumber = static_cast<uint32_t>(functionIndex);
 		info.vGpuMemorySize = std::stoul(lmemString);
 
 		if (functionIndex == 0) {
