@@ -70,8 +70,8 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 		if (som && eom) {
 			DBG("PLDM File Transfer: Received single-packet MCTP message\n");
 			const size_t frameBytes = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
-			if (frameBytes > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Single frame exceeds max assembled size ({})\n", frameBytes);
+			if (frameBytes > sizeof(frame)) {
+				ERR("PLDM File Transfer: Single frame too large ({} bytes, frame buf {})\n", frameBytes, sizeof(frame));
 				return PLDM_ERROR;
 			}
 
@@ -83,7 +83,7 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 
 		if (som) {
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
-			if (fragmentLen == 0 || fragmentLen > maxAssembledFrameBytes) {
+			if (fragmentLen == 0 || fragmentLen > sizeof(frame)) {
 				ERR("PLDM File Transfer: Invalid SOM fragment length {}\n", fragmentLen);
 				return PLDM_ERROR;
 			}
@@ -107,8 +107,11 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 			}
 
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
-			if (assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Assembled frame exceeds max size ({})\n", assembledFrame.size() + fragmentLen);
+			if (mctpContinuationHeaderBytes + fragmentLen > sizeof(frame) ||
+				assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
+				ERR("PLDM File Transfer: Fragment too large (assembled {} + {} bytes, frame buf {}, max assembled "
+					"{})\n",
+					assembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
 				return PLDM_ERROR;
 			}
 
@@ -131,8 +134,11 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 			}
 
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
-			if (assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Assembled frame exceeds max size ({})\n", assembledFrame.size() + fragmentLen);
+			if (mctpContinuationHeaderBytes + fragmentLen > sizeof(frame) ||
+				assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
+				ERR("PLDM File Transfer: Fragment too large (assembled {} + {} bytes, frame buf {}, max assembled "
+					"{})\n",
+					assembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
 				return PLDM_ERROR;
 			}
 
