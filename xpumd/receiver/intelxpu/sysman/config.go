@@ -8,6 +8,8 @@ package sysman
 import (
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +27,8 @@ type Config struct {
 	FailOnSysmanInitError bool `mapstructure:"fail_on_sysman_init_error"`
 	// InfoLogs configures the collection of the GPU info logs.
 	InfoLogs InfoLogsConfig `mapstructure:"info_logs"`
+	// Subsystems contains the subsystem-specific configuration.
+	Subsystems map[string]SubsystemConfig `mapstructure:"subsystems"`
 
 	aggregatedMetricsBufferSize int
 }
@@ -36,6 +40,12 @@ type InfoLogsConfig struct {
 	Enabled bool `mapstructure:"enabled"`
 	// InstanceName is the name of the collection instance to be used. Required.
 	InstanceName string `mapstructure:"instance_name"`
+}
+
+// SubsystemConfig defines configuration for a subsystem.
+type SubsystemConfig struct {
+	// Enabled controls whether the subsystem metrics are collected.
+	Enabled *bool `mapstructure:"enabled"`
 }
 
 // defaultInstanceName is the default name of the info log collection instance.
@@ -68,7 +78,22 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("invalid info_logs.instance_name (%q), must not contain '/'",
 			c.InfoLogs.InstanceName)
 	}
+	for name, sc := range c.Subsystems {
+		if _, ok := subsystems[name]; !ok {
+			return fmt.Errorf("unknown subsystem %q in subsystems, must be one of: %s",
+				name, strings.Join(slices.Sorted(maps.Keys(subsystems)), ", "))
+		}
+		if sc.Enabled == nil {
+			return fmt.Errorf("subsystems.%s.enabled not set", name)
+		}
+	}
 	return nil
+}
+
+// subsystemEnabled tells whether the configuration enables the named subsystem.
+func (c *Config) subsystemEnabled(name string) bool {
+	sc, ok := c.Subsystems[name]
+	return !ok || sc.Enabled == nil || *sc.Enabled
 }
 
 func (c *Config) SetAggregatedMetricsBufferSize(size int) {

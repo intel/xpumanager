@@ -8,7 +8,9 @@ package sysman
 import (
 	"fmt"
 	"iter"
+	"maps"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 
@@ -48,6 +50,14 @@ type device struct {
 	state        deviceState
 	scrapers     []instanceScraper
 
+	deviceConfig
+}
+
+// deviceConfig is the device configuration resolved from the receiver configuration.
+type deviceConfig struct {
+	// subsystems are the configuration-enabled subsystems to enumerate.
+	subsystems []subsystem
+	// aggregatedMetricsBufferSize is the size of the buffer for aggregated metrics.
 	aggregatedMetricsBufferSize int
 }
 
@@ -114,6 +124,8 @@ type deviceAttributes struct {
 func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
 	reg := &deviceRegistry{}
 
+	devCfg := newDeviceConfig(logger, cfg)
+
 	drivers, err := l0sysman.DriverGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES drivers: %w", err)
@@ -121,7 +133,7 @@ func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry,
 	logger.Debugw("Sysman drivers", "enumerated", len(drivers))
 
 	for i, drv := range drivers {
-		devs, err := enumDevices(drv, logger, cfg.aggregatedMetricsBufferSize)
+		devs, err := enumDevices(drv, logger, devCfg)
 		if err != nil {
 			return nil, fmt.Errorf("failed to enumerate devices for driver %d/%d: %w", i+1, len(drivers), err)
 		}
@@ -137,6 +149,22 @@ func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry,
 	}
 
 	return reg, nil
+}
+
+// newDeviceConfig resolves the device configuration from the receiver configuration.
+func newDeviceConfig(logger *zap.SugaredLogger, cfg *Config) deviceConfig {
+	devCfg := deviceConfig{
+		aggregatedMetricsBufferSize: cfg.aggregatedMetricsBufferSize,
+	}
+	// Sorted for a deterministic scrape order
+	for _, name := range slices.Sorted(maps.Keys(subsystems)) {
+		if !cfg.subsystemEnabled(name) {
+			logger.Infow("subsystem skipped: disabled in the configuration", "subsystem", name)
+			continue
+		}
+		devCfg.subsystems = append(devCfg.subsystems, subsystems[name])
+	}
+	return devCfg
 }
 
 func (r *deviceRegistry) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
@@ -163,7 +191,7 @@ func (r *deviceRegistry) devices() iter.Seq[*device] {
 	}
 }
 
-func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) ([]*device, error) {
+func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, cfg deviceConfig) ([]*device, error) {
 	zesDevs, err := driver.DeviceGet()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ZES devices: %w", err)
@@ -173,14 +201,14 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 	devs := make([]*device, 0, len(zesDevs))
 	for i, d := range zesDevs {
 		name := fmt.Sprintf("gpu-%d", i+1) // match error log index
-		devs = append(devs, newDevice(name, d, logger, aggregatedMetricsBufferSize))
+		devs = append(devs, newDevice(name, d, logger, cfg))
 	}
 
 	return devs, nil
 }
 
 // newDevice creates a new device. Use init() to scan the device.
-func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) *device {
+func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, cfg deviceConfig) *device {
 	d := &device{
 		Device: dev,
 		logger: logger,
@@ -188,7 +216,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 			HwName:    name,
 			hwNamePci: name + "-pci",
 		},
-		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
+		deviceConfig: cfg,
 	}
 
 	if err := d.init(); err != nil {
@@ -286,8 +314,8 @@ func (d *device) init() error {
 	}
 	d.attributes.HwFirmwareVersion = strings.Join(fwInfos, ",")
 
-	// Enumerate all device metrics
-	for _, s := range subsystems {
+	// Enumerate the device metrics of the enabled subsystems
+	for _, s := range d.subsystems {
 		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
 	}
 
@@ -361,6 +389,7 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if !d.state.initialized {
 		return
 	}
+	// reported also with the device subsystem disabled
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.HwID,
 		d.attributes.HwName,

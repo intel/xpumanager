@@ -27,6 +27,11 @@ receivers:
     metrics:
     #  hw.memory.size:
     #    enabled: false
+    # Configuration for enabling/disabling metric subsystems, all enabled by default.
+    # See receiver/intelxpu/README.md for the list of subsystems.
+    subsystems:
+    #  ras:
+    #    enabled: false
 
   intel_crashlog:
     # Directory to watch for new crashlog files (must exist!).

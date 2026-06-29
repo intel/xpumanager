@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	registerSubsystem("errorsets", enumErrorSets)
+	registerSubsystem("ras", enumErrorSets)
 }
 
 type errorSet struct {

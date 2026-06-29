@@ -42,6 +42,25 @@ func TestConfigValidate(t *testing.T) {
 			name:  "custom info log instance name",
 			setup: func(cfg *Config) { cfg.InfoLogs.InstanceName = "xpumd-test" },
 		},
+		{
+			name: "disabled and enabled subsystems",
+			setup: func(cfg *Config) {
+				cfg.Subsystems = map[string]SubsystemConfig{
+					"ras":    {Enabled: new(false)},
+					"device": {Enabled: new(true)},
+				}
+			},
+		},
+		{
+			name:    "unknown subsystem",
+			setup:   func(cfg *Config) { cfg.Subsystems = map[string]SubsystemConfig{"errorsets": {Enabled: new(false)}} },
+			wantErr: `unknown subsystem "errorsets" in subsystems, must be one of`,
+		},
+		{
+			name:    "subsystem enabled not set",
+			setup:   func(cfg *Config) { cfg.Subsystems = map[string]SubsystemConfig{"fan": {}} },
+			wantErr: "subsystems.fan.enabled not set",
+		},
 	}
 
 	for _, tc := range tcs {

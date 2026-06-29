@@ -74,6 +74,9 @@ receivers:
     metrics:
       hw.memory.size:
         enabled: false
+    subsystems:
+      ras:
+        enabled: false
 ```
 
 ### Configuration Parameters
@@ -87,6 +90,7 @@ receivers:
 | `fail_on_sysman_init_error` | bool | `false` | Whether to fail the daemon startup if the Sysman API cannot be initialized, e.g. when there is no GPU driver or no access to the GPU devices |
 | `info_logs` | object | see below | Collection of the GPU info logs |
 | `metrics` | map | `{}` | Per-metric `enabled` overrides, see the [metrics documentation](sysman/documentation.md) |
+| `subsystems` | map | `{}` | Subsystem configuration, see [subsystems](#subsystems) below |
 
 #### info_logs
 
@@ -94,6 +98,34 @@ receivers:
 |-----------|------|---------|-------------|
 | `enabled` | bool | `false` | Whether the info logs are collected |
 | `instance_name` | string | `xpumd` | Name of the collection instance the records are collected into (a tracefs instance in the case of the CPER records). Required, and must not contain `/` |
+
+#### subsystems
+
+The metrics are collected by subsystem scrapers, each covering one "component"
+of the GPU. Currently, each subsystem has only one setting, `enabled` (bool),
+that controls whether the subsystem is scraped. A disabled subsystem is not
+enumerated, and its driver queries are not made, so none of its metrics are
+collected, regardless of the `metrics` configuration. All subsystems are
+enabled by default.
+
+| Subsystem | Description |
+|-----------|-------------|
+| `device` | Device-level metrics: ECC state, device state and health, PCI link state and bandwidth |
+| `engine` | Engine utilization |
+| `fan` | Fan speeds |
+| `frequency` | Frequencies and throttling |
+| `memory` | Memory usage, bandwidth and health |
+| `power` | Power and energy |
+| `ras` | RAS error counters |
+| `temperature` | Temperatures |
+
+> [!NOTE]
+> The `hw.gpu.info` metric is always collected, also when the `device`
+> subsystem is disabled.
+
+> [!IMPORTANT]
+> Disabling the `device`, `frequency` or `memory` subsystem also removes the
+> `hw.status` metrics they report.
 
 ## GPU Events
 

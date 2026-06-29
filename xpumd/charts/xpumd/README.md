@@ -213,6 +213,7 @@ And add following option to chart install:
 | config.receivers.intel_xpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
 | config.receivers.intel_xpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intel_xpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
+| config.receivers.intel_xpu.subsystems | object | `{}` | Configuration for enabling/disabling metric subsystems, all enabled by default, see the `intel_xpu` README for details. |
 | config.receivers.intel_xpu.timeout | int | `0` | Metrics collection timeout. |
 | config.service | object | `{"extensions":["health_check","intel_device_watch"],"pipelines":{"logs":{"exporters":["intel_xpu_info"],"receivers":["intel_xpu","intel_crashlog"]},"metrics":{"exporters":["intel_xpu_info"],"processors":["intel_xpu_status"],"receivers":["intel_xpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
 | config.service.extensions | list | `["health_check","intel_device_watch"]` | Extensions to enable |

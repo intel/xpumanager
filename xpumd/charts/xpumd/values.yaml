@@ -173,6 +173,10 @@ config:
       # -- Configuration for enabling/disabling individual metrics.
       # @section -- XPUM Daemon Configuration
       metrics: {}
+      # -- Configuration for enabling/disabling metric subsystems, all enabled by default,
+      # see the `intel_xpu` README for details.
+      # @section -- XPUM Daemon Configuration
+      subsystems: {}
     # -- Override configuration for the Intel Crashlog receiver. Should only be used for advanced use cases.
     # See `intel_crashlog` README for details.
     # @section -- XPUM Daemon Configuration

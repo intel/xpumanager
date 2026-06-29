@@ -135,6 +135,10 @@
                                     "description": "Sampling interval for the high-frequency metrics.",
                                     "type": "string"
                                 },
+                                "subsystems": {
+                                    "description": "Configuration for enabling/disabling metric subsystems, all enabled by default, see the `intel_xpu` README for details.",
+                                    "type": "object"
+                                },
                                 "timeout": {
                                     "description": "Metrics collection timeout.",
                                     "type": "integer"
