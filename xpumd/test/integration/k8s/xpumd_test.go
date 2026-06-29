@@ -34,6 +34,10 @@ func runMain(m *testing.M) (exitCode int) {
 	}
 
 	// Setup and teardown a temporary kind cluster for the test suite
+	suffix := fmt.Sprintf("%x", time.Now().UnixNano())
+	if suite.kindClusterName == "" {
+		suite.kindClusterName = defaultKindClusterBase + suffix
+	}
 	kind := newKindCluster(suite.kindClusterName)
 	fmt.Printf("Creating kind cluster %q\n", suite.kindClusterName)
 	if err := kind.create(); err != nil {

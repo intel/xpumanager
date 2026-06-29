@@ -23,7 +23,7 @@ const (
 	stubDriverConfigMapName = "level-zero-stub-driver-config"
 	defaultImageRepo        = "registry.local/xpumd"
 	defaultImageTag         = "latest"
-	defaultKindCluster      = "xpumd-integration-test"
+	defaultKindClusterBase  = "xpumd-integration-test-"
 	defaultReleaseName      = "xpumd-integration-test"
 
 	helmValuesBasename       = "helm_values.yaml"
@@ -32,7 +32,7 @@ const (
 
 var (
 	useExistingCluster = flag.Bool("use-existing-cluster", false, "Use the current kubectl context instead of creating a kind cluster")
-	kindClusterName    = flag.String("kind-cluster-name", defaultKindCluster, "Kind cluster name to create (ignored with --use-existing-cluster)")
+	kindClusterName    = flag.String("kind-cluster-name", "", "Kind cluster name to create, if empty a unique name is generated (ignored with --use-existing-cluster)")
 	kindLoadImage      = flag.Bool("kind-load-image", false, "Load the image into the kind cluster, requires that image is available on the host docker, sets pull policy to Never (ignored with --use-existing-cluster)")
 	imageRepository    = flag.String("image-repository", defaultImageRepo, "Container image repository to deploy")
 	imageTag           = flag.String("image-tag", defaultImageTag, "Container image tag to deploy")

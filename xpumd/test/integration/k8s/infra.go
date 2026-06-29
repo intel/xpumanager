@@ -35,7 +35,7 @@ func (k *kindCluster) writeKubeconfig() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get kind kubeconfig: %w", err)
 	}
-	f, err := os.CreateTemp("", "kind-kubeconfig-*")
+	f, err := os.CreateTemp("", "kind-kubeconfig-"+k.name+"-*")
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp kubeconfig file: %w", err)
 	}
