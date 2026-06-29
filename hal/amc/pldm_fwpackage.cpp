@@ -67,75 +67,106 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 	}
 
 	uint8_t *pbuf = pkgbuf.data();
+	const uint8_t *bufEnd = pbuf + fileSize;
+	// True while at least n more bytes remain between the cursor and the end of the buffer.
+	auto canRead = [&](size_t n) { return pbuf <= bufEnd && static_cast<size_t>(bufEnd - pbuf) >= n; };
+	// Log msg, release the package and file handle, and return an error.
+	auto failParse = [&](const char *msg) -> uint8_t {
+		ERR("{}\n", msg);
+		free(pkg);
+		pkg = NULL;
+		fclose(mCompFp);
+		mCompFp = NULL;
+		return PLDM_ERROR;
+	};
+
+	if (!canRead(offset_of(fwPkgHdr, pkgVersion))) {
+		return failParse("Truncated firmware package");
+	}
 	memcpy(&pkg->hdr, pbuf, offset_of(fwPkgHdr, pkgVersion));
+	if (!canRead(offset_of(fwPkgHdr, pkgVersion) + pkg->hdr.pkgVerStrLen)) {
+		return failParse("Package version string runs past end of file");
+	}
 	memcpy(pkg->hdr.pkgVersion, pbuf + offset_of(fwPkgHdr, pkgVersion), pkg->hdr.pkgVerStrLen);
 
-	int nextOffset = offset_of(fwPkgHdr, pkgVersion) + pkg->hdr.pkgVerStrLen;
-	pbuf += nextOffset;
+	pbuf += offset_of(fwPkgHdr, pkgVersion) + pkg->hdr.pkgVerStrLen;
 
+	if (!canRead(1)) {
+		return failParse("Truncated firmware package");
+	}
 	pkg->deviceID.recordCount = *pbuf++;
 	if (pkg->deviceID.recordCount > PLDM_FWU_MAX_RECORDS) {
-		ERR("Device record count exceeds maximum limit\n");
-		free(pkg);
-		fclose(mCompFp);
-		return PLDM_ERROR;
+		return failParse("Device record count exceeds maximum limit");
 	}
 
 	for (int i = 0; i < pkg->deviceID.recordCount; i++) {
 		fwDevRecord *record = &pkg->deviceID.records[i];
+		if (!canRead(offset_of(fwDevRecord, compImageSetVerStr))) {
+			return failParse("Device record runs past end of file");
+		}
 		memcpy(record, pbuf, offset_of(fwDevRecord, compImageSetVerStr));
 		pbuf += offset_of(fwDevRecord, compImageSetVerStr);
 
 		if (record->descCount > PLDM_FWU_MAX_RECORD_DESCRIPTORS) {
-			ERR("Record descriptor count exceeds maximum limit\n");
-			free(pkg);
-			pkg = NULL;
-			fclose(mCompFp);
-			mCompFp = NULL;
-			return PLDM_ERROR;
+			return failParse("Record descriptor count exceeds maximum limit");
 		}
 
+		if (!canRead(record->compImageSetVerStrLen)) {
+			return failParse("Component image set version string runs past end of file");
+		}
 		memcpy(record->compImageSetVerStr, pbuf, record->compImageSetVerStrLen);
 		pbuf += record->compImageSetVerStrLen;
 
 		for (int j = 0; j < record->descCount; j++) {
-			record->recordDesc[j].descType = *(uint16_t *)pbuf;
-			record->recordDesc[j].descLength = *(uint16_t *)(pbuf + 2);
-			pbuf += 4;
+			if (!canRead(4)) {
+				return failParse("Descriptor header runs past end of file");
+			}
+			memcpy(&record->recordDesc[j].descType, pbuf, sizeof(uint16_t));
+			memcpy(&record->recordDesc[j].descLength, pbuf + sizeof(uint16_t), sizeof(uint16_t));
+			pbuf += 2 * sizeof(uint16_t);
 
 			if (record->recordDesc[j].descLength > PLDM_DESCRIPTOR_SIZE_BYTES) {
-				ERR("Descriptor length exceeds maximum limit\n");
-				free(pkg);
-				fclose(mCompFp);
-				return PLDM_ERROR;
+				return failParse("Descriptor length exceeds maximum limit");
 			}
 
+			if (!canRead(record->recordDesc[j].descLength)) {
+				return failParse("Descriptor data runs past end of file");
+			}
 			memcpy(record->recordDesc[j].descData, pbuf, record->recordDesc[j].descLength);
 			pbuf += record->recordDesc[j].descLength;
 		}
 	}
 
 	componentImagesInfo *compImagesInfo = &pkg->compImagesInfo;
-	compImagesInfo->compImageCount = *pbuf;
+	if (!canRead(sizeof(compImagesInfo->compImageCount))) {
+		return failParse("Truncated firmware package");
+	}
+	memcpy(&compImagesInfo->compImageCount, pbuf, sizeof(compImagesInfo->compImageCount));
 	pbuf += sizeof(compImagesInfo->compImageCount);
 
 	if (compImagesInfo->compImageCount > PLDM_FWU_MAX_IMAGES) {
-		ERR("Component image count exceeds maximum limit\n");
-		free(pkg);
-		fclose(mCompFp);
-		return PLDM_ERROR;
+		return failParse("Component image count exceeds maximum limit");
 	}
 
 	for (int i = 0; i < compImagesInfo->compImageCount; i++) {
 		compImageInfo *compImage = &compImagesInfo->compImages[i];
+		if (!canRead(offset_of(compImageInfo, verStr))) {
+			return failParse("Component image runs past end of file");
+		}
 		memcpy(compImage, pbuf, offset_of(compImageInfo, verStr));
 		pbuf += offset_of(compImageInfo, verStr);
 
+		if (!canRead(compImage->verStrLen)) {
+			return failParse("Component image version string runs past end of file");
+		}
 		memcpy(compImage->verStr, pbuf, compImage->verStrLen);
 		pbuf += compImage->verStrLen;
 	}
 
-	pkg->checksum = *(uint32_t *)pbuf;
+	if (!canRead(sizeof(pkg->checksum))) {
+		return failParse("Truncated firmware package");
+	}
+	memcpy(&pkg->checksum, pbuf, sizeof(pkg->checksum));
 	pbuf += sizeof(pkg->checksum);
 
 	pkg->pkgInfoSize = (uint32_t)(pbuf - pkgbuf.data());
