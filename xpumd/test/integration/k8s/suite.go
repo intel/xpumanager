@@ -98,11 +98,22 @@ type testConfig struct {
 func newTestConfig(t *testing.T) testConfig {
 	t.Helper()
 	ns := fmt.Sprintf("xpumd-integration-test-%d", time.Now().UnixNano())
+
+	valuesPaths := []string{filepath.Join(suite.testdataDir, helmValuesBasename)}
+	if testSpecific := suite.testdataFile(t, helmValuesBasename); fileExists(testSpecific) {
+		valuesPaths = append(valuesPaths, testSpecific)
+	}
+
 	return testConfig{
 		namespace:   ns,
 		releaseName: defaultReleaseName,
-		helm:        newHelmClient(ns, defaultReleaseName, suite.testdataFile(t, helmValuesBasename)),
+		helm:        newHelmClient(ns, defaultReleaseName, valuesPaths...),
 	}
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
 }
 
 func (tc *testConfig) addCleanup(fn func(*testing.T)) {

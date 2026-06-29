@@ -14,8 +14,9 @@ import (
 	"time"
 
 	"helm.sh/helm/v4/pkg/action"
-	"helm.sh/helm/v4/pkg/chart/common"
 	"helm.sh/helm/v4/pkg/chart/loader"
+	"helm.sh/helm/v4/pkg/cli/values"
+	"helm.sh/helm/v4/pkg/getter"
 	"helm.sh/helm/v4/pkg/kube"
 	"helm.sh/helm/v4/pkg/storage/driver"
 	"helm.sh/helm/v4/pkg/strvals"
@@ -28,7 +29,7 @@ type helmClient struct {
 	namespace       string
 	releaseName     string
 	repoRoot        string
-	valuesPath      string
+	valuesPaths     []string
 	kubeconfigPath  string
 	kubeContext     string
 	imageRepository string
@@ -38,11 +39,11 @@ type helmClient struct {
 
 // newHelmClient creates a helmClient capturing the test-specific fields and the
 // current suite infrastructure settings (image, kubeconfig, etc.).
-func newHelmClient(namespace, releaseName, valuesPath string) helmClient {
+func newHelmClient(namespace, releaseName string, valuesPaths ...string) helmClient {
 	return helmClient{
 		namespace:       namespace,
 		releaseName:     releaseName,
-		valuesPath:      valuesPath,
+		valuesPaths:     valuesPaths,
 		repoRoot:        suite.repoRoot,
 		kubeconfigPath:  suite.kubeconfigPath,
 		kubeContext:     suite.kubeContext,
@@ -118,9 +119,10 @@ func (h helmClient) actionCfg() (*action.Configuration, error) {
 }
 
 func (h helmClient) mergeValues() (map[string]interface{}, error) {
-	vals, err := common.ReadValuesFile(h.valuesPath)
+	opts := values.Options{ValueFiles: h.valuesPaths}
+	vals, err := opts.MergeValues(getter.Getters())
 	if err != nil {
-		return nil, fmt.Errorf("failed to read values file: %w", err)
+		return nil, fmt.Errorf("failed to merge values files: %w", err)
 	}
 	for _, overrides := range []string{
 		fmt.Sprintf("image.repository=%s", h.imageRepository),

@@ -89,8 +89,10 @@ func runMain(m *testing.M) (exitCode int) {
 // In addition, the test suite seeds an initial stub driver config
 // {TEST_NAME}-stub_driver_config.yaml that is loaded at setup time.
 //
-// All scenarios share the same Helm values file {TEST_NAME}-helm_values.yaml where
-// {TEST_NAME} is the name of the test function, i.e. "TestMetrics".
+// All scenarios share the same Helm values file. We rely on the default
+// helm_values.yaml, but, test specific overrides could be specified in
+// {TEST_NAME}-helm_values.yaml where {TEST_NAME} is the name of the test
+// function, i.e. "TestMetrics".
 //
 // This pattern can be used add more scenarios in this test (function) or to add more tests (functions).
 func TestMetrics(t *testing.T) {
