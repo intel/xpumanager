@@ -11,22 +11,23 @@
 #include "table_builder.h"
 #include <osvf.h>
 #include <algorithm>
-#include <assert.h>
-#include <cinttypes>
+#include <cassert>
 #include <format>
 #include <stdexcept>
+#include <unordered_map>
 
 static std::unordered_map<vgpuCmdType, vgpuCmdStruct> vgpuCmds = {
-	{VGPU_HELP, {}},
-	{VGPU_JSON, {}},
-	{VGPU_DEVICE, {}},
-	{VGPU_PRECHECK, {.func = &cmdVgpu::precheck}},
-	{VGPU_NUMBER, {}},
-	{VGPU_CREATE, {.func = &cmdVgpu::create}},
-	{VGPU_REMOVE, {.func = &cmdVgpu::remove}},
-	{VGPU_LIST, {.func = &cmdVgpu::listGpus}},
-	{VGPU_STATS, {.func = &cmdVgpu::stats}},
-	{VGPU_LMEM, {}},
+	// NOLINT(cert-err58-cpp,cppcoreguidelines-avoid-non-const-global-variables,misc-use-anonymous-namespace)
+	{VGPU_HELP, {.canRunOnIGPU = true}},
+	{VGPU_JSON, {.canRunOnIGPU = true}},
+	{VGPU_DEVICE, {.canRunOnIGPU = true}},
+	{VGPU_PRECHECK, {.func = &cmdVgpu::precheck, .canRunOnIGPU = true}},
+	{VGPU_NUMBER, {.canRunOnIGPU = true}},
+	{VGPU_CREATE, {.func = &cmdVgpu::create, .canRunOnIGPU = true}},
+	{VGPU_REMOVE, {.func = &cmdVgpu::remove, .canRunOnIGPU = true}},
+	{VGPU_LIST, {.func = &cmdVgpu::listGpus, .canRunOnIGPU = true}},
+	{VGPU_STATS, {.func = &cmdVgpu::stats, .canRunOnIGPU = true}},
+	{VGPU_LMEM, {.canRunOnIGPU = false}},
 };
 
 /**
@@ -139,12 +140,12 @@ ze_result_t cmdVgpu::create(devInfo *d)
 	TRACING();
 
 	// Check for elevated privileges early
-	if (!PRIVILEGECHECK()) {
-		ERR("Creating virtual GPUs requires elevated privileges. Run with sudo.\n");
-		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	if (!PRIVILEGECHECK()) {														 // NOLINT(misc-include-cleaner)
+		ERR("Creating virtual GPUs requires elevated privileges. Run with sudo.\n"); // NOLINT(misc-include-cleaner)
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;							 // NOLINT(misc-include-cleaner)
 	}
 
-	ze_result_t result;
+	ze_result_t result = ZE_RESULT_SUCCESS;
 	DeviceSriovInfo deviceInfo = {};
 	zes_device_ecc_properties_t eccState = {};
 	pci *p = d->dev->getPCI();
@@ -157,7 +158,7 @@ ze_result_t cmdVgpu::create(devInfo *d)
 		}
 
 		if (vgpuCmds[vgpuCmdType::VGPU_LMEM].enabled) {
-			deviceInfo.vGpuMemorySize = stoi(vgpuCmds[vgpuCmdType::VGPU_LMEM].val);
+			deviceInfo.vGpuMemorySize = static_cast<uint64_t>(stoi(vgpuCmds[vgpuCmdType::VGPU_LMEM].val));
 		}
 	} catch (std::invalid_argument &) {
 		ERR("Error: Invalid argument provided for virtual GPU number or local memory size.\n"); // NOLINT(misc-include-cleaner)
@@ -205,9 +206,6 @@ ze_result_t cmdVgpu::create(devInfo *d)
 				  deviceInfo.vGpuMemorySize / ONE_MB_IN_BYTES, p->getBDFStr().c_str());
 		}
 	} else {
-		if (!PRIVILEGECHECK()) {
-			ERR("Creating virtual GPUs requires elevated privileges to write SR-IOV control files.\n");
-		}
 		ERR("Failed to create virtual GPUs on device {}.\n", p->getBDFStr().c_str());
 	}
 
@@ -223,17 +221,17 @@ ze_result_t cmdVgpu::create(devInfo *d)
  * @param[in] d Pointer to device information structure (currently unused)
  * @return ze_result_t ZE_RESULT_SUCCESS on successful vGPU removal
  */
-ze_result_t cmdVgpu::remove(devInfo *d)
+ze_result_t cmdVgpu::remove(devInfo *d) // NOLINT(readability-convert-member-functions-to-static)
 {
 	TRACING();
 
 	// Check for elevated privileges early
-	if (!PRIVILEGECHECK()) {
-		ERR("Removing virtual GPUs requires elevated privileges. Run with sudo.\n");
-		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	if (!PRIVILEGECHECK()) {														 // NOLINT(misc-include-cleaner)
+		ERR("Removing virtual GPUs requires elevated privileges. Run with sudo.\n"); // NOLINT(misc-include-cleaner)
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;							 // NOLINT(misc-include-cleaner)
 	}
 
-	int result;
+	int result = 0;
 	DeviceSriovInfo deviceInfo = {};
 	vf *vfHandle = d->dev->getVF();
 	pci *pciHandle = d->dev->getPCI();
@@ -331,15 +329,16 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 	}
 
 	// If all VFs show N/A for engine utilization, hint about privileges
-	bool allEngineNA = std::all_of(vfStatsList.begin(), vfStatsList.end(),
-								   [](const VFStatsInfo &s) { return s.gpuUtilization < 0.0; });
+	const bool allEngineNA = std::all_of(vfStatsList.begin(), vfStatsList.end(),
+										 [](const VFStatsInfo &s) { return s.gpuUtilization < 0.0; });
 	if (allEngineNA && !PRIVILEGECHECK()) {
 		ERR("Engine utilization requires elevated privileges. Run with sudo for full stats.\n");
 	}
 
 	for (const auto &vfStats : vfStatsList) {
-		static constexpr size_t bdfStringSize = 16; // "DDDD:BB:DD.F" max length
-		char vfBdf[bdfStringSize];
+		static constexpr std::size_t bdfStringSize = 16; // "DDDD:BB:DD.F" max length
+		char vfBdf
+			[bdfStringSize]; // NOLINT(cppcoreguidelines-avoid-c-arrays,hicpp-avoid-c-arrays,modernize-avoid-c-arrays)
 		snprintf(vfBdf, sizeof(vfBdf), "%04x:%02x:%02x.%x", vfStats.domain, vfStats.bus, vfStats.device,
 				 vfStats.function);
 
@@ -437,6 +436,14 @@ int cmdVgpu::run(arg_struct *args)
 
 	// Iterate through the device list and execute the command
 	for (auto &device : deviceList) {
+		// Gate unsupported command options on iGPU using per-command capability metadata.
+		for (const auto &cmd : vgpuCmds) {
+			if (cmd.second.enabled && !cmd.second.canRunOnIGPU && device.dev->isIGPU()) {
+				ERR("Command option is not supported for integrated GPU device id: {}\n", device.index);
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+		}
+
 		// Call the appropriate command function based on the command type
 		for (const auto &cmd : vgpuCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {

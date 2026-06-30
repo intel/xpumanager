@@ -49,7 +49,8 @@ struct vgpuCmdStruct
 {
 	vgpuSubCmdFunc func{nullptr};
 	bool enabled{false};
-	std::string val{};
+	std::string val{}; // NOLINT(readability-redundant-member-init)
+	bool canRunOnIGPU{false};
 };
 
 constexpr std::string_view vgpuCmdName(vgpuCmdType t) noexcept
