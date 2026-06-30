@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: MIT
+
+# Label sets used across assertions. Exists only to define common parts (with YAML
+# anchors) referenced by the assertions below.
+_templates:
+  # All hw_gpu_info label values for device 1 (gpu-1, recovered in AfterAttach).
+  dev1_gpu_info_labels: &dev1_gpu_info_labels
+    hw_name: gpu-1
+    hw_id: "aabbccdd-0000-0000-0000-000000000000"
+    pci_bdf: "0000:06:00.0"
+    pci_vendor_id: "8086"
+    pci_device_id: "0bd5"
+    hw_model: "Recovered GPU"
+    hw_serial_number: SN-0001
+    hw_vendor: "Intel(R) Corporation"
+    hw_gpu_type: discrete
+    com_intel_subdevice_count: "0"
+    pci_lanes: "16"
+    pci_link_gen: "4"
+    hw_memory_demand_paging: "false"
+    hw_memory_ecc: unknown
+  # All hw_gpu_info label values for device 2 (gpu-2, always healthy).
+  dev2_gpu_info_labels: &dev2_gpu_info_labels
+    hw_name: gpu-2
+    hw_id: "12345678-0000-0000-0000-000000000000"
+    pci_bdf: "0000:05:00.0"
+    pci_vendor_id: "8086"
+    pci_device_id: "0bd5"
+    hw_model: "Healthy GPU"
+    hw_serial_number: SN-0002
+    hw_vendor: "Intel(R) Corporation"
+    hw_gpu_type: discrete
+    com_intel_subdevice_count: "0"
+    pci_lanes: "16"
+    pci_link_gen: "4"
+    hw_memory_demand_paging: "false"
+    hw_memory_ecc: unknown
+  # Minimal id labels for temperature sensor assertions.
+  dev1_id_labels: &dev1_id_labels
+    hw_id: "aabbccdd-0000-0000-0000-000000000000"
+  dev2_id_labels: &dev2_id_labels
+    hw_id: "12345678-0000-0000-0000-000000000000"
+
+# common assertions hold in every scenario: device 2 is always healthy and all
+# hw_gpu_info attributes are verified.
+common:
+  metrics_assertions:
+    - name: hw_gpu_info
+      value: 1
+      labels: *dev2_gpu_info_labels
+
+# InitialState: device 1 has failed to initialize; only device 2 reports metrics.
+InitialState:
+  # Wait for device 2's info metric to confirm it is being scraped.
+  metrics_sentinel:
+    name: hw_gpu_info
+    value: 1
+    labels:
+      <<: *dev2_id_labels
+      hw_name: gpu-2
+  metrics_assertions:
+    - name: hw_temperature_celsius
+      value: 48
+      labels:
+        <<: *dev2_id_labels
+        hw_name: temp-1
+        hw_sensor_location: global
+        statistic: max
+
+# AfterAttach: device 1 reports DEVICE_ATTACH, xpumd re-initializes the device, and starts reporting metrics.
+AfterAttach:
+  # Wait until device 1's info metric appears, confirming it has been re-initialized.
+  metrics_sentinel:
+    name: hw_gpu_info
+    value: 1
+    labels:
+      <<: *dev1_id_labels
+      hw_name: gpu-1
+  metrics_assertions:
+    - name: hw_gpu_info
+      value: 1
+      labels: *dev1_gpu_info_labels
+    - name: hw_temperature_celsius
+      value: 55
+      labels:
+        <<: *dev1_id_labels
+        hw_name: temp-1
+        hw_sensor_location: global
+        statistic: max
+    - name: hw_temperature_celsius
+      value: 48
+      labels:
+        <<: *dev2_id_labels
+        hw_name: temp-1
+        hw_sensor_location: global
+        statistic: max

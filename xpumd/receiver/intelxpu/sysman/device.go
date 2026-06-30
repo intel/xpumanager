@@ -55,6 +55,7 @@ type eccState struct {
 
 // deviceState has values that can change after enumeration.
 type deviceState struct {
+	initialized      bool
 	devStateDisabled bool
 	pci              pciState
 	ecc              *eccState
@@ -136,22 +137,17 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, aggregatedM
 	}
 	logger.Infow("Sysman devices", "enumerated", len(zesDevs))
 
-	devs := make([]*device, len(zesDevs))
+	devs := make([]*device, 0, len(zesDevs))
 	for i, d := range zesDevs {
 		name := fmt.Sprintf("gpu-%d", i+1) // match error log index
-		dev, err := newDevice(name, d, logger, aggregatedMetricsBufferSize)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create Sysman device %d/%d: %w", i+1, len(devs), err)
-		}
-
-		devs[i] = dev
+		devs = append(devs, newDevice(name, d, logger, aggregatedMetricsBufferSize))
 	}
 
 	return devs, nil
 }
 
 // newDevice creates a new device. Use init() to scan the device.
-func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*device, error) {
+func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) *device {
 	d := &device{
 		Device: dev,
 		logger: logger,
@@ -163,9 +159,9 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 	}
 
 	if err := d.init(); err != nil {
-		return nil, err
+		logger.Errorw("Failed to initialize Sysman device", "name", name, "error", err)
 	}
-	return d, nil
+	return d
 }
 
 // init scans and initializes the device attributes, state and scrapers. May be
@@ -267,6 +263,7 @@ func (d *device) init() error {
 	}
 
 	d.logger.Debugw("Device init() done", "name", d.attributes.hwName, "BDF", d.attributes.pciBDF)
+	d.state.initialized = true
 	return nil
 }
 
@@ -321,6 +318,9 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	d.RLock()
 	defer d.RUnlock()
 
+	if !d.state.initialized {
+		return
+	}
 	if d.state.ecc.configurable {
 		err := d.updateEccState()
 		if !d.state.ecc.configurable {

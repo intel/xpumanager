@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: MIT
+#
+# Two-device config: both devices are healthy. Device 1 (gpu-1) reports
+# Events: 2 (ZES_EVENT_TYPE_FLAG_DEVICE_ATTACH = ZE_BIT(1)), which causes
+# xpumd to re-initialize it. After re-initialization, metrics are reported
+# for both devices.
+
+Drivers:
+  - Devices:
+      # Device 1 (gpu-1): recovered — reports DEVICE_ATTACH so xpumd re-initializes it.
+      - Properties:
+          Core:
+            Type: 1  # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "aabbccdd-0000-0000-0000-000000000000"
+          NumSubdevices: 0
+          ModelName: "Recovered GPU"
+          VendorName: "Intel(R) Corporation"
+          SerialNumber: "SN-0001"
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 6
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+        TemperatureSensors:
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+            Temperature: 55.0
+        Events: 2  # ZES_EVENT_TYPE_FLAG_DEVICE_ATTACH
+
+      # Device 2 (gpu-2): unchanged and healthy.
+      - Properties:
+          Core:
+            Type: 1  # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "12345678-0000-0000-0000-000000000000"
+          NumSubdevices: 0
+          ModelName: "Healthy GPU"
+          VendorName: "Intel(R) Corporation"
+          SerialNumber: "SN-0002"
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+        TemperatureSensors:
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+            Temperature: 48.0
+

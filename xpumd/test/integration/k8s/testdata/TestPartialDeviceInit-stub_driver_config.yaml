@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+#
+# Two-device config: device 1 (gpu-1) fails GetProperties with
+# ZE_RESULT_ERROR_DEVICE_REQUIRES_RESET; device 2 (gpu-2) is healthy.
+
+Drivers:
+  - Devices:
+      # Device 1 (gpu-1): fails init — GetProperties returns DEVICE_REQUIRES_RESET.
+      - ReturnValues:
+          zesDeviceGetProperties: 0x70000006  # ZE_RESULT_ERROR_DEVICE_REQUIRES_RESET
+
+      # Device 2 (gpu-2): healthy, reports one global temperature sensor.
+      - Properties:
+          Core:
+            Type: 1  # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "12345678-0000-0000-0000-000000000000"
+          NumSubdevices: 0
+          ModelName: "Healthy GPU"
+          VendorName: "Intel(R) Corporation"
+          SerialNumber: "SN-0002"
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+        TemperatureSensors:
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+            Temperature: 48.0
+

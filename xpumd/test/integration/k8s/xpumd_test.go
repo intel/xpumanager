@@ -158,3 +158,40 @@ func TestMetrics(t *testing.T) {
 		assertions.MetricsAssertions.assert(t, families)
 	})
 }
+
+// TestPartialDeviceInit verifies that xpumd handles partial device initialization gracefully.
+func TestPartialDeviceInit(t *testing.T) {
+	assertConfig, err := loadAssertions(t)
+	if err != nil {
+		t.Fatalf("failed to load assertions: %v", err)
+	}
+
+	tc := newTestConfig(t)
+	t.Cleanup(func() { tc.cleanup(t) })
+	tc.setup(t)
+
+	tunnel := tc.forwardPort(t, servicePort)
+	t.Cleanup(tunnel.stop)
+	endpoint := tunnel.endpoint()
+
+	commonAssertions := requireScenarioConfig(t, assertConfig, "common").MetricsAssertions
+
+	t.Run("InitialState", func(t *testing.T) {
+		assertions := requireScenarioConfig(t, assertConfig, path.Base(t.Name()))
+		families := assertions.MetricsSentinel.waitFor(t, endpoint, 30*time.Second)
+
+		commonAssertions.assert(t, families)
+		assertions.MetricsAssertions.assert(t, families)
+	})
+
+	t.Run("AfterAttach", func(t *testing.T) {
+		tc.loadStubDriverConfig(t)
+
+		assertions := requireScenarioConfig(t, assertConfig, path.Base(t.Name()))
+		// Allow extra time for the DEVICE_ATTACH event to fire and device 1 to re-initialize.
+		families := assertions.MetricsSentinel.waitFor(t, endpoint, 60*time.Second)
+
+		commonAssertions.assert(t, families)
+		assertions.MetricsAssertions.assert(t, families)
+	})
+}
