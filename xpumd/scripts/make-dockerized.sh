@@ -27,9 +27,9 @@ RUN mkdir -p /go/pkg && chmod 777 /go/pkg
 
 COPY $CHECKSUMS .
 
-# Unzip needed for installing protoc, doxygen for generating Go bindings
+# Unzip needed for installing protoc, libyaml-dev/libcyaml-dev/jq/clang-format for generating Go bindings
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        unzip doxygen libyaml-dev libcyaml-dev jq clang-format shellcheck && \
+        unzip libyaml-dev libcyaml-dev jq clang-format shellcheck && \
     curl -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
          -LO ${L0_BASE_URL}/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     if ! sha256sum --check $CHECKSUMS ; then \
