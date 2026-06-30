@@ -150,7 +150,7 @@ type ResetProperties struct {
 // Uuid declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-uuid-t
 //
-// Device universal unique id (UUID)
+// Device universal unique id (UUID).
 type Uuid struct {
 	Id uuid.UUID
 }
@@ -861,7 +861,7 @@ type RasState struct {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-config-t
 //
 // RAS error configuration - thresholds used for triggering RAS events
-// (ZES_EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS, ZES_EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS)
+// (ZES_EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS, ZES_EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS).
 //
 //   - The driver maintains a total counter which is updated every time a hardware
 //     block covered by the corresponding RAS error set notifies that an error has
@@ -897,7 +897,7 @@ type SchedProperties struct {
 // SchedTimeoutProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-timeout-properties-t
 //
-// Configuration for timeout scheduler mode (ZES_SCHED_MODE_TIMEOUT)
+// Configuration for timeout scheduler mode (ZES_SCHED_MODE_TIMEOUT).
 type SchedTimeoutProperties struct {
 	stype           structureType
 	pnext           unsafe.Pointer
@@ -907,7 +907,7 @@ type SchedTimeoutProperties struct {
 // SchedTimesliceProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-timeslice-properties-t
 //
-// Configuration for timeslice scheduler mode (ZES_SCHED_MODE_TIMESLICE)
+// Configuration for timeslice scheduler mode (ZES_SCHED_MODE_TIMESLICE).
 type SchedTimesliceProperties struct {
 	stype        structureType
 	pnext        unsafe.Pointer

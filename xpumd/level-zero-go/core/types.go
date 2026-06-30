@@ -8,7 +8,7 @@ import "github.com/google/uuid"
 // DeviceUuid declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-uuid-t
 //
-// Device universal unique id (UUID)
+// Device universal unique id (UUID).
 type DeviceUuid struct {
 	Id uuid.UUID
 }

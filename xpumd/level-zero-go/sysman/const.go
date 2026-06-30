@@ -747,7 +747,7 @@ type FanSpeedUnits uint32
 
 // FanSpeedUnits enumeration from level-zero/zes_api.h:3591
 const (
-	// The fan speed is in units of revolutions per minute (rpm)
+	// The fan speed is in units of revolutions per minute (rpm).
 	FAN_SPEED_UNITS_RPM FanSpeedUnits = iota
 	// The fan speed is a percentage of the maximum speed of the fan.
 	FAN_SPEED_UNITS_PERCENT FanSpeedUnits = 1
@@ -1152,7 +1152,7 @@ const (
 // PowerLimitsExtVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limits-ext-version-t
 //
-// Power Limits Extension Version(s)
+// Power Limits Extension Version(s).
 type PowerLimitsExtVersion uint32
 
 // PowerLimitsExtVersion enumeration from level-zero/zes_api.h:7490
@@ -1168,7 +1168,7 @@ const (
 // EngineActivityExtVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-activity-ext-version-t
 //
-// Engine Activity Extension Version(s)
+// Engine Activity Extension Version(s).
 type EngineActivityExtVersion uint32
 
 // EngineActivityExtVersion enumeration from level-zero/zes_api.h:7709
@@ -1184,7 +1184,7 @@ const (
 // RasStateExpVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-exp-version-t
 //
-// RAS Get State Extension Version(s)
+// RAS Get State Extension Version(s).
 type RasStateExpVersion uint32
 
 // RasStateExpVersion enumeration from level-zero/zes_api.h:7802
@@ -1242,7 +1242,7 @@ const (
 // DeviceEccDefaultPropertiesExtVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-version-t
 //
-// Device ECC default properties Extension Version(s)
+// Device ECC default properties Extension Version(s).
 type DeviceEccDefaultPropertiesExtVersion uint32
 
 // DeviceEccDefaultPropertiesExtVersion enumeration from level-zero/zes_api.h:9027
@@ -1258,7 +1258,7 @@ const (
 // PciLinkSpeedDowngradeExtVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-version-t
 //
-// PCI Link Speed Downgrade Extension Version(s)
+// PCI Link Speed Downgrade Extension Version(s).
 type PciLinkSpeedDowngradeExtVersion uint32
 
 // PciLinkSpeedDowngradeExtVersion enumeration from level-zero/zes_api.h:9062
@@ -1274,7 +1274,7 @@ const (
 // DeviceExtStateVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-state-version-t
 //
-// Device State Extension Version(s)
+// Device State Extension Version(s).
 type DeviceExtStateVersion uint32
 
 // DeviceExtStateVersion enumeration from level-zero/zes_api.h:9150
@@ -1308,7 +1308,7 @@ const (
 // OemSerialIdExtVersion declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-oem-serial-id-ext-version-t
 //
-// OEM Serial ID Extension Version(s)
+// OEM Serial ID Extension Version(s).
 type OemSerialIdExtVersion uint32
 
 // OemSerialIdExtVersion enumeration from level-zero/zes_api.h:9204
