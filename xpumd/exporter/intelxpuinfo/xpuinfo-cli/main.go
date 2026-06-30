@@ -33,6 +33,7 @@ var (
 	socketName = flag.String("sock-name", metadata.Type.String()+".sock", "gRPC server socket file name")
 	noHealth   = flag.Bool("no-health", false, "disable device health stream")
 	noEvents   = flag.Bool("no-events", false, "disable device events stream")
+	oneshot    = flag.Bool("oneshot", false, "exit after receiving the first message from any stream")
 )
 
 func main() {
@@ -68,7 +69,7 @@ func run() int {
 		wg.Go(func() {
 			errc <- runStream(ctx, "health", func(ctx context.Context) (grpcStream[*pb.DeviceHealthResponse], error) {
 				return c.WatchDeviceHealth(ctx, &pb.WatchDeviceHealthRequest{})
-			})
+			}, cancel)
 			cancel()
 		})
 	}
@@ -76,7 +77,7 @@ func run() int {
 		wg.Go(func() {
 			errc <- runStream(ctx, "events", func(ctx context.Context) (grpcStream[*pb.DeviceEventResponse], error) {
 				return c.WatchDeviceEvents(ctx, &pb.WatchDeviceEventsRequest{})
-			})
+			}, cancel)
 			cancel()
 		})
 	}
@@ -96,7 +97,7 @@ type grpcStream[T any] interface {
 	Recv() (T, error)
 }
 
-func runStream[T any](ctx context.Context, name string, open func(context.Context) (grpcStream[T], error)) int {
+func runStream[T any](ctx context.Context, name string, open func(context.Context) (grpcStream[T], error), cancelOnRecv context.CancelFunc) int {
 	stream, err := open(ctx)
 	if err != nil {
 		if ctx.Err() != nil {
@@ -128,5 +129,9 @@ func runStream[T any](ctx context.Context, name string, open func(context.Contex
 			return 1
 		}
 		stdout.Print(string(data))
+		if *oneshot {
+			cancelOnRecv()
+			return 0
+		}
 	}
 }
