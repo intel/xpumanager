@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -96,8 +97,8 @@ func (kc k8sClient) deleteNamespace() error {
 	return err
 }
 
-// getDaemonSetPodNames returns the names of all pods owned by a DaemonSet.
-func (kc k8sClient) getDaemonSetPodNames(name string) ([]string, error) {
+// getDaemonSetPods returns all pods owned by a DaemonSet.
+func (kc k8sClient) getDaemonSetPods(name string) ([]corev1.Pod, error) {
 	ds, err := kc.AppsV1().DaemonSets(kc.namespace).Get(context.Background(), name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get daemonset %s/%s: %w", kc.namespace, name, err)
@@ -115,11 +116,7 @@ func (kc k8sClient) getDaemonSetPodNames(name string) ([]string, error) {
 	if len(pods.Items) == 0 {
 		return nil, fmt.Errorf("no pods found for daemonset %s/%s", kc.namespace, name)
 	}
-	names := make([]string, len(pods.Items))
-	for i, pod := range pods.Items {
-		names[i] = pod.Name
-	}
-	return names, nil
+	return pods.Items, nil
 }
 
 // waitForRollout waits for a DaemonSet to have at least one desired pod and all desired pods ready.
@@ -261,4 +258,122 @@ func (kc k8sClient) forwardPortOnce(pod string, remotePort int) (*portForwarder,
 		close(stopChan)
 		return nil, fmt.Errorf("timed out after %v waiting for port-forward readiness", portForwardReadinessTimeout)
 	}
+}
+
+const (
+	xpuinfoCLIPath      = "/usr/local/bin/xpuinfo-cli"
+	xpuinfoCLISockDir   = "/run/xpumd"
+	podRunningTimeout   = 30 * time.Second
+	podCompletedTimeout = 60 * time.Second
+)
+
+// runXpuinfoCLI creates a one-shot xpuinfo-cli Pod. Calls afterRunning() after
+// the Pod has reached Running phase, then waits for the Pod to complete and
+// returns its stdout log.
+func (kc k8sClient) runXpuinfoCLI(ctx context.Context, t *testing.T, name, nodeName string, args []string, afterRunning func()) string {
+	t.Helper()
+
+	image := fmt.Sprintf("%s:%s", suite.imageRepository, suite.imageTag)
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: kc.namespace,
+		},
+		Spec: corev1.PodSpec{
+			NodeName:      nodeName,
+			RestartPolicy: corev1.RestartPolicyNever,
+			Containers: []corev1.Container{{
+				Name:            "xpuinfo-cli",
+				Image:           image,
+				ImagePullPolicy: corev1.PullPolicy(suite.imagePullPolicy),
+				Command:         append([]string{xpuinfoCLIPath, "--sock-dir=" + xpuinfoCLISockDir}, args...),
+				VolumeMounts: []corev1.VolumeMount{{
+					Name:      "xpumd-sock-dir",
+					MountPath: xpuinfoCLISockDir,
+				}},
+			}},
+			Volumes: []corev1.Volume{{
+				Name: "xpumd-sock-dir",
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: xpuinfoCLISockDir,
+					},
+				},
+			}},
+		},
+	}
+
+	if _, err := kc.CoreV1().Pods(kc.namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
+		t.Fatalf("failed to create pod %q: %v", name, err)
+	}
+	t.Cleanup(func() {
+		bg := context.Background()
+		if err := kc.CoreV1().Pods(kc.namespace).Delete(bg, name, metav1.DeleteOptions{}); err != nil && !apierrors.IsNotFound(err) {
+			t.Errorf("failed to delete pod %q: %v", name, err)
+		}
+	})
+
+	if afterRunning != nil {
+		if _, err := kc.waitForPodPhase(ctx, name, podRunningTimeout, corev1.PodRunning); err != nil {
+			t.Fatalf("pod %q never reached Running: %v", name, err)
+		}
+		afterRunning()
+	}
+
+	phase, err := kc.waitForPodPhase(ctx, name, podCompletedTimeout,
+		corev1.PodSucceeded, corev1.PodFailed)
+	if err != nil {
+		t.Fatalf("pod %q did not terminate: %v", name, err)
+	}
+
+	// Collect logs before checking exit status so failures include output.
+	logBytes, err := kc.podLogs(ctx, name, "xpuinfo-cli")
+	if err != nil {
+		t.Fatalf("failed to get logs for pod %q: %v", name, err)
+	}
+	if phase != corev1.PodSucceeded {
+		t.Fatalf("pod %q exited with phase %s:\n%s", name, phase, logBytes)
+	}
+
+	return string(logBytes)
+}
+
+// waitForPodPhase polls until the named pod reaches one of the given phases,
+// returning the phase reached. Returns immediately whenever the pod reaches a
+// terminal phase (Succeeded or Failed), with an error if the terminal phase is
+// not one of the expected phases.
+func (kc k8sClient) waitForPodPhase(ctx context.Context, name string, timeout time.Duration, phases ...corev1.PodPhase) (corev1.PodPhase, error) {
+	deadline := time.Now().Add(timeout)
+	for {
+		p, err := kc.CoreV1().Pods(kc.namespace).Get(ctx, name, metav1.GetOptions{})
+		if err != nil {
+			return "", err
+		}
+		current := p.Status.Phase
+		if slices.Contains(phases, current) {
+			return current, nil
+		}
+		if current == corev1.PodSucceeded || current == corev1.PodFailed {
+			return current, fmt.Errorf("pod %q terminated with phase %s before reaching %v",
+				name, current, phases)
+		}
+		if time.Now().After(deadline) {
+			return p.Status.Phase, fmt.Errorf("timed out after %v waiting for pod %q (current: %s)",
+				timeout, name, p.Status.Phase)
+		}
+		time.Sleep(time.Second)
+	}
+}
+
+// podLogs returns the stdout log of the named container in the named pod.
+func (kc k8sClient) podLogs(ctx context.Context, pod, container string) ([]byte, error) {
+	req := kc.CoreV1().Pods(kc.namespace).GetLogs(pod, &corev1.PodLogOptions{
+		Container: container,
+	})
+	stream, err := req.Stream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer stream.Close() //nolint:errcheck
+	return io.ReadAll(stream)
 }

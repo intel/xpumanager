@@ -6,12 +6,20 @@
 package k8s
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"path"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.yaml.in/yaml/v4"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func TestMain(m *testing.M) {
@@ -192,5 +200,93 @@ func TestPartialDeviceInit(t *testing.T) {
 
 		commonAssertions.assert(t, families)
 		assertions.MetricsAssertions.assert(t, families)
+	})
+}
+
+// TestXpuinfo verifies the gRPC streams of the intel_xpu_info exporter.
+func TestXpuinfo(t *testing.T) {
+	tc := newTestConfig(t)
+	t.Cleanup(func() { tc.cleanup(t) })
+	tc.setup(t)
+
+	t.Run("Health", func(t *testing.T) {
+		logs := tc.runXpuinfoCLI(context.Background(), t, "xpuinfo-cli-health",
+			[]string{"--no-events", "--oneshot"}, nil)
+
+		var resp pb.DeviceHealthResponse
+		require.NoError(t, yaml.Unmarshal([]byte(logs), &resp), "unmarshal health response\nlogs:\n%s", logs)
+
+		want := &pb.DeviceHealthResponse{
+			Devices: []*pb.DeviceHealth{
+				{
+					Info: &pb.DeviceInformation{
+						Uuid:  "12345678-0000-0000-0000-000000000000",
+						Model: "Super 3000",
+						Pci: &pb.PciInfo{
+							Bdf:      "0000:05:00.0",
+							DeviceId: "0bd5",
+							VendorId: "8086",
+						},
+						Firmwares: []*pb.FirmwareInfo{
+							{
+								Name:        "gfx",
+								SubdeviceId: "",
+								Version:     "1.2.3.4",
+							},
+						},
+						Memory: []*pb.MemoryInfo{
+							{
+								Type:        "hbm",
+								SubdeviceId: "",
+								Size:        17179869184,
+							},
+						},
+					},
+					Health: []*pb.HealthStatus{
+						{
+							Name:     "frequency",
+							Severity: pb.SeverityLevel_SEVERITY_LEVEL_OK,
+							Reason:   "ok",
+						},
+						{
+							Name:     "memory",
+							Severity: pb.SeverityLevel_SEVERITY_LEVEL_OK,
+							Reason:   "ok",
+						},
+						{
+							Name:     "temperature",
+							Severity: pb.SeverityLevel_SEVERITY_LEVEL_OK,
+							Reason:   "ok",
+						},
+					},
+				},
+			},
+		}
+		assert.Empty(t, cmp.Diff(want, &resp, protocmp.Transform()), "health response mismatch (-want +got)")
+	})
+
+	t.Run("Events", func(t *testing.T) {
+		logs := tc.runXpuinfoCLI(context.Background(), t, "xpuinfo-cli-events",
+			[]string{"--no-health", "--oneshot"},
+			func() { tc.loadStubDriverConfig(t) })
+
+		var resp pb.DeviceEventResponse
+		require.NoError(t, yaml.Unmarshal([]byte(logs), &resp), "unmarshal event response\nlogs:\n%s", logs)
+
+		want := &pb.DeviceEventResponse{
+			Device: &pb.DeviceIdentification{
+				Uuid:  "12345678-0000-0000-0000-000000000000",
+				Model: "Super 3000",
+				Pci: &pb.PciInfo{
+					Bdf:      "0000:05:00.0",
+					DeviceId: "0bd5",
+					VendorId: "8086",
+				},
+			},
+			Reason:   "device_detach",
+			Message:  "DEVICE_DETACH",
+			Severity: pb.EventSeverityLevel_EVENT_SEVERITY_LEVEL_ERROR,
+		}
+		assert.Empty(t, cmp.Diff(want, &resp, protocmp.Transform()), "event response mismatch (-want +got)")
 	})
 }

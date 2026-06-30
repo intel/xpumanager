@@ -6,6 +6,7 @@
 package k8s
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -93,6 +94,7 @@ type testConfig struct {
 	helm         helmClient
 	k8sClient    k8sClient
 	podName      string
+	nodeName     string
 }
 
 func newTestConfig(t *testing.T) testConfig {
@@ -149,11 +151,12 @@ func (tc *testConfig) setup(t *testing.T) {
 	if err := tc.k8sClient.waitForRollout(tc.releaseName, defaultTimeout); err != nil {
 		t.Fatalf("wait for xpumd rollout: %v", err)
 	}
-	podNames, err := tc.k8sClient.getDaemonSetPodNames(tc.releaseName)
+	pods, err := tc.k8sClient.getDaemonSetPods(tc.releaseName)
 	if err != nil {
-		t.Fatalf("get xpumd pod name: %v", err)
+		t.Fatalf("get xpumd pod: %v", err)
 	}
-	tc.podName = podNames[0]
+	tc.podName = pods[0].Name
+	tc.nodeName = pods[0].Spec.NodeName
 }
 
 func (tc *testConfig) createStubDriverConfig(t *testing.T) {
@@ -194,6 +197,13 @@ func (tc testConfig) loadStubDriverConfig(t *testing.T) {
 func (tc testConfig) forwardPort(t *testing.T, remotePort int) *portForwarder {
 	t.Helper()
 	return tc.k8sClient.forwardPort(t, tc.podName, remotePort)
+}
+
+// runXpuinfoCLI creates a one-shot xpuinfo-cli Pod co-located with the xpumd
+// pod and returns its stdout log. See k8sClient.runXpuinfoCLI for details.
+func (tc testConfig) runXpuinfoCLI(ctx context.Context, t *testing.T, name string, args []string, afterRunning func()) string {
+	t.Helper()
+	return tc.k8sClient.runXpuinfoCLI(ctx, t, name, tc.nodeName, args, afterRunning)
 }
 
 func (s *suiteConfig) k8sClient(namespace string) (k8sClient, error) {
