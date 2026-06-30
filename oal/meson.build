@@ -4,7 +4,6 @@
 # OAL (OS Abstraction Layer) build
 
 # Platform-specific source files
-oal_sources = []
 oal_inc_dirs = [include_directories('.')] # Include the oal folder itself
 oal_inc_dirs += [include_directories('../hal/core/logger')]
 oal_deps = [thread_dep, levelzero_dep, bdf_dep, igsc_dep]
@@ -15,7 +14,6 @@ if is_windows
     'win/fs_lock.cpp',
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
-    'win/oem_serial.cpp',
     'win/thread.cpp',
     'win/win.cpp',
   )
@@ -30,7 +28,6 @@ elif is_linux
     'lin/i2c_interface.cpp',
     'lin/lin.cpp',
     'lin/linvf.cpp',
-    'lin/oem_serial.cpp',
     'lin/pci_database.cpp',
     'lin/topology.cpp',
   )

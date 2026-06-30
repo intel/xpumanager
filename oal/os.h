@@ -53,7 +53,6 @@ std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
-int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &serialNumber);
 inline std::mutex progressPrintMutex;
 
 #ifdef _WIN32

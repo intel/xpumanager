@@ -26,6 +26,7 @@ ial_cmn_sources = files(
   'cmd_vgpu.cpp',
   'cmds.cpp',
   'metrics_registry.cpp',
+  'oem_serial.cpp',
   'printer.cpp',
   'metrics/eu_array.cpp',
   'metrics/fan.cpp',

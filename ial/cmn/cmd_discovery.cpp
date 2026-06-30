@@ -11,6 +11,7 @@
 #include "table_builder.h"
 #include "amclib.h"
 #include <os.h>
+#include "oem_serial.h"
 #include <array>
 #include <assert.h>
 #include <charconv>
@@ -908,15 +909,15 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 	}
 
 	// AMC route if exists
-	if (strcmp(zesDevProp.serialNumber, "unknown") == 0) {
-		std::string serialNumFromAMC = "";
+	if (std::string_view{zesDevProp.serialNumber} == "unknown") {
+		std::string serialNumFromAMC;
 		const auto amcResult = querySerialNumberFromAMC(d, &serialNumFromAMC);
-		if (amcResult != ZE_RESULT_SUCCESS || (serialNumFromAMC.size() == 0)) {
-			DBG("Failed to get serial number from AMC or No AMC Available: 0x%X (%s)\n", amcResult,
+		if (amcResult != ZE_RESULT_SUCCESS || serialNumFromAMC.empty()) {
+			DBG("Failed to get serial number from AMC or No AMC Available: 0x{:X} ({})\n", amcResult,
 				l0_error_to_string(amcResult));
 			*outputLine = zesDevProp.serialNumber;
 		} else {
-			DBG("Successfully retrieved serial number from AMC: %s\n", serialNumFromAMC.c_str());
+			DBG("Successfully retrieved serial number from AMC: {}\n", serialNumFromAMC.c_str());
 			*outputLine = serialNumFromAMC;
 		}
 	} else {
@@ -925,26 +926,13 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 
 	// OEM provided serial number via IGSC if available
 	if (*outputLine == "unknown") {
-		std::string meiPath;
-		gscupd gsc;
-		const std::string bdfStr = d->dev->getPCI()->getBDFStr();
-		for (const auto &dev : gsc.getPCIAddrAndMeiDevices()) {
-			auto devBdf =
-				std::format("{:04x}:{:02x}:{:02x}.{:01x}", dev.pciProps.address.domain, dev.pciProps.address.bus,
-							dev.pciProps.address.device, dev.pciProps.address.function);
-			if (devBdf == bdfStr) {
-				meiPath = dev.meiDevicePath;
-				break;
-			}
-		}
-
-		std::string serialNumFromIGSC = "";
-		const auto igscResult = getOemSerialNumber(meiPath, serialNumFromIGSC);
-		if (igscResult != ZE_RESULT_SUCCESS || (serialNumFromIGSC.size() == 0)) {
-			DBG("Failed to get OEM serial number from IGSC or No IGSC Available: 0x%X (%s)\n", igscResult,
+		std::string serialNumFromIGSC;
+		const auto igscResult = getOemSerialNumber(d->dev->getPCI()->getMeiDevicePath(), serialNumFromIGSC);
+		if (igscResult != ZE_RESULT_SUCCESS || serialNumFromIGSC.empty()) {
+			DBG("Failed to get OEM serial number from IGSC or No IGSC Available: 0x{:X} ({})\n", igscResult,
 				l0_error_to_string(igscResult));
 		} else {
-			DBG("Successfully retrieved OEM serial number from IGSC: %s\n", serialNumFromIGSC.c_str());
+			DBG("Successfully retrieved OEM serial number from IGSC: {}\n", serialNumFromIGSC.c_str());
 			*outputLine = serialNumFromIGSC;
 		}
 	}
