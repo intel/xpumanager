@@ -22,7 +22,7 @@ gotool c-for-go -ccincl -nostamp "$PACKAGE.yml"
 
 cd "$PACKAGE"
 if [ -f Doxyfile ]; then
-    doxygen
+    "$ROOT_DIR/hack/bin/doxygen"
 fi
 
 go tool cgo -godefs -- -I../level-zero ./types.go > types.go.tmp

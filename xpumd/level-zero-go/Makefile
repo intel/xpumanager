@@ -24,12 +24,16 @@ stats:
 # --- Build targets ---
 
 .PHONY: generate
-generate: clean-generated generate-stub
+generate: clean-generated generate-stub install-doxygen
 	go mod download
 	$(Q)for pkg in $(PACKAGES); do \
 	    hack/generate.sh $$pkg || exit 1; \
 	done
 	go -C hack generate
+
+.PHONY: install-doxygen
+install-doxygen:
+	hack/install-doxygen.sh
 
 .PHONY: generate-stub
 generate-stub:
