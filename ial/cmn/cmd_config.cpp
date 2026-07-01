@@ -13,7 +13,9 @@
 #include <ecc.h>
 #include <fabric.h>
 #include <fan.h>
+#include <osvf.h>
 #include <ras.h>
+#include <vf.h>
 #include <charconv>
 #include <format>
 #include <frequency.h>
@@ -1483,6 +1485,11 @@ ze_result_t cmdConfig::setPCIeGenUpdate(devInfo *d)
 /**
  * @brief Resets the device.
  *
+ * Removes any active SR-IOV Virtual Functions before performing the Secondary
+ * Bus Reset (SBR).  Issuing an SBR while VFs are still active causes the
+ * Linux kernel to hang or crash (SSH "Broken pipe"), because the kernel cannot
+ * safely tear down the live VF mappings during the bus reset.
+ *
  * @param d Device information structure.
  *
  * @return ze_result_t Result of the operation.
@@ -1492,6 +1499,28 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 	TRACING();
 
 	PRINT("It may take one minute to reset GPU {}. Please wait ...\n", d->index);
+
+	// Remove active VFs before the SBR to prevent a host crash/hang.
+	// If the device does not support SR-IOV, listVFs() returns an error and
+	// we skip VF removal entirely.
+	vf *vfHandle = d->dev->getVF();
+	pci *pciHandle = d->dev->getPCI();
+	DeviceSriovInfo deviceInfo = {};
+	deviceInfo.bdfAddress = pciHandle->getBDFStr();
+	deviceInfo.drmPath = d->dev->getDrmDevPath();
+
+	// listVFs() always places the PF at index 0 followed by VF1..n (see linListVFs).
+	// So size() > 1 means at least one VF is active, and size() - 1 is the VF count.
+	std::vector<DeviceSriovInfo> vfList;
+	if (vfHandle->listVFs(&deviceInfo, vfList) == ZE_RESULT_SUCCESS && vfList.size() > 1) {
+		DBG("Removing {} active VF(s) on GPU {} before reset\n", vfList.size() - 1, d->index);
+		ze_result_t removeResult = vfHandle->removeVFs(&deviceInfo);
+		if (removeResult != ZE_RESULT_SUCCESS) {
+			ERR("Failed to remove VFs before reset on GPU {}: 0x{:X} ({})\n", d->index, removeResult,
+				l0_error_to_string(removeResult));
+			return removeResult;
+		}
+	}
 
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
