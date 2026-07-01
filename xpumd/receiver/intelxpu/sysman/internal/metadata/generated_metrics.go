@@ -3,14 +3,13 @@
 package metadata
 
 import (
-	"slices"
-	"time"
-
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/scraper"
 	conventions "go.opentelemetry.io/otel/semconv/v1.38.0"
+	"slices"
+	"time"
 )
 
 const (
@@ -254,79 +253,104 @@ var MapAttributeStatistic = map[string]AttributeStatistic{
 
 var MetricsInfo = metricsInfo{
 	HwEnergy: metricInfo{
-		Name: "hw.energy",
+		Name:       "hw.energy",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location"},
 	},
 	HwErrors: metricInfo{
-		Name: "hw.errors",
+		Name:       "hw.errors",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.type", "error.type", "error.category"},
 	},
 	HwFrequency: metricInfo{
-		Name: "hw.frequency",
+		Name:       "hw.frequency",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.frequency.domain", "aggregation"},
 	},
 	HwFrequencyLimit: metricInfo{
-		Name: "hw.frequency.limit",
+		Name:       "hw.frequency.limit",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.frequency.domain", "hw.limit_type"},
 	},
 	HwFrequencyRequest: metricInfo{
-		Name: "hw.frequency.request",
+		Name:       "hw.frequency.request",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.frequency.domain"},
 	},
 	HwFrequencySamples: metricInfo{
-		Name: "hw.frequency.samples",
+		Name:       "hw.frequency.samples",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.frequency.domain", "sample.status"},
 	},
 	HwFrequencyThrottleStatus: metricInfo{
-		Name: "hw.frequency.throttle_status",
+		Name:       "hw.frequency.throttle_status",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.frequency.domain", "com.intel.speed.throttle_reason"},
 	},
 	HwGpuBandwidthLimit: metricInfo{
-		Name: "hw.gpu.bandwidth.limit",
+		Name:       "hw.gpu.bandwidth.limit",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf"},
 	},
 	HwGpuBandwidthUtilization: metricInfo{
-		Name: "hw.gpu.bandwidth.utilization",
+		Name:       "hw.gpu.bandwidth.utilization",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf"},
 	},
 	HwGpuInfo: metricInfo{
-		Name: "hw.gpu.info",
+		Name:       "hw.gpu.info",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "pci.vendor_id", "pci.device_id", "hw.model", "hw.serial_number", "hw.vendor", "hw.firmware_version", "hw.gpu.type", "com.intel.subdevice_count", "pci.lanes", "pci.link_gen", "hw.memory.demand_paging", "hw.memory.ecc"},
 	},
 	HwGpuIo: metricInfo{
-		Name: "hw.gpu.io",
+		Name:       "hw.gpu.io",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "network.io.direction"},
 	},
 	HwGpuIoRate: metricInfo{
-		Name: "hw.gpu.io.rate",
+		Name:       "hw.gpu.io.rate",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf"},
 	},
 	HwGpuUtilization: metricInfo{
-		Name: "hw.gpu.utilization",
+		Name:       "hw.gpu.utilization",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.gpu.task"},
 	},
 	HwMemoryBandwidthLimit: metricInfo{
-		Name: "hw.memory.bandwidth.limit",
+		Name:       "hw.memory.bandwidth.limit",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwMemoryBandwidthUtilization: metricInfo{
-		Name: "hw.memory.bandwidth.utilization",
+		Name:       "hw.memory.bandwidth.utilization",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwMemoryFree: metricInfo{
-		Name: "hw.memory.free",
+		Name:       "hw.memory.free",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwMemoryIo: metricInfo{
-		Name: "hw.memory.io",
+		Name:       "hw.memory.io",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type", "network.io.direction"},
 	},
 	HwMemoryIoRate: metricInfo{
-		Name: "hw.memory.io.rate",
+		Name:       "hw.memory.io.rate",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwMemorySize: metricInfo{
-		Name: "hw.memory.size",
+		Name:       "hw.memory.size",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwMemoryUsage: metricInfo{
-		Name: "hw.memory.usage",
+		Name:       "hw.memory.usage",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwMemoryUtilization: metricInfo{
-		Name: "hw.memory.utilization",
+		Name:       "hw.memory.utilization",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.memory.location", "hw.memory.type"},
 	},
 	HwPower: metricInfo{
-		Name: "hw.power",
+		Name:       "hw.power",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location"},
 	},
 	HwPowerLimit: metricInfo{
-		Name: "hw.power.limit",
+		Name:       "hw.power.limit",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location", "com.intel.power.limit.level", "com.intel.power.limit.source"},
 	},
 	HwStatus: metricInfo{
-		Name: "hw.status",
+		Name:       "hw.status",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.state", "hw.type"},
 	},
 	HwTemperature: metricInfo{
-		Name: "hw.temperature",
+		Name:       "hw.temperature",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location", "statistic"},
 	},
 }
 
@@ -359,7 +383,8 @@ type metricsInfo struct {
 }
 
 type metricInfo struct {
-	Name string
+	Name       string
+	Attributes []string
 }
 
 type metricHwEnergy struct {

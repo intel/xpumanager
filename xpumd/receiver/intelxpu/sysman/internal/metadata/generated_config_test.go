@@ -295,6 +295,305 @@ func TestMetricsBuilderConfig(t *testing.T) {
 		})
 	}
 }
+func TestHwEnergyMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwEnergy
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwEnergyMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.energy doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]")
+
+	cfg = DefaultMetricsConfig().HwEnergy
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwErrorsMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwErrors
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwErrorsMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.errors doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.type, error.type, error.category]")
+
+	cfg = DefaultMetricsConfig().HwErrors
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFrequencyMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFrequency
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFrequencyMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.frequency doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, aggregation]")
+
+	cfg = DefaultMetricsConfig().HwFrequency
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFrequencyLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFrequencyLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFrequencyLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.frequency.limit doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, hw.limit_type]")
+
+	cfg = DefaultMetricsConfig().HwFrequencyLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFrequencyRequestMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFrequencyRequest
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFrequencyRequestMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.frequency.request doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain]")
+
+	cfg = DefaultMetricsConfig().HwFrequencyRequest
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFrequencySamplesMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFrequencySamples
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFrequencySamplesMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.frequency.samples doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, sample.status]")
+
+	cfg = DefaultMetricsConfig().HwFrequencySamples
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFrequencyThrottleStatusMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFrequencyThrottleStatus
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFrequencyThrottleStatusMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.frequency.throttle_status doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.frequency.domain, com.intel.speed.throttle_reason]")
+
+	cfg = DefaultMetricsConfig().HwFrequencyThrottleStatus
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuBandwidthLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuBandwidthLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuBandwidthLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.bandwidth.limit doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf]")
+
+	cfg = DefaultMetricsConfig().HwGpuBandwidthLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuBandwidthUtilizationMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuBandwidthUtilization
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuBandwidthUtilizationMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.bandwidth.utilization doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf]")
+
+	cfg = DefaultMetricsConfig().HwGpuBandwidthUtilization
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuInfoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuInfo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuInfoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.info doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc]")
+
+	cfg = DefaultMetricsConfig().HwGpuInfo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuIoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuIo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuIoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.io doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, network.io.direction]")
+
+	cfg = DefaultMetricsConfig().HwGpuIo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuIoRateMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuIoRate
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuIoRateMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.io.rate doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf]")
+
+	cfg = DefaultMetricsConfig().HwGpuIoRate
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuUtilizationMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuUtilization
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuUtilizationMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.utilization doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.gpu.task]")
+
+	cfg = DefaultMetricsConfig().HwGpuUtilization
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryBandwidthLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryBandwidthLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryBandwidthLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.bandwidth.limit doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemoryBandwidthLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryBandwidthUtilizationMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryBandwidthUtilization
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryBandwidthUtilizationMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.bandwidth.utilization doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemoryBandwidthUtilization
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryFreeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryFree
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryFreeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.free doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemoryFree
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryIoMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryIo
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryIoMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.io doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type, network.io.direction]")
+
+	cfg = DefaultMetricsConfig().HwMemoryIo
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryIoRateMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryIoRate
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryIoRateMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.io.rate doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemoryIoRate
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemorySizeMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemorySize
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemorySizeMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.size doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemorySize
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryUsageMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryUsage
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryUsageMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.usage doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemoryUsage
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwMemoryUtilizationMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwMemoryUtilization
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwMemoryUtilizationMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.memory.utilization doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]")
+
+	cfg = DefaultMetricsConfig().HwMemoryUtilization
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwPowerMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwPower
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwPowerMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.power doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]")
+
+	cfg = DefaultMetricsConfig().HwPower
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwPowerLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwPowerLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwPowerLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.power.limit doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, com.intel.power.limit.level, com.intel.power.limit.source]")
+
+	cfg = DefaultMetricsConfig().HwPowerLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwStatusMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwStatus
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwStatusMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.status doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.state, hw.type]")
+
+	cfg = DefaultMetricsConfig().HwStatus
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwTemperatureMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwTemperature
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwTemperatureMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.temperature doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, statistic]")
+
+	cfg = DefaultMetricsConfig().HwTemperature
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
 
 func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	cm, err := confmaptest.LoadConf(filepath.Join("testdata", "config.yaml"))

@@ -91,175 +91,150 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount := 0
 			allMetricsCount := 0
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwEnergyDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwErrorsDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", AttributeHwTypeFrequency, AttributeErrorTypeCorrectable, "error.category-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwErrorsDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", AttributeHwTypeGpu, AttributeErrorTypeUncorrectable, "error.category-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeAggregationMin)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", AttributeAggregationMax)
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "hw.limit_type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", "hw.limit_type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyRequestDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyRequestDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencySamplesDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeSampleStatusCollected)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencySamplesDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", AttributeSampleStatusDropped)
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "com.intel.speed.throttle_reason-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", "com.intel.speed.throttle_reason-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuBandwidthLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", AttributeHwGpuTypeDiscrete, 25, "pci.lanes-val", "pci.link_gen-val", false, AttributeHwMemoryEccAvailable)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuInfoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "pci.vendor_id-val-2", "pci.device_id-val-2", "hw.model-val-2", "hw.serial_number-val-2", "hw.vendor-val-2", "hw.firmware_version-val-2", AttributeHwGpuTypeIntegrated, 26, "pci.lanes-val-2", "pci.link_gen-val-2", true, AttributeHwMemoryEccConfigurable)
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuIoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", AttributeNetworkIoDirectionTransmit)
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuIoRateDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.gpu.task-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.gpu.task-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryFreeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryFreeDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryIoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2", AttributeNetworkIoDirectionTransmit)
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryIoRateDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemorySizeDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryUsageDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwPowerDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwPowerLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", "com.intel.power.limit.level-val-2", "com.intel.power.limit.source-val-2")
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.state-val", AttributeHwTypeFrequency)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwStatusDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.state-val-2", AttributeHwTypeGpu)
 			}
-
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwTemperatureDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", AttributeStatisticMin)
