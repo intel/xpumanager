@@ -201,14 +201,21 @@ UpdatedValues:
   # metrics_sentinel is also asserted (Value set → automatically included in
   # the assertion run alongside the metrics_assertions list below).
   metrics_sentinel:
-    name: hw_temperature_celsius
-    value: 75
+    name: hw_frequency_hertz
+    value: 800000000
     labels:
-      <<: *dev_common_labels
-      hw_name: temp-1
-      hw_sensor_location: global
-      statistic: max
+      <<: *freq_common_labels
+      aggregation: max
   metrics_assertions:
+    # hw.temperature (global sensor — was the previous sentinel; kept here for coverage)
+    - name: hw_temperature_celsius
+      value: 75
+      labels:
+        <<: *dev_common_labels
+        hw_name: temp-1
+        hw_sensor_location: global
+        statistic: max
+
     # hw.energy
     - name: hw_energy_joules_total
       value: 10
