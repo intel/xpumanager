@@ -6,11 +6,11 @@
 
 set -o pipefail
 
-ROOT_DIR=$(pwd)
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
 PACKAGE="$1"
 
 gotool() {
-    go tool -modfile "$ROOT_DIR/hack/go.mod" "$@"
+    go tool -modfile "$SCRIPT_DIR/go.mod" "$@"
 }
 
 if [ -z "$PACKAGE" ] || [ ! -d "$PACKAGE" ]; then
@@ -22,16 +22,16 @@ gotool c-for-go -ccincl -nostamp "$PACKAGE.yml"
 
 cd "$PACKAGE"
 if [ -f Doxyfile ]; then
-    "$ROOT_DIR/hack/bin/doxygen"
+    "$SCRIPT_DIR/bin/doxygen"
 fi
 
 go tool cgo -godefs -- -I../level-zero ./types.go > types.go.tmp
 
-go -C "$ROOT_DIR/hack" run ./types-mangle \
+go -C "$SCRIPT_DIR" run ./types-mangle \
     -in-place \
     -config "$PWD/types-mangle.yaml" \
     "$PWD/types.go.tmp"
-go -C "$ROOT_DIR/hack" run ./types-mangle \
+go -C "$SCRIPT_DIR" run ./types-mangle \
     -in-place \
     -config "$PWD/types-mangle-const.yaml" \
     "$PWD/const.go"
