@@ -154,8 +154,10 @@ func (kc k8sClient) createConfigMap(name string, data map[string]string) error {
 	return err
 }
 
-// copyFile copies a file to a container by execing "cat >" in it, and piping
-// local file content to it (mimics "kubectl cp" but without using tar).
+// copyFile copies a file to a container by execing "cat >" and "mv" in the container. It pipes the
+// local file content to a temporary file in the target directory in the container, followed by a
+// rename (mv) to make the update of the target file atomic.
+// This function mimics "kubectl cp" but without using tar.
 func (kc k8sClient) copyFile(t *testing.T, pod, container, localPath, remotePath string) {
 	t.Helper()
 
@@ -164,6 +166,8 @@ func (kc k8sClient) copyFile(t *testing.T, pod, container, localPath, remotePath
 		t.Fatalf("failed to read %q file to copy: %v", localPath, err)
 	}
 
+	tmpPath := remotePath + ".tmp"
+	script := fmt.Sprintf("cat > %q && mv %q %q", tmpPath, tmpPath, remotePath)
 	req := kc.CoreV1().RESTClient().Post().
 		Namespace(kc.namespace).
 		Resource("pods").
@@ -171,7 +175,7 @@ func (kc k8sClient) copyFile(t *testing.T, pod, container, localPath, remotePath
 		SubResource("exec").
 		VersionedParams(&corev1.PodExecOptions{
 			Container: container,
-			Command:   []string{"sh", "-c", "cat > " + remotePath},
+			Command:   []string{"sh", "-c", script},
 			Stdin:     true,
 			Stdout:    false,
 			Stderr:    true,
