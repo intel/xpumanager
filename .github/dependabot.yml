@@ -14,6 +14,14 @@ updates:
         patterns:
           - "go.opentelemetry.io/collector/*"
   - package-ecosystem: "gomod"
+    directory: "/xpumd/common"
+    schedule:
+      interval: "weekly"
+    groups:
+      otel-collector:
+        patterns:
+          - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
     directory: "/xpumd/tools"
     schedule:
       interval: "weekly"
@@ -38,6 +46,10 @@ updates:
         patterns:
           - "go.opentelemetry.io/collector/*"
   - package-ecosystem: "gomod"
+    directory: "/xpumd/exporter/intelxpuinfo/api"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
     directory: "/xpumd/receiver"
     schedule:
       interval: "weekly"
@@ -45,3 +57,23 @@ updates:
       otel-collector:
         patterns:
           - "go.opentelemetry.io/collector/*"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/level-zero-go"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/level-zero-go/examples"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/level-zero-go/hack"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      - dependency-name: "github.com/xlab/c-for-go"
+  - package-ecosystem: "gomod"
+    directory: "/xpumd/test/integration"
+    schedule:
+      interval: "weekly"
