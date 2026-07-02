@@ -17,6 +17,40 @@
 #include <thread>
 #include <inttypes.h>
 
+namespace {
+/**
+ * @brief Sets a health failure status in the JSON object
+ *
+ * This helper function adds a standardized health failure entry to a JSON object
+ * with "Unknown" status and the provided description message.
+ *
+ * @param [in,out] jsonObj Pointer to the JSON object where the failure will be stored
+ * @param [in] jsonKey The key name to use in the JSON object for this health component
+ * @param [in] description Human-readable description of the health failure
+ */
+void setHealthFailureJson(nlohmann::ordered_json *jsonObj, const std::string &jsonKey, const std::string &description)
+{
+	(*jsonObj)[jsonKey] = {{"status", "Unknown"}, {"description", description}};
+}
+
+/**
+ * @brief Sets a temperature failure status in the JSON object
+ *
+ * This helper function adds a standardized temperature failure entry to a JSON object
+ * with "Unknown" status, initialized thresholds, and the provided description message.
+ *
+ * @param [in,out] jsonObj Pointer to the JSON object where the failure will be stored
+ * @param [in] jsonKey The key name to use in the JSON object for this temperature sensor
+ * @param [in] description Human-readable description of the temperature failure
+ */
+void setTemperatureFailureJson(nlohmann::ordered_json *jsonObj, const std::string &jsonKey,
+							   const std::string &description)
+{
+	(*jsonObj)[jsonKey] = {
+		{"status", "Unknown"}, {"throttle_threshold", -1}, {"shutdown_threshold", -1}, {"description", description}};
+}
+} // namespace
+
 static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
 	{healthCmdType::HEALTH_HELP, {}},
 	{healthCmdType::HEALTH_JSON, {}},
@@ -198,7 +232,6 @@ ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::ordered_json *jsonObj
 		result = (this->*test.func)(d, jsonObj);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Health check failed for device id: {}\n", d->index);
-			break;
 		}
 	}
 
@@ -272,12 +305,14 @@ ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *
 	temperature *t = (temperature *)d->dev->getTemperature();
 	if (t == nullptr) {
 		ERR("Failed to get temperature handle\n");
+		setTemperatureFailureJson(jsonObj, jsonKey, "Failed to get temperature handle.");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	result = (t->*getThresholdFunc)(d->zesDeviceHdl, &throttleThreshold, &shutdownThreshold);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("{}: 0x{:X} ({})\n", thresholdErrorMsg.c_str(), result, l0_error_to_string(result));
+		setTemperatureFailureJson(jsonObj, jsonKey, thresholdErrorMsg + ": " + l0_error_to_string(result));
 		return result;
 	}
 
@@ -286,7 +321,7 @@ ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *
 	result = (t->*getTempFunc)(&tempVal);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("{}: 0x{:X} ({})\n", tempErrorMsg.c_str(), result, l0_error_to_string(result));
-		return result;
+		description = tempErrorMsg + ": " + l0_error_to_string(result);
 	}
 	if (tempVal > 0 && tempVal < throttleThreshold) {
 		status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
@@ -367,9 +402,17 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 	ze_result_t res;
 
 	power *pwr = d->dev->getPower();
+	if (pwr == nullptr) {
+		ERR("Failed to get power handle\n");
+		setHealthFailureJson(jsonObj, "power_health", "Failed to get power handle.");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
 	res = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
 	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get device properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
+		setHealthFailureJson(jsonObj, "power_health",
+							 std::string("Failed to get device properties: ") + l0_error_to_string(res));
 		return res;
 	}
 
@@ -377,6 +420,7 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 	if (powerThreshold <= 0) {
 		description = "Health threshold for the power domains is not set";
 		ERR("Power threshold is not set for power domain\n");
+		setHealthFailureJson(jsonObj, "power_health", description);
 		return ZE_RESULT_NOT_READY;
 	}
 
@@ -532,12 +576,15 @@ ze_result_t cmdHealth::healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj)
 	memory *mem = d->dev->getMemory();
 	if (mem == nullptr) {
 		ERR("Failed to get memory handle\n");
+		setHealthFailureJson(jsonObj, "memory_health", "Failed to get memory handle.");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	result = mem->getMemoryHealth(&health);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get memory temperature thresholds: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		ERR("Failed to get memory health: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		setHealthFailureJson(jsonObj, "memory_health",
+							 std::string("Failed to get memory health: ") + l0_error_to_string(result));
 		return result;
 	}
 
