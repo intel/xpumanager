@@ -132,6 +132,19 @@ shellcheck:
 	@echo -e "\nshellcheck: linting shell scripts...\n"
 	git ls-files -z '*.sh' | xargs -0 shellcheck
 
+.PHONY: check-go-format
+check-go-format:
+	@echo "Checking gofmt formatting..."
+	@unformatted=$$(gofmt -l . | grep -v '^dist/'); \
+	if [ -n "$$unformatted" ]; then \
+		echo "ERROR: The following files are not gofmt formatted:"; \
+		echo "$$unformatted"; \
+		echo ""; \
+		echo "Run 'gofmt -w' on them to fix."; \
+		exit 1; \
+	fi; \
+	echo "✓ All Go files are properly formatted"
+
 .PHONY: check-modfiles
 check-modfiles:
 	@echo "Verifying go.mod files..."
