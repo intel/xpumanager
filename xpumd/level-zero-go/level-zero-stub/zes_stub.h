@@ -18,9 +18,12 @@ int sysman_state_load(const char *yaml_path);
 // config path. Thread-safe.
 void sysman_state_reset(void);
 
-// Return a copy of the effective config path used by the last successful
-// sysman_state_load. The caller is responsible for free()ing the returned
-// string. Returns NULL on allocation failure. Thread-safe.
+// Return a copy of the config path.
+// NOTE: This is not necessarily the path of the effective active config, e.g.
+// a sysman_state_load("good.yaml") followed by sysman_state_load("bad.yaml"),
+// the config path will be "bad.yaml" even if the latter failed to parse.
+// The caller is responsible for free()ing the returned string. Returns NULL on allocation failure.
+// Thread-safe.
 char *sysman_get_config_path(void);
 
 // Start a background inotify thread watching the currently-loaded config file.

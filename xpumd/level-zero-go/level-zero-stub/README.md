@@ -27,9 +27,11 @@ int sysman_state_load(const char *path);
 // config path. Thread-safe.
 void sysman_state_reset(void);
 
-// Return a copy of the effective config path used by the last successful
-// sysman_state_load. The caller is responsible for free()ing the returned
-// string. Returns NULL on allocation failure. Thread-safe.
+// Return a copy of the config path from the most recent sysman_state_load call.
+// NOTE: This may differ from the currently active config if that load failed.
+// The caller is responsible for free()ing the returned string.
+// Returns NULL on allocation failure.
+// Thread-safe.
 char *sysman_get_config_path(void);
 
 // Start a background inotify thread watching the currently-loaded config file.

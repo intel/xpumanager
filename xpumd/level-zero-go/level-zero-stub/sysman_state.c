@@ -590,6 +590,16 @@ static int sysman_state_load_locked(const char *path)
 		return 0;
 	}
 
+	// Record the effective path for callers (e.g. the Go file watcher) up
+	// front, even if parsing below fails, so that a watch can still be set
+	// up to pick up a corrected config file later.
+	int n = snprintf(g_config_path, sizeof(g_config_path), "%s", resolved);
+	if (n < 0 || n >= (int)sizeof(g_config_path)) {
+		fprintf(stderr, "stub: config path too long: '%s'\n", resolved);
+		g_config_path[0] = '\0';
+		return -1;
+	}
+
 	sysman_state_t *parsed = NULL;
 	cyaml_err_t err = cyaml_load_file(resolved, &cyaml_cfg, &sysman_state_schema, (cyaml_data_t **)&parsed, NULL);
 	if (err != CYAML_OK) {
@@ -597,8 +607,11 @@ static int sysman_state_load_locked(const char *path)
 		return -1;
 	}
 	if (!parsed) {
-		fprintf(stderr, "stub: YAML produced empty state in '%s'\n", resolved);
-		return -1;
+		// An empty YAML document is accepted: fall back to an empty state
+		// rather than treating it as an error.
+		fprintf(stderr, "stub: loaded empty state from '%s'\n", resolved);
+		sysman_state_reset_locked();
+		return 0;
 	}
 
 	if (!resolve_uuids(parsed)) {
@@ -618,8 +631,7 @@ static int sysman_state_load_locked(const char *path)
 	g_sysman_state = *parsed;
 	free(parsed);
 
-	// Record the effective path for callers (e.g. the Go file watcher).
-	snprintf(g_config_path, sizeof(g_config_path), "%s", resolved);
+	fprintf(stderr, "stub: successfully loaded state from '%s'\n", resolved);
 
 	return 0;
 }
@@ -685,8 +697,11 @@ __attribute__((constructor)) static void sysman_auto_init(void)
 	const char *path = getenv("SYSMAN_STUB_CONFIG");
 	if (!path)
 		return;
-	if (sysman_state_load(path) == 0)
-		sysman_watch_start();
+	// Attempt to load the config, but set up the watcher regardless of the
+	// result: even if the initial parse fails, the config path is recorded
+	// and the watcher can pick up a corrected file later.
+	sysman_state_load(path);
+	sysman_watch_start();
 }
 
 // Stop the watcher (if running) when the library is unloaded.
