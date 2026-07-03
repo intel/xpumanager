@@ -90,6 +90,22 @@ golint:
 	  -e PKG_CONFIG_PATH=/app/level-zero-stub \
 	  golangci/golangci-lint:v2.6.2 golangci-lint run --color=always
 
+.PHONY: check-format
+check-format: check-go-format
+
+.PHONY: check-go-format
+check-go-format:
+	@echo "Checking gofmt formatting..."
+	@unformatted=$$(gofmt -l .); \
+	if [ -n "$$unformatted" ]; then \
+		echo "ERROR: The following files are not gofmt formatted:"; \
+		echo "$$unformatted"; \
+		echo ""; \
+		echo "Run 'gofmt -w' on them to fix."; \
+		exit 1; \
+	fi; \
+	echo "✓ All Go files are properly formatted"
+
 .PHONY: shellcheck
 # <apt|dnf> install shellcheck
 shellcheck:
