@@ -24,8 +24,8 @@ jobs:
     - name: Check modfiles
       run: ./xpumd/scripts/make-dockerized.sh check-modfiles
 
-    - name: Golangci-lint
-      run: ./xpumd/scripts/make-dockerized.sh golint
+    - name: Linters
+      run: ./xpumd/scripts/make-dockerized.sh lint
 
     - name: Run tests
       run: ./xpumd/scripts/make-dockerized.sh test

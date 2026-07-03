@@ -115,6 +115,9 @@ test-integration-existing-cluster:
 		--use-existing-cluster \
 		--image-pull-policy=$(IMAGE_PULL_POLICY)
 
+.PHONY: lint
+lint: golint shellcheck
+
 .PHONY: golint
 golint:
 	@error=""; for module in $(GO_MODULES); do \
