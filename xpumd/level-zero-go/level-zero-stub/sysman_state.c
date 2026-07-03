@@ -27,6 +27,11 @@ static char g_config_path[PATH_MAX];
 // Guards access to g_sysman_state and g_config_path.
 static pthread_mutex_t g_state_lock = PTHREAD_MUTEX_INITIALIZER;
 
+#define LOG_ERROR(fmt, ...) fprintf(stderr, "stub: ERROR: " fmt "\n", ##__VA_ARGS__)
+// Like perror() but consistent with LOG_ERROR
+#define LOG_ERRNO(fmt, ...) fprintf(stderr, "stub: ERROR: " fmt ": %s\n", ##__VA_ARGS__, strerror(errno))
+#define LOG_INFO(fmt, ...) fprintf(stderr, "stub: INFO: " fmt "\n", ##__VA_ARGS__)
+
 // ------------------------------------------------------------------
 // Config file watcher
 // ------------------------------------------------------------------
@@ -62,7 +67,7 @@ static void *watch_thread_fn(void *arg)
 	char *dirc = strdup(g_watch_path);
 	char *fnamec = strdup(g_watch_path);
 	if (!dirc || !fnamec) {
-		fprintf(stderr, "stub watcher: OOM in strdup\n");
+		LOG_ERROR("watcher: OOM in strdup");
 		goto error;
 	}
 
@@ -71,12 +76,12 @@ static void *watch_thread_fn(void *arg)
 
 	int ifd = inotify_init1(IN_NONBLOCK);
 	if (ifd < 0) {
-		perror("stub watcher: inotify_init1");
+		LOG_ERRNO("watcher: inotify_init1");
 		goto error;
 	}
 	int wd = inotify_add_watch(ifd, dname, IN_CLOSE_WRITE | IN_MOVED_TO);
 	if (wd < 0) {
-		perror("stub watcher: inotify_add_watch");
+		LOG_ERRNO("watcher: inotify_add_watch");
 		close(ifd);
 		goto error;
 	}
@@ -106,7 +111,7 @@ static void *watch_thread_fn(void *arg)
 			if (r < 0) {
 				if (errno == EINTR)
 					continue;
-				perror("stub watcher: poll");
+				LOG_ERRNO("watcher: poll");
 				break;
 			}
 
@@ -188,19 +193,19 @@ static void sysman_watch_stop_locked(void)
 static int sysman_watch_start_locked(void)
 {
 	if (g_config_path[0] == '\0') {
-		fprintf(stderr, "stub watcher: no config path known; call sysman_state_load first\n");
+		LOG_ERROR("watcher: no config path known; call sysman_state_load first");
 		return -1;
 	}
 	snprintf(g_watch_path, sizeof(g_watch_path), "%s", g_config_path);
 
 	if (g_watch_thread_started) {
-		fprintf(stderr, "stub watcher: already watching\n");
+		LOG_ERROR("watcher: already watching");
 		return -1;
 	}
 
 	g_stop_efd = eventfd(0, EFD_NONBLOCK);
 	if (g_stop_efd < 0) {
-		perror("stub watcher: eventfd");
+		LOG_ERRNO("watcher: eventfd");
 		return -1;
 	}
 
@@ -210,7 +215,7 @@ static int sysman_watch_start_locked(void)
 
 	int rc = pthread_create(&g_watch_thread, NULL, watch_thread_fn, NULL);
 	if (rc != 0) {
-		fprintf(stderr, "stub watcher: pthread_create: %s\n", strerror(rc));
+		LOG_ERROR("watcher: pthread_create: %s", strerror(rc));
 		close(g_stop_efd);
 		g_stop_efd = -1;
 		return -1;
@@ -555,11 +560,11 @@ static bool resolve_uuids(sysman_state_t *state)
 			// then overlay the parsed UUID string onto .base.core.uuid.id.
 			p->base.core = p->core.ze;
 			if (!parse_uuid(p->core.uuid.id, &p->base.core.uuid.id)) {
-				fprintf(stderr, "stub: invalid Core.Uuid '%s' in device %u of driver %u\n", p->core.uuid.id, i, d);
+				LOG_ERROR("invalid Core.Uuid '%s' in device %u of driver %u", p->core.uuid.id, i, d);
 				return false;
 			}
 			if (!parse_uuid(p->uuid.id, &p->extended_properties.uuid.id)) {
-				fprintf(stderr, "stub: invalid Uuid '%s' in device %u of driver %u\n", p->uuid.id, i, d);
+				LOG_ERROR("invalid Uuid '%s' in device %u of driver %u", p->uuid.id, i, d);
 				return false;
 			}
 		}
@@ -595,7 +600,7 @@ static int sysman_state_load_locked(const char *path)
 	// up to pick up a corrected config file later.
 	int n = snprintf(g_config_path, sizeof(g_config_path), "%s", resolved);
 	if (n < 0 || n >= (int)sizeof(g_config_path)) {
-		fprintf(stderr, "stub: config path too long: '%s'\n", resolved);
+		LOG_ERROR("config path too long: '%s'", resolved);
 		g_config_path[0] = '\0';
 		return -1;
 	}
@@ -603,13 +608,13 @@ static int sysman_state_load_locked(const char *path)
 	sysman_state_t *parsed = NULL;
 	cyaml_err_t err = cyaml_load_file(resolved, &cyaml_cfg, &sysman_state_schema, (cyaml_data_t **)&parsed, NULL);
 	if (err != CYAML_OK) {
-		fprintf(stderr, "stub: YAML parse error in '%s': %s\n", resolved, cyaml_strerror(err));
+		LOG_ERROR("YAML parse error in '%s': %s", resolved, cyaml_strerror(err));
 		return -1;
 	}
 	if (!parsed) {
 		// An empty YAML document is accepted: fall back to an empty state
 		// rather than treating it as an error.
-		fprintf(stderr, "stub: loaded empty state from '%s'\n", resolved);
+		LOG_INFO("loaded empty state from '%s'", resolved);
 		sysman_state_reset_locked();
 		return 0;
 	}
@@ -631,7 +636,7 @@ static int sysman_state_load_locked(const char *path)
 	g_sysman_state = *parsed;
 	free(parsed);
 
-	fprintf(stderr, "stub: successfully loaded state from '%s'\n", resolved);
+	LOG_INFO("successfully loaded state from '%s'", resolved);
 
 	return 0;
 }
