@@ -40,18 +40,18 @@ for pkg in $PKGS; do
         # (MIT-licensed but no file to copy), tolerate missing copyright file
         libze1)
             install -Dt "$OUT/usr/share/doc/$pkg" \
-                    /usr/share/doc/$pkg/copyright 2>/dev/null || true
+                    "/usr/share/doc/$pkg/copyright" 2>/dev/null || true
             ;;
         # Non-(L)GPL packages: copyright notice only
         libigdgmm12|libze-intel-gpu1|libcyaml1|libyaml-0-2)
             install -Dt "$OUT/usr/share/doc/$pkg" \
-                    /usr/share/doc/$pkg/copyright
+                    "/usr/share/doc/$pkg/copyright"
             ;;
         # Default: treat as (L)GPL, download source archive and copy copyright
         *)
             ( cd "$OUT/sources" && apt-get source --download-only "$pkg" )
             install -Dt "$OUT/usr/share/doc/$pkg" \
-                    /usr/share/doc/$pkg/copyright
+                    "/usr/share/doc/$pkg/copyright"
             ;;
     esac
 done

@@ -94,7 +94,7 @@ echo "Converting $count metrics in '$old' to '$new'..." 1>&2
 #   - engine ratio averaging
 # - attribute names in queries
 # - attribute names in legends
-cat "$old" | sed \
+sed "$old" \
 -e 's/label_values(xpum_[a-z_]*/label_values(hw_gpu_info/' \
 \
 -e 's/xpum_energy_joules_total/hw_energy_joules_total/g' \
