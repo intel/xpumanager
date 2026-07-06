@@ -27,7 +27,7 @@ func NewFactory() receiver.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		Directory:        "",
+		Directory:       "",
 		IgnoreOlderThan: 0,
 	}
 }
