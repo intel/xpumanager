@@ -62,6 +62,11 @@ generate:
 format:
 	@clang-format -i *.c *.h
 
+.PHONY: check-format
+check-format:
+	@echo "Checking clang-format formatting..."
+	@clang-format --dry-run --Werror *.c *.h
+
 .PHONY: clean
 clean:
 	rm -f $(OBJS) $(LIB) $(SOLINK) $(TESTS)

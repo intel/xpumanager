@@ -92,6 +92,7 @@ golint:
 
 .PHONY: check-format
 check-format: check-go-format
+	$(MAKE) -C level-zero-stub check-format
 
 .PHONY: check-go-format
 check-go-format:
