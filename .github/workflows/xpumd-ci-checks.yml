@@ -27,6 +27,9 @@ jobs:
     - name: Linters
       run: ./xpumd/scripts/make-dockerized.sh lint
 
+    - name: Check formatting
+      run: ./xpumd/scripts/make-dockerized.sh check-format
+
     - name: Run tests
       run: ./xpumd/scripts/make-dockerized.sh test
 

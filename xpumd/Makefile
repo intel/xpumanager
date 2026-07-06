@@ -135,6 +135,10 @@ shellcheck:
 	@echo -e "\nshellcheck: linting shell scripts...\n"
 	git ls-files -z '*.sh' | xargs -0 shellcheck
 
+.PHONY: check-format
+check-format: check-go-format
+	$(MAKE) -C level-zero-go check-format
+
 .PHONY: check-go-format
 check-go-format:
 	@echo "Checking gofmt formatting..."
