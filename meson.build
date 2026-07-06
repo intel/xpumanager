@@ -182,9 +182,12 @@ if is_windows
     '/NXCOMPAT',
   ]
 elif is_linux
+  compile_args += ['-U_FORTIFY_SOURCE']
+  # _FORTIFY_SOURCE requires optimization (-O); skip it for debug builds (-O0)
+  if not is_debug
+    compile_args += ['-D_FORTIFY_SOURCE=3']
+  endif
   compile_args += [
-    '-U_FORTIFY_SOURCE',
-    '-D_FORTIFY_SOURCE=3',
     '-fstack-protector-strong',
     '-fstack-clash-protection',
     '-Wformat-security',
