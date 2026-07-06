@@ -1052,8 +1052,10 @@ static void test_error_cases(void)
 	ASSERT_ZE_RET("zesRasGetConfig: NULL handle", zesRasGetConfig(bad_ras, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesRasSetConfig: NULL handle", zesRasSetConfig(bad_ras, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesRasGetState: NULL handle", zesRasGetState(bad_ras, 0, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
-	ASSERT_ZE_RET("zesRasGetStateExp: NULL handle", zesRasGetStateExp(bad_ras, 0, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
-	ASSERT_ZE_RET("zesRasClearStateExp: NULL handle", zesRasClearStateExp(bad_ras, 0), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesRasGetStateExp: NULL handle", zesRasGetStateExp(bad_ras, 0, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesRasClearStateExp: NULL handle", zesRasClearStateExp(bad_ras, 0),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 
 	// Schedulers
 	{
@@ -1194,17 +1196,13 @@ static void test_unsupported_features(void)
 	sysman_state_lock();
 	sysman_drivers_state_t *drv = &g_sysman_state.system.drivers[0];
 	ASSERT("driver UnsupportedFeatures count", drv->unsupported_features_count == 2);
-	ASSERT("driver UnsupportedFeatures[0]",
-		   drv->unsupported_features[0] == UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET);
-	ASSERT("driver UnsupportedFeatures[1]",
-		   drv->unsupported_features[1] == UNSUPPORTED_FEATURE_EVENT_LISTEN);
+	ASSERT("driver UnsupportedFeatures[0]", drv->unsupported_features[0] == UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET);
+	ASSERT("driver UnsupportedFeatures[1]", drv->unsupported_features[1] == UNSUPPORTED_FEATURE_EVENT_LISTEN);
 
 	sysman_device_state_t *dev = &drv->devices[0];
 	ASSERT("device UnsupportedFeatures count", dev->unsupported_features_count == 2);
-	ASSERT("device UnsupportedFeatures[0]",
-		   dev->unsupported_features[0] == UNSUPPORTED_FEATURE_GET_STATE);
-	ASSERT("device UnsupportedFeatures[1]",
-		   dev->unsupported_features[1] == UNSUPPORTED_FEATURE_FANS);
+	ASSERT("device UnsupportedFeatures[0]", dev->unsupported_features[0] == UNSUPPORTED_FEATURE_GET_STATE);
+	ASSERT("device UnsupportedFeatures[1]", dev->unsupported_features[1] == UNSUPPORTED_FEATURE_FANS);
 	sysman_state_unlock();
 
 	sysman_state_reset();

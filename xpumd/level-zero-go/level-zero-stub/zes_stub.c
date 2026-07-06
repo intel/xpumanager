@@ -381,8 +381,7 @@ ze_result_t zesDevicePciGetProperties(zes_device_handle_t hDevice, zes_pci_prope
 	pProperties->stype = stype;
 	pProperties->pNext = pNext;
 	if (pNext) {
-		zes_pci_link_speed_downgrade_ext_properties_t *ext =
-			(zes_pci_link_speed_downgrade_ext_properties_t *)pNext;
+		zes_pci_link_speed_downgrade_ext_properties_t *ext = (zes_pci_link_speed_downgrade_ext_properties_t *)pNext;
 		if (ext->stype == ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES) {
 			pNext = ext->pNext;
 			*ext = dev->pci.properties->link_speed_downgrade;
@@ -413,8 +412,7 @@ ze_result_t zesDevicePciGetState(zes_device_handle_t hDevice, zes_pci_state_t *p
 	pState->stype = stype;
 	pState->pNext = pNext;
 	if (pNext) {
-		zes_pci_link_speed_downgrade_ext_state_t *ext =
-			(zes_pci_link_speed_downgrade_ext_state_t *)pNext;
+		zes_pci_link_speed_downgrade_ext_state_t *ext = (zes_pci_link_speed_downgrade_ext_state_t *)pNext;
 		if (ext->stype == ZES_STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE) {
 			pNext = ext->pNext;
 			*ext = dev->pci.state->link_speed_downgrade;
