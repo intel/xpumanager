@@ -110,15 +110,8 @@ void PsTextPrinter::print(nlohmann::ordered_json *jsonObj)
 // NOLINTNEXTLINE (readability-identifier-naming) // nlohmann_json requires to_json for ADL
 void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
 {
-	// Clean process name by truncating at first null character
-	std::string cleanProcessName = procInfo.commandName;
-	size_t nullPos = cleanProcessName.find('\0');
-	if (nullPos != std::string::npos) {
-		cleanProcessName = cleanProcessName.substr(0, nullPos);
-	}
-
 	jsonObj = nlohmann::ordered_json{{"process_id", procInfo.processId},
-									 {"process_name", cleanProcessName},
+									 {"process_name", procInfo.commandName},
 									 {"device_id", procInfo.devId},
 									 {"engines", static_cast<uint64_t>(procInfo.engines)},
 									 {"shared_mem_size", procInfo.sharedSize},
@@ -147,8 +140,19 @@ ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInf
 	}
 	result = ps->getState(dev->zesDeviceHdl, &processList);
 	for (auto &p : processList) {
-		psInfoList.push_back(
-			{p.processId, GETPROCESSNAME(p.processId), dev->index, p.engines, p.sharedSize / 1024, p.memSize / 1024});
+		std::string procName = GETPROCESSNAME(p.processId);
+		size_t nullPos = procName.find('\0');
+		if (nullPos != std::string::npos) {
+			procName = procName.substr(0, nullPos);
+		}
+		size_t slashPos = procName.rfind('/');
+		if (slashPos != std::string::npos) {
+			procName = procName.substr(slashPos + 1);
+		}
+		if (procName == progName) {
+			continue;
+		}
+		psInfoList.push_back({p.processId, procName, dev->index, p.engines, p.sharedSize / 1024, p.memSize / 1024});
 	}
 	return result;
 }
