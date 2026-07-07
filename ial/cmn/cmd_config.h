@@ -10,6 +10,7 @@
 #include "cmds.h"
 #include <os.h>
 #include <string>
+#include <string_view>
 
 enum configCmdType
 {
@@ -35,6 +36,61 @@ enum configCmdType
 	FANID,
 	TOTAL_CONFIG,
 };
+
+/**
+ * @brief Returns the string name for a config command.
+ *
+ * @param[in] t The config command type.
+ * @return std::string_view The CLI flag name (e.g. "--memoryecc"), or "" if the command has no flag name.
+ */
+constexpr std::string_view configCmdName(configCmdType t) noexcept
+{
+	switch (t) {
+	case CONFIGHELP:
+		return "--help";
+	case CONFIGJSON:
+		return "--json";
+	case CONFIGDEVICE:
+		return "--device";
+	case TILE:
+		return "--tile";
+	case FREQUENCYRANGE:
+		return "--frequencyrange";
+	case POWERLIMIT:
+		return "--powerlimit";
+	case POWERTYPE:
+		return "--powertype";
+	case STANDBYMODE:
+		return "--standby";
+	case SCHEDULERMODE:
+		return "--scheduler";
+	case MEMORYECC:
+		return "--memoryecc";
+	case RESET:
+		return "--reset";
+	case COLDRESET:
+		return "--coldreset";
+	case IGNORE_GPU_USER_PROCESSES:
+		return "--ignore-gpu-user-processes";
+	case FORCE_RESET_GPUS:
+		return "--force-reset-gpus";
+	case CLEARRAS:
+		return "--clear-ras-errors";
+	case PCIEDOWNGRADE:
+		return "--pciedowngrade";
+	case FANSPEED:
+		return "--fanspeed";
+	case FANCURVE:
+		return "--fancurve";
+	case FANCURVERPM:
+		return "--fancurve-rpm";
+	case FANID:
+		return "--fanid";
+	case TOTAL_CONFIG:
+		return "";
+	}
+	return "";
+}
 
 struct configCmdStruct;
 
@@ -69,6 +125,7 @@ struct configCmdStruct
 	configSubCmdFunc func{nullptr};
 	bool enabled{false};
 	std::string val{};
+	bool canRunOnIGPU{false};
 };
 
 #endif

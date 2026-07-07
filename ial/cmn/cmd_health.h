@@ -97,6 +97,7 @@ struct healthSubCmdStruct
 {
 	int type;
 	healthSubCmdFunc func;
+	bool canRunOnIGPU{false};
 };
 
 #endif

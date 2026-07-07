@@ -53,10 +53,10 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGJSON, {}},
 	{configCmdType::CONFIGDEVICE, {}},
 	{configCmdType::TILE, {}},
-	{configCmdType::FREQUENCYRANGE, {.func = &cmdConfig::setFrequencyRange}},
+	{configCmdType::FREQUENCYRANGE, {.func = &cmdConfig::setFrequencyRange, .canRunOnIGPU = true}},
 	{configCmdType::POWERLIMIT, {.func = &cmdConfig::setPowerLimit}},
 	{configCmdType::STANDBYMODE, {.func = &cmdConfig::setStandby}},
-	{configCmdType::SCHEDULERMODE, {.func = &cmdConfig::setScheduler}},
+	{configCmdType::SCHEDULERMODE, {.func = &cmdConfig::setScheduler, .canRunOnIGPU = true}},
 	{configCmdType::MEMORYECC, {.func = &cmdConfig::setMemoryEcc}},
 	{configCmdType::PCIEDOWNGRADE, {.func = &cmdConfig::setPCIeGenUpdate}},
 	{configCmdType::RESET, {.func = &cmdConfig::resetDevice}},
@@ -2181,13 +2181,24 @@ int cmdConfig::run(arg_struct *args)
 		return ZE_RESULT_SUCCESS;
 	}
 
-	// Otherwise, execute set commands
+	// Apply the requested set commands. An unsupported command on an iGPU is skipped, not
+	// failed, since it may still apply to other selected devices. Only report UNSUPPORTED
+	// if nothing ran; a real execution error always takes precedence.
 	ze_result_t firstError = ZE_RESULT_SUCCESS;
-	bool hadError = false;
+	bool hadError = false;			  // a supported command ran but failed
+	bool anyCommandAttempted = false; // a supported command ran on at least one device
+	bool skippedUnsupported = false;  // a command was skipped as unsupported on the target device
 
 	for (auto &device : deviceList) {
 		for (const auto &cmd : configCmds) {
 			if (cmd.second.enabled && cmd.second.func != nullptr) {
+				if (device.dev->isIGPU() && !cmd.second.canRunOnIGPU) {
+					INFO("Command {} is not supported on integrated GPU (BDF: {}), skipping\n",
+						 configCmdName(cmd.first), device.dev->getBDFStr());
+					skippedUnsupported = true;
+					continue;
+				}
+				anyCommandAttempted = true;
 				result = (this->*cmd.second.func)(&device);
 				if (result != ZE_RESULT_SUCCESS) {
 					if (!hadError) {
@@ -2202,6 +2213,12 @@ int cmdConfig::run(arg_struct *args)
 		}
 	}
 
-	// Return the first error encountered, or success if all succeeded
-	return hadError ? firstError : ZE_RESULT_SUCCESS;
+	if (hadError) {
+		return firstError;
+	}
+	if (skippedUnsupported && !anyCommandAttempted) {
+		ERR("Requested command(s) are not supported on the selected device(s).\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	return ZE_RESULT_SUCCESS;
 }

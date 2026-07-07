@@ -60,12 +60,12 @@ static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
 };
 
 healthSubCmdStruct componentCmds[] = {
-	{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature},
-	{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature},
-	{healthSubCmdType::HEALTH_POWER, &cmdHealth::gpuPower},
-	{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory},
-	{healthSubCmdType::HEALTH_UNSUPPORTED0, &cmdHealth::unsupported},
-	{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency},
+	{healthSubCmdType::HEALTH_CORETEMPERATURE, &cmdHealth::coreTemperature, false},
+	{healthSubCmdType::HEALTH_MEMORYTEMPERATURE, &cmdHealth::memoryTemperature, false},
+	{healthSubCmdType::HEALTH_POWER, &cmdHealth::gpuPower, false},
+	{healthSubCmdType::HEALTH_MEMORY, &cmdHealth::healthMemory, false},
+	{healthSubCmdType::HEALTH_UNSUPPORTED0, &cmdHealth::unsupported, false},
+	{healthSubCmdType::HEALTH_FREQUENCY, &cmdHealth::frequency, true},
 };
 
 /**
@@ -228,6 +228,11 @@ ze_result_t cmdHealth::allComponents(devInfo *d, nlohmann::ordered_json *jsonObj
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	for (const auto &test : componentCmds) {
+		// If the device is an iGPU and the test is not supported for iGPUs, skip it
+		if (d->dev->isIGPU() && !test.canRunOnIGPU) {
+			DBG("Skipping test {} for integrated GPU (BDF: {})\n", test.type, d->dev->getBDFStr());
+			continue;
+		}
 		DBG("Running test: {}\n", test.type);
 		result = (this->*test.func)(d, jsonObj);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -257,6 +262,11 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
 
 	for (const auto &test : componentCmds) {
 		if (test.type == stoi(healthCmds[healthCmdType::HEALTH_COMPONENT].val)) {
+			// If the device is an iGPU and the test is not supported for iGPUs, skip it
+			if (d->dev->isIGPU() && !test.canRunOnIGPU) {
+				DBG("Skipping test {} for integrated GPU (BDF: {})\n", test.type, d->dev->getBDFStr());
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
 			DBG("Running test: {}\n", test.type);
 			found = true;
 			result = (this->*test.func)(d, jsonObj);
