@@ -187,7 +187,7 @@ public:
 									 // order to use partial designated initializers
 		std::string noDataText = "No data";
 		bool showRowNumbers = false;
-		int maxCellWidth = 50; // Prevent extremely wide columns
+		int maxCellWidth = 80; // Default wrap/truncation width for auto-sized columns
 	};
 
 	struct TableStats
@@ -205,6 +205,7 @@ private:
 		std::vector<std::string> extraHeaders; // Additional header lines (second and further header rows)
 		mutable int width;
 		Align alignment;
+		bool wrap = true; // Participate in word-wrap when TableBuilder::wordWrap is enabled
 
 		Column(std::string h, int w, Align a) : header(std::move(h)), width(w), alignment(a) {}
 	};
@@ -216,6 +217,7 @@ private:
 	bool suppressHeaderSep = true;    // Suppress the border line drawn after column headers
 	bool suppressHeaderColSep = true; // Suppress inner | between column headers
 	bool suppressDataColSep = true;   // Suppress inner | between data cells
+	bool wordWrap = false;            // Wrap cell text at word boundaries instead of truncating
 	mutable bool widthsCalculated = false;
 	OutputFormat outputFormat = OutputFormat::Table;
 	TableConfig config;
@@ -248,6 +250,12 @@ private:
 	std::string getBorderLine(int rowNumWidth = 0, BorderStyle style = BorderStyle::Normal) const;
 
 	void alignTextDirect(std::string &result, std::string_view text, int width, Align alignment) const;
+
+	/**
+	 * @brief Split @p text into lines of at most @p width display characters, breaking at word boundaries.
+	 * Words longer than @p width are hard-broken at the character level.
+	 */
+	[[nodiscard]] std::vector<std::string> wrapText(std::string_view text, int width) const;
 
 	std::string toTableString() const;
 
@@ -430,6 +438,23 @@ public:
 	 * @brief Disable automatic column width sizing
 	 */
 	TableBuilder &disableAutoSizing() noexcept;
+
+	/**
+	 * @brief Enable word-wrap: cells that exceed their column width break at word boundaries into multiple lines.
+	 * Pairs naturally with setMaxCellWidth() — the cell width cap becomes the wrap width.
+	 */
+	TableBuilder &enableWordWrap() noexcept;
+
+	/**
+	 * @brief Disable word-wrap (default). Cells wider than their column are truncated with '...'.
+	 */
+	TableBuilder &disableWordWrap() noexcept;
+
+	/**
+	 * @brief Enable or disable word-wrap for a single column.
+	 * Setting @p enable to true also turns on the global word-wrap flag.
+	 */
+	TableBuilder &setColumnWrap(size_t colIndex, bool enable);
 
 	/**
 	 * @brief Set output format (Table or JSON)

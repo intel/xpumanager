@@ -1421,7 +1421,7 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 {
 	TRACING();
 	TableBuilder table;
-	table.setMaxCellWidth(120).addColumn("Metric", Align::Left).addColumn("Value", Align::Left);
+	table.setMaxCellWidth(120).enableWordWrap().addColumn("Metric", Align::Left).addColumn("Value", Align::Left);
 
 	uint32_t deviceIndex = deviceJson.value("device_index", 0);
 	std::string pciBdf = deviceJson.value("pci_bdf", "N/A");

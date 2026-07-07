@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <format>
+#include <ranges>
 #include <unordered_set>
 #include <stdexcept>
 #include <vector>
@@ -106,8 +107,8 @@ void TableBuilder::calculateWidths() const
 		return w - 3;
 	};
 	auto ensureFits = [&](std::string_view text) {
-		int textW = displayWidth(text);
-		int deficit = textW - computeContentWidth();
+		int const textW = displayWidth(text);
+		int const deficit = textW - computeContentWidth();
 		if (deficit > 0) {
 			columns.back().width += deficit;
 		}
@@ -226,6 +227,84 @@ void TableBuilder::alignTextDirect(std::string &result, std::string_view text, i
 		break;
 	}
 	}
+}
+
+std::vector<std::string> TableBuilder::wrapText(std::string_view text, int width) const
+{
+	if (width <= 0 || text.empty()) {
+		return {std::string{text}};
+	}
+	if (displayWidth(text) <= width) {
+		return {std::string{text}};
+	}
+
+	// Returns the byte span of sv covering up to n display characters.
+	auto takeChars = [](std::string_view sv, int n) -> std::string_view {
+		int count = 0;
+		size_t i = 0;
+		while (i < sv.size() && count < n) {
+			if ((static_cast<unsigned char>(sv[i]) & 0xC0U) != 0x80U) {
+				++count;
+			}
+			++i;
+		}
+		while (i < sv.size() && (static_cast<unsigned char>(sv[i]) & 0xC0U) == 0x80U) {
+			++i;
+		}
+		return sv.substr(0, i);
+	};
+
+	std::vector<std::string> lines;
+	std::string current;
+	int curW = 0;
+
+	// Start a new line with word; hard-break if word itself exceeds width.
+	// Precondition: current must be empty.
+	// wordW is pre-computed by the caller to avoid rescanning word.
+	auto beginLine = [&](std::string_view word, int wordW) {
+		if (wordW <= width) {
+			current = word;
+			curW    = wordW;
+			return;
+		}
+		std::string_view rem = word;
+		while (displayWidth(rem) > width) {
+			auto chunk = takeChars(rem, width);
+			lines.emplace_back(chunk);
+			rem = rem.substr(chunk.size());
+		}
+		current = rem;
+		curW    = displayWidth(rem);
+	};
+
+	for (auto token : text | std::views::split(' ')) {
+		std::string_view const word{token.begin(), token.end()};
+		if (word.empty()) {
+			continue;
+		}
+
+		int const wordW = displayWidth(word);
+
+		if (current.empty()) {
+			beginLine(word, wordW);
+		} else if (curW + 1 + wordW <= width) {
+			current += ' ';
+			current += word;
+			curW    += 1 + wordW;
+		} else {
+			lines.push_back(std::move(current));
+			current.clear();
+			curW = 0;
+			beginLine(word, wordW);
+		}
+	}
+
+	if (!current.empty()) {
+		lines.push_back(std::move(current));
+	}
+
+	// all-spaces input: emit a single blank line
+	return lines.empty() ? std::vector<std::string>{""} : lines;
 }
 
 std::string TableBuilder::toTableString() const
@@ -422,30 +501,58 @@ std::string TableBuilder::toTableString() const
 					result += '\n';
 				}
 			} else {
-				// Regular single-line row
-				result += config.verticalChar;
+				// Regular row — compute wrapped cells when word-wrap is enabled.
+				std::vector<std::vector<std::string>> wrappedCells;
+				size_t numLines = 1;
 
-				// Row number
-				if (config.showRowNumbers) {
-					result += ' ';
-					alignTextDirect(result, std::to_string(rowIdx + 1), rowNumWidth, Align::Right);
-					result += std::format(" {}", config.verticalChar);
-				}
-
-				for (size_t i = 0; i < columns.size(); ++i) {
-					result += ' ';
-					std::string_view const cellContent = (i < row.cells.size() && !row.cells[i].empty())
-															 ? std::string_view{row.cells[i]}
-															 : std::string_view{config.emptyCellText};
-					alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
-					const bool isLast = (i == columns.size() - 1);
-					if (!suppressDataColSep || isLast) {
-						result += std::format(" {}", config.verticalChar);
-					} else {
-						result += "  ";
+				if (wordWrap) {
+					wrappedCells.resize(columns.size());
+					for (size_t i = 0; i < columns.size(); ++i) {
+						std::string_view const rawContent = (i < row.cells.size() && !row.cells[i].empty())
+																? std::string_view{row.cells[i]}
+																: std::string_view{config.emptyCellText};
+						wrappedCells[i] = columns[i].wrap
+								? wrapText(rawContent, columns[i].width)
+								: std::vector{std::string{rawContent}};
+						numLines = std::max(numLines, wrappedCells[i].size());
 					}
 				}
-				result += '\n';
+
+				for (size_t line = 0; line < numLines; ++line) {
+					result += config.verticalChar;
+
+					if (config.showRowNumbers) {
+						result += ' ';
+						if (line == 0) {
+							alignTextDirect(result, std::to_string(rowIdx + 1), rowNumWidth, Align::Right);
+						} else {
+							result.append(static_cast<size_t>(rowNumWidth), ' ');
+						}
+						result += std::format(" {}", config.verticalChar);
+					}
+
+					for (size_t i = 0; i < columns.size(); ++i) {
+						result += ' ';
+						std::string_view cellContent;
+						if (wordWrap) {
+							cellContent = (line < wrappedCells[i].size())
+									? std::string_view{wrappedCells[i][line]}
+									: std::string_view{};
+						} else {
+							cellContent = (i < row.cells.size() && !row.cells[i].empty())
+									? std::string_view{row.cells[i]}
+									: std::string_view{config.emptyCellText};
+						}
+						alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
+						const bool isLast = (i == columns.size() - 1);
+						if (!suppressDataColSep || isLast) {
+							result += std::format(" {}", config.verticalChar);
+						} else {
+							result += "  ";
+						}
+					}
+					result += '\n';
+				}
 			}
 		}
 	}
@@ -618,6 +725,30 @@ TableBuilder &TableBuilder::disableAutoSizing() noexcept
 	return *this;
 }
 
+TableBuilder &TableBuilder::enableWordWrap() noexcept
+{
+	wordWrap = true;
+	return *this;
+}
+
+TableBuilder &TableBuilder::disableWordWrap() noexcept
+{
+	wordWrap = false;
+	return *this;
+}
+
+TableBuilder &TableBuilder::setColumnWrap(size_t colIndex, bool enable)
+{
+	if (colIndex >= columns.size()) {
+		throw std::out_of_range("Column index out of range");
+	}
+	columns[colIndex].wrap = enable;
+	if (enable) {
+		wordWrap = true;
+	}
+	return *this;
+}
+
 TableBuilder &TableBuilder::setOutputFormat(OutputFormat format) noexcept
 {
 	outputFormat = format;
@@ -701,7 +832,7 @@ int TableBuilder::getTotalWidth() const
 	calculateWidths();
 	int total = 1; // left border char
 	if (config.showRowNumbers) {
-		int rw = std::max(3, static_cast<int>(std::to_string(rows.size()).length()) + 2);
+		int const rw = std::max(3, static_cast<int>(std::to_string(rows.size()).length()) + 2);
 		total += rw + 3;
 	}
 	for (const auto &col : columns) {
@@ -715,7 +846,7 @@ TableBuilder &TableBuilder::padToWidth(int targetWidth)
 	if (columns.empty()) {
 		return *this;
 	}
-	int deficit = targetWidth - getTotalWidth();
+	int const deficit = targetWidth - getTotalWidth();
 	if (deficit > 0) {
 		columns.back().width += deficit;
 		widthCache.clear();

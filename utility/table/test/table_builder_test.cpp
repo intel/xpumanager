@@ -480,8 +480,18 @@ TEST_CASE("TableBuilder chaining methods") {
     CHECK_FALSE(result.empty());
 }
 
-// Helper function for counting pipes on a line
+// Helper functions
 namespace {
+    int countOccurrences(const std::string& str, std::string_view needle) {
+        int count = 0;
+        std::size_t pos = 0;
+        while ((pos = str.find(needle, pos)) != std::string::npos) {
+            ++count;
+            pos += needle.size();
+        }
+        return count;
+    }
+
     int pipeCountOnLine(const std::string& str, std::string_view needle) {
         auto pos = str.find(needle);
         if (pos == std::string::npos) return -1;
@@ -489,7 +499,8 @@ namespace {
         lineStart = (lineStart == std::string::npos) ? 0 : lineStart + 1;
         auto lineEnd = str.find('\n', pos);
         if (lineEnd == std::string::npos) lineEnd = str.size();
-        return static_cast<int>(std::count(str.begin() + lineStart, str.begin() + lineEnd, '|'));
+        return static_cast<int>(std::count(str.begin() + static_cast<std::ptrdiff_t>(lineStart),
+                                            str.begin() + static_cast<std::ptrdiff_t>(lineEnd), '|'));
     }
 }
 
@@ -663,4 +674,114 @@ TEST_CASE("TableBuilder clear also clears preHeaderRows") {
 
     CHECK_MESSAGE(table.toString().find("MyBanner") == std::string::npos,
                   "banner must not appear after clear()");
+}
+
+// ── wrapText ─────────────────────────────────────────────────────────────────
+
+TEST_CASE("wrapText - content fits within width, no wrapping") {
+    TableBuilder table;
+    table.addColumn("Col", 20).disableAutoSizing().setColumnWrap(0, true).addRow("short text");
+    auto str = table.toString();
+    CHECK_MESSAGE(countOccurrences(str, "short text") == 1, "content should appear exactly once");
+}
+
+TEST_CASE("wrapText - word exactly fills column, no wrap") {
+    TableBuilder table;
+    table.addColumn("Col", 5).disableAutoSizing().setColumnWrap(0, true).addRow("Hello");
+    auto str = table.toString();
+    CHECK_MESSAGE(countOccurrences(str, "Hello") == 1, "exact-fit word should appear once");
+}
+
+TEST_CASE("wrapText - wraps at word boundary") {
+    // width=7: "hello"(5) fits but "hello world"(11) does not → split
+    TableBuilder table;
+    table.addColumn("Col", 7).disableAutoSizing().setColumnWrap(0, true).addRow("hello world");
+    auto str = table.toString();
+    CHECK(str.find("hello") != std::string::npos);
+    CHECK(str.find("world") != std::string::npos);
+    CHECK_MESSAGE(str.find("hello world") == std::string::npos, "wrapped words must not appear on same line");
+}
+
+TEST_CASE("wrapText - greedy packing: fits as many words as possible per line") {
+    // width=9: "hello"(5) alone; "world"(5)+"foo"(3)+space(1)=9 fits on second line
+    TableBuilder table;
+    table.addColumn("Col", 9).disableAutoSizing().setColumnWrap(0, true).addRow("hello world foo");
+    auto str = table.toString();
+    CHECK(str.find("hello") != std::string::npos);
+    CHECK_MESSAGE(str.find("world foo") != std::string::npos, "world and foo should be packed onto one line");
+}
+
+TEST_CASE("wrapText - hard break when single word exceeds column width") {
+    // "HelloWorld"(10) with width=5: hard-breaks into "Hello" + "World"
+    TableBuilder table;
+    table.addColumn("Col", 5).disableAutoSizing().setColumnWrap(0, true).addRow("HelloWorld");
+    auto str = table.toString();
+    CHECK(str.find("Hello") != std::string::npos);
+    CHECK(str.find("World") != std::string::npos);
+}
+
+TEST_CASE("wrapText - consecutive spaces are collapsed") {
+    // Double space produces an empty token that is skipped
+    TableBuilder table;
+    table.addColumn("Col", 7).disableAutoSizing().setColumnWrap(0, true).addRow("hello  world");
+    auto str = table.toString();
+    CHECK(str.find("hello") != std::string::npos);
+    CHECK(str.find("world") != std::string::npos);
+}
+
+TEST_CASE("wrapText - only the enabled column wraps") {
+    TableBuilder table;
+    table.addColumn("A", 5)
+         .addColumn("B", 5)
+         .disableAutoSizing()
+         .setColumnWrap(1, true)
+         .addRow("abcde", "hello world");
+    auto str = table.toString();
+    CHECK_MESSAGE(str.find("abcde") != std::string::npos, "non-wrapped column content must be unchanged");
+    CHECK(str.find("hello") != std::string::npos);
+    CHECK(str.find("world") != std::string::npos);
+}
+
+TEST_CASE("wrapText - UTF-8 word boundary wrap preserves multibyte characters") {
+    // "café"(4) "mocha"(5): width=6 → "café mocha"(10) does not fit → split at boundary
+    TableBuilder table;
+    table.addColumn("Col", 6).disableAutoSizing().setColumnWrap(0, true).addRow("café mocha");
+    auto str = table.toString();
+    CHECK_MESSAGE(str.find("café") != std::string::npos, "multibyte word must be intact on its line");
+    CHECK(str.find("mocha") != std::string::npos);
+    CHECK(str.find("café mocha") == std::string::npos);
+}
+
+TEST_CASE("wrapText - UTF-8 hard break: 2-byte char falls at split boundary") {
+    // "ABéCD": A,B,é([0xC3,0xA9]),C,D — displayWidth=5, width=3
+    // takeChars counts A→1, B→2, leading-byte-of-é→3, exits, drains 0xA9 → chunk="ABé"
+    // rem="CD" fits → result: ["ABé", "CD"]
+    TableBuilder table;
+    table.addColumn("Col", 3).disableAutoSizing().setColumnWrap(0, true).addRow("AB\xC3\xA9""CD");
+    auto str = table.toString();
+    CHECK_MESSAGE(str.find("AB\xC3\xA9") != std::string::npos, "ABé must be a valid UTF-8 sequence in output");
+    CHECK(str.find("CD") != std::string::npos);
+}
+
+TEST_CASE("wrapText - UTF-8 hard break: 2-byte char split at its own boundary") {
+    // "éé" ([0xC3,0xA9,0xC3,0xA9]) with width=1
+    // Each é is 1 display char; hard-break produces ["é", "é"]
+    // Without the continuation-byte fix, the first chunk would be the orphaned
+    // leading byte [0xC3] only — invalid UTF-8 and the second line would be garbled
+    TableBuilder table;
+    table.addColumn("X", 1).disableAutoSizing().setColumnWrap(0, true).addRow("\xC3\xA9\xC3\xA9");
+    auto str = table.toString();
+    CHECK_MESSAGE(countOccurrences(str, "\xC3\xA9") == 2,
+                  "both é chars must survive as valid 2-byte UTF-8 sequences");
+}
+
+TEST_CASE("wrapText - UTF-8 hard break: 3-byte char falls at split boundary") {
+    // "AB™C": A,B,™([0xE2,0x84,0xA2]),C — displayWidth=4, width=3
+    // takeChars counts A→1, B→2, leading-byte-of-™→3, exits, drains 0x84+0xA2 → chunk="AB™"
+    // rem="C" fits → result: ["AB™", "C"]
+    TableBuilder table;
+    table.addColumn("Col", 3).disableAutoSizing().setColumnWrap(0, true).addRow("AB\xE2\x84\xA2""C");
+    auto str = table.toString();
+    CHECK_MESSAGE(str.find("AB\xE2\x84\xA2") != std::string::npos, "AB™ must be a valid UTF-8 sequence in output");
+    CHECK(str.find("C") != std::string::npos);
 }
