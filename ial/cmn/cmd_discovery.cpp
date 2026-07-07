@@ -196,28 +196,30 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		}
 		return val.dump();
 	};
+	auto buildCsvLine = [&](const nlohmann::ordered_json &cells) -> std::string {
+		std::string line;
+		for (size_t i = 0; i < cells.size(); ++i) {
+			if (i > 0) {
+				line += ", ";
+			}
+			const std::string cell = valueToString(cells[i]);
+			for (char ch : cell) {
+				if (ch != '\n' && ch != '\r') {
+					line.push_back(ch);
+				}
+			}
+		}
+		return line;
+	};
 
 	if (jsonObj->contains("heading")) {
 		// Print CSV-style headers for dump command
 		const auto &headers = (*jsonObj)["heading"];
-		for (size_t i = 0; i < headers.size(); ++i) {
-			PRINT("{}", valueToString(headers[i]).c_str());
-			if (i < headers.size() - 1) {
-				PRINT(", ");
-			}
-		}
-		PRINT("\n");
+		PRINT("{}\n", buildCsvLine(headers));
 
 		for (auto &deviceItem : jsonObj->items()) {
 			if (deviceItem.key() != "heading") {
-				const auto &values = deviceItem.value();
-				for (size_t i = 0; i < values.size(); ++i) {
-					PRINT("{}", valueToString(values[i]).c_str());
-					if (i < values.size() - 1) {
-						PRINT(", ");
-					}
-				}
-				PRINT("\n");
+				PRINT("{}\n", buildCsvLine(deviceItem.value()));
 			}
 		}
 		return;
