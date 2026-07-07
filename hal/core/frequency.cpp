@@ -243,6 +243,46 @@ ze_result_t frequency::getCurFreq(double *currentFreq, zes_freq_domain_t domain)
 }
 
 /**
+ * @brief Gets the current voltage for a specific frequency domain type
+ *
+ * This function searches for frequency domains matching the specified type
+ * and retrieves the current operating voltage, useful for monitoring
+ * real-time voltage levels across different GPU subsystems.
+ *
+ * @param [out] currentVoltage Pointer to store the current voltage value (in V)
+ * @param [in] domain The frequency domain type to query (GPU, memory, media, etc.)
+ * @return ze_result_t ZE_RESULT_SUCCESS if voltage retrieved successfully, error code otherwise
+ */
+ze_result_t frequency::getCurVoltage(double *currentVoltage, zes_freq_domain_t domain)
+{
+	TRACING();
+	zes_freq_properties_t properties = {};
+	zes_freq_state_t state = {};
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		ze_result_t result = getProperties(frequencyHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		if (properties.type != domain) {
+			continue;
+		}
+
+		result = getState(frequencyHandles[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+
+		if (currentVoltage) {
+			*currentVoltage = state.currentVoltage;
+		}
+		return ZE_RESULT_SUCCESS;
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Gets the current frequency for each tile/subdevice for a specific domain
  *
  * This function enumerates all frequency domains and returns the current frequency
@@ -286,6 +326,55 @@ ze_result_t frequency::getCurFreqPerTile(zes_freq_domain_t domain, std::map<uint
 		DBG("Tile {} {} frequency: {:.2f} MHz\n", tileId,
 			domain == ZES_FREQ_DOMAIN_GPU ? "GPU" : (domain == ZES_FREQ_DOMAIN_MEDIA ? "Media" : "Other"),
 			state.actual);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Gets the current voltage for each tile/subdevice for a specific domain
+ *
+ * This function enumerates all frequency domains and returns the current voltage
+ * for each subdevice/tile that matches the specified domain type.
+ * Used for per-tile voltage monitoring.
+ *
+ * @param [in] domain The frequency domain type to query (GPU, Media, Memory, etc.)
+ * @param [out] tileVoltages Map of tile_id -> current voltage in V
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful voltage retrieval
+ */
+ze_result_t frequency::getCurVoltagePerTile(zes_freq_domain_t domain, std::map<uint32_t, double> &tileVoltages)
+{
+	TRACING();
+	tileVoltages.clear();
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		zes_freq_properties_t properties = {};
+		ze_result_t result = getProperties(frequencyHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get properties for frequency domain {}\n", i);
+			return result;
+		}
+
+		if (properties.type != domain) {
+			continue;
+		}
+
+		uint32_t tileId = 0;
+		if (properties.onSubdevice) {
+			tileId = properties.subdeviceId;
+		}
+
+		zes_freq_state_t state = {};
+		result = getState(frequencyHandles[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get state for frequency domain {}: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+
+		tileVoltages[tileId] = state.currentVoltage;
+		DBG("Tile {} {} voltage: {:.4f} V\n", tileId,
+			domain == ZES_FREQ_DOMAIN_GPU ? "GPU" : (domain == ZES_FREQ_DOMAIN_MEMORY ? "Memory" : "Other"),
+			state.currentVoltage);
 	}
 
 	return ZE_RESULT_SUCCESS;

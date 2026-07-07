@@ -176,14 +176,18 @@ struct DeviceMetrics
 	SummaryStats gpuPower;
 	SummaryStats gpuFrequency;
 	SummaryStats mediaFrequency;
+	SummaryStats memoryFrequency;
+	SummaryStats memoryVoltage;
 	SummaryStats fanSpeedPercent;
 	SummaryStats fanSpeedRpm;
 
-	std::map<uint32_t, std::vector<double>> gpuPowerPerTile;	   // tile_id -> power samples in watts
-	std::map<uint32_t, std::vector<double>> gpuFrequencyPerTile;   // tile_id -> GPU freq samples in MHz
-	std::map<uint32_t, std::vector<double>> mediaFrequencyPerTile; // tile_id -> media freq samples in MHz
-	std::map<uint32_t, std::vector<double>> gpuCoreTempPerTile;	   // tile_id -> GPU core temp samples in Celsius
-	std::map<uint32_t, std::vector<double>> memoryTempPerTile;	   // tile_id -> memory temp samples in Celsius
+	std::map<uint32_t, std::vector<double>> gpuPowerPerTile;		// tile_id -> power samples in watts
+	std::map<uint32_t, std::vector<double>> gpuFrequencyPerTile;	// tile_id -> GPU freq samples in MHz
+	std::map<uint32_t, std::vector<double>> mediaFrequencyPerTile;	// tile_id -> media freq samples in MHz
+	std::map<uint32_t, std::vector<double>> memoryFrequencyPerTile; // tile_id -> memory freq samples in MHz
+	std::map<uint32_t, std::vector<double>> memoryVoltagePerTile;	// tile_id -> memory voltage samples in V
+	std::map<uint32_t, std::vector<double>> gpuCoreTempPerTile;		// tile_id -> GPU core temp samples in Celsius
+	std::map<uint32_t, std::vector<double>> memoryTempPerTile;		// tile_id -> memory temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> vrTempPerTile; // tile_id -> voltage regulator temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> fanSpeedPercentSamplesPerFan; // fan_id -> fan speed samples in percent
 
@@ -293,9 +297,12 @@ private:
 	static ze_result_t collectRasCounters(devInfo *device, DeviceMetrics &metrics);
 	static ze_result_t collectPowerMetricsPerTile(power *powerHandler, TilePowerSnapshot &baseline,
 												  std::map<uint32_t, std::vector<double>> &powerSamplesPerTile);
-	static ze_result_t collectFrequencyMetricsPerTile(frequency *frequencyHandler,
-													  std::map<uint32_t, std::vector<double>> &gpuFreqSamplesPerTile,
-													  std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile);
+	static ze_result_t
+	collectFrequencyMetricsPerTile(frequency *frequencyHandler,
+								   std::map<uint32_t, std::vector<double>> &gpuFreqSamplesPerTile,
+								   std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile,
+								   std::map<uint32_t, std::vector<double>> &memoryFreqSamplesPerTile,
+								   std::map<uint32_t, std::vector<double>> &memoryVoltageSamplesPerTile);
 	static ze_result_t collectTemperatureMetricsPerTile(temperature *tempHandler,
 														std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
 														std::map<uint32_t, std::vector<double>> &memoryTempPerTile,

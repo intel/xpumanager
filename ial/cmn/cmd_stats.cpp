@@ -331,20 +331,25 @@ ze_result_t cmdStats::collectPowerMetricsPerTile(power *powerHandler, TilePowerS
 }
 
 /**
- * @brief Collect GPU and media frequency metrics per tile
+ * @brief Collect GPU, media, and memory frequency and voltage metrics per tile
  *
- * This function captures current frequency readings for both GPU compute
- * and media engine domains per tile. Frequencies are sampled from the HAL frequency
- * layer and stored in MHz for summary statistics computation.
+ * This function captures current frequency readings for GPU compute, media engine,
+ * and memory domains per tile, as well as current memory voltage. Frequencies are
+ * sampled from the HAL frequency layer and stored in MHz; voltage is stored in V.
  *
  * @param [in] frequencyHandler The HAL frequency instance
  * @param [out] gpuFreqSamplesPerTile Map of tile_id -> vector of GPU frequency samples in MHz
  * @param [out] mediaFreqSamplesPerTile Map of tile_id -> vector of media frequency samples in MHz
+ * @param [out] memoryFreqSamplesPerTile Map of tile_id -> vector of memory frequency samples in MHz
+ * @param [out] memoryVoltageSamplesPerTile Map of tile_id -> vector of memory voltage samples in V
  * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
  */
-ze_result_t cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
-													 std::map<uint32_t, std::vector<double>> &gpuFreqSamplesPerTile,
-													 std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile)
+ze_result_t
+cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
+										 std::map<uint32_t, std::vector<double>> &gpuFreqSamplesPerTile,
+										 std::map<uint32_t, std::vector<double>> &mediaFreqSamplesPerTile,
+										 std::map<uint32_t, std::vector<double>> &memoryFreqSamplesPerTile,
+										 std::map<uint32_t, std::vector<double>> &memoryVoltageSamplesPerTile)
 {
 	TRACING();
 	if (frequencyHandler == nullptr) {
@@ -370,6 +375,28 @@ ze_result_t cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler
 			if (freq > 0.0) {
 				mediaFreqSamplesPerTile[tileId].push_back(freq);
 				DBG("Tile {} Media frequency sample: {:.2f} MHz\n", tileId, freq);
+			}
+		}
+	}
+
+	std::map<uint32_t, double> memoryTileFreqs;
+	result = frequencyHandler->getCurFreqPerTile(ZES_FREQ_DOMAIN_MEMORY, memoryTileFreqs);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, freq] : memoryTileFreqs) {
+			if (freq > 0.0) {
+				memoryFreqSamplesPerTile[tileId].push_back(freq);
+				DBG("Tile {} Memory frequency sample: {:.2f} MHz\n", tileId, freq);
+			}
+		}
+	}
+
+	std::map<uint32_t, double> memoryTileVoltages;
+	result = frequencyHandler->getCurVoltagePerTile(ZES_FREQ_DOMAIN_MEMORY, memoryTileVoltages);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, voltage] : memoryTileVoltages) {
+			if (voltage >= 0.0) {
+				memoryVoltageSamplesPerTile[tileId].push_back(voltage);
+				DBG("Tile {} Memory voltage sample: {:.4f} V\n", tileId, voltage);
 			}
 		}
 	}
@@ -1029,7 +1056,8 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		sampleEngineType(ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE, mediaEmEngines);
 
 		collectPowerMetricsPerTile(powerHandler, powerBaseline, metrics.gpuPowerPerTile);
-		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile);
+		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile,
+									   metrics.memoryFrequencyPerTile, metrics.memoryVoltagePerTile);
 		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile,
 										 metrics.vrTempPerTile);
 		collectFanMetrics(fanHandler, metrics.fanSpeedPercentSamplesPerFan);
@@ -1120,6 +1148,30 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 			tileFreqJson["min"] = stats.min;
 			tileFreqJson["max"] = stats.max;
 			tileFreqJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryFrequencyPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileFreqJson = deviceJson["frequency"]["memory_frequency_mhz"][tileKey];
+			tileFreqJson["avg"] = stats.avg;
+			tileFreqJson["min"] = stats.min;
+			tileFreqJson["max"] = stats.max;
+			tileFreqJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.memoryVoltagePerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileVoltageJson = deviceJson["frequency"]["memory_voltage_v"][tileKey];
+			tileVoltageJson["avg"] = stats.avg;
+			tileVoltageJson["min"] = stats.min;
+			tileVoltageJson["max"] = stats.max;
+			tileVoltageJson["current"] = stats.current;
 		}
 	}
 
@@ -1475,6 +1527,10 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	addPerTileMetricRows(table, deviceJson, "GPU Frequency (MHz)", {"frequency", "gpu_frequency_mhz"}, 0);
 
 	addPerTileMetricRows(table, deviceJson, "Media Frequency (MHz)", {"frequency", "media_frequency_mhz"}, 0);
+
+	addPerTileMetricRows(table, deviceJson, "Memory Frequency (MHz)", {"frequency", "memory_frequency_mhz"}, 0);
+
+	addPerTileMetricRows(table, deviceJson, "Memory Voltage (V)", {"frequency", "memory_voltage_v"}, 3);
 
 	addPerTileMetricRows(table, deviceJson, "GPU Core Temperature", {"temperature", "gpu_core_celsius"}, 0);
 	table.addRow("(Degrees Celsius)", "");

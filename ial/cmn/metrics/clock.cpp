@@ -92,6 +92,72 @@ ze_result_t mediaCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
 }
 
 /**
+ * @brief Reads the current memory clock frequency.
+ *
+ * Queries the frequency HAL for the active clock on @c ZES_FREQ_DOMAIN_MEMORY and
+ * formats the result as a decimal string in MHz.
+ *
+ * @param[in]  d      Device to query. Returns @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
+ *                    if the frequency HAL sub-object is @c nullptr.
+ * @param[out] out    On success, set to the current memory frequency in MHz as a
+ *                    decimal string (e.g. @c "900"). Unchanged on failure.
+ * @param      unused Unused metric cache parameter.
+ *
+ * @retval ZE_RESULT_SUCCESS               The frequency was read and written to @p out.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval Other                           Any error code propagated from the frequency
+ *                                         HAL @c getCurFreq() call.
+ *
+ *  @throws std::bad_alloc If memory allocation fails inside std::format().
+ */
+ze_result_t memoryCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	double val = 0.0;
+	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_MEMORY);
+	if (result == ZE_RESULT_SUCCESS) {
+		out = std::format("{}", val);
+	}
+	return result;
+}
+
+/**
+ * @brief Reads the current memory voltage.
+ *
+ * Queries the frequency HAL for the active voltage on @c ZES_FREQ_DOMAIN_MEMORY and
+ * formats the result as a decimal string in V.
+ *
+ * @param[in]  d      Device to query. Returns @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
+ *                    if the frequency HAL sub-object is @c nullptr.
+ * @param[out] out    On success, set to the current memory voltage in V as a
+ *                    decimal string (e.g. @c "1.2"). Unchanged on failure.
+ * @param      unused Unused metric cache parameter.
+ *
+ * @retval ZE_RESULT_SUCCESS               The voltage was read and written to @p out.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval Other                           Any error code propagated from the frequency
+ *                                         HAL @c getCurVoltage() call.
+ *
+ *  @throws std::bad_alloc If memory allocation fails inside std::format().
+ */
+ze_result_t memoryCurVoltageGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	double val = 0.0;
+	auto const result = freq->getCurVoltage(&val, ZES_FREQ_DOMAIN_MEMORY);
+	if (result == ZE_RESULT_SUCCESS) {
+		out = std::format("{}", val);
+	}
+	return result;
+}
+
+/**
  * @brief Reads the maximum configurable GPU (graphics) core clock frequency.
  *
  * Queries the frequency HAL for the hardware maximum on @c ZES_FREQ_DOMAIN_GPU.
@@ -249,6 +315,22 @@ constexpr auto CLOCK_METRICS = std::to_array<QueryMetric>({
 		.source = MetricSource::Live,
 		.groups = MetricGroup::CLOCK,
 		.getter = throttleReasonGetter,
+	},
+	{
+		.name = "clocks.current.memory",
+		.unit = "MHz",
+		.description = "Current memory clock",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = memoryCurFreqGetter,
+	},
+	{
+		.name = "clocks.current.memory.voltage",
+		.unit = "V",
+		.description = "Current memory voltage",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = memoryCurVoltageGetter,
 	},
 	// ── Maximum hardware clock frequencies ───────────────────────────────────
 	{

@@ -156,13 +156,15 @@ const std::unordered_map<int, std::string_view> LEGACY_METRIC_NAMES = {
 	{34, "utilization.copy"},					  // Copy Engine Group Utilization (%)
 	{35, "clocks.throttle.reason"},				  // Throttle Reason
 	{36, "clocks.current.media"},				  // Media Engine Frequency (MHz)
+	{37, "clocks.current.memory"},				  // Memory Engine Frequency (MHz)
+	{38, "clocks.current.memory.voltage"},		  // Memory Voltage (V)
 };
 
 /**
  * @brief Translate a user-supplied metric query string into canonical registry field names.
  *
  * The input is a comma-separated list of tokens, each of which may be:
- *  - A legacy numeric ID (0–36): mapped via LEGACY_METRIC_NAMES.
+ *  - A legacy numeric ID (0–38): mapped via LEGACY_METRIC_NAMES.
  *  - Any other token: passed through unchanged for metrics::resolveQuery() to handle
  *    (group names, single- and multi-character shortcuts via parseGroupMask).
  *
