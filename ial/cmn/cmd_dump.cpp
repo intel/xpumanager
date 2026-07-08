@@ -432,12 +432,7 @@ std::variant<ParsedArgs, int> parseDumpCLI(std::string_view cmdName, const std::
 	CLI::App sub{std::string{cmdName}};
 	sub.set_help_flag("-h,--help", "Display help");
 	sub.add_flag("-j,--json", parsed.opts.json, "Output in JSON format");
-	sub.add_option("-d,--device,--id", parsed.opts.device, "Device index or PCI BDF address (-1 = all)")
-		->each([&](const std::string &val) {
-			if (const auto n = parseInteger<int>(val); n && *n == -1) {
-				parsed.opts.device.clear();
-			}
-		});
+	sub.add_option("-d,--device,--id", parsed.opts.device, "Device index or PCI BDF address (-1 = all)");
 	sub.add_option("--metrics,--select", parsed.opts.metrics, "Metric query");
 	sub.add_option("-f,--file,--filename", parsed.opts.file, "Output file path");
 	sub.add_option("--time", parsed.opts.time, "Total dump duration in seconds");
@@ -484,6 +479,10 @@ std::variant<ParsedArgs, int> parseDumpCLI(std::string_view cmdName, const std::
 	} catch (const CLI::ParseError &e) {
 		ERR("{}\n", e.what());
 		return static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT);
+	}
+
+	if (parsed.opts.device == "-1") {
+		parsed.opts.device.clear();
 	}
 
 	for (const auto tok : std::string_view{formatStr} | std::views::split(',')) {
