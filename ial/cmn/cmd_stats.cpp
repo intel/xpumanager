@@ -1055,6 +1055,16 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		}
 	}
 
+	// PCIe is supported but the timestamp didn't advance
+	// across any sample window, so no delta samples were pushed. Write 0 to distinguish
+	// from the N/A case (unsupported or handler unavailable)
+	if (pcieBaseline.valid && metrics.pcieReadKBpsSamples.empty()) {
+		metrics.pcieReadKBpsSamples.push_back(0.0);
+	}
+	if (pcieBaseline.valid && metrics.pcieWriteKBpsSamples.empty()) {
+		metrics.pcieWriteKBpsSamples.push_back(0.0);
+	}
+
 	auto endTime = std::chrono::system_clock::now();
 	metrics.endTimeIso = formatIso8601Timestamp(endTime);
 	metrics.elapsedSeconds = std::chrono::duration<double>(endTime - startTime).count();
