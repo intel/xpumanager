@@ -201,7 +201,8 @@ Use <code class="docutils literal notranslate"><span class="pre">--query-gpu</sp
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-interval">
 <span id="cmdoption-delay"></span><span id="cmdoption-loop"></span><span class="sig-name descname"><span class="pre">--interval</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--delay</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--loop</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;seconds&gt;</span></span><a class="headerlink" href="#cmdoption-interval" title="Link to this definition"></a></dt>
-<dd><p>Sampling interval in seconds between dumps. Default: <code class="docutils literal notranslate"><span class="pre">1</span></code>. Maximum: <code class="docutils literal notranslate"><span class="pre">20</span></code>.</p>
+<dd><p>Sampling interval in seconds between dumps. Default: <code class="docutils literal notranslate"><span class="pre">1</span></code>. Maximum: <code class="docutils literal notranslate"><span class="pre">20</span></code>.
+<code class="docutils literal notranslate"><span class="pre">--delay</span></code> and <code class="docutils literal notranslate"><span class="pre">--loop</span></code> are aliases for <code class="docutils literal notranslate"><span class="pre">--interval</span></code>.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -224,8 +225,8 @@ as the power measurement window may be too short for accurate readings.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-file">
-<span id="cmdoption-f"></span><span class="sig-name descname"><span class="pre">--file</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><a class="headerlink" href="#cmdoption-file" title="Link to this definition"></a></dt>
+<dt class="sig sig-object std" id="cmdoption-f">
+<span id="cmdoption-file"></span><span id="cmdoption-filename"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--file</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--filename</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><a class="headerlink" href="#cmdoption-f" title="Link to this definition"></a></dt>
 <dd><p>Write output to a file instead of stdout.</p>
 </dd></dl>
 
@@ -331,48 +332,51 @@ as the power measurement window may be too short for accurate readings.</p>
 <td><p>PCIe Write (kB/s), per device</p></td>
 </tr>
 <tr class="row-odd"><td><p>21</p></td>
-<td><p>Compute engine utilizations (%), per tile</p></td>
+<td><p>Unsupported</p></td>
 </tr>
 <tr class="row-even"><td><p>22</p></td>
-<td><p>Render engine utilizations (%), per tile</p></td>
+<td><p>Compute Engine Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-odd"><td><p>23</p></td>
-<td><p>Media decoder engine utilizations (%), per tile</p></td>
+<td><p>Render Engine Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-even"><td><p>24</p></td>
-<td><p>Media encoder engine utilizations (%), per tile</p></td>
+<td><p>Media Decoder Engine Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-odd"><td><p>25</p></td>
-<td><p>Copy engine utilizations (%), per tile</p></td>
+<td><p>Media Encoder Engine Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-even"><td><p>26</p></td>
-<td><p>Media enhancement engine utilizations (%), per tile</p></td>
+<td><p>Copy Engine Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-odd"><td><p>27</p></td>
-<td><p>3D engine utilizations (%), per tile</p></td>
+<td><p>Unsupported</p></td>
 </tr>
 <tr class="row-even"><td><p>28</p></td>
-<td><p>GPU Memory Errors Correctable. Device-level is the sum value of tiles for multi-tile devices.</p></td>
+<td><p>Unsupported</p></td>
 </tr>
 <tr class="row-odd"><td><p>29</p></td>
-<td><p>GPU Memory Errors Uncorrectable. Device-level is the sum value of tiles for multi-tile devices.</p></td>
+<td><p>GPU Memory Errors Correctable. Device-level is the sum value of tiles for multi-tile devices.</p></td>
 </tr>
 <tr class="row-even"><td><p>30</p></td>
-<td><p>Compute Engine Group Utilization (%), per tile</p></td>
+<td><p>GPU Memory Errors Uncorrectable. Device-level is the sum value of tiles for multi-tile devices.</p></td>
 </tr>
 <tr class="row-odd"><td><p>31</p></td>
-<td><p>Render Engine Group Utilization (%), per tile</p></td>
+<td><p>Compute Engine Group Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-even"><td><p>32</p></td>
-<td><p>Media Engine Group Utilization (%), per tile</p></td>
+<td><p>Render Engine Group Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-odd"><td><p>33</p></td>
-<td><p>Copy Engine Group Utilization (%), per tile</p></td>
+<td><p>Media Engine Group Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-even"><td><p>34</p></td>
-<td><p>Throttle reason, per tile</p></td>
+<td><p>Copy Engine Group Utilization (%), per tile</p></td>
 </tr>
 <tr class="row-odd"><td><p>35</p></td>
+<td><p>Throttle reason, per tile</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
 <td><p>Media Engine Frequency (MHz), per tile or device</p></td>
 </tr>
 </tbody>
