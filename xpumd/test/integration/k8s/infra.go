@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/client"
 	"sigs.k8s.io/kind/pkg/cluster"
 	"sigs.k8s.io/kind/pkg/cluster/nodeutils"
 )
