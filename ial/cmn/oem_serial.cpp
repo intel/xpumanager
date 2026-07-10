@@ -79,13 +79,10 @@ int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &s
 
 	const size_t maxLen = std::min<size_t>(serial.length, sizeof(serial.sn));
 
-	std::ranges::copy(
-	    std::span{serial.sn, maxLen}
-	        | std::views::take_while([](unsigned char c) {
-	              return c >= ASCII_PRINTABLE_MIN && c <= ASCII_PRINTABLE_MAX;
-	          })
-	        | std::views::transform([](unsigned char c) { return static_cast<char>(c); }),
-	    std::back_inserter(serialNumber));
+	std::ranges::copy(std::span{serial.sn, maxLen} | std::views::take_while([](unsigned char c) {
+						  return c >= ASCII_PRINTABLE_MIN && c <= ASCII_PRINTABLE_MAX;
+					  }) | std::views::transform([](unsigned char c) { return static_cast<char>(c); }),
+					  std::back_inserter(serialNumber));
 
 	if (serialNumber.empty()) {
 		DBG("OEM serial number is empty after processing\n");

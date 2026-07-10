@@ -15,7 +15,12 @@
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
 #include "metrics/clock.h"
+#include "metrics/ecc.h"
 #include "metrics/eu_array.h"
+#include "metrics/fan.h"
+#include "metrics/identity.h"
+#include "metrics/memory.h"
+#include "metrics/pci.h"
 #include "metrics/power.h"
 #include <algorithm>
 #include <array>
@@ -72,6 +77,13 @@ TEST_CASE("parseGroupMask expands multi-character alias shorthands")
 	CHECK(hasGroup(mask, MetricGroup::POWER));
 	CHECK(hasGroup(mask, MetricGroup::TEMPERATURE));
 	CHECK(hasGroup(mask, MetricGroup::UTILIZATION));
+	// Groups not named by 'p' or 'u' must be absent.
+	CHECK_FALSE(hasGroup(mask, MetricGroup::CLOCK));
+	CHECK_FALSE(hasGroup(mask, MetricGroup::ECC));
+	CHECK_FALSE(hasGroup(mask, MetricGroup::FAN));
+	CHECK_FALSE(hasGroup(mask, MetricGroup::MEMORY));
+	CHECK_FALSE(hasGroup(mask, MetricGroup::PCI));
+	CHECK_FALSE(hasGroup(mask, MetricGroup::EU_ARRAY));
 }
 
 TEST_CASE("formatGroups emits canonical group names")
@@ -95,21 +107,16 @@ struct ZeroDeviceFixture
 
 // ── Registry API ──────────────────────────────────────────────────────────────
 
-TEST_CASE("getQueryMetrics returns non-empty span")
+TEST_CASE("getQueryMetrics equals getMetricsByGroup ALL")
 {
+	// getQueryMetrics() is the flat backing array; getMetricsByGroup(ALL) should point into it.
 	const auto all = getQueryMetrics();
 	CHECK_FALSE(all.empty());
-	// >= because multiple metric groups are registered
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::IDENTITY).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::TEMPERATURE).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::UTILIZATION).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::PCI).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::EU_ARRAY).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::FAN).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::MEMORY).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::POWER).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::ECC).size());
-	CHECK(all.size() >= getMetricsByGroup(MetricGroup::CLOCK).size());
+	const auto byAll = getMetricsByGroup(MetricGroup::ALL);
+	REQUIRE(all.size() == byAll.size());
+	for (std::size_t i = 0; i < all.size(); ++i) {
+		CHECK(&all[i] == byAll[i]);
+	}
 }
 
 TEST_CASE("getMetricsByGroup ALL returns non-empty, NONE returns empty")
@@ -138,6 +145,11 @@ TEST_CASE("findMetric resolves identity metric names")
 	CHECK(findMetric("pci.sub_device_id").has_value());
 }
 
+TEST_CASE("IDENTITY group size matches getIdentityMetrics")
+{
+	CHECK(getMetricsByGroup(MetricGroup::IDENTITY).size() == metrics::identity::getIdentityMetrics().size());
+}
+
 TEST_CASE("findMetric resolves PCI metric names")
 {
 	CHECK(findMetric("pcie.link.gen.max").has_value());
@@ -151,10 +163,17 @@ TEST_CASE("findMetric resolves PCI metric names")
 	CHECK(findMetric("pcie.tx.throughput.kbs").has_value());
 }
 
-TEST_CASE("PCI group contains exactly 12 canonical entries")
+TEST_CASE("PCI group contains all pci.cpp metrics plus identity metrics tagged PCI")
 {
 	const auto byPci = getMetricsByGroup(MetricGroup::PCI);
-	CHECK(byPci.size() == 12); // 9 from pci.cpp + 3 from identity.h (pci.bus_id, pci.device_id, pci.sub_device_id)
+	const auto identPciCount = static_cast<std::size_t>(
+		std::ranges::count_if(metrics::identity::getIdentityMetrics(),
+							  [](const QueryMetric &m) { return hasGroup(m.groups, MetricGroup::PCI); }));
+	CHECK(byPci.size() == metrics::pci::getPciMetrics().size() + identPciCount);
+	for (const auto name : std::to_array<std::string_view>({"pci.bus_id", "pci.device_id", "pci.sub_device_id"})) {
+		CHECK_MESSAGE(std::ranges::any_of(byPci, [name](const auto *m) { return m->name == name; }), name,
+					  " missing from PCI group");
+	}
 }
 
 TEST_CASE("findMetric resolves Power metric names")
@@ -206,12 +225,12 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 	}
 }
 
-TEST_CASE("getMetricsByGroup MEMORY includes utilization.memory")
+TEST_CASE("MEMORY group contains utilization.memory first, then all memory.cpp metrics")
 {
 	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
-	// utilization.memory is registered first (before memory.cpp metrics)
 	REQUIRE_FALSE(byMem.empty());
-	CHECK(byMem[0]->name == "utilization.memory");
+	CHECK(byMem[0]->name == "utilization.memory"); // registered before memory.cpp metrics
+	CHECK(byMem.size() == metrics::memory::getMemoryMetrics().size() + 1);
 }
 
 TEST_CASE("findMetric resolves Temperature metric names")
@@ -248,8 +267,15 @@ TEST_CASE("findMetric resolves clock aliases")
 TEST_CASE("clock aliases do not appear as separate entries in group expansion")
 {
 	const auto byClock = getMetricsByGroup(MetricGroup::CLOCK);
-	// 5 canonical entries; sm/video/max.sm/max.video are aliases, not separate rows.
-	CHECK(byClock.size() == 5);
+	CHECK(byClock.size() == metrics::clock::getClockMetrics().size());
+	// Aliases (sm/video/max.sm/max.video) resolve to canonical entries; they must not produce duplicate rows.
+	const auto present = [&](std::string_view n) {
+		return std::ranges::any_of(byClock, [n](const auto *m) { return m->name == n; });
+	};
+	CHECK_FALSE(present("clocks.current.sm"));
+	CHECK_FALSE(present("clocks.current.video"));
+	CHECK_FALSE(present("clocks.max.sm"));
+	CHECK_FALSE(present("clocks.max.video"));
 }
 
 TEST_CASE("findMetric resolves Utilization canonical names")
@@ -287,18 +313,18 @@ TEST_CASE("findMetric resolves EU Array metric names")
 	CHECK(findMetric("eu.idle").has_value());
 }
 
-TEST_CASE("EU Array group contains exactly 3 canonical entries")
+TEST_CASE("EU Array group size matches getEuArrayMetrics")
 {
 	const auto byEu = getMetricsByGroup(MetricGroup::EU_ARRAY);
-	CHECK(byEu.size() == 3);
+	CHECK(byEu.size() == metrics::eu_array::getEuArrayMetrics().size());
 }
 
 TEST_CASE("findMetric resolves Fan metric names") { CHECK(findMetric("fan.speed").has_value()); }
 
-TEST_CASE("Fan group contains exactly 1 canonical entry")
+TEST_CASE("Fan group size matches getFanMetrics")
 {
 	const auto byFan = getMetricsByGroup(MetricGroup::FAN);
-	CHECK(byFan.size() == 1);
+	CHECK(byFan.size() == metrics::fan::getFanMetrics().size());
 }
 
 TEST_CASE("findMetric resolves Memory metric names")
@@ -309,12 +335,6 @@ TEST_CASE("findMetric resolves Memory metric names")
 	CHECK(findMetric("memory.read.bandwidth").has_value());
 	CHECK(findMetric("memory.write.bandwidth").has_value());
 	CHECK(findMetric("memory.bandwidth.utilization").has_value());
-}
-
-TEST_CASE("Memory group contains exactly 7 canonical entries")
-{
-	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
-	CHECK(byMem.size() == 7); // 6 from memory.cpp + utilization.memory
 }
 
 TEST_CASE("findMetric resolves ECC metric names")
@@ -328,13 +348,39 @@ TEST_CASE("findMetric resolves ECC metric names")
 	CHECK(findMetric("ras.driver.errors").has_value());
 	CHECK(findMetric("ras.cache.errors.correctable").has_value());
 	CHECK(findMetric("ras.cache.errors.uncorrectable").has_value());
+	CHECK(findMetric("ras.non_compute.errors.correctable").has_value());
+	CHECK(findMetric("ras.non_compute.errors.uncorrectable").has_value());
 	CHECK(findMetric("ras.non_compute.errors.total").has_value());
 }
 
-TEST_CASE("ECC group contains exactly 10 canonical entries")
+TEST_CASE("ECC group size matches getEccMetrics")
 {
 	const auto byEcc = getMetricsByGroup(MetricGroup::ECC);
-	CHECK(byEcc.size() == 10);
+	CHECK(byEcc.size() == metrics::ecc::getEccMetrics().size());
+}
+
+TEST_CASE("no metric is tagged with mutually exclusive groups simultaneously")
+{
+	// These pairs must never co-occur on a single metric — a cross-tag would cause
+	// the metric to silently appear in an unrelated column during '-d' output.
+	struct ExclusivePair
+	{
+		MetricGroup a;
+		MetricGroup b;
+		std::string_view desc;
+	};
+	for (const auto [a, b, desc] : std::to_array<ExclusivePair>({
+			 {MetricGroup::POWER, MetricGroup::TEMPERATURE, "POWER|TEMPERATURE"},
+			 {MetricGroup::ECC, MetricGroup::CLOCK, "ECC|CLOCK"},
+			 {MetricGroup::ECC, MetricGroup::FAN, "ECC|FAN"},
+			 {MetricGroup::FAN, MetricGroup::POWER, "FAN|POWER"},
+			 {MetricGroup::FAN, MetricGroup::TEMPERATURE, "FAN|TEMPERATURE"},
+		 })) {
+		for (const auto &m : getQueryMetrics()) {
+			CHECK_MESSAGE(!(hasGroup(m.groups, a) && hasGroup(m.groups, b)), m.name,
+						  " tagged with mutually exclusive groups: ", desc);
+		}
+	}
 }
 
 TEST_CASE("findMetric returns nullopt for unregistered metrics")
@@ -342,46 +388,52 @@ TEST_CASE("findMetric returns nullopt for unregistered metrics")
 	CHECK_FALSE(findMetric("__no_such_metric__").has_value());
 }
 
-TEST_CASE(
-	"resolveQuery expands IDENTITY, TEMPERATURE, UTILIZATION, PCI, EU Array, Fan, Memory, POWER, ECC, and CLOCK groups")
+TEST_CASE("resolveQuery matches getMetricsByGroup for each canonical group name")
 {
-	CHECK_FALSE(resolveQuery("IDENTITY").empty());
-	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
-	CHECK_FALSE(resolveQuery("UTILIZATION").empty());
-	const auto byQuery = resolveQuery("POWER");
-	const std::vector<std::string_view> expectedPower = {"power.draw", "power.draw.gpu", "energy.consumed",
-														 "power.limit", "power.max_limit"};
-	for (const auto name : expectedPower) {
-		CHECK_MESSAGE(std::ranges::any_of(byQuery, [name](const auto *m) { return m->name == name; }), name,
-					  " not found in resolveQuery(\"POWER\")");
+	// resolveQuery must return exactly the same pointers in the same order as getMetricsByGroup.
+	const auto check = [](std::string_view token, MetricGroup group) {
+		const auto byGroup = getMetricsByGroup(group);
+		const auto byQuery = resolveQuery(token);
+		REQUIRE_MESSAGE(byQuery.size() == byGroup.size(), token, ": size mismatch");
+		for (std::size_t i = 0; i < byGroup.size(); ++i) {
+			CHECK_MESSAGE(byQuery[i] == byGroup[i], token, ": entry ", i, " pointer differs");
+		}
+	};
+	check("IDENTITY", MetricGroup::IDENTITY);
+	check("TEMPERATURE", MetricGroup::TEMPERATURE);
+	check("UTILIZATION", MetricGroup::UTILIZATION);
+	check("PCI", MetricGroup::PCI);
+	check("EU_ARRAY", MetricGroup::EU_ARRAY);
+	check("FAN", MetricGroup::FAN);
+	check("MEMORY", MetricGroup::MEMORY);
+	check("POWER", MetricGroup::POWER);
+	check("ECC", MetricGroup::ECC);
+	check("CLOCK", MetricGroup::CLOCK);
+}
+
+TEST_CASE("resolveQuery single-letter aliases match their canonical groups")
+{
+	struct Alias
+	{
+		std::string_view letter;
+		MetricGroup group;
+	};
+	for (const auto [letter, group] : std::to_array<Alias>({
+			 {"m", MetricGroup::MEMORY},
+			 {"u", MetricGroup::UTILIZATION},
+			 {"c", MetricGroup::CLOCK},
+			 {"e", MetricGroup::ECC},
+			 {"f", MetricGroup::FAN},
+			 {"t", MetricGroup::PCI},
+			 {"x", MetricGroup::EU_ARRAY},
+		 })) {
+		const auto byGroup = getMetricsByGroup(group);
+		const auto byAlias = resolveQuery(letter);
+		REQUIRE_MESSAGE(byAlias.size() == byGroup.size(), letter, ": size mismatch");
+		for (std::size_t i = 0; i < byGroup.size(); ++i) {
+			CHECK_MESSAGE(byAlias[i] == byGroup[i], letter, ": entry ", i, " pointer differs");
+		}
 	}
-	CHECK_FALSE(resolveQuery("CLOCK").empty());
-	CHECK_FALSE(resolveQuery("p").empty()); // 'p' expands to POWER|TEMPERATURE
-	CHECK_FALSE(resolveQuery("u").empty()); // single-letter alias for UTILIZATION
-	CHECK_FALSE(resolveQuery("PCI").empty());
-	CHECK_FALSE(resolveQuery("t").empty()); // single-letter shortcut for PCI
-	CHECK_FALSE(resolveQuery("EU_ARRAY").empty());
-	CHECK_FALSE(resolveQuery("x").empty()); // single-letter alias for EU_ARRAY
-	CHECK_FALSE(resolveQuery("FAN").empty());
-	CHECK_FALSE(resolveQuery("f").empty()); // single-letter alias for FAN
-	CHECK_FALSE(resolveQuery("MEMORY").empty());
-	CHECK_FALSE(resolveQuery("m").empty()); // single-letter alias for MEMORY
-	CHECK_FALSE(resolveQuery("POWER").empty());
-	CHECK_FALSE(resolveQuery("ECC").empty());
-	CHECK_FALSE(resolveQuery("e").empty()); // single-letter alias for ECC
-	CHECK_FALSE(resolveQuery("CLOCK").empty());
-	CHECK_FALSE(resolveQuery("c").empty()); // single-letter alias for CLOCK
-}
-
-TEST_CASE("resolveQuery returns empty for group tokens with no registered metrics")
-{
-	// All previously-unregistered groups (CLOCK, ECC, POWER, FAN) are now registered.
-}
-
-TEST_CASE("resolveQuery TEMPERATURE returns registered metrics")
-{
-	CHECK_FALSE(resolveQuery("TEMPERATURE").empty());
-	CHECK(resolveQuery("TEMPERATURE").size() == metrics::temperature::getTemperatureMetrics().size());
 }
 
 TEST_CASE("resolveQuery pu expands to Temperature, Utilization, and Power metrics")
@@ -537,20 +589,46 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: zero energy format
 TEST_CASE("MetricCache default values are zero and all flags false")
 {
 	const MetricCache cache;
+	// Availability flags
 	CHECK_FALSE(cache.populated);
 	CHECK_FALSE(cache.pcieAvail);
+	CHECK_FALSE(cache.pcieBandwidthAvail);
+	CHECK_FALSE(cache.pcieReplayAvail);
 	CHECK_FALSE(cache.memAvail);
 	CHECK_FALSE(cache.engineAvail);
 	CHECK_FALSE(cache.powerAvail);
 	CHECK_FALSE(cache.euAvail);
+	// PCIe snapshots
 	CHECK(cache.pcieBefore.tx == 0);
+	CHECK(cache.pcieBefore.rx == 0);
+	CHECK(cache.pcieBefore.timeUs == 0);
 	CHECK(cache.pcieAfter.tx == 0);
+	CHECK(cache.pcieAfter.rx == 0);
+	CHECK(cache.pcieAfter.timeUs == 0);
+	CHECK(cache.pcieReplay == 0);
+	// Power snapshots (whole-card and GPU domains)
 	CHECK(cache.cardPowerBefore.energy == 0);
+	CHECK(cache.cardPowerBefore.ts == 0);
 	CHECK(cache.cardPowerAfter.energy == 0);
+	CHECK(cache.cardPowerAfter.ts == 0);
+	CHECK(cache.gpuPowerBefore.energy == 0);
+	CHECK(cache.gpuPowerBefore.ts == 0);
+	CHECK(cache.gpuPowerAfter.energy == 0);
+	CHECK(cache.gpuPowerAfter.ts == 0);
+	// Memory snapshots
 	CHECK(cache.memBefore.read == 0);
+	CHECK(cache.memBefore.write == 0);
 	CHECK(cache.memBefore.ts == 0);
+	CHECK(cache.memAfter.read == 0);
+	CHECK(cache.memAfter.write == 0);
+	CHECK(cache.memAfter.ts == 0);
+	CHECK(cache.memMaxBandwidth == 0);
+	// Engine snapshots (before and after slots)
 	CHECK(cache.engines.all.before.active == 0);
 	CHECK(cache.engines.all.before.ts == 0);
+	CHECK(cache.engines.all.after.active == 0);
+	CHECK(cache.engines.all.after.ts == 0);
+	// EU metrics
 	CHECK(cache.euSample.euActive == 0);
 	CHECK(cache.euSample.euStall == 0);
 	CHECK(cache.euSample.euIdle == 0);
