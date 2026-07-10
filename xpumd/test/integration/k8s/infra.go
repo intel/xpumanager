@@ -57,7 +57,7 @@ func (k *kindCluster) writeKubeconfig() (string, error) {
 func (k *kindCluster) loadImage() error {
 	imageRef := fmt.Sprintf("%s:%s", suite.imageRepository, suite.imageTag)
 
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	dockerClient, err := client.New(client.FromEnv)
 	if err != nil {
 		return fmt.Errorf("failed to create docker client: %w", err)
 	}
