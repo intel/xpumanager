@@ -73,4 +73,21 @@ if is_linux
 
   test('vgpu_test', vgpu_test)
 
+  ps_test = executable(
+    'ps_test',
+    'ps_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: ial_cmn_lib,
+    dependencies: ial_cmn_test_deps,
+    cpp_args: ial_cmn_cpp_args,
+    link_args: ['-pie'],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('ps_test', ps_test)
+
 endif

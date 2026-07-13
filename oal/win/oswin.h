@@ -170,6 +170,7 @@ void *align_alloc(size_t size);
 thread_id *create_thread(funcptr thread, void *args);
 void wait_for_thread(thread_id *tid);
 std::string getProcessName(uint32_t processId);
+uint32_t getCurrentProcessId();
 std::string getLocalCpus(const std::string &bdf);
 std::string getCpuList(const std::string &bdf);
 std::string timestamp();

@@ -49,6 +49,7 @@ struct xeDevPciInfo
 };
 
 std::string getProcessName(uint32_t processId);
+uint32_t getCurrentProcessId();
 std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);

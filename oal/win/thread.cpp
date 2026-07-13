@@ -95,3 +95,10 @@ std::string getProcessName(uint32_t processId)
 	}
 	return processName;
 }
+
+/**
+ * @brief Returns the process ID of the calling (current) process.
+ *
+ * @return uint32_t The current process ID.
+ */
+uint32_t getCurrentProcessId() { return static_cast<uint32_t>(GetCurrentProcessId()); }

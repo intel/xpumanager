@@ -119,6 +119,37 @@ void to_json(nlohmann::ordered_json &jsonObj, const psInfo &procInfo)
 }
 
 /**
+ * @brief Converts raw Level Zero process states into psInfo entries.
+ *
+ * Skips the calling process (selfPid) so xpu-smi never lists itself, reduces the
+ * command line to a base name, and converts memory sizes from bytes to KiB.
+ *
+ * @param psInfoList  Destination list; entries are appended.
+ * @param processList Raw process states returned by the driver.
+ * @param devIndex    Device index recorded on each entry.
+ * @param selfPid     PID of the calling process, which is excluded.
+ */
+void cmdPs::buildPsInfoList(std::vector<psInfo> &psInfoList, const std::vector<zes_process_state_t> &processList,
+							uint32_t devIndex, uint32_t selfPid)
+{
+	for (const auto &p : processList) {
+		if (p.processId == selfPid) {
+			continue;
+		}
+		std::string procName = GETPROCESSNAME(p.processId);
+		size_t nullPos = procName.find('\0');
+		if (nullPos != std::string::npos) {
+			procName = procName.substr(0, nullPos);
+		}
+		size_t slashPos = procName.rfind('/');
+		if (slashPos != std::string::npos) {
+			procName = procName.substr(slashPos + 1);
+		}
+		psInfoList.push_back({p.processId, procName, devIndex, p.engines, p.sharedSize / 1024, p.memSize / 1024});
+	}
+}
+
+/**
  * @brief Gets the process information status for the given device
  *
  * This function retrieves the process information and populates the psInfoList vector.
@@ -139,21 +170,7 @@ ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInf
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 	result = ps->getState(dev->zesDeviceHdl, &processList);
-	for (auto &p : processList) {
-		std::string procName = GETPROCESSNAME(p.processId);
-		size_t nullPos = procName.find('\0');
-		if (nullPos != std::string::npos) {
-			procName = procName.substr(0, nullPos);
-		}
-		size_t slashPos = procName.rfind('/');
-		if (slashPos != std::string::npos) {
-			procName = procName.substr(slashPos + 1);
-		}
-		if (procName == progName) {
-			continue;
-		}
-		psInfoList.push_back({p.processId, procName, dev->index, p.engines, p.sharedSize / 1024, p.memSize / 1024});
-	}
+	buildPsInfoList(psInfoList, processList, dev->index, getCurrentProcessId());
 	return result;
 }
 

@@ -37,6 +37,8 @@ public:
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 	ze_result_t getProcessList(const devInfo *dev, std::vector<psInfo> &psInfoList);
+	static void buildPsInfoList(std::vector<psInfo> &psInfoList, const std::vector<zes_process_state_t> &processList,
+								uint32_t devIndex, uint32_t selfPid);
 };
 
 using psSubCmdFunc = ze_result_t (cmdPs::*)(devInfo *d, nlohmann::ordered_json *jsonObj);
