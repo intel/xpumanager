@@ -11,6 +11,9 @@
 #include <cstring>
 #include <cinttypes>
 namespace {
+constexpr const char *NO_METRIC_GROUPS_MSG =
+	"No metric groups available on device (metrics may be restricted in container environments; "
+	"check CAP_PERFMON/CAP_SYS_ADMIN capability or the driver's perf_stream_paranoid kernel parameter)\n";
 std::mutex metricMutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> targetMetricGroups;
 std::map<ze_device_handle_t, ze_context_handle_t> targetMetricContexts;
@@ -558,9 +561,13 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
 	// Get the number of metric groups
 	uint32_t groupCount = 0;
 	result = zetMetricGroupGet(device, &groupCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || groupCount == 0) {
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metric group count: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
+	}
+	if (groupCount == 0) {
+		DBG("{}", NO_METRIC_GROUPS_MSG);
+		return ZE_RESULT_SUCCESS;
 	}
 
 	// Allocate memory for the metric groups
@@ -631,8 +638,12 @@ findEuMetricGroupLocked(ze_device_handle_t device,
 	}
 	uint32_t metricGroupCount = 0;
 	ze_result_t res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
-	if (res != ZE_RESULT_SUCCESS || metricGroupCount == 0) {
+	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get metric group count: 0x{:X} ({})\n", res, l0_error_to_string(res));
+		return nullptr;
+	}
+	if (metricGroupCount == 0) {
+		DBG("{}", NO_METRIC_GROUPS_MSG);
 		return nullptr;
 	}
 
@@ -698,7 +709,7 @@ findEuMetricGroupLocked(ze_device_handle_t device,
 		}
 	}
 
-	ERR("EU metric group not found\n");
+	DBG("EU metric group not found\n");
 	return nullptr;
 }
 
