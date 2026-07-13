@@ -250,6 +250,26 @@ ze_result_t cmdVgpu::remove(devInfo *d) // NOLINT(readability-convert-member-fun
 }
 
 /**
+ * @brief Builds the JSON representation of a vGPU (VF) list.
+ *
+ * @param vfList List of virtual/physical function descriptors to serialize.
+ * @return Ordered JSON object of shape {"vgpu_list": [ ... ]}.
+ */
+nlohmann::ordered_json buildVgpuListJson(const std::vector<DeviceSriovInfo> &vfList)
+{
+	nlohmann::ordered_json jsonResult;
+	jsonResult["vgpu_list"] = nlohmann::ordered_json::array();
+	for (const auto &vfInfo : vfList) {
+		nlohmann::ordered_json entry;
+		entry["bdf_address"] = vfInfo.bdfAddress;
+		entry["function_type"] = vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical";
+		entry["memory_physical_size_byte"] = vfInfo.vGpuMemorySize;
+		jsonResult["vgpu_list"].push_back(entry);
+	}
+	return jsonResult;
+}
+
+/**
  * @brief Lists all available GPU devices for vGPU creation
  *
  * This function retrieves and displays all GPU devices available for vGPU operations.
@@ -277,20 +297,25 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	for (const auto &vfInfo : vfDeviceInfoList) {
-		TableBuilder table;
-		table.addColumn("Property", 25, Align::Left).addColumn("Value", 40, Align::Left);
+	if (vgpuCmds[vgpuCmdType::VGPU_JSON].enabled) {
+		nlohmann::ordered_json jsonResult = buildVgpuListJson(vfDeviceInfoList);
+		JsonPrinter().print(&jsonResult);
+	} else {
+		for (const auto &vfInfo : vfDeviceInfoList) {
+			TableBuilder table;
+			table.addColumn("Property", 25, Align::Left).addColumn("Value", 40, Align::Left);
 
-		table.addRow("PCI BDF Address", vfInfo.bdfAddress);
-		table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
-		if (vfInfo.vGpuMemorySize > 0) {
-			table.addRow("Memory Physical Size",
-						 xpum::compat::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
-		} else {
-			table.addRow("Memory Physical Size", "N/A (shared memory / iGPU)");
+			table.addRow("PCI BDF Address", vfInfo.bdfAddress);
+			table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
+			if (vfInfo.vGpuMemorySize > 0) {
+				table.addRow("Memory Physical Size",
+							 xpum::compat::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
+			} else {
+				table.addRow("Memory Physical Size", "N/A (shared memory / iGPU)");
+			}
+
+			PRINT("{}", table.toString().c_str());
 		}
-
-		PRINT("{}", table.toString().c_str());
 	}
 
 	return ZE_RESULT_SUCCESS;

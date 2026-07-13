@@ -9,7 +9,10 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <osvf.h>
+#include <nlohmann/json.hpp>
 #include <string_view>
+#include <vector>
 
 enum vgpuCmdType
 {
@@ -44,6 +47,17 @@ public:
 };
 
 using vgpuSubCmdFunc = ze_result_t (cmdVgpu::*)(devInfo *d);
+
+/**
+ * @brief Builds the JSON representation of a vGPU (VF) list.
+ *
+ * Pure, hardware-independent serialization used by `vgpu -l --json`. Kept as a
+ * free function so the JSON contract can be unit-tested without a live device.
+ *
+ * @param vfList List of virtual/physical function descriptors to serialize.
+ * @return Ordered JSON object of shape {"vgpu_list": [ ... ]}.
+ */
+nlohmann::ordered_json buildVgpuListJson(const std::vector<DeviceSriovInfo> &vfList);
 
 struct vgpuCmdStruct
 {
