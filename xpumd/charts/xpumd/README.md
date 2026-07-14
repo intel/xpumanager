@@ -66,14 +66,14 @@ If cluster GPU nodes are labeled (with NFD), add option limiting daemon pods to 
 
 ### Optional functionality
 
-By default, only `intelxpuinfo` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
+By default, only `intel_xpu_info` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
 To enable other exporters, the corresponding values must be set.
 
 To enable also Prometheus exporter endpoint, Prometheus monitoring of that
 and Grafana dashboard for the collected metrics, add options:
 
 ```bash
-  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
+  --set config.service.pipelines.metrics.exporters="{intel_xpu_info,prometheus}" \
   --set prometheus.release=prometheus-stack \
   --set prometheus.monitor=true \
   --set grafana.dashboards=true \
@@ -126,26 +126,26 @@ And add following option to chart install:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | config.exporters | object |   | [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters) |
-| config.exporters.intelxpuinfo | object | `{}` | Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intelxpuinfo` README for details. |
+| config.exporters.intel_xpu_info | object | `{}` | Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intel_xpu_info` README for details. |
 | config.extensions | object | `{}` | [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions) |
-| config.processors | object | `{"intelxpustatus":{}}` | [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors) |
-| config.processors.intelxpustatus | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details. |
+| config.processors | object | `{"intel_xpu_status":{}}` | [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors) |
+| config.processors.intel_xpu_status | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intel_xpu_status` README for details. |
 | config.receivers | object |   | [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers) |
 | config.receivers.intel_crashlog | object | `{}` | Override configuration for the Intel Crashlog receiver. Should only be used for advanced use cases. See `intel_crashlog` README for details. |
-| config.receivers.intelxpu | object |   | Configuration for the Intel XPU receiver. |
-| config.receivers.intelxpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
-| config.receivers.intelxpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
-| config.receivers.intelxpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
-| config.receivers.intelxpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
-| config.receivers.intelxpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"logs":{"exporters":["intelxpuinfo"],"receivers":["intelxpu","intel_crashlog"]},"metrics":{"exporters":["intelxpuinfo"],"processors":["intelxpustatus"],"receivers":["intelxpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.receivers.intel_xpu | object |   | Configuration for the Intel XPU receiver. |
+| config.receivers.intel_xpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
+| config.receivers.intel_xpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
+| config.receivers.intel_xpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
+| config.receivers.intel_xpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
+| config.receivers.intel_xpu.timeout | int | `0` | Metrics collection timeout. |
+| config.service | object | `{"pipelines":{"logs":{"exporters":["intel_xpu_info"],"receivers":["intel_xpu","intel_crashlog"]},"metrics":{"exporters":["intel_xpu_info"],"processors":["intel_xpu_status"],"receivers":["intel_xpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
 
 ### Other Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | affinity | object | `{}` | [Affinity](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) for the pods |
-| config.receivers.intelxpu.fail_on_sysman_init_error | bool | `false` | Whether to fail collector startup if the L0 Sysman API cannot be initialized (e.g. no GPU driver or device access). |
+| config.receivers.intel_xpu.fail_on_sysman_init_error | bool | `false` | Whether to fail collector startup if the L0 Sysman API cannot be initialized (e.g. no GPU driver or device access). |
 | crashlog.directory | string | `"/var/log/crashlog"` | Host directory to watch for collecting GPU crash logs. Use `*` to match all files. |
 | extraEnv | list | `[]` | Extra environment variables for the xpumd container |
 | extraVolumeMounts | list | `[]` | Additional volume mounts for the xpumd container |

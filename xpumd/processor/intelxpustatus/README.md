@@ -24,7 +24,7 @@ This example demonstrates all available configuration fields:
 
 ```yaml
 processors:
-  intelxpustatus:
+  intel_xpu_status:
     rules:
       - name: "Memory temperature health"
         source_metric: "hw.temperature"
@@ -118,7 +118,7 @@ states:
 
 ```yaml
 processors:
-  intelxpustatus:
+  intel_xpu_status:
     rules:
       # GPU memory temperature monitoring
       - name: "GPU memory temperature"

@@ -16,8 +16,8 @@
                     "description": "[Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters)",
                     "type": "object",
                     "properties": {
-                        "intelxpuinfo": {
-                            "description": "Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intelxpuinfo` README for details.",
+                        "intel_xpu_info": {
+                            "description": "Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intel_xpu_info` README for details.",
                             "type": "object"
                         }
                     }
@@ -30,8 +30,8 @@
                     "description": "[Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)",
                     "type": "object",
                     "properties": {
-                        "intelxpustatus": {
-                            "description": "Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.",
+                        "intel_xpu_status": {
+                            "description": "Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intel_xpu_status` README for details.",
                             "type": "object"
                         }
                     }
@@ -44,7 +44,7 @@
                             "description": "Override configuration for the Intel Crashlog receiver. Should only be used for advanced use cases. See `intel_crashlog` README for details.",
                             "type": "object"
                         },
-                        "intelxpu": {
+                        "intel_xpu": {
                             "description": "Configuration for the Intel XPU receiver.",
                             "type": "object",
                             "properties": {

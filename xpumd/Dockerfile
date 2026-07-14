@@ -139,7 +139,7 @@ COPY --from=builder /out/ /
 
 USER 65534:65534
 
-# default "intelxpuinfo" socket dir
+# default "intel_xpu_info" socket dir
 ENV XDG_RUNTIME_DIR=/run/xpumd
 
 ENTRYPOINT ["/usr/local/bin/xpumd"]

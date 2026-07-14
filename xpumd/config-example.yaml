@@ -1,6 +1,6 @@
 receivers:
   # The Intel XPU receiver.
-  intelxpu:
+  intel_xpu:
     # Metrics data collection interval.
     # Must be at least twice the sampling_interval.
     collection_interval: 5s
@@ -32,7 +32,7 @@ receivers:
     #   hw.vendor: "ACME"
 
 processors:
-  intelxpustatus:
+  intel_xpu_status:
     rules:
       - name: "Intel GPU core temperature health"
         source_metric: "hw.temperature"
@@ -88,17 +88,17 @@ processors:
 
   # An example config for filter processor: drop hw.status{hw.state="ok"} data points to reduce metric cardinality.
   # NOTE: If enabled in the default pipeline, this also affects the
-  # intelxpuinfo exporter: healthy components will have no active status entry.
+  # intel_xpu_info exporter: healthy components will have no active status entry.
   filter/ok_status:
     metrics:
       datapoint:
         - 'metric.name == "hw.status" and attributes["hw.state"] == "ok"'
 
 exporters:
-  intelxpuinfo:
+  intel_xpu_info:
     # Only unix domain socket is allowed.
-    # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intelxpuinfo.sock` is used instead.
-    #endpoint: "/run/xpumd/intelxpuinfo.sock"
+    # If `endpoint` is unset, `$XDG_RUNTIME_DIR/intel_xpu_info.sock` is used instead.
+    #endpoint: "/run/xpumd/intel_xpu_info.sock"
     hw_status_mappings:
       - health_domain: "memory"
         filters:
@@ -153,10 +153,10 @@ service:
       disable_stacktrace: true
   pipelines:
     metrics:
-      receivers: [intelxpu]
-      processors: [intelxpustatus]
-      exporters: [intelxpuinfo,prometheus]
+      receivers: [intel_xpu]
+      processors: [intel_xpu_status]
+      exporters: [intel_xpu_info,prometheus]
     logs:
       # "intel_crashlog" receiver can be added when its dir is present
-      receivers: [intelxpu]
-      exporters: [intelxpuinfo]
+      receivers: [intel_xpu]
+      exporters: [intel_xpu_info]

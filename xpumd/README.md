@@ -38,12 +38,12 @@ graph TB
 
         subgraph XPUMD["XPUM Daemon - xpumd"]
             subgraph RECV["Receivers"]
-                RECV_XPU["Intel XPU Receiver<br/>(intelxpu)"]
+                RECV_XPU["Intel XPU Receiver<br/>(intel_xpu)"]
                 RECV_LOG["Intel Crashlog<br/>(intel_crashlog)"]
             end
 
             subgraph PROC["Processor pipeline"]
-                PROC_XPU["Status Processor<br/>(intelxpustatus)"]
+                PROC_XPU["Status Processor<br/>(intel_xpu_status)"]
                 %% PROC_OTHERS["Standard Processors"] %%
             end
 
@@ -51,7 +51,7 @@ graph TB
             %% PROC_XPU --> PROC_OTHERS %%
 
             subgraph EXP["Exporters"]
-                EXP_INFO["Device Info Exporter<br/>(intelxpuinfo)"]
+                EXP_INFO["Device Info Exporter<br/>(intel_xpu_info)"]
                 EXP_PROM["Prometheus Exporter"]
                 EXP_OTEL["OpenTelemetry Exporter"]
             end
@@ -140,7 +140,7 @@ Helm chart installs Grafana dashboard, but one can also load manually
 
 ### Metrics
 
-See the [`intelxpu` receiver documentation](receiver/intelxpu/sysman/documentation.md)
+See the [`intel_xpu` receiver documentation](receiver/intelxpu/sysman/documentation.md)
 for the list of supported GPU metrics and attributes.
 
 Metrics availability depends on the underlying host hardware,
@@ -171,7 +171,7 @@ metrics:
 ### Device info exporter
 
 The XPUM daemon implements a custom exporter that exposes GPU capability and health information.
-It serves a custom gRPC API at local Unix socket (`/run/xpumd/intelxpuinfo.sock` by default).
+It serves a custom gRPC API at local Unix socket (`/run/xpumd/intel_xpu_info.sock` by default).
 
 The device info exporter is enabled by the default configuration file
 ([`config-example.yaml`](config-example.yaml)) and the [Helm chart](charts/xpumd/README.md).

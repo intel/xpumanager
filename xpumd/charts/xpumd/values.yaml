@@ -124,7 +124,7 @@ config:
     # -- Configuration for the Intel XPU receiver.
     # @default --  
     # @section -- XPUM Daemon Configuration
-    intelxpu:
+    intel_xpu:
       # -- Metrics data collection interval. Must be at least twice the sampling_interval.
       # @section -- XPUM Daemon Configuration
       collection_interval: 5s
@@ -151,17 +151,17 @@ config:
   # -- [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)
   # @section -- XPUM Daemon Configuration
   processors:
-    # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intelxpustatus` README for details.
+    # -- Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intel_xpu_status` README for details.
     # @section -- XPUM Daemon Configuration
-    intelxpustatus: {}
+    intel_xpu_status: {}
 
   # -- [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters)
   # @default --  
   # @section -- XPUM Daemon Configuration
   exporters:
-    # -- Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intelxpuinfo` README for details.
+    # -- Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intel_xpu_info` README for details.
     # @section -- XPUM Daemon Configuration
-    intelxpuinfo: {}
+    intel_xpu_info: {}
     # @schema hidden
     prometheus:
       endpoint: "0.0.0.0:8080"
@@ -181,9 +181,9 @@ config:
     # @schema hidden
     pipelines:
       metrics:
-        receivers: [intelxpu]
-        processors: [intelxpustatus]
-        exporters: [intelxpuinfo]
+        receivers: [intel_xpu]
+        processors: [intel_xpu_status]
+        exporters: [intel_xpu_info]
       logs:
-        receivers: [intelxpu, intel_crashlog]
-        exporters: [intelxpuinfo]
+        receivers: [intel_xpu, intel_crashlog]
+        exporters: [intel_xpu_info]

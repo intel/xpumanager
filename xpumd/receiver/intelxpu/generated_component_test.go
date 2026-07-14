@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 )
 
-var typ = component.MustNewType("intelxpu")
+var typ = component.MustNewType("intel_xpu")
 
 func TestComponentFactoryType(t *testing.T) {
 	require.Equal(t, typ, NewFactory().Type())

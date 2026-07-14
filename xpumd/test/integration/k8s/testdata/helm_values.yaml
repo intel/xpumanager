@@ -5,7 +5,7 @@ service:
 
 config:
   receivers:
-    intelxpu:
+    intel_xpu:
       collection_interval: 2s
       initial_delay: 0s
       sampling_interval: 1s

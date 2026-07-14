@@ -19,7 +19,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-var typ = component.MustNewType("intelxpuinfo")
+var typ = component.MustNewType("intel_xpu_info")
 
 func TestComponentFactoryType(t *testing.T) {
 	require.Equal(t, typ, NewFactory().Type())

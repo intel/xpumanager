@@ -51,9 +51,9 @@ sudo ./dist/xpumd --config config-example.yaml
 
 > [!NOTE]
 > If not running this through normal user session, one may need to specify
-> `intelxpuinfo` exporter socket directory with e.g. `XDG_RUNTIME_DIR=$PWD`
+> `intel_xpu_info` exporter socket directory with e.g. `XDG_RUNTIME_DIR=$PWD`
 > environment variable (or full socket path with the
-> `exporters.intelxpuinfo.endpoint` config option).
+> `exporters.intel_xpu_info.endpoint` config option).
 
 ## Testing Prometheus exporter
 
@@ -108,7 +108,7 @@ docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
 One can also modify the config, e.g. to drop the local gRPC health endpoint:
 
 ```bash
-sed -i s/intelxpuinfo,// config-example.yaml
+sed -i s/intel_xpu_info,// config-example.yaml
 ```
 
 Map the modified config inside container, and ask daemon to use it:

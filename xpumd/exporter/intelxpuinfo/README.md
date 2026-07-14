@@ -21,7 +21,7 @@ information for all known XPU devices.
 ### Logs pipeline
 
 The exporter also consumes events (log records) produced by the
-[intelxpu](../../receiver/intelxpu/) receiver. Events with the `hw.id`
+[intel_xpu](../../receiver/intelxpu/) receiver. Events with the `hw.id`
 attribute are translated into device events.
 
 ## Configuration
@@ -30,7 +30,7 @@ attribute are translated into device events.
 
 ```yaml
 exporters:
-  intelxpuinfo:
+  intel_xpu_info:
     hw_status_mappings:
       # Temperature health domain
       - filters:
@@ -71,7 +71,7 @@ ones and a possible catch-all (empty `filters`) last.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `endpoint` | string | `$XDG_RUNTIME_DIR/intelxpuinfo.sock` | Listen endpoint for the gRPC server, only unix domain sockets are supported |
+| `endpoint` | string | `$XDG_RUNTIME_DIR/intel_xpu_info.sock` | Listen endpoint for the gRPC server, only unix domain sockets are supported |
 | `hw_status_mappings` | []HwStatusMapping | *required* | Ordered list of mappings from `hw.status` device health information. The first matching entry is used |
 
 In addition to `endpoint`, the exporter supports a wide range of gRPC

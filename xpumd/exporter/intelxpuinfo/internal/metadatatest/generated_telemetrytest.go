@@ -16,7 +16,7 @@ import (
 
 func NewSettings(tt *componenttest.Telemetry) exporter.Settings {
 	set := exportertest.NewNopSettings(exportertest.NopType)
-	set.ID = component.NewID(component.MustNewType("intelxpuinfo"))
+	set.ID = component.NewID(component.MustNewType("intel_xpu_info"))
 	set.TelemetrySettings = tt.NewTelemetrySettings()
 	return set
 }

@@ -76,7 +76,7 @@ helm install xpumd charts/xpumd \
   --set image.repository=registry.local/xpumd \
   --set image.pullPolicy=Never \
   --set config.exporters.otlphttp.endpoint="http://otel-collector-opentelemetry-collector.default.svc.cluster.local:4318" \
-  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlphttp}"
+  --set config.service.pipelines.metrics.exporters="{intel_xpu_info,otlphttp}"
 ```
 
 From ghcr.io registry:
@@ -84,7 +84,7 @@ From ghcr.io registry:
 ```bash
 helm install xpumd oci://ghcr.io/intel/xpumanager/charts/xpumd \
   --set config.exporters.otlphttp.endpoint="http://otel-collector-opentelemetry-collector.default.svc.cluster.local:4318" \
-  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,otlphttp}" \
+  --set config.service.pipelines.metrics.exporters="{intel_xpu_info,otlphttp}" \
   --version 0.0.0-latest
 ```
 
@@ -126,7 +126,7 @@ Look for Intel GPU metrics, e.g.:
 - `hw_memory_usage_bytes`
 
 > [!NOTE]
-> See the [`intelxpu` receiver documentation](../receiver/intelxpu/sysman/documentation.md)
+> See the [`intel_xpu` receiver documentation](../receiver/intelxpu/sysman/documentation.md)
 > for all available metrics.
 
 ## Visualization with Grafana

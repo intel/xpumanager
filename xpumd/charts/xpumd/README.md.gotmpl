@@ -69,14 +69,14 @@ If cluster GPU nodes are labeled (with NFD), add option limiting daemon pods to 
 
 ### Optional functionality
 
-By default, only `intelxpuinfo` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
+By default, only `intel_xpu_info` exporter (with local unix / gRPC socket endpoint) for GPU status is enabled.
 To enable other exporters, the corresponding values must be set.
 
 To enable also Prometheus exporter endpoint, Prometheus monitoring of that
 and Grafana dashboard for the collected metrics, add options:
 
 ```bash
-  --set config.service.pipelines.metrics.exporters="{intelxpuinfo,prometheus}" \
+  --set config.service.pipelines.metrics.exporters="{intel_xpu_info,prometheus}" \
   --set prometheus.release=prometheus-stack \
   --set prometheus.monitor=true \
   --set grafana.dashboards=true \

@@ -17,7 +17,7 @@ data:
   # in config.yaml (via .Values.config).
   config-processor-xpustatus.yaml: |-
     processors:
-      intelxpustatus:
+      intel_xpu_status:
         rules:
           - name: "Intel GPU core temperature health"
             source_metric: "hw.temperature"
@@ -70,8 +70,8 @@ data:
   # in config.yaml (via .Values.config).
   config-exporter-xpuinfo.yaml: |-
     exporters:
-      intelxpuinfo:
-        endpoint: "/run/xpumd/intelxpuinfo.sock"
+      intel_xpu_info:
+        endpoint: "/run/xpumd/intel_xpu_info.sock"
         hw_status_mappings:
           - health_domain: "memory"
             filters:

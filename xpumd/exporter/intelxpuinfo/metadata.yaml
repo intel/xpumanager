@@ -1,5 +1,5 @@
 display_name: Intel XPU Info Exporter
-type: intelxpuinfo
+type: intel_xpu_info
 
 status:
   class: exporter
@@ -29,4 +29,4 @@ telemetry:
 
 tests:
   config:
-    endpoint: /tmp/intelxpuinfo_test_run/intelxpuinfo.sock
+    endpoint: /tmp/intelxpuinfo_test_run/intel_xpu_info.sock
