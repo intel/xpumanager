@@ -208,6 +208,22 @@ TEST_SUITE("determineLinkType")
 		CHECK(cmdTopology::determineLinkType(gpu1, gpu0) == "NODE");
 	}
 
+	TEST_CASE("NODE: same NUMA, PCIe paths present but on different root complexes")
+	{
+		const auto gpu0 = makeGpu({.deviceId = 0, .tileId = 0, .numaNode = 0, .pciePath = makePath("pci0000:00")});
+		const auto gpu1 = makeGpu({.deviceId = 1, .tileId = 0, .numaNode = 0, .pciePath = makePath("pci0001:00")});
+		CHECK(cmdTopology::determineLinkType(gpu0, gpu1) == "NODE");
+		CHECK(cmdTopology::determineLinkType(gpu1, gpu0) == "NODE");
+	}
+
+	TEST_CASE("SYS: different NUMA nodes, PCIe paths present but no common ancestor")
+	{
+		const auto gpu0 = makeGpu({.deviceId = 0, .tileId = 0, .numaNode = 0, .pciePath = makePath("pci0000:00")});
+		const auto gpu1 = makeGpu({.deviceId = 1, .tileId = 0, .numaNode = 1, .pciePath = makePath("pci0001:00")});
+		CHECK(cmdTopology::determineLinkType(gpu0, gpu1) == "SYS");
+		CHECK(cmdTopology::determineLinkType(gpu1, gpu0) == "SYS");
+	}
+
 	TEST_CASE("SYS: no PCIe path, different NUMA nodes")
 	{
 		const auto gpu0 = makeGpu({.deviceId = 0, .tileId = 0, .numaNode = 0});
@@ -338,6 +354,49 @@ TEST_SUITE("discoverNics")
 		REQUIRE(result.has_value());
 		REQUIRE(result->size() == 1U);
 		CHECK((*result)[0].name == "eth0");
+	}
+
+	TEST_CASE("Deduplicates multi-port NICs sharing a BDF — keeps lexicographically first name")
+	{
+		// eth0 and eth1 both symlink to the same BDF (dual-port card). Only one row
+		// should appear in the topology matrix.
+		const TempDir tmp;
+		const auto netRoot = tmp.path / "net";
+		const auto pciRoot = tmp.path / "pci";
+		const std::string bdf = "0000:04:00.0";
+
+		createSymlink(std::filesystem::path{"../../pci"} / bdf, netRoot / "eth0" / "device");
+		createSymlink(std::filesystem::path{"../../pci"} / bdf, netRoot / "eth1" / "device");
+		writeFile(pciRoot / bdf / "local_cpulist", "0-15");
+
+		const auto result = discoverNics(SysfsPaths{.netRoot = netRoot, .pciDevRoot = pciRoot});
+		REQUIRE(result.has_value());
+		REQUIRE(result->size() == 1U);
+		CHECK((*result)[0].name == "eth0");
+		CHECK((*result)[0].bdfAddress == bdf);
+	}
+
+	TEST_CASE("Deduplication preserves distinct BDFs alongside shared-BDF pair")
+	{
+		// ens3f0 and ens3f1 share a BDF; eth0 is on its own. Two rows expected.
+		const TempDir tmp;
+		const auto netRoot = tmp.path / "net";
+		const auto pciRoot = tmp.path / "pci";
+
+		createSymlink(std::filesystem::path{"../../pci/0000:05:00.0"}, netRoot / "ens3f0" / "device");
+		createSymlink(std::filesystem::path{"../../pci/0000:05:00.0"}, netRoot / "ens3f1" / "device");
+		createSymlink(std::filesystem::path{"../../pci/0000:03:00.0"}, netRoot / "eth0" / "device");
+		writeFile(pciRoot / "0000:05:00.0" / "local_cpulist", "16-31");
+		writeFile(pciRoot / "0000:03:00.0" / "local_cpulist", "0-15");
+
+		const auto result = discoverNics(SysfsPaths{.netRoot = netRoot, .pciDevRoot = pciRoot});
+		REQUIRE(result.has_value());
+		REQUIRE(result->size() == 2U);
+		// Sorted by name: ens3f0 < eth0
+		CHECK((*result)[0].name == "ens3f0");
+		CHECK((*result)[0].bdfAddress == "0000:05:00.0");
+		CHECK((*result)[1].name == "eth0");
+		CHECK((*result)[1].bdfAddress == "0000:03:00.0");
 	}
 }
 

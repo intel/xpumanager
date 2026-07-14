@@ -263,12 +263,12 @@ void cmdTopology::help(HELP helpType)
 						  "-f,--file                   Generate the system topology with the GPU info to a XML file");
 	helpList.emplace_back(HEADING, "-m,--matrix                 Print the CPU/GPU/NIC topology matrix");
 	helpList.emplace_back(SUB_HEADING, "S: Self");
-	helpList.emplace_back(SUB_HEADING, "MDF: Connected with Multi-Die Fabric Interface");
+	helpList.emplace_back(SUB_HEADING, "MDF:  Connected with Multi-Die Fabric Interface");
 	helpList.emplace_back(SUB_HEADING, "PIX:  Connected via PCIe switch");
 	helpList.emplace_back(SUB_HEADING, "PXB:  Connected via multiple PCIe bridges");
 	helpList.emplace_back(SUB_HEADING, "PHB:  Connected via PCIe host bridge");
-	helpList.emplace_back(SUB_HEADING, "NODE: Connected with PCIe within a NUMA node");
-	helpList.emplace_back(SUB_HEADING, "SYS: Connected with PCIe between NUMA nodes");
+	helpList.emplace_back(SUB_HEADING, "NODE: Connected within a NUMA node");
+	helpList.emplace_back(SUB_HEADING, "SYS:  Worst-case connectivity (cross-NUMA or topology unknown)");
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -584,14 +584,15 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
  *
  * Uses a priority-ordered decision chain:
  *
- *  1. **S**   — same stable identity (GPU: matching deviceId/tileId; NIC: matching nicIndex)
- *  2. **MDF** — both GPU tiles on the same physical device
- *  3. **PIX** — PCIe paths share ≥ 3 common bridge ancestors (same PCIe switch)
- *  4. **PXB** — PCIe paths share exactly 2 common ancestors (same root port)
- *  5. **PHB** — PCIe paths share exactly 1 common ancestor (same host bridge)
- *  6. **SYS** — both PCIe paths present but share no common ancestor
- *  7. **NODE** — at least one PCIe path absent; both nodes resolve to the same NUMA index
- *  8. **SYS** — everything else (different NUMA nodes, or NUMA unknown)
+ *  1. **S**    — same stable identity (GPU: matching deviceId/tileId; NIC: matching nicIndex)
+ *  2. **MDF**  — both GPU tiles on the same physical device
+ *  3. **PIX**  — PCIe paths share ≥ 3 common bridge ancestors (same PCIe switch)
+ *  4. **PXB**  — PCIe paths share exactly 2 common ancestors (same root port)
+ *  5. **PHB**  — PCIe paths share exactly 1 common ancestor (same host bridge)
+ *  6. **NODE** — PCIe paths share no common ancestor but both nodes are on the same NUMA node
+ *  7. **SYS**  — PCIe paths share no common ancestor, different or unknown NUMA
+ *  8. **NODE** — at least one PCIe path absent; both nodes resolve to the same NUMA index
+ *  9. **SYS**  — everything else (different NUMA nodes, or NUMA unknown)
  *
  * PCIe path data comes from the sysfs canonical path walk (unavailable on Windows),
  * in which case the fallback NODE / SYS classification is used.
@@ -653,7 +654,10 @@ std::string cmdTopology::determineLinkType(const TopoNode &node1, const TopoNode
 		if (commonLen == 1) {
 			return "PHB";
 		}
-		// commonLen == 0: both paths exist but share no common ancestor → SYS
+		// commonLen == 0: both paths exist but share no common ancestor; use NUMA as tiebreaker
+		if (node1.numaNode.has_value() && node1.numaNode == node2.numaNode) {
+			return "NODE";
+		}
 		return "SYS";
 	}
 

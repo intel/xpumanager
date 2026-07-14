@@ -15,6 +15,7 @@
 #include <string>
 #include <system_error>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <utility>
 
@@ -233,6 +234,28 @@ std::optional<std::vector<NicInfo>> discoverNics(const SysfsPaths &paths)
 	}
 
 	std::ranges::sort(*result, {}, &NicInfo::name);
+
+	// Multi-port NICs expose multiple netdev names for one BDF (e.g. a dual-port
+	// card appears as both eth0 and eth1 under /sys/class/net, both symlinking to
+	// 0000:04:00.0). Without deduplication the topology matrix shows a meaningless row:
+	//
+	//   Before (eth0 and eth1 share 0000:04:00.0):       After:
+	//   +-------+------+------+------+------+------+      +-------+------+------+------+
+	//   |       | GPU0 | GPU1 | NIC0 | NIC1 | NIC2 |      |       | GPU0 | GPU1 | NIC0 |
+	//   +-------+------+------+------+------+------+      +-------+------+------+------+
+	//   | GPU0  |  S   | PIX  | PHB  | PHB  | SYS  |      | GPU0  |  S   | PIX  | PHB  |
+	//   | GPU1  | PIX  |  S   | PHB  | PHB  | SYS  |      | GPU1  | PIX  |  S   | PHB  |
+	//   | NIC0  | PHB  | PHB  |  S   |  S   | SYS  |      | NIC0  | PHB  | PHB  |  S   |
+	//   | NIC1  | PHB  | PHB  |  S   |  S   | SYS  |  =>  | NIC1  | SYS  | SYS  | SYS  |
+	//   | NIC2  | SYS  | SYS  | SYS  | SYS  |  S   |      +-------+------+------+------+
+	//   +-------+------+------+------+------+------+
+	//
+	// NIC0/NIC1 were the same physical card (identical BDF), so their row and
+	// column were duplicates (NIC0 <-> NIC1 = S, because the paths are equal)
+	// Keep only the lexicographically first name so the topology matrix has one row per physical card
+	std::unordered_set<std::string> seenBdfs;
+	std::erase_if(*result, [&](const NicInfo &nic) { return !seenBdfs.insert(nic.bdfAddress).second; });
+
 	return result;
 }
 
