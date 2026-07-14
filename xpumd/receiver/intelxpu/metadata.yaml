@@ -1,3 +1,4 @@
+display_name: Intel XPU Receiver
 type: intelxpu
 
 status:
