@@ -21,6 +21,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <array>
 #include <unordered_map>
 #include <variant>
 
@@ -41,6 +42,23 @@ struct CpuInfo
 
 	auto operator<=>(const CpuInfo &) const = default;
 };
+
+/// Per-device fabric port data used only by the "n" (MDF) P2P capability check.
+struct FabricPortData
+{
+	std::vector<std::vector<zes_fabric_port_id_t>> localPortIds;
+	std::vector<std::vector<portInfo>> allPorts;
+};
+
+/// Single source of truth for P2P capability key → human-readable description.
+/// Used by both printP2PLegend and printP2PCapabilityHelp.
+/// "w" is an accepted alias for "r"; both map to Read (Level Zero unified capability).
+constexpr auto P2P_CAP_DESCRIPTIONS = std::to_array<std::pair<std::string_view, std::string_view>>({
+	{"r", "P2P read/write access (\"w\" accepted as alias; Level Zero reports as a unified capability)"},
+	{"n", "MDF fabric connectivity"},
+	{"a", "P2P atomic operations"},
+	{"p", "PCIe P2P access"},
+});
 } // namespace
 
 /**
@@ -79,6 +97,83 @@ struct CpuInfo
  * @ingroup topology_printers
  */
 TopologyTextPrinter::TopologyTextPrinter() = default;
+
+/**
+ * @brief Prints the P2P matrix legend beneath the capability matrix.
+ *
+ * Looks up the human-readable description for the requested capability from
+ * P2P_CAP_DESCRIPTIONS.  Falls back to the raw capability key when no matching
+ * entry is found.
+ *
+ * @param[in] jsonObj JSON object containing a @c "p2p_capability" string field.
+ *
+ * @post Legend is printed to stdout via PRINT.
+ */
+static void printP2PLegend(nlohmann::ordered_json *jsonObj)
+{
+	const auto cap = jsonObj->value("p2p_capability", std::string{});
+	const auto it = std::ranges::find_if(P2P_CAP_DESCRIPTIONS, [&cap](const auto &p) { return p.first == cap; });
+	const std::string desc = (it != P2P_CAP_DESCRIPTIONS.end()) ? std::string{it->second} : cap;
+	PRINT("\nCapability: {}\nLegend:\n  X  : Self\n  OK : Supported\n  NS : Not supported\n  ?  : Query failed (driver "
+		  "or device error)\n",
+		  desc.c_str());
+}
+
+/**
+ * @brief Renders a topology or P2P matrix JSON object as a bordered text table.
+ *
+ * Dispatches on the @c "p2p" boolean sentinel in @p jsonObj:
+ *  - Topology matrix: appends a "CPU Affinity" column sized to the longest value.
+ *  - P2P matrix: omits the affinity column; appends the legend via printP2PLegend().
+ *
+ * @param[in] jsonObj JSON object containing @c "headers" (array) and @c "matrix"
+ *                    (array of objects with @c "tile", @c "connections", and
+ *                    optionally @c "cpu_affinity").  Must not be nullptr.
+ *
+ * @pre  @p jsonObj contains both @c "matrix" and @c "headers" keys.
+ * @post Formatted table (and optional P2P legend) is printed to stdout via PRINT.
+ */
+static void printMatrixBlock(nlohmann::ordered_json *jsonObj)
+{
+	const auto &headers = (*jsonObj)["headers"];
+	const auto &matrix = (*jsonObj)["matrix"];
+	const bool isP2P = jsonObj->value("p2p", false);
+
+	TableBuilder table;
+	table.addColumn("", MATRIX_TILE_COL_WIDTH);
+	for (const auto &header : headers) {
+		const auto &name = header.get<std::string>();
+		const int colWidth = std::max(MATRIX_CONNECTION_COL_WIDTH, static_cast<int>(name.size()));
+		table.addColumn(name, colWidth);
+	}
+
+	if (!isP2P) {
+		int affinityWidth = MATRIX_AFFINITY_COL_WIDTH;
+		for (const auto &row : matrix) {
+			const auto affinity = row["cpu_affinity"].get<std::string>();
+			affinityWidth = std::max(affinityWidth, static_cast<int>(affinity.size()));
+		}
+		table.addColumn("CPU Affinity", affinityWidth);
+	}
+
+	for (const auto &row : matrix) {
+		std::vector<std::string> cells;
+		cells.push_back(row["tile"].get<std::string>());
+		for (const auto &conn : row["connections"]) {
+			cells.push_back(conn.get<std::string>());
+		}
+		if (!isP2P) {
+			cells.push_back(row["cpu_affinity"].get<std::string>());
+		}
+		table.addRowFromContainer(cells);
+	}
+
+	PRINT("{}", table.toString().c_str());
+
+	if (isP2P) {
+		printP2PLegend(jsonObj);
+	}
+}
 
 /**
  * @brief Custom text printer for topology command output (legacy JSON support)
@@ -138,36 +233,7 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	}
 
 	if (jsonObj->contains("matrix") && jsonObj->contains("headers")) {
-		const auto &headers = (*jsonObj)["headers"];
-		const auto &matrix = (*jsonObj)["matrix"];
-
-		TableBuilder table;
-		table.addColumn("", MATRIX_TILE_COL_WIDTH);
-		for (const auto &header : headers) {
-			const auto &name = header.get<std::string>();
-			const int colWidth = std::max(MATRIX_CONNECTION_COL_WIDTH, static_cast<int>(name.size()));
-			table.addColumn(name, colWidth);
-		}
-
-		// Compute affinity column width from actual data to avoid truncation
-		int affinityWidth = MATRIX_AFFINITY_COL_WIDTH;
-		for (const auto &row : matrix) {
-			const auto affinity = row["cpu_affinity"].get<std::string>();
-			affinityWidth = std::max(affinityWidth, static_cast<int>(affinity.size()));
-		}
-		table.addColumn("CPU Affinity", affinityWidth);
-
-		for (const auto &row : matrix) {
-			std::vector<std::string> cells;
-			cells.push_back(row["tile"].get<std::string>());
-			for (const auto &conn : row["connections"]) {
-				cells.push_back(conn.get<std::string>());
-			}
-			cells.push_back(row["cpu_affinity"].get<std::string>());
-			table.addRowFromContainer(cells);
-		}
-
-		PRINT("{}", table.toString().c_str());
+		printMatrixBlock(jsonObj);
 		return;
 	}
 
@@ -222,7 +288,7 @@ void TopologyTextPrinter::print(const TopologyInfo &info)
 static std::unordered_map<topologyCmdType, TopologyCmdStruct> topologyCmds = {
 	{topologyCmdType::TOPOLOGY_HELP, {}},	{topologyCmdType::TOPOLOGY_JSON, {}},
 	{topologyCmdType::TOPOLOGY_DEVICE, {}}, {topologyCmdType::TOPOLOGY_FILE, {}},
-	{topologyCmdType::TOPOLOGY_MATRIX, {}},
+	{topologyCmdType::TOPOLOGY_MATRIX, {}}, {topologyCmdType::TOPOLOGY_P2P, {}},
 };
 
 /**
@@ -269,6 +335,40 @@ void cmdTopology::help(HELP helpType)
 	helpList.emplace_back(SUB_HEADING, "PHB:  Connected via PCIe host bridge");
 	helpList.emplace_back(SUB_HEADING, "NODE: Connected within a NUMA node");
 	helpList.emplace_back(SUB_HEADING, "SYS:  Worst-case connectivity (cross-NUMA or topology unknown)");
+	helpList.emplace_back(HEADING, "--p2p <capability>          Print the P2P capability matrix between GPU devices");
+
+	helpList.emplace_back(SUB_HEADING, "Capability values:");
+	{
+		TableBuilder capTable;
+		capTable.addColumn("", 1).addColumn("", 1).enableAutoSizing();
+		for (const auto &[key, desc] : P2P_CAP_DESCRIPTIONS) {
+			capTable.addRow("  " + std::string{key}, desc);
+		}
+		capTable.lockWidths();
+		for (const auto &[key, desc] : P2P_CAP_DESCRIPTIONS) {
+			helpList.emplace_back(SUB_HEADING, capTable.rowLine({"  " + std::string{key}, std::string{desc}}).c_str());
+		}
+	}
+
+	helpList.emplace_back(SUB_HEADING, "Matrix symbols:");
+	{
+		static constexpr auto matrixLegend = std::to_array<std::pair<std::string_view, std::string_view>>({
+			{"X", "Self"},
+			{"OK", "Capability supported"},
+			{"NS", "Not supported"},
+			{"?", "Query failed (driver or device error)"},
+		});
+		TableBuilder symTable;
+		symTable.addColumn("", 1).addColumn("", 1).enableAutoSizing();
+		for (const auto &[sym, meaning] : matrixLegend) {
+			symTable.addRow("  " + std::string{sym}, meaning);
+		}
+		symTable.lockWidths();
+		for (const auto &[sym, meaning] : matrixLegend) {
+			helpList.emplace_back(SUB_HEADING,
+								  symTable.rowLine({"  " + std::string{sym}, std::string{meaning}}).c_str());
+		}
+	}
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -720,6 +820,274 @@ ze_result_t cmdTopology::showMatrix(bool useJson)
 	return ZE_RESULT_SUCCESS;
 }
 
+// ─── P2P helpers (file-scope, used only by buildP2PMatrix) ───────────────────
+
+/**
+ * @brief Collects fabric port data for every device in @p deviceList.
+ *
+ * Queries the fabric HAL for each device to retrieve port identifiers and full
+ * port state.  Devices without a fabric HAL, or for which the HAL query fails,
+ * contribute empty vectors at their respective indices.
+ *
+ * @param[in] deviceList Devices to query; indices are preserved in the returned data.
+ * @return FabricPortData where @c localPortIds[i] and @c allPorts[i] are populated
+ *         for reachable devices and empty for unreachable ones.
+ */
+static FabricPortData collectFabricPorts(const std::vector<devInfo> &deviceList)
+{
+	FabricPortData data{
+		.localPortIds = std::vector<std::vector<zes_fabric_port_id_t>>(deviceList.size()),
+		.allPorts = std::vector<std::vector<portInfo>>(deviceList.size()),
+	};
+	for (size_t i = 0; i < deviceList.size(); ++i) {
+		fabric *const f = deviceList[i].dev->getFabric();
+		if (f == nullptr) {
+			continue;
+		}
+		std::vector<portInfo> ports;
+		if (f->getFabricPorts(deviceList[i].zesDeviceHdl, ports) != ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		std::ranges::transform(ports, std::back_inserter(data.localPortIds[i]),
+							   [](const portInfo &p) { return p.portProps.portId; });
+		data.allPorts[i] = std::move(ports);
+	}
+	return data;
+}
+
+/**
+ * @brief Returns whether any active port in @p srcPorts links to the destination device.
+ *
+ * "Active" means @c ZES_FABRIC_PORT_STATUS_HEALTHY or @c ZES_FABRIC_PORT_STATUS_DEGRADED.
+ * Matching uses @c (fabricId, attachId) rather than @c portNumber, since @c portNumber
+ * differs on each end of a link.
+ *
+ * @param[in] srcPorts   All fabric ports belonging to the source device.
+ * @param[in] dstPortIds Local port IDs of the destination device.
+ * @return @c true if at least one active source port has its remote end within
+ *         @p dstPortIds; @c false otherwise (including when either vector is empty).
+ */
+static bool isFabricConnected(const std::vector<portInfo> &srcPorts,
+							  const std::vector<zes_fabric_port_id_t> &dstPortIds)
+{
+	return std::ranges::any_of(srcPorts, [&dstPortIds](const portInfo &port) {
+		const bool active = port.portState.status == ZES_FABRIC_PORT_STATUS_HEALTHY ||
+							port.portState.status == ZES_FABRIC_PORT_STATUS_DEGRADED;
+		return active && std::ranges::any_of(dstPortIds, [&port](const zes_fabric_port_id_t &pid) {
+				   return port.portState.remotePortId.fabricId == pid.fabricId &&
+						  port.portState.remotePortId.attachId == pid.attachId;
+			   });
+	});
+}
+
+/**
+ * @brief Queries whether a specific P2P capability is supported between two devices.
+ *
+ * @param[in] capability  The P2P capability to check.
+ * @param[in] src         Level Zero handle for the source device.
+ * @param[in] dst         Level Zero handle for the destination device.
+ * @param[in] srcPorts    Pre-collected fabric port data for @p src (used only for Fabric).
+ * @param[in] dstPortIds  Pre-collected fabric port IDs for @p dst (used only for Fabric).
+ * @return @c true  if the capability is confirmed supported,
+ *         @c false if the capability is confirmed not supported,
+ *         @c nullopt if the Level Zero API call failed (displayed as "?" in the matrix).
+ */
+static std::optional<bool> queryP2PSupported(P2PCapability capability, ze_device_handle_t src, ze_device_handle_t dst,
+											 const std::vector<portInfo> &srcPorts,
+											 const std::vector<zes_fabric_port_id_t> &dstPortIds)
+{
+	switch (capability) {
+	case P2PCapability::Read: {
+		ze_bool_t canAccess = 0;
+		if (zeDeviceCanAccessPeer(src, dst, &canAccess) != ZE_RESULT_SUCCESS) {
+			return std::nullopt;
+		}
+		return canAccess != 0;
+	}
+	case P2PCapability::Fabric:
+		return isFabricConnected(srcPorts, dstPortIds);
+	case P2PCapability::Atomics:
+	case P2PCapability::Pcie: {
+		ze_device_p2p_properties_t props{};
+		props.stype = ZE_STRUCTURE_TYPE_DEVICE_P2P_PROPERTIES;
+		if (zeDeviceGetP2PProperties(src, dst, &props) != ZE_RESULT_SUCCESS) {
+			return std::nullopt;
+		}
+		const auto flag = (capability == P2PCapability::Atomics) ? ZE_DEVICE_P2P_PROPERTY_FLAG_ATOMICS
+																 : ZE_DEVICE_P2P_PROPERTY_FLAG_ACCESS;
+		return (props.flags & static_cast<ze_device_p2p_property_flag_t>(flag)) != 0;
+	}
+	}
+	return std::nullopt;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * @brief Returns the canonical single-letter CLI key for a @c P2PCapability.
+ *
+ * This is the inverse of @c parseP2PCapability for display and JSON output.
+ * @c Read emits @c "r"; @c "w" is a parse-time alias and is never returned here.
+ *
+ * @param[in] cap  The capability to convert.
+ * @return A non-owning string view of the one-character key, or an empty view
+ *         if @p cap is an unrecognised enumerator (should never occur in practice).
+ */
+static constexpr std::string_view capabilityKey(P2PCapability cap) noexcept
+{
+	switch (cap) {
+	case P2PCapability::Read:
+		return "r";
+	case P2PCapability::Fabric:
+		return "n";
+	case P2PCapability::Atomics:
+		return "a";
+	case P2PCapability::Pcie:
+		return "p";
+	}
+	return {};
+}
+
+/**
+ * @brief Prints the @c --p2p capability list and a usage example to stderr.
+ *
+ * Called when the user omits or provides an invalid capability argument.
+ *
+ * @param[in] prog  The program name as invoked (used in the example line).
+ */
+static void printP2PCapabilityHelp(const std::string &prog)
+{
+	ERR("--p2p requires a capability argument:\n");
+	for (const auto &[key, desc] : P2P_CAP_DESCRIPTIONS) {
+		ERR("  {}  {}\n", key, desc);
+	}
+	ERR("\nExample: {} topology --p2p r\n", prog.c_str());
+}
+
+/**
+ * @brief Builds the P2P capability matrix for all GPU devices
+ * @ingroup topology_matrix
+ *
+ * Queries Level Zero P2P capabilities between every pair of GPU devices.
+ * Operates at device granularity (not tile), matching the Level Zero P2P API contract.
+ *
+ * @param[in]  args       Pointer to argument structure containing system manager.
+ * @param[in]  capability P2P capability to query (see P2PCapability).
+ * @param[out] jsonObj    Populated with:
+ *                        - @c "p2p":            true (sentinel for printer)
+ *                        - @c "p2p_capability": the requested capability letter
+ *                        - @c "headers":        GPU label array ("GPU 0", "GPU 1", ...)
+ *                        - @c "matrix":         2-D array of per-row {tile, connections}
+ *                        - @c "p2p_list":       flat array of per-pair entries
+ *                        On error: @c "error" string.
+ *
+ * @retval ZE_RESULT_SUCCESS           Matrix built successfully
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found
+ */
+ze_result_t cmdTopology::buildP2PMatrix(arg_struct *args, P2PCapability capability, nlohmann::ordered_json *jsonObj)
+{
+	TRACING();
+
+	std::vector<devInfo> deviceList;
+	const auto result = args->sm.findDevice("", &deviceList);
+	if (result != ZE_RESULT_SUCCESS || deviceList.empty()) {
+		*jsonObj = {{"error", "No devices found or error getting device list"}};
+		return result != ZE_RESULT_SUCCESS ? result : ZE_RESULT_ERROR_DEVICE_LOST;
+	}
+
+	const auto deviceCount = deviceList.size();
+
+	// Pre-collect fabric port data only for the "n" capability to avoid redundant
+	// ZES calls for the other capability types.
+	auto [localPortIds, allPorts] =
+		(capability == P2PCapability::Fabric)
+			? collectFabricPorts(deviceList)
+			: FabricPortData{.localPortIds = std::vector<std::vector<zes_fabric_port_id_t>>(deviceCount),
+							 .allPorts = std::vector<std::vector<portInfo>>(deviceCount)};
+
+	std::vector<std::string> headers;
+	headers.reserve(deviceCount);
+	std::ranges::transform(deviceList, std::back_inserter(headers),
+						   [](const devInfo &d) { return std::format("GPU {}", d.index); });
+
+	const std::string capKey{capabilityKey(capability)};
+
+	std::vector<nlohmann::ordered_json> matrixData;
+	std::vector<nlohmann::ordered_json> p2pList;
+
+	for (size_t row = 0; row < deviceCount; ++row) {
+		nlohmann::ordered_json rowData;
+		rowData["tile"] = headers[row];
+
+		std::vector<std::string> connections;
+		for (size_t col = 0; col < deviceCount; ++col) {
+			if (row == col) {
+				connections.emplace_back("X");
+				continue;
+			}
+
+			const auto supported = queryP2PSupported(capability, deviceList[row].deviceHdl, deviceList[col].deviceHdl,
+													 allPorts[row], localPortIds[col]);
+
+			connections.emplace_back(!supported.has_value() ? "?" : (supported.value() ? "OK" : "NS"));
+
+			nlohmann::ordered_json entry;
+			entry["source_device_id"] = static_cast<int>(deviceList[row].index);
+			entry["target_device_id"] = static_cast<int>(deviceList[col].index);
+			entry["capability"] = capKey;
+			entry["supported"] =
+				supported.has_value() ? nlohmann::ordered_json(supported.value()) : nlohmann::ordered_json(nullptr);
+			p2pList.emplace_back(std::move(entry));
+		}
+
+		rowData["connections"] = connections;
+		matrixData.emplace_back(std::move(rowData));
+	}
+
+	(*jsonObj)["p2p"] = true;
+	(*jsonObj)["p2p_capability"] = capKey;
+	(*jsonObj)["headers"] = headers;
+	(*jsonObj)["matrix"] = matrixData;
+	(*jsonObj)["p2p_list"] = p2pList;
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Displays the P2P access matrix for all GPU devices
+ * @ingroup topology_matrix
+ *
+ * @param[in] useJson If true, output JSON format; if false, output text table
+ *
+ * @retval ZE_RESULT_SUCCESS           Matrix displayed successfully
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No devices found in system
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED currentArgs not set
+ *
+ * @see buildP2PMatrix()
+ */
+ze_result_t cmdTopology::showP2PMatrix(bool useJson, P2PCapability capability)
+{
+	TRACING();
+
+	if (currentArgs == nullptr) {
+		ERR("Internal error: currentArgs not initialized\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	nlohmann::ordered_json jsonObj;
+	const auto result = buildP2PMatrix(currentArgs, capability, &jsonObj);
+
+	if (useJson) {
+		auto jsonPrinter = std::make_unique<JsonPrinter>();
+		jsonPrinter->print(&jsonObj);
+	} else {
+		auto textPrinter = std::make_unique<TopologyTextPrinter>();
+		textPrinter->print(&jsonObj);
+	}
+
+	return result;
+}
+
 /**
  * @brief Executes the topology command with parsed command line arguments
  * @ingroup topology_commands
@@ -778,6 +1146,9 @@ int cmdTopology::run(arg_struct *args)
 			xmlFilename = val;
 		});
 	sub.add_flag("-m,--matrix", topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled, "Show topology matrix");
+	sub.add_option("--p2p", topologyCmds[topologyCmdType::TOPOLOGY_P2P].val,
+				   "P2P capability matrix (r=read, w=write, n=fabric/MDF, a=atomics, p=pcie)")
+		->each([&](const std::string &) { topologyCmds[topologyCmdType::TOPOLOGY_P2P].enabled = true; });
 
 	try {
 		sub.parse(args->argc - 1, args->argv + 1);
@@ -785,8 +1156,14 @@ int cmdTopology::run(arg_struct *args)
 		help();
 		return ZE_RESULT_SUCCESS;
 	} catch (const CLI::ParseError &e) {
-		ERR("{}\n", e.what());
-		ERR("Run with --help for more information.\n");
+		const std::string errMsg = e.what();
+		if (errMsg.find("--p2p") != std::string::npos) {
+			ERR("{}\n\n", errMsg.c_str());
+			printP2PCapabilityHelp(progName);
+		} else {
+			ERR("{}\n", errMsg.c_str());
+			ERR("Run with --help for more information.\n");
+		}
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -796,6 +1173,18 @@ int cmdTopology::run(arg_struct *args)
 	// Handle matrix command
 	if (topologyCmds[topologyCmdType::TOPOLOGY_MATRIX].enabled) {
 		return showMatrix(useJson);
+	}
+
+	// Handle P2P matrix command
+	if (topologyCmds[topologyCmdType::TOPOLOGY_P2P].enabled) {
+		const auto &capStr = topologyCmds[topologyCmdType::TOPOLOGY_P2P].val;
+		const auto cap = parseP2PCapability(capStr);
+		if (!cap) {
+			ERR("Invalid P2P capability '{}'.\n\n", capStr.c_str());
+			printP2PCapabilityHelp(progName);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		return showP2PMatrix(useJson, *cap);
 	}
 
 	// Handle file generation command

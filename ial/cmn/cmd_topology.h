@@ -13,6 +13,7 @@
 #include <variant>
 #include <os.h>
 #include <string>
+#include <string_view>
 #include <format>
 
 // Forward declarations
@@ -128,6 +129,37 @@ public:
 	void print(const TopologyInfo &info);
 };
 
+/// Peer-to-peer capability being queried in a P2P matrix request.
+/// Note: Read covers both "r" and "w" — Level Zero reports read/write access
+/// as a single unified capability via zeDeviceCanAccessPeer.
+enum class P2PCapability
+{
+	Read,
+	Fabric,
+	Atomics,
+	Pcie
+};
+
+/// Parses a single-letter CLI string to a P2PCapability.
+/// "w" is accepted as an alias for "r" (both map to Read).
+/// Returns std::nullopt for any unrecognised input.
+[[nodiscard]] constexpr std::optional<P2PCapability> parseP2PCapability(std::string_view s) noexcept
+{
+	if (s == "r" || s == "w") {
+		return P2PCapability::Read;
+	}
+	if (s == "n") {
+		return P2PCapability::Fabric;
+	}
+	if (s == "a") {
+		return P2PCapability::Atomics;
+	}
+	if (s == "p") {
+		return P2PCapability::Pcie;
+	}
+	return std::nullopt;
+}
+
 enum class topologyCmdType
 {
 	TOPOLOGY_HELP,
@@ -135,6 +167,7 @@ enum class topologyCmdType
 	TOPOLOGY_DEVICE,
 	TOPOLOGY_FILE,
 	TOPOLOGY_MATRIX,
+	TOPOLOGY_P2P,
 	TOTAL_TOPOLOGY,
 };
 
@@ -142,6 +175,7 @@ class cmdTopology : public cmds // NOLINT(readability-identifier-naming) // came
 {
 private:
 	ze_result_t buildTopologyMatrix(arg_struct *args, nlohmann::ordered_json *jsonObj) const;
+	static ze_result_t buildP2PMatrix(arg_struct *args, P2PCapability capability, nlohmann::ordered_json *jsonObj);
 	std::string xmlFilename; // Store filename for XML export
 
 public:
@@ -174,6 +208,17 @@ public:
 	 * @return ZE_RESULT_SUCCESS on success, error code on failure
 	 */
 	[[nodiscard]] ze_result_t showMatrix(bool useJson);
+
+	/**
+	 * @brief Generates and displays the P2P capability matrix between all GPU devices
+	 *
+	 * Shows the requested P2P capability between each GPU pair.
+	 *
+	 * @param[in] useJson     If true, output as JSON; otherwise as text table
+	 * @param[in] capability  P2P capability to query (see P2PCapability)
+	 * @return ZE_RESULT_SUCCESS on success, error code on failure
+	 */
+	[[nodiscard]] ze_result_t showP2PMatrix(bool useJson, P2PCapability capability);
 
 	/**
 	 * @brief Executes the topology command with parsed command line arguments

@@ -492,6 +492,118 @@ TEST_SUITE("getNumaNodes")
 	}
 }
 
+// ─── TopologyTextPrinter tests ────────────────────────────────────────────────
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+namespace {
+
+/// Build a minimal 2×2 P2P JSON matrix for the given capability letter.
+nlohmann::ordered_json makeP2PJson(const std::string &cap)
+{
+	nlohmann::ordered_json json;
+	json["p2p"] = true;
+	json["p2p_capability"] = cap;
+	json["headers"] = {"GPU 0", "GPU 1"};
+
+	nlohmann::ordered_json row0, row1;
+	row0["tile"] = "GPU 0";
+	row0["connections"] = {"X", "OK"};
+	row1["tile"] = "GPU 1";
+	row1["connections"] = {"OK", "X"};
+	json["matrix"] = {row0, row1};
+	return json;
+}
+
+} // namespace
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+TEST_SUITE("TopologyTextPrinter")
+{
+	TEST_CASE("P2P matrix: does not crash for each capability letter")
+	{
+		TopologyTextPrinter printer;
+		for (const auto *cap : {"r", "w", "n", "a", "p"}) {
+			auto json = makeP2PJson(cap);
+			CHECK_NOTHROW(printer.print(&json));
+		}
+	}
+
+	TEST_CASE("P2P matrix: single-GPU print does not crash")
+	{
+		nlohmann::ordered_json json;
+		json["p2p"] = true;
+		json["p2p_capability"] = "r";
+		json["headers"] = {"GPU 0"};
+		nlohmann::ordered_json row0;
+		row0["tile"] = "GPU 0";
+		row0["connections"] = {"X"};
+		json["matrix"] = {row0};
+
+		TopologyTextPrinter printer;
+		CHECK_NOTHROW(printer.print(&json));
+	}
+
+	TEST_CASE("P2P matrix: unknown capability letter print does not crash")
+	{
+		// An unrecognised capability string must not crash — it just echoes the raw
+		// value in the legend line.
+		nlohmann::ordered_json json;
+		json["p2p"] = true;
+		json["p2p_capability"] = "z";
+		json["headers"] = {"GPU 0"};
+		nlohmann::ordered_json row0;
+		row0["tile"] = "GPU 0";
+		row0["connections"] = {"X"};
+		json["matrix"] = {row0};
+
+		TopologyTextPrinter printer;
+		CHECK_NOTHROW(printer.print(&json));
+	}
+
+	TEST_CASE("Topology matrix format: print does not crash")
+	{
+		nlohmann::ordered_json json;
+		json["headers"] = {"GPU 0/0", "GPU 1/0"};
+
+		nlohmann::ordered_json row0, row1;
+		row0["tile"] = "GPU 0/0";
+		row0["connections"] = {"S", "NODE"};
+		row0["cpu_affinity"] = "0-15";
+		row1["tile"] = "GPU 1/0";
+		row1["connections"] = {"NODE", "S"};
+		row1["cpu_affinity"] = "16-31";
+		json["matrix"] = {row0, row1};
+
+		TopologyTextPrinter printer;
+		CHECK_NOTHROW(printer.print(&json));
+	}
+}
+
+// ─── parseP2PCapability tests ─────────────────────────────────────────────────
+
+TEST_SUITE("parseP2PCapability")
+{
+	TEST_CASE("All defined capability letters parse to the correct enum value")
+	{
+		CHECK(parseP2PCapability("r") == P2PCapability::Read);
+		CHECK(parseP2PCapability("w") == P2PCapability::Read); // "w" is an alias for "r"
+		CHECK(parseP2PCapability("n") == P2PCapability::Fabric);
+		CHECK(parseP2PCapability("a") == P2PCapability::Atomics);
+		CHECK(parseP2PCapability("p") == P2PCapability::Pcie);
+	}
+
+	TEST_CASE("Unrecognised input returns nullopt")
+	{
+		CHECK_FALSE(parseP2PCapability("").has_value());
+		CHECK_FALSE(parseP2PCapability("R").has_value());	 // case-sensitive
+		CHECK_FALSE(parseP2PCapability("rw").has_value());	 // multi-character
+		CHECK_FALSE(parseP2PCapability("x").has_value());	 // valid ASCII, not a capability
+		CHECK_FALSE(parseP2PCapability("read").has_value()); // full word
+	}
+}
+
 // ─── getPciePaths tests ───────────────────────────────────────────────────────
 
 TEST_SUITE("getPciePaths")
