@@ -160,6 +160,7 @@ private:
 	struct fwuPassCompTable mPassCompTable;
 	struct fwUpdComp mUpdComp;
 	uint8_t mFwuCurrentState;
+	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
 
 	// PLDM FRU datastructures
 	struct fruGetTableRequest mFruTableRequest;
@@ -297,7 +298,7 @@ private:
 public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
-		  mI2cMultiResp(false), mCardNum(cardnum), mFruTableInitialized(false)
+		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mFruTableInitialized(false)
 	{
 		pldminit();
 	}
@@ -308,6 +309,7 @@ public:
 	// pldm Base APIs
 	int initialize();
 	int fwupd(const char *pkgFilePath);
+	void setForceUpdate(bool forceUpdate) { mForceUpdate = forceUpdate; }
 	uint8_t getSensorInfoById(uint16_t sensorId);
 	uint8_t getSensorInfoByUnit(sensorUnits unit);
 	uint8_t getFile(uint16_t filePdrId, std::vector<uint8_t> &fileData);

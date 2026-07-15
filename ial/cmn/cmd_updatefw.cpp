@@ -91,7 +91,8 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(
 		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList.push_back(helpCmd(
-		HEADING, "--force                     Force GFX firmware update. This parameter only works for GFX firmware"));
+		HEADING, "--force                     Force firmware update. For GFX firmware, forces the update. For AMC "
+				 "firmware, allows downgrade when the .img advertises the ForceUpdate capability"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -130,7 +131,8 @@ int cmdUpdateFW::run(arg_struct *args)
 	sub.add_option("-t,--type", fwInfo.firmwareType, typeDesc);
 	sub.add_option("-f,--file", fwInfo.filePath, "Firmware image file path");
 	sub.add_flag("-y,--assumeyes", fwInfo.assumeYes, "Assume yes to all questions");
-	sub.add_flag("--force", fwInfo.forceUpdate, "Force GFX firmware update");
+	sub.add_flag("--force", fwInfo.forceUpdate,
+				 "Force firmware update (GFX: force flash; AMC: allow downgrade when supported by the image)");
 
 	try {
 		sub.parse(args->argc - 1, args->argv + 1);

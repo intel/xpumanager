@@ -51,6 +51,7 @@ public:
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
 	int amcGpuReset(uint32_t cardNum);
 	int amcReadFile(int deviceIndex, uint16_t filePdrId, std::vector<uint8_t> &fileData);
+	int amcSetForceUpdate(uint32_t cardNum, bool forceUpdate);
 };
 
 #endif

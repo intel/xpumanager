@@ -162,6 +162,36 @@ int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath)
 }
 
 /**
+ * @brief Arm the ForceUpdate flag on a specific AMC card's PLDM object
+ *
+ * Sets whether the next amcFirmwareFlash() call for the given card is allowed
+ * to perform a forced (downgrade) update. This is stored as per-card state on
+ * the underlying pldm object so concurrent updates on different AMCs remain
+ * independent.
+ *
+ * @param [in] cardNum Zero-based index of the AMC card
+ * @param [in] forceUpdate true to allow forced/downgrade update, false for normal update
+ *
+ * @return Status of the operation
+ * @retval AMC_SUCCESS Flag configured successfully
+ * @retval AMC_ERROR Invalid card index or PLDM objects not initialized
+ */
+int amclib::amcSetForceUpdate(uint32_t cardNum, bool forceUpdate)
+{
+	TRACING();
+	if (!pldmobj) {
+		ERR("PLDM objects not initialized\n");
+		return AMC_ERROR;
+	}
+	if (cardNum >= (uint32_t)numCards) {
+		ERR("Invalid cardNum specified: {}. Max cards: {}\n", cardNum, numCards);
+		return AMC_ERROR;
+	}
+	pldmobj[cardNum]->setForceUpdate(forceUpdate);
+	return AMC_SUCCESS;
+}
+
+/**
  * @brief Get firmware update progress for all AMC cards
  *
  * Retrieves the firmware update progress percentage for all cards

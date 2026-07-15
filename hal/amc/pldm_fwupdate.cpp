@@ -198,6 +198,26 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	}
 	DBG("Firmware package info parsed successfully from AMC img file for card : {:02}\n", mCardNum);
 
+	// If the user requested --force, make sure every component image in the package
+	// advertises the ForceUpdate capability (bit 0 of ComponentOptions per DSP0267).
+	// Fail fast before any PLDM traffic is sent so the caller gets a clear reason.
+	if (mForceUpdate) {
+		for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
+			if (!pkg->compImagesInfo.compImages[i].compOptions.bits.bit0) {
+				ERR("Force update requested for card {:02} but firmware image '{}' is not "
+					"downgradable: ForceUpdate bit is not set in ComponentOptions for component {}.\n",
+					mCardNum, pkgFilePath, i);
+				free(pkg);
+				pkg = NULL;
+				fclose(mCompFp);
+				mCompFp = NULL;
+				return PLDM_ERROR;
+			}
+		}
+		DBG("Force update requested and all {} component(s) advertise the ForceUpdate capability.\n",
+			pkg->compImagesInfo.compImageCount);
+	}
+
 	for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
 		DBG("Component Number = {}\n", i + 1);
 		DBG("Offset = {} & Size = {}\n", pkg->compImagesInfo.compImages[i].compLocOffset,

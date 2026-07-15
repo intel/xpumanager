@@ -157,8 +157,11 @@ uint8_t pldm::fwUpdComp()
 	mUpdComp.componentimagesize = pkg->compImagesInfo.compImages[mCurComp].compSize;
 
 	// UA will set this bit for any component which has the force update bit set in the
-	// ComponentOptions field of the package header.
-	mUpdComp.updateoptionflags = FWU_FORCEUPDATE;
+	// ComponentOptions field of the package header. Force is only asserted when the user
+	// explicitly requested it via --force AND the input firmware package advertises the capability. The
+	// upfront check in fwUpdInitialize() guarantees the second condition when
+	// mForceUpdate is true, so a simple ternary is safe here.
+	mUpdComp.updateoptionflags = mForceUpdate ? FWU_FORCEUPDATE : 0;
 	mUpdComp.verStrType = pkg->compImagesInfo.compImages[mCurComp].verStrType;
 	mUpdComp.verStrLen = pkg->compImagesInfo.compImages[mCurComp].verStrLen;
 	memcpy(mUpdComp.verStr, pkg->compImagesInfo.compImages[mCurComp].verStr, mUpdComp.verStrLen);
