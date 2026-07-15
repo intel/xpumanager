@@ -2025,7 +2025,8 @@ int cmdConfig::run(arg_struct *args)
 	CLI::App sub{"Configure GPU settings", "config"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", configCmds[configCmdType::CONFIGJSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device,--id", configCmds[configCmdType::CONFIGDEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", configCmds[configCmdType::CONFIGDEVICE].val,
+				   "Device index or BDF address, comma-separated for multiple (e.g. 0,1)")
 		->each([&](const std::string &) { configCmds[configCmdType::CONFIGDEVICE].enabled = true; });
 	sub.add_option("-t,--tile", configCmds[configCmdType::TILE].val, "Tile ID")->each([&](const std::string &) {
 		configCmds[configCmdType::TILE].enabled = true;

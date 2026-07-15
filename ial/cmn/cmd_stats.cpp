@@ -2108,7 +2108,8 @@ int cmdStats::run(arg_struct *args)
 	CLI::App sub{"Show GPU statistics", "stats"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", statsCmds[STATS_JSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device,--id", statsCmds[STATS_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", statsCmds[STATS_DEVICE].val,
+				   "Device index or BDF address, comma-separated for multiple (e.g. 0,1)")
 		->each([&](const std::string &) { statsCmds[STATS_DEVICE].enabled = true; });
 	sub.add_flag("-e,--eu", statsCmds[STATS_EU].enabled, "Show EU statistics");
 	sub.add_flag("-r,--ras", statsCmds[STATS_RAS].enabled, "Show RAS error statistics");

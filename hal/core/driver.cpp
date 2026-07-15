@@ -5,10 +5,12 @@
  */
 
 #include "driver.h"
+#include "driver_util.h"
 #include <loader/ze_loader.h>
-#include <charconv>
-#include <optional>
+#include <ranges>
 #include <set>
+#include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -484,54 +486,97 @@ ze_result_t driver::getLogs(UNUSED std::string fileName)
 }
 
 /**
- * @brief Finds a device based on its BDF (Bus-Device-Function) address or index.
+ * @brief Resolves a single non-comma token (BDF address, numeric index, or empty) to a device.
  *
- * This function searches for a device based on its BDF address. If no BDF is provided,
- * it adds all devices to the list.
+ * Empty @p token adds all devices. A purely numeric token matches by device index.
+ * Any other token is matched against each device's BDF address.
  *
- * @param [in] bdf The BDF address of the device to find. If nullptr or empty, all devices are added.
- * @param [out] devList A pointer to a vector to store the device information.
- * @return ze_result_t indicating success or failure.
+ * @param[in]  token   Single specifier: empty = all devices, numeric index, or BDF address.
+ *                     Must not contain commas — use @c findDevice for comma-separated input.
+ * @param[out] devList Vector to append matching devices to.
+ * @return @c ZE_RESULT_SUCCESS on success, @c ZE_RESULT_ERROR_INVALID_ARGUMENT if @p token
+ *         is non-empty and does not match any known device.
  */
-ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
+ze_result_t driver::findOneToken(std::string_view token, std::vector<devInfo> *devList)
 {
-	uint32_t deviceIndex = 0;
+	// Null-terminated copy required by isBDF (const char* API) — allocated once, outside the loop
+	const std::string bdfStr{token};
 
-	const std::string_view bdfView{bdf ? bdf : ""};
-	std::optional<uint32_t> numericId;
-	if (!bdfView.empty()) {
-		uint32_t val{};
-		auto [ptr, ec] = std::from_chars(bdfView.data(), bdfView.data() + bdfView.size(), val);
-		if (ec == std::errc{} && ptr == bdfView.data() + bdfView.size()) {
-			numericId = val;
-		}
-	}
+	const std::optional<uint32_t> numericId = xpum::detail::parseUint32(token);
 
-	for (uint32_t i = 0; i < driverCount; i++) {
-		for (uint32_t j = 0; j < devs[i].totalDevicesCount; j++) {
-			device &dev = devs[i].dev[j];
-			if (bdfView.empty()) {
+	const auto sizeBefore = devList->size();
+
+	// Empty token means "all devices" — caller passed nullptr or "".
+	if (token.empty()) {
+		uint32_t deviceIndex = 0;
+		for (devGroup &dg : std::span{devs, driverCount}) {
+			for (device &dev : dg.dev) {
 				DBG("No BDF provided, adding all devices.\n");
-				dev.addInfo(devList, deviceIndex);
-			} else {
-				if (dev.isBDF(bdf)) {
+				dev.addInfo(devList, deviceIndex++);
+			}
+		}
+	} else {
+		uint32_t deviceIndex = 0;
+		for (devGroup &dg : std::span{devs, driverCount}) {
+			for (device &dev : dg.dev) {
+				if (dev.isBDF(bdfStr.c_str())) {
 					dev.addInfo(devList, deviceIndex);
 					return ZE_RESULT_SUCCESS;
-				} else if (numericId && *numericId == deviceIndex) {
+				}
+				if (numericId && *numericId == deviceIndex) {
 					DBG("Found device with index: {}\n", *numericId);
 					dev.addInfo(devList, deviceIndex);
 					return ZE_RESULT_SUCCESS;
 				}
+				deviceIndex++;
 			}
-			deviceIndex++;
 		}
 	}
 
-	// If a specific device was requested but nothing matched, return an error
-	if (!bdfView.empty() && devList->empty()) {
+	if (!token.empty() && devList->size() == sizeBefore) {
+		ERR("Device not found: '{}'\n", bdfStr);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+	return ZE_RESULT_SUCCESS;
+}
 
+/**
+ * @brief Finds one or more devices by BDF address, numeric index, or comma-separated list.
+ *
+ * Accepts a single token or a comma-separated list, e.g. @c "0,1" or @c "0000:03:00.0,1".
+ * Each token is resolved via @c findOneToken independently, results are deduplicated by
+ * device index while preserving order. Unrecognised tokens emit an error and are skipped;
+ * the call succeeds as long as at least one token matched. A single unrecognised token
+ * (no comma) returns @c ZE_RESULT_ERROR_INVALID_ARGUMENT. If @p bdf is nullptr or empty,
+ * all devices are added.
+ *
+ * @param[in]  bdf     Device specifier: nullptr/empty = all, numeric index, BDF address,
+ *                     or comma-separated combination of the above.
+ * @param[out] devList Vector to append matching devices to.
+ * @return @c ZE_RESULT_SUCCESS if at least one token matched (or input was empty).
+ *         @c ZE_RESULT_ERROR_INVALID_ARGUMENT if a single token did not match any device.
+ */
+ze_result_t driver::findDevice(const char *bdf, std::vector<devInfo> *devList)
+{
+	const std::string_view bdfView{bdf != nullptr ? bdf : ""};
+
+	if (bdfView.find(',') == std::string_view::npos) {
+		return findOneToken(bdfView, devList);
+	}
+
+	const auto sizeBefore = devList->size();
+	for (const auto token : bdfView | std::views::split(',')) {
+		const std::string_view sv{token.begin(), token.end()};
+		if (sv.empty()) {
+			continue;
+		}
+		// Errors (device not found) are already logged by findOneToken; skip and continue.
+		findOneToken(sv, devList);
+	}
+	xpum::detail::deduplicateByIndex(*devList);
+	if (devList->size() == sizeBefore) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT; // no token matched anything
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -553,14 +598,7 @@ void driver::findSurvDevice(const char *bdf, std::vector<devInfo> *survDevList)
 	}
 
 	const std::string_view bdfView{bdf ? bdf : ""};
-	std::optional<uint32_t> numericId;
-	if (!bdfView.empty()) {
-		uint32_t val{};
-		auto [ptr, ec] = std::from_chars(bdfView.data(), bdfView.data() + bdfView.size(), val);
-		if (ec == std::errc{} && ptr == bdfView.data() + bdfView.size()) {
-			numericId = val;
-		}
-	}
+	const std::optional<uint32_t> numericId = xpum::detail::parseUint32(bdfView);
 
 	for (uint32_t k = 0; k < svZesDevs.survDevCount; k++) {
 		device &dev = svZesDevs.survDevices[k];

@@ -151,6 +151,18 @@ if get_option('with_tests')
     )
     test('temperature_tests', temperature_test)
     message('Temperature unit tests enabled')
+
+    driver_util_test = executable(
+        'driver_util_test',
+        files('test/driver_util_test.cpp'),
+        include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+        dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+        link_args: is_linux ? ['-pie'] : [],
+        build_by_default: true,
+        install: false,
+    )
+    test('driver_util_tests', driver_util_test)
+    message('Driver util unit tests enabled')
 else
     message('Skipping logger tests (pass -Dwith_tests=true to enable)')
 endif

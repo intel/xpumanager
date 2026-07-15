@@ -7,6 +7,7 @@
 #ifndef _DRIVER_H
 #define _DRIVER_H
 
+#include <string_view>
 #include <vector>
 #include "device.h"
 
@@ -27,6 +28,7 @@ struct devGroup
 class LIBXPUM_API driver
 {
 private:
+	ze_result_t findOneToken(std::string_view token, std::vector<devInfo> *devList);
 	bool initialized;
 	uint32_t driverCount;
 	uint32_t totalZesDevicesCount;

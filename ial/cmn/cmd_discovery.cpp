@@ -2234,7 +2234,8 @@ int cmdDiscovery::run(arg_struct *args)
 	CLI::App sub{"Discover Intel GPU devices", "discovery"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", discCmds[discCmdType::DISC_JSON].enabled, "Print result in JSON format");
-	sub.add_option("-d,--device,--id", discCmds[discCmdType::DISC_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", discCmds[discCmdType::DISC_DEVICE].val,
+				   "Device index or BDF address, comma-separated for multiple (e.g. 0,1)")
 		->each([&](const std::string &) { discCmds[discCmdType::DISC_DEVICE].enabled = true; });
 	sub.add_flag("--pf", discCmds[discCmdType::DISC_PF].enabled, "List physical function devices");
 	sub.add_flag("--physicalFunction", discCmds[discCmdType::DISC_PHYSICALFUNCTION].enabled,
@@ -2299,31 +2300,46 @@ int cmdDiscovery::run(arg_struct *args)
 		}
 		printer->print(jsonObj.get());
 	} else if (!deviceList.empty()) {
-		// Iterate through the device list and execute the command
-		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
-		for (auto &device : deviceList) {
-			// Call the appropriate command function based on the command type
-			for (const auto &cmd : discCmds) {
-				if (cmd.second.enabled && cmd.second.func != nullptr) {
-					// If there is a heading function, call it first
-					if (cmd.second.headingFunc != nullptr && headingFirst) {
-						headingFirst = false;
+		const bool isDetailRequest = discCmds[discCmdType::DISC_DEVICE].enabled &&
+									 !discCmds[discCmdType::DISC_DUMP].enabled &&
+									 !discCmds[discCmdType::DISC_LISTAMCVERSIONS].enabled;
 
-						result = (this->*cmd.second.headingFunc)(jsonObj.get());
+		if (isDetailRequest) {
+			// --device without --dump: dumpAll overwrites jsonObj on each call, so
+			// print each device separately rather than accumulating into one object.
+			for (auto &device : deviceList) {
+				auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+				result = dumpAll(&device, jsonObj.get());
+				if (result != ZE_RESULT_SUCCESS) {
+					return result;
+				}
+				printer->print(jsonObj.get());
+			}
+		} else {
+			// --dump / --listamcversions: commands accumulate into a shared object
+			// (keyed by device index or appended to an array) — print once at the end.
+			auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+			for (auto &device : deviceList) {
+				for (const auto &cmd : discCmds) {
+					if (cmd.second.enabled && cmd.second.func != nullptr) {
+						if (cmd.second.headingFunc != nullptr && headingFirst) {
+							headingFirst = false;
+							result = (this->*cmd.second.headingFunc)(jsonObj.get());
+							if (result != ZE_RESULT_SUCCESS) {
+								return result;
+							}
+						}
+
+						DBG("Running command: {}\n", discCmdName(cmd.first));
+						result = (this->*cmd.second.func)(&device, jsonObj.get());
 						if (result != ZE_RESULT_SUCCESS) {
 							return result;
 						}
 					}
-
-					DBG("Running command: {}\n", discCmdName(cmd.first));
-					result = (this->*cmd.second.func)(&device, jsonObj.get());
-					if (result != ZE_RESULT_SUCCESS) {
-						return result;
-					}
 				}
 			}
+			printer->print(jsonObj.get());
 		}
-		printer->print(jsonObj.get());
 	} else if (!survDeviceList.empty()) {
 		// Only survivability devices found — render them through the same device_list path
 		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_ALL);

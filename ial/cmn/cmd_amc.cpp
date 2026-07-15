@@ -185,7 +185,8 @@ int cmdAmc::run(arg_struct *args)
 	sub.add_option("--filename", amcCmds[AMC_OP_FILENAME].val, "Output filename")->each([&](const std::string &) {
 		amcCmds[AMC_OP_FILENAME].enabled = true;
 	});
-	sub.add_option("-d,--device,--id", amcCmds[AMC_DEVICE].val, "Device ID or PCI BDF address")
+	sub.add_option("-d,--device,--id", amcCmds[AMC_DEVICE].val,
+				   "AMC device index or PCI BDF address (single device only)")
 		->each([&](const std::string &) { amcCmds[AMC_DEVICE].enabled = true; });
 	sub.add_flag("-y,--yes", amcCmds[AMC_YES].enabled, "Assume yes to all questions");
 
@@ -294,6 +295,20 @@ ze_result_t cmdAmc::getDeviceIndex(amclib *amc, const std::string &val, int numC
 	return ZE_RESULT_SUCCESS;
 }
 
+/// Prompt the user to confirm a reset. Returns true if confirmed, false if cancelled.
+static bool confirmReset(int deviceId)
+{
+	if (deviceId < 0) {
+		PRINT("\nWARNING: This operation will reset ALL GPU devices via AMC\n");
+	} else {
+		PRINT("\nWARNING: This operation will reset the GPU device {} via AMC\n", deviceId);
+	}
+	PRINT("Do you want to continue? (yes/no): ");
+	std::string response;
+	std::getline(std::cin, response);
+	return response == "yes" || response == "y" || response == "YES" || response == "Y";
+}
+
 /**
  * @brief Performs GPU reset operation via AMC
  *
@@ -311,69 +326,41 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	TRACING();
 	int deviceId = -1;
 	if (amcCmds[AMC_DEVICE].enabled) {
-		try {
-			deviceId = std::stoi(amcCmds[AMC_DEVICE].val);
-		} catch (const std::exception &) {
-			ERR("Invalid device ID: {}\n", amcCmds[AMC_DEVICE].val.c_str());
+		ze_result_t r = getDeviceIndex(amc, amcCmds[AMC_DEVICE].val, numCards, deviceId);
+		if (r != ZE_RESULT_SUCCESS) {
 			ERR("Run with --help for more information.\n");
-			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			return r;
 		}
 	}
 
-	bool skipConfirmation = amcCmds[AMC_YES].enabled;
-
-	if (!skipConfirmation) {
-		if (deviceId < 0) {
-			PRINT("\nWARNING: This operation will reset ALL GPU devices via AMC\n");
-		} else {
-			PRINT("\nWARNING: This operation will reset the GPU device {} via AMC\n", deviceId);
-		}
-		PRINT("Do you want to continue? (yes/no): ");
-
-		std::string response;
-		std::getline(std::cin, response);
-
-		if (response != "yes" && response != "y" && response != "YES" && response != "Y") {
-			PRINT("Operation cancelled!\n");
-			return ZE_RESULT_SUCCESS;
-		}
+	if (!amcCmds[AMC_YES].enabled && !confirmReset(deviceId)) {
+		PRINT("Operation cancelled!\n");
+		return ZE_RESULT_SUCCESS;
 	}
 
-	// Validate device ID against available cards
-	if (deviceId >= 0 && deviceId >= numCards) {
-		if (numCards == 1) {
-			ERR("Invalid device ID {}. Only device 0 is available\n", deviceId);
-		} else {
-			ERR("Invalid device ID {}. Valid range: 0-{}\n", deviceId, numCards - 1);
-		}
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-	}
-
-	std::vector<std::thread> workers;
-	std::atomic<int> failureCount{0};
-	std::atomic<int> successCount{0};
-
+	// Build the list of device indices to reset (-1 means all)
+	std::vector<int> targets;
 	if (deviceId < 0) {
-		DBG("Executing GPU reset via AMC for all {} devices...\n", numCards);
 		for (int i = 0; i < numCards; i++) {
-			workers.emplace_back([amc, i, &failureCount, &successCount]() {
-				DBG("Resetting GPU device {} via AMC...\n", i);
-				if (amc->amcGpuReset(i) != AMC_SUCCESS) {
-					ERR("Failed to reset GPU device {} via AMC\n", i);
-					failureCount.fetch_add(1, std::memory_order_relaxed);
-				} else {
-					DBG("Successfully reset GPU device {} via AMC\n", i);
-					successCount.fetch_add(1, std::memory_order_relaxed);
-				}
-			});
+			targets.push_back(i);
 		}
 	} else {
-		DBG("Executing GPU reset via AMC for device {}...\n", deviceId);
-		workers.emplace_back([amc, deviceId, &failureCount, &successCount]() {
-			if (amc->amcGpuReset(deviceId) != AMC_SUCCESS) {
-				ERR("Failed to reset GPU device {} via AMC\n", deviceId);
+		targets.push_back(deviceId);
+	}
+
+	std::atomic<int> failureCount{0};
+	std::atomic<int> successCount{0};
+	std::vector<std::thread> workers;
+	workers.reserve(targets.size());
+
+	for (int id : targets) {
+		DBG("Executing GPU reset via AMC for device {}...\n", id);
+		workers.emplace_back([amc, id, &failureCount, &successCount]() {
+			if (amc->amcGpuReset(id) != AMC_SUCCESS) {
+				ERR("Failed to reset GPU device {} via AMC\n", id);
 				failureCount.fetch_add(1, std::memory_order_relaxed);
 			} else {
+				DBG("Successfully reset GPU device {} via AMC\n", id);
 				successCount.fetch_add(1, std::memory_order_relaxed);
 			}
 		});
@@ -393,12 +380,7 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	if (deviceId < 0) {
-		PRINT("\nGPU reset successfully completed on all devices via AMC\n");
-	} else {
-		PRINT("\nGPU reset successfully completed on device {} via AMC\n", deviceId);
-	}
-
+	PRINT("\nGPU reset successfully completed on {} device(s) via AMC\n", static_cast<int>(targets.size()));
 	return ZE_RESULT_SUCCESS;
 }
 

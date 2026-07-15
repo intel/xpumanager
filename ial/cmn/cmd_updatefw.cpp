@@ -126,7 +126,8 @@ int cmdUpdateFW::run(arg_struct *args)
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", fwInfo.jsonOutput, "Print result in JSON format");
 	sub.add_option("-d,--device,--id", fwInfo.deviceId,
-				   "Device ID or PCI BDF address. If not specified, all devices are updated");
+				   "Device index or BDF address, comma-separated for multiple (e.g. 0,1). If not specified, all "
+				   "devices are updated");
 	std::string typeDesc = "Firmware name. Valid options: " + validFwTypesStr();
 	sub.add_option("-t,--type", fwInfo.firmwareType, typeDesc);
 	sub.add_option("-f,--file", fwInfo.filePath, "Firmware image file path");

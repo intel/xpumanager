@@ -432,7 +432,8 @@ std::variant<ParsedArgs, int> parseDumpCLI(std::string_view cmdName, const std::
 	CLI::App sub{std::string{cmdName}};
 	sub.set_help_flag("-h,--help", "Display help");
 	sub.add_flag("-j,--json", parsed.opts.json, "Output in JSON format");
-	sub.add_option("-d,--device,--id", parsed.opts.device, "Device index or PCI BDF address (-1 = all)");
+	sub.add_option("-d,--device,--id", parsed.opts.device,
+				   "Device index or BDF address, comma-separated for multiple (e.g. 0,1); -1 for all");
 	sub.add_option("--metrics,--select", parsed.opts.metrics, "Metric query");
 	sub.add_option("-f,--file,--filename", parsed.opts.file, "Output file path");
 	sub.add_option("--time", parsed.opts.time, "Total dump duration in seconds");
@@ -547,6 +548,9 @@ struct DumpOutput
 		// Build the column formatter for use in onEndDevice() regardless of header suppression.
 		if (!json) {
 			alignedFormatter.emplace();
+			// TableBuilder defaults to autoSize=true, which would reset our explicit widths
+			// to header-text widths in lockWidths(). Disable it to preserve them.
+			alignedFormatter->disableAutoSizing();
 			if (prependTimestamp) {
 				alignedFormatter->addColumn("Timestamp", showDate ? 23 : 12, Align::Left);
 			}
