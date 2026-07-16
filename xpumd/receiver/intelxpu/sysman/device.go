@@ -59,6 +59,7 @@ type deviceState struct {
 	devStateDisabled bool
 	pci              pciState
 	ecc              *eccState
+	stateExtSeen     l0sysman.DeviceStateExtFlags
 }
 
 // deviceAttributes fields for numeric items that are always reported,
@@ -401,6 +402,34 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		"reset_needed",
 		metadata.AttributeHwTypeGpu,
 	)
+
+	// Extended (optional) device state
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-state-t
+	if state.ExtendedState != nil {
+		d.state.stateExtSeen |= state.ExtendedState.Flags
+
+		// report status of currently active & previously seen extended states
+		for _, bit := range d.state.stateExtSeen.Bits() {
+			if bit == l0sysman.DEVICE_STATE_EXT_FLAG_NORMAL {
+				// "normal" is the absence of an issue, don't report "ok" as
+				// there hw.status{hw.type=gpu} is overloaded with ecc_* states.
+				// TODO: revisit (add "ok" state) when the decision on how to handle ecc_* states is made.
+				continue
+			}
+			value := int64(0)
+			if l0sysman.DeviceStateExtFlags(state.ExtendedState.Flags)&l0sysman.DeviceStateExtFlags(bit) != 0 {
+				value = 1
+			}
+			mb.RecordHwStatusDataPoint(ts, value,
+				d.attributes.hwID,
+				d.attributes.hwName,
+				d.attributes.pciBDF,
+				"", // not subdevice
+				strings.ToLower(bit.String()),
+				metadata.AttributeHwTypeGpu,
+			)
+		}
+	}
 }
 
 // scrapePciState reports device PCI link state(s)
