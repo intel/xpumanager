@@ -158,6 +158,17 @@ InitialValues:
         hw_state: ecc_disabled
         hw_type: gpu
 
+    # hw.status — no reset needed and no device state extension
+    # (ZES_extension_device_state) issues yet in the initial config (state is
+    # ZES_DEVICE_STATE_EXT_FLAG_NORMAL, which is not reported as an issue)
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: reset_needed
+        hw_type: gpu
+
     # hw.status — PCI link good in the initial config
     - name: hw_status
       value: 1
@@ -409,6 +420,31 @@ UpdatedValues:
         <<: *dev_common_labels
         hw_name: gpu-1
         hw_state: ecc_disabled
+        hw_type: gpu
+
+    # hw.status — device reset needed, plus device state extension
+    # (ZES_extension_device_state) reports the device as wedged and in
+    # survivability mode
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: reset_needed
+        hw_type: gpu
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: wedged
+        hw_type: gpu
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: survivability
         hw_type: gpu
 
     # hw.status — PCI link quality issues

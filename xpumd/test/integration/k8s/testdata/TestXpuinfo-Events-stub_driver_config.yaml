@@ -4,6 +4,8 @@ Drivers:
   - ExtensionProperties:
       - Name: "ZES_extension_power_limits"
         Version: 65536
+      - Name: "ZES_extension_device_state"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -16,6 +18,12 @@ Drivers:
           ModelName: "Super 3000"
           VendorName: "ACME Inc."
           SerialNumber: "SN-0001"
+
+        State:
+          Reset: 0
+          Repaired: 1  # ZES_REPAIR_STATUS_NOT_PERFORMED
+          ExtendedState:
+            Flags: 1  # ZES_DEVICE_STATE_EXT_FLAG_NORMAL
 
         PCI:
           Properties:

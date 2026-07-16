@@ -6,6 +6,8 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_ras_state"
         Version: 65536
+      - Name: "ZES_extension_device_state"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -19,6 +21,12 @@ Drivers:
           VendorName: "ACME Inc."
           SerialNumber: "SN-0001"
           Flags: 1  # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
+
+        State:
+          Reset: 1  # ZES_RESET_REASON_FLAG_WEDGED
+          Repaired: 1  # ZES_REPAIR_STATUS_NOT_PERFORMED
+          ExtendedState:
+            Flags: 6  # ZES_DEVICE_STATE_EXT_FLAG_WEDGED | ZES_DEVICE_STATE_EXT_FLAG_SURVIVABILITY
 
         PCI:
           Properties:
