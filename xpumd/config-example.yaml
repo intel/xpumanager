@@ -126,6 +126,20 @@ exporters:
           - key: hw.state
             values: [ecc_disabled, ecc_enabled, ecc_available, ecc_unavailable]
         state_mapping: {}
+      # Other (than the ecc_* filtered out above) GPU device states.
+      - health_domain: "gpu"
+        filters:
+          - key: hw.type
+            values: [gpu]
+        state_mapping:
+          ok:
+            severity: ok
+          wedged:
+            severity: critical
+          survivability:
+            severity: critical
+          "*":
+            severity: warning
       # Default mapping (empty filters matches any data point not matched above):
       - health_domain: "{{ .hw_type }}"
         state_mapping:
