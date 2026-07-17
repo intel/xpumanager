@@ -139,8 +139,9 @@ def validate_csv_output(output: str, expectations: Dict[str, Any]) -> Tuple[bool
     import csv as _csv
     from io import StringIO
 
-    # Drop empty leading lines before the CSV header row
+    # Strip any non-CSV preamble; CSV typically starts with the header row of column names
     lines = output.splitlines()
+    # Drop empty leading lines
     while lines and not lines[0].strip():
         lines.pop(0)
 
@@ -151,6 +152,15 @@ def validate_csv_output(output: str, expectations: Dict[str, Any]) -> Tuple[bool
         reader = _csv.DictReader(StringIO('\n'.join(lines)))
         rows = list(reader)
         header = reader.fieldnames or []
+        # Strip whitespace from header names — some binaries emit ' DeviceId' etc.
+        header = [h.strip() for h in header if isinstance(h, str)]
+        # Re-key row dicts with stripped names. DictReader stores any extra
+        # columns under a None restkey; drop that entry rather than calling
+        # .strip() on None (which would turn valid CSV into a parse failure).
+        rows = [
+            {k.strip(): v for k, v in row.items() if isinstance(k, str)}
+            for row in rows
+        ]
     except Exception as e:
         return False, f"CSV parse failed: {e}"
 
@@ -211,24 +221,13 @@ def validate_combined_output(stdout: str, stderr: str,
     streams = (('stdout', stdout), ('stderr', stderr))
 
     for pattern in expectations.get('combined_not_contains', []):
-        # Aggregate stream names so a literal that appears in both stdout and
-        # stderr produces a single failure entry rather than two duplicates.
-        hits = []
-        sample_line = pattern
         for stream_name, text in streams:
             if pattern in text:
-                hits.append(stream_name)
-                if sample_line is pattern:
-                    sample_line = next(
-                        (ln for ln in text.splitlines() if pattern in ln),
-                        pattern,
-                    )
-        if hits:
-            where = " and ".join(hits)
-            failures.append(
-                f"Forbidden literal found in {where}: {pattern!r}  "
-                f"(line: {sample_line.strip()!r})"
-            )
+                line = next((ln for ln in text.splitlines() if pattern in ln), pattern)
+                failures.append(
+                    f"Forbidden literal found in {stream_name}: {pattern!r}  "
+                    f"(line: {line.strip()!r})"
+                )
 
     for regex_str in expectations.get('combined_not_matches_regex', []):
         try:
@@ -236,25 +235,15 @@ def validate_combined_output(stdout: str, stderr: str,
         except re.error as exc:
             failures.append(f"Invalid regex {regex_str!r}: {exc}")
             continue
-        hits = []
-        offending = None
-        sample_line = None
         for stream_name, text in streams:
             m = compiled.search(text)
             if m:
-                hits.append(stream_name)
-                if offending is None:
-                    offending = m.group(0)
-                    sample_line = next(
-                        (ln for ln in text.splitlines() if offending in ln),
-                        offending,
-                    )
-        if hits:
-            where = " and ".join(hits)
-            failures.append(
-                f"Forbidden regex {regex_str!r} matched in {where}: "
-                f"{offending!r}  (line: {sample_line.strip()!r})"
-            )
+                offending = m.group(0)
+                line = next((ln for ln in text.splitlines() if offending in ln), offending)
+                failures.append(
+                    f"Forbidden regex {regex_str!r} matched in {stream_name}: "
+                    f"{offending!r}  (line: {line.strip()!r})"
+                )
 
     if failures:
         return False, "; ".join(failures)
@@ -279,7 +268,7 @@ def _parse_json(output: str) -> Tuple[Any, str]:
                 try:
                     return json.loads('\n'.join(lines[i:])), ""
                 except json.JSONDecodeError:
-                    break
+                    continue
         return None, f"Invalid JSON output: {first_err}"
 
 

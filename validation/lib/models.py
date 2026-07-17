@@ -33,6 +33,11 @@ class WorkflowStep:
     name: str
     command: str
     description: str = ""
+    # Optional raw shell script for a step (e.g. cleanup: `rm -f /tmp/x`). When
+    # set, the step runs the script through the shell instead of invoking the
+    # binary with `command`; {command} inside the script expands to the full
+    # binary invocation, matching top-level test script: semantics.
+    script: Optional[str] = None
     step_type: StepType = StepType.NORMAL
     timeout: Optional[int] = None
     output_format: str = "plaintext"
