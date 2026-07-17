@@ -785,3 +785,228 @@ TEST_CASE("wrapText - UTF-8 hard break: 3-byte char falls at split boundary") {
     CHECK_MESSAGE(str.find("AB\xE2\x84\xA2") != std::string::npos, "AB™ must be a valid UTF-8 sequence in output");
     CHECK(str.find("C") != std::string::npos);
 }
+// ============================================================================
+// XPUM-1300: extra coverage for previously-uncovered table_builder paths
+// ============================================================================
+
+TEST_CASE("TableBuilder addSpanRow with BorderStyle::None case path")
+{
+	TableBuilder table;
+	table.addColumn("A").addSpanRow("hello", BorderStyle::None).addRow("x").enableAutoSizing();
+	std::string out = table.toString();
+	CHECK(out.find("hello") != std::string::npos);
+}
+
+TEST_CASE("TableBuilder addSeparator with each BorderStyle")
+{
+	for (auto style : {BorderStyle::Normal, BorderStyle::Heavy, BorderStyle::Double, BorderStyle::None}) {
+		TableBuilder table;
+		table.addColumn("A").addRow("x").addSeparator(style).addRow("y").enableAutoSizing();
+		CHECK(table.toString().size() > 0);
+	}
+}
+
+TEST_CASE("TableBuilder print() handles empty-columns gracefully")
+{
+	TableBuilder table;
+	std::ostringstream capture;
+	auto *oldBuf = std::cout.rdbuf(capture.rdbuf());
+	table.print();
+	std::cout.rdbuf(oldBuf);
+	CHECK(capture.str().find("Empty Table") != std::string::npos);
+}
+
+// (operator<< overload not defined for TableBuilder — covered indirectly via print())
+
+TEST_CASE("TableBuilder addJsonToLastRow attaches JSON metadata")
+{
+	TableBuilder table;
+	table.addColumn("Name")
+		.addColumn("Value")
+		.addRow("temp", "75")
+		.addJsonToLastRow("unit", std::string{"C"})
+		.addJsonToLastRow("celsius", 75)
+		.enableJsonOutput();
+	auto json = table.toString();
+	CHECK(json.find("unit") != std::string::npos);
+	CHECK(json.find("celsius") != std::string::npos);
+}
+
+TEST_CASE("TableBuilder JSON output respects compact flag toggles")
+{
+	TableBuilder table;
+	table.addColumn("Name").addColumn("Value").addRow("x", "1").addRow("y", "2");
+	auto pretty = table.asJson(false);
+	auto compact = table.asJson(true);
+	// Both carry the same data...
+	CHECK(pretty.find("Name") != std::string::npos);
+	CHECK(compact.find("Name") != std::string::npos);
+	// ...but compact must be strictly smaller and free of the pretty-print
+	// newlines/indentation.
+	CHECK(compact.size() < pretty.size());
+	CHECK(compact.find('\n') == std::string::npos);
+	CHECK(pretty.find('\n') != std::string::npos);
+}
+
+TEST_CASE("TableBuilder JSON output for empty rows is well-formed")
+{
+	TableBuilder table;
+	table.addColumn("A").enableJsonOutput();
+	auto json = table.toString();
+	CHECK(json.find('[') != std::string::npos);
+}
+
+TEST_CASE("TableBuilder showRowNumbers in JSON injects row_number")
+{
+	TableBuilder table;
+	table.addColumn("Name").addRow("alpha").addRow("beta").showRowNumbers(true).enableJsonOutput();
+	auto json = table.toString();
+	CHECK(json.find("row_number") != std::string::npos);
+}
+
+TEST_CASE("TableBuilder showRowNumbers widens table layout")
+{
+	TableBuilder a;
+	a.addColumn("A").addRow("x").enableAutoSizing();
+	int narrow = a.getTotalWidth();
+
+	TableBuilder b;
+	b.addColumn("A").addRow("x").showRowNumbers(true).enableAutoSizing();
+	CHECK(b.getTotalWidth() >= narrow);
+}
+
+TEST_CASE("TableBuilder disableAutoSizing keeps user widths")
+{
+	// A column declared at width 30 with auto-sizing OFF must retain that width
+	// rather than shrinking to fit the short header/data, so the total width
+	// reflects the user-specified 30 (plus borders/padding), not ~3 chars.
+	TableBuilder table;
+	table.addColumn("Hdr", 30).addRow("x").disableAutoSizing();
+	CHECK(table.getTotalWidth() >= 30);
+	CHECK(table.toString().find("Hdr") != std::string::npos);
+}
+
+TEST_CASE("TableBuilder setOutputFormat round-trips both formats")
+{
+	TableBuilder table;
+	table.addColumn("A").addRow("1");
+	table.setOutputFormat(OutputFormat::JSON);
+	CHECK(table.getOutputFormat() == OutputFormat::JSON);
+	table.setOutputFormat(OutputFormat::Table);
+	CHECK(table.getOutputFormat() == OutputFormat::Table);
+}
+
+TEST_CASE("TableBuilder setMaxCellWidth rejects < 3")
+{
+	TableBuilder table;
+	table.addColumn("A");
+	CHECK_THROWS_AS(table.setMaxCellWidth(2), std::invalid_argument);
+	CHECK_THROWS_AS(table.setMaxCellWidth(0), std::invalid_argument);
+	CHECK_THROWS_AS(table.setMaxCellWidth(-1), std::invalid_argument);
+}
+
+TEST_CASE("TableBuilder setColumnWidth out-of-range throws")
+{
+	TableBuilder table;
+	table.addColumn("A");
+	CHECK_THROWS_AS(table.setColumnWidth(5, 10), std::out_of_range);
+}
+
+TEST_CASE("TableBuilder setColumnWidth invalid width throws")
+{
+	TableBuilder table;
+	table.addColumn("A");
+	CHECK_THROWS_AS(table.setColumnWidth(0, 0), std::invalid_argument);
+	CHECK_THROWS_AS(table.setColumnWidth(0, -3), std::invalid_argument);
+}
+
+TEST_CASE("TableBuilder setColumnAlignment out-of-range throws")
+{
+	TableBuilder table;
+	table.addColumn("A");
+	CHECK_THROWS_AS(table.setColumnAlignment(99, Align::Left), std::out_of_range);
+}
+
+TEST_CASE("TableBuilder sortByColumn unknown header throws")
+{
+	TableBuilder table;
+	table.addColumn("Name").addRow("a").addRow("b");
+	CHECK_THROWS_AS(table.sortByColumn("NoSuchColumn"), std::invalid_argument);
+}
+
+TEST_CASE("TableBuilder setCell out-of-range row throws")
+{
+	TableBuilder table;
+	table.addColumn("A").addRow("x");
+	CHECK_THROWS_AS(table.setCell(99, 0, "y"), std::out_of_range);
+}
+
+TEST_CASE("TableBuilder setCell out-of-range column throws")
+{
+	TableBuilder table;
+	table.addColumn("A").addRow("x");
+	CHECK_THROWS_AS(table.setCell(0, 99, "y"), std::out_of_range);
+}
+
+TEST_CASE("TableBuilder removeColumn missing header throws")
+{
+	TableBuilder table;
+	table.addColumn("A").addColumn("B");
+	CHECK_THROWS_AS(table.removeColumn("NoSuchColumn"), std::invalid_argument);
+}
+
+TEST_CASE("TableBuilder removeColumn out-of-range throws")
+{
+	TableBuilder table;
+	table.addColumn("A");
+	CHECK_THROWS_AS(table.removeColumn(static_cast<size_t>(99)), std::out_of_range);
+}
+
+TEST_CASE("TableBuilder validate flags empty header and mismatched row size")
+{
+	TableBuilder table;
+	table.addColumn("").addColumn("B"); // empty header on column 0
+	table.addRow("x", "y");
+	// Force a row/column mismatch: add a third column AFTER the row exists, so
+	// the existing row now has 2 cells while the table has 3 columns.
+	table.addColumn("C");
+	auto result = table.validate();
+	// Expect BOTH warnings: the empty header on column 0, and the short row.
+	auto joined = std::string{};
+	for (const auto &w : result.warnings)
+		joined += w + "\n";
+	CHECK_MESSAGE(joined.find("empty header") != std::string::npos,
+				  "expected an empty-header warning, got: " << joined);
+	CHECK_MESSAGE(joined.find("cells but table has") != std::string::npos,
+				  "expected a row-size-mismatch warning, got: " << joined);
+}
+
+TEST_CASE("TableBuilder getStats returns sensible counts")
+{
+	TableBuilder table;
+	table.addColumn("A").addColumn("B").addRow("x", "y").addRow("p", "");
+	auto s = table.getStats();
+	CHECK(s.totalCells == 4);
+	CHECK(s.emptyCells >= 1);
+	CHECK(s.fillRatio >= 0.0);
+	CHECK(s.fillRatio <= 1.0);
+}
+
+TEST_CASE("TableBuilder streaming mode flag toggles")
+{
+	TableBuilder table;
+	CHECK(table.isStreaming() == false);
+	table.startStreaming();
+	CHECK(table.isStreaming() == true);
+	table.endStreaming();
+	CHECK(table.isStreaming() == false);
+}
+
+TEST_CASE("TableBuilder clearScreen emits ANSI escape")
+{
+	std::ostringstream capture;
+	auto *oldBuf = std::cout.rdbuf(capture.rdbuf());
+	TableBuilder::clearScreen();
+	std::cout.rdbuf(oldBuf);
+	CHECK(capture.str().find("\033[") != std::string::npos);
+}
