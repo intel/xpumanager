@@ -42,6 +42,7 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 	if (fileSize < sizeof(fwPkg)) {
 		ERR("Package file is too small\n");
 		fclose(mCompFp);
+		mCompFp = NULL;
 		return PLDM_ERROR;
 	}
 
@@ -49,6 +50,7 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 	if (pkgbuf.empty()) {
 		ERR("Memory allocation failed for firmware package\n");
 		fclose(mCompFp);
+		mCompFp = NULL;
 		return PLDM_ERROR;
 	}
 
@@ -56,6 +58,7 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 	if (readSize != fileSize) {
 		ERR("Failed to read package file\n");
 		fclose(mCompFp);
+		mCompFp = NULL;
 		return PLDM_ERROR;
 	}
 
@@ -63,6 +66,7 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 	if (!pkg) {
 		ERR("Memory allocation for package structure failed\n");
 		fclose(mCompFp);
+		mCompFp = NULL;
 		return PLDM_ERROR;
 	}
 
@@ -170,6 +174,18 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 	pbuf += sizeof(pkg->checksum);
 
 	pkg->pkgInfoSize = (uint32_t)(pbuf - pkgbuf.data());
+
+	// Validate that every component image's payload actually fits inside the package file.
+	for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
+		const compImageInfo *compImage = &pkg->compImagesInfo.compImages[i];
+		if (compImage->compSize == 0 || compImage->compLocOffset < pkg->pkgInfoSize ||
+			compImage->compLocOffset > fileSize ||
+			(uint64_t)compImage->compLocOffset + (uint64_t)compImage->compSize > (uint64_t)fileSize) {
+			ERR("Component {} payload out of range: offset={} size={} file={}\n", i, compImage->compLocOffset,
+				compImage->compSize, fileSize);
+			return failParse("Component payload out of range");
+		}
+	}
 
 	STRNCPY_S(pkg->filePath, pkgFilePath, FILE_PATH_MAX - 1);
 	pkg->filePath[FILE_PATH_MAX - 1] = '\0';

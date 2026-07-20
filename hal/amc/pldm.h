@@ -161,7 +161,7 @@ private:
 	struct fwUpdComp mUpdComp;
 	uint8_t mFwuCurrentState;
 	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
-
+	uint8_t mLastFwuCompletionCode;
 	// PLDM FRU datastructures
 	struct fruGetTableRequest mFruTableRequest;
 	struct fruTableResponse mFruTableResponse;
@@ -298,7 +298,8 @@ private:
 public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
-		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mFruTableInitialized(false)
+		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS),
+		  mFruTableInitialized(false), pkg(nullptr)
 	{
 		pldminit();
 	}

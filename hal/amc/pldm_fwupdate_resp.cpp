@@ -31,6 +31,10 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
 	TRACING();
 	uint8_t ret = PLDM_ERROR;
 
+	// Record the device-supplied FWU completion code so the caller can distinguish recoverable
+	// conditions (ALREADY_IN_UPDATE_MODE, NOT_IN_UPDATE_MODE, ...) from generic errors.
+	mLastFwuCompletionCode = mI2cPldmRead->respPayload[BYTE_0];
+
 	switch (cmd) {
 	case QUERY_DEVICE_IDENTIFIERS:
 	case CANCEL_UPDATE_COMPONENT:
@@ -47,8 +51,12 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
 		ret = pldmFwUpdateRespPayload(cmd, id);
 		if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
 			if (mI2cPldmRead->respPayload[BYTE_0] == ALREADY_IN_UPDATE_MODE) {
-				DBG("FWU : ALREADY_IN_UPDATE_MODE, proceed with firmware update\n");
-				return PLDM_SUCCESS;
+				// Do NOT silently proceed: a stale update session on the device
+				// can carry parameters that conflict with the current package.
+				// Signal the caller (fwUpdInitialize) to CancelUpdate and retry
+				// RequestUpdate once, matching amctool's Go implementation.
+				DBG("FWU : ALREADY_IN_UPDATE_MODE - caller should cancel and retry\n");
+				return PLDM_ERROR;
 			} else if (mI2cPldmRead->respPayload[BYTE_0] == UNABLE_TO_INITIATE_UPDATE) {
 				ERR("FWU : FD is not able to enter update mode - 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
 				return PLDM_ERROR;
@@ -86,6 +94,21 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
 
 	case ACTIVATE_FIRMWARE:
 		ret = pldmFwUpdateRespPayload(cmd, id);
+		if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
+			// The device may have self-activated after ApplyComplete and left
+			// update mode before we sent ActivateFirmware. In that case it
+			// reports NOT_IN_UPDATE_MODE (0x80) or INVALID_STATE_FOR_COMMAND
+			// (0x84) - both mean "activation already happened", not a failure.
+			if (mI2cPldmRead->respPayload[BYTE_0] == NOT_IN_UPDATE_MODE ||
+				mI2cPldmRead->respPayload[BYTE_0] == INVALID_STATE_FOR_COMMAND) {
+				DBG("FWU : Device already left update mode after ApplyComplete (0x{:02x}) - "
+					"treating ActivateFirmware as successful\n",
+					mI2cPldmRead->respPayload[BYTE_0]);
+				return PLDM_SUCCESS;
+			}
+			ERR("FWU : ActivateFirmware failed - 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
+			return PLDM_ERROR;
+		}
 		break;
 
 	default:
@@ -126,6 +149,15 @@ uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, UNUSED uint8_t id)
 
 	DBG("pldm RX  :: ");
 	hexdump((uint8_t *)mI2cPldmRead, totalSize);
+
+	if (mI2cPldmRead->pldmHdr.cmdCode != cmd || mI2cPldmRead->pldmHdr.instanceID != id ||
+		mI2cPldmRead->pldmHdr.request != PLDM_RESPONSE || mI2cPldmRead->pldmHdr.cmdType != PLDM_FIRMWARE_UPDATE) {
+		ERR("FWU : PLDM header mismatch for cmd 0x{:02x} (got cmdType=0x{:02x} cmdCode=0x{:02x} "
+			"instanceID=0x{:02x} request={})\n",
+			cmd, mI2cPldmRead->pldmHdr.cmdType, mI2cPldmRead->pldmHdr.cmdCode, mI2cPldmRead->pldmHdr.instanceID,
+			(uint32_t)mI2cPldmRead->pldmHdr.request);
+		return PLDM_ERROR;
+	}
 
 	if (cmd == GET_STATUS) {
 		// Current State

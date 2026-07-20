@@ -6,6 +6,7 @@
 
 #include "pldm_fwupdate.h"
 #include "pldm.h"
+#include <chrono>
 
 /**
  * @brief Execute pldm firmware update command
@@ -58,6 +59,8 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd, uint8_t size)
 	// For ActivateFirmware command don't do I2C read, post AMC fw update this cmd will
 	// reboot the AMC, I2C channel will be lost and we won't get any response
 	if (cmd != ACTIVATE_FIRMWARE) {
+		constexpr auto kResponseTimeout = std::chrono::seconds(5);
+		auto readDeadline = std::chrono::steady_clock::now() + kResponseTimeout;
 		while (true) {
 			// Wait for I2C event
 			MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
@@ -65,6 +68,18 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd, uint8_t size)
 			if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
 				ERR("FWU : I2C Read failure\n");
 				return PLDM_ERROR;
+			}
+
+			// Skip "device not ready" (cmdCode != 0x0F) - keep polling until
+			// a real MCTP frame arrives or the deadline elapses.
+			if (mI2cPldmRead->mctpSmbusHdr.cmdCode != MCTP_CMD_CODE) {
+				if (std::chrono::steady_clock::now() > readDeadline) {
+					ERR("FWU : Timed out waiting for MCTP response to cmd 0x{:02x} "
+						"(>{} of \"device not ready\")\n",
+						cmd, kResponseTimeout);
+					return PLDM_ERROR;
+				}
+				continue;
 			}
 
 			if (fwUpdateResp(cmd, instanceID) != PLDM_SUCCESS) {
@@ -182,6 +197,38 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	mReqUpdate = {};
 	mPassCompTable = {};
 	mUpdComp = {};
+	mLastFwuCompletionCode = PLDM_SUCCESS;
+
+	// Track whether an update session has been established on the device
+	// (RequestUpdate succeeded). When true, we must send CancelUpdate on any
+	// early return so the device does not stay stuck in update mode.
+	bool updateStarted = false;
+	uint8_t finalStatus = PLDM_ERROR;
+
+	// Closes the package file, frees the parsed package, and sends CancelUpdate
+	// if an update session was started but the flow did not complete successfully.
+	auto cleanupAndReturn = [&](uint8_t status) -> uint8_t {
+		finalStatus = status;
+		if (updateStarted && status != PLDM_SUCCESS) {
+			if (mLastFwuCompletionCode != NOT_IN_UPDATE_MODE) {
+				DBG(">>> Send CANCEL UPDATE\n");
+				if (fwUpdCmd(CANCEL_UPDATE, FWU_COMMAND_BASE_SIZE) == PLDM_SUCCESS) {
+					DBG("<<< CANCEL UPDATE Success\n");
+				} else {
+					DBG("<<< CANCEL UPDATE Failed\n");
+				}
+			}
+		}
+		if (pkg != NULL) {
+			free(pkg);
+			pkg = NULL;
+		}
+		if (mCompFp != NULL) {
+			fclose(mCompFp);
+			mCompFp = NULL;
+		}
+		return finalStatus;
+	};
 
 	DBG("\n=====================AMC Firmware File Parser===============================\n");
 	if (FOPEN_S(&mCompFp, pkgFilePath, "rb") != 0 || mCompFp == NULL) {
@@ -192,7 +239,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	uint8_t result = fwpkgParseInfo(pkgFilePath);
 	if (result != PLDM_SUCCESS) {
 		ERR("Failed to parse firmware package info from file: {}\n", pkgFilePath);
-		return PLDM_ERROR;
+		return cleanupAndReturn(PLDM_ERROR);
 	} else {
 		DBG("Firmware package info parsed successfully from file: {}\n", pkgFilePath);
 	}
@@ -207,11 +254,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 				ERR("Force update requested for card {:02} but firmware image '{}' is not "
 					"downgradable: ForceUpdate bit is not set in ComponentOptions for component {}.\n",
 					mCardNum, pkgFilePath, i);
-				free(pkg);
-				pkg = NULL;
-				fclose(mCompFp);
-				mCompFp = NULL;
-				return PLDM_ERROR;
+				return cleanupAndReturn(PLDM_ERROR);
 			}
 		}
 		DBG("Force update requested and all {} component(s) advertise the ForceUpdate capability.\n",
@@ -231,47 +274,43 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 		for (uint8_t i = 0; i < ARRAY_SIZE(cmdTable); i++) {
 			DBG(">>> Send {}\n", cmdTable[i].name.c_str());
 			ret = fwUpdCmd((uint8_t)cmdTable[i].cmd, cmdTable[i].size);
+
+			// If RequestUpdate fails because the device is already in update
+			// mode (0x81), it is carrying a stale session from a previous
+			// attempt. Cancel that session and retry RequestUpdate once - the
+			// same recovery amctool performs.
+			if (ret != PLDM_SUCCESS && (uint8_t)cmdTable[i].cmd == REQUEST_UPDATE &&
+				mLastFwuCompletionCode == ALREADY_IN_UPDATE_MODE) {
+				DBG("FWU : RequestUpdate reported ALREADY_IN_UPDATE_MODE; cancelling stale session and retrying\n");
+				(void)fwUpdCmd(CANCEL_UPDATE, FWU_COMMAND_BASE_SIZE);
+				ret = fwUpdCmd((uint8_t)cmdTable[i].cmd, cmdTable[i].size);
+			}
+
 			if (ret != PLDM_SUCCESS) {
 				ERR("FWU : {} Failed!!! \n", cmdTable[i].name.c_str());
-				if (((uint8_t)cmdTable[i].cmd == REQUEST_UPDATE) ||
-					((uint8_t)cmdTable[i].cmd == PASS_COMPONENT_TABLE) ||
-					((uint8_t)cmdTable[i].cmd == UPDATE_COMPONENT)) {
-					// Send CANCEL for these three commands only
-					PRINT(">>> Send CANCEL UPDATE\n");
-					if (fwUpdCmd(CANCEL_UPDATE, FWU_COMMAND_BASE_SIZE) == PLDM_SUCCESS) {
-						DBG("<<< CANCEL UPDATE Success\n");
-					} else {
-						DBG("<<< CANCEL UPDATE Failed\n");
-					}
-				}
-				fclose(mCompFp);
-				return ret;
+				return cleanupAndReturn(ret);
 			}
 			DBG("<<< {} Success...\n", cmdTable[i].name.c_str());
+
+			// After a successful RequestUpdate the device is in update mode
+			// and must receive CancelUpdate on any early return from here on.
+			if ((uint8_t)cmdTable[i].cmd == REQUEST_UPDATE) {
+				updateStarted = true;
+			}
 		}
 
 		DBG("Firmware Inventory commands completed, starting firmware update now for card : {:02}\n", mCardNum);
 
 		DBG("\n========= Firmware Update Read from FirmwareDevice(FD) for Component :: {} =========\n", n + 1);
 		if (readFromFD() != PLDM_SUCCESS) {
-			PRINT(">>> Send CANCEL UPDATE\n");
-			// Send CANCEL commands to pldm
-			if (fwUpdCmd(CANCEL_UPDATE, FWU_COMMAND_BASE_SIZE) == PLDM_SUCCESS) {
-				DBG("<<< CANCEL UPDATE Success\n");
-			} else {
-				DBG("<<< CANCEL UPDATE Failed\n");
-			}
-			fclose(mCompFp);
-			return PLDM_ERROR;
+			return cleanupAndReturn(PLDM_ERROR);
 		}
 	}
 
-	// GET_STATUS
 	DBG(">>> Send GetStatus\n");
 	if (fwUpdCmd(GET_STATUS, FWU_COMMAND_BASE_SIZE) != PLDM_SUCCESS) {
 		ERR("FWU : GetStatus Failed!!!\n");
-		fclose(mCompFp);
-		return ret;
+		return cleanupAndReturn(PLDM_ERROR);
 	}
 	DBG("<<< GetStatus Success...\n");
 
@@ -279,12 +318,13 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	DBG(">>> Send ActivateFirmware\n");
 	if (fwUpdCmd(ACTIVATE_FIRMWARE, ACTIVATE_FIRMWARE_SIZE) != PLDM_SUCCESS) {
 		ERR("FWU : Failed!!! Activate Firmware\n");
-		fclose(mCompFp);
-		return ret;
+		return cleanupAndReturn(PLDM_ERROR);
 	}
 	DBG("<<< ActivateFirmware Success...\n");
 	DBG("Firmware Update and Activation completed successfully for card : {:02}\n", mCardNum);
 
-	fclose(mCompFp);
-	return PLDM_SUCCESS;
+	// ActivateFirmware succeeded (or the device already self-activated) - the
+	// update session is finished so no CancelUpdate is required.
+	updateStarted = false;
+	return cleanupAndReturn(PLDM_SUCCESS);
 }

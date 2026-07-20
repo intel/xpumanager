@@ -7,6 +7,7 @@
 #include "common.h"
 #include "pldm_fwupdate.h"
 #include "pldm.h"
+#include <chrono>
 #include <string>
 
 static_assert(sizeof(i2cdataPldmInfo::respPayload) <= 256, "respPayload must fit a uint8_t command length");
@@ -206,6 +207,11 @@ uint8_t pldm::readFromFD()
 	uint32_t totalSize = 0;
 	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
 
+	// Per DSP0267 the firmware device must send its next request within
+	// 60-120 seconds; we use the maximum. Without this bound a wedged AMC would hang xpu-smi forever.
+	constexpr auto kStateTimeout = std::chrono::seconds(120);
+	auto lastMsgTime = std::chrono::steady_clock::now();
+
 	// for a specific component, do read and write until it reaches end of component
 	while (true) {
 
@@ -213,10 +219,14 @@ uint8_t pldm::readFromFD()
 			ERR("pldm from FD : I2C Read failure\n");
 			return PLDM_ERROR;
 		}
-
+		hexdump(rptr, PLDM_MAX_RESPONSE_SIZE);
 		if (mI2cPldmRead->mctpSmbusHdr.cmdCode != MCTP_CMD_CODE) {
-			// This we need if we read a response that is not a mctp response
-			// Need to replace this sleep with "wait for signal"
+			if (std::chrono::steady_clock::now() - lastMsgTime > kStateTimeout) {
+				ERR("FWU : Timed out waiting for firmware device response "
+					"(>{}s with no valid PLDM message)\n",
+					kStateTimeout.count());
+				return PLDM_ERROR;
+			}
 			MSLEEP(MCTP_RESPONSE_DELAY_MS);
 			continue;
 		}
@@ -227,6 +237,9 @@ uint8_t pldm::readFromFD()
 			ERR("FWU : Invalid Command Type {}, expected {}\n", mI2cPldmRead->pldmHdr.cmdType, PLDM_FIRMWARE_UPDATE);
 			return PLDM_ERROR;
 		}
+
+		// Valid firmware-update message received: reset the per-state deadline.
+		lastMsgTime = std::chrono::steady_clock::now();
 
 		if (mI2cPldmRead->pldmHdr.cmdCode == REQUEST_FIRMWARE_DATA) {
 			offset = bytesToInt(mI2cPldmRead->respPayload[BYTE_3], mI2cPldmRead->respPayload[BYTE_2],
@@ -319,7 +332,7 @@ uint8_t pldm::readFromFD()
 uint8_t pldm::writeToAMCCompXfer(uint32_t offset, uint32_t lenToSend, uint8_t completioncode)
 {
 	TRACING();
-	uint8_t totalLen = 0;
+	uint32_t totalLen = 0;
 	uint8_t amcfilebuffer[PLDM_FWUPDATE_MAX_PAYLOAD_SIZE] = {0};
 	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
 	uint32_t compStartLoc = pkg->compImagesInfo.compImages[mCurComp].compLocOffset;
@@ -327,13 +340,24 @@ uint8_t pldm::writeToAMCCompXfer(uint32_t offset, uint32_t lenToSend, uint8_t co
 	uint8_t id = mI2cPldmRead->pldmHdr.instanceID;
 	uint8_t cmd = mI2cPldmRead->pldmHdr.cmdCode;
 
-	totalLen =
-		sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) + PLDM_CMD_RESP_PAYLOAD_SIZE + (uint8_t)lenToSend;
+	if (static_cast<size_t>(PLDM_CMD_RESP_PAYLOAD_SIZE) + lenToSend >= sizeof(mI2cPldmWrite->respPayload)) {
+		ERR("writeToAMCCompXfer: lenToSend {} would overflow respPayload (max {} payload bytes)\n", lenToSend,
+			sizeof(mI2cPldmWrite->respPayload) - PLDM_CMD_RESP_PAYLOAD_SIZE - 1);
+		return PLDM_ERROR;
+	}
+	totalLen = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) + PLDM_CMD_RESP_PAYLOAD_SIZE + lenToSend;
 
 	// UA will calculate this PAK_SEQ for multi packet messages, currently we are not using multi packet messages
-	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (totalLen - 3),
-						MCTP_INTEGRITY_CHECK);
+	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ,
+						static_cast<uint8_t>(totalLen - 3), MCTP_INTEGRITY_CHECK);
 	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
+	// MCTP responses (DSP0236 sec. 11.1) MUST echo the requester's msgTag and
+	// clear the tag-owner (TO) bit. commandConstruction() hard-codes msgTag=0
+	// and TO=1 which is correct for a request but wrong for a response; without
+	// overriding them here the AMC treats our frame as an unsolicited request,
+	// silently discards it, and never sends the next RequestFirmwareData.
+	mI2cPldmWrite->mctpSmbusHdr.msgTag = mI2cPldmRead->mctpSmbusHdr.msgTag;
+	mI2cPldmWrite->mctpSmbusHdr.to = 0;
 	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, id, PLDM_FIRMWARE_UPDATE, cmd, PLDM_ASYNC_REQUEST_NOTIFY,
 						PLDM_RESPONSE);
 
@@ -366,10 +390,16 @@ uint8_t pldm::writeToAMCCompXfer(uint32_t offset, uint32_t lenToSend, uint8_t co
 		memcpy(&mI2cPldmWrite->respPayload[BYTE_1], amcfilebuffer, remBytes);
 	}
 
-	// Update Completion Code and CRC
+	// The CRC must be the LAST byte transmitted, i.e. at wptr[totalLen] which
+	// corresponds to respPayload[totalLen - sizeof(mctpSmbusHdr) - sizeof(pldmHdr)].
+	// PEC is computed over the response payload only (excluding the CRC byte itself),
+	// matching the convention used by the other TX paths in this stack.
 	mI2cPldmWrite->respPayload[BYTE_0] = completioncode;
-	mI2cPldmWrite->respPayload[totalLen] = crc8Smbus(mI2cPldmWrite->respPayload, totalLen - 1);
-
+	const size_t crcIdx = totalLen - sizeof(struct mctpSmbusI2cHdr) - sizeof(struct pldmHdr);
+	mI2cPldmWrite->respPayload[crcIdx] = crc8Smbus(mI2cPldmWrite->respPayload, crcIdx);
+	DBG("pldm TX  Component transfer:: Sending offset = {}, lenToSend = {}, totalLen = {}\n", offset, lenToSend,
+		totalLen);
+	hexdump((uint8_t *)mI2cPldmWrite, (unsigned int)totalLen);
 	if (i2cobj->writeAmc(wptr + 1, totalLen) != true) {
 		ERR("FWU : I2C Write failure\n");
 		return PLDM_ERROR;
@@ -416,6 +446,9 @@ uint8_t pldm::respondtoamc(uint8_t completioncode)
 	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (totalLen - 3),
 						MCTP_INTEGRITY_CHECK);
 	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
+	// Echo the requester's MCTP msgTag and clear TO for responses (DSP0236 sec. 11.1).
+	mI2cPldmWrite->mctpSmbusHdr.msgTag = mI2cPldmRead->mctpSmbusHdr.msgTag;
+	mI2cPldmWrite->mctpSmbusHdr.to = 0;
 	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, id, PLDM_FIRMWARE_UPDATE, cmd, PLDM_ASYNC_REQUEST_NOTIFY,
 						PLDM_RESPONSE);
 
