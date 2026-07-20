@@ -102,7 +102,7 @@ ze_result_t cmdVgpu::precheck(devInfo *d)
 
 	nlohmann::ordered_json result;
 	result["vmx_flag"] = vmxOk ? "Pass" : "Fail";
-	result["vmx_message"] = vmxOk ? "" : "No VMX flag, Please ensure Intel VT is enabled in BIOS";
+	result["vmx_message"] = vmxOk ? "" : "No VMX/SVM flag. Please ensure Intel VT or AMD-V is enabled in BIOS";
 	result["sriov_status"] = sriovOk ? "Pass" : "Fail";
 	result["sriov_message"] = sriovOk ? ""
 									  : "SR-IOV is disabled or sriov_totalvfs is 0. Please set the related BIOS "

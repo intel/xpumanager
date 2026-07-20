@@ -732,10 +732,10 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 /**
  * @brief Check if the CPU supports Intel VT-x (VMX) virtualization
  *
- * Reads /proc/cpuinfo to determine if the "vmx" flag is present,
- * indicating support for Intel VT-x.
+ * Reads /proc/cpuinfo to determine if the "vmx" (Intel VT-x) or "svm"
+ * (AMD-V) flag is present, indicating support for hardware virtualization.
  *
- * @return bool true if VMX is supported, false otherwise
+ * @return bool true if VMX/SVM is supported, false otherwise
  */
 bool isVmxSupported()
 {
@@ -744,7 +744,8 @@ bool isVmxSupported()
 
 	while (std::getline(cpuinfo, line)) {
 		if (line.find("flags") == 0) { // Line starts with "flags"
-			return line.find(" vmx ") != std::string::npos || line.find(" vmx\t") != std::string::npos;
+			return line.find(" vmx ") != std::string::npos || line.find(" vmx\t") != std::string::npos ||
+				   line.find(" svm ") != std::string::npos || line.find(" svm\t") != std::string::npos;
 		}
 	}
 	return false;
