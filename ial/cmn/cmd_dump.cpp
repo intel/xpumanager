@@ -679,9 +679,9 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 
 	std::jthread inputThread;
 	if (shouldStartInputThread) {
-		inputThread = std::jthread([quitSource, quitToken](const std::stop_token &ownStop) mutable {
+		inputThread = std::jthread([quitSource](const std::stop_token &ownStop) mutable {
 			char ch = 0;
-			while (!ownStop.stop_requested() && !quitToken.stop_requested()) {
+			while (!ownStop.stop_requested()) {
 				ch = GETCH();
 				if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
 					quitSource.request_stop();
@@ -708,7 +708,11 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 		}
 	}
 
-	// std::jthread automatically joins on destruction - no need to manually join/detach
+	// Join before restoring the terminal: getch() calls tcsetattr on both entry and exit,
+	// so RESTORE_TERMINAL must not race with the input thread's own tcsetattr cleanup.
+	if (inputThread.joinable()) {
+		inputThread.join();
+	}
 	RESTORE_TERMINAL();
 	return ZE_RESULT_SUCCESS;
 }
@@ -756,9 +760,9 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 
 	std::jthread inputThread;
 	if (shouldStartInputThread) {
-		inputThread = std::jthread([quitSource, quitToken](const std::stop_token &ownStop) mutable {
+		inputThread = std::jthread([quitSource](const std::stop_token &ownStop) mutable {
 			char ch = 0;
-			while (!ownStop.stop_requested() && !quitToken.stop_requested()) {
+			while (!ownStop.stop_requested()) {
 				ch = GETCH();
 				if (ch == 'q' || ch == 'Q' || ch == 27 || ch == 3) {
 					quitSource.request_stop();
