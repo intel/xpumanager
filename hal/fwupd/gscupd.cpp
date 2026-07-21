@@ -105,8 +105,10 @@ ze_result_t gscupd::cmnPreUpdate(firmwareInfo *fwInfo, bool checkType)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	// read image file
-	fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
+	// read image file, unless the caller already supplied the image to flash
+	if (!fwInfo->imagePreloaded) {
+		fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
+	}
 
 	// If the caller didn't specify file type checks, then skip any further checks and return success.
 	if (!checkType) {

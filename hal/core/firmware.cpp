@@ -7,7 +7,41 @@
 #include "firmware.h"
 #include <amcupd.h>
 #include <gscupd.h>
+#include <pldmextraction.h>
 #include <sysmanupd.h>
+#include <ze_api.h>
+
+/**
+ * @brief One PLDM ComponentIdentifier and the firmware type it is flashed as
+ *
+ * Together these rows are the only oracle for what a component in a composite package is: the
+ * package carries no other hint about which endpoint an image belongs to. A component whose
+ * identifier is absent from this table is never flashed.
+ */
+struct compositeComponentMap
+{
+	uint16_t id;			// ComponentIdentifier from the Component Image Information Area
+	const char *name;		// identifier name, for progress lines and debug output
+	int fw;					// firmware type to flash it as, MAX_FW_TYPE when there is no endpoint
+	bool optIn;				// only flashed when the user explicitly asked for it (--fdo)
+	const char *skipReason; // why it is not flashed by default, null when it is
+};
+
+// Every identifier a composite package can carry. Recovery images and the SVN table have no
+// endpoint this stack can flash, so they are listed with MAX_FW_TYPE and skipped by name rather
+// than falling into the "unknown identifier" case.
+static const compositeComponentMap compositeComponents[] = {
+	{PLDM_COMPONENT_ID_SVN_TABLE, "SVN_TABLE", MAX_FW_TYPE, false, "no firmware endpoint accepts an SVN table"},
+	{PLDM_COMPONENT_ID_IFWI, "IFWI", FDO, true, "it is a device recovery image, pass --fdo to flash it"},
+	{PLDM_COMPONENT_ID_AMC_RECOVERY, "AMC_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
+	{PLDM_COMPONENT_ID_AMC, "AMC", AMC, false, nullptr},
+	{PLDM_COMPONENT_ID_VR_CONFIG_RECOVERY, "VR_CONFIG_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
+	{PLDM_COMPONENT_ID_VR_CONFIG, "VR_CONFIG", VR_CONFIG, false, nullptr},
+	{PLDM_COMPONENT_ID_GFX_CODE_RECOVERY, "GFX_CODE_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
+	{PLDM_COMPONENT_ID_GFX_CODE, "GFX_CODE", GFX, false, nullptr},
+	{PLDM_COMPONENT_ID_GFX_DATA_RECOVERY, "GFX_DATA_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
+	{PLDM_COMPONENT_ID_GFX_DATA, "GFX_DATA", GFX_DATA, false, nullptr},
+};
 
 firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(nullptr), fwupdArray(nullptr)
 {
@@ -32,6 +66,9 @@ firmware::firmware() : firmwareCount(0), firmwareList(nullptr), propertiesList(n
 		 "", ""},
 		{FDO, TOSTR(FDO), FWUPD_PREFERENCE_SYSMAN, &fwupd::preUpdateFdo, &fwupd::updateFdo, &fwupd::postUpdateFdo,
 		 nullptr, "", ""},
+		// COMPOSITE is not a firmware endpoint and so has no handlers of its own: updateFW() routes it
+		// to updateComposite(), which unwraps the package and re-enters the rows above per component.
+		{COMPOSITE, TOSTR(COMPOSITE), FWUPD_PREFERENCE_SYSMAN, nullptr, nullptr, nullptr, nullptr, "", ""},
 	};
 }
 
@@ -272,6 +309,59 @@ ze_result_t firmware::getAmcPartNumber(const char *bdfStr, char *partNum, uint32
 	STRCPY_S(partNum, size, pn.c_str());
 	return ZE_RESULT_SUCCESS;
 }
+/*
+ * @brief Runs the pre-update, update and post-update handlers of one firmware type
+ *
+ * The post-update handler is always given a chance to run, so a failed pre-update or update
+ * still releases whatever the pre-update acquired.
+ *
+ * @param cmd The firmware update command row to run
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @return ze_result_t ZE_RESULT_SUCCESS if update successful, error code otherwise
+ */
+ze_result_t firmware::runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fwInfo)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	if (cmd.preference < 0 || cmd.preference >= FWUPD_PREFERENCE_MAX) {
+		ERR("Invalid firmware update preference.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	if (cmd.preUpdateFunc == nullptr || cmd.updateFunc == nullptr || cmd.postUpdateFunc == nullptr) {
+		ERR("Firmware type {} cannot be updated directly.\n", cmd.fwName.c_str());
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	// The firmware update class is based on the update preference
+	fwupd *fw = fwupdArray[cmd.preference];
+
+	if ((fwInfo->fwType != fwType::AMC) && fwInfo->firmwareHandle == nullptr) {
+		ERR("Failed to find firmware handle 0x{:X} ({})\n", ZE_RESULT_ERROR_UNKNOWN,
+			l0_error_to_string(ZE_RESULT_ERROR_UNKNOWN));
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Call the corresponding pre-update, firmware update and post-update functions in the hal
+	result = (fw->*cmd.preUpdateFunc)(fwInfo);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to pre-update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
+		(fw->*cmd.postUpdateFunc)(fwInfo);
+		return result;
+	}
+	result = (fw->*cmd.updateFunc)(fwInfo);
+	if (result != ZE_RESULT_SUCCESS) {
+		if (result != ZE_RESULT_ERROR_UNINITIALIZED && result != ZE_RESULT_ERROR_INVALID_ARGUMENT &&
+			result != ZE_RESULT_ERROR_INVALID_SIZE) {
+			ERR("Failed to update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
+		}
+		(fw->*cmd.postUpdateFunc)(fwInfo);
+		return result;
+	}
+
+	return (fw->*cmd.postUpdateFunc)(fwInfo);
+}
 
 /**
  * @brief Retrieve the Thermal Design Power (TDP) for the GPU identified by bdfStr.
@@ -321,60 +411,217 @@ ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSiz
 ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 {
 	TRACING();
-	ze_result_t result = ZE_RESULT_SUCCESS;
-	uint32_t i;
-	fwupd *fw = nullptr;
 
-	for (i = 0; i < MAX_FW_TYPE; i++) {
+	// A composite package is not a single image: it is unwrapped and its components are flashed
+	// through the firmware types below.
+	if (!STRCASECMP(fwInfo->firmwareType.c_str(), TOSTR(COMPOSITE))) {
+		fwInfo->fwType = COMPOSITE;
+		return updateComposite(fwInfo);
+	}
+
+	for (uint32_t i = 0; i < MAX_FW_TYPE; i++) {
 		// Find the matching firmware type
 		if (!STRCASECMP(fwInfo->firmwareType.c_str(), updateFWCmds[i].fwName.c_str())) {
-			if (updateFWCmds[i].preference < 0 || updateFWCmds[i].preference >= FWUPD_PREFERENCE_MAX) {
-				ERR("Invalid firmware update preference.\n");
-				return ZE_RESULT_ERROR_UNKNOWN;
-			}
-			// The firmware update class is based on the update preference
-			fw = fwupdArray[updateFWCmds[i].preference];
-
 			fwInfo->fwType = updateFWCmds[i].fw;
 			fwInfo->firmwareHandle = updateFWCmds[i].firmwareHandle;
+			return runUpdateSequence(updateFWCmds[i], fwInfo);
+		}
+	}
 
-			if ((fwInfo->fwType != fwType::AMC) && fwInfo->firmwareHandle == nullptr) {
-				ERR("Failed to find firmware handle 0x{:X} ({})\n", ZE_RESULT_ERROR_UNKNOWN,
-					l0_error_to_string(ZE_RESULT_ERROR_UNKNOWN));
-				return ZE_RESULT_ERROR_UNKNOWN;
-			}
+	ERR("Invalid firmware type: {}\n", fwInfo->firmwareType.c_str());
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
 
-			// Call the corresponding pre-update, firmware update and post-update functions in the hal
-			result = (fw->*updateFWCmds[i].preUpdateFunc)(fwInfo);
-			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to pre-update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
-				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
-				return result;
-			}
-			result = (fw->*updateFWCmds[i].updateFunc)(fwInfo);
-			if (result != ZE_RESULT_SUCCESS) {
-				if (result != ZE_RESULT_ERROR_UNINITIALIZED && result != ZE_RESULT_ERROR_INVALID_ARGUMENT &&
-					result != ZE_RESULT_ERROR_INVALID_SIZE) {
-					ERR("Failed to update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
-				}
-				(fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
-				return result;
-			}
-			result = (fw->*updateFWCmds[i].postUpdateFunc)(fwInfo);
-			if (result != ZE_RESULT_SUCCESS) {
-				return result;
-			}
+/**
+ * @brief Decides whether a component of a composite package is flashed by this call
+ *
+ * A component is selected only when it maps to a firmware type, the user opted in to it if it
+ * needs opting in, the update pass matches the component's transport, and the device actually
+ * exposes the endpoint. Anything else is skipped without affecting the result of the update, as
+ * a composite package is built for a family of boards rather than for one device.
+ *
+ * @param identifier ComponentIdentifier read from the package
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @param logSkips true to explain every skip at debug level, false to decide quietly
+ * @return const compositeComponentMap* The mapping row to flash, or nullptr to skip the component
+ */
+const compositeComponentMap *firmware::selectComponent(uint16_t identifier, const firmwareInfo *fwInfo, bool logSkips)
+{
+	const compositeComponentMap *map = nullptr;
 
+	for (const auto &entry : compositeComponents) {
+		if (entry.id == identifier) {
+			map = &entry;
 			break;
 		}
 	}
 
-	if (i == MAX_FW_TYPE) {
-		ERR("Invalid firmware type: {}\n", fwInfo->firmwareType.c_str());
-		result = ZE_RESULT_ERROR_UNKNOWN;
+	if (map == nullptr) {
+		if (logSkips) {
+			DBG("Skipping component 0x{:04X}: unknown component identifier.\n", identifier);
+		}
+		return nullptr;
 	}
 
-	return result;
+	if (map->fw == MAX_FW_TYPE) {
+		if (logSkips) {
+			DBG("Skipping component {} (0x{:04X}): {}.\n", map->name, identifier, map->skipReason);
+		}
+		return nullptr;
+	}
+
+	// --fdo flashes the opt-in component and nothing else; without it the opt-in component is the
+	// only one left out.
+	if (map->optIn != fwInfo->fdoOnly) {
+		if (logSkips) {
+			if (map->optIn) {
+				DBG("Skipping component {} (0x{:04X}): {}.\n", map->name, identifier, map->skipReason);
+			} else {
+				DBG("Skipping component {} (0x{:04X}): --fdo flashes the recovery image only.\n", map->name,
+					identifier);
+			}
+		}
+		return nullptr;
+	}
+
+	// The AMC is shared by every GPU on the card, so it is flashed by its own pass rather than
+	// once per attached device.
+	bool amcPass = (fwInfo->scope == COMPOSITE_SCOPE_AMC);
+	if ((map->fw == AMC) != amcPass) {
+		if (logSkips) {
+			DBG("Skipping component {} (0x{:04X}): not part of this update pass.\n", map->name, identifier);
+		}
+		return nullptr;
+	}
+
+	if (map->fw != AMC && updateFWCmds[map->fw].firmwareHandle == nullptr) {
+		if (logSkips) {
+			DBG("Skipping component {} (0x{:04X}): device {} has no {} firmware to flash it to.\n", map->name,
+				identifier, fwInfo->deviceIndex, updateFWCmds[map->fw].fwName.c_str());
+		}
+		return nullptr;
+	}
+
+	return map;
+}
+
+/**
+ * @brief Updates every applicable component of a PLDM DSP0267 Type 5 firmware package
+ *
+ * The package is validated, its Component Image Information Area is read, and each component the
+ * device can take is flashed in package table order. Components reachable through sysman are
+ * extracted here and handed to zesFirmwareFlash as an in-memory image; the AMC component is left
+ * in the package and pulled out by the AMC itself over PLDM, so only its identifier is passed on.
+ *
+ * Components that do not apply are skipped without failing the update, but a component that has an
+ * endpoint and fails to flash aborts the remaining components on this device.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @return ze_result_t ZE_RESULT_SUCCESS if every applicable component was flashed, error code otherwise
+ */
+ze_result_t firmware::updateComposite(firmwareInfo *fwInfo)
+{
+	TRACING();
+
+	if (fwupdArray == nullptr || fwupdArray[FWUPD_PREFERENCE_SYSMAN] == nullptr) {
+		ERR("Firmware update interfaces are not initialized.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	std::vector<char> package = fwupdArray[FWUPD_PREFERENCE_SYSMAN]->readImageContent(fwInfo->filePath.c_str());
+	if (package.empty()) {
+		ERR("Firmware package '{}' is empty or unreadable.\n", fwInfo->filePath.c_str());
+		return ZE_RESULT_ERROR_INVALID_SIZE;
+	}
+
+	const uint8_t *data = reinterpret_cast<const uint8_t *>(package.data());
+	const size_t len = package.size();
+	const char *formatName = nullptr;
+
+	if (!pldm_fw::isPldmType5(data, len, &formatName)) {
+		ERR("Firmware package '{}' is not a PLDM firmware update package.\n", fwInfo->filePath.c_str());
+		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+	}
+	DBG("Composite package '{}' is {}.\n", fwInfo->filePath.c_str(), formatName);
+
+	// The package checksums cover the header and the payload, so a corrupt file is caught before
+	// anything is written to the hardware.
+	pldm_fw::ChecksumStatus checksums;
+	if (pldm_fw::verifyChecksums(data, len, &checksums) != pldm_fw::Result::Success) {
+		ERR("Firmware package '{}' is corrupt: header checksum 0x{:08X} computed 0x{:08X}, payload checksum 0x{:08X} "
+			"computed 0x{:08X}.\n",
+			fwInfo->filePath.c_str(), checksums.storedHeader, checksums.computedHeader, checksums.storedPayload,
+			checksums.computedPayload);
+		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+	}
+
+	std::vector<pldm_fw::ComponentInfo> components;
+	pldm_fw::Result rc = pldm_fw::getComponentList(data, len, components);
+	if (rc != pldm_fw::Result::Success) {
+		ERR("Failed to read the component list of '{}': {}\n", fwInfo->filePath.c_str(), pldm_fw::resultToString(rc));
+		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+	}
+
+	// Count what applies before flashing anything, so each component can be labelled "n of total".
+	uint32_t total = 0;
+	for (const auto &component : components) {
+		if (selectComponent(component.identifier, fwInfo, false) != nullptr) {
+			total++;
+		}
+	}
+
+	uint32_t current = 0;
+	for (const auto &component : components) {
+		const compositeComponentMap *map = selectComponent(component.identifier, fwInfo, true);
+		if (map == nullptr) {
+			continue;
+		}
+
+		updateFWCmdStruct &cmd = updateFWCmds[map->fw];
+		firmwareInfo componentInfo = *fwInfo;
+
+		current++;
+		componentInfo.fwType = map->fw;
+		componentInfo.firmwareType = cmd.fwName;
+		componentInfo.firmwareHandle = cmd.firmwareHandle;
+		componentInfo.imageLabel = std::string(map->name) + " " + std::to_string(current) + "/" + std::to_string(total);
+
+		if (map->fw == AMC) {
+			// The AMC takes the package file itself and is told which component to pick out of it.
+			componentInfo.pldmComponentId = component.identifier;
+		} else {
+			componentInfo.buffer.resize(component.requiredSize);
+			size_t written = 0;
+			rc = pldm_fw::extractComponent(data, len, component.identifier,
+										   reinterpret_cast<uint8_t *>(componentInfo.buffer.data()),
+										   componentInfo.buffer.size(), &written, component.occurrence);
+			if (rc != pldm_fw::Result::Success) {
+				ERR("Failed to extract component {} (0x{:04X}) from '{}': {}\n", map->name, component.identifier,
+					fwInfo->filePath.c_str(), pldm_fw::resultToString(rc));
+				return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+			}
+			componentInfo.buffer.resize(written);
+			componentInfo.imagePreloaded = true;
+		}
+
+		DBG("Flashing component {} (0x{:04X}, {} bytes, version '{}') as {} on device {}.\n", map->name,
+			component.identifier, component.requiredSize, component.version, cmd.fwName.c_str(), fwInfo->deviceIndex);
+
+		ze_result_t result = runUpdateSequence(cmd, &componentInfo);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to update {} on device {}, the remaining components of '{}' were not applied.\n",
+				componentInfo.imageLabel.c_str(), fwInfo->deviceIndex, fwInfo->filePath.c_str());
+			return result;
+		}
+	}
+
+	if (current == 0) {
+		ERR("Package '{}' carries no component that applies to device {}.\n", fwInfo->filePath.c_str(),
+			fwInfo->deviceIndex);
+		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /*

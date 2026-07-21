@@ -125,7 +125,7 @@ Command Categories
    * - :doc:`updatefw`
      - Yes
      - Yes
-     - Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC)
+     - Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC, COMPOSITE)
    * - :doc:`amc`
      - Yes
      - No

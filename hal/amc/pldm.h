@@ -165,6 +165,7 @@ private:
 	uint8_t mFwuCurrentState = 0;
 	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
 	uint8_t mLastFwuCompletionCode;
+	uint16_t mCompIdFilter; // Only transfer the component with this ComponentIdentifier, 0 for all of them
 
 	// PLDM FRU datastructures
 	struct fruGetTableRequest mFruTableRequest;
@@ -229,6 +230,8 @@ private:
 
 	// pldm FwUpdate Command
 	uint8_t fwUpdInitialize(const char *pkgFilePath);
+	bool fwUpdSkipComp(uint8_t comp) const;
+	uint16_t fwUpdCompCount() const;
 	uint8_t fwUpdCmd(uint8_t cmd, uint8_t size);
 	uint8_t pldmFwUpdFillPayload(uint8_t cmd, uint8_t size);
 
@@ -313,7 +316,7 @@ public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
 		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS),
-		  mFruTableInitialized(false), mFwParamsInitialized(false)
+		  mCompIdFilter(0), mFruTableInitialized(false), mFwParamsInitialized(false)
 	{
 		pldminit();
 	}
@@ -325,7 +328,7 @@ public:
 
 	// pldm Base APIs
 	int initialize();
-	int fwupd(const char *pkgFilePath);
+	int fwupd(const char *pkgFilePath, uint16_t compIdFilter = 0);
 	void setForceUpdate(bool forceUpdate) { mForceUpdate = forceUpdate; }
 	uint8_t getSensorInfoById(uint16_t sensorId);
 	uint8_t getSensorInfoByUnit(sensorUnits unit);

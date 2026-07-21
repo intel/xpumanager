@@ -41,7 +41,7 @@ public:
 	~amclib();
 	int amcInitialize();
 	int amcEnumFirmwares();
-	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath);
+	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath, uint16_t compIdFilter = 0);
 	int amcFirmwareProgress(uint32_t cardNum);
 	int amcGetIndex(const std::string &gpuBDF);
 	int amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::string &versionStr);

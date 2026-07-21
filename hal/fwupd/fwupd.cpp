@@ -61,8 +61,8 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 		}
 
 		if (flashData->totalThreads > 0) {
-			SETPROGRESS((int)flashData->deviceIndex, (int)flashData->curThread, (int)flashData->totalThreads,
-						progressPercent);
+			SETPROGRESSLABEL((int)flashData->deviceIndex, (int)flashData->curThread, (int)flashData->totalThreads,
+							 progressPercent, flashData->label);
 		} else {
 			PRINT("\rFirmware Flash Progress: {} %", progressPercent);
 		}
@@ -81,11 +81,29 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
 	}
 
 	if (flashData->totalThreads > 0) {
-		SETPROGRESS((int)flashData->deviceIndex, (int)flashData->curThread, (int)flashData->totalThreads,
-					progressPercent);
+		SETPROGRESSLABEL((int)flashData->deviceIndex, (int)flashData->curThread, (int)flashData->totalThreads,
+						 progressPercent, flashData->label);
 	} else {
 		PRINT("\rFirmware Flash Progress: {} %\n", progressPercent);
 	}
+}
+
+/**
+ * @brief Names the image being flashed, for use in progress output and error messages
+ *
+ * A composite update flashes several images out of one package, so the file path alone does not
+ * identify which one a message refers to. Falls back to the file path when no component label was
+ * set, which is the case for every single-image update.
+ *
+ * @param fwInfo Pointer to firmware information structure containing update details
+ * @return std::string Human-readable description of the image being flashed
+ */
+static std::string flashTarget(const firmwareInfo *fwInfo)
+{
+	if (!fwInfo->imageLabel.empty()) {
+		return fwInfo->imageLabel + " from '" + fwInfo->filePath + "'";
+	}
+	return "'" + fwInfo->filePath + "'";
 }
 
 /**
@@ -95,6 +113,9 @@ static void trackFirmwareFlashProgress(firmwareProgressInfo *flashData)
  * the firmware image file and flashing it to the device using the Level Zero
  * Sysman firmware flash API.
  *
+ * When fwInfo->imagePreloaded is set the buffer already holds the image to flash -- a component
+ * extracted from a composite package -- and no file is read.
+ *
  * @param fwInfo Pointer to firmware information structure containing update details
  * @return ze_result_t ZE_RESULT_SUCCESS if update successful, error code otherwise
  */
@@ -102,10 +123,12 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	// read image file
-	fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
+	// read image file, unless the caller already supplied the image to flash
+	if (!fwInfo->imagePreloaded) {
+		fwInfo->buffer = readImageContent(fwInfo->filePath.c_str());
+	}
 	if (fwInfo->buffer.empty()) {
-		ERR("Firmware image '{}' is empty or unreadable.\n", fwInfo->filePath.c_str());
+		ERR("Firmware image {} is empty or unreadable.\n", flashTarget(fwInfo).c_str());
 		return ZE_RESULT_ERROR_INVALID_SIZE;
 	}
 
@@ -128,6 +151,7 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 	progressData.deviceIndex = fwInfo->deviceIndex;
 	progressData.curThread = fwInfo->curThread;
 	progressData.totalThreads = fwInfo->totalThreads;
+	progressData.label = fwInfo->imageLabel.empty() ? nullptr : fwInfo->imageLabel.c_str();
 	std::thread progressThread(trackFirmwareFlashProgress, &progressData);
 
 	result = zesFirmwareFlash(fwInfo->firmwareHandle, fwInfo->buffer.data(), (uint32_t)fwInfo->buffer.size());
@@ -139,10 +163,10 @@ ze_result_t fwupd::updateFW(firmwareInfo *fwInfo)
 		progressThread.join();
 
 		if (result == ZE_RESULT_ERROR_INVALID_ARGUMENT || result == ZE_RESULT_ERROR_INVALID_SIZE) {
-			ERR("Firmware image '{}' may be invalid/incompatible.\n", fwInfo->filePath.c_str());
+			ERR("Firmware image {} may be invalid/incompatible.\n", flashTarget(fwInfo).c_str());
 		} else if (result == ZE_RESULT_ERROR_UNINITIALIZED) {
-			ERR("Firmware image '{}' may be invalid/Firmware interface is not initialized.\n",
-				fwInfo->filePath.c_str());
+			ERR("Firmware image {} may be invalid/Firmware interface is not initialized.\n",
+				flashTarget(fwInfo).c_str());
 		} else {
 			ERR("Failed to flash firmware: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		}

@@ -166,11 +166,57 @@ uint8_t pldm::pldmFwUpdFillPayload(uint8_t cmd, uint8_t size)
 }
 
 /**
+ * @brief Whether a component of the parsed package should be left untouched
+ *
+ * A composite package can carry components meant for interfaces other than this one. When a
+ * component filter is armed, every component whose ComponentIdentifier does not match it is
+ * skipped instead of being pushed to the firmware device.
+ *
+ * @param comp Index into the parsed package's component image table
+ * @return bool True when the component must not be transferred
+ */
+bool pldm::fwUpdSkipComp(uint8_t comp) const
+{
+	if (mCompIdFilter == 0) {
+		return false;
+	}
+
+	return pkg->compImagesInfo.compImages[comp].id != mCompIdFilter;
+}
+
+/**
+ * @brief Number of components this update will actually transfer
+ *
+ * Reported to the firmware device in RequestUpdate, so it has to account for the component filter
+ * rather than the package's total component count.
+ *
+ * @return uint16_t Count of components that pass the filter
+ */
+uint16_t pldm::fwUpdCompCount() const
+{
+	if (mCompIdFilter == 0) {
+		return pkg->compImagesInfo.compImageCount;
+	}
+
+	uint16_t count = 0;
+	for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
+		if (pkg->compImagesInfo.compImages[i].id == mCompIdFilter) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+/**
  * @brief Initialize pldm firmware update process
  *
  * Parses the firmware package file and executes the complete firmware update
  * sequence for all components. This includes device identification, parameter
  * retrieval, update requests, component table passing, and firmware activation.
+ *
+ * Components filtered out by mCompIdFilter are skipped entirely: no inventory commands are sent
+ * for them and their images are never transferred.
  *
  * @param pkgFilePath Path to the firmware package file to process
  *
@@ -242,11 +288,22 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	}
 	DBG("Firmware package info parsed successfully from AMC img file for card : {:02}\n", mCardNum);
 
+	// A filtered update has nothing to do when the package does not carry the requested component.
+	// Report it rather than sending RequestUpdate with a component count of zero.
+	if (mCompIdFilter != 0 && fwUpdCompCount() == 0) {
+		ERR("Firmware package '{}' does not contain a component with identifier 0x{:04X}.\n", pkgFilePath,
+			mCompIdFilter);
+		return cleanupAndReturn(PLDM_ERROR);
+	}
+
 	// If the user requested --force, make sure every component image in the package
 	// advertises the ForceUpdate capability (bit 0 of ComponentOptions per DSP0267).
 	// Fail fast before any PLDM traffic is sent so the caller gets a clear reason.
 	if (mForceUpdate) {
 		for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
+			if (fwUpdSkipComp((uint8_t)i)) {
+				continue;
+			}
 			if (!pkg->compImagesInfo.compImages[i].compOptions.bits.bit0) {
 				ERR("Force update requested for card {:02} but firmware image '{}' is not "
 					"downgradable: ForceUpdate bit is not set in ComponentOptions for component {}.\n",
@@ -254,11 +311,15 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 				return cleanupAndReturn(PLDM_ERROR);
 			}
 		}
-		DBG("Force update requested and all {} component(s) advertise the ForceUpdate capability.\n",
-			pkg->compImagesInfo.compImageCount);
+		DBG("Force update requested and all {} component(s) advertise the ForceUpdate capability.\n", fwUpdCompCount());
 	}
 
 	for (int i = 0; i < pkg->compImagesInfo.compImageCount; i++) {
+		if (fwUpdSkipComp((uint8_t)i)) {
+			DBG("Component Number = {} skipped: identifier 0x{:04X} does not match the requested 0x{:04X}\n", i + 1,
+				pkg->compImagesInfo.compImages[i].id, mCompIdFilter);
+			continue;
+		}
 		DBG("Component Number = {}\n", i + 1);
 		DBG("Offset = {} & Size = {}\n", pkg->compImagesInfo.compImages[i].compLocOffset,
 			pkg->compImagesInfo.compImages[i].compSize);
@@ -266,6 +327,9 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 
 	// Firmware Update Inventory Commands
 	for (uint8_t n = 0; n < pkg->compImagesInfo.compImageCount; n++) {
+		if (fwUpdSkipComp(n)) {
+			continue;
+		}
 		DBG("\n========= Firmware Update Inventory for Component :: {} =========\n", n + 1);
 		mCurComp = n;
 		for (uint8_t i = 0; i < ARRAY_SIZE(cmdTable); i++) {

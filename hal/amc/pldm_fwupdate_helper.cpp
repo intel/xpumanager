@@ -56,7 +56,7 @@ uint8_t pldm::fwReqUpdate()
 	TRACING();
 
 	mReqUpdate.maxTransferSize = PLDM_MCTP_MAX_TRANSFER_SIZE;
-	mReqUpdate.numComp = pkg->compImagesInfo.compImageCount;
+	mReqUpdate.numComp = fwUpdCompCount();
 	mReqUpdate.maxOutstandXferReqs = FWU_MAXIMUM_OUTSTANDING_TRANSFER_REQ;
 	mReqUpdate.pkgDataLen = FWU_PACKAGE_DATALENGTH;
 	mReqUpdate.compImgSetVerStrType = pkg->compImagesInfo.compImages[mCurComp].verStrType;

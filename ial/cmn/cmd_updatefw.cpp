@@ -16,7 +16,7 @@
 #include <fstream>
 #include <sys/stat.h>
 
-static const char *validFwTypes[] = {"GFX", "GFX_DATA", "FDO", "AMC", "OP_CODE", "OP_DATA"};
+static const char *validFwTypes[] = {"GFX", "GFX_DATA", "FDO", "AMC", "OP_CODE", "OP_DATA", "COMPOSITE"};
 
 /**
  * @brief Returns a comma-separated string of valid firmware type names
@@ -78,6 +78,8 @@ void cmdUpdateFW::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [pciBdfAddress] -t GFX -f [imageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s updatefw -d [deviceId] -t FDO -f [imageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s updatefw -t AMC -f [imageFilePath]", progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s updatefw -d [deviceId] -t COMPOSITE -f [packageFilePath]", progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
@@ -87,12 +89,16 @@ void cmdUpdateFW::help(HELP helpType)
 										"specified, all devices will be updated"));
 	std::string typeHelp = "-t,--type                   The firmware name. Valid options: " + validFwTypesStr() + ".";
 	helpList.push_back(helpCmd(HEADING, "%s", typeHelp.c_str()));
+	helpList.push_back(helpCmd(HEADING, "                            COMPOSITE takes a PLDM firmware update package "
+										"and applies every component it carries that this device accepts"));
 	helpList.push_back(helpCmd(HEADING, "-f,--file                   The firmware image file path on this server"));
 	helpList.push_back(helpCmd(
 		HEADING, "-y,--assumeyes              Assume that the answer to any question which would be asked is yes"));
 	helpList.push_back(helpCmd(
 		HEADING, "--force                     Force firmware update. For GFX firmware, forces the update. For AMC "
 				 "firmware, allows downgrade when the .img advertises the ForceUpdate capability"));
+	helpList.push_back(helpCmd(HEADING, "--fdo                       Only with -t COMPOSITE. Flash the IFWI recovery "
+										"component of the package to the flash override device, and nothing else"));
 
 	printHelp(helpList, helpType);
 	helpList.clear();
@@ -134,6 +140,8 @@ int cmdUpdateFW::run(arg_struct *args)
 	sub.add_flag("-y,--assumeyes", fwInfo.assumeYes, "Assume yes to all questions");
 	sub.add_flag("--force", fwInfo.forceUpdate,
 				 "Force firmware update (GFX: force flash; AMC: allow downgrade when supported by the image)");
+	sub.add_flag("--fdo", fwInfo.fdoOnly,
+				 "COMPOSITE only: flash the IFWI recovery component to the flash override device and nothing else");
 
 	try {
 		sub.parse(args->argc - 1, args->argv + 1);
@@ -162,6 +170,13 @@ int cmdUpdateFW::run(arg_struct *args)
 	if (!validType) {
 		ERR("Error: Invalid firmware type '{}'. Valid options: {}.\n", fwInfo.firmwareType.c_str(),
 			validFwTypesStr().c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	const bool isComposite = STRCASECMP(fwInfo.firmwareType.c_str(), "composite") == 0;
+
+	if (fwInfo.fdoOnly && !isComposite) {
+		ERR("Error: --fdo is only valid with --type COMPOSITE.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
@@ -206,6 +221,9 @@ int cmdUpdateFW::run(arg_struct *args)
 				localInfo.amcIndex = devPtr->dev->getAmcIndex();
 				localInfo.totalThreads = totalThreads;
 				localInfo.curThread = curThread.fetch_add(1, std::memory_order_relaxed);
+				// This pass only covers what is reachable per device; the AMC of a composite package
+				// is shared between the GPUs of a card and is flashed by the pass below.
+				localInfo.scope = isComposite ? COMPOSITE_SCOPE_GPU : COMPOSITE_SCOPE_NONE;
 
 				firmware *fw = devPtr->dev->getFirmware();
 				if (fw == nullptr) {
@@ -230,10 +248,64 @@ int cmdUpdateFW::run(arg_struct *args)
 		}
 	}
 
+	// A composite package also carries the AMC image. One AMC can serve several GPUs, and it is
+	// reached over a shared bus, so the cards are updated one at a time after the per-device pass
+	// instead of once per attached GPU. --fdo asks for the recovery image alone, which is not an AMC
+	// image, so that pass is skipped entirely.
+	size_t amcLines = 0;
+	if (isComposite && !fwInfo.fdoOnly) {
+		std::vector<devInfo *> amcDevices;
+
+		for (auto &device : deviceList) {
+			int amcIndex = device.dev->getAmcIndex();
+			if (amcIndex == -1) {
+				continue;
+			}
+			bool alreadyQueued = false;
+			for (const auto *queued : amcDevices) {
+				if (queued->dev->getAmcIndex() == amcIndex) {
+					alreadyQueued = true;
+					break;
+				}
+			}
+			if (!alreadyQueued) {
+				amcDevices.push_back(&device);
+			}
+		}
+
+		amcLines = amcDevices.size();
+		for (size_t i = 0; i < amcLines; i++) {
+			PRINT("\n");
+		}
+
+		for (size_t i = 0; i < amcDevices.size(); i++) {
+			firmwareInfo localInfo = fwInfo;
+			localInfo.dev = amcDevices[i]->dev;
+			localInfo.deviceIndex = amcDevices[i]->index;
+			localInfo.amcIndex = amcDevices[i]->dev->getAmcIndex();
+			localInfo.totalThreads = (uint32_t)amcLines;
+			localInfo.curThread = (uint32_t)i;
+			localInfo.scope = COMPOSITE_SCOPE_AMC;
+
+			firmware *fw = amcDevices[i]->dev->getFirmware();
+			if (fw == nullptr) {
+				ERR("Error: Firmware pointer not found (device {}).\n", amcDevices[i]->index);
+				ze_result_t expected = ZE_RESULT_SUCCESS;
+				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+				continue;
+			}
+			if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
+				ERR("Error: Failed to update AMC firmware for device {}.\n", amcDevices[i]->index);
+				ze_result_t expected = ZE_RESULT_SUCCESS;
+				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+			}
+		}
+	}
+
 	if (firstError != ZE_RESULT_SUCCESS) {
 		return firstError.load();
 	} else {
-		if (totalThreads > 0) {
+		if (totalThreads > 0 || amcLines > 0) {
 			PRINT("\n"); // Move the cursor to the next line after the last progress bar
 		}
 		PRINT("Firmware update operation completed successfully.\n");

@@ -3,7 +3,13 @@ UpdateFW
 
 Update GPU firmware. Supports direct GPU firmware types (GFX, GFX_DATA, FDO,
 OP_CODE, OP_DATA) as well as AMC (Add-in card Management Controller) firmware
-on supported server platforms.
+on supported server platforms. COMPOSITE takes a single PLDM firmware update
+package and applies every component in it that the target accepts.
+
+A component the device has no firmware endpoint for is skipped without failing
+the update, as one package covers a family of boards. A component that does
+have an endpoint and fails to flash stops the remaining components on that
+device; other devices continue.
 
 Synopsis
 --------
@@ -14,6 +20,8 @@ Synopsis
    xpu-smi updatefw --device [deviceId] -t GFX -f [imageFilePath]
    xpu-smi updatefw --device [pciBdfAddress] -t GFX -f [imageFilePath]
    xpu-smi updatefw --device [deviceId] -t FDO -f [imageFilePath]
+   xpu-smi updatefw --device [deviceId] -t COMPOSITE -f [packageFilePath]
+   xpu-smi updatefw --device [deviceId] -t COMPOSITE -f [packageFilePath] --fdo
    xpu-smi updatefw -t AMC -f [imageFilePath]
 
 Options
@@ -55,10 +63,14 @@ Options
         - Option ROM code
       * - ``OP_DATA``
         - Option ROM data
+      * - ``COMPOSITE``
+        - PLDM (DSP0267 Type 5) firmware update package holding several components
 
 .. option:: -f <path>, --file <path>
 
-   Path to the firmware image file on the local filesystem.
+   Path to the firmware image file on the local filesystem. With
+   ``-t COMPOSITE`` this is a PLDM firmware update package rather than a single
+   image.
 
 .. option:: -y, --assumeyes
 
@@ -68,6 +80,12 @@ Options
 
    Force the GFX firmware update even if the existing firmware is up to date.
    This option applies to GFX firmware only.
+
+.. option:: --fdo
+
+   Only valid with ``-t COMPOSITE``. Flash the ``IFWI`` component of the package
+   to the flash override device and nothing else. Without this option ``IFWI``
+   is left out, because it is a device recovery image.
 
 Examples
 --------
@@ -101,6 +119,18 @@ Force GFX firmware update even if up to date:
 .. code-block:: shell
 
    xpu-smi updatefw --device 0 -t GFX -f /path/to/gfx_firmware.bin --force
+
+Apply every applicable component of a composite package to device 0:
+
+.. code-block:: shell
+
+   xpu-smi updatefw --device 0 -t COMPOSITE -f /path/to/package.bin
+
+Recover device 0 by flashing only the IFWI component of a composite package:
+
+.. code-block:: shell
+
+   xpu-smi updatefw --device 0 -t COMPOSITE -f /path/to/package.bin --fdo
 
 Obtaining Firmware Binaries for Arc Pro (Battlemage) GPUs
 ---------------------------------------------------------

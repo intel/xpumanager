@@ -366,8 +366,11 @@ std::string getCpuList(const std::string &bdf)
  * @param lineNum The line number to update (1-based).
  * @param totalThreads The total number of threads (or steps) in the update process.
  * @param progress The current progress percentage (0-100).
+ * @param label Optional text identifying what is being flashed, shown alongside the device index.
+ *              Used when a single update flashes several images in sequence, so the progress bar
+ *              restarting from 0% is attributable. Ignored when null.
  */
-void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
+void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress, const char *label)
 {
 	TRACING();
 	std::lock_guard<std::mutex> lock(progressPrintMutex);
@@ -390,8 +393,17 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 			COORD pos = {0, targetRow};
 			SetConsoleCursorPosition(hConsole, pos);
 
+			// Blank the row before redrawing: a sequence of images flashed on one line restarts the
+			// bar at 0%, and without this the bars drawn for the previous image would stay on screen.
+			DWORD cleared = 0;
+			FillConsoleOutputCharacterA(hConsole, ' ', (DWORD)csbi.dwSize.X, pos, &cleared);
+
 			// Clear the line and print progress
-			sync_out << "\rFirmware progress for device " << devIndex << ": ";
+			sync_out << "\rFirmware progress for device " << devIndex;
+			if (label != nullptr) {
+				sync_out << " [" << label << "]";
+			}
+			sync_out << ": ";
 			for (int j = 0; j < (int)progress; ++j) {
 				sync_out << "#";
 			}

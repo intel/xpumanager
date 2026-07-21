@@ -44,7 +44,43 @@ enum fwType
 	VR_CONFIG,
 	AMC,
 	FDO,
+	COMPOSITE,
 	MAX_FW_TYPE,
+};
+
+/**
+ * @brief ComponentIdentifier values used by Intel GPU PLDM (DSP0267 Type 5) firmware packages
+ *
+ * These are the vendor-defined identifiers carried in the Component Image Information Area of a
+ * composite package. firmware::updateComposite() maps them onto the firmware types this stack can
+ * flash; see compositeComponents[] in firmware.cpp.
+ */
+typedef enum
+{
+	PLDM_COMPONENT_ID_SVN_TABLE = 0x0001,
+	PLDM_COMPONENT_ID_IFWI = 0x0002,
+	PLDM_COMPONENT_ID_AMC_RECOVERY = 0x0003,
+	PLDM_COMPONENT_ID_AMC = 0x0004,
+	PLDM_COMPONENT_ID_VR_CONFIG_RECOVERY = 0x0005,
+	PLDM_COMPONENT_ID_VR_CONFIG = 0x0006,
+	PLDM_COMPONENT_ID_GFX_CODE_RECOVERY = 0x0007,
+	PLDM_COMPONENT_ID_GFX_CODE = 0x0008,
+	PLDM_COMPONENT_ID_GFX_DATA_RECOVERY = 0x0009,
+	PLDM_COMPONENT_ID_GFX_DATA = 0x000A,
+} pldm_component_id_t;
+
+/**
+ * @brief Which components of a composite package a single updateFW() call is responsible for
+ *
+ * A composite update runs in two passes: the components reachable through sysman are flashed in
+ * parallel across devices, then the AMC component is flashed once per AMC card. The scope keeps
+ * one orchestrator serving both passes without flashing the same AMC once per attached GPU.
+ */
+enum compositeScope
+{
+	COMPOSITE_SCOPE_NONE, // not a composite update
+	COMPOSITE_SCOPE_GPU,  // components flashed through sysman on this device
+	COMPOSITE_SCOPE_AMC,  // the AMC component only
 };
 
 enum fwupdPreference
@@ -63,13 +99,20 @@ struct firmwareInfo
 	std::string deviceId;
 	uint32_t amcIndex;
 	uint32_t deviceIndex;
-	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC, FDO
+	int fwType;				  // GFX, GFX_DATA, GFX_CODE_DATA, GFX_PSCBIN, FAN_TABLE, VR_CONFIG, AMC, FDO, COMPOSITE
 	std::string firmwareType; // This is the string representation of fwType
 	std::string filePath;
 	device *dev;
 	fwupdPreference preference;
 	uint32_t totalThreads;
 	uint32_t curThread;
+
+	// Composite (PLDM Type 5) package handling. Only meaningful while a COMPOSITE update is running.
+	bool fdoOnly;			  // --fdo was passed: flash the IFWI component and nothing else
+	compositeScope scope;	  // which components this call is responsible for
+	bool imagePreloaded;	  // buffer already holds the image to flash, do not read filePath
+	std::string imageLabel;	  // component being flashed, e.g. "GFX_CODE 1/3", for progress and errors
+	uint16_t pldmComponentId; // component to select from filePath, 0 for the whole package
 
 	igsc_device_handle handle;
 	std::vector<char> buffer;
@@ -87,6 +130,7 @@ struct firmwareProgressInfo
 	uint32_t deviceIndex;
 	uint32_t curThread;
 	uint32_t totalThreads;
+	const char *label; // what is being flashed, shown on the progress line; null when there is nothing to add
 };
 
 class fwupd

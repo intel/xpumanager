@@ -142,6 +142,8 @@ int amclib::amcInitialize()
  *
  * @param cardNum Zero-based index of the AMC card to update
  * @param pkgFilePath Path to the firmware package file
+ * @param compIdFilter When non-zero, only the component with this ComponentIdentifier is flashed.
+ *                     Zero flashes every component the package carries.
  *
  * @return Status of firmware flash operation
  * @retval AMC_SUCCESS Firmware flash completed successfully
@@ -150,14 +152,14 @@ int amclib::amcInitialize()
  * @note The card must be previously enumerated and initialized
  * @note Progress can be monitored using amcFirmwareProgress()
  */
-int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath)
+int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath, uint16_t compIdFilter)
 {
 	TRACING();
 	if (!pldmobj) {
 		ERR("PLDM objects not initialized\n");
 		return AMC_ERROR;
 	}
-	int ret = pldmobj[cardNum]->fwupd(pkgFilePath);
+	int ret = pldmobj[cardNum]->fwupd(pkgFilePath, compIdFilter);
 	return (ret == PLDM_SUCCESS) ? AMC_SUCCESS : AMC_ERROR;
 }
 

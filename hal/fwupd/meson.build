@@ -6,7 +6,8 @@
 fwupd_sources = files(
   'amcupd.cpp',
   'fwupd.cpp', 
-  'gscupd.cpp'
+  'gscupd.cpp',
+  'pldmextraction.cpp'
 )
 
 fwupd_inc = include_directories('.')

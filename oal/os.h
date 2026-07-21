@@ -23,6 +23,8 @@
 #define AMC_CARD_DISCOVERY(amcDeviceList) amcCardDiscovery(amcDeviceList)
 #define TIMESTAMP timestamp
 #define SETPROGRESS(devIndex, lineNum, totalThreads, progress) setProgress(devIndex, lineNum, totalThreads, progress)
+#define SETPROGRESSLABEL(devIndex, lineNum, totalThreads, progress, label)                                             \
+	setProgress(devIndex, lineNum, totalThreads, progress, label)
 #define GET_XE_DEV_PCI_PROPS(pciPropsList) getXeDevPciProps(pciPropsList)
 
 struct bdfID
@@ -53,7 +55,7 @@ uint32_t getCurrentProcessId();
 std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
-void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
+void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress, const char *label = nullptr);
 inline std::mutex progressPrintMutex;
 
 #ifdef _WIN32

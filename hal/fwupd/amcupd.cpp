@@ -303,6 +303,9 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 
 	std::string filePath = fwInfo->filePath;
 	uint32_t amcIndex = fwInfo->amcIndex;
+	// A composite package also carries images for other interfaces, so the AMC is told to take only
+	// its own component out of it. Zero means the whole package, which is what -t AMC passes.
+	uint16_t compIdFilter = fwInfo->pldmComponentId;
 
 	if (amcIndex >= (uint32_t)getNumOfCards()) {
 		ERR("Invalid AMC device index: {}\n", amcIndex);
@@ -327,8 +330,8 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	std::atomic<bool> stopProgress{false};
 
 	// Create a thread to flash firmware
-	std::thread flashThread([amc, amcIndex, filePath, &flashCompleted, &flashSuccess]() {
-		int result = amc->amcFirmwareFlash(amcIndex, filePath.c_str());
+	std::thread flashThread([amc, amcIndex, filePath, compIdFilter, &flashCompleted, &flashSuccess]() {
+		int result = amc->amcFirmwareFlash(amcIndex, filePath.c_str(), compIdFilter);
 		flashSuccess.store(result == AMC_SUCCESS);
 		flashCompleted.store(true);
 

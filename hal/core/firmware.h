@@ -13,6 +13,9 @@
 
 #define TOSTR(x) #x
 
+// One row of the PLDM ComponentIdentifier to firmware type mapping, defined in firmware.cpp.
+struct compositeComponentMap;
+
 class LIBXPUM_API firmware : public sysman
 {
 private:
@@ -21,6 +24,10 @@ private:
 	zes_firmware_properties_t *propertiesList;
 	updateFWCmdStruct *updateFWCmds;
 	fwupd **fwupdArray;
+
+	ze_result_t runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fwInfo);
+	ze_result_t updateComposite(firmwareInfo *fwInfo);
+	const compositeComponentMap *selectComponent(uint16_t identifier, const firmwareInfo *fwInfo, bool logSkips);
 
 public:
 	firmware();

@@ -117,7 +117,6 @@ void wait_for_thread(thread_id *tid);
 bool privilegeCheck();
 char getch();
 void restoreTerminal();
-std::string timestamp();
 std::string getLocalCpus(const std::string &bdf);
 std::string getCpuList(const std::string &bdf);
 struct bdfID;

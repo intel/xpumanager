@@ -890,8 +890,11 @@ std::string getDrmPath(const std::string &bdf)
  * @param lineNum The line number to update (1-based).
  * @param totalThreads The total number of threads (or steps) in the update process.
  * @param progress The current progress percentage (0-100).
+ * @param label Optional text identifying what is being flashed, shown alongside the device index.
+ *              Used when a single update flashes several images in sequence, so the progress bar
+ *              restarting from 0% is attributable. Ignored when null.
  */
-void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
+void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress, const char *label)
 {
 	TRACING();
 	std::lock_guard<std::mutex> lock(progressPrintMutex);
@@ -906,7 +909,14 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress)
 	// We need to move up (totalThreads - lineNum) lines
 	int linesUp = totalThreads - lineNum;
 	syncOut << "\033[" << linesUp << "A\r";
-	syncOut << "Firmware progress for device " << devIndex << ": ";
+	// Erase the line before redrawing: a sequence of images flashed on one line restarts the bar
+	// at 0%, and without this the bars drawn for the previous image would stay on screen.
+	syncOut << "\033[2K";
+	syncOut << "Firmware progress for device " << devIndex;
+	if (label != nullptr) {
+		syncOut << " [" << label << "]";
+	}
+	syncOut << ": ";
 	for (int j = 0; j < (int)progress; ++j) {
 		syncOut << "#";
 	}
