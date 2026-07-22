@@ -715,7 +715,8 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 				return -1;
 			}
 			char bdfBuffer[MAX_PATH] = {0};
-			// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) // sscanf is required for PCI_SLOT_NAME parsing
+			// sscanf is required for PCI_SLOT_NAME parsing
+			// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg)
 			sscanf(line.c_str(), "PCI_SLOT_NAME=%s", bdfBuffer);
 			if (bdfBuffer[0] != 0) {
 				info.bdfAddress = bdfBuffer;
