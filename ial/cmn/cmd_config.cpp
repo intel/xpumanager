@@ -1051,8 +1051,8 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	if (minFreq < 0 || maxFreq < 0 || minFreq >= maxFreq) {
-		ERR("Invalid frequency range values. Min frequency must be less than max frequency"
+	if (minFreq < 0 || maxFreq < 0 || minFreq > maxFreq) {
+		ERR("Invalid frequency range values. Min frequency must be less than or equal to max frequency"
 			" and both must be non-negative.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
