@@ -22,3 +22,4 @@ subprojects/level-zero
 **__pycache__/
 **/*.pyc
 docs/sphinx/_build/
+xpu-build/
