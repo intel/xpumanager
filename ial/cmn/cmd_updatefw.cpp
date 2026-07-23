@@ -184,7 +184,7 @@ int cmdUpdateFW::run(arg_struct *args)
 	// Print a newline for every thread that we will be creating. Also count the total number of threads
 	// as this will come in handy later.
 	for (auto &device : deviceList) {
-		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->getAmcIndex() != -1) ||
+		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->hasAmc()) ||
 			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
 			PRINT("\n");
 			totalThreads++;
@@ -195,7 +195,7 @@ int cmdUpdateFW::run(arg_struct *args)
 	workers.reserve(totalThreads);
 
 	for (auto &device : deviceList) {
-		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->getAmcIndex() != -1) ||
+		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->hasAmc()) ||
 			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
 			workers.emplace_back([&, fwInfo, totalThreads, devPtr = &device]() {
 				// Make a thread‑local copy of firmwareInfo to avoid data races

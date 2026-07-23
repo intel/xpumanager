@@ -6,7 +6,7 @@
 
 #include "pldm_fwupdate.h"
 #include "pldm.h"
-#include <chrono>
+#include <string>
 
 /**
  * @brief Execute pldm firmware update command
@@ -327,4 +327,142 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	// update session is finished so no CancelUpdate is required.
 	updateStarted = false;
 	return cleanupAndReturn(PLDM_SUCCESS);
+}
+
+/**
+ * @brief Send GET_FIRMWARE_PARAMETERS command and cache the parsed response.
+ *
+ * Sends PLDM firmware update command GET_FIRMWARE_PARAMETERS (0x02) to the AMC
+ * and stores the raw response payload in mFwParamRawData. On success the
+ * parsed ActiveComponentImageSetVersionString is stored in mFwParamActiveVersion.
+ *
+ * The response is assembled by pldmFwGetParamPayload() which appends each
+ * received MCTP packet's PLDM payload bytes into mFwParamRawData (SOM and
+ * continuation frames are handled there). After fwUpdCmd() returns, this
+ * function calls parseFwParamResponse() to decode the accumulated buffer.
+ *
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure.
+ *
+ * @note Follows DSP0267 section 11.2.
+ * @note On success mFwParamsInitialized is set to true and mFwParamActiveVersion
+ *       holds the active component image set version string.
+ */
+uint8_t pldm::getFirmwareParameters()
+{
+	TRACING();
+
+	mFwParamRawData.clear();
+	mFwParamsInitialized = false;
+	mFwParamActiveVersion.clear();
+
+	DBG("\n========= GetFirmwareParameters CARD {} =========\n", mCardNum);
+	DBG(">>> Send GetFirmwareParameters\n");
+
+	if (fwUpdCmd(GET_FIRMWARE_PARAMETERS, GET_FIRMWARE_PARAMETERS_SIZE) != PLDM_SUCCESS) {
+		ERR("FWU: GET_FIRMWARE_PARAMETERS command failed on card {}\n", mCardNum);
+		return PLDM_ERROR;
+	}
+
+	DBG("<<< GetFirmwareParameters received {} bytes of payload\n", mFwParamRawData.size());
+
+	return parseFwParamResponse();
+}
+
+/**
+ * @brief Parse the GET_FIRMWARE_PARAMETERS response buffer per DSP0267 section 11.2.
+ *
+ * Decodes the PLDM payload accumulated in mFwParamRawData. Walks the
+ * ComponentParameterTable (DSP0267 Table 19) and extracts the
+ * ActiveComponentVersionString from the first entry whose ComponentClassification
+ * is COMP_CLASS_FIRMWARE (0x000A).
+ *
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure.
+ *
+ * @note On success mFwParamsInitialized is set to true and mFwParamActiveVersion
+ *       contains the ActiveComponentVersionString of the matched component.
+ */
+uint8_t pldm::parseFwParamResponse()
+{
+	TRACING();
+
+	const uint8_t *payload = mFwParamRawData.data();
+	const size_t len = mFwParamRawData.size();
+
+	// DSP0267 section 11.2 Table 18 - GET_FIRMWARE_PARAMETERS response layout:
+	constexpr size_t kResponseHeaderLen = 11;
+
+	if (len < kResponseHeaderLen) {
+		ERR("FWU: GET_FIRMWARE_PARAMETERS response too short ({} bytes, need at least {})\n", len, kResponseHeaderLen);
+		return PLDM_ERROR;
+	}
+
+	// Byte 0: CompletionCode
+	if (payload[0] != PLDM_SUCCESS) {
+		ERR("FWU: GET_FIRMWARE_PARAMETERS completion code 0x{:02x}\n", payload[0]);
+		return PLDM_ERROR;
+	}
+
+	// Bytes 5-6: ComponentCount (little-endian uint16)
+	const uint16_t compCount = static_cast<uint16_t>(payload[5]) | (static_cast<uint16_t>(payload[6]) << 8);
+	DBG("FWU: ComponentCount = {}\n", compCount);
+
+	if (compCount == 0) {
+		ERR("FWU: GET_FIRMWARE_PARAMETERS: no components reported\n");
+		return PLDM_ERROR;
+	}
+
+	// Bytes 8 and 10: image-set version string lengths — used only to skip to
+	// the start of the ComponentParameterTable.
+	const uint8_t imgSetActiveLen = payload[8];
+	const uint8_t imgSetPendingLen = payload[10];
+
+	// Offset to the first ComponentParameterTable entry
+	size_t tableOffset = kResponseHeaderLen + imgSetActiveLen + imgSetPendingLen;
+
+	// DSP0267 Table 19 - ComponentParameterTable entry fixed header size
+	constexpr size_t kCompParamEntryFixedLen = 39;
+
+	// Walk each ComponentParameterTable entry (DSP0267 Table 19)
+	for (uint16_t i = 0; i < compCount; ++i) {
+		if (tableOffset + kCompParamEntryFixedLen > len) {
+			ERR("FWU: component parameter table entry {} truncated\n", i);
+			return PLDM_ERROR;
+		}
+
+		const uint8_t *entry = payload + tableOffset;
+
+		const uint16_t classification = static_cast<uint16_t>(entry[0]) | (static_cast<uint16_t>(entry[1]) << 8);
+		const uint16_t identifier = static_cast<uint16_t>(entry[2]) | (static_cast<uint16_t>(entry[3]) << 8);
+		const uint8_t activeCompVerStrLen = entry[10];
+		const uint8_t pendingCompVerStrLen = entry[24];
+		const size_t entrySize = kCompParamEntryFixedLen + activeCompVerStrLen + pendingCompVerStrLen;
+
+		DBG("FWU: component[{}]: classification=0x{:04x} identifier=0x{:04x} "
+			"activeCompVerStrLen={}\n",
+			i, classification, identifier, activeCompVerStrLen);
+
+		if (tableOffset + entrySize > len) {
+			ERR("FWU: component parameter table entry {} version string truncated\n", i);
+			return PLDM_ERROR;
+		}
+
+		// Match AMC firmware component by classification
+		if (classification == COMP_CLASS_FIRMWARE) {
+			if (activeCompVerStrLen > 0) {
+				mFwParamActiveVersion =
+					std::string(reinterpret_cast<const char *>(entry + kCompParamEntryFixedLen), activeCompVerStrLen);
+				mFwParamsInitialized = true;
+				DBG("FWU: AMC ActiveComponentVersionString (class=0x{:04x}) = \"{}\"\n", classification,
+					mFwParamActiveVersion.c_str());
+				return PLDM_SUCCESS;
+			}
+		}
+
+		tableOffset += entrySize;
+	}
+
+	ERR("FWU: no firmware component (0x{:04x}) found in "
+		"ComponentParameterTable\n",
+		COMP_CLASS_FIRMWARE);
+	return PLDM_ERROR;
 }

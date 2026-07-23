@@ -199,6 +199,43 @@ ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *versio
 }
 
 /**
+ * @brief Retrieve the AMC serial number for the GPU identified by bdfStr.
+ *
+ * Uses the already-initialized amcupd singleton (via fwupdArray[FWUPD_PREFERENCE_AMC]).
+ * amcupd::init() is guarded by std::call_once, so AMC initialization only ever
+ * happens once regardless of how many times this function is called.
+ *
+ * @param[in]  bdfStr     PCI BDF string of the GPU whose AMC serial number is requested.
+ * @param[out] serialNum  Buffer to receive the null-terminated serial number string.
+ * @param[in]  size       Size of serialNum buffer in bytes.
+ * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNINITIALIZED when no AMC
+ *         is registered for this device, ZE_RESULT_ERROR_NOT_AVAILABLE on lookup failure.
+ */
+ze_result_t firmware::getAmcSerialNumber(const char *bdfStr, char *serialNum, uint32_t size)
+{
+	TRACING();
+
+	if (!fwupdArray || !fwupdArray[FWUPD_PREFERENCE_AMC]) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	if (!bdfStr || !serialNum || size == 0) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
+	if (a == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	std::string sn, ver;
+	if (a->amcGetCardInfo(std::string(bdfStr), sn, ver) == -1) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	STRCPY_S(serialNum, size, sn.c_str());
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Updates firmware with the provided firmware information
  *
  * This function performs a firmware update operation using the information

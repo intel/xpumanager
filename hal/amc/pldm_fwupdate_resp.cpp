@@ -180,8 +180,8 @@ uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, UNUSED uint8_t id)
  * provides detailed information about the firmware device capabilities,
  * supported update operations, and component information.
  *
- * @param cmd Firmware update command (should be GET_FIRMWARE_PARAMETERS)
- * @param id pldm instance ID used for the original command
+ * @param[in] cmd Firmware update command (should be GET_FIRMWARE_PARAMETERS)
+ * @param[in] id  pldm instance ID used for the original command
  *
  * @return uint8_t Status of parameter processing
  * @retval PLDM_SUCCESS Parameters processed successfully
@@ -211,6 +211,44 @@ uint8_t pldm::pldmFwGetParamPayload(uint8_t cmd, uint8_t id)
 			ERR("cmd code : 0x{:02x}, id : 0x{:02x}, request / response : 0x{:02x}\n", mI2cPldmRead->pldmHdr.cmdCode,
 				mI2cPldmRead->pldmHdr.instanceID, mI2cPldmRead->pldmHdr.request);
 			return PLDM_ERROR;
+		}
+	}
+
+	// Accumulate PLDM payload bytes into mFwParamRawData for parseFwParamResponse().
+	// SOM packet layout (byte offsets from struct start):
+	//   [0]    destSlaveAddr   (not filled by readAmc - driver placeholder)
+	//   [1]    cmdCode         (3 bytes total before byteCount-counted range)
+	//   [2]    byteCount
+	//   [3..8] remainder of MCTP hdr  (6 bytes: srcAddr + hdrVer + epids + flags)
+	//   [9]    msgType/ic             (SOM-only, 1 byte)
+	//   [9..11] pldmHdr               (3 bytes, starting at byte 9)
+	//   [12..] respPayload            (PLDM payload)
+	// PLDM payload length (SOM) = (byteCount + 3) - sizeof(mctpSmbusI2cHdr) - sizeof(pldmHdr)
+	//                            = byteCount + 3 - 9 - 3 = byteCount - 9
+	//
+	// Continuation packet: no msgType/ic or PLDM header; data starts at byte 8.
+	// PLDM payload length (continuation) = byteCount - 5 (per rxMultiPartData constants).
+	{
+		const unsigned int byteCount = mI2cPldmRead->mctpSmbusHdr.byteCount;
+		if (mI2cPldmRead->mctpSmbusHdr.som == PLDM_SOM_BIT_ON) {
+			mFwParamRawData.clear();
+			if (byteCount < 9 || (byteCount - 9) > sizeof(mI2cPldmRead->respPayload)) {
+				ERR("pldmFwGetParamPayload: SOM byteCount 0x{:02x} out of range\n", byteCount);
+				return PLDM_ERROR;
+			}
+			const size_t payloadLen = byteCount - 9;
+			mFwParamRawData.insert(mFwParamRawData.end(), mI2cPldmRead->respPayload,
+								   mI2cPldmRead->respPayload + payloadLen);
+		} else {
+			// Continuation: data starts at struct byte 8 (mctpSmbusHdr.msgType field
+			// is absent in continuation packets, so the payload fills that slot).
+			if (byteCount < 5 || (byteCount - 5) > (sizeof(*mI2cPldmRead) - 8)) {
+				ERR("pldmFwGetParamPayload: continuation byteCount 0x{:02x} out of range\n", byteCount);
+				return PLDM_ERROR;
+			}
+			const size_t dataLen = byteCount - 5;
+			const uint8_t *contData = reinterpret_cast<const uint8_t *>(mI2cPldmRead) + 8;
+			mFwParamRawData.insert(mFwParamRawData.end(), contData, contData + dataLen);
 		}
 	}
 

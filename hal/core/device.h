@@ -138,6 +138,7 @@ public:
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
 	bool isIGPU() const { return igpu; }
 	int getAmcIndex() const { return amc; }
+	bool hasAmc() const { return amc != -1; }
 	std::string getDrmDevPath() const { return std::string(drmDevPath); }
 	bool isBDF(const char *bdf);
 	void setSurvivabilityMode(bool mode) { survMode = mode; }

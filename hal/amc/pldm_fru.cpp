@@ -377,8 +377,9 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
  * If the FRU table initialization fails or the AMC version is not available, appropriate
  * error handling is performed.
  *
- * @param version Pointer to char buffer to receive AMC version, or nullptr to query length
- * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
+ * @param[in,out] version     Pointer to char buffer to receive AMC version, or nullptr to query length
+ * @param[in,out] bufferSize  Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null
+ * terminator)
  *
  * @return uint8_t Status of the AMC version retrieval operation
  * @retval PLDM_SUCCESS AMC version retrieved successfully or length returned successfully
@@ -394,33 +395,15 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 {
 	TRACING();
 
-	if (!mFruTableInitialized) {
-		DBG("FRU table not initialized\n");
-
-		// Completely initialize the FRU table structure to prevent any Valgrind issues
-		// This ensures that even if the structure was allocated but not initialized, we have clean data
-		memset(&mFruTable, 0, sizeof(mFruTable));
-
-		if (pldmFruInitialize() != PLDM_SUCCESS) {
-			ERR("Failed to initialize FRU table\n");
+	if (!mFwParamsInitialized) {
+		if (getFirmwareParameters() != PLDM_SUCCESS) {
+			ERR("FWU: GET_FIRMWARE_PARAMETERS failed on card {}\n", mCardNum);
 			return PLDM_ERROR;
 		}
 	}
 
-	// Always ensure the version buffer is properly terminated to prevent Valgrind errors
-	// This is a defensive measure to handle any potential uninitialized memory access
-	mFruTable.genVersion[sizeof(mFruTable.genVersion) - 1] = '\0';
+	const size_t requiredLength = mFwParamActiveVersion.size() + 1; // +1 for null terminator
 
-	// Check if version is available by using strnlen for safety
-	size_t versionLen = strnlen(mFruTable.genVersion, sizeof(mFruTable.genVersion) - 1);
-	if (versionLen == 0) {
-		DBG("FRU AMC version not available\n");
-		return PLDM_ERROR;
-	}
-
-	size_t requiredLength = versionLen + 1; // +1 for null terminator
-
-	// If version is nullptr, this is a length query only
 	if (version == nullptr) {
 		if (bufferSize != nullptr) {
 			*bufferSize = requiredLength;
@@ -428,22 +411,19 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 		return PLDM_SUCCESS;
 	}
 
-	// For data copy, bufferSize must be provided
 	if (bufferSize == nullptr) {
 		ERR("Buffer size parameter cannot be null when copying data\n");
 		return PLDM_ERROR;
 	}
 
-	// Check if buffer is large enough
 	if (*bufferSize < requiredLength) {
 		ERR("Buffer too small: need {}, got {}\n", requiredLength, *bufferSize);
-		*bufferSize = requiredLength; // Return required size
+		*bufferSize = requiredLength;
 		return PLDM_ERROR;
 	}
 
-	// Copy the version to the provided buffer
-	STRNCPY_S(version, mFruTable.genVersion, *bufferSize - 1);
-	version[*bufferSize - 1] = '\0'; // Ensure null termination
-
+	STRNCPY_S(version, mFwParamActiveVersion.c_str(), *bufferSize - 1);
+	version[*bufferSize - 1] = '\0';
+	DBG("FWU: AMC version (card {:02}) = \"{}\"\n", mCardNum, version);
 	return PLDM_SUCCESS;
 }

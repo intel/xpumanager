@@ -20,6 +20,9 @@
 #define ACTIVATE_FIRMWARE_SIZE 13
 #define COMPONENTCLASSIFICATIONINDEX 0x00
 
+// DSP0267 Table 32 - ComponentClassification values for AMC firmware
+#define COMP_CLASS_FIRMWARE 0x000A
+
 #include "pldm.h"
 
 enum _pldm_firmwareupdate_command_code

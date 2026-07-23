@@ -183,7 +183,7 @@ DiscoveryTextPrinter::DiscoveryTextPrinter() : TextPrinter() {}
 /**
  * @brief Prints text output with custom formatting for discovery command
  *
- * @param jsonObj Pointer to the JSON object to be formatted and printed as text
+ * @param[in] jsonObj Pointer to the JSON object to be formatted and printed as text
  */
 void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 {
@@ -225,7 +225,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		return;
 	}
 
-	// Table-based output for device list or single device
+	// Table-based output for discovery command 'xpu-smi discovery'
 	if (jsonObj->contains("device_list")) {
 		TableBuilder table;
 		table.addColumn("Device ID", 9, Align::Left).addColumn("Device Information", 84, Align::Left);
@@ -254,6 +254,8 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			addField("pci_bdf_address", "PCI BDF Address");
 			addField("drm_device", "DRM Device");
 			addField("device_function_type", "Function Type");
+			addField("amc_firmware_name", "AMC Firmware Name");
+			addField("amc_firmware_version", "AMC Firmware Version");
 		}
 
 		PRINT("{}", table.toString().c_str());
@@ -333,6 +335,26 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("physical_eu_simd_width", "Physical EU SIMD Width");
 		addField("number_of_media_engines", "Number of Media Engines");
 		addField("number_of_media_enh_engines", "Number of Media Enhancement Engines");
+		table.addRow("", "");
+
+		// Group 6: AMC Firmware Information
+		if (jsonObj->contains("amc_firmware_version")) { // xpu-smi discovery --list-amc-versions
+			const auto &verVal = (*jsonObj)["amc_firmware_version"];
+			if (verVal.is_array()) {
+				if (!jsonObj->contains("device_id") || !(*jsonObj)["device_id"].is_array() ||
+					(*jsonObj)["device_id"].size() != verVal.size()) {
+					ERR("BUG: device_id and amc_firmware_version array sizes do not match — skipping AMC output\n");
+				} else {
+					const auto &devIds = (*jsonObj)["device_id"];
+					for (size_t i = 0; i < verVal.size(); ++i) {
+						table.addRow(valueToString(devIds[i]), "AMC Firmware Version: " + valueToString(verVal[i]));
+					}
+				}
+			} else { // xpu-smi discovery --device <id> or --device <bdf>
+				addField("amc_firmware_name", "AMC Firmware Name");
+				addField("amc_firmware_version", "AMC Firmware Version");
+			}
+		}
 
 		PRINT("{}", table.toString().c_str());
 	}
@@ -379,6 +401,14 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 
 	vendorName(device, &outputLine);
 	(*jsonObj)["vendor_name"] = outputLine;
+
+	if (device->dev->hasAmc()) {
+		amcFirmwareName(device, &outputLine);
+		(*jsonObj)["amc_firmware_name"] = outputLine;
+
+		amcFirmwareVersion(device, &outputLine);
+		(*jsonObj)["amc_firmware_version"] = outputLine;
+	}
 
 	return jsonObj;
 }
@@ -622,10 +652,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	std::string outputLine;
 	ze_result_t result = ZE_RESULT_SUCCESS;
 
-	firmware *fw = d->dev->getFirmware();
-	bool hasAmc = (fw && fw->hasAmcFirmware());
-
-	if (hasAmc) {
+	if (d->dev->hasAmc()) {
 		amcFirmwareName(d, &outputLine);
 		props["amc_firmware_name"] = outputLine;
 
@@ -698,7 +725,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	props["gfx_firmware_status"] = outputLine;
 
 	// OPROM and GFX_PSCBIN are also only on devices with AMC
-	if (hasAmc) {
+	if (d->dev->hasAmc()) {
 		gfxPscBinFirmwareName(d, &outputLine);
 		props["gfx_pscbin_firmware_name"] = outputLine;
 
@@ -909,24 +936,20 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
+	*outputLine = zesDevProp.serialNumber;
 
-	// AMC route if exists
-	if (std::string_view{zesDevProp.serialNumber} == "unknown") {
+	if (d->dev->hasAmc() && *outputLine == "unknown") {
 		std::string serialNumFromAMC;
 		const auto amcResult = querySerialNumberFromAMC(d, &serialNumFromAMC);
-		if (amcResult != ZE_RESULT_SUCCESS || serialNumFromAMC.empty()) {
-			DBG("Failed to get serial number from AMC or No AMC Available: 0x{:X} ({})\n", amcResult,
-				l0_error_to_string(amcResult));
-			*outputLine = zesDevProp.serialNumber;
-		} else {
+		if (amcResult == ZE_RESULT_SUCCESS && !serialNumFromAMC.empty()) {
 			DBG("Successfully retrieved serial number from AMC: {}\n", serialNumFromAMC.c_str());
 			*outputLine = serialNumFromAMC;
+		} else {
+			DBG("AMC serial number query failed (0x{:X}), falling back to sysman\n", amcResult);
 		}
-	} else {
-		*outputLine = zesDevProp.serialNumber;
 	}
 
-	// OEM provided serial number via IGSC if available
+	// OEM provided serial number via IGSC if still unknown
 	if (*outputLine == "unknown") {
 		std::string serialNumFromIGSC;
 		const auto igscResult = getOemSerialNumber(d->dev->getPCI()->getMeiDevicePath(), serialNumFromIGSC);
@@ -2076,15 +2099,21 @@ ze_result_t cmdDiscovery::opromDataFirmwareVersion(devInfo *d, std::string *outp
 ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *jsonObj)
 {
 	TRACING();
+	if (!d->dev->hasAmc()) {
+		return ZE_RESULT_SUCCESS;
+	}
+
 	std::array<char, MAX_PATH> version = {};
 
 	auto *const p = d->dev->getPCI();
 	auto *const fw = d->dev->getFirmware();
 
 	fw->getFWversion(fwType::AMC, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
+	// Record the device ID alongside the version so the text printer can show it.
+	(*jsonObj)["device_id"].push_back(d->index);
 	// Wrap the versions in the documented object shape
-	// ({"amc_fw_version": [...]}) instead of emitting a bare JSON array.
-	(*jsonObj)["amc_fw_version"].push_back(version.data());
+	// ({"amc_firmware_version": [...]}) instead of emitting a bare JSON array.
+	(*jsonObj)["amc_firmware_version"].push_back(version.data());
 
 	return ZE_RESULT_SUCCESS;
 }
@@ -2104,38 +2133,29 @@ ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *js
 ze_result_t cmdDiscovery::querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString)
 {
 	TRACING();
-	amclib amc;
-	int numCards = amc.amcEnumFirmwares();
-	if (numCards <= 0) {
-		DBG("No AMC devices found or enumeration failed. Skipping AMC serial number query.\n");
+
+	// Proceed when this device actually has an AMC associated.
+	// hasAmc() returns false when no AMC is present, avoiding any I2C traffic.
+	if (!d->dev->hasAmc()) {
+		DBG("No AMC associated with device {} — skipping AMC serial number query\n",
+			d->dev->getPCI()->getBDFStr().c_str());
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	int ret = amc.amcInitialize();
-	if (ret != AMC_SUCCESS) {
-		ERR("Failed to initialize AMC devices (error code: %d)\n", ret);
+	firmware *fw = d->dev->getFirmware();
+	if (!fw) {
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	std::string bdfStr = d->dev->getPCI()->getBDFStr();
-	int index = amc.amcGetIndex(bdfStr.c_str());
-
-	if ((index < 0) || (index >= numCards)) {
-		ERR("AMC device index out of range for BDF %s (index: %d, numCards: %d)\n", bdfStr.c_str(), index, numCards);
+	char serialNum[MAX_PATH] = {};
+	ze_result_t result = fw->getAmcSerialNumber(d->dev->getPCI()->getBDFStr().c_str(), serialNum, sizeof(serialNum));
+	if (result != ZE_RESULT_SUCCESS || serialNum[0] == '\0') {
+		ERR("Failed to get serial number from AMC for device {} (result: 0x{:X})\n",
+			d->dev->getPCI()->getBDFStr().c_str(), result);
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	char serialNumber[MAX_PATH] = {0};
-	uint8_t cardNum = static_cast<uint8_t>(index);
-	size_t bufferSize = sizeof(serialNumber);
-	ret = amc.amcGetSerialNumber(cardNum, serialNumber, &bufferSize);
-	if (ret != AMC_SUCCESS) {
-		ERR("Failed to get serial number for AMC device %d (error code: %d)\n", index, ret);
-		return ZE_RESULT_ERROR_UNINITIALIZED;
-	}
-	std::string snStr(serialNumber);
-	*serialNumberString = snStr;
-
+	*serialNumberString = serialNum;
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -2265,6 +2285,19 @@ int cmdDiscovery::run(arg_struct *args)
 		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_PHYSICAL);
 	} else if (discCmds[discCmdType::DISC_VF].enabled || discCmds[discCmdType::DISC_VIRTUALFUNCTION].enabled) {
 		printDeviceInfo(deviceList, survDeviceList, printer, DEVICE_FUNCTION_TYPE_VIRTUAL);
+	} else if (discCmds[discCmdType::DISC_LISTAMCVERSIONS].enabled) {
+		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
+		for (auto &device : deviceList) {
+			result = listamcversions(&device, jsonObj.get());
+			if (result != ZE_RESULT_SUCCESS) {
+				return result;
+			}
+		}
+		if (!jsonObj->contains("amc_firmware_version")) {
+			ERR("No AMC devices found.\n");
+			return ZE_RESULT_ERROR_NOT_AVAILABLE;
+		}
+		printer->print(jsonObj.get());
 	} else if (!deviceList.empty()) {
 		// Iterate through the device list and execute the command
 		auto jsonObj = std::make_unique<nlohmann::ordered_json>();

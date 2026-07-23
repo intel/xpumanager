@@ -18,6 +18,8 @@
 #include "pldm_amc_gpu_reset.h"
 #include <i2c_interface.h>
 #include <mutex>
+#include <string>
+#include <vector>
 
 // Transfer Operation Flags
 enum pldmTransferOpFlag
@@ -162,6 +164,7 @@ private:
 	uint8_t mFwuCurrentState;
 	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
 	uint8_t mLastFwuCompletionCode;
+
 	// PLDM FRU datastructures
 	struct fruGetTableRequest mFruTableRequest;
 	struct fruTableResponse mFruTableResponse;
@@ -237,6 +240,15 @@ private:
 	uint8_t fwUpdateResp(uint8_t cmd, uint8_t id);
 	uint8_t pldmFwUpdateRespPayload(uint8_t cmd, uint8_t id);
 	uint8_t pldmFwGetParamPayload(uint8_t cmd, uint8_t id);
+
+	// pldm GetFirmwareParameters (DSP0267 section 11.2)
+	uint8_t getFirmwareParameters();
+	uint8_t parseFwParamResponse();
+
+	// Cached results from GetFirmwareParameters
+	std::vector<uint8_t> mFwParamRawData; // accumulated multi-packet PLDM payload
+	std::string mFwParamActiveVersion;	  // ActiveComponentImageSetVersionString
+	bool mFwParamsInitialized;
 	uint8_t readFromFD();
 	uint8_t writeToAMCCompXfer(uint32_t offset, uint32_t lenToSend, uint8_t completioncode);
 	uint8_t respondtoamc(uint8_t completioncode);
@@ -299,7 +311,7 @@ public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
 		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS),
-		  mFruTableInitialized(false), pkg(nullptr)
+		  mFruTableInitialized(false), pkg(nullptr), mFwParamsInitialized(false)
 	{
 		pldminit();
 	}
