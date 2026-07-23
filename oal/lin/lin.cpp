@@ -787,6 +787,43 @@ std::string getKernelVersion()
 }
 
 /**
+ * @brief Checks whether the current kernel matches the known-broken xe debug pattern.
+ *
+ * @param [in] release Kernel release string returned by getKernelVersion().
+ * @return true when the release matches the affected lgci xe debug kernels.
+ * @return false otherwise.
+ */
+bool isLgciXeDebugKernel(const std::string &release)
+{
+	return release.find("lgci-xe-kernel-") != std::string::npos && release.find("nodebug") == std::string::npos &&
+		   (release.find("intern") != std::string::npos || release.find("-debug") != std::string::npos);
+}
+
+/**
+ * @brief Determines whether EU metrics can be safely enabled on the current system.
+ *
+ * Affected lgci xe debug kernels are marked unsafe. Users may also set
+ * `XPU_SMI_DISABLE_EU_METRICS` to force EU metrics off on any kernel.
+ *
+ * @param [out] unsafeKernelRelease Optional output for the kernel release when EU metrics are
+ * unsafe because of the known-broken kernel path.
+ * @return true when EU metrics may be enabled.
+ * @return false when EU metrics must remain disabled.
+ */
+bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease)
+{
+	if (hasEnv("XPU_SMI_DISABLE_EU_METRICS")) {
+		return false;
+	}
+	const std::string release = getKernelVersion();
+	const bool isLgciXeDebug{isLgciXeDebugKernel(release)};
+	if (isLgciXeDebug && unsafeKernelRelease != nullptr) {
+		*unsafeKernelRelease = release;
+	}
+	return !isLgciXeDebug;
+}
+
+/**
  * @brief Get the PCI slot label/designation for a device
  *
  * This function attempts to retrieve the physical slot designation for a PCI device

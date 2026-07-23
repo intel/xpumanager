@@ -7,6 +7,9 @@
 #include "driver.h"
 #include "driver_util.h"
 #include <loader/ze_loader.h>
+#include <os.h>
+#include <charconv>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <span>
@@ -148,17 +151,33 @@ ze_result_t driver::zesInitialize()
  * @brief Initializes the driver and its associated devices.
  *
  * This function initializes the Level Zero and ZES APIs, retrieves driver handles,
- * and initializes each device associated with the drivers. It also sets the ZET_ENABLE_METRICS
- * environment variable.
+ * and initializes each device associated with the drivers. It also configures the
+ * `ZET_ENABLE_METRICS` environment variable.
+ * On xe debug/CI kernels where the EU stall firmware path is broken, this function forces
+ * EU metrics off before Level Zero initialization to avoid a firmware hang followed by a
+ * crash in libze_intel_gpu.so.
+ * Users may also set `XPU_SMI_DISABLE_EU_METRICS=1` to force EU metrics off on any kernel.
  *
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::init()
+ze_result_t driver::init() // NOLINT(readability-function-cognitive-complexity)
 {
-	TRACING();
+	TRACING(); // NOLINT(misc-const-correctness)
 
-	// Set ZET_ENABLE_METRICS environment variable
-	SETENV("ZET_ENABLE_METRICS", "1");
+	// Keep EU metrics disabled for explicit user override or on affected kernels
+	// before Level Zero initialization.
+	std::string unsafeKernelRelease;
+	const bool euMetricsSafe{
+		euMetricsSafeOnThisKernel(&unsafeKernelRelease)}; // NOLINT(cppcoreguidelines-init-variables)
+	if (euMetricsSafe) {
+		SETENV("ZET_ENABLE_METRICS", "1"); // NOLINT(concurrency-mt-unsafe)
+	} else if (hasEnv("XPU_SMI_DISABLE_EU_METRICS")) {
+		ERR("XPU_SMI_DISABLE_EU_METRICS is set; leaving ZET_ENABLE_METRICS disabled.\n");
+	} else if (!unsafeKernelRelease.empty()) {
+		ERR("xe EU stall firmware known-broken on this kernel ({}); "
+			"disabling ZET_ENABLE_METRICS to prevent crash.\n",
+			unsafeKernelRelease);
+	}
 
 	// Set COMPOSITE device hierarchy mode to ensure zeDeviceGet returns root devices.
 	// zesDeviceGet always returns root device handles.

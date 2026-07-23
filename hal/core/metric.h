@@ -94,8 +94,8 @@ class LIBXPUM_API metric : public sysman
 private:
 	uint32_t metricCount;
 	zet_metric_handle_t *metrics;
-	ze_result_t getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t subdeviceId, ze_driver_handle_t driver,
-										 EuMetricsData &data);
+	static ze_result_t getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t subdeviceId,
+												ze_driver_handle_t driver, EuMetricsData &data);
 
 	zet_metric_group_handle_t findEuMetricGroup(ze_device_handle_t device);
 

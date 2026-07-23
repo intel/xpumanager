@@ -11,9 +11,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
+#include <stdlib.h>
 #include <cstdio>
 #include <cstring>
-#include <getopt.h>
+#include <getopt.h> // NOLINT(misc-include-cleaner)
 #include <pthread.h>
 #include <string>
 #include <unistd.h>
@@ -66,11 +68,17 @@ typedef wchar_t TCHAR;
 #define IOMMUSUPPORT() isIommuSupported()
 #define SRIOVSUPPORT(deviceInfoPtr) isSriovSupported(deviceInfoPtr)
 #define GETKERNELVERSION() getKernelVersion()
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define GETPCISLOTLABEL(bdf) getPciSlotLabel(bdf)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define FINDRESOURCEFILE(relativePath) findResourceFile(relativePath)
 
+inline bool hasEnv(const char *name) { return secure_getenv(name) != nullptr; } // NOLINT(misc-include-cleaner)
+
+// NOLINTNEXTLINE(readability-identifier-naming)
 static inline int fopen_s_def(FILE **pFile, const char *filename, const char *mode)
 {
+	// NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
 	*(pFile) = fopen(filename, mode);
 	return (*(pFile) != NULL) ? 0 : errno;
 }
@@ -98,6 +106,8 @@ void restoreTerminal();
 std::string timestamp();
 std::string getLocalCpus(const std::string &bdf);
 std::string getCpuList(const std::string &bdf);
+struct bdfID;
+struct amcCardInfo;
 int getTopology(bdfID bdf, std::string *switchDevicePath);
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
 int getLinLogs(const std::string &fileName);
@@ -109,6 +119,8 @@ bool isVmxSupported();
 bool isIommuSupported();
 bool isSriovSupported(DeviceSriovInfo *di);
 std::string getKernelVersion();
+bool isLgciXeDebugKernel(const std::string &release);
+bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease = nullptr);
 std::string getPciSlotLabel(const std::string &bdf);
 std::string findResourceFile(const std::string &relativePath);
 int coldResetViaSysfs(const std::string &gpuBdf);

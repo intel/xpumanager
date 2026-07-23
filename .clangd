@@ -1,0 +1,5 @@
+---
+If:
+  PathMatch: oal/win/.*
+Diagnostics:
+  Suppress: '*'

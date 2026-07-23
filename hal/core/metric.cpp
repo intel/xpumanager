@@ -5,12 +5,18 @@
  */
 
 #include "metric.h"
+#include <os.h>
+#include <ze_api.h>
+#include <zet_api.h>
+#include <memory>
+#include <string>
 #include <thread>
 #include <chrono>
 #include <algorithm>
 #include <cstring>
-#include <cinttypes>
+#include <set>
 namespace {
+// NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables)
 constexpr const char *NO_METRIC_GROUPS_MSG =
 	"No metric groups available on device (metrics may be restricted in container environments; "
 	"check CAP_PERFMON/CAP_SYS_ADMIN capability or the driver's perf_stream_paranoid kernel parameter)\n";
@@ -20,8 +26,10 @@ std::map<ze_device_handle_t, ze_context_handle_t> targetMetricContexts;
 std::map<ze_device_handle_t, std::unique_ptr<std::mutex>> deviceEuMetricMutexes;
 std::mutex perfMetricMutex;
 std::map<ze_device_handle_t, PerfMetricTypes::MetricGroupVector> devicePerfGroups;
+std::set<ze_device_handle_t> euMetricDisabledDevices;
 
-const std::string PERF_GPU_TIME_METRIC = "GpuTime";
+constexpr std::string_view PERF_GPU_TIME_METRIC = "GpuTime";
+// NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables)
 
 /**
  * @brief Retrieves and caches performance metric groups for a device.
@@ -630,11 +638,20 @@ ze_result_t metric::groupGet(ze_device_handle_t device, zet_context_handle_t con
  */
 static zet_metric_group_handle_t
 findEuMetricGroupLocked(ze_device_handle_t device,
-						std::map<ze_device_handle_t, zet_metric_group_handle_t> &metricGroupsCache)
+						std::map<ze_device_handle_t, zet_metric_group_handle_t>
+							&metricGroupsCache) // NOLINT(readability-function-cognitive-complexity)
 {
 	// Check cache first
 	if (metricGroupsCache.find(device) != metricGroupsCache.end()) {
 		return metricGroupsCache.at(device);
+	}
+	// zetMetricGroupGet with Sysman device handles crashes in libze_intel_gpu.so when
+	// ZET_ENABLE_METRICS was not set at init time. driver::init() skips that env var on
+	// broken kernels, so this check covers both failure modes: the 20-second firmware-hang
+	// (ZET_ENABLE_METRICS set on broken kernel) and the immediate null-deref (ZET not set,
+	// metric state never initialized).
+	if (!hasEnv("ZET_ENABLE_METRICS")) {
+		return nullptr;
 	}
 	uint32_t metricGroupCount = 0;
 	ze_result_t res = zetMetricGroupGet(device, &metricGroupCount, nullptr);
@@ -732,8 +749,12 @@ findEuMetricGroupLocked(ze_device_handle_t device,
  *         zetMetricStreamerReadData, zetMetricGroupCalculateMetricValues, zetMetricGet, or zetMetricGetProperties
  */
 ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t subdeviceId, ze_driver_handle_t driver,
-											 EuMetricsData &data)
+											 EuMetricsData &data) // NOLINT(readability-function-cognitive-complexity)
 {
+	if (euMetricDisabledDevices.contains(device)) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
 	// Get or create per-device mutex to serialize EU metric collection for this device
 	std::mutex *deviceMutex = nullptr;
 	{
@@ -811,9 +832,21 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, nullptr);
 	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get raw data size: 0x{:X} ({})\n", res, l0_error_to_string(res));
-		zetMetricStreamerClose(hMetricStreamer);
-		std::lock_guard<std::mutex> lock(metricMutex);
-		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		const ze_result_t closeRes = zetMetricStreamerClose(hMetricStreamer);
+		const std::lock_guard<std::mutex> lock(metricMutex);
+		const ze_result_t deactRes = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		if (closeRes != ZE_RESULT_SUCCESS || deactRes != ZE_RESULT_SUCCESS) {
+			ERR("EU metric OA stream teardown failed "
+				"(close=0x{:X}, deactivate=0x{:X}); disabling EU collection for this "
+				"device to avoid further firmware contamination.\n",
+				closeRes, deactRes);
+			euMetricDisabledDevices.insert(device);
+			if (contextCreate) {
+				zeContextDestroy(hContext);
+				targetMetricContexts.erase(device);
+			}
+			return ZE_RESULT_ERROR_DEVICE_LOST;
+		}
 		if (contextCreate) {
 			zeContextDestroy(hContext);
 			targetMetricContexts.erase(device);
@@ -825,9 +858,21 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 	res = zetMetricStreamerReadData(hMetricStreamer, UINT32_MAX, &rawSize, rawData.data());
 	if (res != ZE_RESULT_SUCCESS) {
 		ERR("Failed to read metric data: 0x{:X} ({})\n", res, l0_error_to_string(res));
-		zetMetricStreamerClose(hMetricStreamer);
-		std::lock_guard<std::mutex> lock(metricMutex);
-		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		const ze_result_t closeRes = zetMetricStreamerClose(hMetricStreamer);
+		const std::lock_guard<std::mutex> lock(metricMutex);
+		const ze_result_t deactRes = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		if (closeRes != ZE_RESULT_SUCCESS || deactRes != ZE_RESULT_SUCCESS) {
+			ERR("EU metric OA stream teardown failed "
+				"(close=0x{:X}, deactivate=0x{:X}); disabling EU collection for this "
+				"device to avoid further firmware contamination.\n",
+				closeRes, deactRes);
+			euMetricDisabledDevices.insert(device);
+			if (contextCreate) {
+				zeContextDestroy(hContext);
+				targetMetricContexts.erase(device);
+			}
+			return ZE_RESULT_ERROR_DEVICE_LOST;
+		}
 		if (contextCreate) {
 			zeContextDestroy(hContext);
 			targetMetricContexts.erase(device);
@@ -835,12 +880,23 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 		return res;
 	}
 
-	// Close streamer
-	zetMetricStreamerClose(hMetricStreamer);
-
+	// Close streamer and deactivate metric group
 	{
-		std::lock_guard<std::mutex> lock(metricMutex);
-		zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		const ze_result_t closeRes = zetMetricStreamerClose(hMetricStreamer);
+		const std::lock_guard<std::mutex> lock(metricMutex);
+		const ze_result_t deactRes = zetContextActivateMetricGroups(hContext, device, 0, nullptr);
+		if (closeRes != ZE_RESULT_SUCCESS || deactRes != ZE_RESULT_SUCCESS) {
+			ERR("EU metric OA stream teardown failed "
+				"(close=0x{:X}, deactivate=0x{:X}); disabling EU collection for this "
+				"device to avoid further firmware contamination.\n",
+				closeRes, deactRes);
+			euMetricDisabledDevices.insert(device);
+			if (contextCreate) {
+				zeContextDestroy(hContext);
+				targetMetricContexts.erase(device);
+			}
+			return ZE_RESULT_ERROR_DEVICE_LOST;
+		}
 	}
 
 	// Calculate metric values

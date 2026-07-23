@@ -7,7 +7,10 @@
 #ifndef _OSWIN_H
 #define _OSWIN_H
 
+#if defined(_WIN32) && defined(_MSC_VER)
+
 #define NOMINMAX
+#include <cstdlib>
 #include <string>
 #include <windows.h>
 #include <process.h>
@@ -127,9 +130,20 @@ static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relative
 static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -1; }
 static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
 static inline std::vector<std::string> getDevicesSharingSlotWith(UNUSED const std::string &gpuBdf) { return {}; }
+static inline bool euMetricsSafeOnThisKernel(UNUSED std::string *unsafeKernelRelease = nullptr) { return true; }
+inline bool hasEnv(const char *name)
+{
+	char *value = nullptr;
+	size_t length = 0;
+	if (_dupenv_s(&value, &length, name) != 0 || value == nullptr) {
+		return false;
+	}
+	free(value); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+	return true;
+}
 
-typedef DWORD(WINAPI *funcptr)(void *input_params);
-extern char *optarg;
+using funcptr = DWORD(WINAPI *)(void *inputParams);
+extern char *optarg; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 extern int optind;
 
 // Topology types (Linux implementations not available on Windows)
@@ -175,5 +189,7 @@ std::string getLocalCpus(const std::string &bdf);
 std::string getCpuList(const std::string &bdf);
 std::string timestamp();
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
+
+#endif // defined(_WIN32) && defined(_MSC_VER)
 
 #endif
