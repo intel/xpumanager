@@ -89,15 +89,13 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 				if (r != ZE_RESULT_SUCCESS) {
 					return r;
 				}
-				std::string s;
-				s.reserve(36);
-				for (int i = 0; i < ZE_MAX_DEVICE_UUID_SIZE; ++i) {
-					if (i == 4 || i == 6 || i == 8 || i == 10) {
-						s += '-';
-					}
-					s += std::format("{:02x}", props.uuid.id[i]);
-				}
-				out = std::move(s);
+				static_assert(ZE_MAX_DEVICE_UUID_SIZE == 16, "UUID formatting assumes 16 bytes");
+				out = std::format("{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:"
+								  "02x}{:02x}{:02x}",
+								  props.uuid.id[15], props.uuid.id[14], props.uuid.id[13], props.uuid.id[12],
+								  props.uuid.id[11], props.uuid.id[10], props.uuid.id[9], props.uuid.id[8],
+								  props.uuid.id[7], props.uuid.id[6], props.uuid.id[5], props.uuid.id[4],
+								  props.uuid.id[3], props.uuid.id[2], props.uuid.id[1], props.uuid.id[0]);
 				return ZE_RESULT_SUCCESS;
 			},
 		},
