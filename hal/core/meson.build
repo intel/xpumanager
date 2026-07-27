@@ -4,13 +4,14 @@
 # HAL core (Hardware Abstraction Layer Core) build
 
 hal_core_sources = files(
-  'device.cpp',
   'debug.cpp',
+  'device.cpp',
   'driver.cpp',
   'ecc.cpp',
   'enginegroup.cpp',
   'fabric.cpp',
   'fan.cpp',
+  'file_io.cpp',
   'firmware.cpp',
   'frequency.cpp',
   'memory.cpp',
@@ -25,7 +26,6 @@ hal_core_sources = files(
   'temperature.cpp',
   'threading.cpp',
   'vf.cpp',
-  'file_io.cpp',
 )
 
 hal_core_inc = include_directories('.')
@@ -47,58 +47,51 @@ else
 endif
 
 # Shared library
-libxpum_shared = shared_library('xpum',
+libxpum_shared = shared_library(
+  'xpum',
   hal_core_sources,
-  include_directories : [
+  include_directories: [
     global_inc,
     hal_core_inc,
     oal_inc_dirs,
     include_directories('../fwupd'),
     include_directories('../amc'),
-    include_directories('../../ial/cli')  # For version.h
-  ] + extensions_inc_dirs,
-  dependencies : [
-    levelzero_dep,
-    igsc_dep,
-    oal_dep,
-    fwupd_dep,
-    nlohmann_json_dep
-  ] + windows_deps,
-  version : xpum_version,
-  soversion : xpum_version.split('.')[0],
-  build_by_default : get_option('shared_library'),
-  install : get_option('shared_library'),
-  install_dir : get_option('libdir'),
+    include_directories('../../ial/cli'),
+  ]
+  + extensions_inc_dirs,
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep]
+  + windows_deps,
+  version: xpum_version,
+  soversion: xpum_version.split('.')[0],
+  build_by_default: get_option('shared_library'),
+  install: get_option('shared_library'),
+  install_dir: get_option('libdir'),
 )
 
 # Static library
-libxpum_static = static_library('xpum',
+libxpum_static = static_library(
+  'xpum',
   hal_core_sources,
-  include_directories : [
+  include_directories: [
     global_inc,
     hal_core_inc,
     oal_inc_dirs,
     include_directories('../fwupd'),
     include_directories('../amc'),
-    include_directories('../../ial/cli')  # For version.h
-  ] + extensions_inc_dirs,
-  dependencies : [
-    levelzero_dep,
-    igsc_dep,
-    oal_dep,
-    fwupd_dep,
-    amc_dep,
-    nlohmann_json_dep
-  ] + windows_deps,
-  install : get_option('static_library'),
-  install_dir : get_option('libdir')
+    include_directories('../../ial/cli'),
+  ]
+  + extensions_inc_dirs,
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep]
+  + windows_deps,
+  install: get_option('static_library'),
+  install_dir: get_option('libdir'),
 )
 
 # Create dependency object for the HAL core library
 libxpum_dep = declare_dependency(
-  link_with : get_option('shared_library') ? libxpum_shared : libxpum_static,
-  include_directories : hal_core_inc,
-  dependencies : [levelzero_dep, igsc_dep, nlohmann_json_dep]
+  link_with: get_option('shared_library') ? libxpum_shared : libxpum_static,
+  include_directories: hal_core_inc,
+  dependencies: [levelzero_dep, igsc_dep, nlohmann_json_dep],
 )
 
 # On Windows builds, copy the DLL next to xpu-smi.exe so it can be
@@ -107,12 +100,13 @@ libxpum_dep = declare_dependency(
 # NOTE: if it fails, it may need to be ran in cmd or with `meson devenv -C {builddir} --shell=cmd`
 if is_windows and get_option('shared_library')
   python = import('python').find_installation(required: true)
-  custom_target('copy_xpum_dll',
+  custom_target(
+    'copy_xpum_dll',
     input: libxpum_shared,
     output: '.xpum_dll_copy.stamp',
     command: [
-      python, '-c',
-      'import shutil, sys, pathlib; dst = sys.argv[2]; pathlib.Path(dst).parent.mkdir(parents=True, exist_ok=True); shutil.copy2(sys.argv[1], dst); open(sys.argv[3], "w").close()',
+      python,
+      '-c', 'import shutil, sys, pathlib; dst = sys.argv[2]; pathlib.Path(dst).parent.mkdir(parents=True, exist_ok=True); shutil.copy2(sys.argv[1], dst); open(sys.argv[3], "w").close()',
       '@INPUT0@',
       meson.project_build_root() / 'ial' / 'cli' / ('xpum-' + major + '.dll'),
       '@OUTPUT0@',
@@ -124,45 +118,61 @@ endif
 
 # Unit tests for the Logger (optional — enable with -Dwith_tests=true)
 if get_option('with_tests')
-    doctest_dep = dependency('doctest', required: true)
-    logger_test = executable(
-        'logger_test',
-        # Compile debug.cpp directly so dbgLvl and the extended helpers are
-        # defined without linking the full xpum library.
-        files('logger/test/logger_test.cpp', 'debug.cpp'),
-        include_directories: [global_inc, hal_core_inc],
-        dependencies: [doctest_dep],
-        link_args: is_linux ? ['-pie'] : [],
-        build_by_default: true,
-        install: false,
-    )
-    test('logger_tests', logger_test)
-    message('Logger unit tests enabled')
+  doctest_dep = dependency('doctest', required: true)
+  logger_test = executable(
+    'logger_test',
+    # Compile debug.cpp directly so dbgLvl and the extended helpers are
+    # defined without linking the full xpum library.
+    files('logger/test/logger_test.cpp', 'debug.cpp'),
+    include_directories: [global_inc, hal_core_inc],
+    dependencies: [doctest_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('logger_tests', logger_test)
+  message('Logger unit tests enabled')
 
-    temperature_test = executable(
-        'temperature_test',
-        files('test/temperature_test.cpp'),
-        include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
-        link_with: libxpum_static,
-        dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
-        link_args: is_linux ? ['-pie'] : [],
-        build_by_default: true,
-        install: false,
+  temperature_test = executable(
+    'temperature_test',
+    files('test/temperature_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('temperature_tests', temperature_test)
+  message('Temperature unit tests enabled')
+
+  if is_linux
+    process_test = executable(
+      'process_test',
+      files('test/process_test.cpp'),
+      include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+      link_with: libxpum_static,
+      dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+      link_args: ['-pie'],
+      build_by_default: true,
+      install: false,
     )
-    test('temperature_tests', temperature_test)
-    message('Temperature unit tests enabled')
+    test('process_tests', process_test)
+    message('Process unit tests enabled')
 
     driver_util_test = executable(
-        'driver_util_test',
-        files('test/driver_util_test.cpp'),
-        include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
-        dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
-        link_args: is_linux ? ['-pie'] : [],
-        build_by_default: true,
-        install: false,
+      'driver_util_test',
+      files('test/driver_util_test.cpp'),
+      include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+      dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+      link_args: is_linux ? ['-pie'] : [],
+      build_by_default: true,
+      install: false,
     )
     test('driver_util_tests', driver_util_test)
     message('Driver util unit tests enabled')
+
+  endif
 else
-    message('Skipping logger tests (pass -Dwith_tests=true to enable)')
+  message('Skipping logger tests (pass -Dwith_tests=true to enable)')
 endif

@@ -5,23 +5,26 @@
  */
 
 #include "sysprocess.h"
+#include "process_platform.h"
+#include <format>
 #include <vector>
-#include <algorithm>
 
 /**
- * @brief Gets the current state of all processes running workloads on a device
+ * @brief Queries all processes currently using @p device.
  *
- * This function retrieves comprehensive information about all processes currently
- * utilizing the specified device, including process IDs, memory usage (shared and
- * private), and process names for system monitoring and resource management.
+ * Calls zesDeviceProcessesGetState() to enumerate active processes, removes
+ * entries with no known engine activity (engines == 0 or OTHER-only), then
+ * replaces memSize with fdinfo-based values that correctly deduplicate by
+ * drm-client-id across both multiple fds and forked children.
  *
- * @param device Handle to the device
- * @param processList Pointer to vector to store process state information
- * @return ze_result_t ZE_RESULT_SUCCESS on successful process enumeration, error code otherwise
+ * @param[in]  device       Sysman device handle.
+ * @param[out] processList  Cleared and repopulated on success.
+ *
+ * @retval ZE_RESULT_SUCCESS  Enumeration and correction completed without error.
+ * @retval ZE_RESULT_ERROR_*  Level Zero error; @p processList may be empty.
  */
 ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_process_state_t> *processList)
 {
-	// Get processes running on the device
 	uint32_t processCount = 0;
 	ze_result_t result = zesDeviceProcessesGetState(device, &processCount, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -41,13 +44,28 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 		return result;
 	}
 
-	processList->erase(std::remove_if(processList->begin(), processList->end(),
-									  [](const zes_process_state_t &ps) {
-										  return ps.engines == 0 || ps.engines == ZES_ENGINE_TYPE_FLAG_OTHER;
-									  }),
-					   processList->end());
-	processCount = static_cast<uint32_t>(processList->size());
+	std::erase_if(*processList, [](const zes_process_state_t &ps) {
+		return ps.engines == 0 || ps.engines == ZES_ENGINE_TYPE_FLAG_OTHER;
+	});
 
+	if (!processList->empty()) {
+		// Fix memSize by reading fdinfo and deduplicating by drm-client-id.
+		// No-op on platforms without /proc (see win/process_platform.cpp).
+		zes_pci_properties_t pciProps{};
+		pciProps.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+		const ze_result_t pciResult = zesDevicePciGetProperties(device, &pciProps);
+		if (pciResult != ZE_RESULT_SUCCESS) {
+			ERR("zesDevicePciGetProperties failed: 0x{:X} ({})\n", static_cast<uint32_t>(pciResult),
+				l0_error_to_string(pciResult));
+		} else {
+			const std::string bdf =
+				std::format("{:04x}:{:02x}:{:02x}.{:x}", pciProps.address.domain, pciProps.address.bus,
+							pciProps.address.device, pciProps.address.function);
+			fixProcessMemSize(bdf, processList);
+		}
+	}
+
+	processCount = static_cast<uint32_t>(processList->size());
 	DBG("  - Device has {} processes\n", processCount);
 	for (const auto &ps : *processList) {
 		DBG("    - Process ID: {}\n", ps.processId);
@@ -61,14 +79,12 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 }
 
 /**
- * @brief Performs comprehensive process monitoring runtime operations
+ * @brief Runs a full process-monitoring cycle (called by the sysman loop).
  *
- * This function executes a complete process monitoring cycle to retrieve
- * information about all processes currently using the device, providing
- * real-time process utilization and resource consumption data.
+ * @param[in] device  Sysman device handle.
  *
- * @param device Handle to the device for process monitoring
- * @return ze_result_t ZE_RESULT_SUCCESS on successful execution, error code otherwise
+ * @retval ZE_RESULT_SUCCESS  Cycle completed without error.
+ * @retval ZE_RESULT_ERROR_*  Propagated from getState().
  */
 ze_result_t process::zesRun(zes_device_handle_t device)
 {

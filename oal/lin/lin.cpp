@@ -5,6 +5,7 @@
  */
 
 #include <os.h>
+#include "process_platform.h"
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -1419,32 +1420,8 @@ std::vector<uint32_t> getGpuProcessesByBdf(const std::string &gpuBdf)
 		return pids;
 	}
 
-	// Find all /dev/dri/ device node names belonging to this BDF.
-	// /sys/class/drm/card<N> is a symlink whose resolved path contains the BDF.
-	std::vector<std::string> deviceNodes; // e.g. {"/dev/dri/card0", "/dev/dri/renderD128"}
+	std::vector<std::string> deviceNodes = deviceNodesForBdf(gpuBdf);
 	std::error_code ec;
-
-	for (const auto &entry : fs::directory_iterator("/sys/class/drm", ec)) {
-		std::string name = entry.path().filename().string();
-		if (name.rfind("card", 0) != 0 || name.find('-') != std::string::npos)
-			continue;
-
-		auto resolved = fs::canonical(entry.path(), ec);
-		if (ec || resolved.string().find(gpuBdf) == std::string::npos)
-			continue;
-
-		// Found the card - enumerate device/drm/ for all DRM node names
-		fs::path devDrmDir = entry.path() / "device" / "drm";
-		if (fs::is_directory(devDrmDir, ec)) {
-			for (const auto &node : fs::directory_iterator(devDrmDir, ec)) {
-				std::string nodeName = node.path().filename().string();
-				if (nodeName.rfind("card", 0) == 0 || nodeName.rfind("renderD", 0) == 0) {
-					deviceNodes.push_back("/dev/dri/" + nodeName);
-				}
-			}
-		}
-		break;
-	}
 
 	if (deviceNodes.empty()) {
 		ERR("No DRM device nodes found for BDF {}\n", gpuBdf);

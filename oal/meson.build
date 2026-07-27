@@ -14,6 +14,7 @@ if is_windows
     'win/fs_lock.cpp',
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
+    'win/process_platform.cpp',
     'win/thread.cpp',
     'win/win.cpp',
   )
@@ -29,6 +30,7 @@ elif is_linux
     'lin/lin.cpp',
     'lin/linvf.cpp',
     'lin/pci_database.cpp',
+    'lin/process_platform.cpp',
     'lin/topology.cpp',
   )
   oal_inc_dirs += [include_directories('lin')]
