@@ -23,9 +23,14 @@ std::string progName = "test";
 #include "cmd_topology.h"
 #include "topology.h"
 
+#include "logger/logger.h"
+#include "logger/ostream_sink.h"
+
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <optional>
+#include <sstream>
 #include <stdlib.h>
 #include <string>
 #include <vector>
@@ -578,6 +583,71 @@ TEST_SUITE("TopologyTextPrinter")
 
 		TopologyTextPrinter printer;
 		CHECK_NOTHROW(printer.print(&json));
+	}
+}
+
+// ─── help() output tests (GSD-13114) ──────────────────────────────────────────
+
+namespace {
+
+/// Capture everything cmdTopology::help() writes via PRINT into a string.
+std::string captureTopologyHelp()
+{
+	std::ostringstream oss;
+	Logger::instance().setSink(std::make_shared<OStreamSink>(oss));
+
+	cmdTopology cmd;
+	cmd.help();
+
+	// Restore the default stdout/stderr sinks so later tests are unaffected.
+	Logger::instance().setSink(nullptr);
+	return oss.str();
+}
+
+} // namespace
+
+TEST_SUITE("cmdTopology::help")
+{
+	// GSD-13114: the P2P capability legend was rendered through TableBuilder, which
+	// truncated the long "r" description to "..." (column cap = 80 chars, description
+	// = 89). Help text must always be shown in full and never carry an ellipsis.
+	TEST_CASE("P2P capability descriptions are printed in full, never truncated")
+	{
+		const std::string help = captureTopologyHelp();
+
+		// The complete "r" description must appear verbatim.
+		CHECK(help.find("P2P read/write access (\"w\" accepted as alias; "
+						"Level Zero reports as a unified capability)") != std::string::npos);
+
+		// Every capability's full description must be present.
+		CHECK(help.find("MDF fabric connectivity") != std::string::npos);
+		CHECK(help.find("P2P atomic operations") != std::string::npos);
+		CHECK(help.find("PCIe P2P access") != std::string::npos);
+
+		// No help line may have been truncated with an ellipsis.
+		CHECK(help.find("...") == std::string::npos);
+	}
+
+	TEST_CASE("Matrix-symbol legend is printed in full")
+	{
+		const std::string help = captureTopologyHelp();
+
+		CHECK(help.find("Query failed (driver or device error)") != std::string::npos);
+		CHECK(help.find("Capability supported") != std::string::npos);
+		CHECK(help.find("Not supported") != std::string::npos);
+	}
+
+	TEST_CASE("Legend keys are left-aligned in a padded column")
+	{
+		const std::string help = captureTopologyHelp();
+
+		// In the P2P legend every key is one char, so the key is followed by a
+		// 2-space gap before the description.
+		CHECK(help.find("r  P2P read/write access") != std::string::npos);
+		// In the matrix-symbol legend the widest key is "OK" (2 chars): the "OK"
+		// row gets a 2-space gap and single-char keys ("X") are padded to align.
+		CHECK(help.find("OK  Capability supported") != std::string::npos);
+		CHECK(help.find("X   Self") != std::string::npos);
 	}
 }
 

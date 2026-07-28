@@ -19,7 +19,10 @@
 #include <map>
 #include <ranges>
 #include <optional>
+#include <span>
 #include <string>
+#include <string_view>
+#include <utility>
 #include <vector>
 #include <array>
 #include <unordered_map>
@@ -59,6 +62,37 @@ constexpr auto P2P_CAP_DESCRIPTIONS = std::to_array<std::pair<std::string_view, 
 	{"a", "P2P atomic operations"},
 	{"p", "PCIe P2P access"},
 });
+
+/**
+ * @brief Appends an aligned, never-truncated "key  description" legend to a help list.
+ *
+ * Help legends were previously rendered through TableBuilder, whose cells are
+ * truncated with an ellipsis once they exceed the (auto-sized) column cap — so
+ * the long "r" P2P description was cut to "...", hiding it from users (GSD-13114).
+ * Help text must always be shown in full, so the key column is padded manually
+ * here and each description is emitted verbatim, however long.
+ *
+ * @param[in,out] helpList Help lines to append to.
+ * @param[in]     entries  Ordered (key, description) pairs to render.
+ *
+ * @note Each description is passed as a preformatted @c "%s" argument so that any
+ *       literal @c % it may contain is never treated as a printf conversion.
+ */
+static void appendLegend(std::vector<helpCmd> &helpList,
+						 std::span<const std::pair<std::string_view, std::string_view>> entries)
+{
+	size_t keyWidth = 0;
+	for (const auto &[key, desc] : entries) {
+		keyWidth = std::max(keyWidth, key.size());
+	}
+	for (const auto &[key, desc] : entries) {
+		std::string line = "  "; // indent legend keys under their heading
+		line += key;
+		line.append(keyWidth - key.size() + 2, ' '); // pad keys to a column, then a 2-space gap
+		line += desc;
+		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
+	}
+}
 } // namespace
 
 /**
@@ -338,17 +372,7 @@ void cmdTopology::help(HELP helpType)
 	helpList.emplace_back(HEADING, "--p2p <capability>          Print the P2P capability matrix between GPU devices");
 
 	helpList.emplace_back(SUB_HEADING, "Capability values:");
-	{
-		TableBuilder capTable;
-		capTable.addColumn("", 1).addColumn("", 1).enableAutoSizing();
-		for (const auto &[key, desc] : P2P_CAP_DESCRIPTIONS) {
-			capTable.addRow("  " + std::string{key}, desc);
-		}
-		capTable.lockWidths();
-		for (const auto &[key, desc] : P2P_CAP_DESCRIPTIONS) {
-			helpList.emplace_back(SUB_HEADING, capTable.rowLine({"  " + std::string{key}, std::string{desc}}).c_str());
-		}
-	}
+	appendLegend(helpList, P2P_CAP_DESCRIPTIONS);
 
 	helpList.emplace_back(SUB_HEADING, "Matrix symbols:");
 	{
@@ -358,16 +382,7 @@ void cmdTopology::help(HELP helpType)
 			{"NS", "Not supported"},
 			{"?", "Query failed (driver or device error)"},
 		});
-		TableBuilder symTable;
-		symTable.addColumn("", 1).addColumn("", 1).enableAutoSizing();
-		for (const auto &[sym, meaning] : matrixLegend) {
-			symTable.addRow("  " + std::string{sym}, meaning);
-		}
-		symTable.lockWidths();
-		for (const auto &[sym, meaning] : matrixLegend) {
-			helpList.emplace_back(SUB_HEADING,
-								  symTable.rowLine({"  " + std::string{sym}, std::string{meaning}}).c_str());
-		}
+		appendLegend(helpList, matrixLegend);
 	}
 
 	printHelp(helpList, helpType);
