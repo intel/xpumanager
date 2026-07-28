@@ -120,15 +120,14 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 		{
 			.name = "driver_version",
 			.unit = "",
-			.description = "The version of the installed GPU driver. This is an alphanumeric string.",
+			.description = "The version of the installed GPU driver.",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-				zes_device_properties_t props{};
-				props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-				auto const r = d.dev->zesGetDevProps(d.zesDeviceHdl, &props);
+				ze_driver_properties_t props{};
+				auto const r = d.dev->getDriverProperties(&props);
 				if (r == ZE_RESULT_SUCCESS) {
-					out = props.driverVersion;
+					out = std::to_string(props.driverVersion);
 				}
 				return r;
 			},
