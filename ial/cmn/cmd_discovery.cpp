@@ -2294,10 +2294,6 @@ int cmdDiscovery::run(arg_struct *args)
 				return result;
 			}
 		}
-		if (!jsonObj->contains("amc_firmware_version")) {
-			ERR("No AMC devices found.\n");
-			return ZE_RESULT_ERROR_NOT_AVAILABLE;
-		}
 		printer->print(jsonObj.get());
 	} else if (!deviceList.empty()) {
 		const bool isDetailRequest = discCmds[discCmdType::DISC_DEVICE].enabled &&
