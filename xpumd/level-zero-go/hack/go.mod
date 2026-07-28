@@ -20,7 +20,7 @@ require (
 	golang.org/x/tools v0.39.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/cc v1.0.0 // indirect
-	modernc.org/golex v1.0.0 // indirect
+	modernc.org/golex v1.1.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/strutil v1.2.0 // indirect
 	modernc.org/xc v1.0.0 // indirect
