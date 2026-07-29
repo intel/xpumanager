@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ fromJson(vars.RUNS_ON) }}
     steps:
       - name: Checkout base branch (simulating post-merge state)
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.base_ref }}
           fetch-depth: 0
@@ -73,7 +73,7 @@ jobs:
       contains(github.event.pull_request.files.*.filename, 'meson.build')
     steps:
       - name: Checkout base branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.base_ref }}
           fetch-depth: 0
@@ -105,7 +105,7 @@ jobs:
       contains(github.event.pull_request.files.*.filename, 'go.sum')
     steps:
       - name: Checkout base branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.base_ref }}
           fetch-depth: 0
