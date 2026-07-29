@@ -7,8 +7,8 @@
 #ifndef __PLDM_FIRMWAREPACKAGE_H
 #define __PLDM_FIRMWAREPACKAGE_H
 
-#include "pldm.h"
 #include "pldm_types.h"
+#include <cstdio>
 
 #define UUID_SIZE 16
 #define RELEASE_DATE_TIME_SIZE 13

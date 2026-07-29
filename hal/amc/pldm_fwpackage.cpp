@@ -34,10 +34,16 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 		return PLDM_ERROR;
 	}
 
-	size_t fileSize = 0;
 	fseek(mCompFp, 0, SEEK_END);
-	fileSize = ftell(mCompFp);
+	long fileLen = ftell(mCompFp);
 	fseek(mCompFp, 0, SEEK_SET);
+	if (fileLen <= 0) {
+		ERR("Failed to determine package file size\n");
+		fclose(mCompFp);
+		mCompFp = NULL;
+		return PLDM_ERROR;
+	}
+	size_t fileSize = static_cast<size_t>(fileLen);
 
 	if (fileSize < sizeof(fwPkg)) {
 		ERR("Package file is too small\n");
@@ -62,23 +68,16 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 		return PLDM_ERROR;
 	}
 
-	pkg = (fwPkg *)malloc(sizeof(fwPkg));
-	if (!pkg) {
-		ERR("Memory allocation for package structure failed\n");
-		fclose(mCompFp);
-		mCompFp = NULL;
-		return PLDM_ERROR;
-	}
+	pkg.emplace();
 
 	uint8_t *pbuf = pkgbuf.data();
 	const uint8_t *bufEnd = pbuf + fileSize;
 	// True while at least n more bytes remain between the cursor and the end of the buffer.
 	auto canRead = [&](size_t n) { return pbuf <= bufEnd && static_cast<size_t>(bufEnd - pbuf) >= n; };
-	// Log msg, release the package and file handle, and return an error.
+	// Log msg, reset pkg, release the file handle, and return an error.
 	auto failParse = [&](const char *msg) -> uint8_t {
 		ERR("{}\n", msg);
-		free(pkg);
-		pkg = NULL;
+		pkg.reset();
 		fclose(mCompFp);
 		mCompFp = NULL;
 		return PLDM_ERROR;
@@ -218,7 +217,7 @@ uint8_t pldm::fwpkgParseInfo(const char *pkgFilePath)
 uint8_t pldm::dumpPldmFwpkgInfo()
 {
 	TRACING();
-	if (pkg == NULL) {
+	if (!pkg) {
 		ERR("Invalid package info\n");
 		return PLDM_ERROR;
 	}

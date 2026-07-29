@@ -219,10 +219,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 				}
 			}
 		}
-		if (pkg != NULL) {
-			free(pkg);
-			pkg = NULL;
-		}
+		pkg.reset();
 		if (mCompFp != NULL) {
 			fclose(mCompFp);
 			mCompFp = NULL;

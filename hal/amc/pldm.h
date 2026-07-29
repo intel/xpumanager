@@ -18,6 +18,7 @@
 #include "pldm_amc_gpu_reset.h"
 #include <i2c_interface.h>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -219,7 +220,7 @@ private:
 	//============== pldm Firmware Update ===========
 	// pldm FwPackage Parse
 	FILE *mCompFp;
-	struct fwPkg *pkg;
+	std::optional<fwPkg> pkg;
 	struct compParseData *mCompParseData;
 	uint8_t mCurComp;
 
@@ -311,7 +312,7 @@ public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
 		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS),
-		  mFruTableInitialized(false), pkg(nullptr), mFwParamsInitialized(false)
+		  mFruTableInitialized(false), mFwParamsInitialized(false)
 	{
 		pldminit();
 	}
