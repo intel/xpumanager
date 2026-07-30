@@ -391,6 +391,12 @@ uint8_t pldm::pfGetSensorValuesById(uint16_t sensorId)
 	TRACING();
 
 	for (const auto &record : mPdrManager.getPdrRecords()) {
+		if (record.header.type != PLDM_NUMERIC_SENSOR_PDR) {
+			continue;
+		}
+		if (record.data.size() < sizeof(pldmNumericSensorValuePdr)) {
+			continue;
+		}
 		const pldmNumericSensorValuePdr *sensorPdr =
 			reinterpret_cast<const pldmNumericSensorValuePdr *>(record.data.data());
 		if (sensorPdr->sensorId != sensorId) {
