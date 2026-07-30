@@ -4,31 +4,34 @@
  *
  */
 
-#ifndef _FS_LOCK_H
-#define _FS_LOCK_H
+#ifndef FS_LOCK_H
+#define FS_LOCK_H
 
-#include <string>
 #include <cstdint>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-// RAII cross-process lock to ensure only one firmware update runs at a time
+// RAII cross-process lock to ensure only one firmware update runs at a time.
+// The lock file path is an OS-specific constant owned by each acquire()
+// implementation, so it is deliberately not part of this interface.
 class FSLock
 {
 public:
 	FSLock() { acquire(); }
 	~FSLock() { release(); }
-	bool locked() const { return acquired; }
+	[[nodiscard]] bool locked() const { return acquired; }
+
+	// Owns an OS handle/fd released in the destructor: copying would duplicate
+	// ownership and double-close, moving would need handle invalidation.
+	FSLock(const FSLock &) = delete;
+	FSLock &operator=(const FSLock &) = delete;
+	FSLock(FSLock &&) = delete;
+	FSLock &operator=(FSLock &&) = delete;
 
 private:
 	uintptr_t handle = 0; // Cast HANDLE/fd to uintptr_t
-	std::string lockFilePath;
 	bool acquired = false;
 
 	void acquire();
 	void release();
 };
 
-#endif // _FS_LOCK_H
+#endif // FS_LOCK_H

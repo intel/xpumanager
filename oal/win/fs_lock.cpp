@@ -5,8 +5,17 @@
  */
 
 #include <fs_lock.h>
-#include <os.h>
+#include <debug.h> // NOLINT(misc-include-cleaner) — provides the DBG() macro
 #include <windows.h>
+#include <cstdint>
+
+namespace {
+
+// Fixed location in ProgramData; ensure the directory exists externally if
+// needed.  A constant rather than per-object state: every FSLock uses it.
+constexpr const char *LOCK_PATH = "C:/ProgramData/xpum_firmware_update.lock";
+
+} // namespace
 
 /*
  * @brief 	On Windows, we use CreateFile with no sharing to create an exclusive lock.
@@ -15,18 +24,22 @@
  */
 void FSLock::acquire()
 {
-	// Use a file in ProgramData; ensure directory exists externally if needed.
-	const char *lockPath = "C:/ProgramData/xpum_firmware_update.lock";
+	if (acquired) {
+		DBG("firmware update lock already held; ignoring acquire()\n");
+		return;
+	}
 	HANDLE hFile =
-		CreateFileA(lockPath, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		CreateFileA(LOCK_PATH, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 	if (hFile == INVALID_HANDLE_VALUE) {
 		acquired = false;
 		handle = 0;
 		return;
 	}
-	acquired = true;							 // Exclusive because share mode = 0
-	lockFilePath = lockPath;					 // Store the path for cleanup
-	handle = reinterpret_cast<uintptr_t>(hFile); // Store HANDLE as uintptr_t
+	acquired = true; // Exclusive because share mode = 0
+	// Store HANDLE as uintptr_t; there is no portable alternative to
+	// round-tripping an opaque OS handle through an integer.
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+	handle = reinterpret_cast<uintptr_t>(hFile);
 }
 
 /*
@@ -34,6 +47,7 @@ void FSLock::acquire()
  */
 void FSLock::release()
 {
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 	HANDLE hFile = reinterpret_cast<HANDLE>(handle);
 	if (acquired && handle != 0 && hFile != INVALID_HANDLE_VALUE) {
 		CloseHandle(hFile);
@@ -41,8 +55,6 @@ void FSLock::release()
 		acquired = false;
 
 		// Delete the lock file
-		if (!lockFilePath.empty()) {
-			DeleteFileA(lockFilePath.c_str());
-		}
+		DeleteFileA(LOCK_PATH);
 	}
 }
