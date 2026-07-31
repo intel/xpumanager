@@ -4,12 +4,12 @@
  *
  */
 
-#include "logger/sink_base.h"
-#include "logger/log_record.h"
-#include "logger/log_level.h"
-#include "logger/ostream_sink.h"
-#include "logger/filestream_sink.h"
-#include "logger/logger.h"
+#include "utility/logger/sink_base.h"
+#include "utility/logger/log_record.h"
+#include "utility/logger/log_level.h"
+#include "utility/logger/ostream_sink.h"
+#include "utility/logger/filestream_sink.h"
+#include "utility/logger/logger.h"
 #include <mutex>
 #include <cstddef>
 #include <condition_variable>
@@ -27,7 +27,7 @@
 #undef INFO
 
 #include "debug.h"
-#include "logger/async_sink.h"
+#include "utility/logger/async_sink.h"
 
 #include <atomic>
 #include <filesystem>

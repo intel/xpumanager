@@ -7,7 +7,7 @@
 #include <debug.h>
 #include <algorithm>
 #include <filesystem>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 #include <optional>
 #include <string>

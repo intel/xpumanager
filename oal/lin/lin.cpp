@@ -15,7 +15,7 @@
 #include <debug.h>
 #include <fcntl.h>
 #include <filesystem>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 #include <functional>
 #include <grp.h>
@@ -283,7 +283,7 @@ std::string getProcessName(uint32_t processId)
 {
 	std::string processName = "";
 	std::ifstream pinfo;
-	std::string path = std::format("/proc/{}/cmdline", processId);
+	std::string path = xpum::compat::format("/proc/{}/cmdline", processId);
 	pinfo.open(path);
 	if (pinfo.is_open()) {
 		std::getline(pinfo, processName);
@@ -328,8 +328,8 @@ std::string timestamp()
 		ERR("gettimeofday failed\n");
 		return timestampStr;
 	}
-	timestampStr = std::format("{:02d}:{:02d}:{:02d}.{:03d}", timeInfo->tm_hour, timeInfo->tm_min, timeInfo->tm_sec,
-							   (int)tv.tv_usec / 1000);
+	timestampStr = xpum::compat::format("{:02d}:{:02d}:{:02d}.{:03d}", timeInfo->tm_hour, timeInfo->tm_min,
+										timeInfo->tm_sec, (int)tv.tv_usec / 1000);
 	return timestampStr;
 }
 
@@ -846,7 +846,7 @@ std::string getPciSlotLabel(const std::string &bdf)
 	}
 
 	// Try sysfs label first (fast path but rarely populated)
-	std::string labelPath = std::format("/sys/bus/pci/devices/{}/label", bdf);
+	std::string labelPath = xpum::compat::format("/sys/bus/pci/devices/{}/label", bdf);
 	std::ifstream labelFile(labelPath);
 
 	if (labelFile.is_open()) {

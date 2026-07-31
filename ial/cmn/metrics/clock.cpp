@@ -14,7 +14,7 @@
 #include "zes_api.h"
 #include <frequency.h>
 #include <array>
-#include <format>
+#include "utility/compat/format.h"
 #include <string>
 #include <string_view>
 #include <utility>
@@ -52,7 +52,7 @@ ze_result_t gpuCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
 	double val = 0.0;
 	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_GPU);
 	if (result == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", val);
+		out = xpum::compat::format("{}", val);
 	}
 	return result;
 }
@@ -86,7 +86,7 @@ ze_result_t mediaCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
 	double val = 0.0;
 	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_MEDIA);
 	if (result == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", val);
+		out = xpum::compat::format("{}", val);
 	}
 	return result;
 }
@@ -121,7 +121,7 @@ ze_result_t gpuMaxFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
 	double maxMHz = 0.0;
 	auto const result = freq->getMaxFreqForDomain(ZES_FREQ_DOMAIN_GPU, maxMHz);
 	if (result == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", maxMHz);
+		out = xpum::compat::format("{}", maxMHz);
 	}
 	return result;
 }
@@ -154,7 +154,7 @@ ze_result_t mediaMaxFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
 	double maxMHz = 0.0;
 	auto const result = freq->getMaxFreqForDomain(ZES_FREQ_DOMAIN_MEDIA, maxMHz);
 	if (result == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", maxMHz);
+		out = xpum::compat::format("{}", maxMHz);
 	}
 	return result;
 }

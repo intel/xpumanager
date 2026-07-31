@@ -52,7 +52,7 @@ struct helpCmd
 	helpCmd(GAP gap)
 	{
 		char_gap = (int)gap;
-		STRNCPY_S(line, "", MAX_PATH);
+		line[0] = '\0';
 	}
 };
 

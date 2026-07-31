@@ -7,7 +7,7 @@
 #include "gscupd.h"
 #include "fwupd.h"
 #include <debug.h>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 #include <os.h>
 #include <sys/stat.h>
@@ -449,8 +449,9 @@ int gscupd::getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *v
 	std::string meiPath;
 	for (const auto &dev : devices) {
 		// Compare BDF address
-		auto devBdf = std::format("{:04x}:{:02x}:{:02x}.{:01x}", dev.pciProps.address.domain, dev.pciProps.address.bus,
-								  dev.pciProps.address.device, dev.pciProps.address.function);
+		auto devBdf =
+			xpum::compat::format("{:04x}:{:02x}:{:02x}.{:01x}", dev.pciProps.address.domain, dev.pciProps.address.bus,
+								 dev.pciProps.address.device, dev.pciProps.address.function);
 		if (devBdf == bdfStr) {
 			meiPath = dev.meiDevicePath;
 			break;

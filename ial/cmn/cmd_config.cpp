@@ -17,7 +17,7 @@
 #include <ras.h>
 #include <vf.h>
 #include <charconv>
-#include <format>
+#include "utility/compat/format.h"
 #include <frequency.h>
 #include <nlohmann/json.hpp>
 #include <power.h>
@@ -819,9 +819,9 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 				int32_t speedPct = -1;
 				ze_result_t speedResult = fanHandler->getSpeedPercentById(fanId, speedPct);
 				if (speedResult == ZE_RESULT_SUCCESS && speedPct >= 0) {
-					table.addRow("", "", std::format("  Fan {}: {} / {}%", fanId, modeText, speedPct));
+					table.addRow("", "", xpum::compat::format("  Fan {}: {} / {}%", fanId, modeText, speedPct));
 				} else {
-					table.addRow("", "", std::format("  Fan {}: {} / N/A", fanId, modeText));
+					table.addRow("", "", xpum::compat::format("  Fan {}: {} / N/A", fanId, modeText));
 				}
 			}
 		}
@@ -843,7 +843,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 	}
 
 	for (uint32_t tileId = 0; tileId < tileCount; tileId++) {
-		std::string tileIdStr = std::format("{}/{}", d->index, tileId);
+		std::string tileIdStr = xpum::compat::format("{}/{}", d->index, tileId);
 
 		// GPU Frequency
 		frequency *fq = d->dev->getFrequency();
@@ -862,8 +862,8 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 			fq->getFreqRangeForTile(tileId, minFreq, maxFreq);
 
 			if (minFreq > 0 || maxFreq > 0) {
-				table.addRow("GPU", tileIdStr, std::format(" GPU Min Frequency (MHz): {:.0f}", minFreq));
-				table.addRow("", "", std::format(" GPU Max Frequency (MHz): {:.0f}", maxFreq));
+				table.addRow("GPU", tileIdStr, xpum::compat::format(" GPU Min Frequency (MHz): {:.0f}", minFreq));
+				table.addRow("", "", xpum::compat::format(" GPU Max Frequency (MHz): {:.0f}", maxFreq));
 			} else {
 				table.addRow("GPU", tileIdStr, " GPU Min Frequency (MHz): N/A");
 				table.addRow("", "", " GPU Max Frequency (MHz): N/A");
@@ -924,7 +924,7 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 		if (sb != nullptr) {
 			std::string standbyModeStr = getStandbyMode(d, tileId);
 			if (!standbyModeStr.empty()) {
-				table.addRow("", "", std::format(" Standby Mode: {}", standbyModeStr));
+				table.addRow("", "", xpum::compat::format(" Standby Mode: {}", standbyModeStr));
 			} else {
 				table.addRow("", "", " Standby Mode: N/A");
 			}
@@ -963,15 +963,16 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 									modeStr = "unknown";
 									break;
 								}
-								table.addRow("", "", std::format(" Scheduler Mode: {}", modeStr));
+								table.addRow("", "", xpum::compat::format(" Scheduler Mode: {}", modeStr));
 
 								// Get mode-specific properties
 								if (mode == ZES_SCHED_MODE_TIMEOUT) {
 									zes_sched_timeout_properties_t timeoutProps = {};
 									if (sched->getTimeoutModeProperties(schedHandles[i], false, &timeoutProps) ==
 										ZE_RESULT_SUCCESS) {
-										table.addRow("", "",
-													 std::format("  Timeout (us): {}", timeoutProps.watchdogTimeout));
+										table.addRow(
+											"", "",
+											xpum::compat::format("  Timeout (us): {}", timeoutProps.watchdogTimeout));
 									} else {
 										table.addRow("", "", "  Timeout (us): N/A");
 									}
@@ -980,11 +981,12 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 									if (sched->getTimesliceProperties(schedHandles[i], false, &timesliceProps) ==
 										ZE_RESULT_SUCCESS) {
 										table.addRow("", "", "  Timeout (us): N/A");
-										table.addRow("", "",
-													 std::format("  Interval (us): {}", timesliceProps.interval));
 										table.addRow(
 											"", "",
-											std::format("  Yield Timeout (us): {}", timesliceProps.yieldTimeout));
+											xpum::compat::format("  Interval (us): {}", timesliceProps.interval));
+										table.addRow("", "",
+													 xpum::compat::format("  Yield Timeout (us): {}",
+																		  timesliceProps.yieldTimeout));
 									} else {
 										table.addRow("", "", "  Timeout (us): N/A");
 										table.addRow("", "", "  Interval (us): N/A");

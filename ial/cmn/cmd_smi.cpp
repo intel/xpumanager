@@ -15,7 +15,7 @@
 #include "table_builder.h"
 #include <chrono>
 #include <cmath>
-#include <format>
+#include "utility/compat/format.h"
 #include <ranges>
 #include <thread>
 #include <vector>
@@ -32,9 +32,9 @@
 
 static std::string fmtPower(double currentW, double tdpW)
 {
-	const std::string cur = currentW > 0.0 ? std::format("{:.0f}W", currentW) : "N/A";
+	const std::string cur = currentW > 0.0 ? xpum::compat::format("{:.0f}W", currentW) : "N/A";
 	if (tdpW > 0.0) {
-		return std::format("{} / {:.0f}W", cur, tdpW);
+		return xpum::compat::format("{} / {:.0f}W", cur, tdpW);
 	}
 	if (currentW <= 0.0) {
 		return "N/A";
@@ -47,7 +47,7 @@ static std::string fmtMem(double usedMiB, double totalMiB)
 	if (totalMiB <= 0.0) {
 		return "N/A";
 	}
-	return std::format("{:.0f}MiB / {:.0f}MiB", usedMiB, totalMiB);
+	return xpum::compat::format("{:.0f}MiB / {:.0f}MiB", usedMiB, totalMiB);
 }
 
 /**
@@ -59,7 +59,7 @@ static std::string fmtMem(double usedMiB, double totalMiB)
 static std::string fmtFan(int32_t pct)
 {
 	if (pct >= 0) {
-		return std::format("{}%", pct);
+		return xpum::compat::format("{}%", pct);
 	}
 	return "N/A";
 }
@@ -358,17 +358,17 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 		.addColumn("Volatile Uncorr. ECC", Align::Right);
 
 	// Multi-line column headers (second header line per column)
-	table.setColumnExtraHeaders(
-		0, {std::format("{:<{}}  {:>{}}  {}", "Fan", fanDisplayWidth, "Temp", tempDisplayWidth, "Pwr:Usage/Cap")});
+	table.setColumnExtraHeaders(0, {xpum::compat::format("{:<{}}  {:>{}}  {}", "Fan", fanDisplayWidth, "Temp",
+														 tempDisplayWidth, "Pwr:Usage/Cap")});
 	table.setColumnExtraHeaders(1, {"Memory-Usage"});
 	table.setColumnExtraHeaders(2, {"GPU-Util  Compute M."});
 
 	// Banner row: inside the table border, above column headers.
-	const std::string shortVer = std::format("v{}.{}", XPUM_VERSION_MAJOR, XPUM_VERSION_MINOR);
-	std::string banner = std::format("Intel XPU-SMI {}    Level Zero: {}", shortVer, lzVersion);
+	const std::string shortVer = xpum::compat::format("v{}.{}", XPUM_VERSION_MAJOR, XPUM_VERSION_MINOR);
+	std::string banner = xpum::compat::format("Intel XPU-SMI {}    Level Zero: {}", shortVer, lzVersion);
 	if (!devStats.empty() && !devStats[0].driverVersion.empty()) {
-		banner = std::format("Intel XPU-SMI {}    Driver: {}    Level Zero: {}", shortVer, devStats[0].driverVersion,
-							 lzVersion);
+		banner = xpum::compat::format("Intel XPU-SMI {}    Driver: {}    Level Zero: {}", shortVer,
+									  devStats[0].driverVersion, lzVersion);
 	}
 	table.addPreHeaderSpanRow(banner);
 
@@ -376,20 +376,21 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 		// Build col-0 lines: name wraps in 22-char chunks rather than truncating.
 		constexpr size_t kNameWidth = 22;
 		std::vector<std::string> col0Lines;
-		col0Lines.push_back(std::format("{:>3}  {:<{}}  Off", s.devIndex, s.name.substr(0, kNameWidth), kNameWidth));
+		col0Lines.push_back(
+			xpum::compat::format("{:>3}  {:<{}}  Off", s.devIndex, s.name.substr(0, kNameWidth), kNameWidth));
 		for (size_t off = kNameWidth; off < s.name.size(); off += kNameWidth) {
-			col0Lines.push_back(std::format("     {}", s.name.substr(off, kNameWidth)));
+			col0Lines.push_back(xpum::compat::format("     {}", s.name.substr(off, kNameWidth)));
 		}
 
-		std::string bdfLine = std::format("{:<16}  Off", s.pciBdf);
+		std::string bdfLine = xpum::compat::format("{:<16}  Off", s.pciBdf);
 		std::string eccLine = s.eccEnabled ? "Enabled" : "Disabled";
 
 		// Row 2: live telemetry per column
-		std::string tempStr = s.tempValid ? std::format("{:.0f}C", s.gpuTempC) : "N/A";
+		std::string tempStr = s.tempValid ? xpum::compat::format("{:.0f}C", s.gpuTempC) : "N/A";
 		std::string fanStr = s.fanValid ? fmtFan(s.fanSpeedPct) : "N/A";
 		std::string pwrStr = fmtPower(s.powerValid ? s.powerCurrentW : 0.0, s.powerTdpW);
 		std::string fanTempPwrLine =
-			std::format("{:<{}}  {:>{}}  {}", fanStr, fanDisplayWidth, tempStr, tempDisplayWidth, pwrStr);
+			xpum::compat::format("{:<{}}  {:>{}}  {}", fanStr, fanDisplayWidth, tempStr, tempDisplayWidth, pwrStr);
 		col0Lines.push_back(fanTempPwrLine);
 
 		// Align memory/util on the same line as fan/temp/pwr by padding cols 1 & 2
@@ -399,8 +400,8 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 		// Left-pad util% to 10 chars so "Default" aligns under "Compute M." in the header
 		// Header extra: "GPU-Util  Compute M." → "Compute M." starts at col 10
 		// Data:          "{:<10}Default"        → "Default"    starts at col 10
-		std::string utilStr = s.utilValid ? std::format("{:.0f}%", s.gpuUtilPercent) : "N/A";
-		std::string utilComputeLine = std::format("{:<10}{}", utilStr, "Default");
+		std::string utilStr = s.utilValid ? xpum::compat::format("{:.0f}%", s.gpuUtilPercent) : "N/A";
+		std::string utilComputeLine = xpum::compat::format("{:<10}{}", utilStr, "Default");
 		std::vector<std::string> col1Lines = {bdfLine};
 		col1Lines.insert(col1Lines.end(), numWraps, "");
 		col1Lines.push_back(memLine);
@@ -455,7 +456,7 @@ TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList)
 			}
 			// memSize is in KiB (already divided by 1024 in getProcessList)
 			double memMiB = static_cast<double>(p.memSize) / 1024.0;
-			std::string memStr = std::format("{:.0f} MiB", memMiB);
+			std::string memStr = xpum::compat::format("{:.0f} MiB", memMiB);
 			std::string procType = processTypeFromEngines(p.engines, p.memSize, p.sharedSize);
 			procTable.addRow(di.index, p.processId, procType, procName, memStr);
 			anyProcess = true;

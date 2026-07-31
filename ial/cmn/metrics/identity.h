@@ -18,7 +18,7 @@
 #include <array>
 #include <chrono>
 #include <cstring>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 #include <string>
 #include <utility>
@@ -40,8 +40,8 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			.source = MetricSource::Live,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &) -> ze_result_t {
-				out = std::format("{:%Y/%m/%d %H:%M:%S}",
-								  std::chrono::floor<std::chrono::milliseconds>(std::chrono::system_clock::now()));
+				out = xpum::compat::format("{:%Y/%m/%d %H:%M:%S}", std::chrono::floor<std::chrono::milliseconds>(
+																	   std::chrono::system_clock::now()));
 				return ZE_RESULT_SUCCESS;
 			},
 		},
@@ -70,7 +70,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-				out = std::format("{}", d.index);
+				out = xpum::compat::format("{}", d.index);
 				return ZE_RESULT_SUCCESS;
 			},
 		},
@@ -90,12 +90,13 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 					return r;
 				}
 				static_assert(ZE_MAX_DEVICE_UUID_SIZE == 16, "UUID formatting assumes 16 bytes");
-				out = std::format("{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:"
-								  "02x}{:02x}{:02x}",
-								  props.uuid.id[15], props.uuid.id[14], props.uuid.id[13], props.uuid.id[12],
-								  props.uuid.id[11], props.uuid.id[10], props.uuid.id[9], props.uuid.id[8],
-								  props.uuid.id[7], props.uuid.id[6], props.uuid.id[5], props.uuid.id[4],
-								  props.uuid.id[3], props.uuid.id[2], props.uuid.id[1], props.uuid.id[0]);
+				out = xpum::compat::format(
+					"{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:"
+					"02x}{:02x}{:02x}",
+					props.uuid.id[15], props.uuid.id[14], props.uuid.id[13], props.uuid.id[12], props.uuid.id[11],
+					props.uuid.id[10], props.uuid.id[9], props.uuid.id[8], props.uuid.id[7], props.uuid.id[6],
+					props.uuid.id[5], props.uuid.id[4], props.uuid.id[3], props.uuid.id[2], props.uuid.id[1],
+					props.uuid.id[0]);
 				return ZE_RESULT_SUCCESS;
 			},
 		},
@@ -183,7 +184,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 				props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
 				auto const r = d.dev->getDevProps(d.deviceHdl, &props);
 				if (r == ZE_RESULT_SUCCESS) {
-					out = std::format("0x{:04X}", props.deviceId);
+					out = xpum::compat::format("0x{:04X}", props.deviceId);
 				}
 				return r;
 			},

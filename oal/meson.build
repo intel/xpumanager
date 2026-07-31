@@ -5,8 +5,7 @@
 
 # Platform-specific source files
 oal_inc_dirs = [include_directories('.')] # Include the oal folder itself
-oal_inc_dirs += [include_directories('../hal/core/logger')]
-oal_deps = [thread_dep, levelzero_dep, bdf_dep, igsc_dep]
+oal_deps = [thread_dep, levelzero_dep, bdf_dep, igsc_dep, compat_dep]
 
 if is_windows
   oal_sources = files(

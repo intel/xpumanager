@@ -59,7 +59,7 @@ libxpum_shared = shared_library(
     include_directories('../../ial/cli'),
   ]
   + extensions_inc_dirs,
-  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep]
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep, compat_dep]
   + windows_deps,
   version: xpum_version,
   soversion: xpum_version.split('.')[0],
@@ -81,7 +81,7 @@ libxpum_static = static_library(
     include_directories('../../ial/cli'),
   ]
   + extensions_inc_dirs,
-  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep]
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep, compat_dep]
   + windows_deps,
   install: get_option('static_library'),
   install_dir: get_option('libdir'),
@@ -116,23 +116,8 @@ if is_windows and get_option('shared_library')
   )
 endif
 
-# Unit tests for the Logger (optional — enable with -Dwith_tests=true)
 if get_option('with_tests')
   doctest_dep = dependency('doctest', required: true)
-  logger_test = executable(
-    'logger_test',
-    # Compile debug.cpp directly so dbgLvl and the extended helpers are
-    # defined without linking the full xpum library.
-    files('logger/test/logger_test.cpp', 'debug.cpp'),
-    include_directories: [global_inc, hal_core_inc],
-    dependencies: [doctest_dep],
-    link_args: is_linux ? ['-pie'] : [],
-    build_by_default: true,
-    install: false,
-  )
-  test('logger_tests', logger_test)
-  message('Logger unit tests enabled')
-
   temperature_test = executable(
     'temperature_test',
     files('test/temperature_test.cpp'),
@@ -174,5 +159,5 @@ if get_option('with_tests')
 
   endif
 else
-  message('Skipping logger tests (pass -Dwith_tests=true to enable)')
+  message('Skipping hal/core tests (pass -Dwith_tests=true to enable)')
 endif

@@ -14,7 +14,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <cstring>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 #include <array>
 #include <filesystem>
@@ -112,7 +112,7 @@ std::vector<std::string> DmiReader::getParentBridges(std::string_view deviceBdf)
 	std::vector<std::string> parents;
 
 	try {
-		const std::filesystem::path devicePath = std::format("/sys/bus/pci/devices/{}", deviceBdf);
+		const std::filesystem::path devicePath = xpum::compat::format("/sys/bus/pci/devices/{}", deviceBdf);
 
 		if (!std::filesystem::exists(devicePath)) {
 			return parents;
@@ -314,7 +314,8 @@ std::optional<DmiReader::SlotInfo> DmiReader::parseSlot(size_t offset) const
 
 		if (result) {
 			const auto &[segment, bus, devfunc] = *result;
-			slot.busAddress = std::format("{:04x}:{:02x}:{:02x}.{:01x}", segment, bus, devfunc >> 3, devfunc & 0x7);
+			slot.busAddress =
+				xpum::compat::format("{:04x}:{:02x}:{:02x}.{:01x}", segment, bus, devfunc >> 3, devfunc & 0x7);
 		}
 	}
 
@@ -352,7 +353,7 @@ std::optional<DmiReader::SystemInfo> DmiReader::parseSystemInfo(size_t offset) c
 								   uuidSpan.subspan(8, 2), uuidSpan.subspan(10, 6));
 		}();
 
-		info.uuid = std::format(
+		info.uuid = xpum::compat::format(
 			"{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
 			part1[0], part1[1], part1[2], part1[3], part2[0], part2[1], part3[0], part3[1], part4[0], part4[1],
 			part5[0], part5[1], part5[2], part5[3], part5[4], part5[5]);
@@ -414,7 +415,7 @@ std::string DmiReader::decodeSlotType(uint8_t type)
 	const auto *const match =
 		std::ranges::find_if(slotTypes, [type](const auto &entry) { return entry.first == type; });
 
-	return (match != slotTypes.end()) ? std::string(match->second) : std::format("Unknown (0x{:x})", type);
+	return (match != slotTypes.end()) ? std::string(match->second) : xpum::compat::format("Unknown (0x{:x})", type);
 }
 
 std::string DmiReader::decodeSlotUsage(uint8_t usage)
@@ -427,5 +428,5 @@ std::string DmiReader::decodeSlotUsage(uint8_t usage)
 	const auto *const match =
 		std::ranges::find_if(usageTypes, [usage](const auto &entry) { return entry.first == usage; });
 
-	return (match != usageTypes.end()) ? std::string(match->second) : std::format("Reserved (0x{:x})", usage);
+	return (match != usageTypes.end()) ? std::string(match->second) : xpum::compat::format("Reserved (0x{:x})", usage);
 }

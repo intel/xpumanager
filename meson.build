@@ -186,6 +186,11 @@ elif is_linux
   # _FORTIFY_SOURCE requires optimization (-O); skip it for debug builds (-O0)
   if not is_debug
     compile_args += ['-D_FORTIFY_SOURCE=3']
+    if not cpp.version().version_compare('>=13')
+      # GCC 12 LTO emits false-positive -Wstringop-overflow when inlining
+      # third-party headers (e.g. fmt/core.h); suppress at link stage only.
+      add_project_link_arguments(['-Wno-error=stringop-overflow'], language: 'cpp')
+    endif
   endif
   compile_args += [
     '-fstack-protector-strong',
@@ -238,6 +243,11 @@ levelzero_dep = dependency('level-zero', required : true)
 igsc_dep = dependency('igsc', required : true)
 nlohmann_json_dep = dependency('nlohmann_json', required : true)
 cli11_dep = dependency('CLI11', required : true, include_type : 'system')
+
+# {fmt} — used by utility/compat/format.h on compilers that lack std::format
+# (e.g. GCC 12 / Debian 12). Always pulled in via Conan; the compat header
+# selects std::format vs. fmt::format at compile time via __cpp_lib_format.
+fmt_dep = dependency('fmt', required : false, include_type : 'system')
 
 # Additional Linux-specific dependencies
 if is_linux

@@ -5,8 +5,8 @@
 
 #include "default_parser.h"
 #include "../version.h"
-#include "logger/logger.h"
-#include "logger/filestream_sink.h"
+#include "utility/logger/logger.h"
+#include "utility/logger/filestream_sink.h"
 #include "cli.h"
 #include "parser/cli_parser.h"
 #include "cmds.h"
@@ -18,7 +18,7 @@
 #include <array>
 #include <charconv>
 #include <exception>
-#include <format>
+#include "utility/compat/format.h"
 #include <ios>
 #include <optional>
 #include <memory>
@@ -231,7 +231,7 @@ std::string_view DefaultParser::progName() { return "xpu-smi"; }
 
 void DefaultParser::printBanner()
 {
-	const std::string shortVersion = std::format("v{}.{}", MAJOR, MINOR);
+	const std::string shortVersion = xpum::compat::format("v{}.{}", MAJOR, MINOR);
 	PRINT("Intel XPU System Management Interface -- {}\n", shortVersion.c_str());
 	PRINT("Intel XPU System Management Interface provides the Intel data center GPU model."
 		  " It can also be used to update the firmware.\n");

@@ -16,7 +16,7 @@ table_lib = static_library(
     'table',
     sources: table_sources,
     include_directories: [global_inc, table_inc],
-    dependencies: [nlohmann_json_dep],
+    dependencies: [nlohmann_json_dep, compat_dep],
     install: false
 )
 
@@ -24,7 +24,7 @@ table_lib = static_library(
 table_dep = declare_dependency(
     include_directories: [table_inc],
     link_with: table_lib,
-    dependencies: [nlohmann_json_dep]
+    dependencies: [nlohmann_json_dep, compat_dep]
 )
 
 # Example application demonstrating GPU monitoring output
@@ -33,7 +33,7 @@ table_example = executable(
     'test/example.cpp',
     include_directories: [global_inc, table_inc],
     link_with: table_lib,
-    dependencies: [nlohmann_json_dep],
+    dependencies: [nlohmann_json_dep, compat_dep],
     link_args : is_linux ? ['-pie'] : [],
     build_by_default: true,
     install: false

@@ -15,7 +15,7 @@
 #include "zes_api.h"
 #include <ras.h>
 #include <array>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 
 namespace metrics::ecc {
@@ -103,7 +103,7 @@ ze_result_t aggregateRasErrors(devInfo &d, zes_ras_error_type_t cacheErrorType, 
 	uint64_t n = 0;
 	auto const res = ras->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, cacheErrorType, &n);
 	if (res == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", n);
+		out = xpum::compat::format("{}", n);
 	}
 	return res;
 }
@@ -134,7 +134,7 @@ ze_result_t aggregateAllRasErrors(devInfo &d, MetricValue &out)
 		}
 		total += corr + uncorr;
 	}
-	out = std::format("{}", total);
+	out = xpum::compat::format("{}", total);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -199,7 +199,7 @@ ze_result_t rasErrorGetter(devInfo &d, MetricValue &out, const MetricCache & /*u
 	uint64_t n = 0;
 	auto const res = r->getErrors(CAT, TYPE, &n);
 	if (res == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", n);
+		out = xpum::compat::format("{}", n);
 	}
 	return res;
 }
@@ -223,7 +223,7 @@ ze_result_t rasAllTypesGetter(devInfo &d, MetricValue &out, const MetricCache & 
 	if (ru != ZE_RESULT_SUCCESS && ru != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
 		return ru;
 	}
-	out = std::format("{}", corr + uncorr);
+	out = xpum::compat::format("{}", corr + uncorr);
 	return ZE_RESULT_SUCCESS;
 }
 

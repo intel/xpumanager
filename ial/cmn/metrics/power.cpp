@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <format>
+#include "utility/compat/format.h"
 #include <power.h>
 #include <ranges>
 #include <span>
@@ -100,7 +100,7 @@ ze_result_t getBestLimitW(devInfo &d, MetricValue &out)
 	if (it == std::ranges::end(valid)) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	out = std::format("{:.2f}", static_cast<double>(it->limitMw) / 1000.0);
+	out = xpum::compat::format("{:.2f}", static_cast<double>(it->limitMw) / 1000.0);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -150,7 +150,7 @@ ze_result_t getMaxLimitW(devInfo &d, MetricValue &out)
 		extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
 		if (pw->getProperties(handles[i], &props, &extProps) == ZE_RESULT_SUCCESS && (props.onSubdevice == 0U) &&
 			props.maxLimit > 0) {
-			out = std::format("{:.2f}", static_cast<double>(props.maxLimit) / 1000.0);
+			out = xpum::compat::format("{:.2f}", static_cast<double>(props.maxLimit) / 1000.0);
 			return ZE_RESULT_SUCCESS;
 		}
 	}
@@ -177,7 +177,7 @@ constexpr auto CARD_DRAW =
 						out = "N/A";
 						return ZE_RESULT_SUCCESS;
 					}
-					out = std::format("{:.2f}", powerDrawWatts(cache.cardPowerBefore, cache.cardPowerAfter));
+					out = xpum::compat::format("{:.2f}", powerDrawWatts(cache.cardPowerBefore, cache.cardPowerAfter));
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -201,7 +201,7 @@ constexpr auto CARD_DRAW_GPU =
 						out = "N/A";
 						return ZE_RESULT_SUCCESS;
 					}
-					out = std::format("{:.2f}", powerDrawWatts(cache.gpuPowerBefore, cache.gpuPowerAfter));
+					out = xpum::compat::format("{:.2f}", powerDrawWatts(cache.gpuPowerBefore, cache.gpuPowerAfter));
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -217,7 +217,7 @@ constexpr auto ENERGY_CONSUMED =
 					if (cache.gpuPowerAfter.ts == 0) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 					}
-					out = std::format("{:.2f}", static_cast<double>(cache.gpuPowerAfter.energy) / 1'000'000.0);
+					out = xpum::compat::format("{:.2f}", static_cast<double>(cache.gpuPowerAfter.energy) / 1'000'000.0);
 					return ZE_RESULT_SUCCESS;
 				}};
 

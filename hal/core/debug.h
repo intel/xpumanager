@@ -9,13 +9,9 @@
 
 // ── C++ path: pull in the modular logger headers ──────────────────────────────
 #ifdef __cplusplus
-#include "logger/log_level.h"
-#include "logger/log_record.h"
-#include "logger/formatters.h"
-#include "logger/sink_base.h"
-#include "logger/ostream_sink.h"
-#include "logger/filestream_sink.h"
-#include "logger/logger.h"
+#include "utility/logger/log_level.h"
+#include "utility/logger/logger.h"
+#include "utility/logger/formatters.h" // NOLINT(misc-include-cleaner) — side-effect: formatter specialisations for enum/char[N] at ERR/INFO/DBG call sites
 #else
 // ── C fallback — no Logger, no source_location ────────────────────────────────
 #include <stdio.h>
@@ -73,9 +69,9 @@ extern int dbgLvl;
 
 // ── Windows helpers ───────────────────────────────────────────────────────────
 #ifdef _WIN32
-static int is_windows = 1;
+static const int is_windows = 1;
 #else
-static int is_windows __attribute__((unused)) = 0; // NOLINT(readability-identifier-naming)
+static const int is_windows __attribute__((unused)) = 0; // NOLINT(readability-identifier-naming)
 #endif
 
 // ── Level helpers — unchanged interface ──────────────────────────────────────

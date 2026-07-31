@@ -6,7 +6,7 @@
 
 #include "sysprocess.h"
 #include "process_platform.h"
-#include <format>
+#include "utility/compat/format.h"
 #include <vector>
 
 /**
@@ -59,8 +59,8 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 				l0_error_to_string(pciResult));
 		} else {
 			const std::string bdf =
-				std::format("{:04x}:{:02x}:{:02x}.{:x}", pciProps.address.domain, pciProps.address.bus,
-							pciProps.address.device, pciProps.address.function);
+				xpum::compat::format("{:04x}:{:02x}:{:02x}.{:x}", pciProps.address.domain, pciProps.address.bus,
+									 pciProps.address.device, pciProps.address.function);
 			fixProcessMemSize(bdf, processList);
 		}
 	}

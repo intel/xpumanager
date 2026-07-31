@@ -9,7 +9,7 @@
 
 #include "nlohmann/json_fwd.hpp"
 #include <algorithm>
-#include <format>
+#include "utility/compat/format.h"
 #include <functional>
 #include <iostream>
 #include <string>
@@ -134,9 +134,9 @@ public:
 				return std::forward<T>(arg) ? "true" : "false";
 			} else if constexpr (std::is_floating_point_v<DecayT>) {
 				// Format floats with reasonable precision
-				return std::format("{:.3f}", std::forward<T>(arg));
+				return xpum::compat::format("{:.3f}", std::forward<T>(arg));
 			} else {
-				return std::format("{}", std::forward<T>(arg));
+				return xpum::compat::format("{}", std::forward<T>(arg));
 			}
 		}
 
@@ -322,7 +322,7 @@ public:
 
 		if (!columns.empty() && sizeof...(args) != columns.size()) {
 			throw std::invalid_argument(
-				std::format("Row has {} cells but table has {} columns", sizeof...(args), columns.size()));
+				xpum::compat::format("Row has {} cells but table has {} columns", sizeof...(args), columns.size()));
 		}
 
 		rows.emplace_back(std::forward<Args>(args)...);
@@ -421,7 +421,7 @@ public:
 
 		if (!columns.empty() && row.cells.size() != columns.size()) {
 			throw std::invalid_argument(
-				std::format("Row has {} cells but table has {} columns", row.cells.size(), columns.size()));
+				xpum::compat::format("Row has {} cells but table has {} columns", row.cells.size(), columns.size()));
 		}
 
 		rows.push_back(std::move(row));

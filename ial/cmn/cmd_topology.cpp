@@ -13,7 +13,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstddef>
-#include <format>
+#include "utility/compat/format.h"
 #include <algorithm>
 #include <memory>
 #include <map>
@@ -257,12 +257,12 @@ void TopologyTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	TRACING();
 
 	if (jsonObj->contains("error")) {
-		PRINT("{}", std::format("Error: {}\n", jsonObj->value("error", "")).c_str());
+		PRINT("{}", xpum::compat::format("Error: {}\n", jsonObj->value("error", "")).c_str());
 		return;
 	}
 
 	if (const auto msg = jsonObj->value("message", ""); !msg.empty()) {
-		PRINT("{}", std::format("{}\n", msg).c_str());
+		PRINT("{}", xpum::compat::format("{}\n", msg).c_str());
 		return;
 	}
 
@@ -503,7 +503,7 @@ ze_result_t cmdTopology::generateFile(const std::string &filename, bool useJson)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	const std::string message = std::format("Topology exported to file: {}", filename);
+	const std::string message = xpum::compat::format("Topology exported to file: {}", filename);
 
 	if (useJson) {
 		auto jsonObj = std::make_unique<nlohmann::ordered_json>();
@@ -581,14 +581,14 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 
 		if (portsByTile.empty()) {
 			allNodes.push_back(
-				TopoNode{.label = std::format("GPU {}/0", device.index),
+				TopoNode{.label = xpum::compat::format("GPU {}/0", device.index),
 						 .cpuAffinity = cpuAffinity,
 						 .bdfAddress = bdf,
 						 .maxBandwidthBps = gpuMaxBwBps,
 						 .data = GpuData{.deviceId = static_cast<int>(device.index), .tileId = 0, .ports = {}}});
 		} else {
 			for (const auto &[tileId, ports] : portsByTile) {
-				allNodes.push_back(TopoNode{.label = std::format("GPU {}/{}", device.index, tileId),
+				allNodes.push_back(TopoNode{.label = xpum::compat::format("GPU {}/{}", device.index, tileId),
 											.cpuAffinity = cpuAffinity,
 											.bdfAddress = bdf,
 											.maxBandwidthBps = gpuMaxBwBps,
@@ -603,7 +603,7 @@ ze_result_t cmdTopology::buildTopologyMatrix(arg_struct *args, nlohmann::ordered
 	if (const auto nicsOpt = GET_SYSTEM_NICS()) {
 		for (auto nicIdx = size_t{0}; nicIdx < nicsOpt->size(); ++nicIdx) {
 			const auto &nic = (*nicsOpt)[nicIdx];
-			allNodes.push_back(TopoNode{.label = std::format("NIC{}", nicIdx),
+			allNodes.push_back(TopoNode{.label = xpum::compat::format("NIC{}", nicIdx),
 										.cpuAffinity = nic.cpuAffinity,
 										.bdfAddress = nic.bdfAddress,
 										.data = NicData{.nicIndex = static_cast<int>(nicIdx)}});
@@ -1023,7 +1023,7 @@ ze_result_t cmdTopology::buildP2PMatrix(arg_struct *args, P2PCapability capabili
 	std::vector<std::string> headers;
 	headers.reserve(deviceCount);
 	std::ranges::transform(deviceList, std::back_inserter(headers),
-						   [](const devInfo &d) { return std::format("GPU {}", d.index); });
+						   [](const devInfo &d) { return xpum::compat::format("GPU {}", d.index); });
 
 	const std::string capKey{capabilityKey(capability)};
 

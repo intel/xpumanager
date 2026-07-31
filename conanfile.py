@@ -39,6 +39,10 @@ class XpumConan(ConanFile):
         self.requires("hwloc/2.9.3")  # Cross-platform topology library
         self.requires("libcurl/8.5.0")
         self.requires("cli11/2.6.2")
+        # {fmt} is only needed on compilers without a conforming std::format.
+        # GCC 13+ defines __cpp_lib_format; earlier versions (e.g. GCC 12 / Debian 12) do not.
+        if not (self.settings.compiler == "gcc" and int(str(self.settings.compiler.version)) >= 13):  # type: ignore
+            self.requires("fmt/10.2.1")
 
     def build_requirements(self):
         self.tool_requires("meson/1.3.2")

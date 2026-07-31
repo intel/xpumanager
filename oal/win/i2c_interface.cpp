@@ -11,7 +11,7 @@
 #include <initguid.h>
 #include <devguid.h>
 #include <setupapi.h>
-#include <format>
+#include "utility/compat/format.h"
 
 #define MAX_BUFFER_SIZE (64 * 1024)
 
@@ -392,7 +392,8 @@ std::string getGpuDeviceFromI2C(const std::basic_string<TCHAR> &dosLink)
 				ULONG device = (slotInfo >> 16) & 0xFFFF; // Will clamp to 8 bits below when formatting
 				ULONG function = slotInfo & 0x7;
 				// Format as domain:bus:device.function with bus & device two hex digits, domain fixed 0000
-				bdfResult = std::format("0000:{:02x}:{:02x}.{}", (busNumber & 0xFF), (device & 0xFF), function);
+				bdfResult =
+					xpum::compat::format("0000:{:02x}:{:02x}.{}", (busNumber & 0xFF), (device & 0xFF), function);
 				DBG("   PCI BDF: {}\n", bdfResult.c_str());
 				break;
 			}

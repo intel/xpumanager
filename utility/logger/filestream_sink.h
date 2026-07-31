@@ -12,7 +12,7 @@
 #include "sink_base.h"
 
 #include <chrono>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 #include <ios>
 #include <stdexcept>
@@ -70,7 +70,7 @@ public:
 			throw std::runtime_error("FileStreamSink: file is not open");
 		}
 		if (mShowTimestamp) {
-			file << std::format("[{:%H:%M:%S}] ", std::chrono::floor<std::chrono::milliseconds>(record.timestamp));
+			file << xpum::compat::format("[{:%H:%M:%S}] ", std::chrono::floor<std::chrono::milliseconds>(record.timestamp));
 		}
 		if (mShowThreadId) {
 			file << '[' << record.threadId << "] ";

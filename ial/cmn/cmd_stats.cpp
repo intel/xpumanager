@@ -17,7 +17,7 @@
 #include <cinttypes>
 #include <cmath>
 #include <numeric>
-#include <format>
+#include "utility/compat/format.h"
 #include <thread>
 
 /**
@@ -113,7 +113,7 @@ static constexpr double BYTES_PER_MIB = 1024.0 * 1024.0;
 std::string cmdStats::formatIso8601Timestamp(const std::chrono::system_clock::time_point &timePoint)
 {
 	TRACING();
-	return std::format("{:%Y-%m-%dT%H:%M:%S}Z", std::chrono::floor<std::chrono::milliseconds>(timePoint));
+	return xpum::compat::format("{:%Y-%m-%dT%H:%M:%S}Z", std::chrono::floor<std::chrono::milliseconds>(timePoint));
 }
 
 /**
@@ -495,7 +495,7 @@ static double calculateThroughputKBps(uint64_t deltaBytes, uint64_t deltaTimeMic
  * @param [in] tileId The tile identifier
  * @return String in format "tile_N"
  */
-static std::string makeTileKey(uint32_t tileId) { return std::format("tile_{}", tileId); }
+static std::string makeTileKey(uint32_t tileId) { return xpum::compat::format("tile_{}", tileId); }
 
 /**
  * @brief Collect memory bandwidth and usage metrics per tile
@@ -1244,7 +1244,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	for (const auto &[fanId, samples] : metrics.fanSpeedPercentSamplesPerFan) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
-			std::string fanKey = std::format("fan_{}", fanId);
+			std::string fanKey = xpum::compat::format("fan_{}", fanId);
 			populateSummaryStatsJson(deviceJson["fan"]["speed_percent"][fanKey], stats);
 		}
 	}
@@ -1444,11 +1444,11 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 
 	table.addRow("Start Time", startTime);
 	table.addRow("End Time", endTime);
-	table.addRow("Elapsed Time (seconds)", std::format("{:.2f}", elapsedSeconds));
+	table.addRow("Elapsed Time (seconds)", xpum::compat::format("{:.2f}", elapsedSeconds));
 
 	if (deviceJson.contains("power") && deviceJson["power"].contains("energy_consumed_j")) {
 		double energyJ = deviceJson["power"]["energy_consumed_j"].get<double>();
-		table.addRow("Energy Consumed (J)", std::format("{:.2f}", energyJ));
+		table.addRow("Energy Consumed (J)", xpum::compat::format("{:.2f}", energyJ));
 	} else {
 		table.addRow("Energy Consumed (J)", "N/A");
 	}
@@ -2021,7 +2021,7 @@ ze_result_t cmdStats::listOfflinePages(devInfo *device, nlohmann::ordered_json &
 	pagesJson = nlohmann::ordered_json::array();
 	for (const auto &page : pages) {
 		nlohmann::ordered_json pageJson;
-		pageJson["address"] = std::format("0x{:016X}", page.pageAddress);
+		pageJson["address"] = xpum::compat::format("0x{:016X}", page.pageAddress);
 		pageJson["size"] = page.pageSize;
 		pagesJson.push_back(pageJson);
 	}

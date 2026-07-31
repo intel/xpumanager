@@ -9,7 +9,7 @@
 #include <hwloc.h>
 #include <algorithm>
 #include <filesystem>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 #include <optional>
 #include <string>
@@ -301,7 +301,7 @@ int exportTopologyToXml(const std::string &filename, const std::vector<GpuDevice
 	if (!gpuDevices.empty()) {
 		hwloc_obj_t root = hwloc_get_root_obj(topology);
 		for (const auto &device : gpuDevices) {
-			const std::string deviceName = std::format("Intel GPU Device {}", device.deviceIndex);
+			const std::string deviceName = xpum::compat::format("Intel GPU Device {}", device.deviceIndex);
 
 			// Add GPU as misc object with metadata
 			hwloc_obj_t gpu = hwloc_topology_insert_misc_object(topology, root, deviceName.c_str());

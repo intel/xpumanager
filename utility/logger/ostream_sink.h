@@ -12,7 +12,7 @@
 #include "sink_base.h"
 
 #include <chrono>
-#include <format>
+#include "utility/compat/format.h"
 #include <ostream>
 
 /**
@@ -39,7 +39,7 @@ public:
 	void emit(const LogRecord &record) override
 	{
 		if (mShowTimestamp) {
-			os << std::format("[{:%H:%M:%S}] ", std::chrono::floor<std::chrono::milliseconds>(record.timestamp));
+			os << xpum::compat::format("[{:%H:%M:%S}] ", std::chrono::floor<std::chrono::milliseconds>(record.timestamp));
 		}
 		if (mShowThreadId) {
 			os << '[' << record.threadId << "] ";

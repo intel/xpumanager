@@ -50,7 +50,7 @@ struct GpuArgs
 
 TopoNode makeGpu(GpuArgs args)
 {
-	return TopoNode{.label = std::format("GPU {}/{}", args.deviceId, args.tileId),
+	return TopoNode{.label = xpum::compat::format("GPU {}/{}", args.deviceId, args.tileId),
 					.cpuAffinity = {},
 					.bdfAddress = {},
 					.numaNode = args.numaNode,
@@ -68,7 +68,7 @@ struct NicArgs
 
 TopoNode makeNic(NicArgs args)
 {
-	return TopoNode{.label = std::format("NIC{}", args.nicIdx),
+	return TopoNode{.label = xpum::compat::format("NIC{}", args.nicIdx),
 					.cpuAffinity = {},
 					.bdfAddress = {},
 					.numaNode = args.numaNode,

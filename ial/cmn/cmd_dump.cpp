@@ -6,7 +6,7 @@
 
 #include "cmd_dump.h"
 #include "cmds.h"
-#include "logger/logger.h"
+#include "utility/logger/logger.h"
 #include "device.h"
 #include "metrics_registry.h"
 #include "table_builder.h"
@@ -20,7 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
-#include <format>
+#include "utility/compat/format.h"
 #include <functional>
 #include <ios>
 #include <optional>
@@ -512,7 +512,7 @@ std::string getTimestamp(bool showDate)
 {
 	auto now = std::chrono::system_clock::now();
 	auto nowMs = std::chrono::floor<std::chrono::milliseconds>(now);
-	return showDate ? std::format("{:%Y/%m/%d %H:%M:%S}", nowMs) : std::format("{:%H:%M:%S}", nowMs);
+	return showDate ? xpum::compat::format("{:%Y/%m/%d %H:%M:%S}", nowMs) : xpum::compat::format("{:%H:%M:%S}", nowMs);
 }
 
 /**
@@ -558,8 +558,9 @@ struct DumpOutput
 				alignedFormatter->addColumn("DeviceId", 8, Align::Right);
 			}
 			for (const auto *f : fieldDefs) {
-				const std::string label =
-					(!nounits && !f->unit.empty()) ? std::format("{} ({})", f->name, f->unit) : std::string{f->name};
+				const std::string label = (!nounits && !f->unit.empty())
+											  ? xpum::compat::format("{} ({})", f->name, f->unit)
+											  : std::string{f->name};
 				alignedFormatter->addColumn(label, std::max(static_cast<int>(label.size()), 6), Align::Right);
 			}
 			alignedFormatter->lockWidths();
@@ -933,7 +934,7 @@ void cmdDump::printQueryHelp()
 		}
 		std::string fieldName = std::string(f.name);
 		if (legacyId.has_value()) {
-			fieldName += std::format(" [{}]", *legacyId);
+			fieldName += xpum::compat::format(" [{}]", *legacyId);
 		}
 		if (f.unit.empty()) {
 			helpList.emplace_back(SUB_HEADING, "%-40s %s", fieldName.c_str(), f.description.data());
@@ -1022,7 +1023,7 @@ void cmdDump::help(HELP helpType)
 
 		std::string fieldName = std::string(f.name);
 		if (legacyId.has_value()) {
-			fieldName += std::format(" [{}]", *legacyId);
+			fieldName += xpum::compat::format(" [{}]", *legacyId);
 		}
 
 		if (f.unit.empty()) {
@@ -1112,8 +1113,8 @@ int cmdDump::run(arg_struct *args)
 		if (!opts.json && !opts.noheader) {
 			std::string header = "Timestamp, DeviceId";
 			for (const metrics::QueryMetric *const f : fields) {
-				header += (!opts.nounits && !f->unit.empty()) ? std::format(", {} ({})", f->name, f->unit)
-															  : std::format(", {}", f->name);
+				header += (!opts.nounits && !f->unit.empty()) ? xpum::compat::format(", {} ({})", f->name, f->unit)
+															  : xpum::compat::format(", {}", f->name);
 			}
 			dumpFile << header << "\n";
 		}

@@ -24,12 +24,11 @@
 #include <os.h>
 #include <string>
 #include <vector>
-#include <format>
-#include "logger/filestream_sink.h"
-#include "logger/logger.h"
+#include "utility/compat/format.h"
+#include "utility/logger/filestream_sink.h"
+#include "utility/logger/logger.h"
 #include <string>
 #include <vector>
-#include <format>
 std::string progName = "xpu-smi";
 
 /**
@@ -37,7 +36,7 @@ std::string progName = "xpu-smi";
  */
 void printVersion(arg_struct *arg)
 {
-	const std::string fullVersion = std::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
+	const std::string fullVersion = xpum::compat::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
 	std::string lzVersion;
 
 	PRINT("{0:<{1}}CLI:\n", "", static_cast<int>(TITLE));

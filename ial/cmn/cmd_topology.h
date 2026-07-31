@@ -14,7 +14,7 @@
 #include <os.h>
 #include <string>
 #include <string_view>
-#include <format>
+#include "utility/compat/format.h"
 
 // Forward declarations
 struct portInfo;
@@ -95,9 +95,10 @@ inline nlohmann::ordered_json toJson(const TopologyInfo &info)
  */
 inline std::string toText(const TopologyInfo &info)
 {
-	return std::format("Device ID: {}\nLocal CPU List: {}\nLocal CPUs: {}\n"
-					   "PCIe Switch Count: {}\nPCIe Switch: {}\n",
-					   info.deviceId, info.localCpuList, info.localCpus, info.pcieSwitchCount, info.pcieSwitch);
+	return xpum::compat::format("Device ID: {}\nLocal CPU List: {}\nLocal CPUs: {}\n"
+								"PCIe Switch Count: {}\nPCIe Switch: {}\n",
+								info.deviceId, info.localCpuList, info.localCpus, info.pcieSwitchCount,
+								info.pcieSwitch);
 }
 
 /**

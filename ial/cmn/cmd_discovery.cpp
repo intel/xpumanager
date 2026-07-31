@@ -17,7 +17,7 @@
 #include <charconv>
 #include <enginegroup.h>
 #include <firmware.h>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 #include <gscupd.h>
 #include <iomanip>
@@ -313,7 +313,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 			auto [ptr, ec] = std::from_chars(bytesStr.data(), bytesStr.data() + bytesStr.size(), maxAllocBytes);
 			if (ec == std::errc{}) {
 				double maxAllocMiB = static_cast<double>(maxAllocBytes) / (1024.0 * 1024.0);
-				table.addRow("", std::format("Max Mem Alloc Size: {:.2f} MiB", maxAllocMiB));
+				table.addRow("", xpum::compat::format("Max Mem Alloc Size: {:.2f} MiB", maxAllocMiB));
 			}
 		}
 		if (jsonObj->contains("memory_ecc_state")) {
@@ -445,7 +445,8 @@ void cmdDiscovery::help(HELP helpType)
 										"format. Separated by the comma. \"-1\" means all properties"));
 
 	for (int propId = 1; propId < TOTAL_DISC_DUMPS; propId++) {
-		helpList.push_back(helpCmd(SUB_HEADING, std::format("{}. {}", propId, DISC_DUMP_CMDS[propId].heading).c_str()));
+		helpList.push_back(
+			helpCmd(SUB_HEADING, xpum::compat::format("{}. {}", propId, DISC_DUMP_CMDS[propId].heading).c_str()));
 	}
 	helpList.push_back(helpCmd(HEADING, "--listamcversions           Show all AMC firmware versions"));
 
@@ -749,7 +750,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	auto *const m = d->dev->getMemory();
 	m->getMemorySize(&physicalSize);
 	double physicalSizeMiB = static_cast<double>(physicalSize) / (1024.0 * 1024.0);
-	props["memory_physical_size"] = std::format("{:.2f} MiB", physicalSizeMiB);
+	props["memory_physical_size"] = xpum::compat::format("{:.2f} MiB", physicalSizeMiB);
 	props["memory_physical_size_byte"] = std::to_string(physicalSize);
 
 	pciVendorID(d, &outputLine);
@@ -811,7 +812,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	// Get device properties for core clock rate
 	auto zeDevProp = ze_device_properties_t{};
 	d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	props["core_clock_rate"] = std::format("{} MHz", zeDevProp.coreClockRate);
+	props["core_clock_rate"] = xpum::compat::format("{} MHz", zeDevProp.coreClockRate);
 
 	return result;
 }
@@ -1914,7 +1915,7 @@ ze_result_t cmdDiscovery::pcieMaxBandwidth(devInfo *d, std::string *outputLine)
 		laneRate = 7.877;
 
 	double bandwidth = pciProps.maxSpeed.width * laneRate; // GB/s
-	*outputLine = std::format("{:.2f} GB/s", bandwidth);
+	*outputLine = xpum::compat::format("{:.2f} GB/s", bandwidth);
 	return ZE_RESULT_SUCCESS;
 }
 

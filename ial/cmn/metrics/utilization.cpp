@@ -18,7 +18,7 @@
 #include "ze_api.h"
 #include <memory.h>
 #include <array>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 #include <string>
 #include <string_view>
@@ -73,7 +73,7 @@ constexpr auto GPU =
 					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 					}
-					out = std::format("{:.2f}", utilFromCache(s));
+					out = xpum::compat::format("{:.2f}", utilFromCache(s));
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -91,7 +91,7 @@ constexpr auto COMPUTE =
 					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 					}
-					out = std::format("{:.2f}", utilFromCache(s));
+					out = xpum::compat::format("{:.2f}", utilFromCache(s));
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -109,7 +109,7 @@ constexpr auto RENDER =
 					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 					}
-					out = std::format("{:.2f}", utilFromCache(s));
+					out = xpum::compat::format("{:.2f}", utilFromCache(s));
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -127,7 +127,7 @@ constexpr auto MEDIA = QueryMetric{
 		if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 		}
-		out = std::format("{:.2f}", utilFromCache(s));
+		out = xpum::compat::format("{:.2f}", utilFromCache(s));
 		return ZE_RESULT_SUCCESS;
 	}};
 
@@ -145,7 +145,7 @@ constexpr auto COPY =
 					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 					}
-					out = std::format("{:.2f}", utilFromCache(s));
+					out = xpum::compat::format("{:.2f}", utilFromCache(s));
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -165,7 +165,7 @@ constexpr auto MEM_UTIL =
 					auto val = 0.0;
 					const auto r = mem->getMemoryUsed(nullptr, &val);
 					if (r == ZE_RESULT_SUCCESS) {
-						out = std::format("{:.2f}", val);
+						out = xpum::compat::format("{:.2f}", val);
 					}
 					return r;
 				}};

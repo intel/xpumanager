@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <pci.h>
 #include <array>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 #include <string>
 
@@ -37,7 +37,7 @@ constexpr auto LINK_GEN_MAX =
 					zes_pci_properties_t props{};
 					auto const r = p->getProperties(d.zesDeviceHdl, &props);
 					if (r == ZE_RESULT_SUCCESS) {
-						out = std::format("{}", props.maxSpeed.gen);
+						out = xpum::compat::format("{}", props.maxSpeed.gen);
 					}
 					return r;
 				}};
@@ -57,7 +57,7 @@ constexpr auto LINK_WIDTH_MAX =
 					zes_pci_properties_t props{};
 					auto const r = p->getProperties(d.zesDeviceHdl, &props);
 					if (r == ZE_RESULT_SUCCESS) {
-						out = std::format("{}", props.maxSpeed.width);
+						out = xpum::compat::format("{}", props.maxSpeed.width);
 					}
 					return r;
 				}};
@@ -77,7 +77,7 @@ constexpr auto LINK_GEN_CURRENT =
 					zes_pci_speed_t speed{};
 					auto const r = p->getCurrentLinkSpeed(d.zesDeviceHdl, speed);
 					if (r == ZE_RESULT_SUCCESS) {
-						out = std::format("{}", speed.gen);
+						out = xpum::compat::format("{}", speed.gen);
 					}
 					return r;
 				}};
@@ -97,7 +97,7 @@ constexpr auto LINK_WIDTH_CURRENT =
 					zes_pci_speed_t speed{};
 					auto const r = p->getCurrentLinkSpeed(d.zesDeviceHdl, speed);
 					if (r == ZE_RESULT_SUCCESS) {
-						out = std::format("{}", speed.width);
+						out = xpum::compat::format("{}", speed.width);
 					}
 					return r;
 				}};
@@ -115,7 +115,7 @@ constexpr auto TX_THROUGHPUT =
 					}
 					const auto dt = static_cast<double>(cache.pcieAfter.timeUs - cache.pcieBefore.timeUs);
 					const auto tx = static_cast<double>(cache.pcieAfter.tx - cache.pcieBefore.tx);
-					out = std::format("{}", tx / dt);
+					out = xpum::compat::format("{}", tx / dt);
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -132,7 +132,7 @@ constexpr auto RX_THROUGHPUT =
 					}
 					const auto dt = static_cast<double>(cache.pcieAfter.timeUs - cache.pcieBefore.timeUs);
 					const auto rx = static_cast<double>(cache.pcieAfter.rx - cache.pcieBefore.rx);
-					out = std::format("{}", rx / dt);
+					out = xpum::compat::format("{}", rx / dt);
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -147,7 +147,7 @@ constexpr auto REPLAY_COUNTER =
 					if (!cache.pcieAvail || !cache.pcieReplayAvail) {
 						return ZE_RESULT_NOT_READY;
 					}
-					out = std::format("{}", cache.pcieReplay);
+					out = xpum::compat::format("{}", cache.pcieReplay);
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -164,7 +164,7 @@ constexpr auto RX_THROUGHPUT_KBS =
 					}
 					const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
 					const uint64_t rx = cache.pcieAfter.rx - cache.pcieBefore.rx;
-					out = std::format("{}", 1000000ULL * rx / dt / 1000ULL);
+					out = xpum::compat::format("{}", 1000000ULL * rx / dt / 1000ULL);
 					return ZE_RESULT_SUCCESS;
 				}};
 
@@ -181,7 +181,7 @@ constexpr auto TX_THROUGHPUT_KBS =
 					}
 					const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
 					const uint64_t tx = cache.pcieAfter.tx - cache.pcieBefore.tx;
-					out = std::format("{}", 1000000ULL * tx / dt / 1000ULL);
+					out = xpum::compat::format("{}", 1000000ULL * tx / dt / 1000ULL);
 					return ZE_RESULT_SUCCESS;
 				}};
 

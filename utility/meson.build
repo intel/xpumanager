@@ -3,5 +3,7 @@
 
 # Utility components build
 
+subdir('compat')
+subdir('logger')
 subdir('bdf')
 subdir('table')

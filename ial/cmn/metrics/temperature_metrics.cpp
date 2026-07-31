@@ -12,7 +12,7 @@
 #include "ze_api.h"
 #include <temperature.h>
 #include <array>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 #include <string>
 
@@ -31,7 +31,7 @@ ze_result_t tempGetter(devInfo &d, MetricValue &out, const MetricCache &)
 	auto val = 0.0;
 	const auto r = (t->*Fn)(&val);
 	if (r == ZE_RESULT_SUCCESS) {
-		out = std::format("{:.2f}", val);
+		out = xpum::compat::format("{:.2f}", val);
 	}
 	return r;
 }

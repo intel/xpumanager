@@ -12,7 +12,7 @@
 #include <osvf.h>
 #include <algorithm>
 #include <cassert>
-#include <format>
+#include "utility/compat/format.h"
 #include <stdexcept>
 #include <unordered_map>
 
@@ -284,7 +284,8 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 		table.addRow("PCI BDF Address", vfInfo.bdfAddress);
 		table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
 		if (vfInfo.vGpuMemorySize > 0) {
-			table.addRow("Memory Physical Size", std::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
+			table.addRow("Memory Physical Size",
+						 xpum::compat::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
 		} else {
 			table.addRow("Memory Physical Size", "N/A (shared memory / iGPU)");
 		}
@@ -357,16 +358,19 @@ ze_result_t cmdVgpu::stats(devInfo *d)
 
 		table.addRow("PCI BDF Address", vfBdf);
 		table.addRow("GPU Utilization (%)",
-					 vfStats.gpuUtilization >= 0.0 ? std::format("{:.0f}", vfStats.gpuUtilization) : "N/A");
-		table.addRow("Compute Engine Util(%)",
-					 vfStats.computeUtilization >= 0.0 ? std::format("{:.0f}", vfStats.computeUtilization) : "N/A");
-		table.addRow("Render Engine Util (%)",
-					 vfStats.renderUtilization >= 0.0 ? std::format("{:.0f}", vfStats.renderUtilization) : "N/A");
-		table.addRow("Media Engine Util (%)",
-					 vfStats.mediaUtilization >= 0.0 ? std::format("{:.0f}", vfStats.mediaUtilization) : "N/A");
+					 vfStats.gpuUtilization >= 0.0 ? xpum::compat::format("{:.0f}", vfStats.gpuUtilization) : "N/A");
+		table.addRow("Compute Engine Util(%)", vfStats.computeUtilization >= 0.0
+												   ? xpum::compat::format("{:.0f}", vfStats.computeUtilization)
+												   : "N/A");
+		table.addRow("Render Engine Util (%)", vfStats.renderUtilization >= 0.0
+												   ? xpum::compat::format("{:.0f}", vfStats.renderUtilization)
+												   : "N/A");
+		table.addRow("Media Engine Util (%)", vfStats.mediaUtilization >= 0.0
+												  ? xpum::compat::format("{:.0f}", vfStats.mediaUtilization)
+												  : "N/A");
 		table.addRow("Copy Engine Util (%)",
-					 vfStats.copyUtilization >= 0.0 ? std::format("{:.0f}", vfStats.copyUtilization) : "N/A");
-		table.addRow("GPU Memory Util (%)", memPercent >= 0.0 ? std::format("{:.0f}", memPercent) : "N/A");
+					 vfStats.copyUtilization >= 0.0 ? xpum::compat::format("{:.0f}", vfStats.copyUtilization) : "N/A");
+		table.addRow("GPU Memory Util (%)", memPercent >= 0.0 ? xpum::compat::format("{:.0f}", memPercent) : "N/A");
 
 		table.addSeparator();
 

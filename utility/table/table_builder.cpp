@@ -10,7 +10,7 @@
 #include <string>
 #include <cstddef>
 #include <algorithm>
-#include <format>
+#include "utility/compat/format.h"
 #include <ranges>
 #include <unordered_set>
 #include <stdexcept>
@@ -357,7 +357,7 @@ std::string TableBuilder::toTableString() const
 			result += config.verticalChar;
 			result += ' ';
 			alignTextDirect(result, *row.spanText, totalContentWidth, row.spanAlign);
-			result += std::format(" {}", config.verticalChar);
+			result += xpum::compat::format(" {}", config.verticalChar);
 			result += '\n';
 		}
 		if (row.borderStyle != BorderStyle::None) {
@@ -372,7 +372,7 @@ std::string TableBuilder::toTableString() const
 	if (config.showRowNumbers) {
 		result += ' ';
 		alignTextDirect(result, "#", rowNumWidth, Align::Center);
-		result += std::format(" {}", config.verticalChar);
+		result += xpum::compat::format(" {}", config.verticalChar);
 	}
 
 	for (size_t colIdx = 0; colIdx < columns.size(); ++colIdx) {
@@ -381,7 +381,7 @@ std::string TableBuilder::toTableString() const
 		alignTextDirect(result, col.header, col.width, col.alignment);
 		const bool isLast = (colIdx == columns.size() - 1);
 		if (!suppressHeaderColSep || isLast) {
-			result += std::format(" {}", config.verticalChar);
+			result += xpum::compat::format(" {}", config.verticalChar);
 		} else {
 			result += "  "; // two spaces instead of " |"
 		}
@@ -398,7 +398,7 @@ std::string TableBuilder::toTableString() const
 		if (config.showRowNumbers) {
 			result += ' ';
 			alignTextDirect(result, "", rowNumWidth, Align::Left);
-			result += std::format(" {}", config.verticalChar);
+			result += xpum::compat::format(" {}", config.verticalChar);
 		}
 		for (const auto &col : columns) {
 			result += ' ';
@@ -407,7 +407,7 @@ std::string TableBuilder::toTableString() const
 			} else {
 				alignTextDirect(result, "", col.width, col.alignment);
 			}
-			result += std::format(" {}", config.verticalChar);
+			result += xpum::compat::format(" {}", config.verticalChar);
 		}
 		result += '\n';
 	}
@@ -435,7 +435,7 @@ std::string TableBuilder::toTableString() const
 		result.append(std::max(0, padding / 2), ' ');
 		result += config.noDataText;
 		result.append(std::max(0, padding - padding / 2), ' ');
-		result += std::format(" {}", config.verticalChar);
+		result += xpum::compat::format(" {}", config.verticalChar);
 		result += '\n';
 	} else {
 		for (size_t rowIdx = 0; rowIdx < rows.size(); ++rowIdx) {
@@ -461,7 +461,7 @@ std::string TableBuilder::toTableString() const
 				result += config.verticalChar;
 				result += ' ';
 				alignTextDirect(result, *row.spanText, totalContentWidth, Align::Center);
-				result += std::format(" {}", config.verticalChar);
+				result += xpum::compat::format(" {}", config.verticalChar);
 				result += '\n';
 				continue;
 			}
@@ -480,7 +480,7 @@ std::string TableBuilder::toTableString() const
 						} else {
 							result.append(rowNumWidth, ' ');
 						}
-						result += std::format(" {}", config.verticalChar);
+						result += xpum::compat::format(" {}", config.verticalChar);
 					}
 
 					// Multi-line cells
@@ -493,7 +493,7 @@ std::string TableBuilder::toTableString() const
 						alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
 						const bool isLast = (i == columns.size() - 1);
 						if (!suppressDataColSep || isLast) {
-							result += std::format(" {}", config.verticalChar);
+							result += xpum::compat::format(" {}", config.verticalChar);
 						} else {
 							result += "  ";
 						}
@@ -528,7 +528,7 @@ std::string TableBuilder::toTableString() const
 						} else {
 							result.append(static_cast<size_t>(rowNumWidth), ' ');
 						}
-						result += std::format(" {}", config.verticalChar);
+						result += xpum::compat::format(" {}", config.verticalChar);
 					}
 
 					for (size_t i = 0; i < columns.size(); ++i) {
@@ -546,7 +546,7 @@ std::string TableBuilder::toTableString() const
 						alignTextDirect(result, cellContent, columns[i].width, columns[i].alignment);
 						const bool isLast = (i == columns.size() - 1);
 						if (!suppressDataColSep || isLast) {
-							result += std::format(" {}", config.verticalChar);
+							result += xpum::compat::format(" {}", config.verticalChar);
 						} else {
 							result += "  ";
 						}
@@ -591,7 +591,7 @@ std::string TableBuilder::toJsonString(bool compact) const
 				int suffix = 1;
 				std::string uniqueHeader;
 				do {
-					uniqueHeader = std::format("{}_{}", header, suffix++);
+					uniqueHeader = xpum::compat::format("{}_{}", header, suffix++);
 				} while (seenKeys.contains(uniqueHeader));
 				header = uniqueHeader;
 			}
@@ -610,7 +610,7 @@ std::string TableBuilder::toJsonString(bool compact) const
 			if (seenKeys.contains(safeKey)) {
 				int suffix = 1;
 				do {
-					safeKey = std::format("{}_{}", key, suffix++);
+					safeKey = xpum::compat::format("{}_{}", key, suffix++);
 				} while (seenKeys.contains(safeKey));
 			}
 			seenKeys.insert(safeKey);
@@ -878,7 +878,7 @@ TableBuilder &TableBuilder::removeColumn(std::string_view header)
 {
 	auto colIdx = findColumn(header);
 	if (!colIdx) {
-		throw std::invalid_argument(std::format("Column '{}' not found", header));
+		throw std::invalid_argument(xpum::compat::format("Column '{}' not found", header));
 	}
 	return removeColumn(*colIdx);
 }
@@ -956,7 +956,7 @@ const std::string &TableBuilder::getCell(size_t rowIndex, std::string_view colum
 {
 	auto colIdx = findColumn(columnHeader);
 	if (!colIdx) {
-		throw std::invalid_argument(std::format("Column '{}' not found", columnHeader));
+		throw std::invalid_argument(xpum::compat::format("Column '{}' not found", columnHeader));
 	}
 	return getCell(rowIndex, *colIdx);
 }
@@ -1001,7 +1001,7 @@ TableBuilder &TableBuilder::sortByColumn(std::string_view columnHeader, bool asc
 {
 	auto colIdx = findColumn(columnHeader);
 	if (!colIdx) {
-		throw std::invalid_argument(std::format("Column '{}' not found", columnHeader));
+		throw std::invalid_argument(xpum::compat::format("Column '{}' not found", columnHeader));
 	}
 	return sortByColumn(*colIdx, ascending);
 }
@@ -1019,7 +1019,7 @@ TableValidationResult TableBuilder::validate() const
 	std::unordered_set<std::string> seenHeaders;
 	for (const auto &col : columns) {
 		if (seenHeaders.contains(col.header)) {
-			result.warnings.push_back(std::format("Duplicate column header: '{}'", col.header));
+			result.warnings.push_back(xpum::compat::format("Duplicate column header: '{}'", col.header));
 		}
 		seenHeaders.insert(col.header);
 	}
@@ -1027,7 +1027,7 @@ TableValidationResult TableBuilder::validate() const
 	// Check for empty headers
 	for (size_t i = 0; i < columns.size(); ++i) {
 		if (columns[i].header.empty()) {
-			result.warnings.push_back(std::format("Column {} has empty header", i));
+			result.warnings.push_back(xpum::compat::format("Column {} has empty header", i));
 		}
 	}
 
@@ -1035,7 +1035,7 @@ TableValidationResult TableBuilder::validate() const
 	for (size_t i = 0; i < rows.size(); ++i) {
 		if (rows[i].cells.size() != columns.size()) {
 			result.warnings.push_back(
-				std::format("Row {} has {} cells but table has {} columns", i, rows[i].cells.size(), columns.size()));
+				xpum::compat::format("Row {} has {} cells but table has {} columns", i, rows[i].cells.size(), columns.size()));
 		}
 	}
 

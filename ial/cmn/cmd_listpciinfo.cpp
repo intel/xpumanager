@@ -8,7 +8,7 @@
 #include "debug.h"
 #include "table_builder.h"
 #include <CLI/CLI.hpp>
-#include <format>
+#include "utility/compat/format.h"
 #include <memory>
 
 static std::unordered_map<listpciinfoCmdType, listpciinfoCmdStruct> listpciinfoCmds = {
@@ -89,7 +89,7 @@ void ListgpuTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		const int width = item["max_link_width"].get<int>();
 		const double bw = item["max_bandwidth_gbps"].get<double>();
 		table.addRow(item["bdf"].get<std::string>(), slot.empty() ? "N/A" : slot, gen > 0 ? std::to_string(gen) : "N/A",
-					 width > 0 ? std::to_string(width) : "N/A", bw > 0.0 ? std::format("{:.2f}", bw) : "N/A");
+					 width > 0 ? std::to_string(width) : "N/A", bw > 0.0 ? xpum::compat::format("{:.2f}", bw) : "N/A");
 	}
 
 	PRINT("{}", table.toString());
@@ -163,7 +163,7 @@ int cmdListpciinfo::run(arg_struct *args)
 	}
 
 	if (filtered && !found) {
-		(*jsonObj)["error"] = std::format("BDF '{}' not found among xe-bound devices", filterBdf);
+		(*jsonObj)["error"] = xpum::compat::format("BDF '{}' not found among xe-bound devices", filterBdf);
 	} else {
 		(*jsonObj)["bdf_device_list"] = std::move(deviceArray);
 	}

@@ -15,7 +15,7 @@
 #include "metrics_registry.h"
 #include "ze_api.h"
 #include <array>
-#include <format>
+#include "utility/compat/format.h"
 #include <span>
 
 namespace metrics::eu_array {
@@ -33,8 +33,8 @@ constexpr auto ACTIVE = QueryMetric{
 		if (!cache.euAvail || cache.euSample.scaleFactor == 0) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 		}
-		out = std::format("{}", static_cast<double>(cache.euSample.euActive) /
-									static_cast<double>(cache.euSample.scaleFactor));
+		out = xpum::compat::format("{}", static_cast<double>(cache.euSample.euActive) /
+											 static_cast<double>(cache.euSample.scaleFactor));
 		return ZE_RESULT_SUCCESS;
 	}};
 
@@ -49,8 +49,8 @@ constexpr auto STALL = QueryMetric{
 		if (!cache.euAvail || cache.euSample.scaleFactor == 0) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 		}
-		out = std::format("{}", static_cast<double>(cache.euSample.euStall) /
-									static_cast<double>(cache.euSample.scaleFactor));
+		out = xpum::compat::format("{}", static_cast<double>(cache.euSample.euStall) /
+											 static_cast<double>(cache.euSample.scaleFactor));
 		return ZE_RESULT_SUCCESS;
 	}};
 
@@ -65,8 +65,8 @@ constexpr auto IDLE = QueryMetric{
 		if (!cache.euAvail || cache.euSample.scaleFactor == 0) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 		}
-		out = std::format("{}",
-						  static_cast<double>(cache.euSample.euIdle) / static_cast<double>(cache.euSample.scaleFactor));
+		out = xpum::compat::format("{}", static_cast<double>(cache.euSample.euIdle) /
+											 static_cast<double>(cache.euSample.scaleFactor));
 		return ZE_RESULT_SUCCESS;
 	}};
 
