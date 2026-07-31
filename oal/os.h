@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -54,6 +55,17 @@ int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
 inline std::mutex progressPrintMutex;
+
+// Discover a PCI device's hwmon "<prefix>N_input" nodes (OS-specific sysfs
+// traversal, kept in the OAL so hal stays portable). Returns a map of
+// zero-based sensor index ("<prefix>1_input" -> 0, "<prefix>2_input" -> 1, ...)
+// to the absolute "<prefix>N_input" path, taken from the first hwmon node under
+// the device that yields a valid entry. The fan RPM fallback passes prefix
+// "fan"; hwmon exposes fanN_input directly (there is no fanN_label). The Linux
+// implementation lives in oal/lin/hwmon_fan.cpp; the Windows stub
+// (oal/win/hwmon_fan.cpp) returns an empty map, so the fan fallback is simply
+// absent on Windows.
+std::map<uint32_t, std::string> getHwmonInputPaths(const std::string &pciBdf, const std::string &subsystemPrefix);
 
 #ifdef _WIN32
 #include "win/oswin.h"
