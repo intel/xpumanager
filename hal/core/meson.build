@@ -13,6 +13,7 @@ hal_core_sources = files(
   'fan.cpp',
   'firmware.cpp',
   'frequency.cpp',
+  'hwmon_temperature_utils.cpp',
   'memory.cpp',
   'metric.cpp',
   'pci.cpp',

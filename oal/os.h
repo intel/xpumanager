@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -54,6 +55,17 @@ int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress);
 inline std::mutex progressPrintMutex;
+
+// Discover the hwmon nodes exposed by a PCI device and return, for the given
+// sensor-subsystem prefix, a map of {hwmon label -> absolute "<prefix>N_input"
+// path}. On Linux this walks /sys/bus/pci/devices/<pciBdf>/hwmon/hwmon* and, for
+// every strict "<subsystemPrefix><N>_label" file, records the label against its
+// sibling "<subsystemPrefix><N>_input" path (first match wins). For temperature
+// the caller passes subsystemPrefix "temp" and looks up labels such as "pkg" /
+// "vram"; the prefix is parameterized so the discovery is reusable for other
+// hwmon subsystems. On platforms without sysfs (Windows) this returns an empty
+// map.
+std::map<std::string, std::string> getHwmonLabelPaths(const std::string &pciBdf, const std::string &subsystemPrefix);
 
 #ifdef _WIN32
 #include "win/oswin.h"
