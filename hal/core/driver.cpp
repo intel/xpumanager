@@ -160,7 +160,7 @@ ze_result_t driver::zesInitialize()
  *
  * @return ze_result_t indicating success or failure.
  */
-ze_result_t driver::init() // NOLINT(readability-function-cognitive-complexity)
+ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cognitive-complexity)
 {
 	TRACING(); // NOLINT(misc-const-correctness)
 
@@ -194,6 +194,21 @@ ze_result_t driver::init() // NOLINT(readability-function-cognitive-complexity)
 	result = zesInitialize();
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
+	}
+
+	// On the config --reset path the Level Zero compute runtime (zeInit) is
+	// deliberately skipped: it creates execution queues on the device that
+	// become stale after the reset and trigger warnings during cleanup at
+	// process exit. Enumerating purely through sysman (zesInit) avoids
+	// creating those queues while still giving us the handles needed to
+	// perform the reset.
+	if (skipZeInit) {
+		result = smOnlyEnumerate();
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		initialized = true;
+		return ZE_RESULT_SUCCESS;
 	}
 
 	// In survivability mode, zeInit might fail. However, we should not exit early
@@ -299,6 +314,56 @@ ze_result_t driver::init() // NOLINT(readability-function-cognitive-complexity)
 	}
 
 	initialized = true;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Enumerates devices using sysman handles only (no zeInit).
+ *
+ * Mirrors the device set that findDevice()/findOneToken() expect: a single
+ * devGroup holding every sysman device, each initialised through smDevInit()
+ * so its BDF, PCI, and VF instances are usable. Because the Level Zero compute
+ * runtime is never initialised, the ze* handles remain null and the device is
+ * driven purely through sysman — which is all that resetDevice() needs.
+ *
+ * zesInitialize() must have already populated totalZesDevices /
+ * totalZesDevicesCount before this is called.
+ *
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t driver::smOnlyEnumerate()
+{
+	TRACING();
+
+	if (totalZesDevices == nullptr || totalZesDevicesCount == 0) {
+		ERR("No sysman devices available for reset-path enumeration.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	// A single synthetic driver group holds all sysman devices. findOneToken()
+	// walks devs[0..driverCount) and indexes devices sequentially, which is the
+	// same ordering the compute-runtime path produces for a single driver.
+	driverCount = 1;
+	std::vector<devGroup> localDevs(driverCount);
+	localDevs[0].totalDevicesCount = totalZesDevicesCount;
+	localDevs[0].dev.resize(totalZesDevicesCount);
+	localDevs[0].zeDevices.assign(totalZesDevicesCount, nullptr);
+
+	for (uint32_t j = 0; j < totalZesDevicesCount; j++) {
+		ze_result_t result = localDevs[0].dev[j].smDevInit(zesDrivers[0], totalZesDevices[j]);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to sysman-initialize device {} on reset path: 0x{:X} ({})\n", j, result,
+				l0_error_to_string(result));
+			return result;
+		}
+	}
+
+	// Copy from local vector to raw array for DLL boundary (matches init()).
+	devs = new devGroup[driverCount];
+	for (uint32_t i = 0; i < driverCount; i++) {
+		devs[i] = std::move(localDevs[i]);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 

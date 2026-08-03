@@ -120,7 +120,30 @@ int main(int argc, char *argv[])
 		setPrintLvl(&arg, LogLevel::NO_PRINT);
 	}
 
-	ze_result_t result = arg.sm.init();
+	// Detect the "config --reset" invocation before driver init. On that path we
+	// skip initializing the Level Zero compute runtime (zeInit) so it never opens
+	// render fds / GuC exec queues on a device we are about to reset; otherwise
+	// the kernel emits an xe "Missing outer runtime PM protection" WARN when the
+	// stale queues are torn down at process exit. Enumeration falls back to pure
+	// sysman, which is sufficient for the reset. --coldreset does not create
+	// compute queues on the target either, but is addressed by BDF and follows a
+	// different code path, so it is left on the normal init path.
+	bool skipZeInit = false;
+	{
+		bool sawConfig = false;
+		bool sawReset = false;
+		for (int i = 1; i < argc; i++) {
+			const std::string av{argv[i]};
+			if (av == "config") {
+				sawConfig = true;
+			} else if (av == "--reset") {
+				sawReset = true;
+			}
+		}
+		skipZeInit = sawConfig && sawReset;
+	}
+
+	ze_result_t result = arg.sm.init(skipZeInit);
 	switch (result) {
 	case ZE_RESULT_SUCCESS:
 		DBG("Sysman driver initialized successfully.\n");

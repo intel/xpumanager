@@ -29,6 +29,9 @@ class LIBXPUM_API driver
 {
 private:
 	ze_result_t findOneToken(std::string_view token, std::vector<devInfo> *devList);
+	// Builds the device list from sysman handles only (no zeInit). Used by the
+	// config --reset path; see init(bool skipZeInit).
+	ze_result_t smOnlyEnumerate();
 	bool initialized;
 	uint32_t driverCount;
 	uint32_t totalZesDevicesCount;
@@ -47,7 +50,13 @@ public:
 	void setPrintLvl(LogLevel lvl);
 	LogLevel getPrintLvl();
 	void forceDebugSync(LogLevel lvl);
-	ze_result_t init();
+	// When skipZeInit is true the Level Zero compute runtime (zeInit) is not
+	// initialized; only sysman (zesInit) is brought up and devices are
+	// enumerated via sysman. This is used on the config --reset path so the
+	// compute runtime never opens render fds / GuC exec queues on a device we
+	// are about to reset (which otherwise triggers an xe "Missing outer runtime
+	// PM protection" kernel WARN when the stale queues are torn down at exit).
+	ze_result_t init(bool skipZeInit = false);
 	bool isDriverLoaded() { return initialized; }
 	ze_result_t zeInitialize();
 	ze_result_t zesInitialize();

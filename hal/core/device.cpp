@@ -823,6 +823,19 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	std::string drmPath;
 	zesDriver = zesDri;
 	zesDevice = zesDev;
+
+	// Determine integrated vs. discrete from sysman. The full init() path also sets
+	// this later from zeDeviceProperties (see init()), but on the config --reset path
+	// zeInit is skipped, so this is the only source of the flag. zes_device_properties_t.core
+	// is a ze_device_properties_t and carries the same ZE_DEVICE_PROPERTY_FLAG_INTEGRATED bit,
+	// so isIGPU() stays correct and iGPU-guarded commands (e.g. --reset) are gated as expected.
+	zes_device_properties_t zesProps = {};
+	zesProps.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	ze_result_t propsRes = zesGetDevProps(zesDev, &zesProps);
+	if (propsRes != ZE_RESULT_SUCCESS) {
+		return propsRes;
+	}
+	igpu = ((zesProps.core.flags & ZE_DEVICE_PROPERTY_FLAG_INTEGRATED) != 0);
 	/*
 	 * For whichever inherited classes of sysman that support the init function,
 	 * call it so that their data can be used later.
