@@ -660,11 +660,18 @@ typedef struct
 
 typedef struct
 {
-	zes_device_properties_t base;					 // gen: flatten
-	zes_device_ext_properties_t extended_properties; // gen: flatten
-	sysman_device_core_properties_t core;			 // YAML parsing helper for base.core.uuid
-	sysman_uuid_t uuid;								 // YAML parsing helper for extended_properties.uuid
+	zes_device_properties_t base;					  // gen: flatten
+	zes_device_ext_properties_t extended_properties;  // gen: flatten
+	sysman_device_core_properties_t core;			  // YAML parsing helper for base.core.uuid
+	sysman_uuid_t uuid;								  // YAML parsing helper for extended_properties.uuid
+	zes_oem_serial_id_ext_properties_t oem_serial_id; // gen: flatten
 } sysman_device_properties_info_t;
+
+typedef struct
+{
+	zes_device_state_t base; // gen: flatten
+	zes_device_ext_state_t extended_state;
+} sysman_device_state_info_t;
 
 typedef struct
 {
@@ -672,7 +679,7 @@ typedef struct
 	uint32_t unsupported_features_count;
 	sysman_unsupported_feature_t *unsupported_features;
 	sysman_device_properties_info_t *properties;
-	zes_device_state_t *state;
+	sysman_device_state_info_t *state;
 	sysman_pci_info_t pci;	// gen: key=PCI
 	sysman_ecc_info_t *ecc; // gen: key=ECC
 	sysman_overclock_info_t *overclock;

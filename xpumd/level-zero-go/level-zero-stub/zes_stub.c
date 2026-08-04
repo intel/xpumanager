@@ -263,13 +263,26 @@ ze_result_t zesDeviceGetProperties(zes_device_handle_t hDevice, zes_device_prope
 	*pProperties = dev->properties->base;
 	pProperties->stype = stype;
 	pProperties->pNext = pNext;
-	if (pNext) {
-		zes_device_ext_properties_t *ext = (zes_device_ext_properties_t *)pNext;
-		if (ext->stype == ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES) {
-			pNext = ext->pNext;
+	for (void *cur = pNext; cur;) {
+		// All Sysman structs (should) have stype as first member
+		zes_structure_type_t *cur_stype = (zes_structure_type_t *)cur;
+
+		if (*cur_stype == ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES) {
+			zes_device_ext_properties_t *ext = (zes_device_ext_properties_t *)cur;
+			void *next = ext->pNext;
 			*ext = dev->properties->extended_properties;
 			ext->stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_PROPERTIES;
-			ext->pNext = pNext;
+			ext->pNext = next;
+			cur = next;
+		} else if (*cur_stype == ZES_STRUCTURE_TYPE_OEM_SERIAL_ID_EXT_PROPERTIES) {
+			zes_oem_serial_id_ext_properties_t *ext = (zes_oem_serial_id_ext_properties_t *)cur;
+			void *next = ext->pNext;
+			*ext = dev->properties->oem_serial_id;
+			ext->stype = ZES_STRUCTURE_TYPE_OEM_SERIAL_ID_EXT_PROPERTIES;
+			ext->pNext = next;
+			cur = next;
+		} else {
+			break;
 		}
 	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
@@ -291,9 +304,18 @@ ze_result_t zesDeviceGetState(zes_device_handle_t hDevice, zes_device_state_t *p
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	zes_structure_type_t stype = pState->stype;
 	const void *pNext = pState->pNext;
-	*pState = *dev->state;
+	*pState = dev->state->base;
 	pState->stype = stype;
 	pState->pNext = pNext;
+	if (pNext) {
+		zes_device_ext_state_t *ext = (zes_device_ext_state_t *)pNext;
+		if (ext->stype == ZES_STRUCTURE_TYPE_DEVICE_EXT_STATE) {
+			pNext = ext->pNext;
+			*ext = dev->state->extended_state;
+			ext->stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_STATE;
+			ext->pNext = pNext;
+		}
+	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 

@@ -27,6 +27,10 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_ras_state"
         Version: 65536
+      - Name: "ZES_extension_device_state"
+        Version: 65536
+      - Name: "ZES_extension_oem_serial_id"
+        Version: 65536
 
     # Function-level return-value overrides for driver-scoped calls.
     # Set a non-zero ze_result_t value to inject an error.
@@ -83,11 +87,16 @@ Drivers:
             Id: "12345678-000a-00b0-0c00-00000000d000"
           Type: 1  # ZES_DEVICE_TYPE_GPU
           Flags: 1  # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
+          # Extended properties for ZES_extension_oem_serial_id
+          OemSerialId: "OEM-SN-0001"
 
         # zesDeviceGetState (nullable)
         State:
           Reset: 0
           Repaired: 1  # ZES_REPAIR_STATUS_NOT_PERFORMED
+          # Extended state for ZES_extension_device_state
+          ExtendedState:
+            Flags: 1  # ZES_DEVICE_STATE_EXT_FLAG_NORMAL
 
         # PCI info
         PCI:

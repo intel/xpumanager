@@ -343,15 +343,25 @@ static const cyaml_schema_field_t sysman_device_properties_info_fields[] = {
 	CYAML_FIELD_MAPPING("Core", CYAML_FLAG_OPTIONAL, sysman_device_properties_info_t, core,
 						sysman_device_core_properties_fields),
 	CYAML_FIELD_MAPPING("Uuid", CYAML_FLAG_OPTIONAL, sysman_device_properties_info_t, uuid, sysman_uuid_fields),
+	CYAML_FIELD_STRING("OemSerialId", CYAML_FLAG_OPTIONAL, sysman_device_properties_info_t, oem_serial_id.oemSerialId,
+					   0),
 	CYAML_FIELD_END};
 static const cyaml_schema_value_t sysman_device_properties_info_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_device_properties_info_t, sysman_device_properties_info_fields)};
 
-static const cyaml_schema_field_t zes_device_state_fields[] = {
-	CYAML_FIELD_UINT("Reset", CYAML_FLAG_OPTIONAL, zes_device_state_t, reset),
-	CYAML_FIELD_UINT("Repaired", CYAML_FLAG_OPTIONAL, zes_device_state_t, repaired), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_device_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_device_state_t, zes_device_state_fields)};
+static const cyaml_schema_field_t zes_device_ext_state_fields[] = {
+	CYAML_FIELD_UINT("Flags", CYAML_FLAG_OPTIONAL, zes_device_ext_state_t, flags), CYAML_FIELD_END};
+static const cyaml_schema_value_t zes_device_ext_state_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_device_ext_state_t, zes_device_ext_state_fields)};
+
+static const cyaml_schema_field_t sysman_device_state_info_fields[] = {
+	CYAML_FIELD_UINT("Reset", CYAML_FLAG_OPTIONAL, sysman_device_state_info_t, base.reset),
+	CYAML_FIELD_UINT("Repaired", CYAML_FLAG_OPTIONAL, sysman_device_state_info_t, base.repaired),
+	CYAML_FIELD_MAPPING("ExtendedState", CYAML_FLAG_OPTIONAL, sysman_device_state_info_t, extended_state,
+						zes_device_ext_state_fields),
+	CYAML_FIELD_END};
+static const cyaml_schema_value_t sysman_device_state_info_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_device_state_info_t, sysman_device_state_info_fields)};
 
 static const cyaml_schema_field_t zes_pci_address_fields[] = {
 	CYAML_FIELD_UINT("Domain", CYAML_FLAG_OPTIONAL, zes_pci_address_t, domain),
@@ -1141,7 +1151,8 @@ static const cyaml_schema_field_t sysman_device_state_fields[] = {
 							   CYAML_UNLIMITED),
 	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, properties,
 							sysman_device_properties_info_fields),
-	CYAML_FIELD_MAPPING_PTR("State", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, state, zes_device_state_fields),
+	CYAML_FIELD_MAPPING_PTR("State", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, state,
+							sysman_device_state_info_fields),
 	CYAML_FIELD_MAPPING("PCI", CYAML_FLAG_OPTIONAL, sysman_device_state_t, pci, sysman_pci_info_fields),
 	CYAML_FIELD_MAPPING_PTR("ECC", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, ecc, sysman_ecc_info_fields),
 	CYAML_FIELD_MAPPING_PTR("Overclock", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, overclock,

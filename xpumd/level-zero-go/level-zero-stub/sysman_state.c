@@ -545,10 +545,11 @@ static bool parse_uuid(const char str[SYSMAN_UUID_STR_SIZE], uint8_t (*id)[16])
 	return true;
 }
 
-// Special post-parse handler for UUID fields. Resolves UUID strings parsed
-// from YAML into the binary fields in the ze/zes structs.
+// Special post-parse handler for device property fields that cannot be
+// mapped directly from YAML: resolves UUID strings into the binary fields in
+// the ze/zes structs, and derives the OEM serial ID length from its string.
 // Must be called on the freshly parsed tree before it is donated to g_sysman_state.
-static bool resolve_uuids(sysman_state_t *state)
+static bool resolve_device_properties(sysman_state_t *state)
 {
 	for (uint32_t d = 0; d < state->system.drivers_count; d++) {
 		sysman_drivers_state_t *drv = &state->system.drivers[d];
@@ -567,6 +568,10 @@ static bool resolve_uuids(sysman_state_t *state)
 				LOG_ERROR("invalid Uuid '%s' in device %u of driver %u", p->uuid.id, i, d);
 				return false;
 			}
+			// Derive the OEM serial ID length from the parsed string, since
+			// only the string itself is configurable via YAML.
+			p->oem_serial_id.length =
+				(uint16_t)strnlen(p->oem_serial_id.oemSerialId, sizeof(p->oem_serial_id.oemSerialId));
 		}
 	}
 	return true;
@@ -619,7 +624,7 @@ static int sysman_state_load_locked(const char *path)
 		return 0;
 	}
 
-	if (!resolve_uuids(parsed)) {
+	if (!resolve_device_properties(parsed)) {
 		free_system_state(&parsed->system);
 		free(parsed);
 		return -1;
