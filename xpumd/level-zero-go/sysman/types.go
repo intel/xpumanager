@@ -12,74 +12,110 @@ import (
 
 // driverHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-handle-t
+//
+// Handle to a driver instance.
 type driverHandle *_Ctype_struct__ze_driver_handle_t
 
 // deviceHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-handle-t
+//
+// Handle of device object.
 type deviceHandle *_Ctype_struct__ze_device_handle_t
 
 // schedHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-handle-t
+//
+// Handle for a Sysman device scheduler queue.
 type schedHandle *_Ctype_struct__zes_sched_handle_t
 
 // perfHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-perf-handle-t
+//
+// Handle for a Sysman device performance factors.
 type perfHandle *_Ctype_struct__zes_perf_handle_t
 
 // pwrHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pwr-handle-t
+//
+// Handle for a Sysman device power domain.
 type pwrHandle *_Ctype_struct__zes_pwr_handle_t
 
 // freqHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-handle-t
+//
+// Handle for a Sysman device frequency domain.
 type freqHandle *_Ctype_struct__zes_freq_handle_t
 
 // engineHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-handle-t
+//
+// Handle for a Sysman device engine group.
 type engineHandle *_Ctype_struct__zes_engine_handle_t
 
 // standbyHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-handle-t
+//
+// Handle for a Sysman device standby control.
 type standbyHandle *_Ctype_struct__zes_standby_handle_t
 
 // firmwareHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-firmware-handle-t
+//
+// Handle for a Sysman device firmware.
 type firmwareHandle *_Ctype_struct__zes_firmware_handle_t
 
 // memHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-handle-t
+//
+// Handle for a Sysman device memory module.
 type memHandle *_Ctype_struct__zes_mem_handle_t
 
 // fabricPortHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-handle-t
+//
+// Handle for a Sysman fabric port.
 type fabricPortHandle *_Ctype_struct__zes_fabric_port_handle_t
 
 // tempHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-handle-t
+//
+// Handle for a Sysman device temperature sensor.
 type tempHandle *_Ctype_struct__zes_temp_handle_t
 
 // psuHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-handle-t
+//
+// Handle for a Sysman device power supply.
 type psuHandle *_Ctype_struct__zes_psu_handle_t
 
 // fanHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-handle-t
+//
+// Handle for a Sysman device fan.
 type fanHandle *_Ctype_struct__zes_fan_handle_t
 
 // ledHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-handle-t
+//
+// Handle for a Sysman device LED.
 type ledHandle *_Ctype_struct__zes_led_handle_t
 
 // rasHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-handle-t
+//
+// Handle for a Sysman device RAS error set.
 type rasHandle *_Ctype_struct__zes_ras_handle_t
 
 // diagHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-handle-t
+//
+// Handle for a Sysman device diagnostics test suite.
 type diagHandle *_Ctype_struct__zes_diag_handle_t
 
 // overclockHandle declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-handle-t
+//
+// Handle for a Sysman device overclock domain.
 type overclockHandle *_Ctype_struct__zes_overclock_handle_t
 
 // DriverExtensionProperties declared in:
@@ -226,8 +262,6 @@ type PciBarProperties struct {
 
 // PciBarProperties12 declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties12-t
-//
-// Properties of a pci bar, including the resizable bar.
 type PciBarProperties12 struct {
 	stype                 structureType
 	pnext                 unsafe.Pointer

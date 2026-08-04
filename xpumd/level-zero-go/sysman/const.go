@@ -52,6 +52,8 @@ const (
 
 // structureType declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-structure-type-t
+//
+// Defines structure types.
 type structureType uint32
 
 // structureType enumeration from level-zero/zes_api.h:170
