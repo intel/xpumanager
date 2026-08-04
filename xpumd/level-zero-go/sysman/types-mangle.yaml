@@ -72,6 +72,15 @@ structs:
         newType: RepairStatus
       - name: Reset
         newType: ResetReasonFlags
+  - name: DeviceExtState
+    fields:
+      - name: Flags
+        newType: DeviceStateExtFlags
+  - name: OemSerialIdExtProperties
+    fields:
+      - name: OemSerialId
+        typeAssert: "[1024]int8"
+        newType: "[1024]byte"
   - name: DiagTest
     fields:
       - name: Name
@@ -299,6 +308,8 @@ types:
     newType: ResetReasonFlag
   - name: DevicePropertyFlags
     newType: DevicePropertyFlag
+  - name: DeviceStateExtFlags
+    newType: DeviceStateExtFlag
   - name: PciLinkQualIssueFlags
     newType: PciLinkQualIssueFlag
   - name: PciLinkStabIssueFlags
