@@ -232,7 +232,7 @@ types:
   - name: "*"
     newComment: |-
       {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}

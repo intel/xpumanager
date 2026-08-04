@@ -10,7 +10,7 @@ types:
   - name: "*"
     newComment: |-
       {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}

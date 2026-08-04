@@ -16,8 +16,9 @@ import (
 
 // doxygen represents a Doxygen XML document.
 type doxygen struct {
-	Members      []memberDef `xml:"compounddef>sectiondef>memberdef"`
-	golanMembers map[string]memberBase
+	Members []memberDef `xml:"compounddef>sectiondef>memberdef"`
+	// names is a lookup-table from the C name to its corresponding member
+	names map[string]memberBase
 }
 
 // memberBase is a base struct for common member and value fields
@@ -52,7 +53,7 @@ type listItem struct {
 	Para paraList `xml:"para"`
 }
 
-func loadDoxygenXml(path, prefix string) (*doxygen, error) {
+func loadDoxygenXml(path string) (*doxygen, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -63,62 +64,42 @@ func loadDoxygenXml(path, prefix string) (*doxygen, error) {
 		return nil, err
 	}
 
-	doc.golanMembers, err = doc.membersMap(prefix)
+	doc.names, err = doc.membersMap()
 	if err != nil {
 		return nil, err
 	}
 	return &doc, nil
 }
 
-func (d *doxygen) getMemberByGoName(goName string) (*memberBase, bool) {
-	m, ok := d.golanMembers[goName]
+func (d *doxygen) getMemberByName(name string) *memberBase {
+	m, ok := d.names[name]
 	if !ok {
-		return nil, false
+		return nil
 	}
-	return &m, true
+	return &m
 }
 
-// membersMap returns a map of golang-name to members and enums.
+// membersMap returns a name based lookup table (map) for the members.
 // NOTE: We simplify and rely on the fact that there are no name clashes
 // between members and enums.
-func (d *doxygen) membersMap(prefix string) (map[string]memberBase, error) {
+func (d *doxygen) membersMap() (map[string]memberBase, error) {
 	members := make(map[string]memberBase, len(d.Members))
 	for _, member := range d.Members {
-		gn := member.goName(member.Kind, prefix)
-		if m, exists := members[gn]; exists {
+		if m, exists := members[member.Name]; exists {
 			// We shouldn't have duplicate members with the same name.
-			return nil, fmt.Errorf("clashing go name: %s (%s and %s)", gn, m.Name, member.Name)
+			return nil, fmt.Errorf("clashing C name: %s (%s and %s)", member.Name, m.Name, member.Name)
 		}
-		members[gn] = member.memberBase
+		members[member.Name] = member.memberBase
 
 		// Add enum values if any
 		for _, enum := range member.Enums {
-			egn := enum.goName("define", prefix)
-			if _, exists := members[egn]; exists {
-				return nil, fmt.Errorf("clashing go name: %s (%s and %s)", egn, enum.Name, member.Name)
+			if _, exists := members[enum.Name]; exists {
+				return nil, fmt.Errorf("clashing C name: %s (%s and %s)", enum.Name, enum.Name, member.Name)
 			}
-			members[egn] = enum
+			members[enum.Name] = enum
 		}
 	}
 	return members, nil
-}
-
-func (m *memberBase) goName(kind, prefix string) string {
-	switch kind {
-	case "function":
-		// Expect the function names not to be mangled
-		return m.Name
-	case "define": // like ZES_ENGINE_TYPE_FLAG_RENDER
-		return strings.TrimPrefix(m.Name, strings.ToUpper(prefix)+"_")
-	case "enum": // _zes_engine_type_flag_t
-		trimmed := strings.TrimSuffix(strings.TrimPrefix(m.Name, "_"+prefix+"_"), "_t")
-		return "_" + snakeToCamel(trimmed)
-	case "typedef": // like zes_engine_type_flags_t
-		trimmed := strings.TrimSuffix(strings.TrimPrefix(m.Name, prefix+"_"), "_t")
-		return snakeToCamel(trimmed)
-	default:
-		return ""
-	}
 }
 
 func (d *description) String() string {
@@ -166,12 +147,4 @@ func (l *paraList) indentedString(indent int) string {
 		}
 	}
 	return strings.Join(parts, "\n\n")
-}
-
-func snakeToCamel(s string) string {
-	parts := strings.Split(s, "_")
-	for i, part := range parts {
-		parts[i] = strings.ToUpper(part[:1]) + part[1:]
-	}
-	return strings.Join(parts, "")
 }

@@ -33,7 +33,7 @@ type config struct {
 }
 
 type options struct {
-	// Prefix to strip when converting C names to Go names.
+	// Prefix to strip/add when converting C names to Go names and vice versa.
 	Prefix string `yaml:"prefix"`
 	// DoxygenPath is the path to the Doxygen XML output file to read documentation from.
 	DoxygenPath string `yaml:"doxygenPath"`
@@ -99,7 +99,7 @@ func main() {
 			p = filepath.Join(filepath.Dir(*mappingsPath), p)
 		}
 		slog.Info("Loading Doxygen XML", "path", p)
-		dox, err = loadDoxygenXml(p, cfg.Options.Prefix)
+		dox, err = loadDoxygenXml(p)
 		if err != nil {
 			log.Fatalf("Failed to load Doxygen file %s: %v", p, err)
 		}
@@ -285,12 +285,13 @@ func (t *typeRewriter) rewriteType(tr *typeRewriteConfig, genDecl *ast.GenDecl, 
 	// Rewrite comment
 	if tr.NewComment != "" {
 		name := typeSpec.Name.Name
+		cName := typeNameToCName(name, t.config.Options.Prefix)
 		vars := map[string]any{
 			"Name":      name,
-			"DocAnchor": typeNameToL0DocsAnchor(name),
+			"DocAnchor": cNameToL0DocsAnchor(cName),
 		}
 		if t.dox != nil {
-			if m, found := t.dox.getMemberByGoName(name); found {
+			if m := t.dox.getMemberByName(cName); m != nil {
 				vars["Doxygen"] = m
 			}
 		}
@@ -316,7 +317,8 @@ func (t *typeRewriter) rewriteValue(tr *valueRewriteConfig, genDecl *ast.GenDecl
 			"Names": names,
 		}
 		if t.dox != nil {
-			if m, found := t.dox.getMemberByGoName(names[0]); found {
+			cName := valueNameToCName(names[0], t.config.Options.Prefix)
+			if m := t.dox.getMemberByName(cName); m != nil {
 				vars["Doxygen"] = m
 			}
 		}
@@ -394,23 +396,40 @@ func newCommentGroup(text string, pos token.Pos) *ast.CommentGroup {
 	}
 }
 
-func typeNameToL0DocsAnchor(n string) string {
-	if strings.HasSuffix(n, "Flag") {
-		// The anchors of the singular flag types in the L0 docs are strange
-		// unpredictable form like "#_CPPv426zes_device_property_flag_t". Thus,
-		// use the anchor of the plural type instead.
-		n = n + "s"
-	}
-
+func camelToSnake(n string) string {
 	// Multiple capitals followed by lowercase
 	re1 := regexp.MustCompile("([A-Z]+)([A-Z][a-z])")
-	n = re1.ReplaceAllString(n, "${1}-${2}")
+	n = re1.ReplaceAllString(n, "${1}_${2}")
 
 	// Lowercase or digit followed by capital
 	re2 := regexp.MustCompile("([a-z0-9])([A-Z])")
-	n = re2.ReplaceAllString(n, "${1}-${2}")
+	n = re2.ReplaceAllString(n, "${1}_${2}")
 
-	return strings.ToLower(n) + "-t"
+	return strings.ToLower(n)
+}
+
+// typeNameToCName guesses the original C type name from the Go type name
+// (e.g. "EngineTypeFlags" -> "zes_engine_type_flags_t").
+func typeNameToCName(n, prefix string) string {
+	return prefix + "_" + camelToSnake(n) + "_t"
+}
+
+// valueNameToCName guesses the original C constant/enum-value name from the Go name
+// (e.g. "ENGINE_TYPE_FLAG_COMPUTE" -> "ZES_ENGINE_TYPE_FLAG_COMPUTE").
+func valueNameToCName(n, prefix string) string {
+	return strings.ToUpper(prefix) + "_" + n
+}
+
+// cNameToL0DocsAnchor derives the L0 docs anchor directly from the original C type name.
+func cNameToL0DocsAnchor(n string) string {
+	if strings.HasSuffix(n, "_flag_t") {
+		// The anchors of the singular flag types in the L0 docs are strange
+		// unpredictable form like "#_CPPv426zes_device_property_flag_t". Thus,
+		// use the anchor of the plural type instead.
+		n = strings.TrimSuffix(n, "_flag_t") + "_flags_t"
+	}
+
+	return strings.ToLower(strings.ReplaceAll(n, "_", "-"))
 }
 
 func docFromDoxygen(vars map[string]any) string {
