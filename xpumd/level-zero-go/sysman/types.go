@@ -159,6 +159,8 @@ type Uuid struct {
 
 // DeviceBaseProperties is the device properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
+//
+// Device properties.
 type DeviceBaseProperties struct {
 	stype         structureType
 	pnext         unsafe.Pointer
@@ -225,6 +227,8 @@ type PciSpeed struct {
 
 // PciBaseProperties is the PCI properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-properties-t
+//
+// Static PCI properties.
 type PciBaseProperties struct {
 	stype                 structureType
 	pnext                 unsafe.Pointer
@@ -238,6 +242,8 @@ type PciBaseProperties struct {
 
 // PciBaseState is the PCI state type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
+//
+// Dynamic PCI state.
 type PciBaseState struct {
 	stype           structureType
 	pnext           unsafe.Pointer
@@ -261,7 +267,9 @@ type PciBarProperties struct {
 }
 
 // PciBarProperties12 declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties12-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties-1-2-t
+//
+// Properties of a pci bar, including the resizable bar.
 type PciBarProperties12 struct {
 	stype                 structureType
 	pnext                 unsafe.Pointer
@@ -390,6 +398,8 @@ type DeviceEccProperties struct {
 
 // EngineBaseProperties is the engine properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
+//
+// Engine group properties.
 type EngineBaseProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
@@ -759,6 +769,8 @@ type PerfProperties struct {
 
 // PowerBaseProperties is the power properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-properties-t
+//
+// Properties related to device power settings.
 type PowerBaseProperties struct {
 	stype                      structureType
 	pnext                      unsafe.Pointer
