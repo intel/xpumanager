@@ -345,7 +345,7 @@ Drivers:
               Enable: true
               Threshold: 10.5
               ProcessId: 4321
-            Limits:
+            LimitsExt:
               - Level: 1 # ZES_POWER_LEVEL_SUSTAINED
                 Source: 0 # ZES_POWER_SOURCE_ANY
                 LimitUnit: 0 # ZES_LIMIT_UNIT_UNKNOWN
@@ -367,7 +367,7 @@ Drivers:
             Usage:
               InstantPower: 180000
               AveragePower: 160000
-            Limit: 200000
+            LimitExt2: 200000
           - Properties:
               OnSubdevice: true
               SubdeviceId: 1

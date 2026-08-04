@@ -540,7 +540,7 @@ func (d *DeviceInfo) collectPowerInfo(device *sysman.Device) {
 		if limits, err := domain.GetLimitsExt(); err != nil {
 			d.recordError("PowerDomain.GetLimitsExt", err)
 		} else {
-			result[i].Limits = limits
+			result[i].LimitsExt = limits
 		}
 		if usage, err := domain.GetUsage(); err != nil {
 			d.recordError("PowerDomain.GetUsage", err)
@@ -550,7 +550,7 @@ func (d *DeviceInfo) collectPowerInfo(device *sysman.Device) {
 		if limit, err := domain.GetLimitsExt2(); err != nil {
 			d.recordError("PowerDomain.GetLimitsExt2", err)
 		} else {
-			result[i].Limit = &limit
+			result[i].LimitExt2 = &limit
 		}
 	}
 

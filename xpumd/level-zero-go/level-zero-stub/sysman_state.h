@@ -581,11 +581,11 @@ typedef struct
 	sysman_power_rv_t return_values;
 	sysman_power_properties_info_t *properties;
 	zes_power_energy_counter_t *energy_counter;
-	uint32_t limits_count;
-	zes_power_limit_ext_desc_t *limits;
+	uint32_t limits_ext_count;
+	zes_power_limit_ext_desc_t *limits_ext;
 	zes_energy_threshold_t *energy_threshold;
 	sysman_power_usage_t *usage;
-	uint32_t *limit;
+	uint32_t *limit_ext2;
 } sysman_power_t;
 
 typedef struct

@@ -945,12 +945,12 @@ static const cyaml_schema_field_t sysman_power_fields[] = {
 							sysman_power_properties_info_fields),
 	CYAML_FIELD_MAPPING_PTR("EnergyCounter", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, energy_counter,
 							zes_power_energy_counter_fields),
-	CYAML_FIELD_SEQUENCE_COUNT("Limits", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, limits, limits_count,
+	CYAML_FIELD_SEQUENCE_COUNT("LimitsExt", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, limits_ext, limits_ext_count,
 							   &zes_power_limit_ext_desc_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_MAPPING_PTR("EnergyThreshold", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, energy_threshold,
 							zes_energy_threshold_fields),
 	CYAML_FIELD_MAPPING_PTR("Usage", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, usage, sysman_power_usage_fields),
-	CYAML_FIELD_UINT_PTR("Limit", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, limit),
+	CYAML_FIELD_UINT_PTR("LimitExt2", SYSMAN_NULLABLE_PTR_FLAGS, sysman_power_t, limit_ext2),
 	CYAML_FIELD_END};
 static const cyaml_schema_value_t sysman_power_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_power_t, sysman_power_fields)};

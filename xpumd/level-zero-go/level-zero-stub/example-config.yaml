@@ -666,7 +666,7 @@ Drivers:
             Threshold: 10.5
             ProcessId: 0
           # zesPowerGetLimitsExt
-          Limits:
+          LimitsExt:
           - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
             Source: 0  # ZES_POWER_SOURCE_ANY
             LimitUnit: 0  # ZES_LIMIT_UNIT_UNKNOWN
@@ -690,7 +690,7 @@ Drivers:
             InstantPower: 180000
             AveragePower: 160000
           # zesPowerGetLimitsExt2 (nullable)
-          Limit: 200000
+          LimitExt2: 200000
           ReturnValues:
             zesPowerGetProperties: 0
             zesPowerGetEnergyCounter: 0

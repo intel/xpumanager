@@ -2149,7 +2149,7 @@ ze_result_t zesPowerGetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (pw->return_values.zesPowerGetLimitsExt)
 		return sysman_unlock_and_return(pw->return_values.zesPowerGetLimitsExt);
-	uint32_t n = pw->limits_count;
+	uint32_t n = pw->limits_ext_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	if (!pSustained) {
@@ -2158,7 +2158,7 @@ ze_result_t zesPowerGetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 	}
 	n = (*pCount < n) ? *pCount : n;
 	for (uint32_t i = 0; i < n; i++)
-		pSustained[i] = pw->limits[i];
+		pSustained[i] = pw->limits_ext[i];
 	*pCount = n;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
@@ -2207,11 +2207,11 @@ ze_result_t zesPowerGetLimitsExt2(zes_pwr_handle_t hPower, uint32_t *pLimit)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (pw->return_values.zesPowerGetLimitsExt2)
 		return sysman_unlock_and_return(pw->return_values.zesPowerGetLimitsExt2);
-	if (!(pw->limit))
+	if (!(pw->limit_ext2))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 	if (!pLimit)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	*pLimit = *pw->limit;
+	*pLimit = *pw->limit_ext2;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 

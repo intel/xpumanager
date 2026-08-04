@@ -387,7 +387,7 @@ static void free_power_domains(sysman_device_state_t *dev)
 		for (uint32_t j = 0; j < dev->power_domains_count; j++) {
 			free(dev->power_domains[j].properties);
 			free(dev->power_domains[j].energy_counter);
-			free(dev->power_domains[j].limits);
+			free(dev->power_domains[j].limits_ext);
 			free(dev->power_domains[j].energy_threshold);
 			memset(&dev->power_domains[j], 0, sizeof(dev->power_domains[j]));
 		}
