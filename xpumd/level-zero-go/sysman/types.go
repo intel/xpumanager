@@ -130,7 +130,8 @@ type DriverExtensionProperties struct {
 // DeviceState declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
 //
-// Device state.
+// Device state. To retrieve the current device state, please use zes_device_ext_state_t
+// as pNext.
 type DeviceState struct {
 	stype    structureType
 	pnext    unsafe.Pointer
@@ -160,7 +161,9 @@ type Uuid struct {
 // DeviceBaseProperties is the device properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
 //
-// Device properties.
+// Device properties. To get OEM Serial ID, pNext member of this structure should
+// point to an instance of ${s}_oem_serial_id_ext_properties_t with its stype set
+// to ZES_STRUCTURE_TYPE_OEM_SERIAL_ID_EXT_PROPERTIES.
 type DeviceBaseProperties struct {
 	stype         structureType
 	pnext         unsafe.Pointer
@@ -968,44 +971,6 @@ type TempConfig struct {
 	Threshold2     TempThreshold
 }
 
-// DeviceEccDefaultPropertiesExt declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-t
-//
-// This structure may be passed to zesDeviceGetEccState as pNext member of
-// zes_device_ecc_properties_t.
-type DeviceEccDefaultPropertiesExt struct {
-	stype        structureType
-	pnext        unsafe.Pointer
-	DefaultState DeviceEccState
-	_            [4]byte
-}
-
-// PciLinkSpeedDowngradeExtState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-state-t
-//
-// Query PCIe downgrade status.
-//
-// - This structure can be passed in the 'pNext' of zes_pci_state_t
-type PciLinkSpeedDowngradeExtState struct {
-	stype                       structureType
-	pnext                       unsafe.Pointer
-	PciLinkSpeedDowngradeStatus uint8
-	_                           [7]byte
-}
-
-// PciLinkSpeedDowngradeExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-properties-t
-//
-// Query PCIe downgrade capability.
-//
-// - This structure can be passed in the 'pNext' of zes_pci_properties_t
-type PciLinkSpeedDowngradeExtProperties struct {
-	stype                     structureType
-	pnext                     unsafe.Pointer
-	PciLinkSpeedUpdateCapable uint8
-	MaxPciGenSupported        int32
-}
-
 // PowerLimitExtDesc declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limit-ext-desc-t
 //
@@ -1067,6 +1032,76 @@ type RasStateExp struct {
 	ErrorCounter uint64
 }
 
+// DeviceEccDefaultPropertiesExt declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-t
+//
+// This structure may be passed to zesDeviceGetEccState as pNext member of
+// zes_device_ecc_properties_t.
+type DeviceEccDefaultPropertiesExt struct {
+	stype        structureType
+	pnext        unsafe.Pointer
+	DefaultState DeviceEccState
+	_            [4]byte
+}
+
+// PciLinkSpeedDowngradeExtState declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-state-t
+//
+// Query PCIe downgrade status.
+//
+// - This structure can be passed in the 'pNext' of zes_pci_state_t
+type PciLinkSpeedDowngradeExtState struct {
+	stype                       structureType
+	pnext                       unsafe.Pointer
+	PciLinkSpeedDowngradeStatus uint8
+	_                           [7]byte
+}
+
+// PciLinkSpeedDowngradeExtProperties declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-properties-t
+//
+// Query PCIe downgrade capability.
+//
+// - This structure can be passed in the 'pNext' of zes_pci_properties_t
+type PciLinkSpeedDowngradeExtProperties struct {
+	stype                     structureType
+	pnext                     unsafe.Pointer
+	PciLinkSpeedUpdateCapable uint8
+	MaxPciGenSupported        int32
+}
+
+// DeviceExtState declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-state-t
+//
+// Extension properties for Device State.
+//
+//   - This structure may be returned from zesDeviceGetState via the member of
+//     zes_device_state_t
+//   - Provides extended device state information including wedged state, survivability
+//     mode, and flash override status
+type DeviceExtState struct {
+	stype structureType
+	pnext unsafe.Pointer
+	Flags DeviceStateExtFlags
+	_     [4]byte
+}
+
+// OemSerialIdExtProperties declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-oem-serial-id-ext-properties-t
+//
+// OEM Serial ID Properties structure.
+//
+//   - This structure can be passed as an extension structure to zesDeviceGetProperties
+//     via pNext member
+//   - Returns the OEM serial ID of the device
+type OemSerialIdExtProperties struct {
+	stype       structureType
+	pnext       unsafe.Pointer
+	Length      uint16
+	OemSerialId [1024]byte
+	_           [6]byte
+}
+
 // InitFlags declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 //
@@ -1126,3 +1161,9 @@ type FabricPortFailureFlags FabricPortFailureFlag
 //
 // Frequency throttle reasons.
 type FreqThrottleReasonFlags FreqThrottleReasonFlag
+
+// DeviceStateExtFlags declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-ext-flags-t
+//
+// Device state flags.
+type DeviceStateExtFlags DeviceStateExtFlag

@@ -22,7 +22,7 @@ import "C"
 // Defines Return/Error codes.
 type Result uint32
 
-// Result enumeration from level-zero/ze_api.h:267
+// Result enumeration from level-zero/ze_api.h:289
 const (
 	// [Core] success
 	RESULT_SUCCESS Result = iota
@@ -121,6 +121,26 @@ const (
 	RESULT_ERROR_SURVIVABILITY_MODE_DETECTED Result = 2013265952
 	// [Core] address not found within specified or current context
 	RESULT_ERROR_ADDRESS_NOT_FOUND Result = 2013265953
+	// [Core, Extension] query API returned true
+	RESULT_QUERY_TRUE Result = 2013265954
+	// [Core, Extension] query API returned false
+	RESULT_QUERY_FALSE Result = 2013265955
+	// [Core, Extension] graph object is invalid
+	RESULT_ERROR_INVALID_GRAPH Result = 2013265956
+	// [Core, Extension] operation is not supported during graph capture
+	RESULT_ERROR_GRAPH_CAPTURE_UNSUPPORTED Result = 2013265957
+	// [Core, Extension] operations failed and invalidated graph capture session
+	RESULT_ERROR_GRAPH_CAPTURE_INVALIDATED Result = 2013265958
+	// [Core, Extension] operation failed because it would merge two graph capture
+	// sessions
+	RESULT_ERROR_GRAPH_CAPTURE_MERGE_ATTEMPT Result = 2013265959
+	// [Core, Extension] command list is not in graph capture mode
+	RESULT_ERROR_COMMAND_LIST_NOT_CAPTURING Result = 2013265960
+	// [Core, Extension] graph contains unjoined forks
+	RESULT_ERROR_GRAPH_UNJOINED_FORKS Result = 2013265961
+	// [Core, Extension] operation failed because it uses a graph-internal counter-based
+	// event outside of the graph
+	RESULT_ERROR_GRAPH_INTERNAL_EVENT Result = 2013265962
 	// [Core] unknown or internal error
 	RESULT_ERROR_UNKNOWN Result = 2147483646
 	// Value marking end of ZE_RESULT_* ENUMs.
@@ -134,7 +154,7 @@ const (
 //     ZE_MINOR_VERSION
 type ApiVersion uint32
 
-// ApiVersion enumeration from level-zero/ze_api.h:1431
+// ApiVersion enumeration from level-zero/ze_api.h:1475
 const (
 	// version 1.0
 	API_VERSION_1_0 ApiVersion = 65536
@@ -170,8 +190,10 @@ const (
 	API_VERSION_1_15 ApiVersion = 65551
 	// version 1.16
 	API_VERSION_1_16 ApiVersion = 65552
+	// version 1.17
+	API_VERSION_1_17 ApiVersion = 65553
 	// API version of the L0 headers which the bindings were generated from.
-	API_VERSION_CURRENT ApiVersion = 65552
+	API_VERSION_CURRENT ApiVersion = 65553
 	// Value marking end of ZE_API_VERSION_* ENUMs.
 	API_VERSION_FORCE_UINT32 ApiVersion = 2147483647
 )
@@ -182,7 +204,7 @@ const (
 // Supported device types.
 type DeviceType uint32
 
-// DeviceType enumeration from level-zero/ze_api.h:1891
+// DeviceType enumeration from level-zero/ze_api.h:1938
 const (
 	// Graphics Processing Unit.
 	DEVICE_TYPE_GPU DeviceType = 1
@@ -202,7 +224,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
 type DevicePropertyFlag uint32
 
-// DevicePropertyFlag enumeration from level-zero/ze_api.h:1924
+// DevicePropertyFlag enumeration from level-zero/ze_api.h:1971
 const (
 	// Device is integrated with the Host.
 	DEVICE_PROPERTY_FLAG_INTEGRATED DevicePropertyFlag = 1

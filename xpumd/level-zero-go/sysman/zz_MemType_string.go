@@ -29,21 +29,28 @@ func _() {
 	_ = x[MEM_TYPE_GDDR6X-18]
 	_ = x[MEM_TYPE_GDDR7-19]
 	_ = x[MEM_TYPE_LPDDR5X-20]
+	_ = x[MEM_TYPE_HBM2-21]
+	_ = x[MEM_TYPE_DDR2-22]
+	_ = x[MEM_TYPE_HBM2E-23]
+	_ = x[MEM_TYPE_HBM3-24]
+	_ = x[MEM_TYPE_HBM3E-25]
+	_ = x[MEM_TYPE_HBM4-26]
+	_ = x[MEM_TYPE_LPDDR6-27]
 	_ = x[MEM_TYPE_FORCE_UINT32-2147483647]
 }
 
 const (
-	_MemType_name_0 = "HBMDDRDDR3DDR4DDR5LPDDRLPDDR3LPDDR4LPDDR5SRAML1L3GRFSLMGDDR4GDDR5GDDR5XGDDR6GDDR6XGDDR7LPDDR5X"
+	_MemType_name_0 = "HBMDDRDDR3DDR4DDR5LPDDRLPDDR3LPDDR4LPDDR5SRAML1L3GRFSLMGDDR4GDDR5GDDR5XGDDR6GDDR6XGDDR7LPDDR5XHBM2DDR2HBM2EHBM3HBM3EHBM4LPDDR6"
 	_MemType_name_1 = "FORCE_UINT32"
 )
 
 var (
-	_MemType_index_0 = [...]uint8{0, 3, 6, 10, 14, 18, 23, 29, 35, 41, 45, 47, 49, 52, 55, 60, 65, 71, 76, 82, 87, 94}
+	_MemType_index_0 = [...]uint8{0, 3, 6, 10, 14, 18, 23, 29, 35, 41, 45, 47, 49, 52, 55, 60, 65, 71, 76, 82, 87, 94, 98, 102, 107, 111, 116, 120, 126}
 )
 
 func (i MemType) String() string {
 	switch {
-	case i <= 20:
+	case i <= 27:
 		return _MemType_name_0[_MemType_index_0[i]:_MemType_index_0[i+1]]
 	case i == 2147483647:
 		return _MemType_name_1
