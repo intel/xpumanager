@@ -499,6 +499,10 @@ Drivers:
         Version: 1
       - Name: "ZES_extension_pci_link_speed_downgrade"
         Version: 65536
+      - Name: "ZES_extension_device_state"
+        Version: 65536
+      - Name: "ZES_extension_oem_serial_id"
+        Version: 65536
 
     Devices:
       - Properties:
@@ -506,6 +510,12 @@ Drivers:
             Id: "abcdef01-2345-6789-abcd-ef0000000000"
           Type: 1 # ZES_DEVICE_TYPE_GPU
           Flags: 1 # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
+          OemSerialId: "OEM-SN-0001"
+        State:
+          Reset: 0
+          Repaired: 1 # ZES_REPAIR_STATUS_NOT_PERFORMED
+          ExtendedState:
+            Flags: 2 # ZES_DEVICE_STATE_EXT_FLAG_WEDGED
         ECC:
           Available: true
           Configurable: true

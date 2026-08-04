@@ -470,6 +470,7 @@ func TestDeviceGetProperties(t *testing.T) {
 				Type:  DEVICE_TYPE_GPU,
 				Flags: 1,
 			},
+			OemSerialId: "OEM-SN-0001",
 		}),
 		withDrvIdx(1), withName("SuccessWithExtProps"),
 	)
@@ -484,6 +485,18 @@ func TestDeviceGetState(t *testing.T) {
 				Repaired: REPAIR_STATUS_NOT_PERFORMED,
 			},
 		}),
+	)
+	testDeviceGetterSuccess(t, (*Device).GetState,
+		checkValueExported(DeviceState{
+			DeviceBaseState: DeviceBaseState{
+				Reset:    0,
+				Repaired: REPAIR_STATUS_NOT_PERFORMED,
+			},
+			ExtendedState: &DeviceExtState{
+				Flags: DeviceStateExtFlags(DEVICE_STATE_EXT_FLAG_WEDGED),
+			},
+		}),
+		withDrvIdx(1), withName("SuccessWithExtProps"),
 	)
 }
 
