@@ -127,12 +127,9 @@ type DriverExtensionProperties struct {
 	Version uint32
 }
 
-// DeviceState declared in:
+// DeviceBaseState is the device state type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
-//
-// Device state. To retrieve the current device state, please use zes_device_ext_state_t
-// as pNext.
-type DeviceState struct {
+type DeviceBaseState struct {
 	stype    structureType
 	pnext    unsafe.Pointer
 	Reset    ResetReasonFlags
@@ -1086,7 +1083,7 @@ type DeviceExtState struct {
 	_     [4]byte
 }
 
-// OemSerialIdExtProperties declared in:
+// oemSerialIdExtProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-oem-serial-id-ext-properties-t
 //
 // OEM Serial ID Properties structure.
@@ -1094,7 +1091,7 @@ type DeviceExtState struct {
 //   - This structure can be passed as an extension structure to zesDeviceGetProperties
 //     via pNext member
 //   - Returns the OEM serial ID of the device
-type OemSerialIdExtProperties struct {
+type oemSerialIdExtProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
 	Length      uint16

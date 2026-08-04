@@ -66,7 +66,7 @@ structs:
       - name: VendorName
         typeAssert: "[64]int8"
         newType: core.StringProperty64
-  - name: DeviceState
+  - name: DeviceBaseState
     fields:
       - name: Repaired
         newType: RepairStatus
@@ -76,7 +76,7 @@ structs:
     fields:
       - name: Flags
         newType: DeviceStateExtFlags
-  - name: OemSerialIdExtProperties
+  - name: oemSerialIdExtProperties
     fields:
       - name: OemSerialId
         typeAssert: "[1024]int8"
@@ -251,6 +251,14 @@ types:
     newComment: |-
       DeviceBaseProperties is the device properties type declared in:
       https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: DeviceBaseState
+    newComment: |-
+      DeviceBaseState is the device state type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
       {{- with doxygen . }}
 
       {{ . }}

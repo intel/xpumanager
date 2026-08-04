@@ -299,6 +299,17 @@ type PowerUsage struct {
 type DeviceProperties struct {
 	DeviceBaseProperties
 	DeviceExtProperties
+	// OemSerialId provides the OEM serial ID of the device, if available via
+	// the OEM serial ID extension. Value is empty if not available.
+	OemSerialId string
+}
+
+// DeviceState wraps the device state structures from the Sysman API.
+type DeviceState struct {
+	DeviceBaseState
+	// ExtendedState provides optional additional state related to the device
+	// state extension. Value is nil if not available.
+	ExtendedState *DeviceExtState
 }
 
 // EccProperties wraps the device ECC property structures from the Sysman API.
@@ -403,6 +414,16 @@ func (f DevicePropertyFlags) String() string {
 // Bits returns a slice of all enabled flags (set bits) of DevicePropertyFlags.
 func (f DevicePropertyFlags) Bits() []DevicePropertyFlag {
 	return internal.FlagsToBits(DevicePropertyFlag(f))
+}
+
+// String representation of all set bits of DeviceStateExtFlags.
+func (f DeviceStateExtFlags) String() string {
+	return internal.FlagsToString(DeviceStateExtFlag(f))
+}
+
+// Bits returns a slice of all enabled flags (set bits) of DeviceStateExtFlags.
+func (f DeviceStateExtFlags) Bits() []DeviceStateExtFlag {
+	return internal.FlagsToBits(DeviceStateExtFlag(f))
 }
 
 // String representation of all set bits of PciLinkQualIssueFlags.

@@ -135,7 +135,22 @@ func (z *Device) GetProperties() (DeviceProperties, error) {
 
 	props.DeviceBaseProperties.pnext = unsafe.Pointer(&props.DeviceExtProperties)
 
+	// Chained on the DeviceExtProperties extension that is always present
+	var extProps oemSerialIdExtProperties
+	if z.extensions[OEM_SERIAL_ID_EXT_NAME] {
+		extProps.stype = _STRUCTURE_TYPE_OEM_SERIAL_ID_EXT_PROPERTIES
+		pinner.Pin(&extProps)
+
+		//nolint:staticcheck // could remove embedded field from selector
+		props.DeviceExtProperties.pnext = unsafe.Pointer(&extProps)
+	}
+
 	ret := zesDeviceGetProperties(z.handle, &props.DeviceBaseProperties)
+
+	if z.extensions[OEM_SERIAL_ID_EXT_NAME] && ret == core.RESULT_SUCCESS {
+		length := min(int(extProps.Length), len(extProps.OemSerialId))
+		props.OemSerialId = string(extProps.OemSerialId[:length])
+	}
 
 	return props, ret.ToError()
 }
@@ -143,8 +158,23 @@ func (z *Device) GetProperties() (DeviceProperties, error) {
 // GetState wraps the zesDeviceGetState function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicegetstate
 func (z *Device) GetState() (DeviceState, error) {
-	var state DeviceState
-	ret := zesDeviceGetState(z.handle, &state)
+	state := DeviceState{}
+
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+
+	if z.extensions[DEVICE_EXT_STATE_NAME] {
+		state.ExtendedState = &DeviceExtState{
+			stype: _STRUCTURE_TYPE_DEVICE_EXT_STATE,
+		}
+		pinner.Pin(state.ExtendedState)
+
+		//nolint:staticcheck // could remove embedded field from selector
+		state.DeviceBaseState.pnext = unsafe.Pointer(state.ExtendedState)
+	}
+
+	ret := zesDeviceGetState(z.handle, &state.DeviceBaseState)
+
 	return state, ret.ToError()
 }
 

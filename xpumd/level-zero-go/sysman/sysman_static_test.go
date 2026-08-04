@@ -479,8 +479,10 @@ func TestDeviceGetState(t *testing.T) {
 	testDeviceGetterError(t, (*Device).GetState, withConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).GetState,
 		checkValue(DeviceState{
-			Reset:    0,
-			Repaired: REPAIR_STATUS_NOT_PERFORMED,
+			DeviceBaseState: DeviceBaseState{
+				Reset:    0,
+				Repaired: REPAIR_STATUS_NOT_PERFORMED,
+			},
 		}),
 	)
 }

@@ -54,6 +54,7 @@ TRANSLATOR:
       - {action: replace, from: "_t$"}
       - {action: replace, from: "^ze_driver_handle$", to: "driver_handle"}
       - {action: replace, from: "^device_properties$", to: "device_base_properties"}
+      - {action: replace, from: "^device_state$", to: "device_base_state"}
       - {action: replace, from: "^engine_properties$", to: "engine_base_properties"}
       - {action: replace, from: "^pci_properties$", to: "pci_base_properties"}
       - {action: replace, from: "^pci_state$", to: "pci_base_state"}
@@ -62,6 +63,7 @@ TRANSLATOR:
       - {load: snakecase}
       - {transform: unexport, from: "^StructureType$"}
       - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
+      - {transform: unexport, from: "^OemSerialIdExtProperties$"}
       # Map Ze types to core package
       - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
       # Ignore experimental (other than RAS)

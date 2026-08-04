@@ -69,7 +69,7 @@ func zesDeviceGetProperties(HDevice deviceHandle, PProperties *DeviceBasePropert
 }
 
 // zesDeviceGetState function as declared in level-zero/zes_api.h:1080
-func zesDeviceGetState(HDevice deviceHandle, PState *DeviceState) core.Result {
+func zesDeviceGetState(HDevice deviceHandle, PState *DeviceBaseState) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
 	cPState, _ := (*C.zes_device_state_t)(unsafe.Pointer(PState)), cgoAllocsUnknown
 	__ret := C.zesDeviceGetState(cHDevice, cPState)
