@@ -90,6 +90,9 @@ Drivers:
               zesPowerSetLimitsExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
               zesPowerGetEnergyThreshold: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
               zesPowerSetEnergyThreshold: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerGetUsage: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerGetLimitsExt2: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+              zesPowerSetLimitsExt2: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
         Psus:
           - ReturnValues:
               zesPsuGetProperties: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE

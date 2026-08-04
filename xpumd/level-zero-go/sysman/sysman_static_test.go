@@ -1104,6 +1104,26 @@ func TestPowerSetLimitsExt(t *testing.T) {
 	testComponentActionSuccess(t, getPower, func(p *Power) error { return p.SetLimitsExt(nil) })
 }
 
+func TestPowerGetUsage(t *testing.T) {
+	testComponentGetterError(t, getPower, (*Power).GetUsage, withConfig(driverConfigComponentErrs))
+	testComponentGetterSuccess(t, getPower, (*Power).GetUsage,
+		checkValue(PowerUsage{
+			InstantPower: 180000,
+			AveragePower: 160000,
+		}),
+	)
+}
+
+func TestPowerGetLimitsExt2(t *testing.T) {
+	testComponentGetterError(t, getPower, (*Power).GetLimitsExt2, withConfig(driverConfigComponentErrs))
+	testComponentGetterSuccess(t, getPower, (*Power).GetLimitsExt2, checkValue(uint32(200000)))
+}
+
+func TestPowerSetLimitsExt2(t *testing.T) {
+	testComponentActionError(t, getPower, func(p *Power) error { return p.SetLimitsExt2(0) }, withConfig(driverConfigComponentErrs))
+	testComponentActionSuccess(t, getPower, func(p *Power) error { return p.SetLimitsExt2(0) })
+}
+
 // ------------------------------------------------------------------
 // Scheduler
 // ------------------------------------------------------------------

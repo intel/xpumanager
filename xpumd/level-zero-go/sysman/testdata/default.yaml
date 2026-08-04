@@ -364,6 +364,10 @@ Drivers:
                 Interval: 0
                 LimitValueLocked: false
                 Limit: 250000
+            Usage:
+              InstantPower: 180000
+              AveragePower: 160000
+            Limit: 200000
           - Properties:
               OnSubdevice: true
               SubdeviceId: 1
