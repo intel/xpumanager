@@ -57,8 +57,12 @@ type fieldRewriteConfig struct {
 type typeRewriteConfig struct {
 	commentRewriter `yaml:",inline"`
 	Name            string `yaml:"name"`
-	NewType         string `yaml:"newType"`
-	TypeAssert      string `yaml:"typeAssert"`
+	// OrigName is the (optional) original C type name (e.g. "zes_device_state_t").
+	// Used for resolving the Doxygen documentation and HTML docs anchor for
+	// this type. If empty, guessing based on the Name (Go type name) will be used.
+	OrigName   string `yaml:"origName"`
+	NewType    string `yaml:"newType"`
+	TypeAssert string `yaml:"typeAssert"`
 }
 
 type valueRewriteConfig struct {
@@ -285,7 +289,10 @@ func (t *typeRewriter) rewriteType(tr *typeRewriteConfig, genDecl *ast.GenDecl, 
 	// Rewrite comment
 	if tr.NewComment != "" {
 		name := typeSpec.Name.Name
-		cName := typeNameToCName(name, t.config.Options.Prefix)
+		cName := tr.OrigName
+		if cName == "" {
+			cName = typeNameToCName(name, t.config.Options.Prefix)
+		}
 		vars := map[string]any{
 			"Name":      name,
 			"DocAnchor": cNameToL0DocsAnchor(cName),
