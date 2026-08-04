@@ -38,7 +38,8 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   Device ID or PCI BDF address of the physical GPU to operate on.
+   Device ID or PCI BDF address of the physical GPU to operate on. Accepts a
+   comma-separated list to operate on several devices at once (e.g., ``-d 0,1``).
 
 .. option:: --precheck
 

@@ -29,7 +29,8 @@ Options
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
    Device ID or PCI BDF address to query. When specified, displays more detailed
-   information about the given device.
+   information about the given device. Accepts a comma-separated list to query
+   several devices at once (e.g., ``-d 0,1,4`` or ``-d 0,0000:4d:00.0``).
 
 .. option:: --pf, --physicalFunction
 

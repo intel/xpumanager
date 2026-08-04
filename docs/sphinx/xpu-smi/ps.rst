@@ -50,8 +50,9 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   The device ID or PCI BDF address. If not specified, processes from all GPUs
-   are listed.
+   The device ID or PCI BDF address. Accepts a comma-separated list to list
+   processes from several devices at once (e.g., ``-d 0,1,4``). If not
+   specified, processes from all GPUs are listed.
 
 Examples
 --------

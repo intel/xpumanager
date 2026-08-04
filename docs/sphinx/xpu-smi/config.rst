@@ -41,7 +41,8 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   The device ID or PCI BDF address to configure.
+   The device ID or PCI BDF address to configure. Accepts a comma-separated list
+   to apply the configuration to several devices at once (e.g., ``-d 0,1,4``).
 
 .. option:: --frequencyrange <minFreq,maxFreq>
 

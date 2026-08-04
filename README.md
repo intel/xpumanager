@@ -121,7 +121,12 @@ $ xpu-smi discovery -d 0
 
 The following instructions apply to Ubuntu (using APT).
 
-First, configure the Intel GPU driver package repository as explained at [Intel GPU driver documentation](https://dgpu-docs.intel.com/installation-guides/installing-packages-from-the-intel-ppa.html).
+Because a Linux distribution may not ship all the driver packages required by
+XPUM, or may ship versions older than required, first configure your APT
+repositories to add the `kobuk-team/intel-graphics` PPA, as explained in the
+"Installing packages from the Intel PPA" section of the
+[Intel GPU driver documentation](https://dgpu-docs.intel.com/installation-guides/installing-packages-from-the-intel-ppa.html).
+This PPA provides both the Intel GPU driver packages and `xpu-smi`.
 
 **Option 1: Install from Intel package repository**
 
@@ -130,18 +135,24 @@ Install `xpu-smi` and its (driver) dependencies:
 sudo apt install xpu-smi
 ```
 
-**Option 2: Install from releases page**
+> **Note:** The version published in the Kobuk PPA may lag the
+> [GitHub releases](https://github.com/intel/xpumanager/releases) by a few weeks,
+> so this method may not install the most recent build. If you need a release
+> immediately after it is published, use Option 2 below.
 
-Install `xpu-smi` dependencies:
-```
-sudo apt install libhwloc15 libpciaccess0 libigsc1 libze1 libze-intel-gpu1
-```
+**Option 2: Install from releases page**
 
 Download XPUM packages (relevant for the host distro) from the [releases page](https://github.com/intel/xpumanager/releases).
 
 Install them:
 ```
-sudo apt install ./libxpum2_*.deb ./xpu-smi_*.deb
+sudo apt install ./xpu-smi_*.deb
+```
+
+Installing from the local `.deb` path with `apt` resolves the driver
+dependencies automatically. If needed, they can also be installed explicitly:
+```
+sudo apt install libhwloc15 libpciaccess0 libigsc1 libze1 libze-intel-gpu1
 ```
 
 **Troubleshooting**
@@ -195,8 +206,9 @@ XPU Manager uses [semantic versioning](https://semver.org/) in the form `MAJOR.M
 
 ## Documentation
 
-* Refer to [Building XPU Manager Installer](./BUILDING.md) to build XPU Manager installer packages. 
-* For Contributions: Please refer to [CONTRIBUTING](./CONTRIBUTING.md)
-* When reporting issues, please use the suggested templates: https://github.com/intel/xpumanager/issues
+* Usage: refer to the generated [XPU-SMI documentation](https://intel.github.io/xpumanager/) for command reference and usage details.
+* Building: refer to [Building XPU Manager Installer](./BUILDING.md) to build XPU-SMI installer packages.
+* Contributions: Please refer to [CONTRIBUTING](./CONTRIBUTING.md)
+* Issues: when reporting issues, please use the suggested templates: https://github.com/intel/xpumanager/issues
 
   
