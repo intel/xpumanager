@@ -229,6 +229,24 @@ struct pldmGetSensorReadingResp
 	uint8_t presentReading[1]; // Variable size based on sensorDataSize
 };
 
+// ----------------------------------------------------------------------------
+// GetStateEffecterStates (0x3A) — DSP0248 s22.6
+// ----------------------------------------------------------------------------
+struct pldmGetStateEffecterStatesReq
+{
+	uint16_t effecterId;
+};
+
+// Fixed layout covering completionCode, compositeEffecterCount, and the first state entry.
+struct pldmGetStateEffecterStatesResp
+{
+	uint8_t completionCode;
+	uint8_t compositeEffecterCount;
+	uint8_t effecterOpState; // first state entry
+	uint8_t pendingValue;
+	uint8_t presentValue;
+};
+
 typedef union
 {
 	uint8_t value_u8;

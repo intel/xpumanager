@@ -56,6 +56,12 @@ uint8_t pldm::pfFillPayload(uint8_t cmd, uint8_t size)
 		DBG("PLDM Platform: Get Sensor Reading payload filled\n");
 		payloadPtr[offset] = crc8Smbus(payloadPtr, offset - 1);
 		break;
+	case PLDM_GET_STATE_EFFECTER_STATES:
+		offset = 0;
+		memcpy(payloadPtr + offset, &mStateEffecterReq.effecterId, sizeof(mStateEffecterReq.effecterId));
+		offset += sizeof(mStateEffecterReq.effecterId);
+		payloadPtr[offset] = crc8Smbus(payloadPtr, offset - 1);
+		break;
 	default:
 		ERR("PLDM Platform: Unknown command payload fill\n");
 		return PLDM_ERROR;
@@ -284,6 +290,8 @@ uint8_t pldm::processPlatformResponse(uint8_t cmd, uint8_t id)
 		return pfPdrRespPayload();
 	case PLDM_GET_SENSOR_READING:
 		return pfSensorReadingRespPayload();
+	case PLDM_GET_STATE_EFFECTER_STATES:
+		return pfStateEffecterRespPayload();
 	default:
 		ERR("PLDM Platform: Unknown command response\n");
 		return PLDM_ERROR;
@@ -513,4 +521,87 @@ uint8_t pldm::getSensorInfoByUnit(sensorUnits unit)
 		return PLDM_ERROR;
 	}
 	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Parses the response payload for the GetStateEffecterStates command
+ *
+ * Extracts the completion code, composite effecter count, and first state entry
+ * from the response payload.
+ *
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
+ */
+uint8_t pldm::pfStateEffecterRespPayload()
+{
+	mStateEffecterResp.completionCode = mI2cPldmRead->respPayload[0];
+	if (mStateEffecterResp.completionCode != PLDM_SUCCESS) {
+		DBG("PLDM Platform: GetStateEffecterStates CC=0x{:02x}\n", mStateEffecterResp.completionCode);
+		return PLDM_ERROR;
+	}
+	mStateEffecterResp.compositeEffecterCount = mI2cPldmRead->respPayload[1];
+	if (mStateEffecterResp.compositeEffecterCount == 0) {
+		ERR("PLDM Platform: GetStateEffecterStates: compositeEffecterCount=0\n");
+		return PLDM_ERROR;
+	}
+	// Each state entry is 3 bytes: effecterOpState, pendingValue, presentValue
+	mStateEffecterResp.effecterOpState = mI2cPldmRead->respPayload[2];
+	mStateEffecterResp.pendingValue = mI2cPldmRead->respPayload[3];
+	mStateEffecterResp.presentValue = mI2cPldmRead->respPayload[4];
+	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Sends the GetStateEffecterStates command for the specified effecter ID
+ *
+ * Initializes the request structure and sends the command to retrieve the state
+ * effecter states for the given effecter ID.
+ *
+ * @param[in] effecterId The ID of the effecter to query
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
+ */
+uint8_t pldm::pfGetStateEffecterStates(uint16_t effecterId)
+{
+	mStateEffecterReq.effecterId = effecterId;
+	mStateEffecterResp.completionCode = 0xFF; // sentinel: no response received yet
+	uint8_t size = sizeof(mctpSmbusI2cHdr) + sizeof(pldmHdr) + sizeof(pldmGetStateEffecterStatesReq);
+	return pfMonCtrlCmd(PLDM_GET_STATE_EFFECTER_STATES, size);
+}
+
+/**
+ * @brief Checks if firmware update is enabled for the FD's effector ID 403
+ *
+ * Returns true if the effector reports firmware update is enabled,
+ * or if the effector is absent (device predates this capability).
+ *
+ * @return bool True if firmware update is enabled or effector is absent, false otherwise
+ */
+bool pldm::isFirmwareUpdateEnabled()
+{
+	constexpr uint16_t kFwuEffecterId = 403;
+
+	if (pfGetStateEffecterStates(kFwuEffecterId) != PLDM_SUCCESS) {
+		if (mStateEffecterResp.completionCode == PLDM_PLATFORM_INVALID_EFFECTER_ID) {
+			DBG("FWU: Effector ID {} not present on card {}; skipping enable check\n", kFwuEffecterId, mCardNum);
+			return true;
+		}
+		ERR("FWU: GetStateEffecterStates effector ID {} failed on card {}\n", kFwuEffecterId, mCardNum);
+		return false;
+	}
+
+	DBG("FWU: Firmware update enable effector ID {} presentValue={} effectorOpState={} on card {}\n", kFwuEffecterId,
+		mStateEffecterResp.presentValue, mStateEffecterResp.effecterOpState, mCardNum);
+
+	if (mStateEffecterResp.effecterOpState == PLDM_EFFECTER_ENABLED_UPDATEPENDING ||
+		mStateEffecterResp.effecterOpState == PLDM_EFFECTER_ENABLED_NOUPDATEPENDING) {
+		if (mStateEffecterResp.presentValue != 0) {
+			ERR("FWU: Firmware update is disabled (effector ID {} presentValue={}) on card {:02}; aborting\n",
+				kFwuEffecterId, mStateEffecterResp.presentValue, mCardNum);
+			return false;
+		}
+	} else {
+		ERR("FWU: Firmware update effector ID {} is not enabled (effecterOpState={}) on card {:02}; aborting\n",
+			kFwuEffecterId, mStateEffecterResp.effecterOpState, mCardNum);
+		return false;
+	}
+	return true;
 }

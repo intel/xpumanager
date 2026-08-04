@@ -184,6 +184,10 @@ private:
 	sensorReadingValue mSensorReading;
 	std::vector<pldmSensorInfo> mSensorInfoList;
 
+	// GetStateEffecterStates request/response (DSP0248 s22.6)
+	struct pldmGetStateEffecterStatesReq mStateEffecterReq;
+	struct pldmGetStateEffecterStatesResp mStateEffecterResp;
+
 	// PLDM File Transfer datastructures
 	struct pldm_file_df_open_req mDfOpenReq;
 	struct pldm_file_df_open_resp mDfOpenResp;
@@ -294,6 +298,9 @@ private:
 	uint8_t pfGetSensorValuesByUnit(sensorUnits unit);
 	uint8_t pfGetSensorValuesById(uint16_t sensorId);
 	uint8_t pfGetSensorValue(const pldmNumericSensorValuePdr *sensor);
+	uint8_t pfStateEffecterRespPayload();
+	uint8_t pfGetStateEffecterStates(uint16_t effecterId);
+	bool isFirmwareUpdateEnabled();
 	void pfBuildPdrSensorCache() { mPdrManager.buildSensorCache(); }
 
 	// PLDM File Transfer APIs

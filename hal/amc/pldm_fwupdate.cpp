@@ -273,6 +273,10 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 		return finalStatus;
 	};
 
+	if (!isFirmwareUpdateEnabled()) {
+		return PLDM_ERROR;
+	}
+
 	DBG("\n=====================AMC Firmware File Parser===============================\n");
 	if (FOPEN_S(&mCompFp, pkgFilePath, "rb") != 0 || mCompFp == NULL) {
 		ERR("Failed to open package file: {}\n", pkgFilePath);
