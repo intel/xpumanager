@@ -8,7 +8,7 @@ require (
 	github.com/prometheus/common v0.67.5
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	helm.sh/helm/v4 v4.2.3
-	k8s.io/api v0.36.1
+	k8s.io/api v0.36.3
 	k8s.io/apimachinery v0.36.3
 	k8s.io/cli-runtime v0.36.1
 	k8s.io/client-go v0.36.1
