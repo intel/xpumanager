@@ -28,7 +28,7 @@ initContainers:
   - name: stub-driver-config-writer
     image: busybox:1.37.0
     restartPolicy: Always
-    command: ["sh", "-c", "cp /etc/level-zero-stub-cm/stub.yaml /etc/level-zero-stub/stub.yaml && sleep inf"]
+    command: ["sh", "-c", "cp /etc/level-zero-stub-cm/stub.yaml /etc/level-zero-stub/stub.yaml.tmp && mv /etc/level-zero-stub/stub.yaml.tmp /etc/level-zero-stub/stub.yaml && sleep inf"]
     volumeMounts:
       - name: stub-driver-config-cm
         mountPath: /etc/level-zero-stub-cm
