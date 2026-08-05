@@ -289,6 +289,24 @@ uint8_t pldm::pldmFruInitialize()
 /**
  * @brief Retrieves the serial number from the PLDM FRU table
  *
+ * @return uint8_t PLDM_SUCCESS if the initialization is successful, PLDM_ERROR otherwise
+ */
+uint8_t pldm::ensureFruInitialized()
+{
+	if (mFruTableInitialized) {
+		return PLDM_SUCCESS;
+	}
+	memset(&mFruTable, 0, sizeof(mFruTable));
+	if (pldmFruInitialize() != PLDM_SUCCESS) {
+		ERR("Failed to initialize FRU table\n");
+		return PLDM_ERROR;
+	}
+	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Retrieves the serial number from the PLDM FRU table
+ *
  * This function supports two usage patterns:
  * 1. Length query: Pass nullptr for serialNumber to get required buffer length
  * 2. Data copy: Pass valid buffer and bufferSize to copy the serial number string
@@ -313,17 +331,8 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 {
 	TRACING();
 
-	if (!mFruTableInitialized) {
-		DBG("FRU table not initialized\n");
-
-		// Completely initialize the FRU table structure to prevent any Valgrind issues
-		// This ensures that even if the structure was allocated but not initialized, we have clean data
-		memset(&mFruTable, 0, sizeof(mFruTable));
-
-		if (pldmFruInitialize() != PLDM_SUCCESS) {
-			ERR("Failed to initialize FRU table\n");
-			return PLDM_ERROR;
-		}
+	if (ensureFruInitialized() != PLDM_SUCCESS) {
+		return PLDM_ERROR;
 	}
 
 	// Always ensure the serial number buffer is properly terminated to prevent Valgrind errors
@@ -361,8 +370,63 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 	}
 
 	// Copy the serial number to the provided buffer
-	STRNCPY_S(serialNumber, mFruTable.genSerialNum, *bufferSize - 1);
+	STRNCPY_S(serialNumber, mFruTable.genSerialNum, *bufferSize);
 	serialNumber[*bufferSize - 1] = '\0'; // Ensure null termination
+
+	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Retrieves the part number from the PLDM FRU table.
+ *
+ * Supports two usage patterns:
+ * 1. Length query: pass nullptr for partNumber to receive the required buffer length.
+ * 2. Data copy: pass a valid buffer and its size to receive the part number string.
+ *
+ * @param[out] partNumber  Buffer to receive the null-terminated part number, or nullptr to query length.
+ * @param[in,out] bufferSize  INPUT = buffer capacity; OUTPUT = required length including null terminator.
+ *
+ * @retval PLDM_SUCCESS  Part number retrieved or required length returned.
+ * @retval PLDM_ERROR    FRU table initialization failed, part number unavailable, or buffer too small.
+ */
+uint8_t pldm::getFruPartNum(char *partNumber, size_t *bufferSize)
+{
+	TRACING();
+
+	if (ensureFruInitialized() != PLDM_SUCCESS) {
+		return PLDM_ERROR;
+	}
+
+	mFruTable.genPartNum[sizeof(mFruTable.genPartNum) - 1] = '\0';
+
+	size_t partLen = strnlen(mFruTable.genPartNum, sizeof(mFruTable.genPartNum) - 1);
+	if (partLen == 0) {
+		DBG("FRU part number not available\n");
+		return PLDM_ERROR;
+	}
+
+	size_t requiredLength = partLen + 1;
+
+	if (partNumber == nullptr) {
+		if (bufferSize != nullptr) {
+			*bufferSize = requiredLength;
+		}
+		return PLDM_SUCCESS;
+	}
+
+	if (bufferSize == nullptr) {
+		ERR("Buffer size parameter cannot be null when copying data\n");
+		return PLDM_ERROR;
+	}
+
+	if (*bufferSize < requiredLength) {
+		ERR("Buffer too small: need {}, got {}\n", requiredLength, *bufferSize);
+		*bufferSize = requiredLength;
+		return PLDM_ERROR;
+	}
+
+	STRNCPY_S(partNumber, mFruTable.genPartNum, *bufferSize - 1);
+	partNumber[*bufferSize - 1] = '\0';
 
 	return PLDM_SUCCESS;
 }
@@ -422,7 +486,7 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 		return PLDM_ERROR;
 	}
 
-	STRNCPY_S(version, mFwParamActiveVersion.c_str(), *bufferSize - 1);
+	STRNCPY_S(version, mFwParamActiveVersion.c_str(), *bufferSize);
 	version[*bufferSize - 1] = '\0';
 	DBG("FWU: AMC version (card {:02}) = \"{}\"\n", mCardNum, version);
 	return PLDM_SUCCESS;

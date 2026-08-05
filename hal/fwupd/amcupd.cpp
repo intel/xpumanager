@@ -183,6 +183,41 @@ int amcupd::amcGetCardInfo(std::string gpuBDF, std::string &serialNum, std::stri
 }
 
 /**
+ * @brief Retrieves the FRU part number for the AMC card associated with a GPU BDF.
+ *
+ * Initializes the AMC subsystem if not already done, locates the card by BDF,
+ * then fetches its part number via amclib.
+ *
+ * @param[in]  gpuBDF   PCI BDF string identifying the GPU (e.g. "0000:03:00.0").
+ * @param[out] partNum  Receives the part number string on success.
+ *
+ * @return Card index (>=0) on success, or -1 if the BDF is not found or retrieval fails.
+ */
+int amcupd::amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum)
+{
+	ze_result_t initResult = init();
+	if (initResult != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize AMC devices before querying part number\n");
+		return -1;
+	}
+
+	amclib *amc = getAmcObj();
+	int idx = amc->amcGetIndex(gpuBDF);
+	if (idx < 0) {
+		return -1;
+	}
+
+	char buf[MAX_PATH] = {};
+	size_t bufSize = sizeof(buf);
+	if (amc->amcGetPartNumber(static_cast<uint8_t>(idx), buf, &bufSize) != AMC_SUCCESS) {
+		return -1;
+	}
+
+	partNum = std::string(buf);
+	return idx;
+}
+
+/**
  * @brief Prepares the AMC (Add-in Management Controller) for firmware update
  *
  * This function performs pre-update operations including opening the I2C

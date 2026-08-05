@@ -98,6 +98,7 @@ static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> DISC_DUMP_CMDS{{
 	{&cmdDiscovery::opromCodeFirmwareVersion, "OPROM Code Firmware Version"},		 // 46
 	{&cmdDiscovery::opromDataFirmwareName, "OPROM Data Firmware Name"},				 // 47
 	{&cmdDiscovery::opromDataFirmwareVersion, "OPROM Data Firmware Version"},		 // 48
+	{&cmdDiscovery::partNumber, "Part Number"},										 // 49
 }};
 /**
  * @brief Helper function to convert internal JSON keys to user-friendly display names
@@ -119,6 +120,7 @@ std::string getDisplayName(const std::string &key)
 		{"device_function_type", "Function Type"},
 		{"survivability_mode", "Survivability Mode"},
 		{"serial_number", "Serial Number"},
+		{"part_number", "Part Number"},
 		{"core_clock_rate", "Core Clock Rate"},
 		{"device_stepping", "Stepping"},
 		{"driver_version", "Driver Version"},
@@ -281,6 +283,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("vendor_name", "Vendor Name");
 		addField("uuid", "SOC UUID");
 		addField("serial_number", "Serial Number");
+		addField("part_number", "Part Number");
 		addField("core_clock_rate", "Core Clock Rate");
 		addField("device_stepping", "Stepping");
 		addField("sku_type", "SKU Type");
@@ -679,6 +682,9 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 
 	serialNumber(d, &outputLine);
 	props["serial_number"] = outputLine;
+
+	partNumber(d, &outputLine);
+	props["part_number"] = outputLine;
 
 	stepping(d, &outputLine);
 	props["device_stepping"] = outputLine;
@@ -2157,6 +2163,69 @@ ze_result_t cmdDiscovery::querySerialNumberFromAMC(devInfo *d, std::string *seri
 	}
 
 	*serialNumberString = serialNum;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Fetches the part number of the given device from the AMC FRU data if AMC is available.
+ *
+ * @param[in]  d                 Pointer to the device info structure.
+ * @param[out] partNumberString  Populated with the FRU part number on success.
+ *
+ * @retval ZE_RESULT_SUCCESS             Part number retrieved and stored in partNumberString.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED No AMC present, firmware object unavailable, or retrieval failed.
+ */
+ze_result_t cmdDiscovery::queryPartNumberFromAMC(devInfo *d, std::string *partNumberString)
+{
+	TRACING();
+
+	if (!d->dev->hasAmc()) {
+		DBG("No AMC associated with device {} — skipping AMC part number query\n",
+			d->dev->getPCI()->getBDFStr().c_str());
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	firmware *fw = d->dev->getFirmware();
+	if (!fw) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	char partNum[MAX_PATH] = {};
+	ze_result_t result = fw->getAmcPartNumber(d->dev->getPCI()->getBDFStr().c_str(), partNum, sizeof(partNum));
+	if (result != ZE_RESULT_SUCCESS || partNum[0] == '\0') {
+		DBG("Failed to get part number from AMC for device {} (result: 0x{:X})\n",
+			d->dev->getPCI()->getBDFStr().c_str(), result);
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	*partNumberString = partNum;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Prints the FRU part number for a device when user runs discovery --dump 49.
+ *
+ * @param[in]  d           Pointer to the device info structure.
+ * @param[out] outputLine  Receives the part number string, or "unknown" if unavailable.
+ *
+ * @retval ZE_RESULT_SUCCESS Always succeeds; outputLine is set to "unknown" when the part number
+ *                           cannot be retrieved.
+ */
+ze_result_t cmdDiscovery::partNumber(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+
+	*outputLine = "unknown";
+
+	if (d->dev->hasAmc()) {
+		std::string partNumFromAMC;
+		const auto amcResult = queryPartNumberFromAMC(d, &partNumFromAMC);
+		if (amcResult == ZE_RESULT_SUCCESS && !partNumFromAMC.empty()) {
+			DBG("Successfully retrieved part number from AMC: {}\n", partNumFromAMC.c_str());
+			*outputLine = partNumFromAMC;
+		}
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 

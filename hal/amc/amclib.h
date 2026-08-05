@@ -48,6 +48,7 @@ public:
 	int amcGetSensorInfoBySensorId(int deviceIndex, uint16_t sensorId, std::vector<amcSensorInfo> &sensorInfo);
 	int oemVrsync(uint8_t cmd);
 	int amcGetSerialNumber(uint8_t card_num, char *serialNumber, size_t *bufferSize);
+	int amcGetPartNumber(uint8_t card_num, char *partNumber, size_t *bufferSize);
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
 	int amcGpuReset(uint32_t cardNum);
 	int amcReadFile(int deviceIndex, uint16_t filePdrId, std::vector<uint8_t> &fileData);

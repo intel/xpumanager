@@ -408,6 +408,46 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 }
 
 /**
+ * @brief Retrieves the FRU part number for a specified AMC card.
+ *
+ * Supports two usage patterns:
+ * 1. Length query: pass nullptr for partNum to receive the required buffer length.
+ * 2. Data copy: pass a valid buffer and bufferSize to copy the part number string.
+ *
+ * @param[in]     cardNum     Card index (0-based, must be less than numCards).
+ * @param[out]    partNum     Buffer to receive the null-terminated part number, or nullptr to query length.
+ * @param[in,out] bufferSize  INPUT = buffer capacity; OUTPUT = required length including null terminator.
+ *
+ * @retval AMC_SUCCESS  Part number retrieved or required length returned.
+ * @retval AMC_ERROR    Invalid card index, uninitialized PLDM object, or buffer too small.
+ */
+int amclib::amcGetPartNumber(uint8_t cardNum, char *partNum, size_t *bufferSize)
+{
+	TRACING();
+
+	if (cardNum >= numCards) {
+		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
+		return AMC_ERROR;
+	}
+
+	if (pldmobj[cardNum] == nullptr) {
+		ERR("PLDM object not initialized for card {}\n", cardNum);
+		return AMC_ERROR;
+	}
+
+	if (pldmobj[cardNum]->getFruPartNum(partNum, bufferSize) != PLDM_SUCCESS) {
+		ERR("Failed to get part number for card {}\n", cardNum);
+		return AMC_ERROR;
+	}
+
+	if (partNum != nullptr && bufferSize != nullptr) {
+		DBG("Part Number of card {}: {}\n", cardNum, partNum);
+	}
+
+	return AMC_SUCCESS;
+}
+
+/**
  * @brief Get the AMC version for a specified AMC card
  *
  * This function supports two usage patterns:

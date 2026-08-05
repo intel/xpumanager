@@ -236,6 +236,44 @@ ze_result_t firmware::getAmcSerialNumber(const char *bdfStr, char *serialNum, ui
 }
 
 /**
+ * @brief Retrieves the AMC FRU part number for the GPU identified by bdfStr.
+ *
+ * @param[in]  bdfStr   PCI BDF string of the GPU whose part number is requested.
+ * @param[out] partNum  Buffer to receive the null-terminated part number string.
+ * @param[in]  size     Size of the partNum buffer in bytes.
+ *
+ * @retval ZE_RESULT_SUCCESS                Part number retrieved successfully.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED    No AMC entry present in fwupdArray or amcupd cast is null.
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT Null pointer or zero-size buffer passed.
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE    AMC init failure, BDF not found, or part number retrieval failed.
+ */
+ze_result_t firmware::getAmcPartNumber(const char *bdfStr, char *partNum, uint32_t size)
+{
+	TRACING();
+
+	if (!fwupdArray || !fwupdArray[FWUPD_PREFERENCE_AMC]) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	if (!bdfStr || !partNum || size == 0) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
+	if (a == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	std::string pn;
+	if (a->amcGetPartNumberByBdf(std::string(bdfStr), pn) == -1) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	STRCPY_S(partNum, size, pn.c_str());
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Updates firmware with the provided firmware information
  *
  * This function performs a firmware update operation using the information

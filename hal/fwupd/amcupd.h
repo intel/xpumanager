@@ -40,6 +40,7 @@ public:
 	// Static method to get the global number of cards
 	static int getNumOfCards();
 	int amcGetCardInfo(std::string gpuBDF, std::string &serialNum, std::string &version);
+	int amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum);
 };
 
 #endif

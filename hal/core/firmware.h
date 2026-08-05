@@ -30,6 +30,7 @@ public:
 	ze_result_t updateFW(firmwareInfo *fwInfo);
 	ze_result_t getFWversion(fwType type, const char *bdfStr, char *version, uint32_t size);
 	ze_result_t getAmcSerialNumber(const char *bdfStr, char *serialNum, uint32_t size);
+	ze_result_t getAmcPartNumber(const char *bdfStr, char *partNum, uint32_t size);
 	int getAmcIndex(std::string gpuBdfStr);
 	bool hasAmcFirmware();
 

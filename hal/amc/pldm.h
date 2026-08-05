@@ -271,6 +271,7 @@ private:
 	uint8_t pldmFruResponsePayload(uint8_t cmd, uint8_t id);
 
 	// PLDM FRU Helper
+	uint8_t ensureFruInitialized();
 	bool parseTimestamp104(const uint8_t *timestampData, uint8_t fieldLength, timestamp104_t *timestamp);
 	uint8_t parseFruTable(const uint8_t *fruData, size_t dataLength);
 	uint8_t parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t recordType, uint8_t encodingType,
@@ -317,6 +318,7 @@ public:
 		pldminit();
 	}
 	uint8_t getFruSerialNum(char *serialNumber, size_t *bufferSize);
+	uint8_t getFruPartNum(char *partNumber, size_t *bufferSize);
 	uint8_t getAmcVersion(char *version, size_t *bufferSize);
 	~pldm() { cleanup(); }
 

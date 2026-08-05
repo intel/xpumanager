@@ -90,6 +90,7 @@ enum discDumpType
 	DUMP_OPROMCODEFIRMWAREVERSION,
 	DUMP_OPROMDATAFIRMWARENAME,
 	DUMP_OPROMDATAFIRMWAREVERSION,
+	DUMP_PARTNUMBER,
 	TOTAL_DISC_DUMPS
 };
 
@@ -169,6 +170,8 @@ public:
 						 std::unique_ptr<Printer> &printer, devFuncType type);
 	ze_result_t getOemSerialNumber(const std::string &meiDevicePath, std::string &serialNumber);
 	ze_result_t querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString);
+	ze_result_t queryPartNumberFromAMC(devInfo *d, std::string *partNumberString);
+	ze_result_t partNumber(devInfo *d, std::string *outputLine);
 
 	std::unique_ptr<nlohmann::ordered_json> printDeviceDetail(devInfo *device, devFuncType funcType);
 
