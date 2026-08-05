@@ -208,17 +208,17 @@ std::string translateMetricQuery(const std::string &query)
 	return result;
 }
 
-/**
- * @brief Build aligned "Group:" / "Alias:" display lines for the dump help text.
- *
- * Derived from metrics::detail::GROUP_TABLE (excludes IDENTITY). Shortcuts match
- * nvidia-smi dmon conventions: @c p = POWER+TEMPERATURE, @c t = PCI, etc.
- *
- * @return  Vector of non-blank strings, typically two elements (Group row then Alias row).
- */
+// Target terminal width used for all help-text line wrapping.
+constexpr int FIELD_HELP_TARGET_WIDTH = 120;
+
 std::vector<std::string> buildGroupAliasLines()
 {
-	// Derived from metrics::detail::GROUP_TABLE; IDENTITY excluded (not a dump metric group).
+	constexpr std::string_view LABEL_GROUP = "Group:";
+	constexpr std::string_view LABEL_ALIAS = "Alias:";
+	constexpr std::size_t LABEL_GAP = 2; // spaces between label and first column
+	constexpr std::size_t COL_GAP = 2;	 // spaces between group columns
+	constexpr std::size_t MAX_LINE = static_cast<std::size_t>(FIELD_HELP_TARGET_WIDTH - static_cast<int>(SUB_HEADING));
+
 	using Entry = std::pair<std::string_view, std::string_view>;
 	std::vector<Entry> groups;
 	for (const auto &e : metrics::detail::GROUP_TABLE) {
@@ -227,41 +227,48 @@ std::vector<std::string> buildGroupAliasLines()
 		}
 	}
 
-	TableBuilder tb;
-	tb.configure(TableBuilder::TableConfig{.borderChar = ' ', .cornerChar = ' ', .verticalChar = ' '})
-		.suppressHeaderSeparator()
-		.suppressHeaderColumnSeparators()
-		.suppressDataColumnSeparators()
-		.enableAutoSizing();
-
-	// One label column + one column per group (all with empty headers).
-	tb.addColumn("", Align::Left);
-	for (std::size_t i = 0; i < std::size(groups); ++i) {
-		tb.addColumn("", Align::Left);
+	// Per-group column width: aligned to the wider of name and alias.
+	std::vector<std::size_t> colWidths;
+	colWidths.reserve(groups.size());
+	for (const auto &[name, alias] : groups) {
+		colWidths.push_back(std::max(name.size(), alias.size()));
 	}
 
-	{
-		std::vector<std::string> row{"Group:"};
-		for (const auto &[g, a] : groups) {
-			row.emplace_back(g);
-		}
-		tb.addRowFromContainer(row);
-	}
-	{
-		std::vector<std::string> row{"Alias:"};
-		for (const auto &[g, a] : groups) {
-			row.emplace_back(a);
-		}
-		tb.addRowFromContainer(row);
-	}
-
+	// Greedily pack groups into sections that each fit within MAX_LINE chars.
 	std::vector<std::string> lines;
-	for (const auto &rng : tb.toString() | std::views::split('\n')) {
-		const std::string_view line{rng.begin(), rng.end()};
-		if (line.find_first_not_of(' ') != std::string_view::npos) {
-			lines.emplace_back(line);
+	std::size_t start = 0;
+	while (start < groups.size()) {
+		std::size_t lineWidth = LABEL_GROUP.size() + LABEL_GAP;
+		std::size_t end = start;
+		while (end < groups.size()) {
+			std::size_t needed = colWidths[end] + (end > start ? COL_GAP : std::size_t{0});
+			if (lineWidth + needed > MAX_LINE)
+				break;
+			lineWidth += needed;
+			++end;
 		}
+		if (end == start)
+			++end; // always include at least one column
+
+		std::string groupLine{LABEL_GROUP};
+		std::string aliasLine{LABEL_ALIAS};
+		groupLine.append(LABEL_GAP, ' ');
+		aliasLine.append(LABEL_GAP, ' ');
+
+		for (std::size_t i = start; i < end; ++i) {
+			if (i > start) {
+				groupLine.append(COL_GAP, ' ');
+				aliasLine.append(COL_GAP, ' ');
+			}
+			groupLine += xpum::compat::format("{:<{}}", groups[i].first, colWidths[i]);
+			aliasLine += xpum::compat::format("{:<{}}", groups[i].second, colWidths[i]);
+		}
+
+		lines.push_back(std::move(groupLine));
+		lines.push_back(std::move(aliasLine));
+		start = end;
 	}
+
 	return lines;
 }
 
@@ -299,39 +306,27 @@ struct SamplingTiming
 };
 
 /**
- * @brief Validate, translate, and resolve a --metrics argument.
+ * @brief Translate and resolve a --metrics argument.
  *
- * Rejects dot-notation field names that belong to @c --query-gpu, then delegates to
- * translateMetricQuery() followed by metrics::resolveQuery().
+ * Accepts group names, single/multi-character shortcuts, individual dot-notation field names,
+ * and legacy numeric IDs. Delegates to translateMetricQuery() then metrics::resolveQuery().
  *
  * @pre   @p metricsArg must not be empty.
  * @param[in] metricsArg  Raw value of the --metrics option.
  * @return  Non-owning pointers to the resolved QueryMetric descriptors, in query order.
- *          Returns an empty vector on any validation or resolution failure (error already logged).
+ *          Returns an empty vector on any resolution failure (error already logged).
  */
 std::vector<const metrics::QueryMetric *> resolveMetricsArg(const std::string &metricsArg)
 {
-	for (auto &&rng : std::string_view{metricsArg} | std::views::split(',')) {
-		std::string_view sv{rng.begin(), rng.end()};
-		const auto b = sv.find_first_not_of(" \t");
-		if (b == std::string_view::npos) {
-			continue;
-		}
-		sv = sv.substr(b, sv.find_last_not_of(" \t") - b + 1);
-		if (!parseInteger<int>(sv).has_value() && sv.find('.') != std::string_view::npos) {
-			ERR("'{}' looks like a field name. Use '--query-gpu={}' for field-name queries.\n", sv, metricsArg.c_str());
-			ERR("Use group names with --metrics (e.g. '--metrics POWER' or '--metrics pu').\n");
-			return {};
-		}
-	}
 	const std::string translated = translateMetricQuery(metricsArg);
 	if (translated.empty()) {
 		return {};
 	}
 	auto fields = metrics::resolveQuery(translated);
 	if (fields.empty()) {
-		ERR("No valid metrics matched: '{}'", metricsArg.c_str());
-		ERR("Use group names like 'POWER' or 'pu'. Run with --help for details.\n");
+		ERR("No valid metrics matched: '{}'\n", metricsArg.c_str());
+		ERR("Use group names ('POWER', 'pu'), field names ('temperature.gpu'), or legacy IDs. Run with --help for "
+			"details.\n");
 	}
 	return fields;
 }
@@ -846,6 +841,56 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	return ZE_RESULT_SUCCESS;
 }
 
+constexpr int FIELD_NAME_WIDTH = 40;
+// Description column: SUB_HEADING indent + field-name column + separator space.
+constexpr int DESC_COL = static_cast<int>(SUB_HEADING) + FIELD_NAME_WIDTH + 1;
+constexpr int DESC_WIDTH = FIELD_HELP_TARGET_WIDTH - DESC_COL;
+
+// Add a field-help entry that word-wraps long descriptions so they never
+// overflow the terminal, with continuation lines aligned to the description column.
+void addFieldHelp(std::vector<helpCmd> &list, const std::string &fieldName, std::string_view description,
+				  std::string_view unit)
+{
+	std::string full = unit.empty() ? std::string{description} : xpum::compat::format("{} ({})", description, unit);
+
+	// Greedily pack words into lines of at most `width` chars, breaking at word boundaries.
+	auto wrapLines = [](std::string_view text, std::size_t width) {
+		std::vector<std::string> out;
+		std::string current;
+		for (auto word_range : text | std::views::split(' ')) {
+			std::string_view word{word_range.begin(), word_range.end()};
+			if (word.empty())
+				continue;
+			if (current.empty()) {
+				current = word;
+			} else if (current.size() + 1 + word.size() <= width) {
+				current += ' ';
+				current += word;
+			} else {
+				out.push_back(std::move(current));
+				current = std::string{word};
+			}
+		}
+		if (!current.empty())
+			out.push_back(std::move(current));
+		if (out.empty())
+			out.emplace_back("");
+		return out;
+	};
+
+	auto chunks = wrapLines(full, static_cast<std::size_t>(DESC_WIDTH));
+
+	auto firstLine = xpum::compat::format("{:<{}} {}", fieldName, FIELD_NAME_WIDTH, chunks[0]);
+	list.emplace_back(SUB_HEADING, "%s", firstLine.c_str());
+
+	for (std::size_t i = 1; i < chunks.size(); ++i) {
+		helpCmd cont;
+		cont.char_gap = DESC_COL;
+		snprintf(cont.line, sizeof(cont.line), "%s", chunks[i].c_str());
+		list.push_back(cont);
+	}
+}
+
 } // namespace
 
 // -- runQuery ---------------------------------------------------------
@@ -938,11 +983,7 @@ void cmdDump::printQueryHelp()
 		if (legacyId.has_value()) {
 			fieldName += xpum::compat::format(" [{}]", *legacyId);
 		}
-		if (f.unit.empty()) {
-			helpList.emplace_back(SUB_HEADING, "%-40s %s", fieldName.c_str(), f.description.data());
-		} else {
-			helpList.emplace_back(SUB_HEADING, "%-40s %s (%s)", fieldName.c_str(), f.description.data(), f.unit.data());
-		}
+		addFieldHelp(helpList, fieldName, f.description, f.unit);
 	}
 	helpList.emplace_back(BLANK);
 
@@ -1011,7 +1052,7 @@ void cmdDump::help(HELP helpType)
 		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
 	}
 	helpList.emplace_back(SUB_HEADING, "Multi-char aliases: e.g. \"pu\" = POWER+TEMPERATURE+UTILIZATION");
-	helpList.emplace_back(SUB_HEADING, "For individual field names use --query-gpu instead.");
+	helpList.emplace_back(SUB_HEADING, "Individual field names also accepted: e.g. \"temperature.gpu,power.draw\"");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Available fields: (legacy ID in brackets)");
 	for (const metrics::QueryMetric &f : metrics::getQueryMetrics()) {
@@ -1028,11 +1069,7 @@ void cmdDump::help(HELP helpType)
 			fieldName += xpum::compat::format(" [{}]", *legacyId);
 		}
 
-		if (f.unit.empty()) {
-			helpList.emplace_back(SUB_HEADING, "%-40s %s", fieldName.c_str(), f.description.data());
-		} else {
-			helpList.emplace_back(SUB_HEADING, "%-40s %s (%s)", fieldName.c_str(), f.description.data(), f.unit.data());
-		}
+		addFieldHelp(helpList, fieldName, f.description, f.unit);
 	}
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(HEADING, "--interval,--delay          Sampling interval in seconds (default: 1)");
