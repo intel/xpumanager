@@ -6,72 +6,34 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "gomod"
-    directory: "/xpumd"
+    directories:
+      - "/xpumd"
+      - "/xpumd/common"
+      - "/xpumd/exporter/intelxpuinfo"
+      - "/xpumd/exporter/intelxpuinfo/api"
+      - "/xpumd/processor/intelxpustatus"
+      - "/xpumd/receiver/intelcrashlog"
+      - "/xpumd/receiver/intelxpu"
+      - "/xpumd/test/integration"
+      - "/xpumd/tools"
     schedule:
       interval: "weekly"
     groups:
       otel-collector:
         patterns:
           - "go.opentelemetry.io/collector/*"
+        group-by: "dependency-name"
+      non-otel-collector:
+        group-by: "dependency-name"
   - package-ecosystem: "gomod"
-    directory: "/xpumd/common"
-    schedule:
-      interval: "weekly"
-    groups:
-      otel-collector:
-        patterns:
-          - "go.opentelemetry.io/collector/*"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/tools"
-    schedule:
-      interval: "weekly"
-    groups:
-      otel-collector:
-        patterns:
-          - "go.opentelemetry.io/collector/*"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/processor"
-    schedule:
-      interval: "weekly"
-    groups:
-      otel-collector:
-        patterns:
-          - "go.opentelemetry.io/collector/*"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/exporter"
-    schedule:
-      interval: "weekly"
-    groups:
-      otel-collector:
-        patterns:
-          - "go.opentelemetry.io/collector/*"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/exporter/intelxpuinfo/api"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/receiver"
-    schedule:
-      interval: "weekly"
-    groups:
-      otel-collector:
-        patterns:
-          - "go.opentelemetry.io/collector/*"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/level-zero-go"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/level-zero-go/examples"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/level-zero-go/hack"
+    directories:
+      - "/xpumd/level-zero-go"
+      - "/xpumd/level-zero-go/examples"
+      - "/xpumd/level-zero-go/hack"
     schedule:
       interval: "weekly"
     ignore:
       - dependency-name: "github.com/xlab/c-for-go"
-  - package-ecosystem: "gomod"
-    directory: "/xpumd/test/integration"
-    schedule:
-      interval: "weekly"
+    groups:
+      level-zero-go:
+        group-by: "dependency-name"
