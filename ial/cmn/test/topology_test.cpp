@@ -23,8 +23,8 @@ std::string progName = "test";
 #include "cmd_topology.h"
 #include "topology.h"
 
-#include "logger/logger.h"
-#include "logger/ostream_sink.h"
+#include "utility/logger/logger.h"
+#include "utility/logger/ostream_sink.h"
 
 #include <filesystem>
 #include <fstream>
