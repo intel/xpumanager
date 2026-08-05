@@ -1065,6 +1065,59 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
+	// Validate requested range against hardware-supported frequency options
+	uint32_t tileCount = 0;
+	zes_device_properties_t devProps = {};
+	devProps.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	if (d->dev->zesGetDevProps(d->zesDeviceHdl, &devProps) == ZE_RESULT_SUCCESS) {
+		tileCount = devProps.numSubdevices;
+	}
+	if (tileCount == 0) {
+		tileCount = 1;
+	}
+
+	auto isSupported = [](double v, const std::vector<uint32_t> &opts) {
+		auto iv = static_cast<uint32_t>(std::llround(v));
+		return std::fabs(v - static_cast<double>(iv)) < 0.0001 && std::find(opts.begin(), opts.end(), iv) != opts.end();
+	};
+
+	uint32_t startTile = (tileId >= 0) ? static_cast<uint32_t>(tileId) : 0;
+	uint32_t endTile = (tileId >= 0) ? (startTile + 1) : tileCount;
+	for (uint32_t t = startTile; t < endTile; ++t) {
+		std::string validOptions;
+		uint32_t unusedMin = 0;
+		uint32_t unusedMax = 0;
+		getGpuFrequencyOptions(d, t, validOptions, unusedMin, unusedMax);
+		if (validOptions.empty()) {
+			continue;
+		}
+
+		std::vector<uint32_t> hwOpts;
+		for (auto tok : split(validOptions, ',')) {
+			tok.erase(std::remove(tok.begin(), tok.end(), ' '), tok.end());
+			char *end = nullptr;
+			unsigned long val = std::strtoul(tok.c_str(), &end, 10);
+			if (end == tok.c_str() || *end != '\0') {
+				hwOpts.clear();
+				break;
+			}
+			hwOpts.push_back(static_cast<uint32_t>(val));
+		}
+		if (hwOpts.empty()) {
+			continue;
+		}
+		std::sort(hwOpts.begin(), hwOpts.end());
+		uint32_t hwMin = hwOpts.front();
+		uint32_t hwMax = hwOpts.back();
+
+		if (minFreq < hwMin || maxFreq > hwMax || !isSupported(minFreq, hwOpts) || !isSupported(maxFreq, hwOpts)) {
+			ERR("Invalid frequency range for tile {}: {:.0f}-{:.0f} MHz.\n", t, minFreq, maxFreq);
+			ERR("Valid min frequency: {} MHz, valid max frequency: {} MHz\n", hwMin, hwMax);
+			ERR("Valid options: {}\n", validOptions);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
 	ze_result_t result = fq->setFrequencyRange(minFreq, maxFreq, tileId);
 
 	if (result == ZE_RESULT_SUCCESS) {
