@@ -29,6 +29,7 @@ generate: clean-generated generate-stub
 	$(Q)for pkg in $(PACKAGES); do \
 	    hack/generate.sh $$pkg || exit 1; \
 	done
+	go -C hack generate
 
 .PHONY: generate-stub
 generate-stub:
