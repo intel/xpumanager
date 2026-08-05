@@ -69,8 +69,6 @@ updates:
     directory: "/xpumd/level-zero-go/hack"
     schedule:
       interval: "weekly"
-    allow:
-      - dependency-type: "all"
     ignore:
       - dependency-name: "github.com/xlab/c-for-go"
   - package-ecosystem: "gomod"
