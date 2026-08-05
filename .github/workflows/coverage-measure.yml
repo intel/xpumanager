@@ -1,0 +1,282 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+#
+# Measures coverage for a head branch vs. a base branch, then posts a
+# PR comment with the delta.
+#
+# Triggers:
+#   pull_request  - automatic on PRs targeting dev or main
+#   workflow_dispatch - ad-hoc via gh CLI or API:
+#       gh workflow run coverage-measure.yml --ref <workflow-branch> \
+#         -f head_ref=bot/sync-dev-to-main \
+#         -f base_ref=main \
+#         -f pr_number=42
+#
+# Variables:
+#   COVERAGE_RUNS_ON          - JSON runner label(s), e.g. ["self-hosted","xpum"] or "ubuntu-latest"
+#   COVERAGE_EXTRA_EXCLUDES   - optional whitespace-separated gcovr --exclude patterns to append
+
+name: Coverage Measure
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    types: [opened, synchronize, reopened]
+    paths:
+      - "**"
+      - "!xpumd/**"
+  workflow_dispatch:
+    inputs:
+      head_ref:
+        description: 'Branch to measure coverage for'
+        required: true
+      base_ref:
+        description: 'Branch to compare against'
+        required: true
+      pr_number:
+        description: 'PR number to post comment on (leave blank to skip comment)'
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  # Coverage on the head branch
+  coverage-pr:
+    runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    timeout-minutes: 60
+    steps:
+      - name: Checkout head branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+        with:
+          ref: ${{ inputs.head_ref || github.head_ref }}
+
+      - name: Build coverage image
+        run: |
+          docker build \
+            --tag xpum-coverage:ci \
+            --file "${{ github.workspace }}/.github/docker/Dockerfile.coverage" \
+            "${{ github.workspace }}"
+
+      - name: Install Conan deps and configure Meson
+        run: |
+          docker run --rm -i \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            --env CONAN_HOME=/conan \
+            xpum-coverage:ci bash << 'SCRIPT'
+          set -e
+          rm -f *.pc
+          conan install . --build=missing \
+            -s build_type=Release \
+            -o '&:use_system_levelzero=True' \
+            -o '&:use_system_igsc=True' \
+            -o '&:use_system_hwloc=True' \
+            -o '&:use_system_curl=True' \
+            -o '&:with_tests=True'
+          rm -rf builddir
+          meson setup builddir \
+            --buildtype=release \
+            -Db_lto=false \
+            -Db_coverage=true \
+            -Dwith_tests=true \
+            -Duse_system_levelzero=true \
+            -Duse_system_igsc=true \
+            --native-file conan_meson_native.ini
+          SCRIPT
+
+      - name: Run unit tests (doctest)
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            xpum-coverage:ci \
+            meson test -C builddir --verbose
+
+      - name: Generate coverage JSON report
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            --env "COVERAGE_EXTRA_EXCLUDES=${{ vars.COVERAGE_EXTRA_EXCLUDES }}" \
+            xpum-coverage:ci \
+            python3 -c "
+          import os, sys, subprocess
+          sys.path.insert(0, 'validation')
+          from coverage_filters import gcovr_filter_args
+          os.makedirs('coverage_pr_html', exist_ok=True)
+          extra = [x for p in os.environ.get('COVERAGE_EXTRA_EXCLUDES', '').split() for x in ('--exclude', p)]
+          subprocess.run(
+              ['gcovr', '--root', '.', '--json-summary', 'coverage_pr.json',
+               '--html-details', 'coverage_pr_html/index.html',
+               '--gcov-ignore-parse-errors=negative_hits.warn_once_per_file',
+               '--gcov-ignore-errors=no_working_dir_found',
+               *gcovr_filter_args(), *extra, 'builddir'],
+              check=True,
+          )
+          "
+
+      - name: Upload head coverage artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: coverage-pr
+          path: |
+            ${{ github.workspace }}/coverage_pr.json
+            ${{ github.workspace }}/coverage_pr_html/
+          retention-days: 7
+
+      - name: Restore workspace file ownership
+        if: always()
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/workspace" \
+            xpum-coverage:ci \
+            chown -R "$(id -u):$(id -g)" /workspace
+
+  # Coverage on the base branch
+  coverage-base:
+    runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    timeout-minutes: 60
+    steps:
+      - name: Checkout head branch (for Dockerfile and conanfile.py)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+        with:
+          ref: ${{ inputs.head_ref || github.head_ref }}
+
+      - name: Build coverage image
+        run: |
+          docker build \
+            --tag xpum-coverage:ci \
+            --file "${{ github.workspace }}/.github/docker/Dockerfile.coverage" \
+            "${{ github.workspace }}"
+
+      - name: Install Conan deps (head conanfile, before switching to base)
+        run: |
+          docker run --rm -i \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            --env CONAN_HOME=/conan \
+            xpum-coverage:ci bash << 'SCRIPT'
+          set -e
+          rm -f *.pc
+          conan install . --build=missing \
+            -s build_type=Release \
+            -o '&:use_system_levelzero=True' \
+            -o '&:use_system_igsc=True' \
+            -o '&:use_system_hwloc=True' \
+            -o '&:use_system_curl=True' \
+            -o '&:with_tests=True'
+          SCRIPT
+
+      - name: Checkout base branch for measurement
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+        with:
+          ref: ${{ inputs.base_ref || github.base_ref }}
+          clean: false
+
+      - name: Configure Meson for base branch source
+        run: |
+          docker run --rm -i \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            --env CONAN_HOME=/conan \
+            xpum-coverage:ci bash << 'SCRIPT'
+          set -e
+          rm -rf builddir
+          meson setup builddir \
+            --buildtype=release \
+            -Db_lto=false \
+            -Db_coverage=true \
+            -Dwith_tests=true \
+            -Duse_system_levelzero=true \
+            -Duse_system_igsc=true \
+            --native-file conan_meson_native.ini
+          SCRIPT
+
+      - name: Run unit tests (doctest)
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            xpum-coverage:ci \
+            meson test -C builddir --verbose
+
+      - name: Generate coverage JSON report
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/workspace" \
+            --workdir /workspace \
+            --env "COVERAGE_EXTRA_EXCLUDES=${{ vars.COVERAGE_EXTRA_EXCLUDES }}" \
+            xpum-coverage:ci \
+            python3 -c "
+          import os, sys, subprocess
+          sys.path.insert(0, 'validation')
+          from coverage_filters import gcovr_filter_args
+          os.makedirs('coverage_base_html', exist_ok=True)
+          extra = [x for p in os.environ.get('COVERAGE_EXTRA_EXCLUDES', '').split() for x in ('--exclude', p)]
+          subprocess.run(
+              ['gcovr', '--root', '.', '--json-summary', 'coverage_base.json',
+               '--html-details', 'coverage_base_html/index.html',
+               '--gcov-ignore-parse-errors=negative_hits.warn_once_per_file',
+               '--gcov-ignore-errors=no_working_dir_found',
+               *gcovr_filter_args(), *extra, 'builddir'],
+              check=True,
+          )
+          "
+
+      - name: Upload base coverage artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v4
+        with:
+          name: coverage-base
+          path: |
+            ${{ github.workspace }}/coverage_base.json
+            ${{ github.workspace }}/coverage_base_html/
+          retention-days: 7
+
+      - name: Restore workspace file ownership
+        if: always()
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/workspace" \
+            xpum-coverage:ci \
+            chown -R "$(id -u):$(id -g)" /workspace
+
+  # Post coverage delta as a PR comment
+  comment:
+    needs: [coverage-pr, coverage-base]
+    # Skip when dispatched without a PR number
+    if: >-
+      needs.coverage-pr.result == 'success' &&
+      needs.coverage-base.result == 'success' &&
+      (github.event_name == 'pull_request' || inputs.pr_number != '')
+    runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository (for compare script)
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
+
+      - name: Download head coverage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        with:
+          name: coverage-pr
+          path: .
+
+      - name: Download base coverage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        with:
+          name: coverage-base
+          path: .
+
+      - name: Post or update PR comment
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7
+        env:
+          BASE_REF: ${{ inputs.base_ref || github.base_ref }}
+          PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+        with:
+          script-path: .github/scripts/post_coverage_comment.ts

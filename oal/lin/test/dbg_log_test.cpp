@@ -354,6 +354,10 @@ TEST_SUITE("Failure Cases")
 
 	TEST_CASE("handle permission denied on file read")
 	{
+		if (getuid() == 0) {
+			return; // root bypasses permissions; test not meaningful
+		}
+
 		TempDirectory temp;
 		auto restrictedFile = temp.createFile("restricted.txt", "data");
 

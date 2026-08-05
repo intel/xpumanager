@@ -24,20 +24,32 @@ class XpumConan(ConanFile):
         "fPIC": [True, False],
         "with_igsc": [True, False],
         "with_tests": [True, False],
+        "use_system_levelzero": [True, False],
+        "use_system_igsc": [True, False],
+        "use_system_hwloc": [True, False],
+        "use_system_curl": [True, False],
     }
     default_options = {
         "shared": False,
         "fPIC": True,
         "with_igsc": True,
         "with_tests": False,
+        "use_system_levelzero": False,
+        "use_system_igsc": False,
+        "use_system_hwloc": False,
+        "use_system_curl": False,
     }
 
     def requirements(self):
-        self.requires("level-zero/1.27.0")
-        self.requires("igsc/1.2.0")
+        if not self.options.use_system_levelzero:
+            self.requires("level-zero/1.27.0")
+        if not self.options.use_system_igsc:
+            self.requires("igsc/1.2.0")
         self.requires("nlohmann_json/3.10.2")
-        self.requires("hwloc/2.9.3")  # Cross-platform topology library
-        self.requires("libcurl/8.5.0")
+        if not self.options.use_system_hwloc:
+            self.requires("hwloc/2.9.3")
+        if not self.options.use_system_curl:
+            self.requires("libcurl/8.5.0")
         self.requires("cli11/2.6.2")
         # {fmt} is only needed on compilers without a conforming std::format.
         # GCC 13+ defines __cpp_lib_format; earlier versions (e.g. GCC 12 / Debian 12) do not.
@@ -51,7 +63,7 @@ class XpumConan(ConanFile):
         if self.options.with_tests:
             self.tool_requires("cmake/3.25.3")  # For some test dependencies
             self.test_requires("boost-ext-ut/2.1.0")  # boost-ext/ut testing framework
-            self.test_requires("doctest/2.4.11")  # doctest — logger unit tests
+            self.test_requires("doctest/2.4.11")  # logger unit tests
 
     def configure(self):
         # Configure fPIC based on shared option
@@ -89,6 +101,10 @@ class XpumConan(ConanFile):
         # Add custom meson options based on conan options
         if not self.options.with_igsc:
             tc.project_options["use_system_igsc"] = False
+        if self.options.use_system_levelzero:
+            tc.project_options["use_system_levelzero"] = True
+        if self.options.use_system_igsc:
+            tc.project_options["use_system_igsc"] = True
 
         tc.generate()
 

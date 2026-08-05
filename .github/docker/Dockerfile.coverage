@@ -1,0 +1,78 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
+FROM ubuntu:24.04
+ENV DEBIAN_FRONTEND=noninteractive
+ENV CONAN_HOME=/conan
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+  build-essential \
+  gcc-13 \
+  g++-13 \
+  meson \
+  ninja-build \
+  pkg-config \
+  python3-pip \
+  curl \
+  ca-certificates \
+  software-properties-common \
+  libhwloc-dev \
+  libpciaccess-dev \
+  libcurl4-openssl-dev \
+  gcovr \
+  lcov \
+  git \
+  && add-apt-repository ppa:kobuk-team/intel-graphics \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends \
+  libze-dev \
+  libigsc-dev \
+  libmetee-dev \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
+  && VER=$(dpkg -s libigsc-dev | awk '/^Version:/{v=$2; sub(/-.*/, "", v); print v}') \
+  && printf 'prefix=/usr\nlibdir=/usr/lib/x86_64-linux-gnu\nincludedir=/usr/include\n\nName: igsc\nDescription: Intel Graphics System Controller firmware update library\nVersion: %s\nLibs: -L${libdir} -ligsc\nCflags: -I${includedir}\n' "$VER" \
+  > /usr/lib/x86_64-linux-gnu/pkgconfig/igsc.pc
+
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 13 \
+  && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 13
+
+RUN pip3 install --break-system-packages "conan>=2.0"
+
+RUN mkdir -p /conan/profiles \
+  && cat > /conan/profiles/default <<'EOF'
+[settings]
+arch=x86_64
+build_type=Release
+compiler=gcc
+compiler.cppstd=20
+compiler.libcxx=libstdc++11
+compiler.version=13
+os=Linux
+
+[conf]
+tools.system.package_manager:mode=install
+tools.system.package_manager:sudo=False
+
+[buildenv]
+CC=gcc
+CXX=g++
+EOF
+RUN cp /conan/profiles/default /conan/profiles/build \
+  && conan remote add conancenter --force https://center2.conan.io
+
+WORKDIR /tmp/conan-deps
+COPY conanfile.py .
+COPY recipes/ recipes/
+RUN conan install . --build=missing \
+  -s build_type=Release \
+  -o "&:use_system_levelzero=True" \
+  -o "&:use_system_igsc=True" \
+  -o "&:use_system_hwloc=True" \
+  -o "&:use_system_curl=True" \
+  -o "&:with_tests=True" \
+  && rm -rf /tmp/conan-deps
+
+WORKDIR /workspace
+CMD ["/bin/bash"]
