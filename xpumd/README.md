@@ -95,6 +95,7 @@ graph TB
     style K8S fill:#e8f5e9
     style TELEM fill:#e8f5e9
     style RECV_XPU fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+    style RECV_LOG fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
     style PROC_XPU fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
     style EXP_INFO fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
 ```
