@@ -151,6 +151,16 @@ def validate_csv_output(output: str, expectations: Dict[str, Any]) -> Tuple[bool
         reader = _csv.DictReader(StringIO('\n'.join(lines)))
         rows = list(reader)
         header = reader.fieldnames or []
+        # Strip whitespace from header names — the CLI emits ', DeviceId' style
+        # padding after commas, so an unstripped lookup of 'DeviceId' misses.
+        header = [h.strip() for h in header if isinstance(h, str)]
+        # Re-key row dicts with stripped names. DictReader files any extra
+        # columns under a None restkey; drop that entry rather than calling
+        # .strip() on None, which would turn valid CSV into a parse failure.
+        rows = [
+            {k.strip(): v for k, v in row.items() if isinstance(k, str)}
+            for row in rows
+        ]
     except Exception as e:
         return False, f"CSV parse failed: {e}"
 
@@ -279,7 +289,10 @@ def _parse_json(output: str) -> Tuple[Any, str]:
                 try:
                     return json.loads('\n'.join(lines[i:])), ""
                 except json.JSONDecodeError:
-                    break
+                    # Keep scanning: a leaked '[Error] ...' log line also starts
+                    # with '[', so the first candidate is not always the real
+                    # JSON body. Stopping here would fail otherwise-valid output.
+                    continue
         return None, f"Invalid JSON output: {first_err}"
 
 

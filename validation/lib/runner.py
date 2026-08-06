@@ -53,6 +53,7 @@ class CLITestRunner:
         self.logger = self._setup_logger()
         self.results: List[TestResult] = []
         self.workflow_context: Dict[str, Any] = {}
+        self._capability_cache: Dict[str, bool] = {}
 
         if self.issues_dir:
             self.issues_dir.mkdir(parents=True, exist_ok=True)
@@ -221,6 +222,38 @@ class CLITestRunner:
         command = self.resolve_variables(step.command, variables)
         timeout = step.timeout or global_settings.get('timeout', 30)
 
+        # A step may carry a raw shell script (e.g. cleanup: `rm -f /tmp/x`)
+        # instead of a binary invocation. Run it through the shell, with
+        # {command} expanding to the full binary invocation.
+        if step.script:
+            _preview = (step.script.strip().splitlines() or [''])[0]
+            self.logger.info(f"    Script: {_preview} ...")
+            result = self._execute_with_script(command, step.script, timeout, variables)
+            expected_rc = step.expect.get('return_code', 0)
+            if not validate_return_code(result['return_code'], expected_rc):
+                step_result = StepResult(
+                    step_name=step.name, passed=False,
+                    message=f"Return code mismatch: expected {expected_rc}, got {result['return_code']}",
+                    duration=time.time() - start_time,
+                    return_code=result['return_code'],
+                    stdout=result['stdout'], stderr=result['stderr'],
+                )
+            else:
+                step_result = StepResult(
+                    step_name=step.name, passed=True, message="Script step passed",
+                    duration=time.time() - start_time,
+                    return_code=result['return_code'],
+                    stdout=result['stdout'], stderr=result['stderr'],
+                )
+            if step.store_result:
+                workflow_context[step.store_result] = step_result.return_code
+            if step.store_output_as:
+                workflow_context[step.store_output_as] = step_result.stdout
+            return step_result
+
+        # Always display the step's command line (pass or fail) for re-runs.
+        self.logger.info(f"    Command: {_full_binary(self.binary_path)} {command}")
+
         if step.step_type == StepType.BACKGROUND:
             result = self.execute_command(command, timeout, background=True)
             if 'process' in result:
@@ -251,7 +284,12 @@ class CLITestRunner:
                 )
             else:
                 if step.output_format == 'json':
-                    success, message = validate_json_output(result['stdout'], step.expect)
+                    rc = result['return_code']
+                    allows_failure = isinstance(expected_rc, list) and rc in expected_rc and rc != 0
+                    if allows_failure and not result['stdout'].strip():
+                        success, message = True, "JSON validation skipped: allowed non-zero rc with empty stdout"
+                    else:
+                        success, message = validate_json_output(result['stdout'], step.expect)
                 else:
                     success, message = validate_plaintext(result['stdout'], step.expect)
                 step_result = StepResult(
@@ -268,10 +306,32 @@ class CLITestRunner:
 
         return step_result
 
+    def _check_os_platform(self, test_config: Dict[str, Any]) -> Optional[TestResult]:
+        """Return a Skipped TestResult if the test's os/platform filter excludes
+        this host, else None. Shared by command and workflow tests so a
+        suite-level (or per-test) os/platform gate is honored by both."""
+        test_name = test_config.get('name', 'unnamed_test')
+        os_filter = test_config.get('os')
+        if os_filter:
+            allowed = [os_filter] if isinstance(os_filter, str) else os_filter
+            if self.os_name not in allowed:
+                self.logger.info(f"Skipping {test_name} (OS filter: {allowed})")
+                return TestResult(test_name, True, f"Skipped (OS: {self.os_name} not supported)")
+        platform_filter = test_config.get('platform')
+        if platform_filter:
+            allowed = [platform_filter] if isinstance(platform_filter, str) else platform_filter
+            if self.platform_type not in allowed:
+                self.logger.info(f"Skipping {test_name} (platform filter: {allowed})")
+                return TestResult(test_name, True, f"Skipped (Platform: {self.platform_type} not supported)")
+        return None
+
     def run_workflow(self, test_config: Dict[str, Any],
                      global_settings: Dict[str, Any]) -> TestResult:
         test_name = test_config.get('name', 'unnamed_workflow')
         description = test_config.get('description', '')
+        skip = self._check_os_platform(test_config)
+        if skip is not None:
+            return skip
         steps_config = test_config.get('steps', [])
         variables = test_config.get('variables', {})
         environment = test_config.get('environment', {})
@@ -291,6 +351,7 @@ class CLITestRunner:
             step = WorkflowStep(
                 name=cfg.get('name', 'unnamed_step'),
                 command=cfg.get('command', ''),
+                script=cfg.get('script'),
                 description=cfg.get('description', ''),
                 timeout=cfg.get('timeout'),
                 output_format=cfg.get('output_format', 'plaintext'),
@@ -387,26 +448,23 @@ class CLITestRunner:
         variables = test_config.get('variables', {})
 
         # OS / platform filters
-        os_filter = test_config.get('os')
-        if os_filter:
-            allowed = [os_filter] if isinstance(os_filter, str) else os_filter
-            if self.os_name not in allowed:
-                self.logger.info(f"Skipping {test_name} (OS filter: {allowed})")
-                return TestResult(test_name, True, f"Skipped (OS: {self.os_name} not supported)")
+        skip = self._check_os_platform(test_config)
+        if skip is not None:
+            return skip
 
-        platform_filter = test_config.get('platform')
-        if platform_filter:
-            allowed = [platform_filter] if isinstance(platform_filter, str) else platform_filter
-            if self.platform_type not in allowed:
-                self.logger.info(f"Skipping {test_name} (platform filter: {allowed})")
-                return TestResult(test_name, True, f"Skipped (Platform: {self.platform_type} not supported)")
+        if variables:
+            command = self.resolve_variables(command, variables)
 
         self.logger.info(f"Running test: {test_name}")
         if description:
             self.logger.info(f"  Description: {description}")
-
-        if variables:
-            command = self.resolve_variables(command, variables)
+        # Always display the exact command line, pass or fail, so any test can
+        # be re-run by hand or reproduced via --test-name with verbose logs.
+        if test_config.get('script'):
+            _preview = (test_config['script'].strip().splitlines() or [''])[0]
+            self.logger.info(f"  Script: {_preview} ...")
+        else:
+            self.logger.info(f"  Command: {_full_binary(self.binary_path)} {command}")
 
         start_time = time.time()
 
@@ -444,7 +502,12 @@ class CLITestRunner:
             return tr
 
         if output_format == 'json':
-            success, message = validate_json_output(result['stdout'], expectations)
+            rc = result['return_code']
+            allows_failure = isinstance(expected_rc, list) and rc in expected_rc and rc != 0
+            if allows_failure and not result['stdout'].strip():
+                success, message = True, "JSON validation skipped: allowed non-zero rc with empty stdout"
+            else:
+                success, message = validate_json_output(result['stdout'], expectations)
         elif output_format == 'csv':
             success, message = validate_csv_output(result['stdout'], expectations)
         else:
@@ -496,6 +559,9 @@ class CLITestRunner:
 
     def _run_test_once(self, test_config: Dict[str, Any],
                       global_settings: Dict[str, Any]) -> TestResult:
+        skip = self._check_required_capabilities(test_config)
+        if skip is not None:
+            return skip
         if TestType(test_config.get('type', 'command')) == TestType.WORKFLOW:
             return self.run_workflow(test_config, global_settings)
         return self.run_single_command_test(test_config, global_settings)
@@ -515,6 +581,69 @@ class CLITestRunner:
         except Exception as e:
             self.logger.debug(f"Auto-discovery failed: {e}")
         return []
+
+    # ------------------------------------------------------------------
+    # Capability detection (hardware/environment gating)
+    # ------------------------------------------------------------------
+
+    def _detect_capability(self, name: str) -> bool:
+        """Probe the platform once to decide whether a capability is available."""
+        if name == "multi_device":
+            return len(self._auto_discover_device_ids()) >= 2
+
+        if name == "amc":
+            try:
+                result = self.execute_command("discovery --listamcversions -j", timeout=10)
+                if result['return_code'] == 0 and result['stdout'].strip():
+                    data = json.loads(result['stdout'])
+                    if isinstance(data, dict):
+                        versions = data.get('amc_fw_version', data.get('amc_versions', []))
+                    else:
+                        versions = data
+                    if isinstance(versions, list):
+                        return any(str(v).strip() for v in versions)
+                    return bool(versions)
+            except Exception as e:
+                self.logger.debug(f"AMC capability probe failed: {e}")
+            return False
+
+        if name == "sriov":
+            # vGPU operations require root and a SR-IOV-capable physical function.
+            if self.is_windows or os.geteuid() != 0:
+                return False
+            import glob
+            for path in glob.glob("/sys/class/drm/card*/device/sriov_totalvfs"):
+                try:
+                    with open(path) as fh:
+                        if int(fh.read().strip()) > 0:
+                            return True
+                except (OSError, ValueError):
+                    continue
+            return False
+
+        self.logger.warning(f"Unknown capability '{name}'; treating as unavailable")
+        return False
+
+    def has_capability(self, name: str) -> bool:
+        if name not in self._capability_cache:
+            self._capability_cache[name] = self._detect_capability(name)
+            state = "available" if self._capability_cache[name] else "unavailable"
+            self.logger.info(f"Capability '{name}' is {state}")
+        return self._capability_cache[name]
+
+    def _check_required_capabilities(self, test_config: Dict[str, Any]) -> Optional[TestResult]:
+        """Return a Skipped TestResult if any required capability is missing."""
+        required = test_config.get('requires_capability')
+        if not required:
+            return None
+        if isinstance(required, str):
+            required = [required]
+        test_name = test_config.get('name', 'unnamed_test')
+        for cap in required:
+            if not self.has_capability(cap):
+                self.logger.info(f"Skipping {test_name} (requires capability: {cap})")
+                return TestResult(test_name, True, f"Skipped (requires capability: {cap})")
+        return None
 
     def expand_parameterized_test(self, test_config: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Expand a parameterized test into one instance per parameter combination."""
@@ -671,18 +800,18 @@ class CLITestRunner:
     # ------------------------------------------------------------------
 
     def run_test_suite(self, config: Dict[str, Any],
-                       filter_tags: Optional[List[str]] = None) -> List[TestResult]:
+                       filter_tags: Optional[List[str]] = None,
+                       exclude_tags: Optional[List[str]] = None,
+                       filter_names: Optional[List[str]] = None) -> List[TestResult]:
         """Run all tests in a test suite with dependency resolution."""
         test_suite = config.get('test_suite', {})
         suite_name = test_suite.get('name', 'Unknown Suite')
         global_settings = test_suite.get('settings', {})
         tests = test_suite.get('tests', [])
 
-        # Suite-level hooks (e.g. ensure daemon running, create/remove scratch dir).
-        # Teardown is paired with setup: if setup fails, teardown still runs so any
-        # partial side-effects (scratch dirs, daemons started before the failing
-        # step) get cleaned up.  Teardown is best-effort; its failure does not
-        # affect the suite result.
+        # Suite-level hooks (setup/teardown). If setup fails the suite is
+        # skipped, but teardown still runs so any partial state (scratch dirs,
+        # daemons, mounts) created by the failed setup is cleaned up.
         suite_setup = test_suite.get('setup')
         suite_teardown = test_suite.get('teardown')
         if suite_setup and not self._run_suite_hook(suite_setup, "suite-setup"):
@@ -694,12 +823,81 @@ class CLITestRunner:
         # Expand parameterized tests
         tests = [t for raw in tests for t in self.expand_parameterized_test(raw)]
 
+        # Suite-level os/platform filters: apply as a default onto each test
+        # that does not set its own, so a whole suite can be gated with one
+        # settings.os / settings.platform entry.
+        suite_os = global_settings.get('os')
+        suite_platform = global_settings.get('platform')
+        if suite_os or suite_platform:
+            for t in tests:
+                if suite_os and 'os' not in t:
+                    t['os'] = suite_os
+                if suite_platform and 'platform' not in t:
+                    t['platform'] = suite_platform
+
         self.logger.info(f"=== Running Test Suite: {suite_name} ===")
         self.logger.info(f"Total tests defined: {len(tests)}")
 
         if filter_tags:
             tests = [t for t in tests if any(tag in t.get('tags', []) for tag in filter_tags)]
             self.logger.info(f"Filtered to {len(tests)} tests with tags: {filter_tags}")
+
+        # CI reliability: skip tests carrying any excluded tag (e.g. `intrusive`
+        # tests that modify system configuration).
+        if exclude_tags:
+            before = len(tests)
+            tests = [t for t in tests if not any(tag in t.get('tags', []) for tag in exclude_tags)]
+            if before != len(tests):
+                self.logger.info(f"Excluded {before - len(tests)} tests with tags: {exclude_tags}")
+            # Cascade-drop any kept test whose depends_on prerequisite was
+            # excluded. Otherwise DependencyResolver would raise on the dangling
+            # reference and collapse the ENTIRE suite to one failure. Repeat to
+            # handle transitive chains (B->A excluded, then C->B must go too).
+            present = {t.get('name', '') for t in tests}
+            while True:
+                kept = []
+                dropped = []
+                for t in tests:
+                    deps = t.get('depends_on', [])
+                    deps = [deps] if isinstance(deps, str) else deps
+                    if any(dep not in present for dep in deps):
+                        dropped.append(t.get('name', ''))
+                    else:
+                        kept.append(t)
+                if not dropped:
+                    break
+                self.logger.info(
+                    f"Skipping {len(dropped)} test(s) whose excluded dependency is gone: {dropped}")
+                tests = kept
+                present = {t.get('name', '') for t in tests}
+
+        # Issue reproduction: run only tests whose (expanded) name matches a
+        # given substring, e.g. `-k dump_modes[mode=0]` or `-k discovery`.
+        # Pull in the transitive depends_on prerequisites of every matched
+        # test so dependency resolution never sees a dangling reference (a
+        # matched test whose dependency was filtered out would otherwise raise
+        # "depends on unknown test").
+        if filter_names:
+            by_name = {t.get('name', ''): t for t in tests}
+            selected: Dict[str, Dict[str, Any]] = {}
+
+            def _select_with_deps(t: Dict[str, Any]) -> None:
+                name = t.get('name', '')
+                if name in selected:
+                    return
+                selected[name] = t
+                deps = t.get('depends_on', [])
+                for dep in ([deps] if isinstance(deps, str) else deps):
+                    dep_test = by_name.get(dep)
+                    if dep_test is not None:
+                        _select_with_deps(dep_test)
+
+            for t in tests:
+                if any(pat in t.get('name', '') for pat in filter_names):
+                    _select_with_deps(t)
+            # Preserve original ordering
+            tests = [t for t in tests if t.get('name', '') in selected]
+            self.logger.info(f"Filtered to {len(tests)} tests matching name(s): {filter_names}")
 
         continue_on_failure = global_settings.get('continue_on_failure', True)
 
@@ -865,16 +1063,23 @@ class CLITestRunner:
         """Write a JUnit-style XML report for CI consumption."""
         from xml.sax.saxutils import escape as _esc
 
-        # XML 1.0 forbids most ASCII control characters in character data.
+        # XML 1.0 forbids most ASCII control bytes inside character data.
         # Strip them so CI parsers (Jenkins, GitLab, etc.) don't reject the
-        # report when the binary emits binary noise on stdout/stderr.
-        # Allowed control chars: \t (0x09), \n (0x0a), \r (0x0d).
-        _ILLEGAL_XML_RE = re.compile(
-            r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]'
-        )
+        # report when stdout/stderr from a crashed binary contains them.
+        # Allowed control chars: \t (0x09), \n (0x0a), \r (0x0d). 0x7f (DEL) is
+        # also disallowed by XML 1.0, so strip it too.
+        _illegal_xml = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
 
-        def _xml_clean(s: str) -> str:
-            return _ILLEGAL_XML_RE.sub('?', s)
+        def _safe(text: str) -> str:
+            """Escape for XML character data (element bodies): &, <, >."""
+            return _esc(_illegal_xml.sub('', text))
+
+        def _attr(text: str) -> str:
+            """Escape for a double-quoted XML attribute value: also escape
+            " and ' so a message/name containing a quote (e.g. stderr like
+            unknown option \"--foo\") does not produce malformed XML that CI
+            parsers reject."""
+            return _esc(_illegal_xml.sub('', text), {'"': '&quot;', "'": '&apos;'})
 
         total = len(results)
         skipped = sum(1 for r in results if r.message.startswith("Skipped"))
@@ -884,29 +1089,29 @@ class CLITestRunner:
         out = []
         out.append('<?xml version="1.0" encoding="UTF-8"?>')
         out.append(
-            f'<testsuite name="{_esc(suite_name)}" tests="{total}" '
+            f'<testsuite name="{_attr(suite_name)}" tests="{total}" '
             f'failures="{failed}" skipped="{skipped}" time="{total_time:.3f}">'
         )
         for r in results:
             classname = r.test_name.split('[')[0] if '[' in r.test_name else r.test_name
             out.append(
-                f'  <testcase classname="{_esc(classname)}" '
-                f'name="{_esc(r.test_name)}" time="{r.duration:.3f}">'
+                f'  <testcase classname="{_attr(classname)}" '
+                f'name="{_attr(r.test_name)}" time="{r.duration:.3f}">'
             )
+            # Skipped results carry passed=True, so they must be tested before
+            # the failure branch — otherwise the <skipped> element is never
+            # emitted even though the suite header counts them.
             if r.message.startswith("Skipped"):
-                out.append(f'    <skipped message="{_esc(_xml_clean(r.message))}"/>')
+                out.append(f'    <skipped message="{_attr(r.message)}"/>')
             elif not r.passed:
-                stdout = _xml_clean((r.details or {}).get('stdout', ''))
-                stderr = _xml_clean((r.details or {}).get('stderr', ''))
-                msg = _xml_clean(r.message[:500])
-                body = (
-                    (r.command or "")
-                    + chr(10) + "STDOUT:" + chr(10) + stdout[:2000]
-                    + chr(10) + "STDERR:" + chr(10) + stderr[:2000]
-                )
+                stdout = (r.details or {}).get('stdout', '')
+                stderr = (r.details or {}).get('stderr', '')
+                body = ((r.command or "") + chr(10)
+                        + "STDOUT:" + chr(10) + stdout[:2000] + chr(10)
+                        + "STDERR:" + chr(10) + stderr[:2000])
                 out.append(
-                    f'    <failure message="{_esc(msg)}">'
-                    f'{_esc(body)}'
+                    f'    <failure message="{_attr(r.message[:500])}">'
+                    f'{_safe(body)}'
                     f'</failure>'
                 )
             out.append('  </testcase>')
