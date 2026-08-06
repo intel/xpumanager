@@ -16,7 +16,7 @@ require (
 	github.com/xlab/pkgconfig v0.0.0-20170226114623-cea12a0fd245 // indirect
 	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/telemetry v0.0.0-20251111182119-bc8e575c7b54 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/cc v1.0.0 // indirect
