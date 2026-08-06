@@ -25,8 +25,8 @@ github.com/knadh/koanf/maps v0.1.2 h1:RBfmAW5CnZT+PJ1CVc1QSJKf4Xu9kxfQgYVQSu8hpb
 github.com/knadh/koanf/maps v0.1.2/go.mod h1:npD/QZY3V6ghQDdcQzl1W4ICNVTkohC8E73eI2xW4yI=
 github.com/knadh/koanf/providers/confmap v1.0.0 h1:mHKLJTE7iXEys6deO5p6olAiZdG5zwp8Aebir+/EaRE=
 github.com/knadh/koanf/providers/confmap v1.0.0/go.mod h1:txHYHiI2hAtF0/0sCmcuol4IDcuQbKTybiB1nOcUo1A=
-github.com/knadh/koanf/v2 v2.3.4 h1:fnynNSDlujWE+v83hAp8wKr/cdoxHLO0629SN+U8Urc=
-github.com/knadh/koanf/v2 v2.3.4/go.mod h1:gRb40VRAbd4iJMYYD5IxZ6hfuopFcXBpc9bbQpZwo28=
+github.com/knadh/koanf/v2 v2.3.5 h1:2dXJUYaKGm4SGYeoAtBviq9+02JZo/pxQ2ssOd60rJg=
+github.com/knadh/koanf/v2 v2.3.5/go.mod h1:gRb40VRAbd4iJMYYD5IxZ6hfuopFcXBpc9bbQpZwo28=
 github.com/kr/pretty v0.3.1 h1:flRD4NNwYAUpkphVc1HcthR4KEIFJ65n8Mw5qdRn3LE=
 github.com/kr/pretty v0.3.1/go.mod h1:hoEshYVHaxMs3cyo3Yncou5ZscifuDolrwPKZanG3xk=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
@@ -57,8 +57,8 @@ go.opentelemetry.io/collector/component/componentstatus v0.157.0 h1:6aARK84axsel
 go.opentelemetry.io/collector/component/componentstatus v0.157.0/go.mod h1:R1nsiV3JluCaffVfjDmglZ0cU3jJUsiaMXgsAZfc670=
 go.opentelemetry.io/collector/component/componenttest v0.157.0 h1:kTMapOVJ3YMKf5Lu2j/FdcKipn90KkIrnHkKca8uNfk=
 go.opentelemetry.io/collector/component/componenttest v0.157.0/go.mod h1:AUzvlwDat8AHaNRDm+dzQ59uaEXQO1qTWccjkRjqq00=
-go.opentelemetry.io/collector/confmap v1.59.0 h1:asxEEiWwNuGfmTVSctYArOTF8jcxYpS4NmPtvvFhNNI=
-go.opentelemetry.io/collector/confmap v1.59.0/go.mod h1:X5SjFINrF0cb0hcM8PwnW2z+0L/pHA1H1yPPtm2j0tY=
+go.opentelemetry.io/collector/confmap v1.63.0 h1:1THBabHoQc8t/9r6ztMsghiO1OxDPZpYtn0cuwwsxYI=
+go.opentelemetry.io/collector/confmap v1.63.0/go.mod h1:ksJNAmLTiMkBjMYwXFW1MRRfXYnRsHXA0fW+ZGwb/1U=
 go.opentelemetry.io/collector/consumer v1.63.0 h1:0eOZh0qmDg6HCJaiUqI9FAb4BD4fKJNNO+ygMV/WW0w=
 go.opentelemetry.io/collector/consumer v1.63.0/go.mod h1:IVhjv4d+PmSf4Ttz/guJFbWJtRM3Ld3nRcZ12gxy6PA=
 go.opentelemetry.io/collector/consumer/consumertest v0.157.0 h1:zehAVaLn67AWLhhi/LrUY0Tv06XWx5LYCvvmu7xHXHU=
