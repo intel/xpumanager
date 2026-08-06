@@ -305,13 +305,23 @@ ze_result_t cmdVgpu::listGpus(devInfo *d)
 			TableBuilder table;
 			table.addColumn("Property", 25, Align::Left).addColumn("Value", 40, Align::Left);
 
+			const bool isVirtualFunction = vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL;
+
 			table.addRow("PCI BDF Address", vfInfo.bdfAddress);
-			table.addRow("Function Type", vfInfo.functionType == DEVICE_FUNCTION_TYPE_VIRTUAL ? "Virtual" : "Physical");
+			table.addRow("Function Type", isVirtualFunction ? "Virtual" : "Physical");
+
+			/*
+			 * The LMEM figure represents different memory types depending on the function type,
+			 * requiring different labels. For the PF, it represents vram_spare:
+			 * memory reserved by the driver for the PF's use, which is deducted from the pool
+			 * available to VFs (total - spare = available). For VFs, it represents
+			 * vram_quota: the memory allocation granted to that specific VF from the shared pool.
+			 */
+			const char *memoryLabel = isVirtualFunction ? "LMEM Quota" : "LMEM Spare (PF reserved)";
 			if (vfInfo.vGpuMemorySize > 0) {
-				table.addRow("Memory Physical Size",
-							 xpum::compat::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
+				table.addRow(memoryLabel, xpum::compat::format("{} MiB", vfInfo.vGpuMemorySize / ONE_MB_IN_BYTES));
 			} else {
-				table.addRow("Memory Physical Size", "N/A (shared memory / iGPU)");
+				table.addRow(memoryLabel, "N/A (shared memory / iGPU)");
 			}
 
 			PRINT("{}", table.toString().c_str());
