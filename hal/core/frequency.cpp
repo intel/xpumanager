@@ -742,6 +742,160 @@ ze_result_t frequency::setFrequencyRangeForAll(double minFreq, double maxFreq)
 }
 
 /**
+ * @brief Restores the default frequency range for a specific tile or all GPU domains
+ *
+ * The default range is the hardware range reported per frequency domain by
+ * zesFrequencyGetProperties(): properties.min is the minimum hardware clock and
+ * properties.max the maximum non-overclock hardware clock. Because those limits are
+ * per-domain, they are read inside the loop and applied to the domain they came from.
+ *
+ * Note the L0 spec describes -1 for both limits as a request to return to factory
+ * settings, but the Intel compute runtime rejects that with an error, so the explicit
+ * hardware range from the domain properties is used instead.
+ *
+ * @param [in] tileId Tile identifier (-1 for all GPU domains, >= 0 for a specific tile)
+ * @retval ZE_RESULT_SUCCESS On success
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT If tileId < -1 or tileId >= numSubdevices
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED If the device handle is not set
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE If no matching frequency domain found
+ */
+ze_result_t frequency::resetFrequencyRange(int32_t tileId)
+{
+	TRACING();
+
+	// Validate tileId parameter
+	if (tileId < -1) {
+		ERR("Invalid tile ID {}. Must be -1 (all) or >= 0 (specific tile).\n", tileId);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (deviceHandle == nullptr) {
+		ERR("Device handle not set.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	zes_freq_properties_t props = {};
+	ze_result_t result = ZE_RESULT_SUCCESS;
+	bool anySuccess = false;
+	bool foundDomain = false;
+	ze_result_t lastError = ZE_RESULT_SUCCESS;
+	bool setAll = (tileId == -1);
+
+	// numSubdevices reports how many tiles the device exposes; 0 means it exposes none
+	zes_device_properties_t devProps = {};
+	devProps.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	result = zesDeviceGetProperties(deviceHandle, &devProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get device properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	// A tile-specific request must name a tile the device actually exposes. A device with no
+	// subdevices reports a single device-level GPU domain, which tile 0 refers to.
+	bool useDeviceLevel = false;
+	if (!setAll) {
+		if (devProps.numSubdevices == 0) {
+			if (tileId != 0) {
+				ERR("Invalid tile ID {}. Device exposes no subdevices.\n", tileId);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			useDeviceLevel = true;
+		} else if (static_cast<uint32_t>(tileId) >= devProps.numSubdevices) {
+			ERR("Invalid tile ID {}. Device exposes {} tiles.\n", tileId, devProps.numSubdevices);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		result = getProperties(frequencyHandles[i], &props);
+		if (result != ZE_RESULT_SUCCESS) {
+			lastError = result;
+			continue;
+		}
+
+		// Only process GPU frequency domains
+		if (props.type != ZES_FREQ_DOMAIN_GPU) {
+			continue;
+		}
+
+		// Check if this domain matches our criteria
+		bool shouldSet = false;
+		if (setAll) {
+			// Reset all GPU domains
+			shouldSet = true;
+		} else if (useDeviceLevel) {
+			// Device exposes no subdevices; use device-level GPU domain
+			shouldSet = (!props.onSubdevice);
+		} else {
+			// Reset the requested tile only - must check onSubdevice per L0 spec
+			shouldSet = (props.onSubdevice && props.subdeviceId == static_cast<uint32_t>(tileId));
+		}
+
+		if (shouldSet) {
+			foundDomain = true;
+
+			if (props.min <= 0.0 || props.max <= 0.0) {
+				ERR("Invalid default frequency range reported for domain {}: {:f}-{:f} MHz\n", i, props.min, props.max);
+				lastError = ZE_RESULT_ERROR_NOT_AVAILABLE;
+				continue;
+			}
+
+			// Defaults are per-domain, so use the limits reported by this handle
+			zes_freq_range_t range = {};
+			range.min = props.min;
+			range.max = props.max;
+
+			result = zesFrequencySetRange(frequencyHandles[i], &range);
+			if (result == ZE_RESULT_SUCCESS) {
+				anySuccess = true;
+				if (props.onSubdevice) {
+					DBG("Successfully reset frequency range for tile {}:\n", props.subdeviceId);
+				} else {
+					DBG("Successfully reset frequency range for device-level GPU domain:\n");
+				}
+				DBG("  Min Frequency: {:f} MHz\n", range.min);
+				DBG("  Max Frequency: {:f} MHz\n", range.max);
+
+				// If we're resetting a specific tile and found it, we can return
+				if (!setAll) {
+					return ZE_RESULT_SUCCESS;
+				}
+			} else {
+				lastError = result;
+				if (props.onSubdevice) {
+					ERR("Failed to reset frequency range for tile {}. 0x{:X} ({})\n", props.subdeviceId, result,
+						l0_error_to_string(result));
+				} else {
+					ERR("Failed to reset frequency range for device-level GPU domain. 0x{:X} ({})\n", result,
+						l0_error_to_string(result));
+				}
+			}
+		}
+	}
+
+	// If resetting all, return success if any succeeded
+	if (setAll) {
+		if (!foundDomain) {
+			return ZE_RESULT_ERROR_NOT_AVAILABLE;
+		}
+		return anySuccess ? ZE_RESULT_SUCCESS : lastError;
+	}
+
+	// If resetting a specific tile/device-level domain, determine if the domain was found
+	if (!foundDomain) {
+		if (useDeviceLevel) {
+			ERR("No matching device-level GPU frequency domain found.\n");
+		} else {
+			ERR("No matching GPU frequency domain found for tile {}\n", tileId);
+		}
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	// Domain found but failed to reset
+	return lastError;
+}
+
+/**
  * @brief Gets available clock frequencies for a specific subdevice
  *
  * This function retrieves all available discrete clock frequencies for a

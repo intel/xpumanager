@@ -12,6 +12,7 @@ Synopsis
    xpu-smi config -d [deviceId]
    xpu-smi config --device [deviceId]
    xpu-smi config --device [deviceId] --frequencyrange [minFrequency,maxFrequency]
+   xpu-smi config --device [deviceId] --resetfrequencyrange
    xpu-smi config --device [deviceId] --powerlimit [powerValue]
    xpu-smi config --device [deviceId] --powerlimit [powerValue] --powertype [sustain|peak|burst]
    xpu-smi config --device [deviceId] --standby [standbyMode]
@@ -48,6 +49,13 @@ Options
 
    Set the GPU tile-level core frequency range in MHz. Provide the minimum and
    maximum frequencies separated by a comma.
+
+.. option:: --resetfrequencyrange
+
+   Reset the GPU core frequency range to the hardware default, that is the minimum
+   hardware clock and the maximum non-overclock clock reported by the driver for the
+   frequency domain. Applies to the tile selected by ``-t``, or to all tiles when
+   ``-t`` is omitted. Cannot be combined with ``--frequencyrange``.
 
 .. option:: --powerlimit <watts>
 
@@ -173,6 +181,12 @@ Set frequency range for device 0:
 .. code-block:: shell
 
    xpu-smi config --device 0 --frequencyrange 300,1200
+
+Reset the frequency range on device 0 back to the hardware default:
+
+.. code-block:: shell
+
+   xpu-smi config --device 0 --resetfrequencyrange
 
 Set power limit to 250W for device 0:
 

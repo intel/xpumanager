@@ -19,6 +19,7 @@ enum configCmdType
 	CONFIGDEVICE,
 	TILE,
 	FREQUENCYRANGE,
+	RESETFREQUENCYRANGE,
 	POWERLIMIT,
 	POWERTYPE,
 	STANDBYMODE,
@@ -56,6 +57,8 @@ constexpr std::string_view configCmdName(configCmdType t) noexcept
 		return "--tile";
 	case FREQUENCYRANGE:
 		return "--frequencyrange";
+	case RESETFREQUENCYRANGE:
+		return "--resetfrequencyrange";
 	case POWERLIMIT:
 		return "--powerlimit";
 	case POWERTYPE:
@@ -103,6 +106,7 @@ public:
 	void help(HELP helpType = FULL_HELP);
 	void displayDeviceConfig(devInfo *d);
 	ze_result_t setFrequencyRange(devInfo *d);
+	ze_result_t resetFrequencyRange(devInfo *d);
 	ze_result_t setPowerLimit(devInfo *d);
 	ze_result_t setStandby(devInfo *d);
 	ze_result_t setScheduler(devInfo *d);

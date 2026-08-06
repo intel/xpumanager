@@ -38,6 +38,7 @@ public:
 	ze_result_t getThrottleReason(zes_freq_throttle_reason_flags_t *throttleReasons);
 	ze_result_t setFrequencyRange(double minFreq, double maxFreq, int32_t subdeviceId = -1);
 	ze_result_t setFrequencyRangeForAll(double minFreq, double maxFreq);
+	ze_result_t resetFrequencyRange(int32_t tileId = -1);
 	ze_result_t getFreqAvailableClocks(uint32_t subdeviceId, std::vector<double> &clocks);
 	ze_result_t getFreqRangeForTile(uint32_t tileId, double &minFreq, double &maxFreq);
 	ze_result_t getFreqStateForTile(uint32_t tileId, zes_freq_state_t *state, zes_freq_properties_t *props);

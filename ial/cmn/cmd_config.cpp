@@ -54,6 +54,7 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGDEVICE, {}},
 	{configCmdType::TILE, {}},
 	{configCmdType::FREQUENCYRANGE, {.func = &cmdConfig::setFrequencyRange, .canRunOnIGPU = true}},
+	{configCmdType::RESETFREQUENCYRANGE, {.func = &cmdConfig::resetFrequencyRange, .canRunOnIGPU = true}},
 	{configCmdType::POWERLIMIT, {.func = &cmdConfig::setPowerLimit}},
 	{configCmdType::STANDBYMODE, {.func = &cmdConfig::setStandby}},
 	{configCmdType::SCHEDULERMODE, {.func = &cmdConfig::setScheduler, .canRunOnIGPU = true}},
@@ -631,6 +632,8 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencyrange [minFrequency,maxFrequency]",
 				progName.c_str()));
+	helpList.push_back(
+		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --resetfrequencyrange", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --standby [standbyMode]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --scheduler [schedulerMode]",
 							   progName.c_str()));
@@ -663,6 +666,9 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(
 		HEADING, "--frequencyrange            Core frequency range (MHz). Applies to all tiles when -t is omitted"));
+	helpList.push_back(helpCmd(HEADING, "--resetfrequencyrange       Reset the core frequency range to the hardware "
+										"default. Applies to all tiles when -t "
+										"is omitted. Cannot be combined with --frequencyrange."));
 	helpList.push_back(helpCmd(
 		HEADING, "--standby                   Standby mode (device-level). Valid options: \"default\"; \"never\""));
 	helpList.push_back(helpCmd(
@@ -1127,6 +1133,51 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		} else {
 			PRINT("Succeeded in changing the core frequency range on GPU {} tile {} to {:.0f}-{:.0f} MHz.\n", d->index,
 				  tileId, minFreq, maxFreq);
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @brief Resets the core frequency range to the hardware default.
+ *
+ * The default range comes from zesFrequencyGetProperties(), which reports the minimum
+ * hardware clock and the maximum non-overclock clock for each GPU frequency domain.
+ * Applies to the tile given by -t, or to all tiles when -t is omitted.
+ *
+ * @param d Device information structure.
+ *
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::resetFrequencyRange(devInfo *d)
+{
+	TRACING();
+
+	int32_t tileId = -1;
+	if (configCmds[configCmdType::TILE].enabled) {
+		uint32_t parsedTileId = 0;
+		if (!parseUint32NoThrow(configCmds[configCmdType::TILE].val, parsedTileId)) {
+			ERR("Error: Invalid tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		tileId = static_cast<int32_t>(parsedTileId);
+	}
+
+	frequency *fq = d->dev->getFrequency();
+	if (fq == nullptr) {
+		ERR("Error: Frequency pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	ze_result_t result = fq->resetFrequencyRange(tileId);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		if (tileId < 0) {
+			PRINT("Succeeded in resetting the core frequency range on GPU {} (all tiles) to the default.\n", d->index);
+		} else {
+			PRINT("Succeeded in resetting the core frequency range on GPU {} tile {} to the default.\n", d->index,
+				  tileId);
 		}
 	}
 
@@ -2092,6 +2143,8 @@ int cmdConfig::run(arg_struct *args)
 			configCmds[configCmdType::FREQUENCYRANGE].enabled = true;
 			isQueryMode = false;
 		});
+	sub.add_flag("--resetfrequencyrange", configCmds[configCmdType::RESETFREQUENCYRANGE].enabled,
+				 "Reset frequency range to the hardware default");
 	sub.add_option("--powerlimit", configCmds[configCmdType::POWERLIMIT].val, "Set power limit (W)")
 		->each([&](const std::string &) {
 			configCmds[configCmdType::POWERLIMIT].enabled = true;
@@ -2162,8 +2215,15 @@ int cmdConfig::run(arg_struct *args)
 
 	// Flags that constitute a write (non-query) operation
 	if (configCmds[configCmdType::RESET].enabled || configCmds[configCmdType::CLEARRAS].enabled ||
-		configCmds[configCmdType::COLDRESET].enabled) {
+		configCmds[configCmdType::COLDRESET].enabled || configCmds[configCmdType::RESETFREQUENCYRANGE].enabled) {
 		isQueryMode = false;
+	}
+
+	// --frequencyrange and --resetfrequencyrange target the same setting; applying both in one
+	// invocation would leave the result dependent on command iteration order.
+	if (configCmds[configCmdType::RESETFREQUENCYRANGE].enabled && configCmds[configCmdType::FREQUENCYRANGE].enabled) {
+		ERR("--resetfrequencyrange cannot be combined with --frequencyrange.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// Check if the device ID is provided
