@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	cloudeng.io/text v0.0.13
 	github.com/xlab/c-for-go v0.0.0-20200718154222-87b0065af829
-	go.yaml.in/yaml/v4 v4.0.0-rc.3
+	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/tools v0.39.0
 )
 
