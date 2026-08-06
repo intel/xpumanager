@@ -139,8 +139,7 @@ func TestMetrics(t *testing.T) {
 	commonAssertions := requireScenarioConfig(t, assertConfig, "common").MetricsAssertions
 
 	t.Run("InitialValues", func(t *testing.T) {
-		tc.loadStubDriverConfig(t)
-
+		// The initial stub driver config is loaded at setup time, so we don't need to load one here.
 		assertions := requireScenarioConfig(t, assertConfig, path.Base(t.Name()))
 		families := assertions.MetricsSentinel.waitFor(t, endpoint, 30*time.Second)
 
