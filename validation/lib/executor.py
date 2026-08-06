@@ -72,7 +72,6 @@ def execute_command(binary_path: str, command: str, timeout: int = 30,
             'return_code': result.returncode,
             'stdout': result.stdout,
             'stderr': result.stderr,
-            'raw_stderr': result.stderr,
             'success': result.returncode == 0,
         }
     except subprocess.TimeoutExpired:
@@ -97,7 +96,6 @@ def execute_with_script(binary_path: str, command: str, script: str,
     """
     full_command = f"{_full_binary(binary_path)} {command}"
     script_with_command = resolved_script.replace('{command}', full_command)
-    script_with_command = script_with_command.replace('{binary}', _full_binary(binary_path))
     logger.debug(f"Executing with script:\n{script_with_command}")
 
     try:
@@ -109,7 +107,6 @@ def execute_with_script(binary_path: str, command: str, script: str,
             'return_code': result.returncode,
             'stdout': result.stdout,
             'stderr': result.stderr,
-            'raw_stderr': result.stderr,
             'success': result.returncode == 0,
         }
     except subprocess.TimeoutExpired:
@@ -153,7 +150,6 @@ def execute_with_hooks(binary_path: str, command: str, hooks: Dict[str, str],
             'return_code': result.returncode,
             'stdout': result.stdout,
             'stderr': result.stderr,
-            'raw_stderr': result.stderr,
             'success': result.returncode == 0,
         }
         if not test_result['success']:

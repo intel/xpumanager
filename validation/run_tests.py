@@ -189,28 +189,6 @@ Parameterization (command tests):
              'Applies to both command and workflow tests. Parameterized tests are expanded '
              'before filtering, so tag filtering matches the expanded instances.'
     )
-
-    parser.add_argument(
-        '--exclude-tags',
-        nargs='+',
-        metavar='TAG',
-        help='Skip tests whose tags: list contains any of the given values. Applied '
-             'after --tags. Intended for CI: e.g. "--exclude-tags intrusive" skips '
-             'tests that modify system configuration (power limits, frequency, '
-             'scheduler), improving CI reliability on shared machines.'
-    )
-
-    parser.add_argument(
-        '-k', '--test-name',
-        nargs='+',
-        metavar='PATTERN',
-        help='Run only tests whose name contains any of the given substrings. '
-             'Applied after tag filters and after parameterized expansion, so an '
-             'exact instance such as "dump_modes[mode=0]" can be selected. Use '
-             'together with -v to reproduce a single failing test with verbose '
-             'logs. Note: filters run before dependency resolution, so include '
-             'any depends_on prerequisites in the pattern set.'
-    )
     
     parser.add_argument(
         '-j', '--parallel',
@@ -359,9 +337,7 @@ Parameterization (command tests):
                 print('='*70)
             
             config = runner.load_test_config(config_path)
-            results = runner.run_test_suite(config, filter_tags=args.tags,
-                                            exclude_tags=args.exclude_tags,
-                                            filter_names=args.test_name)
+            results = runner.run_test_suite(config, filter_tags=args.tags)
             all_results.extend(results)
             
         except Exception as e:
