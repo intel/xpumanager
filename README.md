@@ -179,8 +179,8 @@ XPUM Daemon is available as a container image, please see [`xpumd` README](xpumd
 ## Supported OSes
 
 * XPU-SMI
-	* Ubuntu 24.04.3
-	* Windows Server 2022 (limited features including: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
+	* Ubuntu 24.04.3, Ubuntu 26.04
+	* Windows Server 2022 and 2025 (limited features only: GPU device info, GPU telemetry, GPU firmware update and GPU configuration)
 
 ## Runtime Dependencies
 
