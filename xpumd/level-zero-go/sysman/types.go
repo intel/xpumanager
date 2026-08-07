@@ -1067,27 +1067,6 @@ type RasStateExp struct {
 	ErrorCounter uint64
 }
 
-// RasStateExp2 declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-exp2-t
-//
-// Extension structure for providing RAS error counters.
-type RasStateExp2 struct {
-	stype        structureType
-	pnext        unsafe.Pointer
-	ErrorCounter uint64
-}
-
-// RasConfigExp declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-config-exp-t
-//
-// RAS error configuration for per-category threshold management.
-type RasConfigExp struct {
-	stype     structureType
-	pnext     unsafe.Pointer
-	Category  RasErrorCategoryExp
-	Threshold uint64
-}
-
 // InitFlags declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
 //

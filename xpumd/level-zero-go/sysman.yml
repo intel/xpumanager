@@ -67,6 +67,9 @@ TRANSLATOR:
       # Ignore experimental (other than RAS)
       - {action: ignore, from: "^zes_[^r].*_exp[2]?_"}
       - {action: ignore, from: "^zes_vf_handle_t$"}
+      # Ignore RAS experimental types not yet supported
+      - {action: ignore, from: "^zes_ras_config_exp_t$"}
+      - {action: ignore, from: "^zes_ras_state_exp2_t$"}
       # Ignore deprecated (non-experimental)
       - {action: ignore, from: "^zes_oc_mode_t$"}
       - {action: ignore, from: "^zes_oc_capabilities_t$"}
