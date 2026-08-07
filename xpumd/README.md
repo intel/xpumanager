@@ -21,7 +21,7 @@ provides:
 * Intel GPU metric exporters
 * GPU status information for Kubernetes Intel GPU resource drivers
 
-[Changes](docs/CHANGES.md) lists differences in corresponding functionality compared to XPUM v1.x.
+[Changes](docs/CHANGES.md) lists daemon differences from earlier XPUM versions.
 
 
 ## Architecture
