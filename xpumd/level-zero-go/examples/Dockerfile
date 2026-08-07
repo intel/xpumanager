@@ -26,6 +26,7 @@ ARG METEE_COMMIT=2e9390294f47c3d88590cb4a6e0293e31fd4a9db
 WORKDIR /debs/
 COPY level-zero/$CHECKSUMS_LOADER level-zero/$CHECKSUMS_BACKEND .
 
+# Fetch & extract backend package contents (to be copied to final stage)
 RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
     curl -fS --fail-early --output-dir /debs/ \
          -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
@@ -36,6 +37,7 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
         dpkg-deb -x "$deb" /out; \
     done
 
+# Fetch frontend package, and verify & install all packages (for building bindings examples)
 RUN curl -fS --output-dir /debs/ \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
     if ! sha256sum --check --strict $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
@@ -70,6 +72,7 @@ RUN mkdir /src && \
     ninja -v -C build && \
     DESTDIR=/igsc-install ninja -C build install
 
+# Build Sysman Go bindings $APP example
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,ro \
     cd examples/${APP} && \
@@ -81,8 +84,11 @@ FROM ubuntu:24.04 AS final
 
 ARG APP=list-sysman
 
+# Copy $APP example, driver stack and its deps
 COPY --from=builder /out/ /
 COPY --from=builder /igsc-install/usr/local/lib /usr/local/lib
+
+# Install Sysman distro dep & symlink example to entrypoint
 RUN apt-get update && \
     # Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
     apt-get install -y libnl-genl-3-200 && \
