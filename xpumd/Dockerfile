@@ -55,47 +55,8 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
     fi && \
     dpkg -i *.deb
 
-WORKDIR /go/src/work
-
-# Build IGSC + its MeTee dependency
-# (with --depth 1, clone $TAG + checkout $COMMIT verifies that tags & hashes match)
-RUN mkdir /src && \
-    git clone --branch ${METEE_VERSION} --depth 1 https://github.com/intel/metee.git /src/metee && \
-    cd /src/metee && git checkout ${METEE_COMMIT} && \
-    cmake -G Ninja -S . -B build -LH -DCMAKE_INSTALL_PREFIX=/usr/ && \
-    ninja -v -C build && \
-    ninja -C build install && \
-    git clone --branch ${IGSC_VERSION} --depth 1 https://github.com/intel/igsc.git /src/igsc && \
-    cd /src/igsc && git checkout ${IGSC_COMMIT} && \
-    cmake -G Ninja -S . -B build -LH -DCMAKE_INSTALL_PREFIX=/usr/ && \
-    ninja -v -C build && \
-    ninja -C build install && \
-    ldconfig
-
-# Build xpumd / xpuinfo-cli + stub driver & install them
-RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=type=cache,target=/root/.cache/go-build \
-    --mount=src=.,target=.,rw \
-    mkdir /out && \
-    make build && \
-    make -C level-zero-go/level-zero-stub clean test && \
-    install -D dist/xpumd /out/usr/local/bin/xpumd && \
-    install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
-    install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
-    install -D level-zero-go/level-zero-stub/libze_stub.so \
-               /out/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
-    install -D level-zero-go/level-zero-stub/example-config.yaml \
-               /out/etc/xpumd/level-zero-stub/example-config.yaml && \
-    go -C dist tool -modfile $(pwd)/tools/go.mod \
-        go-licenses save . \
-                --ignore github.com/intel/xpumanager/xpumd \
-                --save_path /out/usr/share/doc/xpumd/licenses
-
-# Endpoints cannot be limited to localhost in a container,
-# as then accessing them would require using host networking
-RUN sed -i 's/127.0.0.1:/0.0.0.0:/' /out/etc/xpumd/config-example.yaml
-
 # Copy runtime libraries and their package info.
+# Placed here so that this layer is cached (avoid downloading of deb source packages, in particular).
 COPY scripts/copy-files-and-package-info.sh .
 RUN ./copy-files-and-package-info.sh /out \
         /lib64/ld-linux-x86-64.so.2 \
@@ -112,6 +73,23 @@ RUN ./copy-files-and-package-info.sh /out \
         /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1 \
         /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
         /usr/local/lib/libigc.so.2
+
+WORKDIR /go/src/work
+
+# Build IGSC + its MeTee dependency
+# (with --depth 1, clone $TAG + checkout $COMMIT verifies that tags & hashes match)
+RUN mkdir /src && \
+    git clone --branch ${METEE_VERSION} --depth 1 https://github.com/intel/metee.git /src/metee && \
+    cd /src/metee && git checkout ${METEE_COMMIT} && \
+    cmake -G Ninja -S . -B build -LH -DCMAKE_INSTALL_PREFIX=/usr/ && \
+    ninja -v -C build && \
+    ninja -C build install && \
+    git clone --branch ${IGSC_VERSION} --depth 1 https://github.com/intel/igsc.git /src/igsc && \
+    cd /src/igsc && git checkout ${IGSC_COMMIT} && \
+    cmake -G Ninja -S . -B build -LH -DCMAKE_INSTALL_PREFIX=/usr/ && \
+    ninja -v -C build && \
+    ninja -C build install && \
+    ldconfig
 
 # libigsc and libmetee are source-built (not DEB packages): copy manually and add synthetic dpkg status entries for scanners
 RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.0 \
@@ -131,6 +109,29 @@ Version: ${METEE_VERSION}\n\
 Homepage: https://github.com/intel/metee\n\
 Description: Intel(R) ME TEE Library (statically linked to libigsc)\n\
 \n" >> /out/var/lib/dpkg/status
+
+# Build xpumd / xpuinfo-cli + stub driver & install them
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=src=.,target=.,rw \
+    mkdir -p /out && \
+    make build && \
+    make -C level-zero-go/level-zero-stub clean test && \
+    install -D dist/xpumd /out/usr/local/bin/xpumd && \
+    install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
+    install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
+    install -D level-zero-go/level-zero-stub/libze_stub.so \
+               /out/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
+    install -D level-zero-go/level-zero-stub/example-config.yaml \
+               /out/etc/xpumd/level-zero-stub/example-config.yaml && \
+    go -C dist tool -modfile $(pwd)/tools/go.mod \
+        go-licenses save . \
+                --ignore github.com/intel/xpumanager/xpumd \
+                --save_path /out/usr/share/doc/xpumd/licenses
+
+# Endpoints cannot be limited to localhost in a container,
+# as then accessing them would require using host networking
+RUN sed -i 's/127.0.0.1:/0.0.0.0:/' /out/etc/xpumd/config-example.yaml
 
 # The final image
 FROM ${BASE_IMAGE} AS final
