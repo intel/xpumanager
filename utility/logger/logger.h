@@ -153,7 +153,7 @@ public:
 	{
 		try {
 			printSink.load(std::memory_order_acquire)
-				->log(LogLevel::TRACE, {}, "", xpum::compat::vformat(fmt.get(), xpum::compat::make_format_args(args...)));
+				->log(LogLevel::TRACE, {}, "", xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...)));
 		} catch (const std::exception &e) {
 			handleFormatError(e.what(), LogLevel::TRACE, "", {});
 		} catch (...) {
@@ -170,7 +170,7 @@ public:
 		}
 		try {
 			sink.load(std::memory_order_acquire)
-				->log(lvl, loc, prefix, xpum::compat::vformat(fmt.get(), xpum::compat::make_format_args(args...)));
+				->log(lvl, loc, prefix, xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...)));
 		} catch (const std::exception &e) {
 			handleFormatError(e.what(), lvl, prefix, loc);
 		} catch (...) {

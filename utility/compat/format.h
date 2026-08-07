@@ -30,6 +30,13 @@ using std::format;
 using std::format_string;
 using std::vformat;
 using std::make_format_args;
+
+// Extract the underlying format string as a string_view for vformat().
+// Deduce the CONCRETE format_string type as a plain `T` — writing the parameter
+// as format_string<Args...> would make Args a non-deduced context (they are
+// wrapped in type_identity_t) and force a consteval reconstruction. Take by
+// const& so the consteval constructor is not re-triggered.
+template <typename T> constexpr std::string_view fmt_view(const T &f) noexcept { return f.get(); }
 } // namespace xpum::compat
 #else
 #include <fmt/format.h>
@@ -39,6 +46,11 @@ using fmt::format;
 using fmt::format_string;
 using fmt::vformat;
 using fmt::make_format_args;
+
+// {fmt} 9's basic_format_string has no .get() (added in {fmt} 10); use its
+// implicit string_view conversion instead, which works in both 9 and 10.
+// See the std branch above for why the parameter is a plain deduced `T`.
+template <typename T> constexpr fmt::string_view fmt_view(const T &f) noexcept { return f; }
 } // namespace xpum::compat
 #endif
 
