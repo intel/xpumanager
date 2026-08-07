@@ -37,15 +37,14 @@ struct helpCmd
 	int char_gap;
 
 	// Default constructor
-	helpCmd() { memset(line, 0, MAX_PATH); }
+	helpCmd() { memset(line, 0, sizeof(line)); }
 
-	// Copy constructor
 	helpCmd(GAP gap, const char *fmt, ...)
 	{
 		char_gap = (int)gap;
 		va_list args;
 		va_start(args, fmt);
-		vsnprintf(line, MAX_PATH, fmt, args);
+		vsnprintf(line, sizeof(line), fmt, args);
 		va_end(args);
 	}
 
