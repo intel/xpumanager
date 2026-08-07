@@ -24,7 +24,7 @@ ARG IGSC_COMMIT=483f0b91d4636cbdc8f0503343f858ff2da45432
 ARG METEE_VERSION=6.2.4
 ARG METEE_COMMIT=2e9390294f47c3d88590cb4a6e0293e31fd4a9db
 
-# Enable source packages and install IGSC build dependencies
+# Enable source packages, install IGSC build dependencies and extra Sysman dependencies
 RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources && \
     apt-get update && apt-get install -y --no-install-recommends \
     cmake \
@@ -32,7 +32,8 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.s
     libyaml-dev \
     ninja-build \
     libudev-dev \
-    pkg-config
+    pkg-config \
+    libnl-genl-3-200
 
 WORKDIR /debs/
 COPY level-zero-go/level-zero/$CHECKSUMS_LOADER level-zero-go/level-zero/$CHECKSUMS_BACKEND .
@@ -66,6 +67,8 @@ RUN ./copy-files-and-package-info.sh /out \
         /usr/lib/x86_64-linux-gnu/libyaml-0.so.2 \
         /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
         /usr/lib/x86_64-linux-gnu/libm.so.6 \
+        /usr/lib/x86_64-linux-gnu/libnl-3.so.200 \
+        /usr/lib/x86_64-linux-gnu/libnl-genl-3.so.200 \
         /usr/lib/x86_64-linux-gnu/libresolv.so.2 \
         /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
         /usr/lib/x86_64-linux-gnu/libudev.so.1 \
