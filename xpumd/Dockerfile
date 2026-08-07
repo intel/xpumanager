@@ -19,10 +19,10 @@ ARG CHECKSUMS_LOADER=checksums-loader.txt
 ARG CHECKSUMS_BACKEND=checksums-backend.txt
 
 # Git repo tags & commit hashes to match against them
-ARG IGSC_VERSION=V0.9.6
-ARG IGSC_COMMIT=6abae21408bc36561baaade9fca9ae4a5173d2f0
-ARG METEE_VERSION=6.2.3
-ARG METEE_COMMIT=67ff323aead437557d9a7309803aae79cd5b2d56
+ARG IGSC_VERSION=V1.3.1
+ARG IGSC_COMMIT=483f0b91d4636cbdc8f0503343f858ff2da45432
+ARG METEE_VERSION=6.2.4
+ARG METEE_COMMIT=2e9390294f47c3d88590cb4a6e0293e31fd4a9db
 
 # Enable source packages and install IGSC build dependencies
 RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources && \
@@ -92,10 +92,10 @@ RUN mkdir /src && \
     ldconfig
 
 # libigsc and libmetee are source-built (not DEB packages): copy manually and add synthetic dpkg status entries for scanners
-RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.0 \
-               /out/usr/lib/x86_64-linux-gnu/libigsc.so.0 && \
+RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.1 \
+               /out/usr/lib/x86_64-linux-gnu/libigsc.so.1 && \
     /usr/bin/echo -e "\
-Package: libigsc0\n\
+Package: libigsc1\n\
 Status: install ok installed\n\
 Architecture: amd64\n\
 Version: ${IGSC_VERSION#V}\n\
