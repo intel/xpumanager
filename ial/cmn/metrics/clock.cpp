@@ -119,7 +119,7 @@ ze_result_t memoryCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache 
 	double val = 0.0;
 	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_MEMORY);
 	if (result == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", val);
+		out = xpum::compat::format("{}", val);
 	}
 	return result;
 }
@@ -152,7 +152,7 @@ ze_result_t memoryCurVoltageGetter(devInfo &d, MetricValue &out, const MetricCac
 	double val = 0.0;
 	auto const result = freq->getCurVoltage(&val, ZES_FREQ_DOMAIN_MEMORY);
 	if (result == ZE_RESULT_SUCCESS) {
-		out = std::format("{}", val);
+		out = xpum::compat::format("{}", val);
 	}
 	return result;
 }
