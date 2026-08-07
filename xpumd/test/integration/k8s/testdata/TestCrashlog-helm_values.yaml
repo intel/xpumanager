@@ -1,0 +1,76 @@
+service:
+  create: false
+
+# Crashlogs are written to an emptyDir instead of a host directory, for test
+# isolation (writable by the test-helper sidecar below).
+crashlog:
+  directory: ""
+
+# GPU (stub) driver not needed, so unset these (set in test base values file)
+extraEnv: []
+extraVolumeMounts: []
+
+config:
+  exporters:
+    otlp:
+      endpoint: "127.0.0.1:4317"
+      tls:
+        insecure: true
+  service:
+    pipelines:
+      logs:
+        exporters: [otlp]
+
+extraVolumes:
+  - name: otelcol-data
+    emptyDir: {}
+
+# Native sidecars for the conduct of this test.
+#   1. upstream opentelemetry-collector to receive log records from xpumd and
+#      write them to a file in a shared emptyDir
+#   2. plain busybox to
+#      a) write crashlog files
+#      b) read back the exporter output of the upstream collector
+initContainers:
+  - name: otel-collector
+    image: otel/opentelemetry-collector:0.157.0
+    restartPolicy: Always
+    args:
+      - |-
+        --config=yaml:receivers:
+          otlp:
+            protocols:
+              grpc:
+                # Bind to all IPs: the startupProbe connects to the pod IP
+                # and the receiver must accept a connection from xpumd (to 127.0.0.1)
+                endpoint: 0.0.0.0:4317
+        exporters:
+          file:
+            path: /data/output.json
+        service:
+          telemetry:
+            # Disable self-metrics endpoint (collides with xpumd)
+            metrics:
+              level: none
+          pipelines:
+            logs:
+              receivers: [otlp]
+              exporters: [file]
+    volumeMounts:
+      - name: otelcol-data
+        mountPath: /data
+    startupProbe:
+      tcpSocket:
+        port: 4317
+      periodSeconds: 1
+      failureThreshold: 30
+  - name: test-helper
+    image: busybox:1.37.0
+    restartPolicy: Always
+    command: ["sleep", "inf"]
+    volumeMounts:
+      - name: crashlog
+        mountPath: /var/log/crashlog
+      - name: otelcol-data
+        mountPath: /data
+        readOnly: true

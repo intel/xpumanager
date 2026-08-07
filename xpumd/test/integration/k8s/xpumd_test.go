@@ -290,3 +290,43 @@ func TestXpuinfo(t *testing.T) {
 		assert.Empty(t, cmp.Diff(want, &resp, protocmp.Transform()), "event response mismatch (-want +got)")
 	})
 }
+
+// TestCrashlog verifies the intel_crashlog receiver.
+// It also verifies the OTLP functionality (the built-in otlp exporter): our
+// otlp exporter forwards emitted log records to a stock
+// opentelemetry-collector whose output is then used to verify the test case.
+func TestCrashlog(t *testing.T) {
+	tc := newTestConfig(t)
+	t.Cleanup(func() { tc.cleanup(t) })
+	tc.setup(t)
+	ch := newCrashlogHelper(tc)
+
+	crashlogData := []byte("This is a fake GPU crash dump used by TestCrashlog\n")
+	t.Run("EmitMatchingFile", func(t *testing.T) {
+		const name = "gpu-0000:00:1e.2-crash.bin"
+		ch.writeCrashlogFile(t, crashlogData, name)
+
+		rec := ch.waitForCrashlogRecord(t, name, 30*time.Second)
+
+		assert.Equal(t, crashlogData, rec.Body, "crashlog record body mismatch")
+		assert.Equal(t, "0000:00:1e.2", rec.Attributes["pci.bdf"], "pci.bdf attribute mismatch")
+	})
+
+	t.Run("IgnoreNonMatchingFile", func(t *testing.T) {
+		const name = "gpu-0000:00:1e.2-crash.txt" // default glob is "*.bin"
+		ch.writeCrashlogFile(t, crashlogData, name)
+
+		ch.assertNoCrashlogRecord(t, name, 10*time.Second)
+	})
+
+	t.Run("NoBDFInFilename", func(t *testing.T) {
+		const name = "crash-no-bdf.bin"
+		ch.writeCrashlogFile(t, crashlogData, name)
+
+		rec := ch.waitForCrashlogRecord(t, name, 30*time.Second)
+
+		_, hasBDF := rec.Attributes["pci.bdf"]
+		assert.False(t, hasBDF, "pci.bdf attribute should be omitted when filename has no BDF")
+		assert.Equal(t, crashlogData, rec.Body, "crashlog record body mismatch")
+	})
+}

@@ -151,10 +151,7 @@ func (kc k8sClient) createConfigMap(name string, data map[string]string) error {
 	return err
 }
 
-// copyFile copies a file to a container by execing "cat >" and "mv" in the container. It pipes the
-// local file content to a temporary file in the target directory in the container, followed by a
-// rename (mv) to make the update of the target file atomic.
-// This function mimics "kubectl cp" but without using tar.
+// copyFile copies a local file to a container. See writeFile for details.
 func (kc k8sClient) copyFile(t *testing.T, pod, container, localPath, remotePath string) {
 	t.Helper()
 
@@ -162,6 +159,16 @@ func (kc k8sClient) copyFile(t *testing.T, pod, container, localPath, remotePath
 	if err != nil {
 		t.Fatalf("failed to read %q file to copy: %v", localPath, err)
 	}
+
+	kc.writeFile(t, pod, container, data, remotePath)
+}
+
+// writeFile writes data to a file in a container by execing "cat >" and "mv" in the container. It
+// pipes data to a temporary file in the target directory in the container, followed by a rename
+// (mv) to make the update of the target file atomic.
+// This function mimics "kubectl cp" but without using tar.
+func (kc k8sClient) writeFile(t *testing.T, pod, container string, data []byte, remotePath string) {
+	t.Helper()
 
 	tmpPath := remotePath + ".tmp"
 	script := fmt.Sprintf("cat > %q && mv %q %q", tmpPath, tmpPath, remotePath)
@@ -188,8 +195,40 @@ func (kc k8sClient) copyFile(t *testing.T, pod, container, localPath, remotePath
 		Stdin:  bytes.NewReader(data),
 		Stderr: &stderr,
 	}); err != nil {
-		t.Fatalf("failed to copy %q to %s/%s:%s: %v (stderr: %q)", localPath, pod, container, remotePath, err, stderr.String())
+		t.Fatalf("failed to write to %s/%s:%s: %v (stderr: %q)", pod, container, remotePath, err, stderr.String())
 	}
+}
+
+// readFile reads a file from a container by execing "cat <path>" and
+// capturing stdout. It mirrors copyFile but in the opposite direction.
+// Unlike copyFile it returns an error instead of failing the test, so callers
+// can poll for a file that may not exist (or be readable) yet.
+func (kc k8sClient) readFile(ctx context.Context, pod, container, remotePath string) ([]byte, error) {
+	req := kc.CoreV1().RESTClient().Post().
+		Namespace(kc.namespace).
+		Resource("pods").
+		Name(pod).
+		SubResource("exec").
+		VersionedParams(&corev1.PodExecOptions{
+			Container: container,
+			Command:   []string{"cat", remotePath},
+			Stdout:    true,
+			Stderr:    true,
+		}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(kc.restConfig, http.MethodPost, req.URL())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create executor for pod %q: %w", pod, err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	if err := executor.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdout: &stdout,
+		Stderr: &stderr,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to read %s/%s:%s: %w (stderr: %q)", pod, container, remotePath, err, stderr.String())
+	}
+	return stdout.Bytes(), nil
 }
 
 // forwardPort imitates kubectl forward, sets up a port-forward to the given

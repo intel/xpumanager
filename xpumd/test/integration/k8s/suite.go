@@ -140,7 +140,9 @@ func (tc *testConfig) setup(t *testing.T) {
 		}
 	})
 
-	tc.createStubDriverConfig(t)
+	if fileExists(suite.testdataFile(t, stubDriverConfigBasename)) {
+		tc.createStubDriverConfig(t)
+	}
 	tc.helm.upgrade(t)
 	tc.addCleanup(func(t *testing.T) {
 		if err := tc.helm.uninstall(); err != nil {
