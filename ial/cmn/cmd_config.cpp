@@ -54,6 +54,7 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGDEVICE, {}},
 	{configCmdType::TILE, {}},
 	{configCmdType::FREQUENCYRANGE, {.func = &cmdConfig::setFrequencyRange, .canRunOnIGPU = true}},
+	{configCmdType::FREQUENCYLOCK, {.func = &cmdConfig::setFrequencyLock, .canRunOnIGPU = true}},
 	{configCmdType::RESETFREQUENCYRANGE, {.func = &cmdConfig::resetFrequencyRange, .canRunOnIGPU = true}},
 	{configCmdType::POWERLIMIT, {.func = &cmdConfig::setPowerLimit}},
 	{configCmdType::STANDBYMODE, {.func = &cmdConfig::setStandby}},
@@ -71,6 +72,8 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::FORCE_RESET_GPUS, {}},
 	{configCmdType::POWERTYPE, {}},
 };
+
+static bool parseUint32NoThrow(const std::string &input, uint32_t &value);
 
 /**
  * @brief Joins a vector of integers into a comma-separated string.
@@ -502,6 +505,23 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 		uint32_t maxFreq = 0;
 		getGpuFrequencyOptions(d, tileId, freqOptions, minFreq, maxFreq);
 
+		// Hardware GT frequency limits: derived from the already-fetched freqOptions
+		// (sorted comma-separated list), avoiding a redundant getFreqAvailableClocks call.
+		uint32_t hwMinFreq = 0;
+		uint32_t hwMaxFreq = 0;
+		if (!freqOptions.empty()) {
+			// First token = hw min, last token = hw max (list is sorted)
+			size_t firstComma = freqOptions.find(',');
+			std::string firstTok = freqOptions.substr(0, firstComma);
+			firstTok.erase(std::remove(firstTok.begin(), firstTok.end(), ' '), firstTok.end());
+			parseUint32NoThrow(firstTok, hwMinFreq);
+
+			size_t lastComma = freqOptions.rfind(',');
+			std::string lastTok = (lastComma != std::string::npos) ? freqOptions.substr(lastComma + 1) : freqOptions;
+			lastTok.erase(std::remove(lastTok.begin(), lastTok.end(), ' '), lastTok.end());
+			parseUint32NoThrow(lastTok, hwMaxFreq);
+		}
+
 		std::string schedulerMode;
 		uint64_t schedInterval = 0;
 		uint64_t schedYieldTimeout = 0;
@@ -512,6 +532,8 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 		nlohmann::ordered_json tileJson;
 		tileJson["compute_engine"] = "compute";
 		tileJson["gpu_frequency_valid_options"] = freqOptions;
+		tileJson["gpu_hw_min_freq_limit"] = hwMinFreq;
+		tileJson["gpu_hw_max_freq_limit"] = hwMaxFreq;
 		tileJson["max_frequency"] = maxFreq;
 		tileJson["media_engine"] = "media";
 		tileJson["min_frequency"] = minFreq;
@@ -632,6 +654,8 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencyrange [minFrequency,maxFrequency]",
 				progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencylock [frequency]",
+							   progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --resetfrequencyrange", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --standby [standbyMode]", progName.c_str()));
@@ -665,7 +689,15 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address to query"));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(
-		HEADING, "--frequencyrange            Core frequency range (MHz). Applies to all tiles when -t is omitted"));
+		HEADING,
+		"--frequencyrange            Set GT min and max frequency (MHz). Applies to all tiles when -t is omitted"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING, "Must be within the hardware-allowed range; overclocking beyond hardware max is not permitted"));
+	helpList.push_back(
+		helpCmd(HEADING, "--frequencylock             Lock GT frequency to a single value (MHz); sets min == max"));
+	helpList.push_back(helpCmd(
+		SUB_HEADING,
+		"Useful for pinning performance (e.g. for GEOPM workload control). Applies to all tiles when -t omitted"));
 	helpList.push_back(helpCmd(HEADING, "--resetfrequencyrange       Reset the core frequency range to the hardware "
 										"default. Applies to all tiles when -t "
 										"is omitted. Cannot be combined with --frequencyrange."));
@@ -864,14 +896,28 @@ void cmdConfig::displayDeviceConfig(devInfo *d)
 				gotClocks = true;
 			}
 
-			// Get current range via HAL
+			// Hardware GT frequency limits: min/max of the available discrete clock list
+			if (gotClocks) {
+				double hwMinFreq = *std::min_element(clocks.begin(), clocks.end());
+				double hwMaxFreq = *std::max_element(clocks.begin(), clocks.end());
+				table.addRow("GPU", tileIdStr, xpum::compat::format(" GPU HW Min Freq Limit (MHz): {:.0f}", hwMinFreq));
+				table.addRow("", "", xpum::compat::format(" GPU HW Max Freq Limit (MHz): {:.0f}", hwMaxFreq));
+			}
+
+			// Get current configured range via HAL
 			fq->getFreqRangeForTile(tileId, minFreq, maxFreq);
 
 			if (minFreq > 0 || maxFreq > 0) {
-				table.addRow("GPU", tileIdStr, xpum::compat::format(" GPU Min Frequency (MHz): {:.0f}", minFreq));
+				// Use empty labels — continues same tile block started by the HW-limit rows above
+				// (or opens the tile block if HW limits were unavailable)
+				std::string typeLabel = gotClocks ? "" : "GPU";
+				std::string tileLabel = gotClocks ? "" : tileIdStr;
+				table.addRow(typeLabel, tileLabel, xpum::compat::format(" GPU Min Frequency (MHz): {:.0f}", minFreq));
 				table.addRow("", "", xpum::compat::format(" GPU Max Frequency (MHz): {:.0f}", maxFreq));
 			} else {
-				table.addRow("GPU", tileIdStr, " GPU Min Frequency (MHz): N/A");
+				std::string typeLabel = gotClocks ? "" : "GPU";
+				std::string tileLabel = gotClocks ? "" : tileIdStr;
+				table.addRow(typeLabel, tileLabel, " GPU Min Frequency (MHz): N/A");
 				table.addRow("", "", " GPU Max Frequency (MHz): N/A");
 			}
 
@@ -1133,6 +1179,122 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 		} else {
 			PRINT("Succeeded in changing the core frequency range on GPU {} tile {} to {:.0f}-{:.0f} MHz.\n", d->index,
 				  tileId, minFreq, maxFreq);
+		}
+	}
+
+	return result;
+}
+
+/**
+ * @brief Locks the GT frequency to a single target value.
+ *
+ * Sets both the minimum and maximum GT frequency to the requested value, pinning the
+ * hardware to that operating point.  The frequency must be one of the discrete clock
+ * steps reported by the driver for the device; overclocking beyond the hardware
+ * maximum is rejected.
+ *
+ * @param d Device information structure.
+ * @return ze_result_t Result of the operation.
+ */
+ze_result_t cmdConfig::setFrequencyLock(devInfo *d)
+{
+	TRACING();
+
+	int32_t tileId = -1;
+	if (configCmds[configCmdType::TILE].enabled) {
+		uint32_t parsedTileId = 0;
+		if (!parseUint32NoThrow(configCmds[configCmdType::TILE].val, parsedTileId)) {
+			ERR("Error: Invalid tile ID.\n");
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+		tileId = static_cast<int32_t>(parsedTileId);
+	}
+
+	const std::string &freqStr = configCmds[configCmdType::FREQUENCYLOCK].val;
+	char *endPtr = nullptr;
+	double freq = std::strtod(freqStr.c_str(), &endPtr);
+	if (endPtr == freqStr.c_str() || *endPtr != '\0') {
+		ERR("Invalid frequency value for --frequencylock.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	if (freq < 0) {
+		ERR("Frequency value must be non-negative.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	frequency *fq = d->dev->getFrequency();
+	if (fq == nullptr) {
+		ERR("Error: Frequency pointer not found.\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	// Determine which tiles to validate
+	uint32_t tileCount = 0;
+	zes_device_properties_t devProps = {};
+	devProps.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	if (d->dev->zesGetDevProps(d->zesDeviceHdl, &devProps) == ZE_RESULT_SUCCESS) {
+		tileCount = devProps.numSubdevices;
+	}
+	if (tileCount == 0) {
+		tileCount = 1;
+	}
+
+	auto isSupported = [](double v, const std::vector<uint32_t> &opts) {
+		auto iv = static_cast<uint32_t>(std::llround(v));
+		return std::fabs(v - static_cast<double>(iv)) < 0.0001 && std::find(opts.begin(), opts.end(), iv) != opts.end();
+	};
+
+	uint32_t startTile = (tileId >= 0) ? static_cast<uint32_t>(tileId) : 0;
+	uint32_t endTile = (tileId >= 0) ? (startTile + 1) : tileCount;
+
+	if (tileId >= 0 && startTile >= tileCount) {
+		ERR("Error: Invalid tile ID {}. Valid range: 0-{}.\n", tileId, tileCount - 1);
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	for (uint32_t t = startTile; t < endTile; ++t) {
+		std::string validOptions;
+		uint32_t unusedMin = 0;
+		uint32_t unusedMax = 0;
+		getGpuFrequencyOptions(d, t, validOptions, unusedMin, unusedMax);
+		if (validOptions.empty()) {
+			ERR("Error: Unable to query supported GT frequency options for tile {}.\n", t);
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+
+		std::vector<uint32_t> hwOpts;
+		for (auto tok : split(validOptions, ',')) {
+			tok.erase(std::remove(tok.begin(), tok.end(), ' '), tok.end());
+			char *end = nullptr;
+			unsigned long val = std::strtoul(tok.c_str(), &end, 10);
+			if (end == tok.c_str() || *end != '\0') {
+				hwOpts.clear();
+				break;
+			}
+			hwOpts.push_back(static_cast<uint32_t>(val));
+		}
+		if (hwOpts.empty()) {
+			continue;
+		}
+		std::sort(hwOpts.begin(), hwOpts.end());
+		uint32_t hwMin = hwOpts.front();
+		uint32_t hwMax = hwOpts.back();
+
+		if (freq < hwMin || freq > hwMax || !isSupported(freq, hwOpts)) {
+			ERR("Invalid lock frequency for tile {}: {:.0f} MHz.\n", t, freq);
+			ERR("Valid min frequency: {} MHz, valid max frequency: {} MHz\n", hwMin, hwMax);
+			ERR("Valid options: {}\n", validOptions);
+			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+		}
+	}
+
+	ze_result_t result = fq->setFrequencyRange(freq, freq, tileId);
+
+	if (result == ZE_RESULT_SUCCESS) {
+		if (tileId < 0) {
+			PRINT("Succeeded in locking the GT frequency on GPU {} (all tiles) to {:.0f} MHz.\n", d->index, freq);
+		} else {
+			PRINT("Succeeded in locking the GT frequency on GPU {} tile {} to {:.0f} MHz.\n", d->index, tileId, freq);
 		}
 	}
 
@@ -2143,6 +2305,12 @@ int cmdConfig::run(arg_struct *args)
 			configCmds[configCmdType::FREQUENCYRANGE].enabled = true;
 			isQueryMode = false;
 		});
+	sub.add_option("--frequencylock", configCmds[configCmdType::FREQUENCYLOCK].val,
+				   "Lock GT frequency to a single value (MHz); sets min == max")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::FREQUENCYLOCK].enabled = true;
+			isQueryMode = false;
+		});
 	sub.add_flag("--resetfrequencyrange", configCmds[configCmdType::RESETFREQUENCYRANGE].enabled,
 				 "Reset frequency range to the hardware default");
 	sub.add_option("--powerlimit", configCmds[configCmdType::POWERLIMIT].val, "Set power limit (W)")
@@ -2217,6 +2385,12 @@ int cmdConfig::run(arg_struct *args)
 	if (configCmds[configCmdType::RESET].enabled || configCmds[configCmdType::CLEARRAS].enabled ||
 		configCmds[configCmdType::COLDRESET].enabled || configCmds[configCmdType::RESETFREQUENCYRANGE].enabled) {
 		isQueryMode = false;
+	}
+
+	// --frequencyrange and --frequencylock are mutually exclusive
+	if (configCmds[configCmdType::FREQUENCYRANGE].enabled && configCmds[configCmdType::FREQUENCYLOCK].enabled) {
+		ERR("Error: --frequencyrange and --frequencylock are mutually exclusive.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
 	// --frequencyrange and --resetfrequencyrange target the same setting; applying both in one
