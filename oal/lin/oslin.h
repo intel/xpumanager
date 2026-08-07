@@ -42,6 +42,10 @@
 #define GETCH getch
 #define RESTORE_TERMINAL() restoreTerminal()
 #define STDIN_ISATTY() isatty(STDIN_FILENO)
+// True only when stdin is an interactive terminal AND this process is in the foreground
+// process group of that terminal.  Unlike STDIN_ISATTY(), this returns false for
+// backgrounded processes, preventing tcsetattr / GETCH calls from triggering SIGTTOU.
+#define STDIN_IS_FOREGROUND() (isatty(STDIN_FILENO) && (tcgetpgrp(STDIN_FILENO) == getpgrp()))
 #define GET_LOCAL_CPUS(bdf) getLocalCpus(bdf)
 #define GET_CPU_LIST(bdf) getCpuList(bdf)
 #define GET_TOPOLOGY getTopology

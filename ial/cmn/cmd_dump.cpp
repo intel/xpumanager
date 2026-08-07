@@ -677,7 +677,7 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 
 	std::stop_source quitSource;
 	auto quitToken = quitSource.get_token();
-	const bool shouldStartInputThread = (count == 0) && STDIN_ISATTY();
+	const bool shouldStartInputThread = (count == 0) && STDIN_IS_FOREGROUND();
 
 	std::jthread inputThread;
 	if (shouldStartInputThread) {
@@ -715,7 +715,9 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 	if (inputThread.joinable()) {
 		inputThread.join();
 	}
-	RESTORE_TERMINAL();
+	if (shouldStartInputThread) {
+		RESTORE_TERMINAL();
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -758,7 +760,7 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 
 	int iter = timing.iterations;
 	const bool shouldStartInputThread =
-		STDIN_ISATTY() && ((iter < 0 && !useFile) || (useFile && timing.totalTimeSeconds < 0));
+		STDIN_IS_FOREGROUND() && ((iter < 0 && !useFile) || (useFile && timing.totalTimeSeconds < 0));
 
 	std::jthread inputThread;
 	if (shouldStartInputThread) {
@@ -837,7 +839,9 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	if (inputThread.joinable()) {
 		inputThread.detach();
 	}
-	RESTORE_TERMINAL();
+	if (shouldStartInputThread) {
+		RESTORE_TERMINAL();
+	}
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -1157,7 +1161,7 @@ int cmdDump::run(arg_struct *args)
 			}
 			dumpFile << header << "\n";
 		}
-		if (!opts.time.has_value() && STDIN_ISATTY()) {
+		if (!opts.time.has_value() && STDIN_IS_FOREGROUND()) {
 			PRINT("Dump data to file {}. Press q or ESC to stop.\n", opts.file->c_str());
 		} else {
 			PRINT("Dump data to file {}.\n", opts.file->c_str());
@@ -1170,6 +1174,6 @@ int cmdDump::run(arg_struct *args)
 	out.json = opts.json;
 	out.noheader = opts.noheader;
 	out.nounits = opts.nounits;
-	out.aligned = !useFile && !opts.json && !opts.csvFormat && STDIN_ISATTY();
+	out.aligned = !useFile && !opts.json && !opts.csvFormat && STDIN_IS_FOREGROUND();
 	return runOutputLoop(out, fields, deviceList, *timing, useFile, dumpFile);
 }

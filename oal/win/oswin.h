@@ -112,6 +112,9 @@ struct option
 #define GETCH (char)_getch
 #define RESTORE_TERMINAL()
 #define STDIN_ISATTY() _isatty(_fileno(stdin))
+// Windows has no POSIX foreground-process-group concept; console processes can always
+// write to the console regardless of launch context, so foreground == tty here.
+#define STDIN_IS_FOREGROUND() _isatty(_fileno(stdin))
 #define GET_LOCAL_CPUS(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GET_CPU_LIST(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GET_TOPOLOGY(bdf, e) (UNUSED_VAR(bdf), UNUSED_VAR(e), 0)
