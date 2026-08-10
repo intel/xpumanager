@@ -111,6 +111,15 @@ def parse_members(struct_name, body):
 
     Member = (type, name, is_ptr, array_size (or None), annotations)
     """
+    # One member declaration: "[const] type [*...] name [array_size];"
+    member_re = re.compile(
+        r"""(?P<type>(?:const\s+)?\w[\w\s]*?)   # type, possibly multi-word ("unsigned int")
+            (?:\s+|\s*(?P<ptr>\*{1,2})\s*)      # separator: whitespace, or pointer stars (max 2 for double pointer)
+            (?P<name>\w+)
+            (?P<array_size>\[\w+\])?            # single fixed dimension, if any
+            \s*;""",
+        re.VERBOSE,
+    )
     members = []
     for raw_line in body.splitlines():
         stripped = raw_line.strip()
@@ -128,20 +137,14 @@ def parse_members(struct_name, body):
         # Skip bitfield members
         if re.search(r":\s*\d+\s*;", code_only):
             continue
-        if not code_only:
-            continue
 
-        # Match "[const] type [**] name [array];"
-        m = re.match(
-            r"((?:const\s+)?[\w][\w\s]*?)\s+(\*{0,2})\s*(\w+)\s*(\[\w+\])?\s*;",
-            code_only,
-        )
+        m = member_re.match(code_only)
         if not m:
             continue
-        type_str = m.group(1).strip()
-        is_ptr = bool(m.group(2).strip())
-        name = m.group(3)
-        array_size = m.group(4)  # e.g. '[ZES_FAN_TEMP_SPEED_PAIR_COUNT]' or None
+        type_str = m["type"]
+        is_ptr = bool(m["ptr"])
+        name = m["name"]
+        array_size = m["array_size"]  # e.g. '[ZES_FAN_TEMP_SPEED_PAIR_COUNT]' or None
 
         annotations = parse_gen_annotations(raw_line)
         override = FIELD_ANNOTATIONS_OVERRIDE.get((struct_name, name))
