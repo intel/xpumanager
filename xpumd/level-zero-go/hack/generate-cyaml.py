@@ -363,6 +363,7 @@ class SchemaEmitter:
 
     parser: HeaderParser
     out: list = field(default_factory=list)
+    seen_keys: dict = field(default_factory=dict)
 
     def _manual_seq(self, ctx, elem_type_str, schema_var, count_path):
         """Emit a manual struct-literal SEQUENCE entry."""
@@ -488,6 +489,8 @@ class SchemaEmitter:
 
     def emit_members(self, container, members, prefix="", depth=0):
         """Emit CYAML_FIELD_* entries for all non-skipped members."""
+        if depth == 0:
+            self.seen_keys = {}
         pairs, count_names = detect_count_pairs(members)
 
         for type_str, name, is_ptr, arr, annotations in members:
@@ -495,6 +498,13 @@ class SchemaEmitter:
             yaml_key = annotations.key if annotations.key else to_yaml_key(name)
             if name in SKIP_FIELDS or name in count_names or annotations.ignore:
                 continue
+
+            # A flattened member creates no YAML key of its own, only its sub-members do (like Go struct embedding),
+            if not (annotations.flatten and type_str in self.parser.all_structs):
+                clash = self.seen_keys.get(yaml_key)
+                if clash is not None:
+                    sys.exit(f"ERROR: {container}: duplicate YAML key {yaml_key} for members {clash} and {member_path}.")
+                self.seen_keys[yaml_key] = member_path
 
             ctx = SchemaEmitter.FieldCtx(
                 yaml_key=yaml_key,
