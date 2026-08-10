@@ -357,8 +357,9 @@ def traverse_from_root(p, root_struct):
             if is_rv:
                 rv_set.add(type_str)
             elif annotations.flatten:
-                if type_str not in flatten_seen:
-                    visit_deps(type_str, flatten_seen | {type_str})
+                if type_str in flatten_seen:
+                    sys.exit(f"ERROR: {name}.{field_name}: flatten recursion cycle on type {type_str}")
+                visit_deps(type_str, flatten_seen | {type_str})
             else:
                 visit(type_str)
 
@@ -513,7 +514,7 @@ class SchemaEmitter:
                 f'\tCYAML_FIELD_INT("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path}),'
             )
         elif kind == "struct" and ctx.type_str in self.parser.all_structs:
-            if ctx.type_str.endswith("_rv_t") or not ctx.annotations.flatten or depth >= 5:
+            if ctx.type_str.endswith("_rv_t") or not ctx.annotations.flatten:
                 fv = fields_var(ctx.type_str)
                 self.out.append(
                     f'\tCYAML_FIELD_MAPPING("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path}, {fv}),'
