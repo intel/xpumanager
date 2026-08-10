@@ -25,7 +25,6 @@
   * Filter out bogus power values caused by Sysman energy counter value wraparounds
     (fixes [#130](https://github.com/intel/xpumanager/issues/130))
 * XPUMD API: New `intelxpuinfo/api` Go module for the GPU info gRPC endpoint
-* Sysman Go bindings: Update to L0 API spec v1.30.0
 * XPUMD image: L0 driver stack update to 26.22.38646.4
 * XPUMD code / Go dependencies: Security enhancements
 
