@@ -194,13 +194,19 @@ def collect_enum_string_tables(text):
 
 def collect_aliases(text):
     """Return {alias: base_type} for all simple (non-pointer, non-function) typedef aliases."""
+    # One typedef alias at the start of a line: "typedef base alias;"
+    alias_re = re.compile(
+        r"""^typedef\s+
+            (?P<base>\w+)\s+    # bare identifier: excludes pointer and function typedefs
+            (?P<alias>\w+)
+            \s*;""",
+        re.MULTILINE | re.VERBOSE,
+    )
     aliases = {}
-    for m in re.finditer(
-        r"^typedef\s+([\w]+(?:\s*\*)?)\s+(\w+)\s*;", text, re.MULTILINE
-    ):
-        base = m.group(1).strip()
-        alias = m.group(2)
-        if alias != base and "(" not in base and "*" not in base:
+    for m in alias_re.finditer(text):
+        base = m["base"]
+        alias = m["alias"]
+        if alias != base:
             aliases[alias] = base
     return aliases
 
