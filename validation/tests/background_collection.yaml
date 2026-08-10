@@ -1,0 +1,192 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression tests: background metrics collection (SIGTTOU fix)
+#
+# Before the fix, running xpu-smi --query-gpu or dump --metrics with a
+# --loop interval as a background job caused the process to be suspended
+# immediately after its first sample.  The root cause was that
+# STDIN_ISATTY() returns true even when the process is in the background
+# (stdin is still attached to the controlling terminal), so the interactive
+# input thread was unconditionally started.  That thread calls getch() →
+# tcsetattr(), and the kernel sends SIGTTOU to any background process that
+# calls tcsetattr() on its controlling terminal, suspending it.
+#
+# The fix introduces STDIN_IS_FOREGROUND() which also checks that the
+# process group matches the terminal's foreground group.  The input thread
+# and RESTORE_TERMINAL() are both gated on this check.
+#
+# Test strategy:
+#   Run xpu-smi in a backgrounded shell subprocess while collecting multiple
+#   samples to a log file, then inspect /proc/<pid>/status for State "T"
+#   (stopped/traced).  The test only runs the full regression check when
+#   stdin is a tty, since in headless CI environments STDIN_ISATTY() is
+#   already false and the bug cannot be triggered regardless.
+#
+# Workaround for affected builds: redirect stdin from /dev/null so that
+# isatty(0) returns false and the input thread is never started:
+#   xpu-smi --query-gpu=... --file out.log < /dev/null &
+# ============================================================================
+
+test_suite:
+  name: "Regression: background collection (SIGTTOU)"
+  description: "xpu-smi loop modes must not be suspended by SIGTTOU when run as a background job"
+
+  settings:
+    timeout: 30
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # --query-gpu background: must collect multiple samples without SIGTTOU
+    # -----------------------------------------------------------------------
+    - name: "query_gpu_background_no_sigttou"
+      description: |
+        --query-gpu with --loop-ms backgrounded via & must not receive SIGTTOU
+        and must collect more than one sample during the observation window.
+
+        The test is skipped (exit 0) when stdin is not a tty because the bug
+        cannot be triggered in headless/CI environments (STDIN_ISATTY() is
+        already false so the input thread is never started).
+
+        State T in /proc/<pid>/status means the process was stopped by a
+        signal, which is the observable symptom of the SIGTTOU regression.
+      os: "Linux"
+      command: "--query-gpu=timestamp --loop-ms=200"
+      script: |
+        if ! test -t 0; then
+          echo "SKIP: stdin is not a tty; SIGTTOU regression cannot be triggered in this environment"
+          exit 0
+        fi
+
+        LOG_FILE="/tmp/bg_qgpu_$$.log"
+
+        # Run in background; file redirect prevents PRINT output going to stdout
+        {command} --file "$LOG_FILE" &
+        BG_PID=$!
+
+        # Allow 3 × 200 ms = 600 ms minimum collection before sampling state
+        sleep 2
+
+        STATE=$(awk '/^State:/{print $2}' /proc/$BG_PID/status 2>/dev/null)
+        kill "$BG_PID" 2>/dev/null
+        wait "$BG_PID" 2>/dev/null
+
+        LINE_COUNT=$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)
+        rm -f "$LOG_FILE"
+
+        if [ "$STATE" = "T" ]; then
+          echo "FAIL: process was in state T (stopped) — SIGTTOU regression"
+          exit 1
+        fi
+
+        if [ "$LINE_COUNT" -lt 3 ]; then
+          echo "FAIL: expected ≥3 lines (header + ≥2 samples), got $LINE_COUNT"
+          exit 1
+        fi
+
+        echo "PASS: process state='${STATE}', collected ${LINE_COUNT} lines"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "background", "sigttou", "query-gpu"]
+
+    # -----------------------------------------------------------------------
+    # dump background: same regression on the dump --metrics path
+    # -----------------------------------------------------------------------
+    - name: "dump_background_no_sigttou"
+      description: |
+        dump backgrounded with continuous interval must not be suspended.
+        Exercises runOutputLoop (the dump path) rather than runQueryLoopMode.
+        Uses --interval (dump's own loop flag) not --loop-ms (a pre-arg that
+        only applies to the --query-gpu path).
+        Sleep 3s: header written at t=0, first row at t=1s, second row at t=2s,
+        giving ≥3 lines before the check at t=3s.
+      os: "Linux"
+      command: "dump --device 0 --metrics 0 --interval 1"
+      script: |
+        if ! test -t 0; then
+          echo "SKIP: stdin is not a tty; SIGTTOU regression cannot be triggered in this environment"
+          exit 0
+        fi
+
+        LOG_FILE="/tmp/bg_dump_$$.log"
+
+        {command} --file "$LOG_FILE" &
+        BG_PID=$!
+
+        sleep 3
+
+        STATE=$(awk '/^State:/{print $2}' /proc/$BG_PID/status 2>/dev/null)
+        kill "$BG_PID" 2>/dev/null
+        wait "$BG_PID" 2>/dev/null
+
+        LINE_COUNT=$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)
+        rm -f "$LOG_FILE"
+
+        if [ "$STATE" = "T" ]; then
+          echo "FAIL: process was in state T (stopped) — SIGTTOU regression"
+          exit 1
+        fi
+
+        if [ "$LINE_COUNT" -lt 3 ]; then
+          echo "FAIL: expected ≥3 lines (header + ≥2 samples), got $LINE_COUNT"
+          exit 1
+        fi
+
+        echo "PASS: process state='${STATE}', collected ${LINE_COUNT} lines"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "background", "sigttou", "dump"]
+
+    # -----------------------------------------------------------------------
+    # Sanity check: --file with /dev/null stdin (the documented workaround)
+    # must always work, even on older builds, since STDIN_ISATTY() returns
+    # false and the input thread is never started.
+    # -----------------------------------------------------------------------
+    - name: "query_gpu_devnull_stdin_collects"
+      description: |
+        Redirecting stdin from /dev/null prevents STDIN_ISATTY() from returning
+        true, so the input thread is never started and SIGTTOU cannot occur.
+        This is both a workaround for the old build and a regression guard:
+        if this test fails, something other than the input thread is triggering
+        a terminal write from the background process.
+      os: "Linux"
+      command: "--query-gpu=timestamp --loop-ms=200"
+      script: |
+        LOG_FILE="/tmp/xpuval_bg_devnull.log"
+        {command} --file "$LOG_FILE" < /dev/null &
+        BG_PID=$!
+        sleep 2
+        STATE=$(awk '/^State:/{print $2}' /proc/$BG_PID/status 2>/dev/null)
+        kill "$BG_PID" 2>/dev/null
+        wait "$BG_PID" 2>/dev/null
+        LINE_COUNT=$(wc -l < "$LOG_FILE" 2>/dev/null || echo 0)
+        rm -f "$LOG_FILE"
+        if [ "$STATE" = "T" ]; then
+          echo "FAIL: process suspended even with /dev/null stdin"
+          exit 1
+        fi
+        if [ "${LINE_COUNT:-0}" -lt 3 ]; then
+          echo "FAIL: expected ≥3 lines, got ${LINE_COUNT:-0}"
+          exit 1
+        fi
+        echo "PASS"
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "background", "sigttou", "query-gpu"]

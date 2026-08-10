@@ -1,0 +1,214 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression tests: RAS correctable and uncorrectable error metrics
+#
+# Previously, the ECC metric reported a single combined RAS error total.
+# After the fix, correctable and uncorrectable counts are exposed as separate
+# fields, matching the hardware's per-category counters.
+#
+# Metric IDs (legacy dump -m notation):
+#   12  ras.reset
+#   13  ras.programming.errors
+#   14  ras.driver.errors
+#   15  ras.cache.errors.correctable       ← previously a combined total
+#   16  ras.cache.errors.uncorrectable     ← new distinct field
+#   29  ras.non_compute.errors.correctable
+#   30  ras.non_compute.errors.uncorrectable
+#
+# Field names accepted by --query-gpu use the same canonical names as the
+# metrics registry.  All tests accept return_code [0, 1] because RAS
+# hardware counters may not be available on all systems.
+# ============================================================================
+
+test_suite:
+  name: "Regression: RAS correctable / uncorrectable metrics"
+  description: "ECC metrics must report correctable and uncorrectable error counts as separate fields"
+
+  settings:
+    timeout: 20
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Error: %s"
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - '\[(?:Error|Warning|Info)\] \.\.\/'
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # dump legacy metric IDs 15 and 16: must produce distinct columns
+    # -----------------------------------------------------------------------
+    - name: "dump_ras_cache_correctable_id"
+      description: |
+        dump -m 15 must map to ras.cache.errors.correctable and emit that
+        column name in the header.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 15 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+      tags: ["regression", "ras", "ecc", "dump"]
+
+    - name: "dump_ras_cache_uncorrectable_id"
+      description: |
+        dump -m 16 must map to the uncorrectable cache error counter and emit
+        "errors.uncorrectable" in the header.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 16 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "dump"]
+
+    - name: "dump_ras_non_compute_correctable_id"
+      description: |
+        dump -m 29 must map to the non-compute correctable error counter.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 29 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+      tags: ["regression", "ras", "ecc", "dump"]
+
+    - name: "dump_ras_non_compute_uncorrectable_id"
+      description: |
+        dump -m 30 must map to the non-compute uncorrectable error counter.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 30 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "dump"]
+
+    # -----------------------------------------------------------------------
+    # dump combined RAS IDs 15,16 in one run: both columns must appear
+    # -----------------------------------------------------------------------
+    - name: "dump_ras_cache_both"
+      description: |
+        dump -m 15,16 must emit both the correctable and uncorrectable cache
+        error columns separately.  Before the fix a single combined total
+        appeared; after the fix both headers must be present.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 15,16 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "dump"]
+
+    - name: "dump_ras_non_compute_both"
+      description: |
+        dump -m 29,30 must emit both non-compute correctable and uncorrectable
+        as separate CSV columns.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 29,30 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "dump"]
+
+    # -----------------------------------------------------------------------
+    # --query-gpu field name access: canonical names must be queryable
+    # -----------------------------------------------------------------------
+    - name: "query_gpu_ras_cache_correctable"
+      description: |
+        --query-gpu=ras.cache.errors.correctable must be accepted as a valid
+        field and emit a header containing "Correctable".
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=ras.cache.errors.correctable --id=0"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+      tags: ["regression", "ras", "ecc", "query-gpu"]
+
+    - name: "query_gpu_ras_cache_uncorrectable"
+      description: |
+        --query-gpu=ras.cache.errors.uncorrectable must be accepted as a
+        distinct field from the correctable count.
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=ras.cache.errors.uncorrectable --id=0"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "query-gpu"]
+
+    - name: "query_gpu_ras_non_compute_correctable"
+      description: "--query-gpu=ras.non_compute.errors.correctable must be a valid field"
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=ras.non_compute.errors.correctable --id=0"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+      tags: ["regression", "ras", "ecc", "query-gpu"]
+
+    - name: "query_gpu_ras_non_compute_uncorrectable"
+      description: "--query-gpu=ras.non_compute.errors.uncorrectable must be a valid field"
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=ras.non_compute.errors.uncorrectable --id=0"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "query-gpu"]
+
+    # -----------------------------------------------------------------------
+    # Both correctable and uncorrectable in one invocation: must be two columns
+    # -----------------------------------------------------------------------
+    - name: "query_gpu_ras_cache_both_columns"
+      description: |
+        --query-gpu with both cache error fields must produce two distinct
+        columns — one containing "Correctable" and one "Uncorrectable".
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=ras.cache.errors.correctable,ras.cache.errors.uncorrectable --id=0"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "query-gpu"]
+
+    - name: "query_gpu_ras_both_categories"
+      description: |
+        Query all four RAS fields to confirm each is individually addressable.
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=ras.cache.errors.correctable,ras.cache.errors.uncorrectable,ras.non_compute.errors.correctable,ras.non_compute.errors.uncorrectable --id=0"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc", "query-gpu"]
+
+    # -----------------------------------------------------------------------
+    # Header validation: correctable and uncorrectable are distinct columns.
+    # The dump command uses aligned (space-padded) output when stdout is a tty,
+    # so we check stdout_contains rather than CSV column parsing.
+    # -----------------------------------------------------------------------
+    - name: "ras_cache_both_csv_columns"
+      description: |
+        dump -m 15,16 must include both the correctable and uncorrectable cache
+        error metric names in its header — confirming they are separate fields,
+        not merged into a single total as before the fix.
+      os: ["Linux", "Windows"]
+      command: "dump --device 0 --metrics 15,16 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "errors.correctable"
+          - "errors.uncorrectable"
+      tags: ["regression", "ras", "ecc"]

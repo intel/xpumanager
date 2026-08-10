@@ -1,0 +1,303 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression tests: process GPU memory reporting
+#
+# Exercises the drm-client-id deduplication fix in hal/core/process.cpp and
+# oal/lin/process_platform.cpp.  Before the fix, each open DRM file descriptor
+# contributed its own allocation total:
+#   - One process with N dup()d fds → reported N × actual VRAM
+#   - A fork()d child → parent + child each reported the full allocation (2×)
+#
+# After the fix, xpu-smi reads /proc/<pid>/fdinfo directly and deduplicates
+# by drm-client-id.  Each unique drm-client-id is counted exactly once.
+#
+# Test helper: process_memstress (validation/scripts/process_memstress.cpp)
+#   Binary resolution order (first found wins):
+#     1. $PROCESS_MEMSTRESS environment variable
+#     2. ./builddir/validation/scripts/process_memstress  (meson -Dwith_tests=true)
+#     3. ./validation/scripts/process_memstress           (in-tree build)
+#     4. ./process_memstress                              (repo root)
+#
+# Validation is delegated to validation/scripts/check_ps_memory.py which
+# contains the JSON parsing and ratio checks.
+#
+# Note on temp files: each workflow uses a fixed name (not $$) because $$ gives
+# a different PID in every step's subshell.  The three tests use distinct
+# prefixes so they are safe to run in parallel.
+# ============================================================================
+
+test_suite:
+  name: "Regression: process GPU memory reporting"
+  description: "xpu-smi ps must not over-report VRAM for dup()d fds or fork()d children"
+
+  settings:
+    timeout: 60
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # 1. alloc — baseline: single-process allocation reported correctly
+    # -----------------------------------------------------------------------
+    - name: "process_memory_alloc_baseline"
+      description: |
+        process_memstress --mode alloc allocates 128 MiB of device VRAM.
+        xpu-smi ps must report mem_size within 50–200% of 131072 KiB for
+        the holding process.
+      os: "Linux"
+      type: workflow
+      continue_on_step_failure: false
+
+      steps:
+        - name: "find_and_start"
+          script: |
+            if [ -n "${PROCESS_MEMSTRESS:-}" ] && [ -x "$PROCESS_MEMSTRESS" ]; then
+              TOOL="$PROCESS_MEMSTRESS"
+            elif [ -x "./builddir/validation/scripts/process_memstress" ]; then
+              TOOL="./builddir/validation/scripts/process_memstress"
+            elif [ -x "./validation/scripts/process_memstress" ]; then
+              TOOL="./validation/scripts/process_memstress"
+            elif [ -x "./process_memstress" ]; then
+              TOOL="./process_memstress"
+            else
+              echo "SKIP: process_memstress binary not found" > /tmp/xpuval_alloc.status
+              exit 0
+            fi
+
+            "$TOOL" --mode alloc --size 128 --device 0 --duration 45 \
+              > /tmp/xpuval_alloc.out 2>&1 &
+            echo $! > /tmp/xpuval_alloc.pid
+
+            for i in $(seq 1 150); do
+              grep -q "^READY" /tmp/xpuval_alloc.out 2>/dev/null && break
+              sleep 0.1
+            done
+
+            if ! grep -q "^READY" /tmp/xpuval_alloc.out 2>/dev/null; then
+              echo "FAIL: process_memstress did not emit READY within 15 s"
+              cat /tmp/xpuval_alloc.out
+              kill "$(cat /tmp/xpuval_alloc.pid)" 2>/dev/null
+              echo "FAIL" > /tmp/xpuval_alloc.status
+              exit 1
+            fi
+
+            echo "OK" > /tmp/xpuval_alloc.status
+            grep "^ALLOC_BYTES=\|^PARENT_PID=" /tmp/xpuval_alloc.out
+
+        - name: "query_and_validate"
+          command: "ps -j"
+          script: |
+            STATUS=$(cat /tmp/xpuval_alloc.status 2>/dev/null)
+            if [ "$STATUS" = "SKIP: process_memstress binary not found" ]; then
+              echo "SKIP: binary not found"; exit 0
+            fi
+            if [ "$STATUS" = "FAIL" ]; then echo "FAIL: startup failed"; exit 1; fi
+
+            ALLOC_BYTES=$(grep "^ALLOC_BYTES=" /tmp/xpuval_alloc.out | cut -d= -f2 | tr -d '[:space:]')
+            PARENT_PID=$(grep "^PARENT_PID=" /tmp/xpuval_alloc.out | cut -d= -f2 | tr -d '[:space:]')
+
+            {command} > /tmp/xpuval_alloc_ps.json 2>&1
+
+            python3 validation/scripts/check_ps_memory.py \
+              --mode alloc \
+              --alloc-bytes "$ALLOC_BYTES" \
+              --parent-pid "$PARENT_PID" \
+              /tmp/xpuval_alloc_ps.json
+          expect:
+            return_code: 0
+            stdout_contains:
+              - "PASS"
+
+        - name: "cleanup"
+          cleanup_step: true
+          script: |
+            PID=$(cat /tmp/xpuval_alloc.pid 2>/dev/null)
+            if [ -n "$PID" ]; then
+              kill "$PID" 2>/dev/null
+              wait "$PID" 2>/dev/null
+            fi
+            rm -f /tmp/xpuval_alloc.pid /tmp/xpuval_alloc.out \
+                  /tmp/xpuval_alloc.status /tmp/xpuval_alloc_ps.json
+
+      tags: ["regression", "process", "memory", "alloc", "ps"]
+
+    # -----------------------------------------------------------------------
+    # 2. fork — forked child must not double-count parent's allocation
+    # -----------------------------------------------------------------------
+    - name: "process_memory_fork_no_double_count"
+      description: |
+        process_memstress --mode fork: parent allocates 128 MiB then forks.
+        Total VRAM across parent + child must be ≈ 128 MiB, not ≈ 256 MiB.
+      os: "Linux"
+      type: workflow
+      continue_on_step_failure: false
+
+      steps:
+        - name: "find_and_start"
+          script: |
+            if [ -n "${PROCESS_MEMSTRESS:-}" ] && [ -x "$PROCESS_MEMSTRESS" ]; then
+              TOOL="$PROCESS_MEMSTRESS"
+            elif [ -x "./builddir/validation/scripts/process_memstress" ]; then
+              TOOL="./builddir/validation/scripts/process_memstress"
+            elif [ -x "./validation/scripts/process_memstress" ]; then
+              TOOL="./validation/scripts/process_memstress"
+            elif [ -x "./process_memstress" ]; then
+              TOOL="./process_memstress"
+            else
+              echo "SKIP: process_memstress binary not found" > /tmp/xpuval_fork.status
+              exit 0
+            fi
+
+            "$TOOL" --mode fork --size 128 --device 0 --duration 45 \
+              > /tmp/xpuval_fork.out 2>&1 &
+            echo $! > /tmp/xpuval_fork.pid
+
+            for i in $(seq 1 150); do
+              grep -q "^READY" /tmp/xpuval_fork.out 2>/dev/null && break
+              sleep 0.1
+            done
+
+            if ! grep -q "^READY" /tmp/xpuval_fork.out 2>/dev/null; then
+              echo "FAIL: process_memstress did not emit READY within 15 s"
+              cat /tmp/xpuval_fork.out
+              kill "$(cat /tmp/xpuval_fork.pid)" 2>/dev/null
+              echo "FAIL" > /tmp/xpuval_fork.status
+              exit 1
+            fi
+
+            echo "OK" > /tmp/xpuval_fork.status
+            grep "^ALLOC_BYTES=\|^PARENT_PID=\|^CHILD_PID=" /tmp/xpuval_fork.out
+
+        - name: "query_and_validate"
+          command: "ps -j"
+          script: |
+            STATUS=$(cat /tmp/xpuval_fork.status 2>/dev/null)
+            if [ "$STATUS" = "SKIP: process_memstress binary not found" ]; then
+              echo "SKIP: binary not found"; exit 0
+            fi
+            if [ "$STATUS" = "FAIL" ]; then echo "FAIL: startup failed"; exit 1; fi
+
+            ALLOC_BYTES=$(grep "^ALLOC_BYTES=" /tmp/xpuval_fork.out | cut -d= -f2 | tr -d '[:space:]')
+            PARENT_PID=$(grep "^PARENT_PID=" /tmp/xpuval_fork.out | cut -d= -f2 | tr -d '[:space:]')
+            CHILD_PID=$(grep "^CHILD_PID=" /tmp/xpuval_fork.out | cut -d= -f2 | tr -d '[:space:]')
+
+            {command} > /tmp/xpuval_fork_ps.json 2>&1
+
+            python3 validation/scripts/check_ps_memory.py \
+              --mode fork \
+              --alloc-bytes "$ALLOC_BYTES" \
+              --parent-pid "$PARENT_PID" \
+              --child-pid "$CHILD_PID" \
+              /tmp/xpuval_fork_ps.json
+          expect:
+            return_code: 0
+            stdout_contains:
+              - "PASS"
+
+        - name: "cleanup"
+          cleanup_step: true
+          script: |
+            PID=$(cat /tmp/xpuval_fork.pid 2>/dev/null)
+            if [ -n "$PID" ]; then
+              kill "$PID" 2>/dev/null
+              wait "$PID" 2>/dev/null
+            fi
+            rm -f /tmp/xpuval_fork.pid /tmp/xpuval_fork.out \
+                  /tmp/xpuval_fork.status /tmp/xpuval_fork_ps.json
+
+      tags: ["regression", "process", "memory", "fork", "ps"]
+
+    # -----------------------------------------------------------------------
+    # 3. dup — dup()d file descriptors must not multiply reported memory
+    # -----------------------------------------------------------------------
+    - name: "process_memory_dup_no_multiply"
+      description: |
+        process_memstress --mode dup: allocates 128 MiB then dup()s each DRM
+        fd 3 extra times (4 total).  xpu-smi ps must report ≈ 128 MiB, not
+        ≈ 512 MiB.
+      os: "Linux"
+      type: workflow
+      continue_on_step_failure: false
+
+      steps:
+        - name: "find_and_start"
+          script: |
+            if [ -n "${PROCESS_MEMSTRESS:-}" ] && [ -x "$PROCESS_MEMSTRESS" ]; then
+              TOOL="$PROCESS_MEMSTRESS"
+            elif [ -x "./builddir/validation/scripts/process_memstress" ]; then
+              TOOL="./builddir/validation/scripts/process_memstress"
+            elif [ -x "./validation/scripts/process_memstress" ]; then
+              TOOL="./validation/scripts/process_memstress"
+            elif [ -x "./process_memstress" ]; then
+              TOOL="./process_memstress"
+            else
+              echo "SKIP: process_memstress binary not found" > /tmp/xpuval_dup.status
+              exit 0
+            fi
+
+            "$TOOL" --mode dup --size 128 --dups 3 --device 0 --duration 45 \
+              > /tmp/xpuval_dup.out 2>&1 &
+            echo $! > /tmp/xpuval_dup.pid
+
+            for i in $(seq 1 150); do
+              grep -q "^READY" /tmp/xpuval_dup.out 2>/dev/null && break
+              sleep 0.1
+            done
+
+            if ! grep -q "^READY" /tmp/xpuval_dup.out 2>/dev/null; then
+              echo "FAIL: process_memstress did not emit READY within 15 s"
+              cat /tmp/xpuval_dup.out
+              kill "$(cat /tmp/xpuval_dup.pid)" 2>/dev/null
+              echo "FAIL" > /tmp/xpuval_dup.status
+              exit 1
+            fi
+
+            echo "OK" > /tmp/xpuval_dup.status
+            grep "^ALLOC_BYTES=\|^PARENT_PID=\|^DUP_FDS=" /tmp/xpuval_dup.out
+
+        - name: "query_and_validate"
+          command: "ps -j"
+          script: |
+            STATUS=$(cat /tmp/xpuval_dup.status 2>/dev/null)
+            if [ "$STATUS" = "SKIP: process_memstress binary not found" ]; then
+              echo "SKIP: binary not found"; exit 0
+            fi
+            if [ "$STATUS" = "FAIL" ]; then echo "FAIL: startup failed"; exit 1; fi
+
+            ALLOC_BYTES=$(grep "^ALLOC_BYTES=" /tmp/xpuval_dup.out | cut -d= -f2 | tr -d '[:space:]')
+            PARENT_PID=$(grep "^PARENT_PID=" /tmp/xpuval_dup.out | cut -d= -f2 | tr -d '[:space:]')
+            DUP_FDS=$(grep "^DUP_FDS=" /tmp/xpuval_dup.out | cut -d= -f2 | tr -d '[:space:]')
+
+            {command} > /tmp/xpuval_dup_ps.json 2>&1
+
+            python3 validation/scripts/check_ps_memory.py \
+              --mode dup \
+              --alloc-bytes "$ALLOC_BYTES" \
+              --parent-pid "$PARENT_PID" \
+              --dup-fds "$DUP_FDS" \
+              /tmp/xpuval_dup_ps.json
+          expect:
+            return_code: 0
+            stdout_contains:
+              - "PASS"
+
+        - name: "cleanup"
+          cleanup_step: true
+          script: |
+            PID=$(cat /tmp/xpuval_dup.pid 2>/dev/null)
+            if [ -n "$PID" ]; then
+              kill "$PID" 2>/dev/null
+              wait "$PID" 2>/dev/null
+            fi
+            rm -f /tmp/xpuval_dup.pid /tmp/xpuval_dup.out \
+                  /tmp/xpuval_dup.status /tmp/xpuval_dup_ps.json
+
+      tags: ["regression", "process", "memory", "dup", "ps"]

@@ -1,0 +1,188 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression + feature tests: device selection
+#
+# Covers two related changes:
+#
+# 1. --device -1 regression fix
+#    CLI11's ->each() callback that cleared the "-1" sentinel was silently
+#    overwritten by subcommand parsing, causing "-1" to reach findDevice()
+#    unresolved and fail.  After the fix, "-1" consistently means "all
+#    devices" across every subcommand.
+#
+# 2. Comma-separated device list (new feature)
+#    All commands accepting --device now parse a comma-separated list of
+#    indices or BDF addresses (e.g. --device 0,1 or --device 0000:03:00.0,1).
+#    Each test uses --device 0,0 (same device twice) to exercise the new
+#    parser on any single-GPU system without requiring a second device.
+# ============================================================================
+
+test_suite:
+  name: "Regression + Feature: device selection"
+  description: "--device -1 regression and comma-separated device list feature"
+
+  settings:
+    timeout: 20
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Error: %s"
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - '\[(?:Error|Warning|Info)\] \.\.\/'
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # --device -1 regression: must resolve to "all devices" in every command
+    # -----------------------------------------------------------------------
+
+    - name: "dump_device_minus_one"
+      description: |
+        dump --device -1 must treat -1 as "all devices" and exit cleanly.
+        Regression: the ->each() callback was overwritten during subcommand
+        parsing so -1 reached findDevice() unparsed and failed device lookup.
+      os: ["Linux", "Windows"]
+      command: "dump --device -1 --metrics 0 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "not found for device ID '-1'"
+      tags: ["regression", "device", "dump"]
+
+    - name: "stats_device_minus_one"
+      description: "stats --device -1 must resolve to all devices without a lookup error"
+      os: ["Linux", "Windows"]
+      command: "stats --device -1 --samples 2 --interval 100"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "not found for device ID '-1'"
+      tags: ["regression", "device", "stats"]
+
+    - name: "ps_device_minus_one"
+      description: "ps --device -1 must resolve to all devices without a lookup error"
+      os: ["Linux", "Windows"]
+      command: "ps --device -1"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "not found for device ID '-1'"
+      tags: ["regression", "device", "ps"]
+
+    - name: "topology_device_minus_one"
+      description: "topology --device -1 must resolve to all devices without a lookup error"
+      os: ["Linux", "Windows"]
+      command: "topology --device -1"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "not found for device ID '-1'"
+      tags: ["regression", "device", "topology"]
+
+    # -----------------------------------------------------------------------
+    # Comma-separated device list: all commands must accept the new syntax.
+    # --device 0,0 exercises the parser on any single-GPU system; on a
+    # multi-GPU system it is expected to produce two rows for device 0.
+    # -----------------------------------------------------------------------
+
+    - name: "discovery_device_comma"
+      description: |
+        discovery --device 0,0 must be accepted by the new comma-separated
+        device parser without a CLI parse error.
+      os: ["Linux", "Windows"]
+      command: "discovery --device 0,0 -j"
+      expect:
+        return_code: [0, 1]
+        stdout_not_matches_regex:
+          - 'not expected|unrecognised|unknown option'
+      tags: ["feature", "device", "comma", "discovery"]
+
+    - name: "dump_device_comma"
+      description: "dump --device 0,0 must be accepted and produce output for device 0"
+      os: ["Linux", "Windows"]
+      command: "dump --device 0,0 --metrics 0 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1]
+        stdout_not_matches_regex:
+          - 'not expected|unrecognised|unknown option'
+      tags: ["feature", "device", "comma", "dump"]
+
+    - name: "stats_device_comma"
+      description: "stats --device 0,0 must be accepted without a parse error"
+      os: ["Linux", "Windows"]
+      command: "stats --device 0,0 --samples 2 --interval 100"
+      expect:
+        return_code: [0, 1]
+        stdout_not_matches_regex:
+          - 'not expected|unrecognised|unknown option'
+      tags: ["feature", "device", "comma", "stats"]
+
+    - name: "ps_device_comma"
+      description: "ps --device 0,0 must be accepted without a parse error"
+      os: ["Linux", "Windows"]
+      command: "ps --device 0,0"
+      expect:
+        return_code: [0, 1]
+        stdout_not_matches_regex:
+          - 'not expected|unrecognised|unknown option'
+      tags: ["feature", "device", "comma", "ps"]
+
+    - name: "topology_device_comma"
+      description: "topology --device 0,0 must be accepted without a parse error"
+      os: ["Linux", "Windows"]
+      command: "topology --device 0,0"
+      expect:
+        return_code: [0, 1]
+        stdout_not_matches_regex:
+          - 'not expected|unrecognised|unknown option'
+      tags: ["feature", "device", "comma", "topology"]
+
+    # -----------------------------------------------------------------------
+    # Multi-GPU comma list: workflow that discovers all GPU IDs and then runs
+    # dump with all of them as a comma-separated list.
+    # Gracefully degenerates to a single-device run on single-GPU systems.
+    # -----------------------------------------------------------------------
+
+    - name: "dump_device_all_comma"
+      description: |
+        Discover all GPU device IDs via discovery -j, join them into a
+        comma-separated string, and run dump --device <all> to exercise the
+        comma parser across the actual device count of the test system.
+      os: "Linux"
+      type: workflow
+      continue_on_step_failure: false
+      steps:
+        - name: "discover_and_dump"
+          script: |
+            DEVS=$({command} discovery -j 2>/dev/null | python3 -c "import json,sys; d=json.load(sys.stdin); print(','.join(str(x['device_id']) for x in d.get('device_list',[])) or '0')" 2>/dev/null || echo "0")
+            echo "Device comma list: $DEVS"
+            {command} dump --device "$DEVS" --metrics 0 --interval 1 --number 1
+          expect:
+            return_code: [0, 1]
+
+      tags: ["feature", "device", "comma", "dump", "workflow"]
+
+    # -----------------------------------------------------------------------
+    # Error cases: malformed comma lists must fail cleanly, not crash
+    # -----------------------------------------------------------------------
+
+    - name: "dump_device_comma_trailing"
+      description: "trailing comma (--device 0,) must not crash; accepted or rejected cleanly"
+      os: ["Linux", "Windows"]
+      command: "dump --device 0, --metrics 0 --interval 1 --number 1"
+      expect:
+        return_code: [0, 1, 2, 255]
+      tags: ["regression", "device", "comma", "error"]
+
+    - name: "dump_device_comma_only"
+      description: "bare comma (--device ,) must be rejected cleanly"
+      os: ["Linux", "Windows"]
+      command: "dump --device , --metrics 0 --interval 1 --number 1"
+      expect:
+        return_code: [1, 2, 255]
+      tags: ["regression", "device", "comma", "error"]

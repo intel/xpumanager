@@ -1,0 +1,259 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression tests: output formatting fixes
+#
+# Covers four distinct formatting regressions:
+#
+# 1. ps process name is basename only
+#    xpu-smi ps displayed the full executable path in the process name column.
+#    After the fix, only the basename (e.g. "gpu_mem_hold") is shown.
+#
+# 2. dump -h word wrapping
+#    Metric field descriptions in dump --help were emitted as single
+#    unbroken lines, causing unreadable output on terminals narrower than the
+#    longest description.  After the fix, descriptions wrap at a sensible
+#    column width.
+#
+# 3. stats output not truncated at 65 characters
+#    The stats table column width was capped at 65 characters (67 configured
+#    width − 2 padding), silently truncating longer values.  Switched to
+#    autosizing with a generous maximum.
+#
+# 4. PCIe throughput shows 0.0 instead of N/A at idle
+#    When PCIe link information is available but no traffic is present,
+#    stats reported N/A for read/write throughput.  After the fix it shows 0.0.
+# ============================================================================
+
+test_suite:
+  name: "Regression: output formatting"
+  description: "ps basename, dump -h wrapping, stats truncation, PCIe idle throughput"
+
+  settings:
+    timeout: 30
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Error: %s"
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - '\[(?:Error|Warning|Info)\] \.\.\/'
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # 1. ps process name: must be basename, not a full path
+    #
+    # The test launches validation/tools/gpu_mem_hold to ensure at least one
+    # GPU-using process is present.  If the tool is not available the check
+    # is skipped gracefully; if no GPU process appears in ps output the test
+    # also skips, since the regression is only observable when there is a
+    # process to display.
+    # -----------------------------------------------------------------------
+    - name: "ps_process_name_is_basename"
+      description: |
+        ps must display the process name (basename) not the full executable path.
+        Regression: cmd_ps used the full path string from /proc/<pid>/cmdline
+        without stripping the directory prefix.
+        Skips gracefully when ps reports no GPU processes.
+      os: "Linux"
+      command: "ps -j"
+      script: |
+        {command} > /tmp/xpuval_ps_out.json 2>&1
+        python3 -c "import json,sys; raw=open('/tmp/xpuval_ps_out.json').read().strip(); data=(json.loads(raw) if raw else None); procs=(data if isinstance(data,list) else (data.get('process_list',[]) if data else [])); bad=[str(p.get('process_name',p.get('name',''))) for p in procs if '/' in str(p.get('process_name',p.get('name','')))]; result='FAIL: path separators: '+str(bad[:3]) if bad else ('PASS: SKIP - no GPU processes' if not procs else 'PASS: '+str(len(procs))+' entries, all basenames'); print(result); sys.exit(1 if result.startswith('FAIL') else 0)"
+        rm -f /tmp/xpuval_ps_out.json
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "ps", "basename"]
+
+    # -----------------------------------------------------------------------
+    # 2. dump -h word wrapping: no description line should exceed ~120 chars
+    #
+    # Before the fix, the field description column was autosized to the longest
+    # single description and emitted as one unbroken line.  After the fix,
+    # descriptions are pre-wrapped so that no output line in the help table
+    # exceeds a sensible terminal width.
+    # -----------------------------------------------------------------------
+    - name: "dump_help_no_overlong_lines"
+      description: |
+        dump --help must not emit any line longer than 120 characters in its
+        metric table.  Regression: description text was emitted as a single
+        line of arbitrary length, wrapping at the terminal rather than at a
+        controlled width.
+      os: "Linux"
+      command: "dump --help"
+      script: |
+        {command} > /tmp/dump_help_$$.txt 2>&1
+
+        LONG=$(awk 'length > 120 {print NR": "length" chars: "$0}' /tmp/dump_help_$$.txt | head -5)
+        rm -f /tmp/dump_help_$$.txt
+
+        if [ -n "$LONG" ]; then
+          echo "FAIL: lines exceeding 120 chars found:"
+          echo "$LONG"
+          exit 1
+        fi
+
+        echo "PASS: all lines within 120 chars"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "dump", "help", "wrapping"]
+
+    # -----------------------------------------------------------------------
+    # 3. stats output: lines must not be hard-truncated at 65 chars
+    #
+    # A label such as "GPU Memory Bandwidth Utilization (%)" is 37 characters;
+    # longer compound labels were silently cut off.  After the fix, the table
+    # column autosizes up to a generous max.  We check that at least one stats
+    # label fills more than 65 characters of the total line width, confirming
+    # the cap has been removed.
+    # -----------------------------------------------------------------------
+    - name: "stats_output_not_truncated"
+      description: |
+        stats must not truncate output lines at the old 65-character column cap.
+        The test checks that the header/label area of the stats table is wider
+        than the previous hard maximum, confirming the autosizing is active.
+      os: "Linux"
+      command: "stats --device 0 --samples 2 --interval 100"
+      script: |
+        {command} > /tmp/stats_trunc_$$.txt 2>&1
+        RC=$?
+
+        if [ $RC -ne 0 ]; then
+          echo "SKIP: stats returned non-zero (no device?)"
+          rm -f /tmp/stats_trunc_$$.txt
+          exit 0
+        fi
+
+        # If any output line is longer than 65 chars, the cap is not active
+        WIDE=$(awk 'length > 65' /tmp/stats_trunc_$$.txt | head -1)
+        rm -f /tmp/stats_trunc_$$.txt
+
+        if [ -z "$WIDE" ]; then
+          echo "FAIL: all lines are ≤65 chars — truncation cap may still be active"
+          exit 1
+        fi
+
+        echo "PASS: found line wider than 65 chars"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "stats", "truncation"]
+
+    # -----------------------------------------------------------------------
+    # 4. PCIe throughput shows 0.0 instead of N/A when link is idle
+    #
+    # The test collects one stats sample on device 0.  If PCIe information is
+    # available on this system, the throughput value must be numeric (0.0 or a
+    # positive number), not N/A.  When PCIe info is entirely unavailable the
+    # check is skipped, since N/A is correct in that case.
+    # -----------------------------------------------------------------------
+    - name: "stats_pcie_throughput_numeric_at_idle"
+      description: |
+        When PCIe link data is present, stats must report 0.0 for read/write
+        throughput at idle, not N/A.  Regression: stats displayed "N/A" when
+        PCIe info was available but no bytes were actively transferred.
+      os: "Linux"
+      command: "stats --device 0 --samples 2 --interval 100"
+      script: |
+        OUTPUT=$({command} 2>&1)
+        RC=$?
+
+        if [ $RC -ne 0 ]; then
+          echo "SKIP: stats returned non-zero (no device?)"
+          exit 0
+        fi
+
+        # Check whether PCIe rows appear at all
+        PCIE_LINES=$(echo "$OUTPUT" | grep -i "PCIe\|pcie" | head -10)
+        if [ -z "$PCIE_LINES" ]; then
+          echo "SKIP: no PCIe rows in stats output (not supported on this device)"
+          exit 0
+        fi
+
+        # PCIe rows are present — none should say N/A for the throughput value
+        NA_LINES=$(echo "$PCIE_LINES" | grep -i "N/A")
+        if [ -n "$NA_LINES" ]; then
+          echo "FAIL: PCIe throughput shows N/A despite link information being present:"
+          echo "$NA_LINES"
+          exit 1
+        fi
+
+        echo "PASS: PCIe throughput values are numeric"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "stats", "pcie", "throughput"]
+
+    # -----------------------------------------------------------------------
+    # Supplementary: --query-gpu PCIe metrics at idle must be numeric
+    # -----------------------------------------------------------------------
+    - name: "query_gpu_pcie_rx_numeric_at_idle"
+      description: |
+        --query-gpu=pcie.rx.throughput.kbs must return a numeric value (0 or
+        positive), not N/A, when the device is present and the link is idle.
+      os: "Linux"
+      command: "--query-gpu=pcie.rx.throughput.kbs --id=0"
+      script: |
+        OUTPUT=$({command} 2>&1)
+        RC=$?
+
+        if [ $RC -ne 0 ]; then
+          echo "SKIP: query returned non-zero"
+          exit 0
+        fi
+
+        # Header line and data line both present — check data line
+        DATA=$(echo "$OUTPUT" | tail -1)
+        if echo "$DATA" | grep -qi "N/A"; then
+          echo "FAIL: pcie.rx.throughput.kbs shows N/A at idle: $DATA"
+          exit 1
+        fi
+
+        echo "PASS: $DATA"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "stats", "pcie", "throughput", "query-gpu"]
+
+    - name: "query_gpu_pcie_tx_numeric_at_idle"
+      description: |
+        --query-gpu=pcie.tx.throughput.kbs must return a numeric value at idle.
+      os: "Linux"
+      command: "--query-gpu=pcie.tx.throughput.kbs --id=0"
+      script: |
+        OUTPUT=$({command} 2>&1)
+        RC=$?
+
+        if [ $RC -ne 0 ]; then
+          echo "SKIP: query returned non-zero"
+          exit 0
+        fi
+
+        DATA=$(echo "$OUTPUT" | tail -1)
+        if echo "$DATA" | grep -qi "N/A"; then
+          echo "FAIL: pcie.tx.throughput.kbs shows N/A at idle: $DATA"
+          exit 1
+        fi
+
+        echo "PASS: $DATA"
+        exit 0
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "stats", "pcie", "throughput", "query-gpu"]

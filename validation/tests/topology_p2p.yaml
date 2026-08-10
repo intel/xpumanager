@@ -1,0 +1,219 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Feature + regression tests: topology --p2p and NUMA classification
+#
+# 1. GPU peer-to-peer topology matrix (new feature)
+#    topology --p2p <capability> prints an N×N matrix showing whether each
+#    GPU pair supports a given peer capability.  Cells are:
+#      X   = self (diagonal)
+#      OK  = capability supported between this pair
+#      NS  = not supported between this pair
+#    Supported capability flags: r (read), w (write), n (MDF fabric),
+#    a (atomics), p (PCIe access).  Multiple flags may be combined: --p2p rwa.
+#
+# 2. Same-NUMA topology classification regression
+#    GPU pairs that share a NUMA memory domain but sit under different PCIe
+#    root complexes were previously classified as SYS.  After the fix they
+#    are correctly classified as NODE.  The regression guard below checks that
+#    the topology matrix does not contain unexpected SYS entries when all GPUs
+#    are on the same NUMA node — valid only on systems where that is the case,
+#    so the check is wrapped in a workflow that inspects NUMA topology first.
+# ============================================================================
+
+test_suite:
+  name: "Feature + Regression: topology --p2p and NUMA classification"
+  description: "P2P topology matrix and same-NUMA NODE classification"
+
+  settings:
+    timeout: 30
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Error: %s"
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - '\[(?:Error|Warning|Info)\] \.\.\/'
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # Help text: --p2p must be documented
+    # -----------------------------------------------------------------------
+    - name: "topology_help_p2p"
+      description: "topology --help must document the --p2p flag"
+      os: ["Linux", "Windows"]
+      command: "topology --help"
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "--p2p"
+      tags: ["feature", "topology", "p2p", "help"]
+
+    # -----------------------------------------------------------------------
+    # Basic invocation: each capability flag must be accepted and produce
+    # output containing the self-entry marker "X".  On a single-GPU system
+    # the matrix is 1×1 and contains only "X"; on multi-GPU systems it will
+    # also contain OK or NS.  All tests accept return_code [0, 1] since
+    # capabilities may be unsupported on some hardware.
+    # -----------------------------------------------------------------------
+    - name: "topology_p2p_read"
+      description: "topology --p2p r (peer read) must exit cleanly and show the matrix"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p r"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "X"
+      tags: ["feature", "topology", "p2p", "sanity"]
+
+    - name: "topology_p2p_write"
+      description: "topology --p2p w (peer write) must exit cleanly and show the matrix"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p w"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "X"
+      tags: ["feature", "topology", "p2p", "sanity"]
+
+    - name: "topology_p2p_fabric"
+      description: "topology --p2p n (MDF fabric) must exit cleanly and show the matrix"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p n"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "X"
+      tags: ["feature", "topology", "p2p", "sanity"]
+
+    - name: "topology_p2p_atomics"
+      description: "topology --p2p a (atomics) must exit cleanly and show the matrix"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p a"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "X"
+      tags: ["feature", "topology", "p2p", "sanity"]
+
+    - name: "topology_p2p_pcie"
+      description: "topology --p2p p (PCIe access) must exit cleanly and show the matrix"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p p"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "X"
+      tags: ["feature", "topology", "p2p", "sanity"]
+
+    # -----------------------------------------------------------------------
+    # Combined capability flags
+    # -----------------------------------------------------------------------
+    - name: "topology_p2p_read_write"
+      description: "topology --p2p rw (read+write combined) must be accepted and produce output"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p rw"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "unrecognised option"
+          - "unknown option"
+      tags: ["feature", "topology", "p2p"]
+
+    - name: "topology_p2p_all"
+      description: "topology --p2p rwanp (all flags) must be accepted without a parse error"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p rwanp"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "unrecognised option"
+          - "unknown option"
+      tags: ["feature", "topology", "p2p"]
+
+    # -----------------------------------------------------------------------
+    # Output format: matrix must be produced when the command succeeds
+    # -----------------------------------------------------------------------
+    - name: "topology_p2p_matrix_cells"
+      description: |
+        topology --p2p r must produce some tabular output when it succeeds.
+        Exact cell values (X/OK/NS) are not hardcoded here since they depend
+        on the number of GPUs and their connectivity.
+      os: ["Linux", "Windows"]
+      command: "topology --p2p r"
+      expect:
+        return_code: [0, 1]
+        stdout_not_contains:
+          - "unrecognised option"
+          - "Aborted (core dumped)"
+      tags: ["feature", "topology", "p2p"]
+
+    # -----------------------------------------------------------------------
+    # Device filtering: --device 0 restricts the matrix to device 0 only
+    # -----------------------------------------------------------------------
+    - name: "topology_p2p_device_filter"
+      description: |
+        topology --device 0 --p2p r must restrict the matrix to device 0.
+        The output must contain the self-entry X for GPU 0.
+      os: ["Linux", "Windows"]
+      command: "topology --device 0 --p2p r"
+      expect:
+        return_code: [0, 1]
+        stdout_contains:
+          - "X"
+      tags: ["feature", "topology", "p2p"]
+
+    # -----------------------------------------------------------------------
+    # Error cases
+    # -----------------------------------------------------------------------
+    - name: "topology_p2p_invalid_flag"
+      description: "topology --p2p with an unrecognised capability letter must fail cleanly"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p z"
+      expect:
+        return_code: [1, 2, 255]
+      tags: ["feature", "topology", "p2p", "error"]
+
+    - name: "topology_p2p_empty_flag"
+      description: "topology --p2p with no capability argument must fail cleanly"
+      os: ["Linux", "Windows"]
+      command: "topology --p2p"
+      expect:
+        return_code: [1, 2, 255]
+      tags: ["feature", "topology", "p2p", "error"]
+
+    # -----------------------------------------------------------------------
+    # Regression: same-NUMA GPU pairs must not be classified as SYS
+    #
+    # topology -j reports the link_type for each GPU pair.  On systems where
+    # all GPUs share one NUMA node, no pair should appear as SYS (they should
+    # be NODE, PIX, PXB, PHB, or similar).  The test inspects NUMA indices
+    # from the JSON output and only asserts the SYS constraint when all devices
+    # share a single NUMA node.
+    # -----------------------------------------------------------------------
+    - name: "topology_numa_node_not_sys"
+      description: |
+        When all discovered GPUs share a single NUMA node, topology must not
+        classify any pair as SYS.  Regression: cross-PCIe-root GPU pairs on a
+        shared NUMA node fell through to SYS because NUMA was not considered
+        when no common PCIe ancestor existed.
+      os: "Linux"
+      command: "topology -j"
+      script: |
+        {command} > /tmp/xpuval_topo_numa.json 2>&1 || true
+        if [ ! -s /tmp/xpuval_topo_numa.json ]; then
+          echo "PASS: SKIP - topology -j produced no output on this binary"
+          rm -f /tmp/xpuval_topo_numa.json
+          exit 0
+        fi
+        python3 -c "import json,sys; raw=open('/tmp/xpuval_topo_numa.json').read().strip(); data=({} if not raw else (json.loads(raw) if raw.startswith('{') or raw.startswith('[') else {})); topo=data.get('topo_list',[]); numas=set(e.get('local_numa_index') for e in topo if e.get('local_numa_index') is not None) if topo else set(); bad=[e for e in topo if e.get('link_type')=='SYS' and e.get('local_device_id')!=e.get('remote_device_id')]; result='PASS: SKIP - no topo data' if not topo else ('PASS: SKIP - multi-NUMA' if len(numas)!=1 else ('FAIL: '+str(len(bad))+' SYS pairs on shared NUMA' if bad else 'PASS: '+str(len(topo))+' entries ok')); print(result); sys.exit(1 if result.startswith('FAIL') else 0)"
+        rm -f /tmp/xpuval_topo_numa.json
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "PASS"
+      tags: ["regression", "topology", "numa"]

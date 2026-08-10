@@ -1,0 +1,71 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression tests: dump --number exit behaviour (XPUM-1371 / GSD-12914)
+#
+# Before the fix, dump and --query-gpu called inputThread.join() without
+# first calling request_stop(), so the command would hang indefinitely after
+# printing its last sample, waiting for a key press.  The tests below use a
+# short --loop-ms interval so all samples complete in well under a second; the
+# per-test timeout (10 s) is the regression guard — if the command hangs, the
+# test times out and fails.
+# ============================================================================
+
+test_suite:
+  name: "dump: count-based exit"
+  description: "dump and --query-gpu must exit cleanly after --number samples without blocking on keyboard input"
+
+  settings:
+    timeout: 10
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+    default_combined_not_matches_regex:
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # dump --number 1
+    # Single sample: no loop at all. If join() blocks, hangs indefinitely.
+    # -----------------------------------------------------------------------
+    - name: "dump_count_1_exits"
+      description: |
+        dump --number 1 must exit cleanly after one sample without waiting for
+        keyboard input.  The 10 s timeout is the regression guard — a hang
+        means request_stop() was not called before join().
+      os: ["Linux", "Windows"]
+      command: "dump -d 0 -m 0 --number 1 --interval 1"
+      expect:
+        return_code: [0, 1]
+      tags: ["sanity", "count", "regression"]
+
+    # -----------------------------------------------------------------------
+    # dump --number 3: three 1-second samples, timeout catches a hang.
+    # -----------------------------------------------------------------------
+    - name: "dump_count_3_exits"
+      description: |
+        dump --number 3 must complete in well under the 10 s timeout.
+        Regression: without request_stop() before join(), the command blocked
+        until the user pressed a key.
+      os: ["Linux", "Windows"]
+      command: "dump -d 0 -m 0 --number 3 --interval 1"
+      expect:
+        return_code: [0, 1]
+      tags: ["sanity", "count", "regression"]
+
+    # -----------------------------------------------------------------------
+    # --query-gpu --count 2
+    # -----------------------------------------------------------------------
+    - name: "query_gpu_count_2_exits"
+      description: |
+        --query-gpu --count 2 must exit after two samples.  This exercises
+        runQueryLoopMode, which had the same join-without-request_stop bug as
+        the dump path.
+      os: ["Linux", "Windows"]
+      command: "--query-gpu=timestamp --count 2 --loop=1 --id=0"
+      expect:
+        return_code: [0, 1]
+      tags: ["sanity", "count", "regression", "query-gpu"]

@@ -16,6 +16,7 @@ import platform
 import re
 import subprocess
 import sys
+import textwrap
 import time
 import yaml
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -339,7 +340,15 @@ class CLITestRunner:
 
         self.logger.info(f"Running workflow: {test_name}")
         if description:
-            self.logger.info(f"  Description: {description}")
+            prefix = "  Description: "
+            subsequent = " " * len(prefix)
+            wrapped = textwrap.fill(
+                description.strip().replace("\n", " "),
+                width=100,
+                initial_indent=prefix,
+                subsequent_indent=subsequent,
+            )
+            self.logger.info(wrapped)
 
         workflow_context = {
             k: (self.resolve_variables(v, variables) if isinstance(v, str) else v)
@@ -457,7 +466,15 @@ class CLITestRunner:
 
         self.logger.info(f"Running test: {test_name}")
         if description:
-            self.logger.info(f"  Description: {description}")
+            prefix = "  Description: "
+            subsequent = " " * len(prefix)
+            wrapped = textwrap.fill(
+                description.strip().replace("\n", " "),
+                width=100,
+                initial_indent=prefix,
+                subsequent_indent=subsequent,
+            )
+            self.logger.info(wrapped)
         # Always display the exact command line, pass or fail, so any test can
         # be re-run by hand or reproduced via --test-name with verbose logs.
         if test_config.get('script'):

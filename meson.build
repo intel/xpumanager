@@ -356,6 +356,10 @@ subdir('oal')
 subdir('hal')
 subdir('ial')
 
+if is_linux and get_option('with_tests')
+  subdir('validation')
+endif
+
 # Copy resources to builddir for development builds
 if is_linux
   run_command('cp', '-r',
