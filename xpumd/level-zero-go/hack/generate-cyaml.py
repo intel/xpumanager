@@ -236,12 +236,16 @@ class HeaderParser:
             enum_str_tables=collect_enum_string_tables(all_text),
         )
 
-    def resolve_kind(self, name, _seen=None):
-        """Return 'bool' | 'float' | 'int' | 'uint' | 'struct' | 'char'."""
-        if _seen is None:
-            _seen = frozenset()
+    def resolve_kind(self, name, context=""):
+        """Return 'bool' | 'float' | 'int' | 'uint' | 'struct' | 'char'.
+
+        Exits with an error on an unrecognized type.
+        """
+        return self._resolve_kind(name, name, context, frozenset())
+
+    def _resolve_kind(self, name, orig, context, _seen):
         if name in _seen:
-            return "uint"
+            sys.exit(f"ERROR: {context}: typedef cycle while resolving type {orig}")
         if name == "char":
             return "char"
         if name == "ze_bool_t":
@@ -257,8 +261,8 @@ class HeaderParser:
         if name in self.all_structs:
             return "struct"
         if name in self.aliases:
-            return self.resolve_kind(self.aliases[name], _seen | {name})
-        return "uint"  # unknown: assume flags/enum
+            return self._resolve_kind(self.aliases[name], orig, context, _seen | {name})
+        sys.exit(f"ERROR: {context}: unrecognized type {orig}" + (f" (via {name})" if name != orig else ""))
 
     def resolve_base(self, name, _seen=None):
         """Resolve a type name through typedef aliases to its underlying base type."""
@@ -389,6 +393,10 @@ class SchemaEmitter:
     out: list = field(default_factory=list)
     seen_keys: dict = field(default_factory=dict)
 
+    def _kind(self, ctx):
+        """Resolve ctx.type_str's kind, reporting the field path on failure."""
+        return self.parser.resolve_kind(ctx.type_str, f"{ctx.container}.{ctx.member_path}")
+
     def _scalar_elem_schema(self, ctx):
         base = self.parser.resolve_base(ctx.type_str)
         schema = SCALAR_ELEM_SCHEMAS.get(base)
@@ -431,7 +439,7 @@ class SchemaEmitter:
 
     def _emit_count_seq(self, ctx, count_name, count_path, prefix):
         """Emit a count+pointer sequence field pair."""
-        kind = self.parser.resolve_kind(ctx.type_str)
+        kind = self._kind(ctx)
         if kind == "struct" and ctx.type_str in self.parser.all_structs:
             sv = schema_var(ctx.type_str)
             if prefix:
@@ -463,7 +471,7 @@ class SchemaEmitter:
 
     def _emit_ptr_field(self, ctx):
         """Emit a non-array pointer field."""
-        kind = self.parser.resolve_kind(ctx.type_str)
+        kind = self._kind(ctx)
         if kind == "struct" and ctx.type_str in self.parser.all_structs:
             fv = fields_var(ctx.type_str)
             self.out.append(
@@ -484,7 +492,7 @@ class SchemaEmitter:
 
     def _emit_inline_field(self, ctx, depth):
         """Emit an inline (non-pointer, non-array) field."""
-        kind = self.parser.resolve_kind(ctx.type_str)
+        kind = self._kind(ctx)
         if kind == "bool":
             self.out.append(
                 f'\tCYAML_FIELD_BOOL("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path}),'
