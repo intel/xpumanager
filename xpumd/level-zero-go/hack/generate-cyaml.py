@@ -144,7 +144,11 @@ def parse_members(struct_name, body):
         array_size = m.group(4)  # e.g. '[ZES_FAN_TEMP_SPEED_PAIR_COUNT]' or None
 
         annotations = parse_gen_annotations(raw_line)
-        annotations = FIELD_ANNOTATIONS_OVERRIDE.get((struct_name, name), annotations)
+        override = FIELD_ANNOTATIONS_OVERRIDE.get((struct_name, name))
+        if override is not None:
+            if annotations != Annotations():
+                sys.exit(f"ERROR: {struct_name}.{name}: has both an in-source (// gen:) annotation and FIELD_ANNOTATIONS_OVERRIDE entry.")
+            annotations = override
 
         members.append((type_str, name, is_ptr, array_size, annotations))
     return members
@@ -632,6 +636,14 @@ def main():
 
     # Parse all header files
     p = HeaderParser.from_files(args.header_files)
+
+    # Check that all FIELD_ANNOTATIONS_OVERRIDE entries refer to existing structs and members
+    for struct_name, field_name in sorted(FIELD_ANNOTATIONS_OVERRIDE):
+        members = p.all_structs.get(struct_name)
+        if members is None:
+            sys.exit(f"ERROR: FIELD_ANNOTATIONS_OVERRIDE: no such struct: {struct_name}")
+        if not any(name == field_name for _t, name, _p, _a, _ann in members):
+            sys.exit(f"ERROR: FIELD_ANNOTATIONS_OVERRIDE: {struct_name} has no member {field_name}")
 
     # Discover structs (and their ordering)
     emit_order, rv_set = traverse_from_root(p, args.root_struct)
