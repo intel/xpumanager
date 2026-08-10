@@ -362,6 +362,8 @@ def traverse_from_root(p, root_struct):
                 visit(type_str)
 
     def visit(name):
+        if name not in p.all_structs:
+            return  # nothing to emit for this type (scalar, enum etc)
         if name in in_order:
             return
         in_order.add(name)
