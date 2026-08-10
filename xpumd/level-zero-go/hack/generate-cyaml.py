@@ -335,6 +335,7 @@ def traverse_from_root(p, root_struct):
     emit_order = []
     rv_set = set()
     in_order = set()
+    path = []  # structs on the current traversal, for cycle reporting
 
     def visit_deps(name, flatten_seen):
         """Recurse into members of 'name', scheduling dependencies via visit()."""
@@ -364,10 +365,14 @@ def traverse_from_root(p, root_struct):
     def visit(name):
         if name not in p.all_structs:
             return  # nothing to emit for this type (scalar, enum etc)
+        if name in path:
+            sys.exit(f"ERROR: struct dependency cycle: {' -> '.join(path + [name])}")
         if name in in_order:
             return
-        in_order.add(name)
+        path.append(name)
         visit_deps(name, set())
+        path.pop()
+        in_order.add(name)
         emit_order.append(name)  # post-order: after all dependencies
 
     if root_struct not in p.all_structs:
