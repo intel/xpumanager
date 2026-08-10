@@ -107,9 +107,11 @@ def parse_gen_annotations(raw_line):
 
 
 def parse_members(struct_name, body):
-    """Parse struct body into Member tuples.
+    """Parse a struct body into its members.
 
-    Member = (type, name, is_ptr, array_size (or None), annotations)
+    Returns (members, unparsed), where each member is a tuple
+    (type, name, is_ptr, array_size (or None), annotations) and unparsed holds the
+    source text of any declaration the member pattern did not recognize.
     """
     # One member declaration: "[const] type [*...] name [array_size];"
     member_re = re.compile(
@@ -121,6 +123,7 @@ def parse_members(struct_name, body):
         re.VERBOSE,
     )
     members = []
+    unparsed = []
     for raw_line in body.splitlines():
         stripped = raw_line.strip()
         if not stripped:
@@ -140,6 +143,7 @@ def parse_members(struct_name, body):
 
         m = member_re.match(code_only)
         if not m:
+            unparsed.append(code_only)
             continue
         type_str = m["type"]
         is_ptr = bool(m["ptr"])
@@ -154,7 +158,7 @@ def parse_members(struct_name, body):
             annotations = override
 
         members.append((type_str, name, is_ptr, array_size, annotations))
-    return members
+    return members, unparsed
 
 
 def collect_enums(text):
@@ -222,6 +226,7 @@ class HeaderParser:
     aliases: dict
     enums: set
     enum_str_tables: dict
+    unparsed_members: dict
 
     @classmethod
     def from_files(cls, paths):
@@ -232,11 +237,18 @@ class HeaderParser:
             text = read_file(path)
             all_structs_raw.update(extract_struct_bodies(text))
             all_text += text
+        all_structs, unparsed_members = {}, {}
+        for name, body in all_structs_raw.items():
+            members, unparsed = parse_members(name, body)
+            all_structs[name] = members
+            if unparsed:
+                unparsed_members[name] = unparsed
         return cls(
-            all_structs={name: parse_members(name, body) for name, body in all_structs_raw.items()},
+            all_structs=all_structs,
             aliases=collect_aliases(all_text),
             enums=collect_enums(all_text),
             enum_str_tables=collect_enum_string_tables(all_text),
+            unparsed_members=unparsed_members,
         )
 
     def resolve_kind(self, name, context=""):
@@ -334,14 +346,18 @@ def traverse_from_root(p, root_struct):
     topological order (dependencies before dependents) and rv_set lists "return
     value" structs that need separate RV field arrays.
     NOTE: flattened types are visited for their dependencies but not added to emit_order.
+
+    Exits with an error if any struct we consume had unparsable members.
     """
     emit_order = []
     rv_set = set()
     in_order = set()
     path = []  # structs on the current traversal, for cycle reporting
+    visited = set()
 
     def visit_deps(name, flatten_seen):
         """Recurse into members of 'name', scheduling dependencies via visit()."""
+        visited.add(name)
         members = p.all_structs.get(name, [])
         _, count_names = detect_count_pairs(members)
         for type_str, field_name, is_ptr, arr, annotations in members:
@@ -383,6 +399,15 @@ def traverse_from_root(p, root_struct):
         sys.exit(f"ERROR: root struct {root_struct} not found")
 
     visit(root_struct)
+
+    # RV structs are consumed too, but via a separate field-array path.
+    bad = {name: p.unparsed_members[name] for name in (visited | rv_set) if name in p.unparsed_members}
+    if bad:
+        for name, decls in sorted(bad.items()):
+            for decl in decls:
+                print(f"ERROR: {name}: cannot parse member declaration: {decl}", file=sys.stderr)
+        sys.exit(f"ERROR: {sum(len(d) for d in bad.values())} unparsable member declaration(s)")
+
     return emit_order, rv_set
 
 
