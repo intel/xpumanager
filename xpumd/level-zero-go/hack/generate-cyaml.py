@@ -260,12 +260,27 @@ class HeaderParser:
             return self.resolve_kind(self.aliases[name], _seen | {name})
         return "uint"  # unknown: assume flags/enum
 
+    def resolve_base(self, name, _seen=None):
+        """Resolve a type name through typedef aliases to its underlying base type."""
+        if _seen is None:
+            _seen = frozenset()
+        if name in _seen or name not in self.aliases:
+            return name
+        return self.resolve_base(self.aliases[name], _seen | {name})
+
 
 # ---------------------------------------------------------------------------
 # Code generation helpers
 # ---------------------------------------------------------------------------
 
 SKIP_FIELDS = {"stype", "pNext"}
+
+# Scalar element schemas available for sequence entries (statically defined in _CYAML_FILE_SCALAR_SCHEMAS).
+SCALAR_ELEM_SCHEMAS = {
+    "double": "double_schema",
+    "uint64_t": "uint64_schema",
+}
+
 
 def var_name(struct_name, suffix):
     return re.sub(r"_t$", "", struct_name) + suffix
@@ -374,6 +389,13 @@ class SchemaEmitter:
     out: list = field(default_factory=list)
     seen_keys: dict = field(default_factory=dict)
 
+    def _scalar_elem_schema(self, ctx):
+        base = self.parser.resolve_base(ctx.type_str)
+        schema = SCALAR_ELEM_SCHEMAS.get(base)
+        if schema is None:
+            sys.exit(f"ERROR: {ctx.container}.{ctx.member_path}: no schema for element type {ctx.type_str} (resolved to {base}).")
+        return schema
+
     def _manual_seq(self, ctx, elem_type_str, schema_var, count_path):
         """Emit a manual struct-literal SEQUENCE entry."""
         self.out.append(f'\t{{.key = "{ctx.yaml_key}",')
@@ -393,25 +415,19 @@ class SchemaEmitter:
             self.out.append(
                 f'\tCYAML_FIELD_STRING("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path}, 0),'
             )
-        elif ctx.annotations.count:
-            sv = schema_var(ctx.type_str) if ctx.type_str in self.parser.all_structs else "uint64_schema"
+            return
+        sv = schema_var(ctx.type_str) if ctx.type_str in self.parser.all_structs else self._scalar_elem_schema(ctx)
+        if ctx.annotations.count:
+            # A count= annotation turns the array into a sequence bounded at run time.
             self.out.append(
                 f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path},'
                 f" {ctx.annotations.count}, &{sv}, 0, {size_expr}),"
             )
         else:
-            kind = self.parser.resolve_kind(ctx.type_str)
-            if kind == "struct" and ctx.type_str in self.parser.all_structs:
-                sv = schema_var(ctx.type_str)
-                self.out.append(
-                    f'\tCYAML_FIELD_SEQUENCE_FIXED("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path},'
-                    f" &{sv}, {size_expr}),"
-                )
-            else:
-                self.out.append(
-                    f'\tCYAML_FIELD_SEQUENCE_FIXED("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path},'
-                    f" &uint64_schema, {size_expr}),"
-                )
+            self.out.append(
+                f'\tCYAML_FIELD_SEQUENCE_FIXED("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path},'
+                f" &{sv}, {size_expr}),"
+            )
 
     def _emit_count_seq(self, ctx, count_name, count_path, prefix):
         """Emit a count+pointer sequence field pair."""
@@ -435,15 +451,14 @@ class SchemaEmitter:
                     f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", SYSMAN_NULLABLE_PTR_FLAGS, {ctx.container},'
                     f" {ctx.member_path}, {count_name}, &{sv}, 0, CYAML_UNLIMITED),"
                 )
-        elif ctx.type_str == "double":
-            self._manual_seq(ctx, "double", "double_schema", count_path)
         else:
+            sv = self._scalar_elem_schema(ctx)
             if prefix:
-                self._manual_seq(ctx, "uint64_t", "uint64_schema", count_path)
+                self._manual_seq(ctx, self.parser.resolve_base(ctx.type_str), sv, count_path)
             else:
                 self.out.append(
                     f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", SYSMAN_NULLABLE_PTR_FLAGS, {ctx.container},'
-                    f" {ctx.member_path}, {count_name}, &uint64_schema, 0, CYAML_UNLIMITED),"
+                    f" {ctx.member_path}, {count_name}, &{sv}, 0, CYAML_UNLIMITED),"
                 )
 
     def _emit_ptr_field(self, ctx):
