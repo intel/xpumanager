@@ -34,6 +34,11 @@ func (c *Config) Validate() error {
 		return err
 	}
 
+	// Validate the embedded sysman config first as the checks below depend on its values (sampling_interval).
+	if err := c.Config.Validate(); err != nil {
+		return err
+	}
+
 	if c.CollectionInterval < time.Second {
 		return fmt.Errorf("collection_interval too short (%s), must be at least 1 second", c.CollectionInterval)
 	}
