@@ -85,6 +85,7 @@ Drivers:
               ReadCounter: 2147483648
               WriteCounter: 1073741824
               MaxBandwidth: 512000000000
+              # 1 s later than the initial config: 1.5 GiB over 1 s
               Timestamp: 2000000
 
         PowerDomains:

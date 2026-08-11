@@ -397,6 +397,20 @@ UpdatedValues:
       value: 0.75
       labels: *mem_common_labels
 
+    # hw.memory.io.rate, 1.5 GiB of read+write over 1 s
+    - name: hw_memory_io_rate_bytes_per_second
+      value: 1610612736
+      labels: *mem_common_labels
+
+    - name: hw_memory_bandwidth_limit_bytes_per_second
+      value: 512000000000
+      labels: *mem_common_labels
+
+    # hw.memory.bandwidth.utilization, rate divided by the limit above
+    - name: hw_memory_bandwidth_utilization_ratio
+      value: 0.003145728
+      labels: *mem_common_labels
+
     # hw.temperature — GPU above 105 °C threshold, memory above 85 °C threshold
     - name: hw_temperature_celsius
       value: 110
