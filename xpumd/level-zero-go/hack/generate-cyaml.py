@@ -294,10 +294,10 @@ class HeaderParser:
 
 SKIP_FIELDS = {"stype", "pNext"}
 
-# Scalar element schemas available for sequence entries (statically defined in _CYAML_FILE_SCALAR_SCHEMAS).
+# Scalar element schemas available.
 SCALAR_ELEM_SCHEMAS = {
-    "double": "double_schema",
-    "uint64_t": "uint64_schema",
+    "double": "CYAML_VALUE_FLOAT",
+    "uint64_t": "CYAML_VALUE_UINT",
 }
 
 
@@ -428,17 +428,22 @@ class SchemaEmitter:
     parser: HeaderParser
     out: list = field(default_factory=list)
     seen_keys: dict = field(default_factory=dict)
+    refs: set = field(default_factory=set)
 
     def _kind(self, ctx):
         """Resolve ctx.type_str's kind, reporting the field path on failure."""
         return self.parser.resolve_kind(ctx.type_str, f"{ctx.container}.{ctx.member_path}")
 
+    def _schema_ref(self, schema):
+        """Record a reference to a value schema and return "&schema" for embedding."""
+        self.refs.add(schema)
+        return f"&{schema}"
+
     def _scalar_elem_schema(self, ctx):
         base = self.parser.resolve_base(ctx.type_str)
-        schema = SCALAR_ELEM_SCHEMAS.get(base)
-        if schema is None:
+        if base not in SCALAR_ELEM_SCHEMAS:
             sys.exit(f"ERROR: {ctx.container}.{ctx.member_path}: no schema for element type {ctx.type_str} (resolved to {base}).")
-        return schema
+        return schema_var(base)
 
     def _manual_seq(self, ctx, elem_type_str, schema_var, count_path):
         """Emit a manual struct-literal SEQUENCE entry."""
@@ -447,7 +452,7 @@ class SchemaEmitter:
         self.out.append("\t           .flags = SYSMAN_NULLABLE_PTR_FLAGS,")
         self.out.append(f"\t           .data_size = sizeof({elem_type_str}),")
         self.out.append(
-            f"\t           .sequence = {{.entry = &{schema_var}, .min = 0, .max = CYAML_UNLIMITED}}}},"
+            f"\t           .sequence = {{.entry = {self._schema_ref(schema_var)}, .min = 0, .max = CYAML_UNLIMITED}}}},"
         )
         self.out.append(f"\t .data_offset = offsetof({ctx.container}, {ctx.member_path}),")
         self.out.append(f"\t .count_offset = offsetof({ctx.container}, {count_path}),")
@@ -465,12 +470,12 @@ class SchemaEmitter:
             # A count= annotation turns the array into a sequence bounded at run time.
             self.out.append(
                 f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path},'
-                f" {ctx.annotations.count}, &{sv}, 0, {size_expr}),"
+                f" {ctx.annotations.count}, {self._schema_ref(sv)}, 0, {size_expr}),"
             )
         else:
             self.out.append(
                 f'\tCYAML_FIELD_SEQUENCE_FIXED("{ctx.yaml_key}", CYAML_FLAG_OPTIONAL, {ctx.container}, {ctx.member_path},'
-                f" &{sv}, {size_expr}),"
+                f" {self._schema_ref(sv)}, {size_expr}),"
             )
 
     def _emit_count_seq(self, ctx, count_name, count_path, prefix):
@@ -484,7 +489,7 @@ class SchemaEmitter:
             else:
                 self.out.append(
                     f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", SYSMAN_NULLABLE_PTR_FLAGS, {ctx.container},'
-                    f" {ctx.member_path}, {count_name}, &{sv}, 0, CYAML_UNLIMITED),"
+                    f" {ctx.member_path}, {count_name}, {self._schema_ref(sv)}, 0, CYAML_UNLIMITED),"
                 )
         elif ctx.type_str in self.parser.enum_str_tables:
             sv = schema_var(ctx.type_str)
@@ -493,7 +498,7 @@ class SchemaEmitter:
             else:
                 self.out.append(
                     f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", SYSMAN_NULLABLE_PTR_FLAGS, {ctx.container},'
-                    f" {ctx.member_path}, {count_name}, &{sv}, 0, CYAML_UNLIMITED),"
+                    f" {ctx.member_path}, {count_name}, {self._schema_ref(sv)}, 0, CYAML_UNLIMITED),"
                 )
         else:
             sv = self._scalar_elem_schema(ctx)
@@ -502,7 +507,7 @@ class SchemaEmitter:
             else:
                 self.out.append(
                     f'\tCYAML_FIELD_SEQUENCE_COUNT("{ctx.yaml_key}", SYSMAN_NULLABLE_PTR_FLAGS, {ctx.container},'
-                    f" {ctx.member_path}, {count_name}, &{sv}, 0, CYAML_UNLIMITED),"
+                    f" {ctx.member_path}, {count_name}, {self._schema_ref(sv)}, 0, CYAML_UNLIMITED),"
                 )
 
     def _emit_ptr_field(self, ctx):
@@ -623,13 +628,10 @@ _CYAML_FILE_RV_MACRO_BEGIN = """
 #define RV(T, n) CYAML_FIELD_UINT(#n, CYAML_FLAG_OPTIONAL, T, n)
 """
 
-_CYAML_FILE_SCALAR_SCHEMAS = """
+_CYAML_FILE_PTR_FLAGS = """
 #undef RV
 
 #define SYSMAN_NULLABLE_PTR_FLAGS (CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER_NULL_STR)
-
-static const cyaml_schema_value_t double_schema = {CYAML_VALUE_FLOAT(CYAML_FLAG_DEFAULT, double)};
-static const cyaml_schema_value_t uint64_schema = {CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint64_t)};
 """
 
 _CYAML_FILE_FOOTER = """
@@ -641,7 +643,16 @@ _CYAML_FILE_FOOTER = """
 
 def generate(p, rv_set, emit_order, root_struct):
     out = []
-    emitter = SchemaEmitter(parser=p, out=out)
+    emitter = SchemaEmitter(parser=p)
+
+    # First pass: collect the referenced value schemas (needed when a type is used
+    # as an element of a sequence or fixed-size array in some other type).
+    # NOTE: Hack'ish in that this pass emits into a throwaway output buffer. The
+    # output is re-rendered later below once we know which schemas are referenced.
+    emitter.refs.add(schema_var(root_struct))
+    for struct_name in emit_order:
+        emitter.emit_members(struct_name, p.all_structs.get(struct_name, []))
+    emitter.out = out
 
     emit(out, _CYAML_FILE_HEADER)
 
@@ -657,16 +668,16 @@ def generate(p, rv_set, emit_order, root_struct):
         out.append("\tCYAML_FIELD_END};")
         out.append("")
 
-    emit(out, _CYAML_FILE_SCALAR_SCHEMAS)
+    emit(out, _CYAML_FILE_PTR_FLAGS)
+
+    for base, value_macro in SCALAR_ELEM_SCHEMAS.items():
+        sv = schema_var(base)
+        if sv in emitter.refs:
+            out.append(f"static const cyaml_schema_value_t {sv} = {{{value_macro}(CYAML_FLAG_DEFAULT, {base})}};")
+    out.append("")
 
     # Emit enum schemas
-    referenced_enum_str = {
-        type_str
-        for struct_name in emit_order
-        for type_str, _n, is_ptr, _a, _ann in p.all_structs.get(struct_name, [])
-        if is_ptr and type_str in p.enum_str_tables
-    }
-    for enum_name in sorted(referenced_enum_str):
+    for enum_name in sorted(n for n in p.enum_str_tables if schema_var(n) in emitter.refs):
         strvals_var = re.sub(r"_t$", "", enum_name) + "_strvals"
         sv = schema_var(enum_name)
         out.append(f"static const cyaml_strval_t {strvals_var}[] = {{")
@@ -693,8 +704,9 @@ def generate(p, rv_set, emit_order, root_struct):
         emitter.emit_members(struct_name, members)
         out.append("\tCYAML_FIELD_END};")
 
-        flag = "CYAML_FLAG_POINTER" if struct_name == root_struct else "CYAML_FLAG_DEFAULT"
-        out.append(f"static const cyaml_schema_value_t {sv} = {{CYAML_VALUE_MAPPING({flag}, {struct_name}, {fv})}};")
+        if sv in emitter.refs:
+            flag = "CYAML_FLAG_POINTER" if struct_name == root_struct else "CYAML_FLAG_DEFAULT"
+            out.append(f"static const cyaml_schema_value_t {sv} = {{CYAML_VALUE_MAPPING({flag}, {struct_name}, {fv})}};")
         out.append("")
 
     emit(out, _CYAML_FILE_FOOTER)
