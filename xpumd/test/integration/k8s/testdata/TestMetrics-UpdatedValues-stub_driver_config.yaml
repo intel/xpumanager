@@ -98,11 +98,12 @@ Drivers:
                   Limit: 150000
             EnergyCounter:
               Energy: 10000000
-              Timestamp: 123456789
-            Limits:
+              # 0.1 s later than the initial config: 5 J over 0.1 s -> 50 W
+              Timestamp: 123556789
+            LimitsExt:
               - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
-                Source: 0
-                LimitUnit: 0
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
                 EnabledStateLocked: false
                 Enabled: true
                 IntervalValueLocked: false

@@ -189,7 +189,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		}
 		mb.RecordHwPowerLimitDataPoint(
 			ts,
-			float64(limit.Limit)*1e3, // mW -> W
+			float64(limit.Limit)/1e3, // mW -> W
 			power.attributes.hwID,
 			power.attributes.hwName,
 			power.attributes.pciBDF,

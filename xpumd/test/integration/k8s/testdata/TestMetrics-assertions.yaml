@@ -224,6 +224,16 @@ UpdatedValues:
         hw_name: power-1
         hw_sensor_location: package
 
+    # hw.power.limit, 200000 mW in the stub driver config
+    - name: hw_power_limit_watts
+      value: 200
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-1
+        hw_sensor_location: package
+        com_intel_power_limit_level: sustained
+        com_intel_power_limit_source: any
+
     # hw.frequency
     - name: hw_frequency_hertz
       value: 800000000

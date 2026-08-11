@@ -89,10 +89,10 @@ Drivers:
             EnergyCounter:
               Energy: 5000000
               Timestamp: 123456789
-            Limits:
+            LimitsExt:
               - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
-                Source: 0
-                LimitUnit: 0
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
                 EnabledStateLocked: false
                 Enabled: true
                 IntervalValueLocked: false
