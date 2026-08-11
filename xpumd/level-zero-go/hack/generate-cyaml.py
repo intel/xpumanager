@@ -315,7 +315,7 @@ def traverse_from_root(p, root_struct):
         """Recurse into members of 'name', scheduling dependencies via visit()."""
         members = p.all_structs.get(name, [])
         _, count_names = detect_count_pairs(members)
-        for type_str, field_name, _is_ptr, arr, annotations in members:
+        for type_str, field_name, is_ptr, arr, annotations in members:
             if field_name in SKIP_FIELDS:
                 continue
             if field_name in count_names:
@@ -323,6 +323,9 @@ def traverse_from_root(p, root_struct):
             if annotations.ignore:
                 continue
             is_rv = type_str.endswith("_rv_t")
+            # Only struct members can be flattened (everything else emits a YAML key)
+            if annotations.flatten and (is_ptr or arr or is_rv or type_str not in p.all_structs):
+                sys.exit(f"ERROR: {name}.{field_name}: 'flatten' can only be specified on struct members.")
             if arr and not annotations.count:
                 continue
             if is_rv:
