@@ -53,6 +53,22 @@ Drivers:
             PendingState: 2
             PendingAction: 0
 
+        EngineGroups:
+          - Properties:
+              Type: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL
+              OnSubdevice: false
+              SubdeviceId: 0
+            Activity:
+              ActiveTime: 500000
+              Timestamp: 1000000
+          - Properties:
+              Type: 3  # ZES_ENGINE_GROUP_COPY_ALL
+              OnSubdevice: false
+              SubdeviceId: 0
+            Activity:
+              ActiveTime: 200000
+              Timestamp: 1000000
+
         FrequencyDomains:
           - Properties:
               Type: 0  # ZES_FREQ_DOMAIN_GPU

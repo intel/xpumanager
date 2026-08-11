@@ -22,6 +22,14 @@ _templates:
   gpu_io_common_labels: &gpu_io_common_labels
     <<: *dev_common_labels
     hw_name: gpu-1-pci
+  engine_compute_labels: &engine_compute_labels
+    <<: *dev_common_labels
+    hw_gpu_task: compute-all
+    hw_name: engine-1-compute-all
+  engine_copy_labels: &engine_copy_labels
+    <<: *dev_common_labels
+    hw_gpu_task: copy-all
+    hw_name: engine-2-copy-all
   temp_status_common_labels: &temp_status_common_labels
     <<: *pci_common_labels
     hw_type: temperature
@@ -390,6 +398,14 @@ UpdatedValues:
     - name: hw_gpu_bandwidth_utilization_ratio
       value: 0.0001875
       labels: *gpu_io_common_labels
+
+    # hw.gpu.utilization, engine active time over the 1 s
+    - name: hw_gpu_utilization_ratio
+      value: 0.25
+      labels: *engine_compute_labels
+    - name: hw_gpu_utilization_ratio
+      value: 0.1
+      labels: *engine_copy_labels
 
     # hw.memory
     - name: hw_memory_io_bytes_total
