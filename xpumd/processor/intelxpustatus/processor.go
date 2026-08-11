@@ -222,9 +222,10 @@ func (p *ruleProcessor) evaluateStates(value float64, parentID string) map[strin
 }
 
 func (p *ruleProcessor) createHealthMetric(dps pmetric.NumberDataPointSlice, baseAttrs pcommon.Map, states map[string]uint64, timestamp pcommon.Timestamp) {
-	for state, value := range states {
+	// Iterate in sorted order for deterministic output
+	for _, state := range slices.Sorted(maps.Keys(states)) {
 		dp := dps.AppendEmpty()
-		dp.SetIntValue(int64(value))
+		dp.SetIntValue(int64(states[state]))
 		dp.SetTimestamp(timestamp)
 
 		attrs := dp.Attributes()
