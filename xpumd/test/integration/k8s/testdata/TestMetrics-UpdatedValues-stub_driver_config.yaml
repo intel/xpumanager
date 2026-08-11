@@ -30,11 +30,13 @@ Drivers:
             MaxSpeed:
               Gen: 4
               Width: 16
-              MaxBandwidth: 0
+              MaxBandwidth: 32000000000
             HaveBandwidthCounters: true
           Stats:
             RxCounter: 3000000
             TxCounter: 6000000
+            # 1 s later than the initial config: 6 MB of rx+tx over 1 s
+            Timestamp: 2000000
 
         Firmwares:
           - Properties:

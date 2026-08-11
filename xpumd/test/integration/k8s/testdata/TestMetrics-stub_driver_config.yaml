@@ -30,11 +30,12 @@ Drivers:
             MaxSpeed:
               Gen: 4
               Width: 16
-              MaxBandwidth: 0
+              MaxBandwidth: 32000000000
             HaveBandwidthCounters: true
           Stats:
             RxCounter: 1000000
             TxCounter: 2000000
+            Timestamp: 1000000
 
         Firmwares:
           - Properties:

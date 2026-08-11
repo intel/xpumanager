@@ -377,6 +377,20 @@ UpdatedValues:
         <<: *gpu_io_common_labels
         network_io_direction: transmit
 
+    # hw.gpu.io.rate, 6 MB of rx+tx over 1 s
+    - name: hw_gpu_io_rate_bytes_per_second
+      value: 6000000
+      labels: *gpu_io_common_labels
+
+    - name: hw_gpu_bandwidth_limit_bytes_per_second
+      value: 32000000000
+      labels: *gpu_io_common_labels
+
+    # hw.gpu.bandwidth.utilization, rate divided by the limit above
+    - name: hw_gpu_bandwidth_utilization_ratio
+      value: 0.0001875
+      labels: *gpu_io_common_labels
+
     # hw.memory
     - name: hw_memory_io_bytes_total
       value: 2147483648
