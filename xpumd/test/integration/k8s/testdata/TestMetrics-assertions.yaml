@@ -254,6 +254,14 @@ UpdatedValues:
         hw_name: power-1
         hw_sensor_location: package
 
+    # hw.power, 5 J over 0.1 s between the two stub driver configs
+    - name: hw_power_watts
+      value: 50
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-1
+        hw_sensor_location: package
+
     # hw.power.limit, 200000 mW in the stub driver config
     - name: hw_power_limit_watts
       value: 200
