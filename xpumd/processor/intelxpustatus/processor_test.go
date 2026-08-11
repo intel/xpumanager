@@ -19,10 +19,12 @@ import (
 
 func TestRuleProcessorEvaluatestates(t *testing.T) {
 	tests := []struct {
-		name           string
-		states         []StateRule
-		value          float64
-		parentID       string
+		name     string
+		states   []StateRule
+		value    float64
+		parentID string
+		// parentAttrs are the attributes collected for parentID. A nil map
+		// means that the parent is unknown, i.e. no attributes were collected.
 		parentAttrs    map[string]any
 		expectedStates map[string]uint64
 	}{
@@ -259,18 +261,50 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			parentID:       "parent1",
 			expectedStates: map[string]uint64{},
 		},
+		{
+			name: "state with parent filter, missing parent attributes - filter cannot match",
+			states: []StateRule{
+				{
+					StateName: "ok",
+				},
+				{
+					StateName: "warning",
+					Conditions: []ConditionRule{
+						{
+							Value: 50.0,
+							ParentFilters: common.AttributeFilterList{
+								{
+									Key:    "hw.type",
+									Values: []string{"gpu"},
+								},
+							},
+						},
+					},
+				},
+			},
+			value:    75.0,
+			parentID: "parent1",
+			expectedStates: map[string]uint64{
+				"ok":      1,
+				"warning": 0,
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parentAttrs := pcommon.NewMap()
-			_ = parentAttrs.FromRaw(tt.parentAttrs)
+			parentAttrsMap := map[string]pcommon.Map{}
+			if tt.parentAttrs != nil {
+				parentAttrs := pcommon.NewMap()
+				_ = parentAttrs.FromRaw(tt.parentAttrs)
+				parentAttrsMap[tt.parentID] = parentAttrs
+			}
 			rp := &ruleProcessor{
 				HealthRule: &HealthRule{
 					States: tt.states,
 				},
 				logger:      zap.NewNop().Sugar(),
-				parentAttrs: map[string]pcommon.Map{tt.parentID: parentAttrs},
+				parentAttrs: parentAttrsMap,
 			}
 
 			states := rp.evaluateStates(tt.value, tt.parentID)
@@ -482,6 +516,96 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 			},
 			expectMetric:     "hw.status",
 			expectDataPoints: nil,
+		},
+		{
+			name: "parent attributes missing, rule-level parent filter",
+			rule: HealthRule{
+				SourceMetric:       "gpu.temperature",
+				StatusMetric:       "hw.status",
+				StateAttribute:     "hw.state",
+				ParentMetric:       "system.info",
+				ParentRefAttribute: "hw.parent",
+				ParentFilters: common.AttributeFilterList{
+					{
+						Key:    "pci.vendor_id",
+						Values: []string{"8086"},
+					},
+				},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+				},
+			},
+			sourceMetric: "gpu.temperature",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 50.0,
+					attributes: map[string]any{
+						"hw.type":   "gpu",
+						"hw.parent": "system1",
+					},
+				},
+			},
+			expectMetric:     "hw.status",
+			expectDataPoints: nil,
+		},
+		{
+			name: "parent attributes missing, condition-level parent filters",
+			rule: HealthRule{
+				SourceMetric:       "gpu.temperature",
+				StatusMetric:       "hw.status",
+				StateAttribute:     "hw.state",
+				ParentMetric:       "system.info",
+				ParentRefAttribute: "hw.parent",
+				CopyAttributes:     []string{"hw.type"},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+					{
+						StateName: "warning",
+						Conditions: []ConditionRule{
+							{
+								Value: 95.0,
+								ParentFilters: common.AttributeFilterList{
+									{
+										Key:    "pci.device_id",
+										Values: []string{"56c1"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			sourceMetric: "gpu.temperature",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 100.0,
+					attributes: map[string]any{
+						"hw.type":   "gpu",
+						"hw.parent": "system1",
+					},
+				},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.type":  "gpu",
+						"hw.state": "ok",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.type":  "gpu",
+						"hw.state": "warning",
+					},
+				},
+			},
 		},
 	}
 

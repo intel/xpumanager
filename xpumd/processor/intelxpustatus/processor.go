@@ -7,6 +7,8 @@ package intelxpustatus
 
 import (
 	"context"
+	"maps"
+	"slices"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -150,7 +152,7 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 			parentAttrs, exists := p.parentAttrs[parentID]
 			if !exists {
 				p.logger.Debugw("missing parent attributes", "metric", p.SourceMetric, "parentID", parentID, "attributes", sourceAttrs.AsRaw())
-				parentAttrs = pcommon.Map{}
+				parentAttrs = pcommon.NewMap()
 			}
 			if !p.ParentFilters.Match(parentAttrs) {
 				continue
@@ -188,7 +190,10 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 }
 
 func (p *ruleProcessor) evaluateStates(value float64, parentID string) map[string]uint64 {
-	parentAttrs := p.parentAttrs[parentID]
+	parentAttrs, exists := p.parentAttrs[parentID]
+	if !exists {
+		parentAttrs = pcommon.NewMap()
+	}
 
 	// Iterate over all state rules. Set the last matching one as the active one.
 	states := make(map[string]uint64, len(p.States))
