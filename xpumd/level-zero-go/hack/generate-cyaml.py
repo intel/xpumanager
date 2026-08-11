@@ -102,7 +102,7 @@ def parse_gen_annotations(raw_line):
         elif key == "key" and value is not None:
             ann.key = value
         else:
-            raise ValueError(f"Unknown gen annotation: {stripped!r} in line: {raw_line.strip()!r}")
+            raise ValueError(f"Unknown gen annotation: {stripped} in line: {raw_line.strip()}")
     return ann
 
 
@@ -377,7 +377,7 @@ def traverse_from_root(p, root_struct):
         emit_order.append(name)  # post-order: after all dependencies
 
     if root_struct not in p.all_structs:
-        sys.exit(f"ERROR: root struct {root_struct!r} not found")
+        sys.exit(f"ERROR: root struct {root_struct} not found")
 
     visit(root_struct)
     return emit_order, rv_set
