@@ -57,6 +57,23 @@ if is_linux
 
   test('dump_test', dump_test)
 
+  cmd_stats_test = executable(
+    'cmd_stats_test',
+    'cmd_stats_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: ial_cmn_lib,
+    dependencies: ial_cmn_test_deps,
+    cpp_args: ial_cmn_cpp_args,
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('cmd_stats_test', cmd_stats_test)
+
   vgpu_test = executable(
     'vgpu_test',
     'vgpu_test.cpp',

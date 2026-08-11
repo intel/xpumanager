@@ -20,6 +20,23 @@ if get_option('with_tests')
   # Register tests with meson
   test('dbg_log_tests', dbg_log_test)
 
+  # OAL Linux hwmon fan sysfs-traversal tests
+  # Exercises the internal scanHwmonInputDir / scanHwmonInputRoot helpers
+  # (oal/lin/hwmon_fan.cpp) against on-disk fixtures. hwmon_fan.cpp is compiled
+  # directly so the internal helpers link without exposing them on the public OAL
+  # surface. The oal/ and oal/lin/ include dirs resolve os.h and
+  # hwmon_fan_internal.h; level-zero provides the zes_api.h header pulled in
+  # transitively via os.h.
+  hwmon_fan_test = executable(
+    'hwmon_fan_test',
+    ['hwmon_fan_test.cpp', '../hwmon_fan.cpp'],
+    include_directories: [global_inc, include_directories('..'), include_directories('../..')],
+    dependencies: [doctest_dep, levelzero_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+  test('hwmon_fan_tests', hwmon_fan_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')

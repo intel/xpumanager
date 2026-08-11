@@ -186,6 +186,7 @@ struct DeviceMetrics
 	std::map<uint32_t, std::vector<double>> memoryTempPerTile;	   // tile_id -> memory temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> vrTempPerTile; // tile_id -> voltage regulator temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> fanSpeedPercentSamplesPerFan; // fan_id -> fan speed samples in percent
+	std::map<uint32_t, std::vector<double>> fanSpeedRpmSamplesPerFan; // fan_id -> fan speed samples in RPM (sysfs fallback)
 
 	std::map<uint32_t, std::vector<double>> memoryReadKBpsPerTile;	// tile_id -> read throughput samples in kB/s
 	std::map<uint32_t, std::vector<double>> memoryWriteKBpsPerTile; // tile_id -> write throughput samples in kB/s
@@ -244,12 +245,21 @@ public:
 	StatsTextPrinter() : Printer() {}
 	void print(nlohmann::ordered_json *jsonObj) override;
 
+	// Renders one per-fan table cell, e.g. "Fan 0: 1234 RPM" or "Fan 0: 50%".
+	// This is a genuine rendering primitive of the printer (the per-fan row
+	// builder calls it for both the percent and RPM rows), so it is kept public
+	// rather than hidden -- which also lets the unit-suffix rendering be
+	// unit-tested directly. The unit string is appended verbatim: "%" for
+	// percent, " RPM" for RPM.
+	static std::string formatPerFanValue(uint32_t fanId, double value, int precision, const std::string &unit);
+
 private:
 	void printDeviceTable(const nlohmann::ordered_json &deviceJson);
 	static void addPerTileMetricRows(TableBuilder &table, const nlohmann::ordered_json &json, const std::string &label,
 									 const std::vector<std::string> &path, int precision = 0);
 	static void addPerFanMetricRows(TableBuilder &table, const nlohmann::ordered_json &json, const std::string &label,
-									const std::vector<std::string> &path, int precision = 0);
+									const std::vector<std::string> &path, int precision = 0,
+									const std::string &unit = "%");
 	static void addMetricRow(TableBuilder &table, const nlohmann::ordered_json &deviceJson, const std::string &label,
 							 const std::vector<std::string> &path);
 	static void addEngineInstanceRows(TableBuilder &table, const nlohmann::ordered_json &deviceJson,
@@ -302,6 +312,8 @@ private:
 														std::map<uint32_t, std::vector<double>> &vrTempPerTile);
 	static ze_result_t collectFanMetrics(fan *fanHandler,
 										 std::map<uint32_t, std::vector<double>> &fanSpeedPercentSamplesPerFan);
+	static ze_result_t collectFanRpmMetrics(fan *fanHandler,
+											std::map<uint32_t, std::vector<double>> &fanSpeedRpmSamplesPerFan);
 	static ze_result_t
 	collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
 								std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,

@@ -5,8 +5,14 @@
  */
 
 #include "fan.h"
+#include "hwmon_fan_utils.h"
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <map>
+#include <string>
 
 namespace {
 constexpr uint64_t FAN_CONFIG_CACHE_TTL_MS = 500;
@@ -186,6 +192,9 @@ fan::~fan() { clearFanHandles(); }
 ze_result_t fan::enumFans(zes_device_handle_t device)
 {
 	deviceHandle = device;
+	// Resolve the PCI hwmon directory up front so the RPM sysfs fallback is
+	// available on the tested B70, where Level Zero enumerates zero fan handles.
+	resolveSysfsHwmon(device);
 	clearFanHandles();
 
 	ze_result_t result = zesDeviceEnumFans(device, &fanCount, nullptr);
@@ -642,4 +651,209 @@ ze_result_t fan::setSpeedTableMode(const std::vector<std::pair<uint32_t, int32_t
 	}
 
 	return lastResult;
+}
+
+// =============================================================================
+// Fan RPM readers (Level Zero authoritative, sysfs hwmon fallback on xe)
+//
+// The stateless parse/identity/selection helpers live in hwmon_fan_utils.h
+// (namespace xpum::hwmon). This file holds only the device/driver-stateful glue.
+// =============================================================================
+
+/**
+ * @brief Resolves and caches the PCI hwmon fanN_input paths for this device.
+ *
+ * The Level Zero API contract requires zes_pci_properties_t.stype to be set (and
+ * .pNext initialized) before zesDevicePciGetProperties -- it is a versioned
+ * descriptor the driver keys off .stype; leaving it zero-initialized yields a
+ * bad BDF. The OS-specific sysfs traversal (walking the device's hwmon* nodes,
+ * enumerating the strict fanN_input files, and mapping each to its zero-based
+ * fan index) lives in the OS Abstraction Layer: getHwmonInputPaths(bdf, "fan").
+ * A single PCI device can expose several hwmon nodes (e.g. one for temperatures,
+ * one for fans); the oal walk accepts the first node that yields a valid
+ * fanN_input entry, so a temperature-only node never shadows the fan node. On
+ * Windows the oal stub returns an empty map and the fallback is simply absent.
+ *
+ * @param[in] device Sysman device handle.
+ */
+void fan::resolveSysfsHwmon(zes_device_handle_t device)
+{
+	// Resolve once and cache. A resolved hwmon topology is stable for the
+	// device's lifetime; enumFans runs on every stats sample on Battlemage/xe
+	// (fan count 0 caches no handle), so re-walking sysfs every sample would be
+	// wasteful. An empty map means "not yet resolved" and is retried next sample.
+	if (!sysfsFanInputPaths.empty()) {
+		return;
+	}
+	zes_pci_properties_t pci{};
+	pci.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES; // required by the L0 API contract
+	pci.pNext = nullptr;                            // required by the L0 API contract
+	if (zesDevicePciGetProperties(device, &pci) != ZE_RESULT_SUCCESS) {
+		return;
+	}
+	char bdf[40];
+	snprintf(bdf, sizeof(bdf), "%04x:%02x:%02x.%x", pci.address.domain, pci.address.bus, pci.address.device,
+		pci.address.function);
+	// OS-specific sysfs traversal is delegated to the OAL: map each fanN_input
+	// node to its zero-based fan index (fan1_input -> 0, fan2_input -> 1, ...).
+	sysfsFanInputPaths = getHwmonInputPaths(std::string(bdf), "fan");
+}
+
+/**
+ * @brief Reads one fan's RPM from its cached hwmon fanN_input path.
+ *
+ * Looks the requested fan's zero-based index up in the oal-resolved path map and
+ * delegates the actual read to the state-free xpum::hwmon::readFanRpmFromPath, so
+ * the reading is attributed to the correct fan's own node (fan index 0 ->
+ * fan1_input) rather than fabricated from an arbitrary first positive value.
+ *
+ * @param[in] fanIndex Zero-based fan index.
+ * @param[out] rpm Fan speed in RPM (>= 0) on success.
+ * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNSUPPORTED_FEATURE when
+ *         no hwmon node exists for this fan, else an error from the utils reader.
+ */
+ze_result_t fan::readSysfsFanRpm(uint32_t fanIndex, int32_t *rpm)
+{
+	const auto it = sysfsFanInputPaths.find(fanIndex);
+	if (it == sysfsFanInputPaths.end()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE; // no hwmon fanN_input node for this fan
+	}
+	return xpum::hwmon::readFanRpmFromPath(it->second, rpm);
+}
+
+/**
+ * @brief Reads every fan's RPM from the cached hwmon fanN_input paths.
+ *
+ * Reads every fanN_input path the oal walk resolved and keys each reading by its
+ * real fan index (fan1_input -> 0, fan2_input -> 1, ...), so a genuine multi-fan
+ * hwmon topology reports every fan rather than only fan 0. A node that fails to
+ * parse is skipped so one bad sensor cannot suppress the rest.
+ *
+ * @param[out] rpms Map of real fan id -> RPM.
+ * @return ZE_RESULT_SUCCESS if at least one fan was read, else
+ *         ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
+ */
+ze_result_t fan::readAllSysfsFanRpms(std::map<uint32_t, int32_t> &rpms)
+{
+	if (sysfsFanInputPaths.empty()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE; // no resolved hwmon fanN_input paths
+	}
+	for (const auto &[fanIndex, path] : sysfsFanInputPaths) {
+		int32_t rpm = 0;
+		if (xpum::hwmon::readFanRpmFromPath(path, &rpm) == ZE_RESULT_SUCCESS) {
+			rpms[fanIndex] = rpm; // key by real fan id
+		}
+	}
+	if (rpms.empty()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads the RPM of a specific Level Zero fan handle.
+ *
+ * A Level Zero fan handle is authoritative: its state-read error is propagated
+ * rather than masked by sysfs. A negative RPM is rejected as invalid; 0 RPM (a
+ * stopped fan) is a valid reading.
+ *
+ * @param[in] fanId Zero-based fan index.
+ * @param[out] rpm Fan speed in RPM (>= 0) on success.
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, else an error code.
+ */
+ze_result_t fan::getSpeedRpmById(uint32_t fanId, int32_t &rpm)
+{
+	ze_result_t result = ensureFansEnumerated();
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	if (fanHandles == nullptr || fanId >= fanCount) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+	int32_t speedRpm = 0;
+	result = zesFanGetState(fanHandles[fanId], ZES_FAN_SPEED_UNITS_RPM, &speedRpm);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result; // authoritative L0 error: propagate, never mask with sysfs
+	}
+	if (speedRpm < 0) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE; // negative RPM is invalid
+	}
+	rpm = speedRpm; // 0 RPM (stopped fan) is a valid reading
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads every fan's RPM keyed by its real fan id.
+ *
+ * Selection is delegated to xpum::hwmon::decideFanRpmSource:
+ *   - enumeration unsupported / insufficient permissions -> sysfs
+ *   - other enumeration failure                          -> propagate
+ *   - enumeration OK, >= 1 handle                        -> Level Zero
+ *   - enumeration OK, 0 handles                          -> sysfs
+ *
+ * @param[out] rpms Map of real fan id -> RPM.
+ * @return ze_result_t ZE_RESULT_SUCCESS when at least one fan was read.
+ */
+ze_result_t fan::getAllSpeedsRpm(std::map<uint32_t, int32_t> &rpms)
+{
+	rpms.clear();
+	const ze_result_t enumResult = ensureFansEnumerated();
+	switch (xpum::hwmon::decideFanRpmSource(enumResult, fanCount)) {
+	case xpum::hwmon::FanRpmSource::PropagateEnumerationError:
+		return enumResult; // enumeration failed: a hard error, not "no fan handle"
+	case xpum::hwmon::FanRpmSource::Sysfs:
+		return readAllSysfsFanRpms(rpms); // Battlemage/xe: no Level Zero fan handle
+	case xpum::hwmon::FanRpmSource::LevelZero:
+		break;
+	}
+
+	// LevelZero branch. Guard the inconsistent "fanCount > 0 but null handle
+	// array" state as an internal error rather than silently dropping to sysfs;
+	// decideFanRpmSource deliberately routes a non-zero count here, never to Sysfs.
+	if (fanHandles == nullptr) {
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+
+	for (uint32_t i = 0; i < fanCount; ++i) {
+		int32_t rpm = 0;
+		ze_result_t r = getSpeedRpmById(i, rpm);
+		if (r == ZE_RESULT_SUCCESS) {
+			rpms[i] = rpm; // key by real fan id, not a hard-coded 0
+			continue;
+		}
+		if (r == ZE_RESULT_ERROR_NOT_AVAILABLE || r == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			continue; // this fan has no reading; skip it and keep the others
+		}
+		return r; // hard driver error: propagate, do not fabricate partial data
+	}
+
+	if (rpms.empty()) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE; // every fan unavailable
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads the current fan speed in RPM for the single-fan convenience path.
+ *
+ * Routes through the same selection contract as getAllSpeedsRpm but for fan
+ * index 0: propagate an enumeration failure; read fan 0's Level Zero handle when
+ * one exists; otherwise read fan1_input via sysfs (Battlemage/xe). Kept for API
+ * stability; multi-fan callers use getAllSpeedsRpm.
+ *
+ * @param[out] rpm Fan speed in RPM (>= 0) on success.
+ * @return ze_result_t ZE_RESULT_SUCCESS on success, else an error code.
+ */
+ze_result_t fan::getSpeedRpm(int32_t &rpm)
+{
+	const ze_result_t enumResult = ensureFansEnumerated();
+	switch (xpum::hwmon::decideFanRpmSource(enumResult, fanCount)) {
+	case xpum::hwmon::FanRpmSource::PropagateEnumerationError:
+		return enumResult;
+	case xpum::hwmon::FanRpmSource::Sysfs:
+		return readSysfsFanRpm(0, &rpm);
+	case xpum::hwmon::FanRpmSource::LevelZero:
+		return getSpeedRpmById(0, rpm);
+	}
+	return ZE_RESULT_ERROR_UNKNOWN; // unreachable: decideFanRpmSource is total
 }

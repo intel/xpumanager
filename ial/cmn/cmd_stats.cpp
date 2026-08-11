@@ -469,6 +469,47 @@ ze_result_t cmdStats::collectFanMetrics(fan *fanHandler,
 }
 
 /**
+ * @brief Collect fan speed metrics in RPM, per fan.
+ *
+ * Reads every fan's RPM via the HAL getAllSpeedsRpm, which returns Level Zero
+ * readings when fan handles expose them, otherwise the PCI hwmon fanN_input
+ * values (the Battlemage/xe case on the tested Arc Pro B70, where Level Zero
+ * enumerates no fan handle). Each reading is recorded under its REAL fan id so a
+ * genuine multi-fan device reports every fan, not just fan 0.
+ *
+ * An RPM of 0 (a stopped fan) is a valid, operationally important sample and IS
+ * recorded; only a failed read is dropped, so a stopped fan is distinguishable
+ * in the stats output from an unavailable sensor.
+ *
+ * @param [in] fanHandler The HAL fan instance.
+ * @param [out] fanSpeedRpmSamplesPerFan Map of fan_id -> fan speed samples in RPM.
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful.
+ */
+ze_result_t cmdStats::collectFanRpmMetrics(fan *fanHandler,
+										   std::map<uint32_t, std::vector<double>> &fanSpeedRpmSamplesPerFan)
+{
+	TRACING();
+	if (fanHandler == nullptr) {
+		return ZE_RESULT_SUCCESS; // Not an error, just not supported
+	}
+
+	std::map<uint32_t, int32_t> rpms;
+	ze_result_t result = fanHandler->getAllSpeedsRpm(rpms);
+	if (result != ZE_RESULT_SUCCESS) {
+		return ZE_RESULT_SUCCESS; // no fan reading available this sample; not an error
+	}
+
+	for (const auto &[fanId, rpm] : rpms) {
+		if (rpm >= 0) { // 0 RPM (a stopped fan) is a valid sample
+			fanSpeedRpmSamplesPerFan[fanId].push_back(static_cast<double>(rpm));
+			DBG("Fan {} speed sample: {} RPM\n", fanId, rpm);
+		}
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Calculate throughput in kB/s from byte counter delta and time delta
  *
  * Helper function to compute throughput rate from counter deltas. Handles division
@@ -1033,6 +1074,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile,
 										 metrics.vrTempPerTile);
 		collectFanMetrics(fanHandler, metrics.fanSpeedPercentSamplesPerFan);
+		collectFanRpmMetrics(fanHandler, metrics.fanSpeedRpmSamplesPerFan);
 		collectMemoryMetricsPerTile(memoryHandler, memoryBaseline, metrics.memoryReadKBpsPerTile,
 									metrics.memoryWriteKBpsPerTile, metrics.memoryBandwidthPercentPerTile,
 									metrics.memoryUsedMiBPerTile, metrics.memoryUtilPercentPerTile);
@@ -1246,6 +1288,14 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		if (stats.valid) {
 			std::string fanKey = std::format("fan_{}", fanId);
 			populateSummaryStatsJson(deviceJson["fan"]["speed_percent"][fanKey], stats);
+		}
+	}
+
+	for (const auto &[fanId, samples] : metrics.fanSpeedRpmSamplesPerFan) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string fanKey = std::format("fan_{}", fanId);
+			populateSummaryStatsJson(deviceJson["fan"]["speed_rpm"][fanKey], stats);
 		}
 	}
 
@@ -1486,6 +1536,8 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	table.addRow("(Degrees Celsius)", "");
 
 	addPerFanMetricRows(table, deviceJson, "Fan Speed (%)", {"fan", "speed_percent"}, 0);
+	// RPM row uses a " RPM" unit suffix; the percent row above keeps its "%" default.
+	addPerFanMetricRows(table, deviceJson, "Fan Speed (RPM)", {"fan", "speed_rpm"}, 0, " RPM");
 
 	addPerTileMetricRows(table, deviceJson, "GPU Memory Read (kB/s)", {"memory", "read_kbps"}, 0);
 
@@ -1613,10 +1665,12 @@ void StatsTextPrinter::addPerTileMetricRows(TableBuilder &table, const nlohmann:
  * @param [in] label Row label for the metric.
  * @param [in] path Nested JSON path to the metric object.
  * @param [in] precision Decimal places for formatting values.
+ * @param [in] unit Unit suffix appended to each value ("%" for percent rows,
+ *                  " RPM" for the RPM row). Defaults to "%".
  */
 void StatsTextPrinter::addPerFanMetricRows(TableBuilder &table, const nlohmann::ordered_json &json,
 										   const std::string &label, const std::vector<std::string> &path,
-										   int precision)
+										   int precision, const std::string &unit)
 {
 	const nlohmann::ordered_json *metricPtr = getNestedJson(json, path);
 	if (metricPtr == nullptr) {
@@ -1664,21 +1718,41 @@ void StatsTextPrinter::addPerFanMetricRows(TableBuilder &table, const nlohmann::
 			continue;
 		}
 
-		std::ostringstream oss;
-		oss << std::fixed << std::setprecision(precision);
-		oss << "Fan " << fanId << ": " << value << "%";
+		std::string cell = formatPerFanValue(fanId, value, precision, unit);
 
 		if (firstFan) {
-			table.addRow(label, oss.str());
+			table.addRow(label, cell);
 			firstFan = false;
 		} else {
-			table.addRow("", oss.str());
+			table.addRow("", cell);
 		}
 	}
 
 	if (firstFan) {
 		table.addRow(label, "N/A");
 	}
+}
+
+/**
+ * @brief Renders a single per-fan table cell, e.g. "Fan 0: 1234 RPM".
+ *
+ * Pure/stateless so the unit-suffix rendering can be unit-tested directly. The
+ * unit string is appended verbatim after the numeric value: "%" for percent
+ * rows, " RPM" for the RPM row. The percent path is byte-for-byte identical to
+ * the previous inline formatting ("Fan <id>: <value>%").
+ *
+ * @param [in] fanId Fan index.
+ * @param [in] value Numeric value to render.
+ * @param [in] precision Decimal places.
+ * @param [in] unit Unit suffix (e.g. "%" or " RPM").
+ * @return Formatted cell string.
+ */
+std::string StatsTextPrinter::formatPerFanValue(uint32_t fanId, double value, int precision, const std::string &unit)
+{
+	// std::format with a dynamic precision ({:.{}f}) renders the same fixed-point
+	// value the prior ostringstream produced: the percent row stays byte-identical
+	// ("Fan <id>: <v>%") and the RPM row reads "Fan <id>: <rpm> RPM".
+	return std::format("Fan {}: {:.{}f}{}", fanId, value, precision, unit);
 }
 
 /**
