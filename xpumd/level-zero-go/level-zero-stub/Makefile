@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 Intel Corporation
 
-CC      = gcc
-CFLAGS  = -std=c11 -O2 -Wall -Wextra -fPIC -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg-config --cflags libcyaml)
-LDFLAGS = -shared
-LDLIBS  = -lpthread $(shell pkg-config --libs libcyaml)
+CC     = gcc
+CFLAGS = -std=c11 -O2 -Wall -Wextra -Wunused-const-variable=2 -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg-config --cflags libcyaml)
 
-TEST_CFLAGS  = -std=c11 -O2 -Wall -Wextra -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg-config --cflags libcyaml)
-TEST_LDFLAGS = -Wl,-rpath,.
-TEST_LDLIBS  = -L. -lze_stub $(shell pkg-config --libs libcyaml)
+STUB_LDFLAGS = -shared
+STUB_LDLIBS  = -lpthread $(shell pkg-config --libs libcyaml)
+
+TESTER_LDFLAGS = -Wl,-rpath,.
+TESTER_LDLIBS  = -L. -lze_stub $(shell pkg-config --libs libcyaml)
 
 LIB    = libze_stub.so
 SOLINK = libze_loader.so.1
@@ -24,14 +24,15 @@ help:
 all: $(LIB)
 
 $(LIB): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CC) $(STUB_LDFLAGS) -o $@ $^ $(STUB_LDLIBS)
 	ln -sf $(LIB) $(SOLINK)
 
+# Objects go into a shared library, hence -fPIC
 %.o: %.c sysman_state.h sysman_state_cyaml.h zes_stub.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
 
 $(TESTS): %: %.c $(LIB) zes_stub.h
-	$(CC) $(TEST_CFLAGS) -o $@ $< $(TEST_LDFLAGS) $(TEST_LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $< $(TESTER_LDFLAGS) $(TESTER_LDLIBS)
 
 .PHONY: test
 test: $(TESTS)
