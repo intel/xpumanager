@@ -162,9 +162,9 @@ static const cyaml_schema_field_t sysman_temp_rv_fields[] = {
 #undef RV
 
 #define SYSMAN_NULLABLE_PTR_FLAGS (CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER_NULL_STR)
-
 static const cyaml_schema_value_t double_schema = {CYAML_VALUE_FLOAT(CYAML_FLAG_DEFAULT, double)};
 static const cyaml_schema_value_t uint64_schema = {CYAML_VALUE_UINT(CYAML_FLAG_DEFAULT, uint64_t)};
+
 static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"Device.GetProperties", UNSUPPORTED_FEATURE_GET_PROPERTIES},
 	{"Device.GetState", UNSUPPORTED_FEATURE_GET_STATE},
@@ -298,8 +298,6 @@ static const cyaml_schema_value_t zes_driver_extension_properties_schema = {
 
 static const cyaml_schema_field_t sysman_uuid_fields[] = {
 	CYAML_FIELD_STRING("Id", CYAML_FLAG_OPTIONAL, sysman_uuid_t, id, 0), CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_uuid_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_uuid_t, sysman_uuid_fields)};
 
 static const cyaml_schema_field_t sysman_device_core_properties_fields[] = {
 	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, sysman_device_core_properties_t, ze.type),
@@ -327,8 +325,6 @@ static const cyaml_schema_field_t sysman_device_core_properties_fields[] = {
 	CYAML_FIELD_STRING("Name", CYAML_FLAG_OPTIONAL, sysman_device_core_properties_t, ze.name, 0),
 	CYAML_FIELD_MAPPING("Uuid", CYAML_FLAG_OPTIONAL, sysman_device_core_properties_t, uuid, sysman_uuid_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_device_core_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_device_core_properties_t, sysman_device_core_properties_fields)};
 
 static const cyaml_schema_field_t sysman_device_properties_info_fields[] = {
 	CYAML_FIELD_UINT("NumSubdevices", CYAML_FLAG_OPTIONAL, sysman_device_properties_info_t, base.numSubdevices),
@@ -346,13 +342,9 @@ static const cyaml_schema_field_t sysman_device_properties_info_fields[] = {
 	CYAML_FIELD_STRING("OemSerialId", CYAML_FLAG_OPTIONAL, sysman_device_properties_info_t, oem_serial_id.oemSerialId,
 					   0),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_device_properties_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_device_properties_info_t, sysman_device_properties_info_fields)};
 
 static const cyaml_schema_field_t zes_device_ext_state_fields[] = {
 	CYAML_FIELD_UINT("Flags", CYAML_FLAG_OPTIONAL, zes_device_ext_state_t, flags), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_device_ext_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_device_ext_state_t, zes_device_ext_state_fields)};
 
 static const cyaml_schema_field_t sysman_device_state_info_fields[] = {
 	CYAML_FIELD_UINT("Reset", CYAML_FLAG_OPTIONAL, sysman_device_state_info_t, base.reset),
@@ -360,23 +352,17 @@ static const cyaml_schema_field_t sysman_device_state_info_fields[] = {
 	CYAML_FIELD_MAPPING("ExtendedState", CYAML_FLAG_OPTIONAL, sysman_device_state_info_t, extended_state,
 						zes_device_ext_state_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_device_state_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_device_state_info_t, sysman_device_state_info_fields)};
 
 static const cyaml_schema_field_t zes_pci_address_fields[] = {
 	CYAML_FIELD_UINT("Domain", CYAML_FLAG_OPTIONAL, zes_pci_address_t, domain),
 	CYAML_FIELD_UINT("Bus", CYAML_FLAG_OPTIONAL, zes_pci_address_t, bus),
 	CYAML_FIELD_UINT("Device", CYAML_FLAG_OPTIONAL, zes_pci_address_t, device),
 	CYAML_FIELD_UINT("Function", CYAML_FLAG_OPTIONAL, zes_pci_address_t, function), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_pci_address_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_pci_address_t, zes_pci_address_fields)};
 
 static const cyaml_schema_field_t zes_pci_speed_fields[] = {
 	CYAML_FIELD_INT("Gen", CYAML_FLAG_OPTIONAL, zes_pci_speed_t, gen),
 	CYAML_FIELD_INT("Width", CYAML_FLAG_OPTIONAL, zes_pci_speed_t, width),
 	CYAML_FIELD_INT("MaxBandwidth", CYAML_FLAG_OPTIONAL, zes_pci_speed_t, maxBandwidth), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_pci_speed_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_pci_speed_t, zes_pci_speed_fields)};
 
 static const cyaml_schema_field_t zes_pci_link_speed_downgrade_ext_properties_fields[] = {
 	CYAML_FIELD_BOOL("PciLinkSpeedUpdateCapable", CYAML_FLAG_OPTIONAL, zes_pci_link_speed_downgrade_ext_properties_t,
@@ -384,9 +370,6 @@ static const cyaml_schema_field_t zes_pci_link_speed_downgrade_ext_properties_fi
 	CYAML_FIELD_INT("MaxPciGenSupported", CYAML_FLAG_OPTIONAL, zes_pci_link_speed_downgrade_ext_properties_t,
 					maxPciGenSupported),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_pci_link_speed_downgrade_ext_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_pci_link_speed_downgrade_ext_properties_t,
-						zes_pci_link_speed_downgrade_ext_properties_fields)};
 
 static const cyaml_schema_field_t sysman_pci_properties_info_fields[] = {
 	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, base.address,
@@ -400,15 +383,11 @@ static const cyaml_schema_field_t sysman_pci_properties_info_fields[] = {
 	CYAML_FIELD_MAPPING("LinkSpeedDowngrade", CYAML_FLAG_OPTIONAL, sysman_pci_properties_info_t, link_speed_downgrade,
 						zes_pci_link_speed_downgrade_ext_properties_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_pci_properties_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_pci_properties_info_t, sysman_pci_properties_info_fields)};
 
 static const cyaml_schema_field_t zes_pci_link_speed_downgrade_ext_state_fields[] = {
 	CYAML_FIELD_BOOL("PciLinkSpeedDowngradeStatus", CYAML_FLAG_OPTIONAL, zes_pci_link_speed_downgrade_ext_state_t,
 					 pciLinkSpeedDowngradeStatus),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_pci_link_speed_downgrade_ext_state_schema = {CYAML_VALUE_MAPPING(
-	CYAML_FLAG_DEFAULT, zes_pci_link_speed_downgrade_ext_state_t, zes_pci_link_speed_downgrade_ext_state_fields)};
 
 static const cyaml_schema_field_t sysman_pci_state_info_fields[] = {
 	CYAML_FIELD_UINT("Status", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, base.status),
@@ -418,8 +397,6 @@ static const cyaml_schema_field_t sysman_pci_state_info_fields[] = {
 	CYAML_FIELD_MAPPING("LinkSpeedDowngrade", CYAML_FLAG_OPTIONAL, sysman_pci_state_info_t, link_speed_downgrade,
 						zes_pci_link_speed_downgrade_ext_state_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_pci_state_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_pci_state_info_t, sysman_pci_state_info_fields)};
 
 static const cyaml_schema_field_t zes_pci_bar_properties_fields[] = {
 	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, zes_pci_bar_properties_t, type),
@@ -437,8 +414,6 @@ static const cyaml_schema_field_t zes_pci_stats_fields[] = {
 	CYAML_FIELD_UINT("TxCounter", CYAML_FLAG_OPTIONAL, zes_pci_stats_t, txCounter),
 	CYAML_FIELD_MAPPING("Speed", CYAML_FLAG_OPTIONAL, zes_pci_stats_t, speed, zes_pci_speed_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_pci_stats_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_pci_stats_t, zes_pci_stats_fields)};
 
 static const cyaml_schema_field_t sysman_pci_info_fields[] = {
 	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_pci_info_t, properties,
@@ -450,14 +425,10 @@ static const cyaml_schema_field_t sysman_pci_info_fields[] = {
 	CYAML_FIELD_UINT("PciLinkSpeedUpdatePendingAction", CYAML_FLAG_OPTIONAL, sysman_pci_info_t,
 					 pci_link_speed_update_pending_action),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_pci_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_pci_info_t, sysman_pci_info_fields)};
 
 static const cyaml_schema_field_t zes_device_ecc_default_properties_ext_fields[] = {
 	CYAML_FIELD_UINT("DefaultState", CYAML_FLAG_OPTIONAL, zes_device_ecc_default_properties_ext_t, defaultState),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_device_ecc_default_properties_ext_schema = {CYAML_VALUE_MAPPING(
-	CYAML_FLAG_DEFAULT, zes_device_ecc_default_properties_ext_t, zes_device_ecc_default_properties_ext_fields)};
 
 static const cyaml_schema_field_t sysman_ecc_state_info_fields[] = {
 	CYAML_FIELD_UINT("CurrentState", CYAML_FLAG_OPTIONAL, sysman_ecc_state_info_t, properties.currentState),
@@ -466,16 +437,12 @@ static const cyaml_schema_field_t sysman_ecc_state_info_fields[] = {
 	CYAML_FIELD_MAPPING("ExtendedProperties", CYAML_FLAG_OPTIONAL, sysman_ecc_state_info_t, extended_properties,
 						zes_device_ecc_default_properties_ext_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_ecc_state_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_ecc_state_info_t, sysman_ecc_state_info_fields)};
 
 static const cyaml_schema_field_t sysman_ecc_info_fields[] = {
 	CYAML_FIELD_BOOL("Available", CYAML_FLAG_OPTIONAL, sysman_ecc_info_t, available),
 	CYAML_FIELD_BOOL("Configurable", CYAML_FLAG_OPTIONAL, sysman_ecc_info_t, configurable),
 	CYAML_FIELD_MAPPING_PTR("State", SYSMAN_NULLABLE_PTR_FLAGS, sysman_ecc_info_t, state, sysman_ecc_state_info_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_ecc_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_ecc_info_t, sysman_ecc_info_fields)};
 
 static const cyaml_schema_field_t sysman_oc_control_fields[] = {
 	CYAML_FIELD_UINT("DomainType", CYAML_FLAG_OPTIONAL, sysman_oc_control_t, domain_type),
@@ -490,8 +457,6 @@ static const cyaml_schema_field_t sysman_overclock_state_info_fields[] = {
 	CYAML_FIELD_UINT("PendingAction", CYAML_FLAG_OPTIONAL, sysman_overclock_state_info_t, pending_action),
 	CYAML_FIELD_BOOL("PendingReset", CYAML_FLAG_OPTIONAL, sysman_overclock_state_info_t, pending_reset),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_overclock_state_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_overclock_state_info_t, sysman_overclock_state_info_fields)};
 
 static const cyaml_schema_field_t zes_overclock_properties_fields[] = {
 	CYAML_FIELD_UINT("DomainType", CYAML_FLAG_OPTIONAL, zes_overclock_properties_t, domainType),
@@ -499,8 +464,6 @@ static const cyaml_schema_field_t zes_overclock_properties_fields[] = {
 	CYAML_FIELD_UINT("VFProgramType", CYAML_FLAG_OPTIONAL, zes_overclock_properties_t, VFProgramType),
 	CYAML_FIELD_UINT("NumberOfVFPoints", CYAML_FLAG_OPTIONAL, zes_overclock_properties_t, NumberOfVFPoints),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_overclock_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_overclock_properties_t, zes_overclock_properties_fields)};
 
 static const cyaml_schema_field_t zes_vf_property_fields[] = {
 	CYAML_FIELD_FLOAT("MinFreq", CYAML_FLAG_OPTIONAL, zes_vf_property_t, MinFreq),
@@ -510,8 +473,6 @@ static const cyaml_schema_field_t zes_vf_property_fields[] = {
 	CYAML_FIELD_FLOAT("MaxVolt", CYAML_FLAG_OPTIONAL, zes_vf_property_t, MaxVolt),
 	CYAML_FIELD_FLOAT("StepVolt", CYAML_FLAG_OPTIONAL, zes_vf_property_t, StepVolt),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_vf_property_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_vf_property_t, zes_vf_property_fields)};
 
 static const cyaml_schema_field_t zes_control_property_fields[] = {
 	CYAML_FIELD_FLOAT("MinValue", CYAML_FLAG_OPTIONAL, zes_control_property_t, MinValue),
@@ -520,8 +481,6 @@ static const cyaml_schema_field_t zes_control_property_fields[] = {
 	CYAML_FIELD_FLOAT("RefValue", CYAML_FLAG_OPTIONAL, zes_control_property_t, RefValue),
 	CYAML_FIELD_FLOAT("DefaultValue", CYAML_FLAG_OPTIONAL, zes_control_property_t, DefaultValue),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_control_property_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_control_property_t, zes_control_property_fields)};
 
 static const cyaml_schema_field_t sysman_oc_control_info_fields[] = {
 	CYAML_FIELD_UINT("ControlType", CYAML_FLAG_OPTIONAL, sysman_oc_control_info_t, control_type),
@@ -557,8 +516,6 @@ static const cyaml_schema_field_t sysman_overclock_info_fields[] = {
 	CYAML_FIELD_SEQUENCE_COUNT("Domains", SYSMAN_NULLABLE_PTR_FLAGS, sysman_overclock_info_t, domains, domains_count,
 							   &sysman_oc_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_overclock_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_overclock_info_t, sysman_overclock_info_fields)};
 
 static const cyaml_schema_field_t zes_process_state_fields[] = {
 	CYAML_FIELD_UINT("ProcessId", CYAML_FLAG_OPTIONAL, zes_process_state_t, processId),
@@ -572,8 +529,6 @@ static const cyaml_schema_field_t zes_engine_ext_properties_fields[] = {
 	CYAML_FIELD_UINT("CountOfVirtualFunctionInstance", CYAML_FLAG_OPTIONAL, zes_engine_ext_properties_t,
 					 countOfVirtualFunctionInstance),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_engine_ext_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_engine_ext_properties_t, zes_engine_ext_properties_fields)};
 
 static const cyaml_schema_field_t sysman_engine_properties_info_fields[] = {
 	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, sysman_engine_properties_info_t, base.type),
@@ -582,8 +537,6 @@ static const cyaml_schema_field_t sysman_engine_properties_info_fields[] = {
 	CYAML_FIELD_MAPPING("ExtendedProperties", CYAML_FLAG_OPTIONAL, sysman_engine_properties_info_t, extended_properties,
 						zes_engine_ext_properties_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_engine_properties_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_engine_properties_info_t, sysman_engine_properties_info_fields)};
 
 static const cyaml_schema_field_t zes_engine_stats_fields[] = {
 	CYAML_FIELD_UINT("ActiveTime", CYAML_FLAG_OPTIONAL, zes_engine_stats_t, activeTime),
@@ -606,14 +559,10 @@ static const cyaml_schema_field_t zes_fabric_port_id_fields[] = {
 	CYAML_FIELD_UINT("FabricId", CYAML_FLAG_OPTIONAL, zes_fabric_port_id_t, fabricId),
 	CYAML_FIELD_UINT("AttachId", CYAML_FLAG_OPTIONAL, zes_fabric_port_id_t, attachId),
 	CYAML_FIELD_UINT("PortNumber", CYAML_FLAG_OPTIONAL, zes_fabric_port_id_t, portNumber), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_id_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_id_t, zes_fabric_port_id_fields)};
 
 static const cyaml_schema_field_t zes_fabric_port_speed_fields[] = {
 	CYAML_FIELD_INT("BitRate", CYAML_FLAG_OPTIONAL, zes_fabric_port_speed_t, bitRate),
 	CYAML_FIELD_INT("Width", CYAML_FLAG_OPTIONAL, zes_fabric_port_speed_t, width), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_speed_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_speed_t, zes_fabric_port_speed_fields)};
 
 static const cyaml_schema_field_t zes_fabric_port_properties_fields[] = {
 	CYAML_FIELD_STRING("Model", CYAML_FLAG_OPTIONAL, zes_fabric_port_properties_t, model, 0),
@@ -625,19 +574,13 @@ static const cyaml_schema_field_t zes_fabric_port_properties_fields[] = {
 	CYAML_FIELD_MAPPING("MaxTxSpeed", CYAML_FLAG_OPTIONAL, zes_fabric_port_properties_t, maxTxSpeed,
 						zes_fabric_port_speed_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_properties_t, zes_fabric_port_properties_fields)};
 
 static const cyaml_schema_field_t zes_fabric_link_type_fields[] = {
 	CYAML_FIELD_STRING("Desc", CYAML_FLAG_OPTIONAL, zes_fabric_link_type_t, desc, 0), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_link_type_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_link_type_t, zes_fabric_link_type_fields)};
 
 static const cyaml_schema_field_t zes_fabric_port_config_fields[] = {
 	CYAML_FIELD_BOOL("Enabled", CYAML_FLAG_OPTIONAL, zes_fabric_port_config_t, enabled),
 	CYAML_FIELD_BOOL("Beaconing", CYAML_FLAG_OPTIONAL, zes_fabric_port_config_t, beaconing), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_config_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_config_t, zes_fabric_port_config_fields)};
 
 static const cyaml_schema_field_t zes_fabric_port_state_fields[] = {
 	CYAML_FIELD_UINT("Status", CYAML_FLAG_OPTIONAL, zes_fabric_port_state_t, status),
@@ -648,15 +591,11 @@ static const cyaml_schema_field_t zes_fabric_port_state_fields[] = {
 	CYAML_FIELD_MAPPING("RxSpeed", CYAML_FLAG_OPTIONAL, zes_fabric_port_state_t, rxSpeed, zes_fabric_port_speed_fields),
 	CYAML_FIELD_MAPPING("TxSpeed", CYAML_FLAG_OPTIONAL, zes_fabric_port_state_t, txSpeed, zes_fabric_port_speed_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_state_t, zes_fabric_port_state_fields)};
 
 static const cyaml_schema_field_t zes_fabric_port_throughput_fields[] = {
 	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, zes_fabric_port_throughput_t, timestamp),
 	CYAML_FIELD_UINT("RxCounter", CYAML_FLAG_OPTIONAL, zes_fabric_port_throughput_t, rxCounter),
 	CYAML_FIELD_UINT("TxCounter", CYAML_FLAG_OPTIONAL, zes_fabric_port_throughput_t, txCounter), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_throughput_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_throughput_t, zes_fabric_port_throughput_fields)};
 
 static const cyaml_schema_field_t zes_fabric_port_error_counters_fields[] = {
 	CYAML_FIELD_UINT("LinkFailureCount", CYAML_FLAG_OPTIONAL, zes_fabric_port_error_counters_t, linkFailureCount),
@@ -664,8 +603,6 @@ static const cyaml_schema_field_t zes_fabric_port_error_counters_fields[] = {
 	CYAML_FIELD_UINT("FwErrorCount", CYAML_FLAG_OPTIONAL, zes_fabric_port_error_counters_t, fwErrorCount),
 	CYAML_FIELD_UINT("LinkDegradeCount", CYAML_FLAG_OPTIONAL, zes_fabric_port_error_counters_t, linkDegradeCount),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fabric_port_error_counters_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fabric_port_error_counters_t, zes_fabric_port_error_counters_fields)};
 
 static const cyaml_schema_field_t sysman_fabric_port_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_fabric_port_t, return_values,
@@ -695,14 +632,10 @@ static const cyaml_schema_field_t zes_fan_properties_fields[] = {
 	CYAML_FIELD_INT("MaxRPM", CYAML_FLAG_OPTIONAL, zes_fan_properties_t, maxRPM),
 	CYAML_FIELD_INT("MaxPoints", CYAML_FLAG_OPTIONAL, zes_fan_properties_t, maxPoints),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fan_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fan_properties_t, zes_fan_properties_fields)};
 
 static const cyaml_schema_field_t zes_fan_speed_fields[] = {
 	CYAML_FIELD_INT("Speed", CYAML_FLAG_OPTIONAL, zes_fan_speed_t, speed),
 	CYAML_FIELD_UINT("Units", CYAML_FLAG_OPTIONAL, zes_fan_speed_t, units), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fan_speed_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fan_speed_t, zes_fan_speed_fields)};
 
 static const cyaml_schema_field_t zes_fan_temp_speed_fields[] = {
 	CYAML_FIELD_UINT("Temperature", CYAML_FLAG_OPTIONAL, zes_fan_temp_speed_t, temperature),
@@ -716,16 +649,12 @@ static const cyaml_schema_field_t zes_fan_speed_table_fields[] = {
 	CYAML_FIELD_SEQUENCE_COUNT("Table", CYAML_FLAG_OPTIONAL, zes_fan_speed_table_t, table, numPoints,
 							   &zes_fan_temp_speed_schema, 0, ZES_FAN_TEMP_SPEED_PAIR_COUNT),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fan_speed_table_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fan_speed_table_t, zes_fan_speed_table_fields)};
 
 static const cyaml_schema_field_t zes_fan_config_fields[] = {
 	CYAML_FIELD_UINT("Mode", CYAML_FLAG_OPTIONAL, zes_fan_config_t, mode),
 	CYAML_FIELD_MAPPING("SpeedFixed", CYAML_FLAG_OPTIONAL, zes_fan_config_t, speedFixed, zes_fan_speed_fields),
 	CYAML_FIELD_MAPPING("SpeedTable", CYAML_FLAG_OPTIONAL, zes_fan_config_t, speedTable, zes_fan_speed_table_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_fan_config_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_fan_config_t, zes_fan_config_fields)};
 
 static const cyaml_schema_field_t sysman_fan_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_fan_t, return_values, sysman_fan_rv_fields),
@@ -743,8 +672,6 @@ static const cyaml_schema_field_t zes_firmware_properties_fields[] = {
 	CYAML_FIELD_STRING("Name", CYAML_FLAG_OPTIONAL, zes_firmware_properties_t, name, 0),
 	CYAML_FIELD_STRING("Version", CYAML_FLAG_OPTIONAL, zes_firmware_properties_t, version, 0),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_firmware_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_firmware_properties_t, zes_firmware_properties_fields)};
 
 static const cyaml_schema_field_t sysman_firmware_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_firmware_t, return_values,
@@ -765,14 +692,10 @@ static const cyaml_schema_field_t zes_freq_properties_fields[] = {
 	CYAML_FIELD_FLOAT("Min", CYAML_FLAG_OPTIONAL, zes_freq_properties_t, min),
 	CYAML_FIELD_FLOAT("Max", CYAML_FLAG_OPTIONAL, zes_freq_properties_t, max),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_freq_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_freq_properties_t, zes_freq_properties_fields)};
 
 static const cyaml_schema_field_t zes_freq_range_fields[] = {
 	CYAML_FIELD_FLOAT("Min", CYAML_FLAG_OPTIONAL, zes_freq_range_t, min),
 	CYAML_FIELD_FLOAT("Max", CYAML_FLAG_OPTIONAL, zes_freq_range_t, max), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_freq_range_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_freq_range_t, zes_freq_range_fields)};
 
 static const cyaml_schema_field_t zes_freq_state_fields[] = {
 	CYAML_FIELD_FLOAT("CurrentVoltage", CYAML_FLAG_OPTIONAL, zes_freq_state_t, currentVoltage),
@@ -782,14 +705,10 @@ static const cyaml_schema_field_t zes_freq_state_fields[] = {
 	CYAML_FIELD_FLOAT("Actual", CYAML_FLAG_OPTIONAL, zes_freq_state_t, actual),
 	CYAML_FIELD_UINT("ThrottleReasons", CYAML_FLAG_OPTIONAL, zes_freq_state_t, throttleReasons),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_freq_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_freq_state_t, zes_freq_state_fields)};
 
 static const cyaml_schema_field_t zes_freq_throttle_time_fields[] = {
 	CYAML_FIELD_UINT("ThrottleTime", CYAML_FLAG_OPTIONAL, zes_freq_throttle_time_t, throttleTime),
 	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, zes_freq_throttle_time_t, timestamp), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_freq_throttle_time_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_freq_throttle_time_t, zes_freq_throttle_time_fields)};
 
 static const cyaml_schema_field_t sysman_freq_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_freq_t, return_values, sysman_freq_rv_fields),
@@ -810,21 +729,15 @@ static const cyaml_schema_field_t zes_led_properties_fields[] = {
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_led_properties_t, subdeviceId),
 	CYAML_FIELD_BOOL("CanControl", CYAML_FLAG_OPTIONAL, zes_led_properties_t, canControl),
 	CYAML_FIELD_BOOL("HaveRGB", CYAML_FLAG_OPTIONAL, zes_led_properties_t, haveRGB), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_led_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_led_properties_t, zes_led_properties_fields)};
 
 static const cyaml_schema_field_t zes_led_color_fields[] = {
 	CYAML_FIELD_FLOAT("Red", CYAML_FLAG_OPTIONAL, zes_led_color_t, red),
 	CYAML_FIELD_FLOAT("Green", CYAML_FLAG_OPTIONAL, zes_led_color_t, green),
 	CYAML_FIELD_FLOAT("Blue", CYAML_FLAG_OPTIONAL, zes_led_color_t, blue), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_led_color_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_led_color_t, zes_led_color_fields)};
 
 static const cyaml_schema_field_t zes_led_state_fields[] = {
 	CYAML_FIELD_BOOL("IsOn", CYAML_FLAG_OPTIONAL, zes_led_state_t, isOn),
 	CYAML_FIELD_MAPPING("Color", CYAML_FLAG_OPTIONAL, zes_led_state_t, color, zes_led_color_fields), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_led_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_led_state_t, zes_led_state_fields)};
 
 static const cyaml_schema_field_t sysman_led_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_led_t, return_values, sysman_led_rv_fields),
@@ -844,23 +757,17 @@ static const cyaml_schema_field_t zes_mem_properties_fields[] = {
 	CYAML_FIELD_INT("BusWidth", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, busWidth),
 	CYAML_FIELD_INT("NumChannels", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, numChannels),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_mem_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_mem_properties_t, zes_mem_properties_fields)};
 
 static const cyaml_schema_field_t zes_mem_state_fields[] = {
 	CYAML_FIELD_UINT("Health", CYAML_FLAG_OPTIONAL, zes_mem_state_t, health),
 	CYAML_FIELD_UINT("Free", CYAML_FLAG_OPTIONAL, zes_mem_state_t, free),
 	CYAML_FIELD_UINT("Size", CYAML_FLAG_OPTIONAL, zes_mem_state_t, size), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_mem_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_mem_state_t, zes_mem_state_fields)};
 
 static const cyaml_schema_field_t zes_mem_bandwidth_fields[] = {
 	CYAML_FIELD_UINT("ReadCounter", CYAML_FLAG_OPTIONAL, zes_mem_bandwidth_t, readCounter),
 	CYAML_FIELD_UINT("WriteCounter", CYAML_FLAG_OPTIONAL, zes_mem_bandwidth_t, writeCounter),
 	CYAML_FIELD_UINT("MaxBandwidth", CYAML_FLAG_OPTIONAL, zes_mem_bandwidth_t, maxBandwidth),
 	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, zes_mem_bandwidth_t, timestamp), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_mem_bandwidth_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_mem_bandwidth_t, zes_mem_bandwidth_fields)};
 
 static const cyaml_schema_field_t sysman_mem_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_mem_t, return_values, sysman_mem_rv_fields),
@@ -876,8 +783,6 @@ static const cyaml_schema_field_t zes_perf_properties_fields[] = {
 	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, zes_perf_properties_t, onSubdevice),
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_perf_properties_t, subdeviceId),
 	CYAML_FIELD_UINT("Engines", CYAML_FLAG_OPTIONAL, zes_perf_properties_t, engines), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_perf_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_perf_properties_t, zes_perf_properties_fields)};
 
 static const cyaml_schema_field_t sysman_perf_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_perf_t, return_values, sysman_perf_rv_fields),
@@ -906,8 +811,6 @@ static const cyaml_schema_field_t sysman_power_ext_properties_fields[] = {
 	CYAML_FIELD_MAPPING("DefaultLimit", CYAML_FLAG_OPTIONAL, sysman_power_ext_properties_t, default_limit,
 						zes_power_limit_ext_desc_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_power_ext_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_power_ext_properties_t, sysman_power_ext_properties_fields)};
 
 static const cyaml_schema_field_t sysman_power_properties_info_fields[] = {
 	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, sysman_power_properties_info_t, base.onSubdevice),
@@ -921,27 +824,19 @@ static const cyaml_schema_field_t sysman_power_properties_info_fields[] = {
 	CYAML_FIELD_MAPPING("ExtendedProperties", CYAML_FLAG_OPTIONAL, sysman_power_properties_info_t, extended_properties,
 						sysman_power_ext_properties_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_power_properties_info_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_power_properties_info_t, sysman_power_properties_info_fields)};
 
 static const cyaml_schema_field_t zes_power_energy_counter_fields[] = {
 	CYAML_FIELD_UINT("Energy", CYAML_FLAG_OPTIONAL, zes_power_energy_counter_t, energy),
 	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, zes_power_energy_counter_t, timestamp), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_power_energy_counter_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_power_energy_counter_t, zes_power_energy_counter_fields)};
 
 static const cyaml_schema_field_t zes_energy_threshold_fields[] = {
 	CYAML_FIELD_BOOL("Enable", CYAML_FLAG_OPTIONAL, zes_energy_threshold_t, enable),
 	CYAML_FIELD_FLOAT("Threshold", CYAML_FLAG_OPTIONAL, zes_energy_threshold_t, threshold),
 	CYAML_FIELD_UINT("ProcessId", CYAML_FLAG_OPTIONAL, zes_energy_threshold_t, processId), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_energy_threshold_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_energy_threshold_t, zes_energy_threshold_fields)};
 
 static const cyaml_schema_field_t sysman_power_usage_fields[] = {
 	CYAML_FIELD_UINT("InstantPower", CYAML_FLAG_OPTIONAL, sysman_power_usage_t, instant_power),
 	CYAML_FIELD_UINT("AveragePower", CYAML_FLAG_OPTIONAL, sysman_power_usage_t, average_power), CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_power_usage_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_power_usage_t, sysman_power_usage_fields)};
 
 static const cyaml_schema_field_t sysman_power_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_power_t, return_values, sysman_power_rv_fields),
@@ -964,16 +859,12 @@ static const cyaml_schema_field_t zes_psu_properties_fields[] = {
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_psu_properties_t, subdeviceId),
 	CYAML_FIELD_BOOL("HaveFan", CYAML_FLAG_OPTIONAL, zes_psu_properties_t, haveFan),
 	CYAML_FIELD_INT("AmpLimit", CYAML_FLAG_OPTIONAL, zes_psu_properties_t, ampLimit), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_psu_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_psu_properties_t, zes_psu_properties_fields)};
 
 static const cyaml_schema_field_t zes_psu_state_fields[] = {
 	CYAML_FIELD_UINT("VoltStatus", CYAML_FLAG_OPTIONAL, zes_psu_state_t, voltStatus),
 	CYAML_FIELD_BOOL("FanFailed", CYAML_FLAG_OPTIONAL, zes_psu_state_t, fanFailed),
 	CYAML_FIELD_INT("Temperature", CYAML_FLAG_OPTIONAL, zes_psu_state_t, temperature),
 	CYAML_FIELD_INT("Current", CYAML_FLAG_OPTIONAL, zes_psu_state_t, current), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_psu_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_psu_state_t, zes_psu_state_fields)};
 
 static const cyaml_schema_field_t sysman_psu_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_psu_t, return_values, sysman_psu_rv_fields),
@@ -988,23 +879,17 @@ static const cyaml_schema_field_t zes_ras_properties_fields[] = {
 	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, zes_ras_properties_t, type),
 	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, zes_ras_properties_t, onSubdevice),
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_ras_properties_t, subdeviceId), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_ras_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_ras_properties_t, zes_ras_properties_fields)};
 
 static const cyaml_schema_field_t zes_ras_state_fields[] = {
 	CYAML_FIELD_SEQUENCE_FIXED("Category", CYAML_FLAG_OPTIONAL, zes_ras_state_t, category, &uint64_schema,
 							   ZES_MAX_RAS_ERROR_CATEGORY_COUNT),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_ras_state_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_ras_state_t, zes_ras_state_fields)};
 
 static const cyaml_schema_field_t zes_ras_config_fields[] = {
 	CYAML_FIELD_UINT("TotalThreshold", CYAML_FLAG_OPTIONAL, zes_ras_config_t, totalThreshold),
 	CYAML_FIELD_MAPPING("DetailedThresholds", CYAML_FLAG_OPTIONAL, zes_ras_config_t, detailedThresholds,
 						zes_ras_state_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_ras_config_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_ras_config_t, zes_ras_config_fields)};
 
 static const cyaml_schema_field_t zes_ras_state_exp_fields[] = {
 	CYAML_FIELD_UINT("Category", CYAML_FLAG_OPTIONAL, zes_ras_state_exp_t, category),
@@ -1031,21 +916,15 @@ static const cyaml_schema_field_t zes_sched_properties_fields[] = {
 	CYAML_FIELD_UINT("Engines", CYAML_FLAG_OPTIONAL, zes_sched_properties_t, engines),
 	CYAML_FIELD_UINT("SupportedModes", CYAML_FLAG_OPTIONAL, zes_sched_properties_t, supportedModes),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_sched_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_sched_properties_t, zes_sched_properties_fields)};
 
 static const cyaml_schema_field_t zes_sched_timeout_properties_fields[] = {
 	CYAML_FIELD_UINT("WatchdogTimeout", CYAML_FLAG_OPTIONAL, zes_sched_timeout_properties_t, watchdogTimeout),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_sched_timeout_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_sched_timeout_properties_t, zes_sched_timeout_properties_fields)};
 
 static const cyaml_schema_field_t zes_sched_timeslice_properties_fields[] = {
 	CYAML_FIELD_UINT("Interval", CYAML_FLAG_OPTIONAL, zes_sched_timeslice_properties_t, interval),
 	CYAML_FIELD_UINT("YieldTimeout", CYAML_FLAG_OPTIONAL, zes_sched_timeslice_properties_t, yieldTimeout),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_sched_timeslice_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_sched_timeslice_properties_t, zes_sched_timeslice_properties_fields)};
 
 static const cyaml_schema_field_t sysman_sched_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_sched_t, return_values, sysman_sched_rv_fields),
@@ -1065,8 +944,6 @@ static const cyaml_schema_field_t zes_standby_properties_fields[] = {
 	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, zes_standby_properties_t, type),
 	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, zes_standby_properties_t, onSubdevice),
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_standby_properties_t, subdeviceId), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_standby_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_standby_properties_t, zes_standby_properties_fields)};
 
 static const cyaml_schema_field_t sysman_standby_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_standby_t, return_values, sysman_standby_rv_fields),
@@ -1085,23 +962,17 @@ static const cyaml_schema_field_t zes_temp_properties_fields[] = {
 	CYAML_FIELD_BOOL("IsThreshold1Supported", CYAML_FLAG_OPTIONAL, zes_temp_properties_t, isThreshold1Supported),
 	CYAML_FIELD_BOOL("IsThreshold2Supported", CYAML_FLAG_OPTIONAL, zes_temp_properties_t, isThreshold2Supported),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_temp_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_temp_properties_t, zes_temp_properties_fields)};
 
 static const cyaml_schema_field_t zes_temp_threshold_fields[] = {
 	CYAML_FIELD_BOOL("EnableLowToHigh", CYAML_FLAG_OPTIONAL, zes_temp_threshold_t, enableLowToHigh),
 	CYAML_FIELD_BOOL("EnableHighToLow", CYAML_FLAG_OPTIONAL, zes_temp_threshold_t, enableHighToLow),
 	CYAML_FIELD_FLOAT("Threshold", CYAML_FLAG_OPTIONAL, zes_temp_threshold_t, threshold), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_temp_threshold_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_temp_threshold_t, zes_temp_threshold_fields)};
 
 static const cyaml_schema_field_t zes_temp_config_fields[] = {
 	CYAML_FIELD_BOOL("EnableCritical", CYAML_FLAG_OPTIONAL, zes_temp_config_t, enableCritical),
 	CYAML_FIELD_MAPPING("Threshold1", CYAML_FLAG_OPTIONAL, zes_temp_config_t, threshold1, zes_temp_threshold_fields),
 	CYAML_FIELD_MAPPING("Threshold2", CYAML_FLAG_OPTIONAL, zes_temp_config_t, threshold2, zes_temp_threshold_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_temp_config_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_temp_config_t, zes_temp_config_fields)};
 
 static const cyaml_schema_field_t sysman_temp_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_temp_t, return_values, sysman_temp_rv_fields),
@@ -1118,8 +989,6 @@ static const cyaml_schema_field_t zes_diag_properties_fields[] = {
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_diag_properties_t, subdeviceId),
 	CYAML_FIELD_STRING("Name", CYAML_FLAG_OPTIONAL, zes_diag_properties_t, name, 0),
 	CYAML_FIELD_BOOL("HaveTests", CYAML_FLAG_OPTIONAL, zes_diag_properties_t, haveTests), CYAML_FIELD_END};
-static const cyaml_schema_value_t zes_diag_properties_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_diag_properties_t, zes_diag_properties_fields)};
 
 static const cyaml_schema_field_t zes_diag_test_fields[] = {
 	CYAML_FIELD_UINT("Index", CYAML_FLAG_OPTIONAL, zes_diag_test_t, index),
