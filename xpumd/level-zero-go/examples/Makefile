@@ -12,6 +12,11 @@ EXAMPLE_APPS := list-sysman events-sysman
 # PIE + full RELRO, drop all symbols
 GO_FLAGS := -buildmode=pie --ldflags="-bindnow -s -w"
 
+# Use a dedicated GOCACHE for stub builds.
+# Go build cache does not distinguish between PKG_CONFIG_PATH values (set from env) so this
+# would otherwise "pollute" the cache for the real driver build.
+BUILD_STUB_ENV := PKG_CONFIG_PATH=$(CURDIR)/../level-zero-stub GOCACHE=$(CURDIR)/.gocache-stub
+
 # --- Helper targets ---
 
 .PHONY: help
@@ -27,10 +32,10 @@ build:
 
 .PHONY: build-stub
 build-stub:
-	$(Q)PKG_CONFIG_PATH=$(CURDIR)/../level-zero-stub go build $(GO_FLAGS) -o bin/list-sysman ./list-sysman/.
-	$(Q)PKG_CONFIG_PATH=$(CURDIR)/../level-zero-stub go build $(GO_FLAGS) -o bin/events-sysman ./events-sysman/.
+	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -o bin/list-sysman-stub ./list-sysman/.
+	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -o bin/events-sysman-stub ./events-sysman/.
 	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
-	@echo "  SYSMAN_STUB_CONFIG=../level-zero-stub/example-config.yaml ./bin/list-sysman"
+	@echo "  SYSMAN_STUB_CONFIG=../level-zero-stub/example-config.yaml ./bin/list-sysman-stub"
 	@echo ""
 
 .PHONY: images
@@ -47,3 +52,4 @@ images:
 .PHONY: clean
 clean:
 	rm -f bin/*
+	rm -rf .gocache-stub
