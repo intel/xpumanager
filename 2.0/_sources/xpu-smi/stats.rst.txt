@@ -34,8 +34,9 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   The device ID or PCI BDF address to query. If omitted, statistics for all
-   detected devices are displayed.
+   The device ID or PCI BDF address to query. Accepts a comma-separated list to
+   query several devices at once (e.g., ``-d 0,1,4``). If omitted, statistics
+   for all detected devices are displayed.
 
 .. option:: -e, --eu
 

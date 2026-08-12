@@ -14,6 +14,7 @@ Synopsis
    xpu-smi topology --device [deviceId] -j
    xpu-smi topology -f [filename]
    xpu-smi topology -m
+   xpu-smi topology --p2p [capability]
 
 Options
 -------
@@ -28,7 +29,8 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   The device ID or PCI BDF address to query.
+   The device ID or PCI BDF address to query. Accepts a comma-separated list to
+   query several devices at once (e.g., ``-d 0,1,4``).
 
 .. option:: -f <filename>, --file <filename>
 
@@ -57,9 +59,68 @@ Options
       * - PHB
         - Connected via PCIe host bridge (1 common ancestor)
       * - NODE
-        - Connected with PCIe within a NUMA node
+        - Connected within a NUMA node
       * - SYS
-        - Connected with PCIe between NUMA nodes
+        - Worst-case connectivity (cross-NUMA or topology unknown)
+
+   Symbols are assigned by a priority-ordered decision chain, best (fastest)
+   connectivity first:
+
+   #. **S** — self (same device and tile).
+   #. **MDF** — both GPU tiles on the same physical device.
+   #. **PIX** — PCIe paths share ≥3 common bridge ancestors (same PCIe switch).
+   #. **PXB** — PCIe paths share exactly 2 common ancestors (same root port).
+   #. **PHB** — PCIe paths share exactly 1 common ancestor (same host bridge).
+   #. **NODE** — no common PCIe ancestor (or a PCIe path is unavailable) but both
+      devices resolve to the same NUMA node.
+   #. **SYS** — everything else: different NUMA nodes, or NUMA/topology unknown.
+
+   .. note::
+
+      When two devices share a NUMA node but sit under different PCIe root
+      complexes (no common PCIe ancestor), they are classified as ``NODE``
+      rather than ``SYS``. NUMA locality is used as the tiebreaker whenever the
+      PCIe paths do not share an ancestor.
+
+.. option:: --p2p <capability>
+
+   Print the peer-to-peer (P2P) capability matrix between GPU devices for the
+   requested capability.
+
+   The capability argument selects which P2P property to probe:
+
+   .. list-table::
+      :widths: 15 85
+      :header-rows: 1
+
+      * - Value
+        - Meaning
+      * - ``r``
+        - P2P read/write access (``w`` accepted as an alias; Level Zero reports
+          this as a single unified capability)
+      * - ``n``
+        - MDF fabric connectivity
+      * - ``a``
+        - P2P atomic operations
+      * - ``p``
+        - PCIe P2P access
+
+   The matrix uses the following symbols:
+
+   .. list-table::
+      :widths: 15 85
+      :header-rows: 1
+
+      * - Symbol
+        - Meaning
+      * - X
+        - Self
+      * - OK
+        - Capability supported
+      * - NS
+        - Not supported
+      * - ?
+        - Query failed (driver or device error)
 
 Examples
 --------
@@ -87,3 +148,9 @@ Print the full CPU/GPU interconnect matrix:
 .. code-block:: shell
 
    xpu-smi topology -m
+
+Print the P2P read/write capability matrix between GPUs:
+
+.. code-block:: shell
+
+   xpu-smi topology --p2p r

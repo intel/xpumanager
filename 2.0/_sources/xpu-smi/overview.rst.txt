@@ -142,6 +142,18 @@ addressed by either:
 - **Device ID**: An integer index assigned by the driver (e.g., ``0``, ``1``)
 - **PCI BDF address**: Bus/Device/Function notation (e.g., ``0000:4d:00.0``)
 
+A comma-separated list combining either form selects multiple devices in a
+single invocation (e.g., ``-d 0,1,4`` or ``-d 0,0000:4d:00.0``). Most
+subcommands that accept ``--device`` parse this list; duplicate entries are
+de-duplicated and the requested order is preserved. Some operations still
+require a single device or behave differently for multiple devices:
+
+- ``amc`` operates on a single device only and does not accept a list.
+- ``config --reset`` / ``config --coldreset`` act on a single device.
+- ``health`` produces separate per-device output only when ``--list`` is used.
+
+Refer to each subcommand's page for its exact device-selection behavior.
+
 --query-gpu Field Reference
 ----------------------------
 
@@ -358,9 +370,15 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``ras.cache.errors.uncorrectable``
      - —
      - RAS uncorrectable cache error counter
+   * - ``ras.non_compute.errors.correctable``
+     - —
+     - RAS correctable non-compute error counter
+   * - ``ras.non_compute.errors.uncorrectable``
+     - —
+     - RAS uncorrectable non-compute error counter
    * - ``ras.non_compute.errors.total``
      - —
-     - RAS non-compute (memory) error counter
+     - RAS non-compute error counter (correctable + uncorrectable)
    * - ``eu.active``
      - %
      - EU array active percentage (Intel Xe only)

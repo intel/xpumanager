@@ -179,7 +179,8 @@ xpu-smi discovery --dump [propertyIds]
 <dt class="sig sig-object std" id="cmdoption-d">
 <span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
 <dd><p>Device ID or PCI BDF address to query. When specified, displays more detailed
-information about the given device.</p>
+information about the given device. Accepts a comma-separated list to query
+several devices at once (e.g., <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,1,4</span></code> or <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,0000:4d:00.0</span></code>).</p>
 </dd></dl>
 
 <dl class="std option">

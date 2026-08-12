@@ -41,7 +41,14 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   The device ID or PCI BDF address to query.
+   The device ID or PCI BDF address to query. Accepts a comma-separated list to
+   query several devices at once (e.g., ``-d 0,1,4``).
+
+   .. note::
+
+      Separate per-device output is only produced when ``--list`` is used.
+      Without ``--list``, results for a multi-device selection are not shown
+      per device.
 
 .. option:: -c <componentTypeId>, --component <componentTypeId>
 

@@ -158,6 +158,7 @@ xpu-smi topology --device [pciBdfAddress]
 xpu-smi topology --device [deviceId] -j
 xpu-smi topology -f [filename]
 xpu-smi topology -m
+xpu-smi topology --p2p [capability]
 </pre></div>
 </div>
 </section>
@@ -178,7 +179,8 @@ xpu-smi topology -m
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-d">
 <span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
-<dd><p>The device ID or PCI BDF address to query.</p>
+<dd><p>The device ID or PCI BDF address to query. Accepts a comma-separated list to
+query several devices at once (e.g., <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,1,4</span></code>).</p>
 </dd></dl>
 
 <dl class="std option">
@@ -219,10 +221,89 @@ xpu-smi topology -m
 <td><p>Connected via PCIe host bridge (1 common ancestor)</p></td>
 </tr>
 <tr class="row-odd"><td><p>NODE</p></td>
-<td><p>Connected with PCIe within a NUMA node</p></td>
+<td><p>Connected within a NUMA node</p></td>
 </tr>
 <tr class="row-even"><td><p>SYS</p></td>
-<td><p>Connected with PCIe between NUMA nodes</p></td>
+<td><p>Worst-case connectivity (cross-NUMA or topology unknown)</p></td>
+</tr>
+</tbody>
+</table>
+<p>Symbols are assigned by a priority-ordered decision chain, best (fastest)
+connectivity first:</p>
+<ol class="arabic simple">
+<li><p><strong>S</strong> — self (same device and tile).</p></li>
+<li><p><strong>MDF</strong> — both GPU tiles on the same physical device.</p></li>
+<li><p><strong>PIX</strong> — PCIe paths share ≥3 common bridge ancestors (same PCIe switch).</p></li>
+<li><p><strong>PXB</strong> — PCIe paths share exactly 2 common ancestors (same root port).</p></li>
+<li><p><strong>PHB</strong> — PCIe paths share exactly 1 common ancestor (same host bridge).</p></li>
+<li><p><strong>NODE</strong> — no common PCIe ancestor (or a PCIe path is unavailable) but both
+devices resolve to the same NUMA node.</p></li>
+<li><p><strong>SYS</strong> — everything else: different NUMA nodes, or NUMA/topology unknown.</p></li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When two devices share a NUMA node but sit under different PCIe root
+complexes (no common PCIe ancestor), they are classified as <code class="docutils literal notranslate"><span class="pre">NODE</span></code>
+rather than <code class="docutils literal notranslate"><span class="pre">SYS</span></code>. NUMA locality is used as the tiebreaker whenever the
+PCIe paths do not share an ancestor.</p>
+</div>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-p2p">
+<span class="sig-name descname"><span class="pre">--p2p</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;capability&gt;</span></span><a class="headerlink" href="#cmdoption-p2p" title="Link to this definition"></a></dt>
+<dd><p>Print the peer-to-peer (P2P) capability matrix between GPU devices for the
+requested capability.</p>
+<p>The capability argument selects which P2P property to probe:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Value</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">r</span></code></p></td>
+<td><p>P2P read/write access (<code class="docutils literal notranslate"><span class="pre">w</span></code> accepted as an alias; Level Zero reports
+this as a single unified capability)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">n</span></code></p></td>
+<td><p>MDF fabric connectivity</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">a</span></code></p></td>
+<td><p>P2P atomic operations</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
+<td><p>PCIe P2P access</p></td>
+</tr>
+</tbody>
+</table>
+<p>The matrix uses the following symbols:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Symbol</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>X</p></td>
+<td><p>Self</p></td>
+</tr>
+<tr class="row-odd"><td><p>OK</p></td>
+<td><p>Capability supported</p></td>
+</tr>
+<tr class="row-even"><td><p>NS</p></td>
+<td><p>Not supported</p></td>
+</tr>
+<tr class="row-odd"><td><p>?</p></td>
+<td><p>Query failed (driver or device error)</p></td>
 </tr>
 </tbody>
 </table>
@@ -245,6 +326,10 @@ xpu-smi topology -m
 </div>
 <p>Print the full CPU/GPU interconnect matrix:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>topology<span class="w"> </span>-m
+</pre></div>
+</div>
+<p>Print the P2P read/write capability matrix between GPUs:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>topology<span class="w"> </span>--p2p<span class="w"> </span>r
 </pre></div>
 </div>
 </section>

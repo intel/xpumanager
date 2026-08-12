@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#obtaining-firmware-binaries-for-arc-pro-battlemage-gpus">Obtaining Firmware Binaries for Arc Pro (Battlemage) GPUs</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="amc.html">AMC</a></li>
@@ -179,8 +180,9 @@ xpu-smi updatefw -t AMC -f [imageFilePath]
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-d">
 <span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
-<dd><p>The device ID or PCI BDF address to update. If not specified, the firmware
-image is applied to all compatible devices.</p>
+<dd><p>The device ID or PCI BDF address to update. Accepts a comma-separated list to
+update several devices at once (e.g., <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,1,4</span></code>). If not specified, the
+firmware image is applied to all compatible devices.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -261,6 +263,42 @@ This option applies to GFX firmware only.</p>
 <p>Force GFX firmware update even if up to date:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>updatefw<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-t<span class="w"> </span>GFX<span class="w"> </span>-f<span class="w"> </span>/path/to/gfx_firmware.bin<span class="w"> </span>--force
 </pre></div>
+</div>
+</section>
+<section id="obtaining-firmware-binaries-for-arc-pro-battlemage-gpus">
+<h2>Obtaining Firmware Binaries for Arc Pro (Battlemage) GPUs<a class="headerlink" href="#obtaining-firmware-binaries-for-arc-pro-battlemage-gpus" title="Link to this heading"></a></h2>
+<p>Firmware images for Intel(R) Arc Pro Series (Battlemage / BMG) GPUs are
+distributed through the Linux Vendor Firmware Service (LVFS). To gather the
+binaries required by the <code class="docutils literal notranslate"><span class="pre">updatefw</span></code> command:</p>
+<ol class="arabic">
+<li><p>Browse the LVFS catalog and search for your device at
+<a class="reference external" href="https://fwupd.org/lvfs/search?value=Arc+Battlemage">LVFS Arc Battlemage search</a>,
+then navigate to the exact Arc Pro GPU SKU you want to update.</p></li>
+<li><p>On that device’s page, click <strong>Download archive</strong> to download the cabinet
+(<code class="docutils literal notranslate"><span class="pre">.cab</span></code>) file for that BMG GPU.</p></li>
+<li><p>Use the <code class="docutils literal notranslate"><span class="pre">cabextract</span></code> tool to extract the contents of the <code class="docutils literal notranslate"><span class="pre">.cab</span></code> archive.
+It contains multiple firmware files — typically <code class="docutils literal notranslate"><span class="pre">fwcode</span></code>, <code class="docutils literal notranslate"><span class="pre">fwdata</span></code>,
+<code class="docutils literal notranslate"><span class="pre">opromcode</span></code>, and <code class="docutils literal notranslate"><span class="pre">opromdata</span></code> for your specific device. Choose the file
+matching the firmware type you want to update.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cabextract<span class="w"> </span>firmware-archive.cab
+</pre></div>
+</div>
+</li>
+<li><p>Confirm the type is supported by <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> — run <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">updatefw</span> <span class="pre">--help</span></code>
+to list the supported firmware types (see the <code class="docutils literal notranslate"><span class="pre">-t</span></code> option above for the
+mapping). If the type is supported, feed the extracted file to the update
+command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>updatefw<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-t<span class="w"> </span>GFX<span class="w"> </span>-f<span class="w"> </span>/path/to/fwcode
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The file names inside the cabinet map to the <code class="docutils literal notranslate"><span class="pre">updatefw</span></code> firmware types
+(for example, <code class="docutils literal notranslate"><span class="pre">fwcode</span></code> / <code class="docutils literal notranslate"><span class="pre">fwdata</span></code> correspond to the GFX code and data
+images). Only the types listed under the <code class="docutils literal notranslate"><span class="pre">-t</span></code> option can be flashed with
+<code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code>.</p>
 </div>
 </section>
 </section>

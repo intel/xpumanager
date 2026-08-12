@@ -326,6 +326,17 @@ addressed by either:</p>
 <li><p><strong>Device ID</strong>: An integer index assigned by the driver (e.g., <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>)</p></li>
 <li><p><strong>PCI BDF address</strong>: Bus/Device/Function notation (e.g., <code class="docutils literal notranslate"><span class="pre">0000:4d:00.0</span></code>)</p></li>
 </ul>
+<p>A comma-separated list combining either form selects multiple devices in a
+single invocation (e.g., <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,1,4</span></code> or <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,0000:4d:00.0</span></code>). Most
+subcommands that accept <code class="docutils literal notranslate"><span class="pre">--device</span></code> parse this list; duplicate entries are
+de-duplicated and the requested order is preserved. Some operations still
+require a single device or behave differently for multiple devices:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">amc</span></code> operates on a single device only and does not accept a list.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">--reset</span></code> / <code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">--coldreset</span></code> act on a single device.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">health</span></code> produces separate per-device output only when <code class="docutils literal notranslate"><span class="pre">--list</span></code> is used.</p></li>
+</ul>
+<p>Refer to each subcommand’s page for its exact device-selection behavior.</p>
 </section>
 <section id="query-gpu-field-reference">
 <h2>–query-gpu Field Reference<a class="headerlink" href="#query-gpu-field-reference" title="Link to this heading"></a></h2>
@@ -614,9 +625,17 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 <td><p>—</p></td>
 <td><p>RAS uncorrectable cache error counter</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable non-compute error counter</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable non-compute error counter</p></td>
+</tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.total</span></code></p></td>
 <td><p>—</p></td>
-<td><p>RAS non-compute (memory) error counter</p></td>
+<td><p>RAS non-compute error counter (correctable + uncorrectable)</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.active</span></code></p></td>
 <td><p>%</p></td>

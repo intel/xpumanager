@@ -29,8 +29,9 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   The device ID or PCI BDF address to update. If not specified, the firmware
-   image is applied to all compatible devices.
+   The device ID or PCI BDF address to update. Accepts a comma-separated list to
+   update several devices at once (e.g., ``-d 0,1,4``). If not specified, the
+   firmware image is applied to all compatible devices.
 
 .. option:: -t <type>, --type <type>
 
@@ -100,3 +101,42 @@ Force GFX firmware update even if up to date:
 .. code-block:: shell
 
    xpu-smi updatefw --device 0 -t GFX -f /path/to/gfx_firmware.bin --force
+
+Obtaining Firmware Binaries for Arc Pro (Battlemage) GPUs
+---------------------------------------------------------
+
+Firmware images for Intel(R) Arc Pro Series (Battlemage / BMG) GPUs are
+distributed through the Linux Vendor Firmware Service (LVFS). To gather the
+binaries required by the ``updatefw`` command:
+
+#. Browse the LVFS catalog and search for your device at
+   `LVFS Arc Battlemage search <https://fwupd.org/lvfs/search?value=Arc+Battlemage>`_,
+   then navigate to the exact Arc Pro GPU SKU you want to update.
+
+#. On that device's page, click **Download archive** to download the cabinet
+   (``.cab``) file for that BMG GPU.
+
+#. Use the ``cabextract`` tool to extract the contents of the ``.cab`` archive.
+   It contains multiple firmware files — typically ``fwcode``, ``fwdata``,
+   ``opromcode``, and ``opromdata`` for your specific device. Choose the file
+   matching the firmware type you want to update.
+
+   .. code-block:: shell
+
+      cabextract firmware-archive.cab
+
+#. Confirm the type is supported by ``xpu-smi`` — run ``xpu-smi updatefw --help``
+   to list the supported firmware types (see the ``-t`` option above for the
+   mapping). If the type is supported, feed the extracted file to the update
+   command:
+
+   .. code-block:: shell
+
+      xpu-smi updatefw --device 0 -t GFX -f /path/to/fwcode
+
+.. note::
+
+   The file names inside the cabinet map to the ``updatefw`` firmware types
+   (for example, ``fwcode`` / ``fwdata`` correspond to the GFX code and data
+   images). Only the types listed under the ``-t`` option can be flashed with
+   ``xpu-smi``.

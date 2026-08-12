@@ -38,6 +38,11 @@ Options
 
    Specify the device ID or PCI BDF address.
 
+   .. note::
+
+      Unlike the other commands, the ``amc`` command operates on a single device
+      only and does not accept a comma-separated list of devices.
+
 .. option:: --gpureset
 
    Reset GPU(s) via AMC. If ``--device`` is not specified, all GPUs are reset.
