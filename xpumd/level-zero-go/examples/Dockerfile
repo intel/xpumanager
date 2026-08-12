@@ -24,7 +24,7 @@ ARG METEE_VERSION=6.2.4
 ARG METEE_COMMIT=2e9390294f47c3d88590cb4a6e0293e31fd4a9db
 
 WORKDIR /debs/
-COPY level-zero/$CHECKSUMS_LOADER level-zero/$CHECKSUMS_BACKEND .
+COPY level-zero/$CHECKSUMS_LOADER level-zero/$CHECKSUMS_BACKEND ./
 
 # Fetch & extract backend package contents (to be copied to final stage)
 RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
@@ -88,10 +88,10 @@ ARG APP=list-sysman
 COPY --from=builder /out/ /
 COPY --from=builder /igsc-install/usr/local/lib /usr/local/lib
 
-# Install Sysman distro dep & symlink example to entrypoint
+# Install Sysman dep & strace tool from distro & symlink example to entrypoint
 RUN apt-get update && \
     # Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
-    apt-get install -y libnl-genl-3-200 && \
+    apt-get install -y libnl-genl-3-200 strace && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     ln -s /usr/local/bin/${APP} /entrypoint
 
