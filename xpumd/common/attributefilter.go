@@ -45,16 +45,6 @@ func (f *AttributeFilter) Match(attrs pcommon.Map) bool {
 // AttributeFilterList is a list of AttributeFilter items.
 type AttributeFilterList []AttributeFilter
 
-// Validate checks if all filters in the list are valid.
-func (l AttributeFilterList) Validate() error {
-	for _, f := range l {
-		if err := f.Validate(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Match reports whether attrs satisfies all filters in the list. All filters
 // must match for the list to match (AND semantics). An empty list matches
 // unconditionally.

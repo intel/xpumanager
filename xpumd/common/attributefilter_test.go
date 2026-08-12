@@ -8,6 +8,8 @@ package common
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
@@ -205,17 +207,21 @@ func TestAttributeFilterList_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
 		filters AttributeFilterList
-		wantErr bool
+		wantErr string
 	}{
 		{
 			name:    "single filter, valid",
 			filters: AttributeFilterList{{Key: "hw.type", Values: []string{"gpu"}}},
-			wantErr: false,
 		},
 		{
 			name:    "empty key",
 			filters: AttributeFilterList{{Key: "", Values: []string{"gpu"}}},
-			wantErr: true,
+			wantErr: "filter key is required",
+		},
+		{
+			name:    "empty value",
+			filters: AttributeFilterList{{Key: "hw.type", Values: []string{""}}},
+			wantErr: `filter value cannot be empty for key "hw.type"`,
 		},
 		{
 			name: "multiple filters, all valid",
@@ -223,7 +229,6 @@ func TestAttributeFilterList_Validate(t *testing.T) {
 				{Key: "hw.type", Values: []string{"gpu"}},
 				{Key: "hw.vendor", Values: []string{"acme"}},
 			},
-			wantErr: false,
 		},
 		{
 			name: "multiple filters, one invalid",
@@ -231,15 +236,18 @@ func TestAttributeFilterList_Validate(t *testing.T) {
 				{Key: "hw.type", Values: []string{"gpu"}},
 				{Key: "", Values: []string{"acme"}},
 			},
-			wantErr: true,
+			wantErr: "filter key is required",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.filters.Validate()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AttributeFilterList.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			err := confmap.Validate(&tt.filters)
+
+			if tt.wantErr == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.ErrorContains(t, err, tt.wantErr)
 			}
 		})
 	}
