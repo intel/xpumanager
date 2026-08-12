@@ -85,7 +85,7 @@ Drivers:
               ReadCounter: 1073741824
               WriteCounter: 536870912
               MaxBandwidth: 512000000000
-              Timestamp: 123456789
+              Timestamp: 1000000
 
         PowerDomains:
           - Properties:
@@ -100,7 +100,7 @@ Drivers:
                   Limit: 150000
             EnergyCounter:
               Energy: 5000000
-              Timestamp: 123456789
+              Timestamp: 1000000
             LimitsExt:
               - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
                 Source: 0  # ZES_POWER_SOURCE_ANY

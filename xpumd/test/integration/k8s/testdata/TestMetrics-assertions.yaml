@@ -248,7 +248,7 @@ UpdatedValues:
 
     # hw.energy
     - name: hw_energy_joules_total
-      value: 10
+      value: 55
       labels:
         <<: *dev_common_labels
         hw_name: power-1
