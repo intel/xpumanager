@@ -1,4 +1,6 @@
 /dist/
+/dist-stub/
+/.gocache-stub
 /tools/bin
 /tools/include
 /builder-config.yaml

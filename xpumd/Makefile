@@ -36,12 +36,28 @@ BACKEND ?= deb
 # PIE + full RELRO, drop all symbols
 GO_FLAGS := -buildmode=pie -bindnow -s -w
 
+# Use a dedicated GOCACHE for stub builds.
+# Go build cache does not distinguish between PKG_CONFIG_PATH values (set from env) so this
+# would otherwise "pollute" the cache for the real driver build.
+BUILD_STUB_ENV := PKG_CONFIG_PATH=$(CURDIR)/level-zero-go/level-zero-stub GOCACHE=$(CURDIR)/.gocache-stub
+
 .PHONY: build
 # Build xpumd + xpuinfo-cli
 build:
 	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
 	go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
 	go -C dist build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
+
+.PHONY: build-stub
+# Build xpumd + xpuinfo-cli against the level-zero-stub driver
+build-stub:
+	$(MAKE) -C level-zero-go/level-zero-stub all
+	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' -e 's#output_path: ./dist#output_path: ./dist-stub#' builder-config.yaml.in > builder-config.yaml
+	$(BUILD_STUB_ENV) go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
+	$(BUILD_STUB_ENV) go -C dist-stub build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
+	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
+	@echo "  SYSMAN_STUB_CONFIG=level-zero-go/level-zero-stub/example-config.yaml ./dist-stub/xpumd" --config config-example.yaml
+	@echo ""
 
 .PHONY: race
 # Build race detector versions (incompatible with PIE mode)
@@ -194,3 +210,4 @@ clean:
 	  tools/include/google/protobuf/*.proto \
 	  tools/bin/* \
 	  dist/*
+	rm -rf dist-stub .gocache-stub
