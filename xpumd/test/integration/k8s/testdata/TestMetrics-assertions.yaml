@@ -19,6 +19,12 @@ _templates:
     hw_memory_location: device
     hw_memory_type: hbm
     hw_name: mem-1
+  # Second memory module, without size information (see the stub driver config).
+  mem2_common_labels: &mem2_common_labels
+    <<: *dev_common_labels
+    hw_memory_location: system
+    hw_memory_type: ddr
+    hw_name: mem-2
   gpu_io_common_labels: &gpu_io_common_labels
     <<: *dev_common_labels
     hw_name: gpu-1-pci
@@ -131,6 +137,13 @@ InitialValues:
         hw_name: mem-1
         hw_state: ok
         hw_type: memory
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: mem-2
+        hw_state: ok
+        hw_type: memory
 
     # hw.status — ECC disabled in initial config
     - name: hw_status
@@ -172,6 +185,12 @@ InitialValues:
     - name: hw_memory_utilization_ratio
       value: 0.5
       labels: *mem_common_labels
+
+    # hw.memory.free, reported for the second module instead of the size /
+    # usage / utilization metrics as its size is unknown.
+    - name: hw_memory_free_bytes
+      value: 2147483648
+      labels: *mem2_common_labels
 
     # hw.temperature
     - name: hw_temperature_celsius
@@ -358,6 +377,14 @@ UpdatedValues:
         hw_name: mem-1
         hw_state: ok
         hw_type: memory
+    # second module stays healthy
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: mem-2
+        hw_state: ok
+        hw_type: memory
     - name: hw_status
       value: 1
       labels:
@@ -440,6 +467,11 @@ UpdatedValues:
     - name: hw_memory_bandwidth_utilization_ratio
       value: 0.003145728
       labels: *mem_common_labels
+
+    # hw.memory.free, only for mem2 (instead of the size/usage/utilization) as its size is unknown
+    - name: hw_memory_free_bytes
+      value: 1073741824
+      labels: *mem2_common_labels
 
     # hw.temperature — GPU above 105 °C threshold, memory above 85 °C threshold
     - name: hw_temperature_celsius

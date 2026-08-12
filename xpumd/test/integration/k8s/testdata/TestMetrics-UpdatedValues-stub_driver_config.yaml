@@ -107,6 +107,20 @@ Drivers:
               # 1 s later than the initial config: 1.5 GiB over 1 s
               Timestamp: 2000000
 
+          # Second module without size information: exercises the
+          # hw.memory.free fallback used when neither the physical nor the
+          # allocatable size is known.
+          - Properties:
+              Type: 1  # ZES_MEM_TYPE_DDR
+              OnSubdevice: false
+              SubdeviceId: 0
+              Location: 0  # ZES_MEM_LOC_SYSTEM
+              PhysicalSize: 0
+            State:
+              Health: 1  # ZES_MEM_HEALTH_OK
+              Free: 1073741824
+              Size: 0
+
         PowerDomains:
           - Properties:
               OnSubdevice: false
