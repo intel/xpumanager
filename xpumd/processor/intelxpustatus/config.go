@@ -83,16 +83,6 @@ func (c *Config) setDefaults() {
 	}
 }
 
-// Validate checks if the processor configuration is valid.
-func (c *Config) Validate() error {
-	for _, rule := range c.Rules {
-		if err := rule.validate(); err != nil {
-			return fmt.Errorf("invalid health rule %q: %w", rule.Name, err)
-		}
-	}
-	return nil
-}
-
 func (r *HealthRule) setDefaults() {
 	if r.StatusMetric == "" {
 		r.StatusMetric = "hw.status"
@@ -108,7 +98,12 @@ func (r *HealthRule) setDefaults() {
 	}
 }
 
-func (r *HealthRule) validate() error {
+// Validate checks if the configuration is valid.
+// NOTE: Does not validate the nested fields implementing Validate() (the
+// attribute filters).  The method is expected to be called by the
+// otel-collector validator (confmap.Validate()) which recursively validates
+// the nested types.
+func (r *HealthRule) Validate() error {
 	if r.Name == "" {
 		return fmt.Errorf("rule name cannot be empty")
 	}
@@ -118,38 +113,21 @@ func (r *HealthRule) validate() error {
 	if len(r.States) == 0 {
 		return fmt.Errorf("at least one state is required")
 	}
-	for _, t := range r.States {
-		if err := t.validate(); err != nil {
-			return fmt.Errorf("invalid state rule: %w", err)
-		}
-	}
-	if err := r.ComponentFilters.Validate(); err != nil {
-		return fmt.Errorf("invalid component filter: %w", err)
-	}
-	if err := r.ParentFilters.Validate(); err != nil {
-		return fmt.Errorf("invalid parent filter: %w", err)
-	}
 	return nil
 }
 
-func (t *StateRule) validate() error {
+// Validate checks if the configuration is valid.
+func (t *StateRule) Validate() error {
 	if t.StateName == "" {
 		return fmt.Errorf("state_name cannot be empty")
 	}
-	for _, rule := range t.Conditions {
-		if err := rule.validate(); err != nil {
-			return fmt.Errorf("invalid condition rule: %w", err)
-		}
-	}
 	return nil
 }
 
-func (r *ConditionRule) validate() error {
+// Validate checks if the configuration is valid.
+func (r *ConditionRule) Validate() error {
 	if math.IsNaN(r.Value) {
 		return fmt.Errorf("value cannot be NaN")
-	}
-	if err := r.ParentFilters.Validate(); err != nil {
-		return fmt.Errorf("invalid parent filter: %w", err)
 	}
 	return nil
 }
