@@ -3,6 +3,12 @@
 #
 # SPDX-License-Identifier: MIT
 
+# Use '--build-arg TOOLS="strace"' to build local XPUMD image that includes specified debugging tools
+# - works only for tools that do not need configs etc, only their libs
+# Then run image with other entrypoint than the default XPUMD one, e.g:
+# - "docker run -it --rm --cap-add SYS_PTRACE --entrypoint strace ... <image> -f /usr/local/bin/xpumd"
+ARG TOOLS=""
+
 ARG BASE_IMAGE=scratch
 
 # The build stage
@@ -76,6 +82,20 @@ RUN ./copy-files-and-package-info.sh /out \
         /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1 \
         /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
         /usr/local/lib/libigc.so.2
+
+# Install debug tool binary & its libs to where they get copied to final image
+ARG TOOLS
+RUN if [ -n "$TOOLS" ]; then \
+      apt-get update && \
+      apt-get install -y --no-install-recommends $TOOLS && \
+      ./copy-files-and-package-info.sh /out \
+      $(for pkg in $TOOLS; do \
+        for bin in $(dpkg -L $pkg | grep bin/); do \
+          echo $bin; \
+          ldd $bin | awk '/=>/{lib=$3; if(lib=="not") lib="missing:"$1; print lib}'; \
+        done \
+      done); \
+    fi
 
 WORKDIR /go/src/work
 
