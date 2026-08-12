@@ -662,6 +662,9 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 
 		amcFirmwareVersion(d, &outputLine);
 		props["amc_firmware_version"] = outputLine;
+
+		partNumber(d, &outputLine);
+		props["part_number"] = outputLine;
 	}
 
 	deviceID(d, &outputLine);
@@ -682,9 +685,6 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 
 	serialNumber(d, &outputLine);
 	props["serial_number"] = outputLine;
-
-	partNumber(d, &outputLine);
-	props["part_number"] = outputLine;
 
 	stepping(d, &outputLine);
 	props["device_stepping"] = outputLine;
@@ -2205,25 +2205,28 @@ ze_result_t cmdDiscovery::queryPartNumberFromAMC(devInfo *d, std::string *partNu
 /**
  * @brief Prints the FRU part number for a device when user runs discovery --dump 49.
  *
- * @param[in]  d           Pointer to the device info structure.
- * @param[out] outputLine  Receives the part number string, or "unknown" if unavailable.
+ * Only produces output for devices with an AMC. For non-AMC devices outputLine
+ * is set to an empty string.
  *
- * @retval ZE_RESULT_SUCCESS Always succeeds; outputLine is set to "unknown" when the part number
- *                           cannot be retrieved.
+ * @param[in]  d           Pointer to the device info structure.
+ * @param[out] outputLine  Receives the part number string, or "" if no AMC is present.
+ *
+ * @retval ZE_RESULT_SUCCESS Always; outputLine is empty when AMC is absent or retrieval fails.
  */
 ze_result_t cmdDiscovery::partNumber(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	*outputLine = "unknown";
-
-	if (d->dev->hasAmc()) {
-		std::string partNumFromAMC;
-		const auto amcResult = queryPartNumberFromAMC(d, &partNumFromAMC);
-		if (amcResult == ZE_RESULT_SUCCESS && !partNumFromAMC.empty()) {
-			DBG("Successfully retrieved part number from AMC: {}\n", partNumFromAMC.c_str());
-			*outputLine = partNumFromAMC;
-		}
+	*outputLine = "";
+	if (d->dev == nullptr || !d->dev->hasAmc()) {
+		DBG("Device {} has no AMC; skipping part number retrieval\n",
+			d->dev ? d->dev->getPCI()->getBDFStr().c_str() : "unknown");
+		return ZE_RESULT_SUCCESS;
+	}
+	std::string partNumFromAMC;
+	if (queryPartNumberFromAMC(d, &partNumFromAMC) == ZE_RESULT_SUCCESS && !partNumFromAMC.empty()) {
+		DBG("Successfully retrieved part number from AMC: {}\n", partNumFromAMC.c_str());
+		*outputLine = partNumFromAMC;
 	}
 
 	return ZE_RESULT_SUCCESS;
