@@ -36,7 +36,7 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.s
     libnl-genl-3-200
 
 WORKDIR /debs/
-COPY level-zero-go/level-zero/$CHECKSUMS_LOADER level-zero-go/level-zero/$CHECKSUMS_BACKEND .
+COPY level-zero-go/level-zero/$CHECKSUMS_LOADER level-zero-go/level-zero/$CHECKSUMS_BACKEND ./
 
 # Download and install Level-Zero and its dependencies
 RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
