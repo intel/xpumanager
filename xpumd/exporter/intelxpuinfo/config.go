@@ -111,24 +111,18 @@ type Config struct {
 }
 
 // Validate checks if the configuration is valid.
+// NOTE: Does not validate the nested fields implementing Validate(). The
+// method is expected to be called by the otel-collector validator
+// (confmap.Validate()) which recursively validates the nested types.
 func (cfg *Config) Validate() error {
 	if cfg.NetAddr.Transport != confignet.TransportTypeUnix {
 		return fmt.Errorf("unsupported transport type: %q, only %q is supported", cfg.NetAddr.Transport, confignet.TransportTypeUnix)
-	}
-	for i, hwTypeMapping := range cfg.HwStatusMappings {
-		if err := hwTypeMapping.Validate(); err != nil {
-			return fmt.Errorf("hw_status_mappings[%d]: %w", i, err)
-		}
 	}
 	return nil
 }
 
 // Validate checks if the mapping is valid and compiles derived fields.
 func (m *HwStatusMapping) Validate() error {
-	if err := m.Filters.Validate(); err != nil {
-		return fmt.Errorf("invalid filter: %w", err)
-	}
-
 	if m.HealthDomain == "" {
 		return fmt.Errorf("health_domain must be specified")
 
@@ -140,7 +134,7 @@ func (m *HwStatusMapping) Validate() error {
 	m.healthDomainTmpl = tmpl
 
 	for hwState, sm := range m.StateMapping {
-		if err := sm.Validate(hwState); err != nil {
+		if err := sm.validate(hwState); err != nil {
 			return err
 		}
 		sm.severityLevel = severityNames[sm.Severity]
@@ -162,9 +156,9 @@ func (m *HwStatusMapping) healthStatusFor(hwState string) (HwStateMapping, bool)
 	return HwStateMapping{}, false
 }
 
-// Validate checks if the state mapping is valid. hwState is the map key and
+// validate checks if the state mapping is valid. hwState is the map key and
 // is used only in error messages.
-func (m *HwStateMapping) Validate(hwState string) error {
+func (m *HwStateMapping) validate(hwState string) error {
 	if _, ok := severityNames[m.Severity]; !ok {
 		return fmt.Errorf("state_mapping[%q]: invalid severity %q, valid values are: %s",
 			hwState, m.Severity, slices.Sorted(maps.Keys(severityNames)))
