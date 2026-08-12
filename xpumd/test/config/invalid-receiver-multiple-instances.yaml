@@ -1,0 +1,13 @@
+# A second, differently named intel_xpu receiver instance
+#
+# expect-error: multiple intel_xpu instances not supported
+
+receivers:
+  intel_xpu/second:
+    collection_interval: 5s
+    sampling_interval: 1s
+
+service:
+  pipelines:
+    metrics:
+      receivers: [intel_xpu, intel_xpu/second]
