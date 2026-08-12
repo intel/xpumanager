@@ -29,27 +29,25 @@ func defaultConfig() component.Config {
 }
 
 // Validate checks if the receiver configuration is valid.
+// NOTE: Does not validate the nested fields implementing Validate(). The
+// method is expected to be called by the otel-collector validator
+// (confmap.Validate()) which recursively validates the nested types.
 func (c *Config) Validate() error {
-	if err := c.ControllerConfig.Validate(); err != nil {
-		return err
-	}
-
-	// Validate the embedded sysman config first as the checks below depend on its values (sampling_interval).
-	if err := c.Config.Validate(); err != nil {
-		return err
-	}
-
 	if c.CollectionInterval < time.Second {
 		return fmt.Errorf("collection_interval too short (%s), must be at least 1 second", c.CollectionInterval)
 	}
 
-	if c.CollectionInterval < 2*c.SamplingInterval {
-		return fmt.Errorf("collection_interval (%s) must be at least twice the sampling_interval (%s)", c.CollectionInterval, c.SamplingInterval)
+	samplingInterval := c.SamplingInterval
+	if samplingInterval <= 0 {
+		return fmt.Errorf("sampling_interval (%v) must be greater than zero", samplingInterval)
+	}
+	if c.CollectionInterval < 2*samplingInterval {
+		return fmt.Errorf("collection_interval (%s) must be at least twice the sampling_interval (%s)", c.CollectionInterval, samplingInterval)
 	}
 
-	if c.CollectionInterval/c.SamplingInterval > 1e5 {
+	if c.CollectionInterval/samplingInterval > 1e5 {
 		// Cap to 100k samples per collection cycle to avoid excessive memory use
-		return fmt.Errorf("too many samples per collection cycle (%d), maximum is 1e5", c.CollectionInterval/c.SamplingInterval)
+		return fmt.Errorf("too many samples per collection cycle (%d), maximum is 1e5", c.CollectionInterval/samplingInterval)
 	}
 
 	// Reserve one second (or at least 10 samples) extra for the aggregated sample buffer to mitigate possible jitter to not lose samples

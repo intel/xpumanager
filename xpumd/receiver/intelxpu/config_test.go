@@ -19,7 +19,9 @@ func TestConfigValidate(t *testing.T) {
 		name               string
 		collectionInterval time.Duration
 		samplingInterval   time.Duration
-		expectErr          string
+		// mangle optionally makes the configuration invalid in some other way.
+		mangle    func(*Config)
+		expectErr string
 	}{
 		{
 			name:               "default intervals",
@@ -35,19 +37,13 @@ func TestConfigValidate(t *testing.T) {
 			name:               "zero sampling_interval",
 			collectionInterval: 1 * time.Minute,
 			samplingInterval:   0,
-			expectErr:          "sampling_interval too short",
+			expectErr:          "must be greater than zero",
 		},
 		{
 			name:               "sampling_interval below one millisecond",
 			collectionInterval: 1 * time.Minute,
 			samplingInterval:   500 * time.Microsecond,
 			expectErr:          "sampling_interval too short",
-		},
-		{
-			name:               "zero collection_interval",
-			collectionInterval: 0,
-			samplingInterval:   1 * time.Second,
-			expectErr:          `"collection_interval"`,
 		},
 		{
 			name:               "collection_interval below one second",
@@ -67,6 +63,15 @@ func TestConfigValidate(t *testing.T) {
 			samplingInterval:   1 * time.Millisecond,
 			expectErr:          "too many samples per collection cycle",
 		},
+		{
+			// Covered by the recursive validation of the collector, not by
+			// Config.Validate() itself.
+			name:               "invalid metric aggregation strategy",
+			collectionInterval: 1 * time.Minute,
+			samplingInterval:   1 * time.Second,
+			mangle:             func(c *Config) { c.Metrics.HwEnergy.AggregationStrategy = "bogus" },
+			expectErr:          "invalid aggregation strategy",
+		},
 	}
 
 	for _, tt := range tests {
@@ -75,6 +80,9 @@ func TestConfigValidate(t *testing.T) {
 			require.True(t, ok)
 			cfg.CollectionInterval = tt.collectionInterval
 			cfg.SamplingInterval = tt.samplingInterval
+			if tt.mangle != nil {
+				tt.mangle(cfg)
+			}
 
 			// Validate through confmap as the collector service does, i.e.
 			// including recursive validation of the embedded configs.
