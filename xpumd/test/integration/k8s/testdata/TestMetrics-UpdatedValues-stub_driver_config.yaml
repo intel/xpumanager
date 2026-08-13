@@ -32,6 +32,10 @@ Drivers:
               Width: 16
               MaxBandwidth: 32000000000
             HaveBandwidthCounters: true
+          State:
+            Status: 2  # ZES_PCI_LINK_STATUS_QUALITY_ISSUES
+            QualityIssues: 3  # ZES_PCI_LINK_QUAL_ISSUE_FLAG_REPLAYS | ZES_PCI_LINK_QUAL_ISSUE_FLAG_SPEED
+            StabilityIssues: 0
           Stats:
             RxCounter: 3000000
             TxCounter: 6000000

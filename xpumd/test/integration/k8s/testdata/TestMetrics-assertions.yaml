@@ -28,6 +28,10 @@ _templates:
   gpu_io_common_labels: &gpu_io_common_labels
     <<: *dev_common_labels
     hw_name: gpu-1-pci
+  pci_link_status_common_labels: &pci_link_status_common_labels
+    <<: *dev_common_labels
+    hw_name: gpu-1-pci
+    hw_type: pci_link
   engine_compute_labels: &engine_compute_labels
     <<: *dev_common_labels
     hw_gpu_task: compute-all
@@ -153,6 +157,13 @@ InitialValues:
         hw_name: gpu-1
         hw_state: ecc_disabled
         hw_type: gpu
+
+    # hw.status — PCI link good in the initial config
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *pci_link_status_common_labels
+        hw_state: ok
 
     # hw.gpu.io
     - name: hw_gpu_io_bytes_total
@@ -399,6 +410,23 @@ UpdatedValues:
         hw_name: gpu-1
         hw_state: ecc_disabled
         hw_type: gpu
+
+    # hw.status — PCI link quality issues
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *pci_link_status_common_labels
+        hw_state: replays_issue
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *pci_link_status_common_labels
+        hw_state: speed_issue
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *pci_link_status_common_labels
+        hw_state: ok
 
     # hw.gpu.io
     - name: hw_gpu_io_bytes_total
