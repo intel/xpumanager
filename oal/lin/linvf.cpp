@@ -7,6 +7,7 @@
 #include <os.h>
 #include <osvf.h>
 #include <debug.h>
+#include "utility/logger/logger.h"
 #include <fstream>
 #include "lin.h"
 #include <sstream>
@@ -268,10 +269,10 @@ static std::string getSriovAdminPath(const std::string &drmCardName)
 {
 	std::string sysfsPath = "/sys/class/drm/" + drmCardName + "/device/sriov_admin";
 	if (fileExists(sysfsPath)) {
-		DBG("Using sysfs SR-IOV admin path: %s\n", sysfsPath.c_str());
+		DBG("Using sysfs SR-IOV admin path: {}\n", sysfsPath.c_str());
 		return sysfsPath;
 	}
-	INFO("sysfs sriov_admin not found for %s\n", drmCardName.c_str());
+	INFO("sysfs sriov_admin not found for {}\n", drmCardName.c_str());
 	return "";
 }
 
@@ -356,7 +357,7 @@ static uint64_t readAvailableVram(const std::string &bdfAddress)
 		return parseVramValueInBytes(line);
 	}
 
-	ERR("Failed to parse available VRAM from %s\n", mmPath.c_str());
+	ERR("Failed to parse available VRAM from {}\n", mmPath.c_str());
 	return 0;
 }
 
@@ -396,7 +397,7 @@ static uint64_t getFreeLmemSize(const std::string &path, bool isIGPU)
 		return parseVramValueInBytes(line);
 	}
 
-	ERR("Failed to parse visible_avail from %s\n", mmPath.c_str());
+	ERR("Failed to parse visible_avail from {}\n", mmPath.c_str());
 	return 0;
 }
 

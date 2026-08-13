@@ -90,4 +90,21 @@ if is_linux
 
   test('ps_test', ps_test)
 
+  offline_pages_test = executable(
+    'offline_pages_test',
+    'offline_pages_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: ial_cmn_lib,
+    dependencies: ial_cmn_test_deps,
+    cpp_args: ial_cmn_cpp_args,
+    link_args: ['-pie'],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('offline_pages_test', offline_pages_test)
+
 endif

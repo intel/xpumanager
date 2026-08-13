@@ -21,6 +21,7 @@
 #include <sstream>
 #include <iomanip>
 #include <nlohmann/json.hpp>
+#include <ze_api.h>
 
 enum statsCmdType
 {
@@ -271,6 +272,24 @@ private:
 	static void printOfflinePagesTable(const nlohmann::ordered_json &deviceJson);
 };
 
+/**
+ * @brief Aggregate verdict for one --list-offline-pages invocation.
+ *
+ * Offline-page reporting depends on the GPU, its driver and the build, so a run can
+ * end up with no data through no fault of any single device. This carries both halves
+ * of that outcome: what the process should exit with, and the single notice to print.
+ */
+struct OfflinePagesOutcome
+{
+	/// ZE_RESULT_SUCCESS only when every queried device succeeded; otherwise the first
+	/// failure seen, so a command that produced no data cannot report success.
+	ze_result_t exitResult = ZE_RESULT_SUCCESS;
+
+	/// One-shot "not supported" notice, empty when no device answered unsupported.
+	/// Returned rather than logged so the decision is testable without a GPU.
+	std::string summaryMessage;
+};
+
 class cmdStats : public cmds
 {
 
@@ -282,7 +301,13 @@ public:
 	ze_result_t ras(devInfo *d);
 	int run(arg_struct *args);
 
+	// Pure helpers for the --list-offline-pages path. Public so they can be unit tested
+	// without a GPU: pageOffline is not virtual, so the HAL cannot be substituted.
+	static void annotateOfflinePagesFailure(ze_result_t result, nlohmann::ordered_json &deviceJson);
+	static OfflinePagesOutcome summarizeOfflinePages(const std::vector<ze_result_t> &deviceResults);
+
 private:
+	static ze_result_t runListOfflinePages(std::vector<devInfo> &deviceList, Printer *printer, bool jsonMode);
 	static std::string formatIso8601Timestamp(const std::chrono::system_clock::time_point &timePoint);
 	static double computeUtilPercent(const EngineSnapshot &start, const EngineSnapshot &end);
 	static SummaryStats computeSummaryStats(const std::vector<double> &samples);

@@ -1957,7 +1957,7 @@ ze_result_t cmdConfig::setFanSpeed(devInfo *d)
 		!parseUint32NoThrow(numericStr, speedRaw)) {
 		ERR("Error: Invalid fan speed format: '{}'. Valid formats are:\n", fanSpeedStr.c_str());
 		ERR("  - NN to set percentage (0-100)\n");
-		ERR("  - NN%% to set percentage (0-100)\n");
+		ERR("  - NN% to set percentage (0-100)\n");
 		ERR("  - default to reset to automatic mode\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
@@ -1968,9 +1968,9 @@ ze_result_t cmdConfig::setFanSpeed(devInfo *d)
 	}
 	result = fanHandler->setFixedSpeedPercent(speedValue, fanId);
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in setting fan {} speed to {}%% on GPU {}\n", fanTarget.c_str(), speedValue, d->index);
+		PRINT("Succeeded in setting fan {} speed to {}% on GPU {}\n", fanTarget.c_str(), speedValue, d->index);
 	} else {
-		ERR("Failed to set fan {} speed to {}%% on GPU {}: 0x{:X} ({})\n", fanTarget.c_str(), speedValue, d->index,
+		ERR("Failed to set fan {} speed to {}% on GPU {}: 0x{:X} ({})\n", fanTarget.c_str(), speedValue, d->index,
 			result, l0_error_to_string(result));
 	}
 

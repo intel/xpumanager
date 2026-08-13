@@ -451,7 +451,7 @@ ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 	if (result == ZE_RESULT_SUCCESS) {
 		for (const auto &[tileId, temp] : vrTileTemps) {
 			vrTempPerTile[tileId].push_back(temp);
-			DBG("Tile %u voltage regulator temperature sample: %.2f C\n", tileId, temp);
+			DBG("Tile {} voltage regulator temperature sample: {:.2f} C\n", tileId, temp);
 		}
 	}
 	return ZE_RESULT_SUCCESS;
@@ -1392,9 +1392,9 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		if (pageResult == ZE_RESULT_SUCCESS) {
 			metrics.offlinePageCount = offlinePageCount;
 			deviceJson["offline_page_count"] = offlinePageCount;
-			DBG("Offline memory page count: %u\n", offlinePageCount);
+			DBG("Offline memory page count: {}\n", offlinePageCount);
 		} else {
-			DBG("Failed to get offline page count: 0x%X (%s)\n", pageResult, l0_error_to_string(pageResult));
+			DBG("Failed to get offline page count: 0x{:X} ({})\n", pageResult, l0_error_to_string(pageResult));
 		}
 	}
 
@@ -2067,8 +2067,9 @@ ze_result_t cmdStats::listOfflinePages(devInfo *device, nlohmann::ordered_json &
 	std::vector<memPageOfflineInfo> pages;
 	ze_result_t result = dev->getPageOffline()->getDeviceMemoryPageOfflineState(&count, &pages);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get offline pages for device %u: 0x%X (%s)\n", device->index, result,
-			l0_error_to_string(result));
+		// Reporting is the caller's job: it distinguishes "unsupported" (a capability
+		// answer, summarised once) from a genuine fault, and annotates deviceJson for
+		// JSON consumers. device_index / pci_bdf above are already set for that use.
 		return result;
 	}
 
@@ -2083,6 +2084,140 @@ ze_result_t cmdStats::listOfflinePages(devInfo *device, nlohmann::ordered_json &
 	}
 
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Annotate a device entry whose offline-page query failed
+ *
+ * Adds the failure to @p deviceJson instead of dropping the device, so JSON output
+ * covers every requested device and a consumer can tell "reporting unavailable" apart
+ * from "zero offline pages" — the two are indistinguishable if the entry is omitted.
+ *
+ * "supported" is added only for ZE_RESULT_ERROR_UNSUPPORTED_FEATURE: a genuine fault
+ * (lost device, bad argument) says nothing about whether the feature exists, and
+ * claiming otherwise would mislead.
+ *
+ * @param [in] result Non-success status returned for this device
+ * @param [in,out] deviceJson Device entry to annotate; device_index / pci_bdf are
+ *                            already present from listOfflinePages()
+ */
+void cmdStats::annotateOfflinePagesFailure(ze_result_t result, nlohmann::ordered_json &deviceJson)
+{
+	if (result == ZE_RESULT_SUCCESS) {
+		return;
+	}
+	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		deviceJson["supported"] = false;
+	}
+	deviceJson["error"] = l0_error_to_string(result);
+	deviceJson["error_code"] = xpum::compat::format("0x{:X}", result);
+}
+
+/**
+ * @brief Fold per-device offline-page results into an exit status and one notice
+ *
+ * An unsupported answer is a capability statement rather than a per-device fault, so
+ * it is summarised once for the whole command instead of once per device — the original
+ * defect reported two error lines for every device on the system.
+ *
+ * @param [in] deviceResults Status for each queried device, in query order
+ * @return OfflinePagesOutcome exit status plus the notice to emit (empty if none)
+ */
+OfflinePagesOutcome cmdStats::summarizeOfflinePages(const std::vector<ze_result_t> &deviceResults)
+{
+	OfflinePagesOutcome outcome;
+	size_t unsupportedCount = 0;
+
+	for (const ze_result_t result : deviceResults) {
+		if (result == ZE_RESULT_SUCCESS) {
+			continue;
+		}
+		if (outcome.exitResult == ZE_RESULT_SUCCESS) {
+			outcome.exitResult = result;
+		}
+		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			unsupportedCount++;
+		}
+	}
+
+	if (unsupportedCount == 0) {
+		return outcome;
+	}
+
+	if (unsupportedCount == deviceResults.size()) {
+		// Every device agreed, so report the capability once and include the status code
+		// so the outcome stays diagnosable without enabling debug logging.
+		outcome.summaryMessage = xpum::compat::format(
+			"Offline memory page reporting is not supported on this device or driver: "
+			"0x{:X} ({}).\n",
+			ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, l0_error_to_string(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE));
+	} else {
+		outcome.summaryMessage =
+			xpum::compat::format("Offline memory page reporting is not supported on {} of {} selected devices.\n",
+								 unsupportedCount, deviceResults.size());
+	}
+
+	return outcome;
+}
+
+/**
+ * @brief Query and report offline memory pages for every selected device
+ *
+ * Drives the exclusive --list-offline-pages path: queries each device, annotates
+ * failures for JSON consumers, prints per-device tables in text mode, and folds the
+ * per-device statuses into a single notice plus an exit status.
+ *
+ * @param [in] deviceList Devices selected on the command line
+ * @param [in] printer Printer used to render output
+ * @param [in] jsonMode True when -j was given, so output is one JSON document
+ * @return ze_result_t ZE_RESULT_SUCCESS only when every device succeeded
+ */
+ze_result_t cmdStats::runListOfflinePages(std::vector<devInfo> &deviceList, Printer *printer, bool jsonMode)
+{
+	const bool collectMultiple = (deviceList.size() > 1);
+	nlohmann::ordered_json outputJson;
+	if (jsonMode && collectMultiple) {
+		outputJson = nlohmann::ordered_json::array();
+	}
+
+	std::vector<ze_result_t> deviceResults;
+	deviceResults.reserve(deviceList.size());
+
+	for (auto &device : deviceList) {
+		nlohmann::ordered_json deviceJson;
+		const ze_result_t result = listOfflinePages(&device, deviceJson);
+		deviceResults.push_back(result);
+
+		if (result != ZE_RESULT_SUCCESS) {
+			annotateOfflinePagesFailure(result, deviceJson);
+			// An unsupported answer is summarised once after the loop; anything else is a
+			// real fault and is worth naming the device it happened on.
+			if (result != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+				ERR("Failed to list offline pages for device {}: 0x{:X} ({})\n", device.index, result,
+					l0_error_to_string(result));
+			}
+		}
+
+		if (jsonMode) {
+			if (collectMultiple) {
+				outputJson.push_back(deviceJson);
+			} else {
+				outputJson = deviceJson;
+			}
+		} else if (result == ZE_RESULT_SUCCESS) {
+			printer->print(&deviceJson);
+		}
+	}
+
+	const OfflinePagesOutcome outcome = summarizeOfflinePages(deviceResults);
+	if (!outcome.summaryMessage.empty()) {
+		ERR("{}", outcome.summaryMessage.c_str());
+	}
+
+	if (jsonMode) {
+		printer->print(&outputJson);
+	}
+	return outcome.exitResult;
 }
 
 /**
@@ -2103,7 +2238,7 @@ void OfflinePagesTextPrinter::printOfflinePagesTable(const nlohmann::ordered_jso
 	std::string pciBdf = deviceJson.value("pci_bdf", "N/A");
 	uint32_t count = deviceJson.value("offline_page_count", 0);
 
-	PRINT("Device %u (%s) - Offline Memory Pages: %u\n\n", deviceIndex, pciBdf.c_str(), count);
+	PRINT("Device {} ({}) - Offline Memory Pages: {}\n\n", deviceIndex, pciBdf.c_str(), count);
 
 	if (count == 0 || !deviceJson.contains("offline_pages") || deviceJson["offline_pages"].empty()) {
 		PRINT("No offline memory pages found.\n");
@@ -2115,7 +2250,7 @@ void OfflinePagesTextPrinter::printOfflinePagesTable(const nlohmann::ordered_jso
 	for (const auto &page : deviceJson["offline_pages"]) {
 		table.addRow(page.value("address", "N/A"), std::to_string(page.value("size", static_cast<uint32_t>(0))));
 	}
-	PRINT("%s", table.toString().c_str());
+	PRINT("{}", table.toString().c_str());
 }
 
 /**
@@ -2267,27 +2402,7 @@ int cmdStats::run(arg_struct *args)
 	}
 
 	if (statsCmds[STATS_LIST_OFFLINE_PAGES].enabled) {
-		for (auto &device : deviceList) {
-			nlohmann::ordered_json deviceJson;
-			result = listOfflinePages(&device, deviceJson);
-			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to list offline pages for device %u.\n", device.index);
-				continue;
-			}
-			if (statsCmds[STATS_JSON].enabled) {
-				if (collectMultiple) {
-					outputJson.push_back(deviceJson);
-				} else {
-					outputJson = deviceJson;
-				}
-			} else {
-				printer->print(&deviceJson);
-			}
-		}
-		if (statsCmds[STATS_JSON].enabled) {
-			printer->print(&outputJson);
-		}
-		return ZE_RESULT_SUCCESS;
+		return runListOfflinePages(deviceList, printer.get(), statsCmds[STATS_JSON].enabled);
 	}
 
 	for (auto &device : deviceList) {

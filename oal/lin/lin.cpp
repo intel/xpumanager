@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstring>
 #include <debug.h>
+#include "utility/logger/logger.h"
 #include <fcntl.h>
 #include <filesystem>
 #include "utility/compat/format.h"
@@ -23,6 +24,7 @@
 #include <pwd.h>
 #include <spawn.h>
 #include <sys/utsname.h>
+#include <system_error>
 #include <sys/wait.h>
 #include <syncstream>
 #include <termios.h>
@@ -121,7 +123,8 @@ SystemCommandResult execCommand(const std::string &command)
 		} else if (bytesRead == 0) {
 			break;
 		} else if (errno != EINTR) {
-			ERR("read() failed during command execution: %s\n", strerror(errno));
+			// std::system_category() is thread safe, unlike strerror().
+			ERR("read() failed during command execution: {}\n", std::system_category().message(errno));
 			readError = true;
 			break;
 		}
@@ -134,7 +137,7 @@ SystemCommandResult execCommand(const std::string &command)
 		waitResult = waitpid(pid, &status, 0);
 	} while (waitResult < 0 && errno == EINTR);
 	if (waitResult < 0) {
-		ERR("waitpid failed: %s\n", strerror(errno));
+		ERR("waitpid failed: {}\n", std::system_category().message(errno));
 		return {result, -1};
 	}
 	const int exitcode = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
@@ -982,7 +985,7 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 				const std::string name = component.string();
 				if (isValidBdf(name) && name != bdf) {
 					linkBdf = name;
-					DBG("Using root port BDF %s for link attributes of %s\n", linkBdf.c_str(), bdf.c_str());
+					DBG("Using root port BDF {} for link attributes of {}\n", linkBdf.c_str(), bdf.c_str());
 					break;
 				}
 			}
@@ -996,7 +999,7 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 				try {
 					speedGTs = std::stod(speedStr);
 				} catch (const std::exception &) {
-					ERR("Failed to parse max_link_speed for %s: \"%s\"\n", linkBdf.c_str(), speedStr.c_str());
+					ERR("Failed to parse max_link_speed for {}: \"{}\"\n", linkBdf.c_str(), speedStr.c_str());
 				}
 			}
 			info.pcieGeneration = pcieSpeedToGeneration(speedGTs);
@@ -1009,7 +1012,7 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 				try {
 					info.maxLinkWidth = std::stoi(widthStr);
 				} catch (const std::exception &) {
-					ERR("Failed to parse max_link_width for %s: \"%s\"\n", linkBdf.c_str(), widthStr.c_str());
+					ERR("Failed to parse max_link_width for {}: \"{}\"\n", linkBdf.c_str(), widthStr.c_str());
 				}
 			}
 
@@ -1019,7 +1022,7 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 			pciPropsList->push_back(std::move(info));
 		}
 	} catch (const fs::filesystem_error &e) {
-		ERR("Error accessing %s: %s\n", kXeDriverPath.data(), e.what());
+		ERR("Error accessing {}: {}\n", kXeDriverPath.data(), e.what());
 		return -1;
 	}
 
