@@ -11,6 +11,8 @@ LEVEL_ZERO_GO_MODULES := $(foreach m,$(GO_MODULES),$(if $(findstring level-zero-
 # Filter out level-zero-go and test/
 XPUMD_GO_MODULES := $(filter-out $(LEVEL_ZERO_GO_MODULES) $(filter test/%,$(GO_MODULES)),$(GO_MODULES))
 
+WHAT ?=
+
 .PHONY: help
 help:
 	@echo -e "\nTargets:\n$$(grep '^[^#:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
@@ -108,8 +110,11 @@ COVERAGE_DIR := coverage
 test: test-daemon test-config test-bindings
 
 .PHONY: test-daemon
+# Run xpumd unit tests.
+# Select tests with WHAT=<regexp>
 test-daemon:
-	@level-zero-go/hack/go-test-coverage.sh $(COVERAGE_DIR) $(XPUMD_GO_MODULES)
+	@GO_TEST_FLAGS="$(if $(WHAT),-run $(WHAT))" \
+	  level-zero-go/hack/go-test-coverage.sh $(COVERAGE_DIR) $(XPUMD_GO_MODULES)
 	@echo "✓ All tests passed"
 
 .PHONY: coverage
@@ -132,15 +137,19 @@ test-config: build
 	scripts/run-config-tests.sh
 
 .PHONY: test-integration-kind
+# Run integration tests in an ephemeral kind cluster.
+# Select tests with WHAT=<regexp>
 test-integration-kind: docker-build
-	scripts/run-integration-tests.sh \
+	RUN_REGEX='$(WHAT)' scripts/run-integration-tests.sh \
 		--image-repository=$(IMAGE_REPOSITORY) \
 		--image-tag=$(IMAGE_TAG) \
 		--kind-load-image
 
 .PHONY: test-integration-existing-cluster
+# Run integration tests in the currently configured cluster.
+# Select tests with WHAT=<regexp>
 test-integration-existing-cluster:
-	scripts/run-integration-tests.sh \
+	RUN_REGEX='$(WHAT)' scripts/run-integration-tests.sh \
 		--image-repository=$(IMAGE_REPOSITORY) \
 		--image-tag=$(IMAGE_TAG) \
 		--use-existing-cluster \
