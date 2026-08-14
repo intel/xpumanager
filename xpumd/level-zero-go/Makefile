@@ -6,6 +6,12 @@
 Q := @
 PACKAGES := core sysman sysman/exp sysman/exp/intel
 
+# Hand-written C sources of the Go packages, i.e. excluding the vendored
+# headers, the generated cgo helpers and level-zero-stub (which has its own
+# formatting targets).
+C_SOURCES := $(shell git ls-files '*.c' '*.h' | \
+	     grep -v -e '^level-zero/' -e '^include/' -e '^level-zero-stub/' -e '/cgo_helpers\.')
+
 # --- Helper targets ---
 
 .PHONY: help
@@ -96,8 +102,13 @@ golint:
 	  golangci/golangci-lint:v2.6.2 golangci-lint run --color=always
 
 .PHONY: check-format
-check-format: check-go-format
+check-format: check-go-format check-c-format
 	$(MAKE) -C level-zero-stub check-format
+
+.PHONY: check-c-format
+check-c-format:
+	@echo "Checking clang-format formatting..."
+	@clang-format --dry-run --Werror $(C_SOURCES)
 
 .PHONY: check-go-format
 check-go-format:
