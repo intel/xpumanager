@@ -6,6 +6,7 @@ package sysman
 import (
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
@@ -204,6 +205,84 @@ func testComponentActionSuccess[C any](t *testing.T, getComp func(*testing.T, in
 	t.Helper()
 	cfg := th.NewConfig("Success", nil, opts...)
 	th.Action(t, cfg, componentGetter(cfg, getComp), action)
+}
+
+// ------------------------------------------------------------------
+// Handle getters
+// ------------------------------------------------------------------
+
+// component is implemented by all wrapper types of the device components (Engine, Memory, etc).
+type component interface {
+	Handle() unsafe.Pointer
+	Device() *Device
+}
+
+func testHandleGetters[C component](t *testing.T, name string, getComp func(*testing.T, int, int, int) C) {
+	t.Helper()
+	t.Run(name, func(t *testing.T) {
+		comp := getComp(t, 0, 0, 0)
+		assert.NotNil(t, comp.Handle())
+		require.NotNil(t, comp.Device())
+		assert.Equal(t, getDevice(t, 0, 0).getHandle(), comp.Device().getHandle())
+	})
+}
+
+func TestHandleGetters(t *testing.T) {
+	th.LoadConfig(t, driverConfigDefault)
+	t.Run("Driver", func(t *testing.T) {
+		assert.NotNil(t, getDriver(t, 0).Handle())
+	})
+	t.Run("Device", func(t *testing.T) {
+		assert.NotNil(t, getDevice(t, 0, 0).Handle())
+	})
+	testHandleGetters(t, "Diagnostics", getDiagnostic)
+	testHandleGetters(t, "Engine", getEngine)
+	testHandleGetters(t, "FabricPort", getFabricPort)
+	testHandleGetters(t, "Fan", getFan)
+	testHandleGetters(t, "Firmware", getFirmware)
+	testHandleGetters(t, "Frequency", getFrequency)
+	testHandleGetters(t, "Led", getLed)
+	testHandleGetters(t, "Memory", getMemory)
+	testHandleGetters(t, "Overclock", getOcDomain)
+	testHandleGetters(t, "Performance", getPerf)
+	testHandleGetters(t, "Power", getPower)
+	testHandleGetters(t, "Psu", getPsu)
+	testHandleGetters(t, "Ras", getRas)
+	testHandleGetters(t, "Scheduler", getScheduler)
+	testHandleGetters(t, "Standby", getStandby)
+	testHandleGetters(t, "Temperature", getTemperature)
+}
+
+func testHasExtension(t *testing.T, name string, drvIdx int, extensions []string) {
+	t.Helper()
+	t.Run(name, func(t *testing.T) {
+		drv := getDriver(t, drvIdx)
+		dev := getDevice(t, drvIdx, 0)
+
+		// Devices see the extensions of their driver
+		for _, ext := range extensions {
+			assert.True(t, drv.HasExtension(ext), "driver extension %q", ext)
+			assert.True(t, dev.HasExtension(ext), "device extension %q", ext)
+		}
+		assert.False(t, drv.HasExtension("ZES_extension_nonexistent"))
+		assert.False(t, dev.HasExtension("ZES_extension_nonexistent"))
+	})
+}
+
+func TestHasExtension(t *testing.T) {
+	th.LoadConfig(t, driverConfigDefault)
+	testHasExtension(t, "Driver0", 0, []string{
+		RAS_GET_STATE_EXP_NAME,
+		"ZES_extension_bar",
+	})
+	testHasExtension(t, "Driver1", 1, []string{
+		DEVICE_ECC_DEFAULT_PROPERTIES_EXT_NAME,
+		DEVICE_EXT_STATE_NAME,
+		ENGINE_ACTIVITY_EXT_NAME,
+		OEM_SERIAL_ID_EXT_NAME,
+		PCI_LINK_SPEED_DOWNGRADE_EXT_NAME,
+		POWER_LIMITS_EXT_NAME,
+	})
 }
 
 // ------------------------------------------------------------------

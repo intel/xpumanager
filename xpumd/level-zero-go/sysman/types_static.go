@@ -12,215 +12,196 @@ package sysman
 #include "cgo_helpers.h"
 */
 import "C"
-import "github.com/intel/level-zero-go/internal"
+import (
+	"unsafe"
+
+	"github.com/intel/level-zero-go/internal"
+)
 
 // Wrappers for handles
 //
 // This section defines wrapper types for the Sysman API handles
 
+// zesHandle is the set of Level Zero handle types that the higher level wrapper types are built on.
+type zesHandle interface {
+	driverHandle | deviceHandle | schedHandle | perfHandle | pwrHandle |
+		freqHandle | engineHandle | standbyHandle | firmwareHandle | memHandle |
+		fabricPortHandle | tempHandle | psuHandle | fanHandle | ledHandle |
+		rasHandle | diagHandle | overclockHandle
+}
+
+// handleWrapper is embedded in the wrapper types to hold the Level Zero handle of the wrapped component.
+type handleWrapper[H zesHandle] struct {
+	handle H
+}
+
+// Handle returns the underlying Level Zero handle of the component
+// (zes_engine_handle_t for Engine, zes_mem_handle_t for Memory etc).
+//
+// It exists for implementing bindings for experimental or vendor extension
+// APIs that this package does not cover (see the sysman/exp packages). Not
+// meant for general use.
+func (w *handleWrapper[H]) Handle() unsafe.Pointer {
+	return unsafe.Pointer(w.handle)
+}
+
+func (w *handleWrapper[H]) setHandle(h H) {
+	w.handle = h
+}
+
+func (w *handleWrapper[H]) getHandle() H {
+	return w.handle
+}
+
+// deviceRef is embedded in the wrapper types of the components that are enumerated from a device.
+type deviceRef struct {
+	device *Device
+}
+
+// Device returns the device that the component was enumerated from. See Handle for the intended use.
+func (w *deviceRef) Device() *Device {
+	return w.device
+}
+
+func (w *deviceRef) setDevice(d *Device) {
+	w.device = d
+}
+
 // Driver provides access to Sysman API driver functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#driver-functions
 type Driver struct {
-	handle     driverHandle
+	handleWrapper[driverHandle]
 	extensions map[string]bool
 }
 
-func (w *Driver) setHandle(h driverHandle) {
-	w.handle = h
+// HasExtension reports whether the driver advertises the given extension.
+func (w *Driver) HasExtension(name string) bool {
+	return w.extensions[name]
 }
 
 // Device provides access to Sysman API device functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#device-functions
 type Device struct {
-	handle     deviceHandle
+	handleWrapper[deviceHandle]
 	extensions map[string]bool
 }
 
-func (w *Device) setHandle(h deviceHandle) {
-	w.handle = h
-}
-
-func (w *Device) getHandle() deviceHandle {
-	return w.handle
+// HasExtension reports whether the driver of this device advertises the given
+// extension.
+func (w *Device) HasExtension(name string) bool {
+	return w.extensions[name]
 }
 
 // Overclock provides access to Sysman API overclock functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#overclock-functions
 type Overclock struct {
-	handle overclockHandle
-}
-
-func (w *Overclock) setHandle(h overclockHandle) {
-	w.handle = h
+	handleWrapper[overclockHandle]
+	deviceRef
 }
 
 // Diagnostics provides access to Sysman API diagnostics functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#diagnostics-functions
 type Diagnostics struct {
-	handle diagHandle
-}
-
-func (w *Diagnostics) setHandle(h diagHandle) {
-	w.handle = h
+	handleWrapper[diagHandle]
+	deviceRef
 }
 
 // Engine provides access to Sysman API engine functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#engine-functions
 type Engine struct {
-	handle engineHandle
-	device *Device
-}
-
-func (w *Engine) setHandle(h engineHandle) {
-	w.handle = h
-}
-
-func (w *Engine) setDevice(d *Device) {
-	w.device = d
+	handleWrapper[engineHandle]
+	deviceRef
 }
 
 // FabricPort provides access to Sysman API fabric functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#fabric-functions
 type FabricPort struct {
-	handle fabricPortHandle
-}
-
-func (w *FabricPort) setHandle(h fabricPortHandle) {
-	w.handle = h
-}
-
-func (w *FabricPort) getHandle() fabricPortHandle {
-	return w.handle
+	handleWrapper[fabricPortHandle]
+	deviceRef
 }
 
 // Fan provides access to Sysman API fan functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#fan-functions
 type Fan struct {
-	handle fanHandle
-}
-
-func (w *Fan) setHandle(h fanHandle) {
-	w.handle = h
+	handleWrapper[fanHandle]
+	deviceRef
 }
 
 // Firmware provides access to Sysman API firmware functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#firmware-functions
 type Firmware struct {
-	handle firmwareHandle
-}
-
-func (w *Firmware) setHandle(h firmwareHandle) {
-	w.handle = h
+	handleWrapper[firmwareHandle]
+	deviceRef
 }
 
 // Frequency provides access to Sysman API frequency functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#frequency-functions
 type Frequency struct {
-	handle freqHandle
-}
-
-func (w *Frequency) setHandle(h freqHandle) {
-	w.handle = h
+	handleWrapper[freqHandle]
+	deviceRef
 }
 
 // Led provides access to Sysman API LED functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#led-functions
 type Led struct {
-	handle ledHandle
-}
-
-func (w *Led) setHandle(h ledHandle) {
-	w.handle = h
+	handleWrapper[ledHandle]
+	deviceRef
 }
 
 // Memory provides access to Sysman API memory functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#memory-functions
 type Memory struct {
-	handle memHandle
-}
-
-func (w *Memory) setHandle(h memHandle) {
-	w.handle = h
+	handleWrapper[memHandle]
+	deviceRef
 }
 
 // Performance provides access to Sysman API performance functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#performance-functions
 type Performance struct {
-	handle perfHandle
-}
-
-func (w *Performance) setHandle(h perfHandle) {
-	w.handle = h
+	handleWrapper[perfHandle]
+	deviceRef
 }
 
 // Power provides access to Sysman API power functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#power-functions
 type Power struct {
-	handle pwrHandle
-	device *Device
-}
-
-func (w *Power) setHandle(h pwrHandle) {
-	w.handle = h
-}
-
-func (w *Power) setDevice(d *Device) {
-	w.device = d
+	handleWrapper[pwrHandle]
+	deviceRef
 }
 
 // Psu provides access to Sysman API psu (power supply) functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#psu-functions
 type Psu struct {
-	handle psuHandle
-}
-
-func (w *Psu) setHandle(h psuHandle) {
-	w.handle = h
+	handleWrapper[psuHandle]
+	deviceRef
 }
 
 // Ras provides access to Sysman API RAS functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#ras-functions
 type Ras struct {
-	handle rasHandle
-	device *Device
-}
-
-func (w *Ras) setHandle(h rasHandle) {
-	w.handle = h
-}
-
-func (w *Ras) setDevice(d *Device) {
-	w.device = d
+	handleWrapper[rasHandle]
+	deviceRef
 }
 
 // Scheduler provides access to Sysman API scheduler functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#scheduler-functions
 type Scheduler struct {
-	handle schedHandle
-}
-
-func (w *Scheduler) setHandle(h schedHandle) {
-	w.handle = h
+	handleWrapper[schedHandle]
+	deviceRef
 }
 
 // Standby provides access to Sysman API standby functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#standby-functions
 type Standby struct {
-	handle standbyHandle
-}
-
-func (w *Standby) setHandle(h standbyHandle) {
-	w.handle = h
+	handleWrapper[standbyHandle]
+	deviceRef
 }
 
 // Temperature provides access to Sysman API temperature functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#temperature-functions
 type Temperature struct {
-	handle tempHandle
-}
-
-func (w *Temperature) setHandle(h tempHandle) {
-	w.handle = h
+	handleWrapper[tempHandle]
+	deviceRef
 }
 
 // Generics for handle wrappers
