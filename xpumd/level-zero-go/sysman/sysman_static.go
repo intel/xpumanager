@@ -8,12 +8,12 @@
 package sysman
 
 import (
-	"math"
 	"runtime"
 	"time"
 	"unsafe"
 
 	"github.com/intel/level-zero-go/core"
+	"github.com/intel/level-zero-go/internal"
 )
 
 func boolToByte(b bool) byte {
@@ -108,7 +108,7 @@ func (z *Driver) EventListen(timeout time.Duration, devices []*Device) (uint32, 
 	handles := wrappersToHandles[Device](devices)
 	var numEvents uint32
 	events := make([]EventTypeFlags, len(handles))
-	ms := durationToMillisecondsUint32(timeout)
+	ms := internal.DurationToMillisecondsUint32(timeout)
 	ret := zesDriverEventListen(z.handle, ms, uint32(len(handles)), handles, &numEvents, events)
 	return numEvents, events, ret.ToError()
 }
@@ -119,7 +119,7 @@ func (z *Driver) EventListenEx(timeout time.Duration, devices []*Device) (uint32
 	handles := wrappersToHandles[Device](devices)
 	var numEvents uint32
 	events := make([]EventTypeFlags, len(handles))
-	ms := durationToMillisecondsUint64(timeout)
+	ms := internal.DurationToMillisecondsUint64(timeout)
 	ret := zesDriverEventListenEx(z.handle, ms, uint32(len(handles)), handles, &numEvents, events)
 	return numEvents, events, ret.ToError()
 }
@@ -1302,30 +1302,4 @@ func (z *Temperature) GetState() (float64, error) {
 	var state float64
 	ret := zesTemperatureGetState(z.handle, &state)
 	return state, ret.ToError()
-}
-
-// durationToMillisecondsUint32 converts a time.Duration to milliseconds (uint32).
-// Negative durations are treated as infinite timeout (UINT32_MAX).
-// Durations that exceed UINT32_MAX-1 milliseconds are clamped to UINT32_MAX-1.
-func durationToMillisecondsUint32(d time.Duration) uint32 {
-	if d < 0 {
-		return math.MaxUint32
-	}
-
-	ms := d.Milliseconds()
-
-	if ms >= math.MaxUint32 {
-		return math.MaxUint32 - 1
-	}
-
-	return uint32(ms)
-}
-
-// durationToMillisecondsUint64 converts a time.Duration to milliseconds (uint64).
-// Negative durations are treated as infinite timeout (UINT64_MAX).
-func durationToMillisecondsUint64(d time.Duration) uint64 {
-	if d < 0 {
-		return math.MaxUint64
-	}
-	return uint64(d.Milliseconds())
 }
