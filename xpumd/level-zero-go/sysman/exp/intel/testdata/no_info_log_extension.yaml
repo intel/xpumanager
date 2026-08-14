@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: a driver advertises the driver event extension but not the info logs extension,
+# i.e. the extensions are resolved independently.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536 # ZES_INTEL_DRIVER_EVENT_EXP_VERSION_1_0
+
+    Devices:
+      - Properties: {}

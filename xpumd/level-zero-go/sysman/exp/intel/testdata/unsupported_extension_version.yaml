@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: a driver advertising the extensions in a major version that the
+# bindings do not support.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 131072 # ZE_MAKE_VERSION(2, 0)
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 131072 # ZE_MAKE_VERSION(2, 0)
+
+    Devices:
+      - Properties: {}
+
+    InfoLogs:
+      - Properties: {}

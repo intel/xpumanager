@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Default stub state for unit testing the Intel experimental sysman Go bindings.
+
+Drivers:
+  - ExtensionProperties:
+      # to get the Intel experimental info log APIs enabled
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+      # to get the Intel experimental driver scoped event APIs enabled
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536 # ZES_INTEL_DRIVER_EVENT_EXP_VERSION_1_0
+
+    # pending driver scoped events
+    Events: 65536 # ZES_INTEL_CPER_DATA_AVAILABLE
+
+    Devices:
+      - Properties: {}
+        # pending device scoped event
+        Events: 1 # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
+
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0 # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0 # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 1 # kilobytes
+          IsInstancedCollectionSupported: true
+        # reading does not consume the records, only whole records are returned
+        Records:
+          - Data: "CPER-RECORD-1"
+            # per-record metadata, the length and the offset of the record are
+            # computed by the stub
+            Address:
+              Domain: 0
+              Bus: 1
+              Device: 2
+              Function: 3
+            Uuid:
+              Id: "12345678-abcd-ef01-2345-6789abcdef01"
+            Timestamp: 1234567
+          - Data: "CPER-RECORD-2"
+      # a log that only supports collection into the global trace buffer
+      - Properties:
+          MaxSize: 1 # kilobytes
+          IsInstancedCollectionSupported: false

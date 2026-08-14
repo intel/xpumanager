@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Warning stub: reading the info log succeeds but the driver reports that it had
+# to drop records.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+
+    Devices:
+      - Properties: {}
+
+    InfoLogs:
+      - Properties:
+          MaxSize: 1 # kilobytes
+        Records:
+          - Data: "CPER-RECORD-1"
+        ReturnValues:
+          # the records above are read regardless of the warning
+          zesIntelInfoLogReadExp: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA
+          zesIntelInfoLogReadWithMetadataExp: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA

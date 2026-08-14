@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Error stub: the driver advertises the info logs extension but resolving the extension function addresses fails.
+
+Drivers:
+  - UnsupportedFeatures:
+      - GetExtensionFunctionAddress
+
+    ExtensionProperties:
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+      # to get the Intel experimental driver scoped event APIs enabled
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536 # ZES_INTEL_DRIVER_EVENT_EXP_VERSION_1_0
+
+    Devices:
+      - Properties: {}
+
+    InfoLogs:
+      - Properties: {}
