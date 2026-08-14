@@ -61,6 +61,17 @@ make generate-dockerized
 4. Use [stringer](https://pkg.go.dev/golang.org/x/tools/cmd/stringer) to
    generate stringers for enums.
 
+### Intel extension headers
+
+The Intel-specific experimental extensions (the `sysman/exp/intel` package) are
+declared in a header that is not part of the oneAPI Level-Zero release packages.
+Copies of the required headers are vendored in `include/intel/`. Update them against a
+[Graphics Compute Runtime](https://github.com/intel/compute-runtime) tree with
+
+```bash
+./hack/vendor-intel-header.sh <path-to-compute-runtime>
+```
+
 ## FAQ
 
 **Is Windows supported?**
@@ -71,4 +82,5 @@ Not yet.
 
 Go bindings currently cover the Sysman API part of Level-Zero, except
 for the deprecated functions (which will not be supported). Experimental
-functionality lives in the `sysman/exp` package.
+functionality lives in the `sysman/exp` package, and the Intel-specific
+experimental extensions in the `sysman/exp/intel` package.
