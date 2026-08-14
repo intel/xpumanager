@@ -941,12 +941,12 @@ Options:
   -h,--help                   Print this help message and exit
   -j,--json                   Print result in JSON format
 
-  -f,--file                   The file (a tar.gz) to archive all the debug logs
+  -f,--file                   The absolute path (a tar.gz) under /tmp or /var/tmp to archive all the debug logs
 ```
  
-Collect the GPU log files.
+Collect the GPU log files. The path must be an absolute path with no shell metacharacters, and its parent directory must resolve to /tmp or /var/tmp. Relative paths are not accepted.
 ```
-xpu-smi log -f 1217.tar.gz
+xpu-smi log -f /tmp/1217.tar.gz
 Done
 ```
  

@@ -129,7 +129,7 @@ bool Device::isUpgradingFw(void) noexcept {
     return false;
 }
 
-std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capability, Device* p_device) {
+std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capability, Device* p_device, int samplingPeriodNs) {
     switch (capability) {
         case DeviceCapability::METRIC_POWER:
             return [p_device](Callback_t callback) { p_device->getPower(callback); };
@@ -178,7 +178,7 @@ std::function<void(Callback_t)> Device::getDeviceMethod(DeviceCapability& capabi
         case DeviceCapability::METRIC_FABRIC_THROUGHPUT:
             return [p_device](Callback_t callback) { p_device->getFabricThroughput(callback); };
         case DeviceCapability::METRIC_PERF:
-            return [p_device](Callback_t callback) { p_device->getPerfMetrics(callback); };            
+            return [p_device, samplingPeriodNs](Callback_t callback) { p_device->getPerfMetrics(callback, samplingPeriodNs); };            
         default:
             break;
     }

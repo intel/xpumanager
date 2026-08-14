@@ -1931,7 +1931,7 @@ LOG_ERR:
 std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProcessState(int deviceId) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     xpum_result_t res;
-    uint32_t count;
+    uint32_t count = 0;
 
     res = xpumGetDeviceProcessState(deviceId, nullptr, &count);
     if (res != XPUM_OK) {
@@ -1944,6 +1944,7 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getDeviceProcessState(int deviceId)
                 break;
         }
         (*json)["errno"] = errorNumTranslate(res);
+	return json;
     }
     if (count > 0) {
         xpum_device_process_t dataArray[count];
@@ -2125,9 +2126,9 @@ std::unique_ptr<nlohmann::json> LibCoreStub::getXelinkTopology() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> LibCoreStub::runStress(int deviceId, uint32_t stressTime) {
+std::unique_ptr<nlohmann::json> LibCoreStub::runStress(int deviceId, uint32_t stressTime, uint32_t computeType) {
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
-    xpum_result_t res = xpumRunStress(deviceId, stressTime);
+    xpum_result_t res = xpumRunStressEx(deviceId, stressTime, computeType);
     if (res != XPUM_OK) {
         switch (res) {
             case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:

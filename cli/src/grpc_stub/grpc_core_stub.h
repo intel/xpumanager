@@ -131,7 +131,7 @@ class GrpcCoreStub : public CoreStub {
 
     std::vector<std::unique_ptr<nlohmann::json>> getMetricsFromSysfs(std::vector<std::string> bdfs);
 
-    std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime);
+    std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime, uint32_t computeType);
     std::unique_ptr<nlohmann::json> checkStress(int deviceId);
     
     std::string getPciSlotName(std::vector<std::string> &bdfs) {

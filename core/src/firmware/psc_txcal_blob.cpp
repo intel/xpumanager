@@ -215,11 +215,13 @@ std::vector<uint8_t> getPSCData(std::vector<uint8_t>& blob_data) {
         return std::vector<uint8_t>();
     }
 
-    uint32_t psc_size = psc_hdr->data_size + offsetof(psc_data, data);
-
-    if (blob_data.size() < psc_size) {
+    // Reject if data_size would overflow when added to the header offset.
+    // blob_data.size() >= offsetof(psc_data, data) is guaranteed by the earlier check.
+    size_t hdr_data_offset = offsetof(psc_data, data);
+    if (static_cast<size_t>(psc_hdr->data_size) > blob_data.size() - hdr_data_offset) {
         return std::vector<uint8_t>();
     }
+    size_t psc_size = static_cast<size_t>(psc_hdr->data_size) + hdr_data_offset;
 
     return std::vector<uint8_t>(blob_data.begin(), blob_data.begin() + psc_size);
 }
@@ -240,7 +242,7 @@ static std::vector<uint8_t> getTxCalBlobData(std::vector<uint8_t>& blob_data) {
         return std::vector<uint8_t>();
     }
 
-    uint32_t dataLen = txcal_hdr->num_settings * sizeof(txcal_settings);
+    size_t dataLen = static_cast<size_t>(txcal_hdr->num_settings) * sizeof(txcal_settings);
 
     if (blob_data.size() < dataLen + hdrLen) {
         return std::vector<uint8_t>();

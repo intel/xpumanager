@@ -122,7 +122,7 @@ class Device {
 
     virtual void getFabricThroughput(Callback_t callback) noexcept = 0;
 
-    virtual void getPerfMetrics(Callback_t callback) noexcept = 0;
+    virtual void getPerfMetrics(Callback_t callback, int samplingPeriodNs = -1) noexcept = 0;
 
     void addCapability(DeviceCapability& capability);
 
@@ -145,7 +145,7 @@ class Device {
 
     virtual bool isUpgradingFwResultReady(void) noexcept = 0;
 
-    static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device);
+    static std::function<void(Callback_t)> getDeviceMethod(DeviceCapability& capability, Device* p_device, int samplingPeriodNs = -1);
 
     void addEngine(uint64_t engine, zes_engine_group_t type, bool on_subdevice, uint32_t subdevice_id);
 

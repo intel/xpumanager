@@ -5,6 +5,9 @@
  */
 
 #include "util.h"
+#include <cstddef>
+#include <cstdio>
+#include <memory>
 
 namespace xpum {
 
@@ -15,17 +18,17 @@ int doCmd(std::string cmd, std::string& output) {
 
     cmd += " 2>&1";
 
-    FILE* pipe = popen(cmd.c_str(), "r");
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
     if (pipe != nullptr) {
         try {
             std::size_t bytesread;
-            while ((bytesread = std::fread(buffer, 1, 1024, pipe)) != 0) {
+            while ((bytesread = std::fread(buffer, 1, 1024, pipe.get())) != 0) {
                 result += std::string(buffer, bytesread);
             }
+            ret = pclose(pipe.release());
         } catch (...) {
-            pclose(pipe);
+            // pipe is closed automatically by unique_ptr destructor
         }
-        ret = pclose(pipe);
     }
     output = result;
     return ret;

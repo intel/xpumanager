@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <utility>
 #include <igsc_lib.h>
 
 #include "core/core.h"
@@ -444,11 +445,15 @@ void GPUDevice::getFabricThroughput(Callback_t callback) noexcept {
                                                   });
 }
 
-void GPUDevice::getPerfMetrics(Callback_t callback) noexcept {
-    GPUDeviceStub::instance().getPerfMetrics(ze_device_handle, ze_driver_handle,
-                                                  [callback](std::shared_ptr<void> ret, std::shared_ptr<BaseException> e) {
-                                                      callback(ret, e);
-                                                  });
+void GPUDevice::getPerfMetrics(Callback_t callback, int samplingPeriodNs) noexcept {
+    try {
+        GPUDeviceStub::instance().getPerfMetrics(ze_device_handle, ze_driver_handle,
+                                                std::move(callback), samplingPeriodNs);
+    } catch (const std::exception& e) {
+        XPUM_LOG_ERROR_NOEXCEPT("Failed to get perf metrics of device {}: {}", getId(), e.what());
+    } catch (...) {
+        XPUM_LOG_ERROR_NOEXCEPT("Failed to get perf metrics of device {}: unexpected exception", getId());
+    }
 }
 
 } // end namespace xpum

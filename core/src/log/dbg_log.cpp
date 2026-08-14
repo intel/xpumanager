@@ -4,8 +4,11 @@
  *  @file dbg_log.cpp
  */
 
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <fstream>
@@ -206,9 +209,44 @@ int genCmdOut(const string &uuid) {
 }
 
 int tarBall(const string &uuid, const char *fileName) {
-    string cmd = "tar -C /var/tmp/ -czf " + string(fileName) + " xpum-" + uuid;
-    SystemCommandResult scr = execCommand(cmd.c_str()) ;
-    return scr.exitStatus();
+    // Invoke tar directly via fork/execvp to avoid shell metacharacter injection.
+    // Open the output file with O_CREAT|O_EXCL|O_NOFOLLOW before forking to
+    // atomically create the file and prevent symlink-based TOCTOU attacks.
+    // tar writes the archive to stdout ("-czf -"), which is redirected to this fd.
+    string srcDir = "xpum-" + uuid;
+    int outFd = open(fileName, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0600);
+    if (outFd < 0) {
+        return -1;
+    }
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(outFd);
+        return -1;
+    }
+    if (pid == 0) {
+        // child: redirect stdout to the pre-opened fd, then exec tar
+        if (dup2(outFd, STDOUT_FILENO) < 0) {
+            _exit(127);
+        }
+        close(outFd);
+        char * const argv[] = {
+            const_cast<char *>("tar"),
+            const_cast<char *>("-C"),
+            const_cast<char *>("/var/tmp/"),
+            const_cast<char *>("-czf"),
+            const_cast<char *>("-"),  // write archive to stdout
+            const_cast<char *>(srcDir.c_str()),
+            nullptr
+        };
+        execvp("tar", argv);
+        _exit(127); // execvp failed
+    }
+    close(outFd);
+    int status = 0;
+    if (waitpid(pid, &status, 0) < 0) {
+        return -1;
+    }
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
 int removeTmp(const string &uuid) {

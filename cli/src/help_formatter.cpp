@@ -120,6 +120,7 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
                "  " + appName + " diag -d [deviceIds] --stress \n"
 #endif
                "  " + appName + " diag -d [deviceIds] --stress --stresstime [time]\n"
+               "  " + appName + " diag -d [deviceIds] --stress --stresstime [time] --stresstype [int|sp|dp|combo]\n"
 #ifndef DAEMONLESS
                "  " + appName + " diag -g [groupId] -l [level] \n"
                "  " + appName + " diag -g [groupId] -l [level] -j \n"
@@ -139,7 +140,8 @@ std::string HelpFormatter::make_usage(const CLI::App *app, std::string name) con
 #ifdef DAEMONLESS
                "  " + appName + " diag --stress\n"
 #endif
-               "  " + appName + " diag --stress --stresstime [time]\n";
+               "  " + appName + " diag --stress --stresstime [time]\n"
+               "  " + appName + " diag --stress --stresstime [time] --stresstype [int|sp|dp|combo]\n";
     } else if (app->get_name().compare("dump") == 0) {
 #ifndef DAEMONLESS
         return "\nUsage: " + appName + " dump [Options]\n"

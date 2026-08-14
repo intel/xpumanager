@@ -130,14 +130,14 @@ void DeviceManager::getDeviceList(
 }
 
 std::shared_ptr<MeasurementData> DeviceManager::getRealtimeMeasurementData(
-    MeasurementType type, std::string& device_id) {
+    MeasurementType type, std::string& device_id, int samplingPeriodNs) {
     std::shared_ptr<Device> p_device = getDevice(device_id);
     if (p_device == nullptr) {
         throw IlegalParameterException("device does not exist");
     }
 
     DeviceCapability capability = Utility::capabilityFromMeasurementType(type);
-    auto method = Device::getDeviceMethod(capability, p_device.get());
+    auto method = Device::getDeviceMethod(capability, p_device.get(), samplingPeriodNs);
     if (method == nullptr) {
         throw IlegalParameterException("method does not exist");
     }

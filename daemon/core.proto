@@ -141,6 +141,7 @@ message RunMultipleSpecificDiagnosticsByGroupRequest{
 message RunStressRequest {
     int32 deviceId = 1;
     uint32 stressTime = 2;
+    uint32 computeType = 3;
 }
 
 message CheckStressRequest {

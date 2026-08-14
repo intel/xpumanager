@@ -116,7 +116,7 @@ class GPUDeviceStub {
 
     void getFabricThroughput(const zes_device_handle_t& device, Callback_t callback) noexcept;
 
-    void getPerfMetrics(zes_device_handle_t& device, ze_driver_handle_t& driver, Callback_t callback) noexcept;
+    void getPerfMetrics(ze_device_handle_t& device, ze_driver_handle_t& driver, Callback_t callback, int samplingPeriodNs = -1) noexcept;
     static xpum_result_t getPowerLimitsExt(const zes_device_handle_t& device,
                                            std::vector<xpum_power_domain_ext_t>& power_domain_ext);
     static void getPowerLimits(const zes_device_handle_t& device,
@@ -242,7 +242,7 @@ private:
 
     static void toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data);
 
-    static std::shared_ptr<PerfMeasurementData> toGetPerfMetrics(ze_device_handle_t& device, ze_driver_handle_t& driver);
+    static std::shared_ptr<PerfMeasurementData> toGetPerfMetrics(ze_device_handle_t& device, ze_driver_handle_t& driver, int samplingPeriodNs = -1);
 
     //static std::shared_ptr<MeasurementData> toGetRasError(const zes_device_handle_t& device, const zes_ras_error_cat_t& rasCat, const zes_ras_error_type_t& rasType);
 
@@ -301,7 +301,8 @@ private:
                                            std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
                                            std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts,
                                            std::map<ze_device_handle_t, ze_event_pool_handle_t>& device_event_pools,
-                                           std::map<ze_device_handle_t, ze_event_handle_t>& device_events);
+                                           std::map<ze_device_handle_t, ze_event_handle_t>& device_events,
+                                           int samplingPeriodNs = -1);
 
     static std::string getPciSlot(zes_pci_address_t address);
     static std::string getOAMSocketId(zes_pci_address_t address);

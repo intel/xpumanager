@@ -10,11 +10,13 @@ namespace xpum {
 PCIeDowngrade::PCIeDowngrade(bool available, pciedown_state_t current) {
     this->pciedown_available = available;
     this->current = current;
+    this->action = PCIE_DOWNGRADE_ACTION_NONE;
 }
 
 PCIeDowngrade::PCIeDowngrade() {
     this->pciedown_available = false;
     this->current = PCIE_DOWNGRADE_STATE_UNAVAILABLE;
+    this->action = PCIE_DOWNGRADE_ACTION_NONE;
 }
 
 PCIeDowngrade::~PCIeDowngrade() {

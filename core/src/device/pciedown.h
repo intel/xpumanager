@@ -56,6 +56,6 @@ class PCIeDowngrade {
 
     pciedown_state_t current;
 
-    pciedown_action_t action;
+    pciedown_action_t action = PCIE_DOWNGRADE_ACTION_NONE;
 };
 } // end namespace xpum

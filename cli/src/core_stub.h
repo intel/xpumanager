@@ -60,7 +60,7 @@ class CoreStub {
     virtual std::shared_ptr<nlohmann::json> getDiagnosticsXeLinkThroughputResult(int deviceId, bool rawFpsStr)=0;
     virtual std::unique_ptr<nlohmann::json> runDiagnosticsByGroup(uint32_t groupId, int level, std::vector<int> targetTypes, bool rawComponentTypeStr)=0;
     virtual std::unique_ptr<nlohmann::json> getDiagnosticsResultByGroup(uint32_t groupId, bool rawComponentTypeStr)=0;
-    virtual std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime)=0;
+    virtual std::unique_ptr<nlohmann::json> runStress(int deviceId, uint32_t stressTime, uint32_t computeType)=0;
     virtual std::unique_ptr<nlohmann::json> checkStress(int deviceId)=0;
 
     virtual std::unique_ptr<nlohmann::json> precheck(xpum_precheck_options options, bool rawComponentTypeStr)=0;

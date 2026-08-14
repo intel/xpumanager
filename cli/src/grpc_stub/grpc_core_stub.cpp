@@ -2415,13 +2415,14 @@ std::unique_ptr<nlohmann::json> GrpcCoreStub::getXelinkTopology() {
     return json;
 }
 
-std::unique_ptr<nlohmann::json> GrpcCoreStub::runStress(int deviceId, uint32_t stressTime) {
+std::unique_ptr<nlohmann::json> GrpcCoreStub::runStress(int deviceId, uint32_t stressTime, uint32_t computeType) {
     assert(this->stub != nullptr);
     auto json = std::unique_ptr<nlohmann::json>(new nlohmann::json());
     grpc::ClientContext context;
     RunStressRequest request;
     request.set_deviceid(deviceId);
     request.set_stresstime(stressTime);
+    request.set_computetype(computeType);
     DiagnosticsTaskInfo response;
     grpc::Status status = stub->runStress(&context, request, &response);
     if (status.ok()) {

@@ -22,6 +22,8 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <cstdio>
+#include <memory>
 #include <mutex>
 #include <regex>
 #include <igsc_lib.h>
@@ -41,18 +43,18 @@ SystemCommandResult execCommand(const std::string& command) {
     std::array<char, 1048576> buffer = {};
     std::string result;
 
-    FILE* pipe = popen(command.c_str(), "r");
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
     if (pipe != nullptr) {
         try {
             std::size_t bytesread;
-            while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe)) != 0) {
+            while ((bytesread = std::fread(buffer.data(), sizeof(buffer.at(0)), sizeof(buffer), pipe.get())) != 0) {
                 result += std::string(buffer.data(), bytesread);
             }
+            int ret = pclose(pipe.release());
+            exitcode = WEXITSTATUS(ret);
         } catch (...) {
-            pclose(pipe);
+            // pipe is closed automatically by unique_ptr destructor
         }
-        int ret = pclose(pipe);
-        exitcode = WEXITSTATUS(ret);
     }
 
     return SystemCommandResult(result, exitcode);
@@ -387,12 +389,18 @@ std::vector<char> readImageContent(const char* filePath) {
     }
     // get length of file:
     is.seekg(0, is.end);
-    int length = is.tellg();
+    std::streamoff length = is.tellg();
     is.seekg(0, is.beg);
 
-    std::vector<char> buffer(length);
+    // Reject files that are too large (256 MiB) or could not be sized
+    constexpr std::streamoff MAX_FW_SIZE = 256LL * 1024 * 1024;
+    if (length <= 0 || length > MAX_FW_SIZE) {
+        return std::vector<char>();
+    }
 
-    is.read(buffer.data(), length);
+    std::vector<char> buffer(static_cast<size_t>(length));
+
+    is.read(buffer.data(), static_cast<std::streamsize>(length));
     is.close();
     return buffer;
 }
@@ -1257,11 +1265,28 @@ xpum_result_t FirmwareManager::runFwCodeDataFlash(xpum_device_id_t deviceId, con
     }
 
     std::string codeImagePath, dataImagePath;
-    const char *dirName = (pDevice->getFwCodeDataMgmt()->tmpUnpackPath).c_str();
-    if (!removeDir(dirName)) {
-        flashFwErrMsg = std::string(dirName) + " exist and fail to remove.";
+    // Create a unique working directory under /var/lib/xpum (not a fixed /tmp path)
+    // to prevent symlink-based directory traversal attacks.
+    struct stat st;
+    if (lstat("/var/lib/xpum", &st) == 0) {
+        if (!S_ISDIR(st.st_mode)) {
+            flashFwErrMsg = "/var/lib/xpum exists but is not a directory";
+            return XPUM_GENERIC_ERROR;
+        }
+    } else {
+        if (mkdir("/var/lib/xpum", 0700) != 0) {
+            flashFwErrMsg = "Failed to create /var/lib/xpum for firmware update";
+            return XPUM_GENERIC_ERROR;
+        }
+    }
+    char tmpTemplate[] = "/var/lib/xpum/fw_update_XXXXXX";
+    char* tmpDir = mkdtemp(tmpTemplate);
+    if (tmpDir == nullptr) {
+        flashFwErrMsg = "Failed to create secure temporary directory for firmware update";
         return XPUM_GENERIC_ERROR;
     }
+    pDevice->getFwCodeDataMgmt()->tmpUnpackPath = std::string(tmpDir);
+    const char *dirName = (pDevice->getFwCodeDataMgmt()->tmpUnpackPath).c_str();
     int ret = unpackAndGetImagePath(filePath, dirName, eccState, codeImagePath, dataImagePath);
     if (!ret) {
         flashFwErrMsg = "Fail to unpack and get matching image path";

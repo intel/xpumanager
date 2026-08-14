@@ -12,6 +12,12 @@
 #include <regex>
 #include <igsc_lib.h>
 #include <string>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 #include "infrastructure/logger.h"
 #include "system_cmd.h"
@@ -67,9 +73,21 @@ static std::string findSubDir(const char* dirPath, const char* sudDirName){
 }
 
 bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccState, std::string &codeImagePath, std::string &dataImagePath){
-    std::string unpack_cmd = "unzip -q -o " + std::string(filePath) + " -d " + std::string(dirName);
-    int status = std::system(unpack_cmd.c_str());
-    if (status != 0)
+    // Use fork+exec to avoid shell injection via std::system
+    pid_t pid = fork();
+    if (pid < 0)
+        return false;
+    if (pid == 0) {
+        execlp("unzip", "unzip", "-q", "-o",
+               filePath, "-d", dirName, static_cast<char*>(nullptr));
+        _exit(127);
+    }
+    int wstatus = 0;
+    while (waitpid(pid, &wstatus, 0) < 0) {
+        if (errno != EINTR)
+            return false;
+    }
+    if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0)
         return false;
     //check if follow the standard format
     std::string eccStateStr = (eccState == 1) ? "ECC_ON" : "ECC_OFF";
@@ -88,32 +106,82 @@ bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccSta
     return true;
 }
 
-bool removeDir(const char* dirPath){
-    DIR* dir;
-    struct dirent* ent;
+// Recursively remove a directory by fd, never following symlinks.
+static bool removeDirFd(int parentDirFd, const char* entryName) {
+    // O_NOFOLLOW | O_DIRECTORY: fail if entryName is a symlink or not a directory
+    int dirFd = openat(parentDirFd, entryName,
+                       O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+    if (dirFd < 0)
+        return errno == ENOENT;  // already absent is fine
+
+    DIR* dir = fdopendir(dirFd);
+    if (dir == nullptr) {
+        close(dirFd);
+        return false;
+    }
+
     bool success = true;
-    if ((dir = opendir(dirPath)) == nullptr)
-        return success;
+    struct dirent* ent;
     while ((ent = readdir(dir)) != nullptr) {
-        if (ent->d_name[0] == '.' || strcmp(ent->d_name, "..") == 0)
+        if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
             continue;
-        if (ent->d_type == DT_DIR) {
-            std::string subDir = std::string(dirPath) + "/" + std::string(ent->d_name);
-            if (!removeDir(subDir.c_str())) {
+
+        unsigned char dtype = ent->d_type;
+        if (dtype == DT_UNKNOWN) {
+            struct stat st;
+            if (fstatat(dirfd(dir), ent->d_name, &st, AT_SYMLINK_NOFOLLOW) == 0)
+                dtype = S_ISDIR(st.st_mode) ? DT_DIR : DT_REG;
+        }
+
+        if (dtype == DT_DIR) {
+            if (!removeDirFd(dirfd(dir), ent->d_name))
                 success = false;
-            }
-        } else if (ent->d_type == DT_REG) {
-            std::string filePath = std::string(dirPath) + "/" + std::string(ent->d_name);
-            if (unlink(filePath.c_str()) != 0) {
+        } else {
+            // unlinkat never follows symlinks for the final path component
+            if (unlinkat(dirfd(dir), ent->d_name, 0) != 0)
                 success = false;
-            }
         }
     }
-    closedir(dir);
-    if (rmdir(dirPath) != 0) {
+    closedir(dir);  // also closes dirFd
+
+    if (unlinkat(parentDirFd, entryName, AT_REMOVEDIR) != 0)
         success = false;
-    }
+
     return success;
+}
+
+bool removeDir(const char* dirPath) {
+    if (dirPath == nullptr || dirPath[0] == '\0')
+        return true;
+
+    std::string path(dirPath);
+    while (path.size() > 1 && path.back() == '/')
+        path.pop_back();
+
+    auto sep = path.rfind('/');
+    std::string parentPath;
+    std::string baseName;
+    if (sep == std::string::npos) {
+        parentPath = ".";
+        baseName   = path;
+    } else if (sep == 0) {
+        parentPath = "/";
+        baseName   = path.substr(1);
+    } else {
+        parentPath = path.substr(0, sep);
+        baseName   = path.substr(sep + 1);
+    }
+
+    if (baseName.empty() || baseName == "." || baseName == "..")
+        return false;
+
+    int parentFd = open(parentPath.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    if (parentFd < 0)
+        return errno == ENOENT;
+
+    bool ok = removeDirFd(parentFd, baseName.c_str());
+    close(parentFd);
+    return ok;
 }
 
 static bool validateImageFormat(std::vector<char>& buffer){
@@ -176,7 +244,7 @@ xpum_result_t FwCodeDataMgmt::flashFwCodeData(FlashFwCodeDataParam &param) {
 
         percent.store(0);
 
-        taskFwCodeData = std::async(std::launch::async, [this, deviceId, codeImagePath, dataImagePath] {
+        taskFwCodeData = std::async(std::launch::async, [this, deviceId, codeImagePath, dataImagePath, tmpUnpackPath = tmpUnpackPath] {
             XPUM_LOG_INFO("Start update GSC FW-CODE-DATA on device {}", devicePath);
             xpum_result_t res;
             res = Core::instance().getFirmwareManager()->runGSCFirmwareFlash(deviceId, codeImagePath.c_str());

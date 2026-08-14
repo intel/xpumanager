@@ -22,6 +22,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <climits>
+#include <stdlib.h>
 
 #include "api/device_model.h"
 #include "api_types.h"
@@ -469,7 +471,6 @@ xpum_result_t xpumGetAMCFirmwareVersionsErrorMsg(char *buffer, int *count) {
         return XPUM_BUFFER_TOO_SMALL;
     }
     std::strcpy(buffer, errMsg.c_str());
-    buffer[errMsg.length() + 1] = '\0';
     return XPUM_OK;
 }
 
@@ -828,7 +829,6 @@ xpum_result_t xpumGetFirmwareFlashErrorMsg(char *buffer, int *count) {
         return XPUM_BUFFER_TOO_SMALL;
     }
     std::strcpy(buffer, errMsg.c_str());
-    buffer[errMsg.length()] = '\0';
     return XPUM_OK;
 }
 
@@ -2820,16 +2820,19 @@ xpum_result_t xpumGetDeviceProcessState(xpum_device_id_t deviceId, xpum_device_p
         *count = process.size();
     }
 
-    if (dataArray != nullptr) {
-        int i = 0;
-        for (auto &proc : process) {
-            dataArray[i].processId = proc.getProcessId();
-            dataArray[i].memSize = proc.getMemSize();
-            dataArray[i].sharedSize = proc.getSharedSize();
-            dataArray[i].engine = (xpum_engine_type_flags_t)proc.getEngine();
-            strcpy(dataArray[i].processName, proc.getProcessName().c_str());
-            i++;
-        }
+    if (dataArray == nullptr) {
+        return XPUM_OK;
+    }
+
+    int i = 0;
+    for (auto &proc : process) {
+        dataArray[i].processId = proc.getProcessId();
+        dataArray[i].memSize = proc.getMemSize();
+        dataArray[i].sharedSize = proc.getSharedSize();
+        dataArray[i].engine = (xpum_engine_type_flags_t)proc.getEngine();
+        strncpy(dataArray[i].processName, proc.getProcessName().c_str(), XPUM_MAX_STR_LENGTH - 1);
+        dataArray[i].processName[XPUM_MAX_STR_LENGTH - 1] = '\0';
+        i++;
     }
     return XPUM_OK;
 }
@@ -2867,10 +2870,12 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
     uint32_t tileCount = prop.getValueInt();
 
-    if (*count > 0 && *count < tileCount && dataArray != nullptr) {
+    uint32_t expectedCount = (tileId == -1) ? tileCount : 1u;
+    if (dataArray != nullptr && *count < expectedCount) {
+        *count = expectedCount;
         return XPUM_BUFFER_TOO_SMALL;
     } else {
-        *count = tileCount;
+        *count = expectedCount;
     }
 
     if (dataArray == nullptr) {
@@ -2878,8 +2883,10 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
     }
 
     std::string device_id = std::to_string(deviceId);
-    if (samplingInterval != -1 && samplingInterval > 0) {
+    if (samplingInterval > 0 && samplingInterval <= 2000) {
         Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD = samplingInterval * 1000000;
+    } else if (samplingInterval != -1 && samplingInterval != 0) {
+        return XPUM_INTERVAL_INVALID;
     }
 
     auto p_data = Core::instance().getDeviceManager()->getRealtimeMeasurementData(METRIC_PERF, device_id);
@@ -2923,7 +2930,9 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         return ifs.good();
     };
     /*  calculate the component occupancy ratio of each tile in current device */
-    for (size_t i = 0; i < p_perf_datas->size(); i++) {
+    uint32_t outIdx = 0;
+    for (size_t i = 0; i < p_perf_datas->size() && outIdx < *count; i++) {
+        if (tileId != -1 && static_cast<xpum_device_tile_id_t>(i) != tileId) continue;
         std::float_t active = 0;
         std::float_t stall = 0;
         std::float_t inUse = 0;
@@ -3141,13 +3150,14 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         components_ratios.push_back(std::pair<std::string, std::double_t>("stallOther", stallOther));
         components_ratios.push_back(std::pair<std::string, std::double_t>("stallInstFetch", stallInstFetch));
 
-        dataArray[i].componentNum = components_ratios.size();
+        dataArray[outIdx].componentNum = components_ratios.size();
         int idx = 0;
         for (auto it = components_ratios.begin(); it != components_ratios.end(); it++) {
-            std::strcpy(dataArray[i].ratios[idx].occupancyName, (*it).first.c_str());
-            dataArray[i].ratios[idx].value = (*it).second;
+            std::strcpy(dataArray[outIdx].ratios[idx].occupancyName, (*it).first.c_str());
+            dataArray[outIdx].ratios[idx].value = (*it).second;
             idx++;
         }
+        outIdx++;
     }
 
     return XPUM_OK;
@@ -3833,7 +3843,15 @@ xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressTime) {
     if (res != XPUM_OK) {
         return res;
     }
-    return Core::instance().getDiagnosticManager()->runStress(deviceId, stressTime);
+    return Core::instance().getDiagnosticManager()->runStress(deviceId, stressTime, 0);
+}
+
+xpum_result_t xpumRunStressEx(xpum_device_id_t deviceId, uint32_t stressTime, uint32_t computeType) {
+    xpum_result_t res = Core::instance().apiAccessPreCheck();
+    if (res != XPUM_OK) {
+        return res;
+    }
+    return Core::instance().getDiagnosticManager()->runStress(deviceId, stressTime, computeType);
 }
 
 xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) {
@@ -3844,7 +3862,47 @@ xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t r
     return Core::instance().getDiagnosticManager()->checkStress(deviceId, resultList, count);
 }
 
+static bool isValidDebugLogFileName(const char *fileName) {
+    // Must be an absolute path with no shell metacharacters.
+    if (fileName == nullptr || fileName[0] != '/') {
+        return false;
+    }
+    // Reject characters that have special meaning in POSIX shells.
+    static const std::string forbidden = ";|&`$(){}[]<>\n\r!~*?'\"\\";
+    for (const char *p = fileName; *p != '\0'; ++p) {
+        if (forbidden.find(*p) != std::string::npos) {
+            return false;
+        }
+    }
+    // Require output under a fixed, safe directory.
+    // Canonicalize the parent directory via realpath() to prevent
+    // symlink-based traversal out of the allowed prefix.
+    std::string path(fileName);
+    size_t sep = path.rfind('/');
+    if (sep == std::string::npos || sep == path.length() - 1) {
+        return false; // no filename component after the last '/'
+    }
+    std::string parentDir = (sep == 0) ? "/" : path.substr(0, sep);
+    char resolved[PATH_MAX];
+    if (realpath(parentDir.c_str(), resolved) == nullptr) {
+        return false; // parent directory does not exist or cannot be resolved
+    }
+    // Only allow /tmp and /var/tmp as output directories.
+    static const char * const allowedDirs[] = { "/tmp", "/var/tmp", nullptr };
+    for (int i = 0; allowedDirs[i] != nullptr; ++i) {
+        size_t dlen = strlen(allowedDirs[i]);
+        if (strncmp(resolved, allowedDirs[i], dlen) == 0 &&
+            (resolved[dlen] == '\0' || resolved[dlen] == '/')) {
+            return true;
+        }
+    }
+    return false;
+}
+
 xpum_result_t xpumGenerateDebugLog(const char *fileName) {
+    if (!isValidDebugLogFileName(fileName)) {
+        return XPUM_RESULT_INVALID_DIR;
+    }
     if (access(fileName, F_OK) == 0) {
         return XPUM_RESULT_FILE_DUP;
     }

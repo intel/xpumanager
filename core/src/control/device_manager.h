@@ -38,7 +38,7 @@ class DeviceManager : public DeviceManagerInterface,
                        std::vector<std::shared_ptr<Device>>& devices) override;
 
     std::shared_ptr<MeasurementData> getRealtimeMeasurementData(MeasurementType type,
-                                               std::string& device_id) override;
+                                               std::string& device_id, int samplingPeriodNs = -1) override;
 
     void getDeviceSchedulers(const std::string& id, std::vector<Scheduler>& schedulers) override;
 

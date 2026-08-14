@@ -6,6 +6,7 @@
 
 #include "comlet_firmware.h"
 
+#include <cerrno>
 #include <chrono>
 #include <nlohmann/json.hpp>
 #include <regex>
@@ -15,6 +16,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "core_stub.h"
 #include "xpum_structs.h"
@@ -578,11 +580,42 @@ static std::string findSubDir(const char* dirPath, const char* sudDirName){
     return path;
 }
 
-static bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccState, std::string &codeImagePath, std::string &dataImagePath){
-    std::string unpack_cmd = "unzip -q -o " + std::string(filePath) + " -d " + std::string(dirName);
-    int status = std::system(unpack_cmd.c_str());
-    if (status != 0)
+static bool executeCommand(const char* commandPath, char* const args[]) {
+    pid_t pid = fork();
+    if (pid < 0) {
         return false;
+    }
+
+    if (pid == 0) {
+        execv(commandPath, args);
+        _exit(127);  // execv failed: conventional "command could not execute"
+    }
+
+    int status = 0;
+    pid_t ret;
+    do {
+        ret = waitpid(pid, &status, 0);
+    } while (ret < 0 && errno == EINTR);
+    if (ret < 0) {
+        return false;
+    }
+
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+
+static bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccState, std::string &codeImagePath, std::string &dataImagePath){
+    char* const args[] = {
+        const_cast<char*>("unzip"),
+        const_cast<char*>("-q"),
+        const_cast<char*>("-o"),
+        const_cast<char*>(filePath),
+        const_cast<char*>("-d"),
+        const_cast<char*>(dirName),
+        nullptr
+    };
+    if (!executeCommand("/usr/bin/unzip", args)) {
+        return false;
+    }
     //check if follow the standard format
     std::string eccStateStr = (eccState == 1) ? "ECC_ON" : "ECC_OFF";
     std::string dirPath = findSubDir(dirName, eccStateStr.c_str());
@@ -693,7 +726,7 @@ void ComletFirmware::getTableResult(std::ostream &out) {
         }
     } else if (type == XPUM_DEVICE_FIRMWARE_GFX_CODE_DATA) {
         // check unzip
-        if (std::system("which unzip >/dev/null 2>&1") != 0) {
+        if (access("/usr/bin/unzip", X_OK) != 0) {
             out << "Error: unzip not found, please install unzip at first." << std::endl;
             exit_code = XPUM_CLI_ERROR_OPEN_FILE;
             return;

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2021-2023 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 # SPDX-License-Identifier: MIT
 # @file check_intel_gpu.py
 #
@@ -22,6 +22,7 @@ deviceId = None
 disableTLS = False
 username = None
 password = None
+cafile = None
 
 warning_threshold = None
 critical_threshold = None
@@ -60,8 +61,8 @@ def http_query(url):
     if disableTLS:
         conn = http.client.HTTPConnection(host, port)
     else:
-        conn = http.client.HTTPSConnection(
-            host, port, context=ssl._create_unverified_context())
+        ssl_context = ssl.create_default_context(cafile=cafile)
+        conn = http.client.HTTPSConnection(host, port, context=ssl_context)
     headers = {
         'Authorization': genBasicAuthKey(username, password)
     }
@@ -318,6 +319,8 @@ def arg():
 
     parser.add_argument('--disableTLS', action="store_true",
                         help="Use http instead of https")
+    parser.add_argument('--cafile', default=None,
+                        help="Path to a CA bundle file for verifying the server's TLS certificate (e.g. for self-signed certs)")
 
     parser.add_argument('-T', '--Type', required=True,
                         choices=['telemetry', 'health'], help="The gpu info type to check")
@@ -338,6 +341,7 @@ def arg():
     global disableTLS
     global username
     global password
+    global cafile
 
     host = parsed.host
     port = parsed.port
@@ -346,6 +350,7 @@ def arg():
     # bdfaddr = parsed.BDFAddr
     deviceId = parsed.deviceId
     disableTLS = parsed.disableTLS
+    cafile = parsed.cafile
 
     global warning_threshold
     global critical_threshold

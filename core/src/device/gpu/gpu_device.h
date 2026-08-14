@@ -46,7 +46,7 @@ class GPUDevice : public Device {
     void getPCIeRead(Callback_t callback) noexcept override;
     void getPCIeWrite(Callback_t callback) noexcept override;
     void getFabricThroughput(Callback_t callback) noexcept override;
-    void getPerfMetrics(Callback_t callback) noexcept override;
+    void getPerfMetrics(Callback_t callback, int samplingPeriodNs = -1) noexcept override;
 
     virtual xpum_result_t runFirmwareFlash(RunGSCFirmwareFlashParam &param) noexcept override; // GSC
     virtual xpum_firmware_flash_result_t getFirmwareFlashResult(GetGSCFirmwareFlashResultParam &param) noexcept override;

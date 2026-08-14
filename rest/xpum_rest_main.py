@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2021-2024 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 # SPDX-License-Identifier: MIT
 # @file xpum_rest_main.py
 #
@@ -9,8 +9,10 @@ import configparser
 import os
 import sys
 import hashlib
+import hmac
+import threading
 import time
-from flask import Flask
+from flask import Flask, request, send_from_directory
 from flask_httpauth import HTTPBasicAuth
 
 from views import versions
@@ -44,7 +46,9 @@ env_exporter_no_auth = True if os.environ.get(
 env_exporter_only = True if os.environ.get(
     'XPUM_EXPORTER_ONLY', '') == '1' else False
 
-login_failure_count = 0
+# Per-client lockout state keyed by remote_addr: {'count': int, 'until': float}
+_login_failure_lock = threading.Lock()
+_login_failures: dict = {}
 
 
 def main(*args, **kwargs):
@@ -55,10 +59,22 @@ def main(*args, **kwargs):
     if "gunicorn_pid_file" in kwargs:
         grpc_stub.gunicorn_pid_file = kwargs["gunicorn_pid_file"]
 
-    app = Flask(__name__, static_url_path=dump_raw_data_stub.url_prefix,
-                static_folder=dump_raw_data_stub.dump_folder)
+    app = Flask(__name__)
 
     app.url_map.strict_slashes = False
+
+    def _download_file(filename):
+        base = os.path.realpath(dump_raw_data_stub.dump_folder)
+        requested = os.path.realpath(os.path.join(base, filename))
+        if not requested.startswith(base + os.sep) or not os.path.isfile(requested):
+            return "Not Found", 404
+        return send_from_directory(base, os.path.relpath(requested, base))
+
+    app.add_url_rule(
+        dump_raw_data_stub.url_prefix + '/<path:filename>',
+        view_func=auth.login_required(_download_file),
+        methods=['GET']
+    )
 
     # version
     app.add_url_rule('/rest/v1/version',
@@ -220,23 +236,32 @@ def verify_password(username, password):
     # store username in threadlocal for audit log
     logger.set_audit_username(username)
     if not disableAuth:
+        client = request.remote_addr
+        now = time.monotonic()
+
+        # Check per-client lockout without blocking the worker thread
+        with _login_failure_lock:
+            failure_info = _login_failures.get(client, {'count': 0, 'until': 0.0})
+            if now < failure_info['until']:
+                return False
+
         tmpHash = hashlib.pbkdf2_hmac('sha512', password.encode(
             'ASCII'), salt.encode('ASCII'), 10000).hex()
-        global login_failure_count
-        if username == user and tmpHash == pwHash:
-            login_failure_count -= 1
-            if login_failure_count < 0:
-                login_failure_count = 0
+        if hmac.compare_digest(username, user) and hmac.compare_digest(tmpHash, pwHash):
+            with _login_failure_lock:
+                _login_failures.pop(client, None)
             return True
         else:
-            login_failure_count += 1
-            if login_failure_count > 8:
-                login_failure_count = 8
+            with _login_failure_lock:
+                failure_info = _login_failures.get(client, {'count': 0, 'until': 0.0})
+                count = min(failure_info['count'] + 1, 8)
+                _login_failures[client] = {
+                    'count': count,
+                    'until': time.monotonic() + (2 ** count),
+                }
 
             logger.audit('Authentication', 'Failed',
                          "The username '{}' doesn't exist or the password is incorrect", username)
-
-            time.sleep(2 ** login_failure_count)
             return False
     else:
         return True

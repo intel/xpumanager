@@ -135,7 +135,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p>fileName</p></td>
-<td><p>IN: The file name (a .tar.gz) of debug log.</p></td>
+<td><p>IN: The absolute path (a .tar.gz) for the debug log archive. Must start with ‘/’, contain no shell metacharacters, and resolve to a directory under /tmp or /var/tmp.</p></td>
 </tr>
 </tbody>
 </table>
@@ -143,6 +143,7 @@ XPUM_API<span></span> <a class="reference internal" href="global.html#xpum-doxid
 <p>xpum_result_t</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867a7d4434e8c8d0df4d31c6cbb0e7a7d665"><span class="std std-ref">XPUM_OK</span></a> if log file is generated successfully</p></li>
+<li><p><a class="reference internal" href="enum_xpum_result_enum.html#xpum-doxid-xpum-structs-8h-1a84ee4bbac7842e8a4271ca54af28f867ac7285cf7ee3e351ecbe48c468951cb2d"><span class="std std-ref">XPUM_RESULT_INVALID_DIR</span></a> if fileName is null, not an absolute path, contains forbidden characters, or its parent directory is not under /tmp or /var/tmp</p></li>
 </ul>
 </section>
 </section>

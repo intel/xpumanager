@@ -72,9 +72,11 @@ std::string getRedfishAmcWarn() {
 #define XPUM_CURL_TIMEOUT_DEFAULT 120L
 
 int XPUM_CURL_TIMEOUT = XPUM_CURL_TIMEOUT_DEFAULT;
+std::string XPUM_REDFISH_CA_CERT;
 
 void RedfishAmcManager::readConfigFile(){
     XPUM_CURL_TIMEOUT = XPUM_CURL_TIMEOUT_DEFAULT;
+    XPUM_REDFISH_CA_CERT.clear();
     std::string file_name = "xpum.conf";
     std::string file_path = std::string(XPUM_CONFIG_DIR) + file_name;
     struct stat buffer;
@@ -119,6 +121,10 @@ void RedfishAmcManager::readConfigFile(){
             } catch (std::exception &e) {
                 XPUM_LOG_ERROR("Get invalid value for REDFISH_HOST_TIMEOUT: {}", value);
             }
+        }
+        if (name == "REDFISH_CA_CERT") {
+            XPUM_REDFISH_CA_CERT = value;
+            XPUM_LOG_INFO("REDFISH_CA_CERT set to: {}", XPUM_REDFISH_CA_CERT);
         }
     }
     conf_file.close();

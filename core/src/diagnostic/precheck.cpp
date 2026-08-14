@@ -18,6 +18,7 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <spawn.h>
 #include "helper.h"
 #include "device/gpu/gpu_device_stub.h"
 
@@ -89,7 +90,7 @@ namespace xpum {
                 cinfo.errorCategory = PRECHECK_ERROR_TYPE_INFO_LIST[errorId - 1].errorCategory;
                 cinfo.errorSeverity = PRECHECK_ERROR_TYPE_INFO_LIST[errorId - 1].errorSeverity;
             }
-            strncpy(cinfo.time, time.c_str(), time.size() + 1);
+            strncpy(cinfo.time, time.c_str(), sizeof(cinfo.time) - 1);
             cinfo.time[sizeof(cinfo.time)-1] = '\0';
         }
     }
@@ -129,7 +130,7 @@ namespace xpum {
                         component_gpu.errorCategory = PRECHECK_ERROR_TYPE_INFO_LIST[errorId - 1].errorCategory;
                         component_gpu.errorSeverity = PRECHECK_ERROR_TYPE_INFO_LIST[errorId - 1].errorSeverity;
                     }
-                    strncpy(component_gpu.time, time.c_str(), time.size() + 1);
+                    strncpy(component_gpu.time, time.c_str(), sizeof(component_gpu.time) - 1);
                     component_gpu.time[sizeof(component_gpu.time)-1] = '\0';
                     break;
                 }
@@ -151,7 +152,7 @@ namespace xpum {
                     component_cpu.errorId = -1;
                     component_cpu.errorCategory = errorCategory;
                     component_cpu.errorSeverity = errorSeverity;
-                    strncpy(component_cpu.time, time.c_str(), time.size() + 1);
+                    strncpy(component_cpu.time, time.c_str(), sizeof(component_cpu.time) - 1);
                     component_cpu.time[sizeof(component_cpu.time) - 1] = '\0';
                     break;
                 }
@@ -707,8 +708,39 @@ namespace xpum {
         if (logSource == XPUM_PRECHECK_LOG_SOURCE_JOURNALCTL && sinceTime != nullptr) {
             std::string sinceTimeStr = std::string(sinceTime);
             if (sinceTimeStr.size() > 0) {
-                std::string test_cmd = "journalctl --since \"" + sinceTimeStr + "\" -n 1 >/dev/null 2>&1";
-                if (system(test_cmd.c_str()) != 0) {
+                // Validate timestamp format to prevent command injection
+                static const std::regex ts_re(R"(^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$)");
+                if (!std::regex_match(sinceTimeStr, ts_re)) {
+                    return XPUM_PRECHECK_INVALID_SINCETIME;
+                }
+                // Use posix_spawnp to avoid shell injection - pass --since as a discrete argv element
+                pid_t pid;
+                const char* argv_spawn[] = {"journalctl", "--since", sinceTimeStr.c_str(), "-n", "1", nullptr};
+                posix_spawn_file_actions_t fa;
+                int fa_rc = posix_spawn_file_actions_init(&fa);
+                if (fa_rc != 0) {
+                    return XPUM_PRECHECK_INVALID_SINCETIME;
+                }
+                fa_rc = posix_spawn_file_actions_addopen(&fa, STDOUT_FILENO, "/dev/null", O_WRONLY, 0);
+                if (fa_rc != 0) {
+                    posix_spawn_file_actions_destroy(&fa);
+                    return XPUM_PRECHECK_INVALID_SINCETIME;
+                }
+                fa_rc = posix_spawn_file_actions_addopen(&fa, STDERR_FILENO, "/dev/null", O_WRONLY, 0);
+                if (fa_rc != 0) {
+                    posix_spawn_file_actions_destroy(&fa);
+                    return XPUM_PRECHECK_INVALID_SINCETIME;
+                }
+                int rc = posix_spawnp(&pid, "journalctl", &fa, nullptr, const_cast<char* const*>(argv_spawn), environ);
+                posix_spawn_file_actions_destroy(&fa);
+                if (rc != 0) {
+                    return XPUM_PRECHECK_INVALID_SINCETIME;
+                }
+                int wstatus = 0;
+                if (waitpid(pid, &wstatus, 0) == -1) {
+                    return XPUM_PRECHECK_INVALID_SINCETIME;
+                }
+                if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
                     return XPUM_PRECHECK_INVALID_SINCETIME;
                 }
             }
@@ -722,9 +754,9 @@ namespace xpum {
             *count = val;
             return XPUM_OK;
         }
-        std::string sinceTimeStr;
+        std::string sinceTimeStr = "";
         if (sinceTime != nullptr)
-            std::string sinceTimeStr = std::string(sinceTime);
+            sinceTimeStr = std::string(sinceTime);
         toCheck(logSource, onlyGPU, sinceTimeStr);
         int val = PrecheckManager::component_gpus.size() + 1;
         if (!onlyGPU)

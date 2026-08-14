@@ -114,6 +114,10 @@ xpum_result_t VgpuManager::createVf(xpum_device_id_t deviceId, xpum_vgpu_config_
         lmemToUse = attrs.vfLmem;
     }
 
+    if (param->numVfs > 0 && lmemToUse > UINT64_MAX / param->numVfs) {
+        XPUM_LOG_ERROR("LMEM size too large");
+        return XPUM_VGPU_INVALID_LMEM;
+    }
     if (deviceInfo.lmemSizeFree < lmemToUse * param->numVfs) {
         XPUM_LOG_ERROR("LMEM size too large");
         return XPUM_VGPU_INVALID_LMEM;

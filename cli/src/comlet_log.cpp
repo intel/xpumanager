@@ -24,7 +24,7 @@ ComletLog::ComletLog() : ComletBase("log",
 
 void ComletLog::setupOptions() {
     this->opts = std::unique_ptr<ComletLogOptions>(new ComletLogOptions());
-    addOption("-f,--file", this->opts->fileName, "The file (a tar.gz) to archive all the debug logs");
+    addOption("-f,--file", this->opts->fileName, "The absolute path (a tar.gz) under /tmp or /var/tmp to archive all the debug logs");
 }
 
 std::unique_ptr<nlohmann::json> ComletLog::run() {

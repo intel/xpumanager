@@ -28,6 +28,7 @@
 #include <climits>
 #include <sys/stat.h>
 #include <string>
+#include <cstdint>
 
 #include "api/api_types.h"
 #include "api/device_model.h"
@@ -642,88 +643,249 @@ static std::deque<std::string> getParentPciBridges(const std::string& origin_str
     return res;
 }
 
-static const std::string SYSTEM_SLOT_NAME_MARKER("Designation:");
-static const std::string SYSTEM_SLOT_BUS_ADDRESS_MARKER("Bus Address:");
-static const std::string SYSTEM_SLOT_CURRENT_USAGE_MARKER("Current Usage:");
-static const std::string SYSTEM_INFO_IGNORED_STARTER(" \t");
-static const std::string SYSTEM_INFO_IGNORED_ENDER("\r\n");
-static std::string getValueAtMarker(const std::string& sysInfo, const std::string& marker) {
-    std::string res;
-    std::string spaces;
-    size_t mPos = sysInfo.find(marker);
-    if (mPos != std::string::npos) {
-        const int len = sysInfo.length();
-        int i = mPos + marker.length();
-        while (i < len && SYSTEM_INFO_IGNORED_STARTER.find(sysInfo.at(i)) != std::string::npos) i++;
-        char cc;
-        while (i < len && SYSTEM_INFO_IGNORED_ENDER.find(cc = sysInfo.at(i)) == std::string::npos) {
-            switch (cc) {
-                case ' ':
-                case '\t':
-                    spaces += cc;
-                    break;
-                default:
-                    if (!spaces.empty()) {
-                        res += spaces;
-                        spaces.clear();
-                    }
-                    res += cc;
-                    break;
-            }
-            i++;
-        }
-    }
-    return res;
-}
-
 static const std::string SYSTEM_SLOT_IN_USE("In Use");
+static constexpr size_t SMBIOS_SYSTEM_SLOT_TYPE_OFFSET = 4;
+static constexpr size_t SMBIOS_SYSTEM_SLOT_USAGE_OFFSET = 7;
+static constexpr size_t SMBIOS_SYSTEM_SLOT_STANDARD_LENGTH = 8;
+static constexpr size_t SMBIOS_SYSTEM_SLOT_EXTENDED_LENGTH = 17;
+static constexpr size_t SMBIOS_SYSTEM_SLOT_SEGMENT_OFFSET_V26 = 13;
+static constexpr size_t SMBIOS_SYSTEM_SLOT_BUS_OFFSET_V26 = 15;
+static constexpr size_t SMBIOS_SYSTEM_SLOT_DEVFUNC_OFFSET_V26 = 16;
+static constexpr uint8_t SMBIOS_SYSTEM_SLOT_BUS_INVALID = 0xFF;
 class DMISystemSlot {
     std::string _name;
     std::string _busAddress;
     std::string _currentUsage;
 
    public:
-    DMISystemSlot(const std::string& slotInfo) {
-        _name = getValueAtMarker(slotInfo, SYSTEM_SLOT_NAME_MARKER);
-        _busAddress = getValueAtMarker(slotInfo, SYSTEM_SLOT_BUS_ADDRESS_MARKER);
-        _currentUsage = getValueAtMarker(slotInfo, SYSTEM_SLOT_CURRENT_USAGE_MARKER);
+    DMISystemSlot(const std::string& name, const std::string& busAddress, const std::string& currentUsage)
+        : _name(name), _busAddress(busAddress), _currentUsage(currentUsage) {
     }
 
-    const std::string& name() {
+    const std::string& name() const {
         return _name;
     }
 
-    const std::string& busAddress() {
+    const std::string& busAddress() const {
         return _busAddress;
     }
 
-    const std::string& currentUsage() {
+    const std::string& currentUsage() const {
         return _currentUsage;
     }
 
-    bool inUse() {
+    bool inUse() const {
         return _currentUsage == SYSTEM_SLOT_IN_USE;
     }
 };
 
+struct SMBIOSHeader {
+    uint8_t type;
+    uint8_t length;
+    uint16_t handle;
+} __attribute__((packed));
 
-static const std::string SYSTEM_SLOT_MARKER("System Slot Information");
-static std::vector<DMISystemSlot> getSystemSlotBlocks(const std::string& ssInfos) {
-    std::vector<DMISystemSlot> res;
-    size_t curPos = 0;
-    size_t nextPos;
-    while ((nextPos = ssInfos.find(SYSTEM_SLOT_MARKER, curPos)) != std::string::npos) {
-        if (curPos > 0) {
-            res.push_back(DMISystemSlot(ssInfos.substr(curPos, nextPos - curPos)));
-        }
-        curPos = nextPos + SYSTEM_SLOT_MARKER.length();
+/**
+ * @brief Validate that an SMBIOS structure fits within the loaded DMI table.
+ *
+ * @param[in] dmiData Raw DMI table bytes.
+ * @param[in] offset Structure offset within the table.
+ * @param[in] minSize Minimum valid structure length.
+ * @return true when the structure header and payload are in bounds.
+ */
+static bool validateDmiStructure(const std::vector<uint8_t>& dmiData, size_t offset, size_t minSize) {
+    if (offset + sizeof(SMBIOSHeader) > dmiData.size()) {
+        return false;
     }
-    if (curPos > 0) {
-        res.push_back(DMISystemSlot(ssInfos.substr(curPos)));
-    }
-    return res;
+
+    const uint8_t length = dmiData[offset + 1];
+    return length >= sizeof(SMBIOSHeader) && offset + length <= dmiData.size() && length >= minSize;
 }
 
+/**
+ * @brief Find the start offset of the next SMBIOS structure.
+ *
+ * @param[in] dmiData Raw DMI table bytes.
+ * @param[in] currentOffset Start offset of the current SMBIOS structure.
+ * @return Offset of the next structure, or 0 when not found/invalid.
+ */
+static size_t findNextDmiStructure(const std::vector<uint8_t>& dmiData, size_t currentOffset) {
+    if (!validateDmiStructure(dmiData, currentOffset, sizeof(SMBIOSHeader))) {
+        return 0;
+    }
+
+    const uint8_t length = dmiData[currentOffset + 1];
+    size_t offset = currentOffset + length;
+    if (offset >= dmiData.size()) {
+        return 0;
+    }
+
+    for (size_t i = offset; i + 1 < dmiData.size(); ++i) {
+        if (dmiData[i] == 0 && dmiData[i + 1] == 0) {
+            return i + 2;
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * @brief Read a null-terminated SMBIOS string from a structure string table.
+ *
+ * @param[in] dmiData Raw DMI table bytes.
+ * @param[in] structureOffset Structure start offset.
+ * @param[in] structureLength SMBIOS structure length field.
+ * @param[in] stringIndex SMBIOS string index to resolve.
+ * @return Resolved string value or an empty string when unavailable.
+ */
+static std::string getDmiStringFromTable(const std::vector<uint8_t>& dmiData,
+                                         size_t structureOffset,
+                                         uint8_t structureLength,
+                                         uint8_t stringIndex) {
+    if (stringIndex == 0) {
+        return "";
+    }
+
+    size_t stringAreaStart = structureOffset + structureLength;
+    if (stringAreaStart >= dmiData.size()) {
+        return "";
+    }
+
+    size_t pos = stringAreaStart;
+    for (uint8_t currentString = 1; currentString < stringIndex; ++currentString) {
+        while (pos < dmiData.size() && dmiData[pos] != 0) {
+            ++pos;
+        }
+        if (pos >= dmiData.size() || (pos + 1 < dmiData.size() && dmiData[pos] == 0 && dmiData[pos + 1] == 0)) {
+            return "";
+        }
+        ++pos;
+    }
+
+    if (pos >= dmiData.size() || dmiData[pos] == 0) {
+        return "";
+    }
+
+    size_t end = pos;
+    while (end < dmiData.size() && dmiData[end] != 0) {
+        ++end;
+    }
+
+    if (end <= pos) {
+        return "";
+    }
+
+    return std::string(reinterpret_cast<const char*>(&dmiData[pos]), end - pos);
+}
+
+/**
+ * @brief Convert SMBIOS slot usage code to a human-readable string.
+ *
+ * @param[in] usageRaw Raw SMBIOS usage value.
+ * @return Slot usage description.
+ */
+static std::string decodeSlotUsage(uint8_t usageRaw) {
+    if (usageRaw == 0x04) {
+        return SYSTEM_SLOT_IN_USE;
+    }
+    return "Unknown";
+}
+
+/**
+ * @brief Format a PCI address tuple into a canonical BDF string.
+ *
+ * @param[in] segment PCI segment number.
+ * @param[in] bus PCI bus number.
+ * @param[in] devFunc Packed device/function value from SMBIOS.
+ * @return Canonical PCI address string.
+ */
+static std::string formatBdf(uint16_t segment, uint8_t bus, uint8_t devFunc) {
+    char bdf[16] = {0};
+    snprintf(bdf, sizeof(bdf), "%04x:%02x:%02x.%01x", segment, bus, (devFunc >> 3), (devFunc & 0x7));
+    return std::string(bdf);
+}
+
+/**
+ * @brief Load and parse SMBIOS type 9 entries from /sys/firmware/dmi/tables/DMI.
+ *
+ * @return Parsed system slot entries.
+ */
+static std::vector<DMISystemSlot> loadSystemSlotBlocks() {
+    std::vector<DMISystemSlot> slots;
+    std::ifstream dmiFile("/sys/firmware/dmi/tables/DMI", std::ios::binary);
+    if (!dmiFile) {
+        return slots;
+    }
+
+    std::vector<uint8_t> dmiData((std::istreambuf_iterator<char>(dmiFile)), std::istreambuf_iterator<char>());
+    if (dmiData.size() < sizeof(SMBIOSHeader)) {
+        return slots;
+    }
+
+    size_t offset = 0;
+    while (offset < dmiData.size()) {
+        if (!validateDmiStructure(dmiData, offset, sizeof(SMBIOSHeader))) {
+            break;
+        }
+
+        const uint8_t type = dmiData[offset];
+        const uint8_t length = dmiData[offset + 1];
+        if (type == 9 && length >= SMBIOS_SYSTEM_SLOT_STANDARD_LENGTH) {
+            std::string designation = getDmiStringFromTable(
+                dmiData, offset, length, dmiData[offset + SMBIOS_SYSTEM_SLOT_TYPE_OFFSET]);
+            std::string usage = decodeSlotUsage(dmiData[offset + SMBIOS_SYSTEM_SLOT_USAGE_OFFSET]);
+            std::string busAddress;
+
+            if (length >= SMBIOS_SYSTEM_SLOT_EXTENDED_LENGTH) {
+                auto tryReadBusAddress = [&](size_t segOff, size_t busOff, size_t dfOff) -> bool {
+                    if (offset + dfOff >= dmiData.size() || offset + segOff + 1 >= dmiData.size()) {
+                        return false;
+                    }
+                    uint8_t bus = dmiData[offset + busOff];
+                    if (bus == SMBIOS_SYSTEM_SLOT_BUS_INVALID) {
+                        return false;
+                    }
+                    uint16_t segment = static_cast<uint16_t>(dmiData[offset + segOff]) |
+                                       (static_cast<uint16_t>(dmiData[offset + segOff + 1]) << 8);
+                    uint8_t devFunc = dmiData[offset + dfOff];
+                    busAddress = formatBdf(segment, bus, devFunc);
+                    return true;
+                };
+
+                tryReadBusAddress(SMBIOS_SYSTEM_SLOT_SEGMENT_OFFSET_V26,
+                                  SMBIOS_SYSTEM_SLOT_BUS_OFFSET_V26,
+                                  SMBIOS_SYSTEM_SLOT_DEVFUNC_OFFSET_V26);
+            }
+
+            slots.emplace_back(designation, busAddress, usage);
+        }
+
+        size_t nextOffset = findNextDmiStructure(dmiData, offset);
+        if (nextOffset == 0) {
+            break;
+        }
+        offset = nextOffset;
+    }
+
+    return slots;
+}
+
+/**
+ * @brief Return the cached set of parsed SMBIOS system slot entries.
+ *
+ * @return Cached system slot entries loaded from the DMI table.
+ */
+static const std::vector<DMISystemSlot>& getSystemSlotBlocks() {
+    static const std::vector<DMISystemSlot> slots = loadSystemSlotBlocks();
+    return slots;
+}
+
+/**
+ * @brief Resolve a GPU card symlink in /sys/class/drm to a full PCI path.
+ *
+ * @param[in] bdf_address Target PCI BDF address to match.
+ * @return Full sysfs path of the matching card, or an empty string when unavailable.
+ */
 static std::string getCardFullPath(std::string& bdf_address) {
     char link_path[PATH_MAX];
     DIR *pdir = NULL;
@@ -872,18 +1034,23 @@ std::string GPUDeviceStub::getOAMSocketId(zes_pci_address_t address) {
     return ret;
 }
 
+/**
+ * @brief Resolve the PCI slot designation for a GPU BDF.
+ *
+ * @param address GPU PCI address.
+ * @return Slot designation when the GPU maps to an in-use SMBIOS slot.
+ */
 std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
     std::string res;
     std::string bdf = to_string(address);
     std::string card_full_path = getCardFullPath(bdf);
-    SystemCommandResult ss_res = execCommand("dmidecode -t 9 2>/dev/null");
 
-    if (card_full_path.size() > 0 && ss_res.exitStatus() == 0) {
+    if (card_full_path.size() > 0) {
         /* 
             Add a temporary workaround for SMC servers because they return
             GPU BDF as bus address of a slot. Here the BDF of a GPU would be 
             added to match a slot. For a GPU which is not showed in
-            dmidecode (smibios), the slot name would be updated when
+            SMBIOS type 9 data, the slot name would be updated when
             buildin groups were created.
             For Intel servers, the behavior need to be changed to follow
             smbios spec 3.3 (bus address of a slot sould be an endpoint
@@ -891,7 +1058,7 @@ std::string GPUDeviceStub::getPciSlot(zes_pci_address_t address) {
             is updated.  
         */
         std::deque<std::string> allBdf = getParentPciBridges(card_full_path);
-        std::vector<DMISystemSlot> systemSlots = getSystemSlotBlocks(ss_res.output());
+        const auto& systemSlots = getSystemSlotBlocks();
         for (auto& pBdf : allBdf) {
             for (auto& sysSlot : systemSlots) {
                 if (sysSlot.inUse() && sysSlot.busAddress() == pBdf) {
@@ -2303,7 +2470,7 @@ std::mutex GPUDeviceStub::metric_streamer_mutex;
 std::map<ze_device_handle_t, zet_metric_group_handle_t> GPUDeviceStub::target_metric_groups;
 std::map<ze_device_handle_t, ze_context_handle_t> GPUDeviceStub::target_metric_contexts;
 void GPUDeviceStub::toGetEuActiveStallIdleCore(const ze_device_handle_t& device, uint32_t subdeviceId, const ze_driver_handle_t& driver, MeasurementType type, std::shared_ptr<MeasurementData>& data) {
-    ze_result_t res;
+    ze_result_t res = ZE_RESULT_ERROR_UNKNOWN;
     zet_metric_group_handle_t hMetricGroup = nullptr;
     ze_context_handle_t hContext = nullptr;
     zet_metric_streamer_handle_t hMetricStreamer = nullptr;
@@ -4959,12 +5126,13 @@ std::shared_ptr<FabricMeasurementData> GPUDeviceStub::toGetFabricThroughput(cons
 }
 
 void GPUDeviceStub::getPerfMetrics(ze_device_handle_t& device, ze_driver_handle_t& driver, 
-                                   Callback_t callback) noexcept {
-    invokeTask(callback, toGetPerfMetrics, device, driver);
+                                   Callback_t callback, int samplingPeriodNs) noexcept {
+    invokeTask(callback, toGetPerfMetrics, device, driver, samplingPeriodNs);
 }
 
 std::shared_ptr<PerfMeasurementData> GPUDeviceStub::toGetPerfMetrics(ze_device_handle_t& device, 
-                                                                     ze_driver_handle_t& driver) {  
+                                                                     ze_driver_handle_t& driver,
+                                                                     int samplingPeriodNs) {  
     uint32_t sub_device_count = MAX_SUB_DEVICE;
     ze_device_handle_t sub_device_handles[MAX_SUB_DEVICE];
     
@@ -5031,7 +5199,7 @@ std::shared_ptr<PerfMeasurementData> GPUDeviceStub::toGetPerfMetrics(ze_device_h
         }
 
         for (auto it = to_active_groups.begin(); it != to_active_groups.end(); it++) {
-            openDevicePerfMetricStream(device, driver, it->second, device_contexts, device_event_pools, device_events);
+            openDevicePerfMetricStream(device, driver, it->second, device_contexts, device_event_pools, device_events, samplingPeriodNs);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(
@@ -5181,7 +5349,8 @@ void GPUDeviceStub::openDevicePerfMetricStream(ze_device_handle_t& device,
                                               std::shared_ptr<std::map<uint32_t, std::shared_ptr<DeviceMetricGroups_t>>>& p_target_groups,
                                               std::map<ze_device_handle_t, ze_context_handle_t>& device_contexts,
                                               std::map<ze_device_handle_t, ze_event_pool_handle_t>& device_event_pools,
-                                              std::map<ze_device_handle_t, ze_event_handle_t>& device_events
+                                              std::map<ze_device_handle_t, ze_event_handle_t>& device_events,
+                                              int samplingPeriodNs
                                             ) {
     ze_context_handle_t ze_context;
     if (device_contexts.find(device) != device_contexts.end()) {
@@ -5245,7 +5414,7 @@ void GPUDeviceStub::openDevicePerfMetricStream(ze_device_handle_t& device,
     }
 
     zet_metric_streamer_desc_t streamer_desc = {ZET_STRUCTURE_TYPE_METRIC_STREAMER_DESC};
-    streamer_desc.samplingPeriod = Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
+    streamer_desc.samplingPeriod = (samplingPeriodNs > 0) ? static_cast<uint32_t>(samplingPeriodNs) : Configuration::EU_ACTIVE_STALL_IDLE_STREAMER_SAMPLING_PERIOD;
     streamer_desc.notifyEveryNReports  = Configuration::RAW_DATA_COLLECTION_TASK_NUM_MAX;
     for (auto it = p_target_groups->begin(); it != p_target_groups->end(); it++) {
         res = zetMetricStreamerOpen(ze_context, device, it->second->metric_group, &streamer_desc,
@@ -5352,10 +5521,15 @@ void GPUDeviceStub::readPerfMetricsData(std::shared_ptr<std::map<uint32_t, std::
     }
 }
 
+/**
+ * @brief Resolve the PCI slot designation from a PCI bridge path.
+ *
+ * @param pciPath Ordered PCI path components from the GPU to the root.
+ * @return Slot designation when any path component matches an in-use SMBIOS slot.
+ */
 std::string GPUDeviceStub::getPciSlotByPath(std::vector<std::string> pciPath) {
     std::string ret;
-    SystemCommandResult res = execCommand("dmidecode -t 9 2>/dev/null");
-    std::vector<DMISystemSlot> slots = getSystemSlotBlocks(res.output());
+    const auto& slots = getSystemSlotBlocks();
     for (auto &slot : slots) {
         for (auto &node : pciPath) {
             if (slot.inUse() && slot.busAddress() == node) {

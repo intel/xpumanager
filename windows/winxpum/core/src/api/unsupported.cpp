@@ -130,6 +130,10 @@ xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressTime) {
     return XPUM_API_UNSUPPORTED;
 }
 
+xpum_result_t xpumRunStressEx(xpum_device_id_t deviceId, uint32_t stressTime, uint32_t computeType) {
+    return XPUM_API_UNSUPPORTED;
+}
+
 xpum_result_t xpumCheckStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int* count) {
     return XPUM_API_UNSUPPORTED;
 }

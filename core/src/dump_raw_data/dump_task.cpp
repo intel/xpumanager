@@ -496,13 +496,16 @@ void DumpRawDataTask::reschedule() {
 void DumpRawDataTask::fillTaskInfoBuffer(xpum_dump_raw_data_task_t* taskInfo) {
     taskInfo->beginTime = begin;
     taskInfo->taskId = taskId;
-    auto size = dumpFilePath.copy(taskInfo->dumpFilePath, dumpFilePath.size());
+    taskInfo->deviceId = deviceId;
+    taskInfo->tileId = tileId;
+    auto size = dumpFilePath.copy(taskInfo->dumpFilePath, sizeof(taskInfo->dumpFilePath) - 1);
     taskInfo->dumpFilePath[size] = '\0';
-    for (std::size_t i = 0; i < dumpTypeList.size(); i++) {
+    std::size_t copyCount = std::min(dumpTypeList.size(), static_cast<std::size_t>(XPUM_DUMP_MAX));
+    for (std::size_t i = 0; i < copyCount; i++) {
         auto buf = taskInfo->dumpTypeList;
         buf[i] = dumpTypeList[i];
     }
-    taskInfo->count = dumpTypeList.size();
+    taskInfo->count = copyCount;
 }
 
 } // namespace xpum

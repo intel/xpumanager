@@ -192,6 +192,8 @@ void ComletDiagnostic::setupOptions() {
     
     auto stressFlag = addFlag("-s,--stress", this->opts->stress, "Stress the GPU(s) for the specified time");
     auto stressTimeOpt = addOption("--stresstime", this->opts->stressTime, "Stress time (in minutes)");
+    auto stressTypeOpt = addOption("--stresstype", this->opts->stressType, "Stress compute type. One of: int (integer, default), sp (single-precision float), dp (double-precision float), combo (INT compute + memory bandwidth concurrently, targets max TDP)");
+    stressTypeOpt->check(CLI::IsMember({"int", "sp", "dp", "combo"}));
     auto preCheckOpt = addFlag("--precheck", this->opts->preCheck, "Do the precheck on the GPU and GPU driver. By default, precheck scans kernel messages by journalctl.\n\
 It could be configured to scan dmesg or log file through xpum.conf.");
     auto listErrorTypeOpt = addFlag("--listtypes", this->opts->listErrorType, "List all supported GPU error types");
@@ -225,15 +227,18 @@ It also applies to diag level tests.";
     preCheckOpt->excludes(level);
     preCheckOpt->excludes(stressFlag);
     preCheckOpt->excludes(stressTimeOpt);
+    preCheckOpt->excludes(stressTypeOpt);
     level->excludes(preCheckOpt);
     level->excludes(stressFlag);
     level->excludes(stressTimeOpt);
+    level->excludes(stressTypeOpt);
     level->excludes(singleTestIdList);
     singleTestIdList->excludes(level);
     sinceTimeOpt->needs(preCheckOpt);
 
     deviceIdOpt->excludes(preCheckOpt);
     stressTimeOpt->needs(stressFlag);
+    stressTypeOpt->needs(stressFlag);
 
     onlyGPUOpt->needs(preCheckOpt);
 
@@ -379,7 +384,11 @@ std::unique_ptr<nlohmann::json> ComletDiagnostic::run() {
     }
 
     if (this->opts->stress) {
-        return this->coreStub->runStress(deviceId, this->opts->stressTime);
+        uint32_t computeType = 0; // default: integer
+        if (this->opts->stressType == "sp") computeType = 1;
+        else if (this->opts->stressType == "dp") computeType = 2;
+        else if (this->opts->stressType == "combo") computeType = 3;
+        return this->coreStub->runStress(deviceId, this->opts->stressTime, computeType);
     }
 
     (*json)["error"] = "Wrong argument or unknown operation, run with --help for more information.";

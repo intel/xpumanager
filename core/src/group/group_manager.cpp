@@ -41,6 +41,11 @@ xpum_result_t GroupManager::createGroup(const char* pGroupName, xpum_group_id_t*
     }
     std::string name = std::string(pGroupName);
 
+    if (!buildIn && name.length() >= XPUM_MAX_STR_LENGTH) {
+        XPUM_LOG_DEBUG("GroupManager::createGroup-groupName exceeds maximum length of {}.", XPUM_MAX_STR_LENGTH - 1);
+        return XPUM_GENERIC_ERROR;
+    }
+
     if (pGroupId == nullptr) {
         XPUM_LOG_DEBUG("GroupManager::createGroup-pGroupId is nullptr.");
         return ret;

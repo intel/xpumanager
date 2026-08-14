@@ -45,6 +45,9 @@ typedef enum {
     CINIT(USERNAME, STRINGPOINT, 173),
     CINIT(PASSWORD, STRINGPOINT, 174),
     CINIT(MIMEPOST, OBJECTPOINT, 269),
+    CINIT(CAINFO, STRINGPOINT, 65),
+    CINIT(PINNEDPUBLICKEY, STRINGPOINT, 230),
+    CINIT(REDIR_PROTOCOLS, LONG, 182),
 } CURLoption;
 
 #define CURLINFO_LONG 0x200000
@@ -347,26 +350,61 @@ std::string getLibCurlPath();
 
 class LibCurlApi {
    private:
-    void *handle;
+    void *handle = nullptr;
     std::string libPath = "Unknown";
     std::string initErrMsg;
 
    public:
-    curl_easy_init_t curl_easy_init;
-    curl_easy_setopt_t curl_easy_setopt;
-    curl_easy_perform_t curl_easy_perform;
-    curl_easy_cleanup_t curl_easy_cleanup;
-    curl_mime_init_t curl_mime_init;
-    curl_mime_addpart_t curl_mime_addpart;
-    curl_mime_name_t curl_mime_name;
-    curl_mime_type_t curl_mime_type;
-    curl_mime_data_t curl_mime_data;
-    curl_mime_filedata_t curl_mime_filedata;
-    curl_slist_append_t curl_slist_append;
-    curl_version_info_t curl_version_info;
-    curl_easy_getinfo_t curl_easy_getinfo;
+    curl_easy_init_t curl_easy_init = nullptr;
+    curl_easy_setopt_t curl_easy_setopt = nullptr;
+    curl_easy_perform_t curl_easy_perform = nullptr;
+    curl_easy_cleanup_t curl_easy_cleanup = nullptr;
+    curl_mime_init_t curl_mime_init = nullptr;
+    curl_mime_addpart_t curl_mime_addpart = nullptr;
+    curl_mime_name_t curl_mime_name = nullptr;
+    curl_mime_type_t curl_mime_type = nullptr;
+    curl_mime_data_t curl_mime_data = nullptr;
+    curl_mime_filedata_t curl_mime_filedata = nullptr;
+    curl_slist_append_t curl_slist_append = nullptr;
+    curl_version_info_t curl_version_info = nullptr;
+    curl_easy_getinfo_t curl_easy_getinfo = nullptr;
+
+   private:
+    void steal(LibCurlApi&& other) noexcept {
+        handle = other.handle;
+        libPath = std::move(other.libPath);
+        initErrMsg = std::move(other.initErrMsg);
+        curl_easy_init = other.curl_easy_init;
+        curl_easy_setopt = other.curl_easy_setopt;
+        curl_easy_perform = other.curl_easy_perform;
+        curl_easy_cleanup = other.curl_easy_cleanup;
+        curl_mime_init = other.curl_mime_init;
+        curl_mime_addpart = other.curl_mime_addpart;
+        curl_mime_name = other.curl_mime_name;
+        curl_mime_type = other.curl_mime_type;
+        curl_mime_data = other.curl_mime_data;
+        curl_mime_filedata = other.curl_mime_filedata;
+        curl_slist_append = other.curl_slist_append;
+        curl_version_info = other.curl_version_info;
+        curl_easy_getinfo = other.curl_easy_getinfo;
+        other.handle = nullptr;
+    }
 
    public:
+    LibCurlApi(const LibCurlApi&) = delete;
+    LibCurlApi& operator=(const LibCurlApi&) = delete;
+
+    LibCurlApi(LibCurlApi&& other) noexcept { steal(std::move(other)); }
+
+    LibCurlApi& operator=(LibCurlApi&& other) noexcept {
+        if (this != &other) {
+            if (handle)
+                dlclose(handle);
+            steal(std::move(other));
+        }
+        return *this;
+    }
+
     LibCurlApi() {
         handle = dlopen("libcurl.so", RTLD_LAZY);
         if(!handle){

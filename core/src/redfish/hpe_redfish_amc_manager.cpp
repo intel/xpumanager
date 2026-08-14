@@ -137,8 +137,10 @@ static size_t curlWriteToStringCallback(char* contents, size_t size, size_t nmem
 
 static void curlBasicConfig(CURL* curl, std::string& buffer, std::string username, std::string password) {
     libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    libcurl.curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, 2L); // CURLPROTO_HTTPS only
+    if (!XPUM_REDFISH_CA_CERT.empty()) {
+        libcurl.curl_easy_setopt(curl, CURLOPT_CAINFO, XPUM_REDFISH_CA_CERT.c_str());
+    }
     libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
     // timeout
@@ -165,8 +167,10 @@ static bool getBasePage() {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
         libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-        libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        libcurl.curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, 2L); // CURLPROTO_HTTPS only
+        if (!XPUM_REDFISH_CA_CERT.empty()) {
+            libcurl.curl_easy_setopt(curl, CURLOPT_CAINFO, XPUM_REDFISH_CA_CERT.c_str());
+        }
         libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
         libcurl.curl_easy_setopt(curl, CURLOPT_TIMEOUT, XPUM_CURL_TIMEOUT);
@@ -230,14 +234,13 @@ bool HEPRedfishAmcManager::preInit(){
     // load libcurl.so
     if (!libcurl.initialized()) {
         // if fail to initialize libcurl, try to re-initialize, so that no need to restart xpum
-        LibCurlApi tmp;
-        libcurl = tmp;
+        libcurl = LibCurlApi();
         if(!libcurl.initialized()){
             XPUM_LOG_INFO("fail to load libcurl.so");
             initErrMsg = libcurl.getInitErrMsg();
             return false;
         }
-        // fail to load libcurl.so
+        // libcurl loaded successfully
         XPUM_LOG_INFO("libcurl version: {}", libcurl.getLibCurlVersion());
         XPUM_LOG_INFO("libcurl path: {}", libcurl.getLibPath());
     }
@@ -470,8 +473,10 @@ static bool uploadImage(FlashAmcFirmwareParam& flashAmcParam, std::string pushUr
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
         libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-        libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        libcurl.curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, 2L); // CURLPROTO_HTTPS only
+        if (!XPUM_REDFISH_CA_CERT.empty()) {
+            libcurl.curl_easy_setopt(curl, CURLOPT_CAINFO, XPUM_REDFISH_CA_CERT.c_str());
+        }
         libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
         // timeout

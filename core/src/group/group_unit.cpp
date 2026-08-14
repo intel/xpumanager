@@ -31,12 +31,18 @@ unsigned int GroupUnit::getDeviceCount() {
 }
 
 void GroupUnit::getName(char groupname[XPUM_MAX_STR_LENGTH]) {
-    std::size_t length = name.copy(groupname, XPUM_MAX_STR_LENGTH);
+    if (name.length() >= XPUM_MAX_STR_LENGTH) {
+        XPUM_LOG_DEBUG("GroupUnit::getName - group name length {} exceeds max ({}), truncating to fit buffer.",
+                       name.length(), XPUM_MAX_STR_LENGTH - 1);
+    }
+    std::size_t length = name.copy(groupname, XPUM_MAX_STR_LENGTH - 1);
     groupname[length] = '\0';
 }
 
 void GroupUnit::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]) {
-    for (unsigned int idx = 0; idx < deviceList.size(); idx++) {
+    std::size_t count = deviceList.size();
+    if (count > static_cast<std::size_t>(XPUM_MAX_NUM_DEVICES)) count = static_cast<std::size_t>(XPUM_MAX_NUM_DEVICES);
+    for (std::size_t idx = 0; idx < count; ++idx) {
         device_List[idx] = deviceList[idx];
     }
 }
@@ -44,7 +50,12 @@ void GroupUnit::getDeviceList(xpum_device_id_t device_List[XPUM_MAX_NUM_DEVICES]
 xpum_result_t GroupUnit::addDevice(xpum_device_id_t deviceId) {
     XPUM_LOG_TRACE("GroupUnit::addDevice");
 
-    for (unsigned int i = 0; i < deviceList.size(); i++) {
+    if (deviceList.size() >= static_cast<std::size_t>(XPUM_MAX_NUM_DEVICES)) {
+        XPUM_LOG_ERROR("GroupUnit::addDevice- device count reached maximum ({}).", XPUM_MAX_NUM_DEVICES);
+        return XPUM_GENERIC_ERROR;
+    }
+
+    for (std::size_t i = 0; i < deviceList.size(); i++) {
         if (deviceList[i] == deviceId) {
             XPUM_LOG_ERROR(std::string("GroupUnit::addDevice- device id ") + std::string(std::to_string(deviceId)) + std::string(" was already in the group."));
             return XPUM_GROUP_DEVICE_DUPLICATED;

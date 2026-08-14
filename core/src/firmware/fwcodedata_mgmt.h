@@ -48,7 +48,7 @@ class FwCodeDataMgmt {
 
     bool isNeedUpdateData= false;
 
-    std::string tmpUnpackPath = "/tmp/tmp_fw_update_for_xpum";
+    std::string tmpUnpackPath;
 
    private:
     std::string devicePath;

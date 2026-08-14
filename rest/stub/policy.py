@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2021-2023 Intel Corporation
+# Copyright (C) 2026 Intel Corporation
 # SPDX-License-Identifier: MIT
 # @file policy.py
 #
@@ -10,8 +10,95 @@ from google.protobuf import empty_pb2
 import datetime
 import traceback
 import json
+import ipaddress
+import socket
+import http.client
+import ssl as _ssl
 import urllib
+import urllib.parse
+import urllib.request
 import xpum_logger as logger
+
+# Blocked IP ranges: loopback, link-local (incl. cloud metadata), RFC1918, and other special-use
+_BLOCKED_NETWORKS = [
+    ipaddress.ip_network("127.0.0.0/8"),    # loopback
+    ipaddress.ip_network("::1/128"),          # IPv6 loopback
+    ipaddress.ip_network("10.0.0.0/8"),      # RFC1918
+    ipaddress.ip_network("172.16.0.0/12"),   # RFC1918
+    ipaddress.ip_network("192.168.0.0/16"),  # RFC1918
+    ipaddress.ip_network("169.254.0.0/16"),  # link-local / cloud metadata (e.g. 169.254.169.254)
+    ipaddress.ip_network("fe80::/10"),        # IPv6 link-local
+    ipaddress.ip_network("fc00::/7"),         # IPv6 unique local
+    ipaddress.ip_network("0.0.0.0/8"),        # this-network
+    ipaddress.ip_network("100.64.0.0/10"),   # shared address space
+]
+
+
+def _make_ssrf_safe_request(url, timeout=10):
+    """Resolve DNS once, verify SSRF safety, then connect directly to the
+    resolved IP to eliminate DNS-rebinding races.  For HTTPS the TLS
+    handshake still uses the original hostname for SNI and certificate
+    validation."""
+    parsed = urllib.parse.urlparse(url)
+    hostname = parsed.hostname
+    scheme = parsed.scheme.lower()
+    port = parsed.port or (443 if scheme == 'https' else 80)
+    try:
+        results = socket.getaddrinfo(hostname, port, type=socket.SOCK_STREAM)
+    except OSError:
+        raise ValueError("Cannot resolve: {}".format(hostname))
+    if not results:
+        raise ValueError("No addresses for: {}".format(hostname))
+    _, _, _, _, sockaddr = results[0]
+    ip_str = sockaddr[0]
+    ip = ipaddress.ip_address(ip_str)
+    if ip.version == 6 and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    if not ip.is_global or any(ip in net for net in _BLOCKED_NETWORKS):
+        raise ValueError("SSRF-blocked address: {}".format(ip))
+    path = (parsed.path or '/') + ('?' + parsed.query if parsed.query else '')
+    req_headers = {'Host': hostname}
+    if scheme == 'https':
+        ctx = _ssl.create_default_context()
+        raw_sock = socket.create_connection((ip_str, port), timeout=timeout)
+        tls_sock = ctx.wrap_socket(raw_sock, server_hostname=hostname)
+        conn = http.client.HTTPSConnection(ip_str, port=port, timeout=timeout)
+        conn.sock = tls_sock
+    else:
+        conn = http.client.HTTPConnection(ip_str, port=port, timeout=timeout)
+    try:
+        conn.request('GET', path, headers=req_headers)
+        return conn.getresponse()
+    except Exception:
+        conn.close()
+        raise
+
+
+def _is_ssrf_safe_url(url):
+    """Return True only if every resolved IP for the URL's hostname is a
+    publicly routable address (not loopback, link-local, RFC1918, or
+    cloud-metadata ranges)."""
+    try:
+        parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        results = socket.getaddrinfo(hostname, None)
+        if not results:
+            return False
+        for result in results:
+            addr = result[4][0]
+            try:
+                ip = ipaddress.ip_address(addr)
+            except ValueError:
+                return False
+            if ip.version == 6 and ip.ipv4_mapped is not None:
+                ip = ip.ipv4_mapped
+            if not ip.is_global or any(ip in net for net in _BLOCKED_NETWORKS):
+                return False
+        return True
+    except Exception:
+        return False
 
 XpumPolicyTypeToString = {
     core_pb2.POLICY_TYPE_GPU_TEMPERATURE: "XPUM_POLICY_TYPE_GPU_TEMPERATURE",
@@ -110,6 +197,8 @@ def isValidNotifyCallbackUrl(notify_callback_url):
     if notify_callback_url is None or len(notify_callback_url) == 0:
         return False
     if not (str(notify_callback_url).startswith('http://') or str(notify_callback_url).startswith('https://')):
+        return False
+    if not _is_ssrf_safe_url(notify_callback_url):
         return False
     return True
 
@@ -227,7 +316,7 @@ def readPolicyNotifyData():
                 print("{} - CallBackPolicyData: Failed to send callback url:{} -- policyType={}; policyTimestamp={}; Because callback url is invalid.".format(
                     time_stamp, one.notifyCallBackUrl, data['type'], one.timestamp))
                 continue
-            response = urllib.request.urlopen(url)
+            response = _make_ssrf_safe_request(url)
             html = response.read()
             # print(html)
             print("{} - CallBackPolicyData: Success to send callback url:{} -- policyType={}; policyTimestamp={}; ".format(

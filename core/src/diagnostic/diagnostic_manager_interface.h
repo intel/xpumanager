@@ -31,7 +31,7 @@ class DiagnosticManagerInterface : public InitCloseInterface {
 
     virtual xpum_result_t getDiagnosticsXeLinkThroughputResult(xpum_device_id_t deviceId, xpum_diag_xe_link_throughput_t resultList[], int *count) = 0;
     
-    virtual xpum_result_t runStress(xpum_device_id_t deviceId, uint32_t stressTime) = 0;
+    virtual xpum_result_t runStress(xpum_device_id_t deviceId, uint32_t stressTime, uint32_t computeType) = 0;
 
     virtual xpum_result_t checkStress(xpum_device_id_t deviceId, xpum_diag_task_info_t resultList[], int *count) = 0;
 };

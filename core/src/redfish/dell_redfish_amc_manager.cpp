@@ -97,8 +97,10 @@ bool DELLRedfishAmcManager::redfishHostInterfaceInit(){
 
 static void curlBasicConfig(CURL* curl, std::string& buffer, std::string username, std::string password) {
     libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-    libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-    libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+    libcurl.curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, 2L); // CURLPROTO_HTTPS only
+    if (!XPUM_REDFISH_CA_CERT.empty()) {
+        libcurl.curl_easy_setopt(curl, CURLOPT_CAINFO, XPUM_REDFISH_CA_CERT.c_str());
+    }
     libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
     // timeout
@@ -127,8 +129,10 @@ static bool getBasePage(std::string interface_host) {
         libcurl.curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
         libcurl.curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         libcurl.curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-        libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-        libcurl.curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+        libcurl.curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, 2L); // CURLPROTO_HTTPS only
+        if (!XPUM_REDFISH_CA_CERT.empty()) {
+            libcurl.curl_easy_setopt(curl, CURLOPT_CAINFO, XPUM_REDFISH_CA_CERT.c_str());
+        }
         libcurl.curl_easy_setopt(curl, CURLOPT_NOPROXY, "*");
 
         libcurl.curl_easy_setopt(curl, CURLOPT_TIMEOUT, XPUM_CURL_TIMEOUT);
@@ -199,14 +203,13 @@ bool DELLRedfishAmcManager::preInit(){
     // load libcurl.so
     if (!libcurl.initialized()) {
         // if fail to initialize libcurl, try to re-initialize, so that no need to restart xpum
-        LibCurlApi tmp;
-        libcurl = tmp;
+        libcurl = LibCurlApi();
         if(!libcurl.initialized()){
             XPUM_LOG_INFO("fail to load libcurl.so");
             initErrMsg = libcurl.getInitErrMsg();
             return false;
         }
-        // fail to load libcurl.so
+        // libcurl loaded successfully
         XPUM_LOG_INFO("libcurl version: {}", libcurl.getLibCurlVersion());
         XPUM_LOG_INFO("libcurl path: {}", libcurl.getLibPath());
     }
@@ -464,8 +467,8 @@ static bool uploadImage(std::string interface_host,
 
         res = libcurl.curl_easy_perform(curl);
     }
-    libcurl.curl_easy_cleanup(curl);
     if (res != CURLE_OK) {
+        libcurl.curl_easy_cleanup(curl);
         XPUM_LOG_ERROR("Fail to upload image, error code: {}", res);
         switch (res) {
             case CURLE_OPERATION_TIMEDOUT:
@@ -478,8 +481,15 @@ static bool uploadImage(std::string interface_host,
         return false;
     }
 
-    long response_code;
-    libcurl.curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    long response_code = 0;
+    CURLcode info_res = libcurl.curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    libcurl.curl_easy_cleanup(curl);
+    if (info_res != CURLE_OK) {
+        XPUM_LOG_ERROR("Fail to get HTTP response code, error code: {}", info_res);
+        flashAmcParam.errCode = XPUM_GENERIC_ERROR;
+        flashAmcParam.errMsg = "Fail to get HTTP response code for " + url;
+        return false;
+    }
     if (response_code >= 200 && response_code < 300){
         std::stringstream ss(recvHeader);
         std::string line;

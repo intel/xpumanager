@@ -3819,14 +3819,44 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                                           const ze_driver_handle_t &ze_driver,
                                           std::shared_ptr<xpum_diag_task_info_t> p_task_info,
                                           std::mutex *p_mutex,
-                                          std::map<xpum_device_id_t, std::shared_ptr<std::vector<double>>> *p_stress_score_map) {
+                                          std::map<xpum_device_id_t, std::shared_ptr<std::vector<double>>> *p_stress_score_map,
+                                          uint32_t computeType) {
     
     xpum_device_id_t device_id = p_task_info->deviceId;
     try {
         ze_result_t ret;
         struct ZeWorkGroups workgroup_info;
-        int input_value = 4;
         size_t flops_per_work_item = 2048;
+
+        // Select kernel binary and name based on compute type:
+        // 0 = integer (default), 1 = single-precision float, 2 = double-precision float
+        // 3 = combo: SP compute + memory bandwidth concurrently (targets max TDP)
+        std::string spv_file;
+        std::string kernel_name;
+        size_t element_size;
+        if (computeType == 1) {
+            spv_file = "ze_sp_compute.spv";
+            kernel_name = "compute_sp_v1";
+            element_size = sizeof(float);
+            flops_per_work_item = 4096;
+        } else if (computeType == 2) {
+            spv_file = "ze_dp_compute.spv";
+            kernel_name = "compute_dp_v1";
+            element_size = sizeof(double);
+            flops_per_work_item = 4096;
+        } else if (computeType == 3) {
+            // Combo: INT compute (higher power draw than SP on Xe2) + BW kernel.
+            // INT MAD draws ~163 W vs SP FMA at ~87 W on BMG B580.
+            spv_file = "ze_int_compute.spv";
+            kernel_name = "compute_int_v1";
+            element_size = sizeof(int);
+            flops_per_work_item = 2048;
+        } else {
+            spv_file = "ze_int_compute.spv";
+            kernel_name = "compute_int_v1";
+            element_size = sizeof(int);
+            flops_per_work_item = 2048;
+        }
 
         ze_device_properties_t device_properties;
         device_properties.pNext = nullptr;
@@ -3844,7 +3874,7 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
         }
         ze_context_handle_t context;
         contextCreate(ze_driver, &context);
-        std::vector<uint8_t> binary_file = loadBinaryFile("ze_int_compute.spv");
+        std::vector<uint8_t> binary_file = loadBinaryFile(spv_file);
         ze_module_handle_t module_handle;
         moduleCreate(context, ze_device, binary_file, &module_handle);
         uint64_t max_work_items = (uint64_t)device_properties.numSlices *
@@ -3853,6 +3883,9 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                                     device_compute_properties.maxGroupCountX * 2048;
 
         uint64_t available_memory = device_properties.maxMemAllocSize;
+        // For combo mode, BW buffer size is derived from remaining GPU memory after
+        // the compute allocation.  Initialise to 0; set inside the memory query.
+        uint64_t bw_max_floats_per_buf = 0;
         zes_device_handle_t zes_device = (zes_device_handle_t)ze_device;
         uint32_t mem_module_count = 0;
         ret = zesDeviceEnumMemoryModules(zes_device, &mem_module_count, nullptr);
@@ -3874,50 +3907,180 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
                     }
                 }
                 if (total_free_memory > 0) {
-                    // Use 90% of free memory to leave headroom for system operations
-                    available_memory = std::min(available_memory, (total_free_memory * 9) / 10);
+                    // Use 90% of free memory to leave headroom for system operations.
+                    uint64_t usable = (total_free_memory * 9) / 10;
+                    available_memory = std::min(available_memory, usable);
+                    if (computeType == 3) {
+                        // Give compute the full budget.  BW buffers get whatever
+                        // VRAM remains after the compute output is allocated.
+                        // Estimate: remaining ≈ total_free_memory - available_memory.
+                        // Take 90% of that, split equally between input and output.
+                        uint64_t remaining = (total_free_memory > available_memory)
+                            ? (total_free_memory - available_memory) * 9 / 10
+                            : total_free_memory / 8;
+                        bw_max_floats_per_buf = remaining / sizeof(float) / 2;
+                    }
                 }
             }
         }
 
-        uint64_t max_number_of_allocated_items = available_memory / sizeof(int);
+        uint64_t max_number_of_allocated_items = available_memory / element_size;
         uint64_t number_of_work_items = std::min(max_number_of_allocated_items, max_work_items);
         number_of_work_items = setWorkgroups(device_compute_properties, number_of_work_items, &workgroup_info);
 
+        // Allocate device buffers with appropriate element size
         void *device_input_value;
-        memoryAlloc(context, ze_device, sizeof(int), 1, &device_input_value);
+        memoryAlloc(context, ze_device, element_size, 1, &device_input_value);
         void *device_output_buffer;
-        memoryAlloc(context, ze_device, static_cast<std::size_t>((number_of_work_items * sizeof(int))), 1, &device_output_buffer);
+        memoryAlloc(context, ze_device, static_cast<std::size_t>((number_of_work_items * element_size)), 1, &device_output_buffer);
         ze_command_list_handle_t command_list;
         commandListCreate(context, ze_device, 0, &command_list, ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY);
         ze_command_queue_handle_t command_queue;
         commandQueueCreate(context, ze_device, 0, 0, &command_queue, ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
-        commandListAppendMemoryCopy(command_list, device_input_value, &input_value, sizeof(int));
+
+        // Copy the appropriate input value type to device
+        if (computeType == 1) {
+            float input_value = 1.3f;
+            commandListAppendMemoryCopy(command_list, device_input_value, &input_value, element_size);
+        } else if (computeType == 2) {
+            double input_value = 1.3;
+            commandListAppendMemoryCopy(command_list, device_input_value, &input_value, element_size);
+        } else {
+            int input_value = 4;
+            commandListAppendMemoryCopy(command_list, device_input_value, &input_value, element_size);
+        }
         commandListAppendBarrier(command_list);
         commandListClose(command_list);
         commandQueueExecuteCommandLists(command_queue, command_list);
         commandQueueSynchronize(command_queue);
         commandListReset(command_list);
-        ze_kernel_handle_t compute_int_v1;
-        setupFunction(module_handle, compute_int_v1, "compute_int_v1", device_input_value, device_output_buffer);
+        ze_kernel_handle_t compute_kernel;
+        setupFunction(module_handle, compute_kernel, kernel_name.c_str(), device_input_value, device_output_buffer);
 
         //runKernel stuff
-        kernelSetGroupSize(compute_int_v1, workgroup_info.group_size_x, workgroup_info.group_size_y, workgroup_info.group_size_z);
+        kernelSetGroupSize(compute_kernel, workgroup_info.group_size_x, workgroup_info.group_size_y, workgroup_info.group_size_z);
         ze_group_count_t thread_group_dimensions;
         thread_group_dimensions.groupCountX = workgroup_info.group_count_x;
         thread_group_dimensions.groupCountY = workgroup_info.group_count_y;
         thread_group_dimensions.groupCountZ = workgroup_info.group_count_z;
-        commandListAppendLaunchKernel(command_list, compute_int_v1, &thread_group_dimensions);
+        commandListAppendLaunchKernel(command_list, compute_kernel, &thread_group_dimensions);
         commandListClose(command_list);
 
-        #define KERN_TIMES 5
+        // ── Combo mode: stress memory via the COPY ENGINE ────────────────────
+        // The copy engine is separate hardware from the compute engine.
+        #define KERN_TIMES 20
+        // Running zeCommandListAppendMemoryCopy on the copy engine while
+        // the INT compute kernel runs on the compute engine gives TRUE
+        // hardware-level parallelism: both execute simultaneously, pushing
+        // power toward TDP (compute ~163 W + sustained GDDR6 BW ~20-30 W).
+        ze_command_list_handle_t bw_command_list = nullptr;
+        ze_command_queue_handle_t bw_command_queue = nullptr;
+        void *bw_input_buf = nullptr;
+        void *bw_output_buf = nullptr;
+        if (computeType == 3) {
+            // Find the dedicated copy engine ordinal.
+            uint32_t bw_ordinal = 0; // fallback: compute engine
+            uint32_t numGroups = 0;
+            XPUM_ZE_HANDLE_LOCK(ze_device,
+                zeDeviceGetCommandQueueGroupProperties(ze_device, &numGroups, nullptr));
+            if (numGroups > 0) {
+                std::vector<ze_command_queue_group_properties_t> props(numGroups);
+                for (auto &p : props) {
+                    p.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_GROUP_PROPERTIES;
+                    p.pNext = nullptr;
+                }
+                XPUM_ZE_HANDLE_LOCK(ze_device,
+                    zeDeviceGetCommandQueueGroupProperties(ze_device, &numGroups, props.data()));
+                for (uint32_t i = 0; i < numGroups; i++) {
+                    bool hasCompute = (props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COMPUTE) != 0;
+                    bool hasCopy   = (props[i].flags & ZE_COMMAND_QUEUE_GROUP_PROPERTY_FLAG_COPY) != 0;
+                    if (!hasCompute && hasCopy) { bw_ordinal = i; break; }
+                }
+            }
+
+            // Allocate src/dst buffers sized from the remaining GPU memory
+            // (computed earlier as bw_max_floats_per_buf).
+            uint64_t bw_size = bw_max_floats_per_buf * sizeof(float);
+            const uint64_t min_bw_size = 64ULL * 1024 * 1024; // 64 MB floor
+            if (bw_size < min_bw_size) bw_size = min_bw_size;
+
+            memoryAlloc(context, ze_device, bw_size, 1, &bw_input_buf);
+            memoryAlloc(context, ze_device, bw_size, 1, &bw_output_buf);
+
+            commandListCreate(context, ze_device, bw_ordinal, &bw_command_list,
+                              ZE_COMMAND_LIST_FLAG_EXPLICIT_ONLY);
+            commandQueueCreate(context, ze_device, bw_ordinal, 0, &bw_command_queue,
+                               ZE_COMMAND_QUEUE_FLAG_EXPLICIT_ONLY);
+            // Batch KERN_TIMES back-to-back copies per command list.
+            // This amortises the per-sync CPU round-trip (~0.5 ms) across
+            // multiple copies, keeping the copy engine >99% utilised.
+            // Each copy reads from src (unchanged) and writes to dst, so
+            // there are no data dependencies between successive copies.
+            for (int c = 0; c < KERN_TIMES; c++) {
+                commandListAppendMemoryCopy(bw_command_list, bw_output_buf, bw_input_buf, bw_size);
+            }
+            commandListClose(bw_command_list);
+        }
+        // ─────────────────────────────────────────────────────────────────────
         long double workTime = 0;
+
+        // For combo mode, run the BW kernel on a dedicated thread so it
+        // overlaps with the compute kernel at the hardware scheduler level.
+        // Both threads submit to separate L0 command queue objects; the GPU
+        // can pipeline the two independent work streams concurrently.
+        std::atomic<bool> bw_thread_stop{false};
+        std::thread bw_thread;
+        if (computeType == 3) {
+            bw_thread = std::thread([&]() {
+                try {
+                    while (!bw_thread_stop.load(std::memory_order_relaxed)) {
+                        commandQueueExecuteCommandLists(bw_command_queue, bw_command_list);
+                        commandQueueSynchronize(bw_command_queue);
+                    }
+                } catch (...) {
+                    // Silently absorb BW errors; compute scoring continues.
+                }
+            });
+
+            // Thermal soak for combo mode: run at full load until the GPU reaches
+            // thermal equilibrium, giving accurate peak-power readings on machines
+            // that start cold.  The soak exits early if throughput drops more than
+            // SOAK_THROTTLE_DROP below the peak seen so far — this means the power
+            // management is already throttling the clocks, and continuing to soak
+            // would only degrade the scored measurement that follows.
+            const int    SOAK_SECONDS      = 120;   // hard upper limit
+            const double SOAK_THROTTLE_DROP = 0.02; // exit if >2% below peak
+            long double  peak_soak_iops    = 0;
+            auto soak_start = std::chrono::steady_clock::now();
+            while (true) {
+                auto t0 = std::chrono::high_resolution_clock::now();
+                for (int i = 0; i < KERN_TIMES; i++) {
+                    commandQueueExecuteCommandLists(command_queue, command_list);
+                }
+                commandQueueSynchronize(command_queue);
+                auto t1 = std::chrono::high_resolution_clock::now();
+                long double timed = std::chrono::duration<long double,
+                    std::chrono::nanoseconds::period>(t1 - t0).count() / KERN_TIMES;
+                long double cur_iops = calculateGbps(timed,
+                    number_of_work_items * flops_per_work_item);
+                if (cur_iops > peak_soak_iops) peak_soak_iops = cur_iops;
+                auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(
+                    std::chrono::steady_clock::now() - soak_start).count();
+                if (elapsed >= SOAK_SECONDS) break;
+                // Early exit: GPU is throttling — stop before it degrades further
+                if (peak_soak_iops > 0 &&
+                    cur_iops < peak_soak_iops * (1.0 - SOAK_THROTTLE_DROP)) break;
+            }
+        }
+
         while (true) {
             auto begin = std::chrono::high_resolution_clock::now();
+            // Queue KERN_TIMES compute dispatches before syncing so the GPU
+            // pipeline stays full without CPU round-trip gaps.
             for (int i = 0; i < KERN_TIMES; i++) {
                 commandQueueExecuteCommandLists(command_queue, command_list);
-                commandQueueSynchronize(command_queue);
             }
+            commandQueueSynchronize(command_queue);
             auto end = std::chrono::high_resolution_clock::now();
             long double timed = std::chrono::duration<long double, 
                 std::chrono::nanoseconds::period>(end - begin).count();
@@ -3947,7 +4110,22 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
         commandListReset(command_list);
         //end of runKernel
 
-        kernelDestroy(compute_int_v1);
+        // Stop the BW thread before freeing BW resources.
+        if (computeType == 3 && bw_thread.joinable()) {
+            bw_thread_stop.store(true, std::memory_order_release);
+            bw_thread.join();
+        }
+
+        // Cleanup combo mode copy-engine resources
+        if (computeType == 3 && bw_command_list != nullptr) {
+            commandListReset(bw_command_list);
+            commandListDestroy(bw_command_list);
+            commandQueueDestroy(bw_command_queue);
+            memoryFree(context, bw_input_buf);
+            memoryFree(context, bw_output_buf);
+        }
+
+        kernelDestroy(compute_kernel);
         commandListDestroy(command_list);
         commandQueueDestroy(command_queue);
         memoryFree(context, device_input_value);
@@ -3968,7 +4146,7 @@ void DiagnosticManager::stressThreadFunc(int stress_time,
     return;
 }
 
-xpum_result_t DiagnosticManager::runStress(xpum_device_id_t deviceId, uint32_t stressTime) {
+xpum_result_t DiagnosticManager::runStress(xpum_device_id_t deviceId, uint32_t stressTime, uint32_t computeType) {
     readConfigFile(XPUM_GLOBAL_CONFIG_FILE);
     readConfigFile(DIAG_CONFIG_THRESHOLD_CONIG_FILE);
     std::unique_lock<std::mutex> lock(this->mutex);
@@ -4014,10 +4192,11 @@ xpum_result_t DiagnosticManager::runStress(xpum_device_id_t deviceId, uint32_t s
         p_task_info->startTime = Utility::getCurrentMillisecond();
         updateMessage(p_task_info->message, std::string("Doing stress"));
         stress_task_map.insert(std::pair<xpum_device_id_t, std::shared_ptr<xpum_diag_task_info_t>>(p_task_info->deviceId, p_task_info));
+        stress_compute_type_map[p_task_info->deviceId] = computeType;
         std::thread thread(DiagnosticManager::stressThreadFunc, stressTime,
                            device->getDeviceZeHandle(),
                            device->getDriverHandle(), p_task_info, &this->mutex, 
-                           &this->stress_score_map);
+                           &this->stress_score_map, computeType);
         thread.detach();
     }
     return XPUM_OK;
@@ -4077,9 +4256,30 @@ xpum_result_t DiagnosticManager::checkStress(xpum_device_id_t deviceId, xpum_dia
         device != nullptr) {
         double mean = calculateMean(allScores);
         double variance = calcaulateVariance(allScores);
-        int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_INT_GFLOPS"];
-        std::string msg = "Integer compute: Mean: " + roundDouble(mean, 3) + " GIOPS. Var: ";
-        msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GIOPS.";
+        // Determine compute type from the most recently started task
+        uint32_t ct = 0;
+        auto ctIt = stress_compute_type_map.find(deviceId == -1 ? 0 : deviceId);
+        if (ctIt != stress_compute_type_map.end()) {
+            ct = ctIt->second;
+        }
+        std::string msg;
+        if (ct == 1) {
+            int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_SINGLE_PRECISION_GFLOPS"];
+            msg = "Single-precision float compute: Mean: " + roundDouble(mean, 3) + " GFLOPS. Var: ";
+            msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GFLOPS.";
+        } else if (ct == 2) {
+            int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_DOUBLE_PRECISION_GFLOPS"];
+            msg = "Double-precision float compute: Mean: " + roundDouble(mean, 3) + " GFLOPS. Var: ";
+            msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GFLOPS.";
+        } else if (ct == 3) {
+            int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_INT_GFLOPS"];
+            msg = "Combo (INT compute + memory bandwidth): Mean: " + roundDouble(mean, 3) + " GIOPS. Var: ";
+            msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GIOPS.";
+        } else {
+            int ref = thresholds[device_names[device->getDeviceHandle()]]["REF_INT_GFLOPS"];
+            msg = "Integer compute: Mean: " + roundDouble(mean, 3) + " GIOPS. Var: ";
+            msg += roundDouble(variance, 3) + ". Ref: " + std::to_string(ref) + " GIOPS.";
+        }
         updateMessage(resultList[0].message, msg);
     }
     return XPUM_OK;

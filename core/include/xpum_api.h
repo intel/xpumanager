@@ -1039,6 +1039,18 @@ XPUM_API xpum_result_t xpumGetDiagnosticsXeLinkThroughputResult(xpum_device_id_t
 XPUM_API xpum_result_t xpumRunStress(xpum_device_id_t deviceId, uint32_t stressTime);
 
 /**
+ * @brief Run stress test on GPU with a specified compute type
+ * This function will return immediately. To check status of a stress test, call \ref xpumCheckStress
+ * 
+ * @param deviceId          IN: Device id, -1 means run stress test on all GPU devices
+ * @param stressTime        IN: The time (in minutes) to run the stress test. 0 means unlimited time.
+ * @param computeType       IN: Compute type: 0 = integer (default), 1 = single-precision float, 2 = double-precision float
+ * @return xpum_result_t 
+ * @note Support Platform: Linux
+ */
+XPUM_API xpum_result_t xpumRunStressEx(xpum_device_id_t deviceId, uint32_t stressTime, uint32_t computeType);
+
+/**
  * @brief Check stress test status
  * 
  * @param deviceId          IN: The device id to check stress test status
@@ -1598,9 +1610,14 @@ XPUM_API xpum_result_t xpumGetVfMetrics(xpum_device_id_t deviceId, xpum_vf_metri
 /**
  * @brief Generate a debug log file
  * 
- * @param fileName   IN: The file name (a .tar.gz) of debug log.
+ * @param fileName   IN: The absolute path (a .tar.gz) for the debug log archive.
+ *                       Must start with '/', contain no shell metacharacters, and
+ *                       resolve to a directory under /tmp or /var/tmp.
  * @return xpum_result_t 
  *      - \ref XPUM_OK                  if log file is generated successfully
+ *      - \ref XPUM_RESULT_INVALID_DIR  if fileName is null, not an absolute path,
+ *                                      contains forbidden characters, or its parent
+ *                                      directory is not under /tmp or /var/tmp
  * @note Support Platform: Linux
  */
 XPUM_API xpum_result_t xpumGenerateDebugLog(const char *fileName);

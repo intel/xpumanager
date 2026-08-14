@@ -7,12 +7,14 @@
 
 #include <future>
 #include <mutex>
+#include <string>
 
 #include "amc_manager.h"
 
 namespace xpum {
 
 extern int XPUM_CURL_TIMEOUT;
+extern std::string XPUM_REDFISH_CA_CERT;
 class RedfishAmcManager : public AmcManager {
    public:
     RedfishAmcManager() {

@@ -28,6 +28,26 @@ namespace xpum {
 #define XPUM_LOG_TRACE(...) spdlog::trace(__VA_ARGS__)
 #define XPUM_LOG_FATAL(...) spdlog::critical(__VA_ARGS__)
 
+// spdlog rethrows exceptions it does not recognise (see SPDLOG_LOGGER_CATCH in
+// spdlog/logger.h), and formatting the arguments can allocate. Use these
+// variants from inside a catch handler of a noexcept function, where a second
+// exception would escape and terminate the process.
+#define XPUM_LOG_ERROR_NOEXCEPT(...)     \
+    do {                                 \
+        try {                            \
+            spdlog::error(__VA_ARGS__);  \
+        } catch (...) {                  \
+        }                                \
+    } while (0)
+
+#define XPUM_LOG_DEBUG_NOEXCEPT(...)     \
+    do {                                 \
+        try {                            \
+            spdlog::debug(__VA_ARGS__);  \
+        } catch (...) {                  \
+        }                                \
+    } while (0)
+
 namespace xpum {
 
 class Logger {
