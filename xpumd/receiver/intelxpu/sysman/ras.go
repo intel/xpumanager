@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
+	l0sysmanexp "github.com/intel/level-zero-go/sysman/exp"
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
 
@@ -22,7 +23,8 @@ func init() {
 }
 
 type errorSet struct {
-	*l0sysman.Ras
+	// exp.Ras provides both the stable and the experimental RAS API.
+	*l0sysmanexp.Ras
 	logger     *zap.SugaredLogger
 	attributes errorSetAttributes
 	state      errorSetState
@@ -61,7 +63,9 @@ func enumErrorSets(d *device) []instanceScraper {
 	return scrapers
 }
 
-func newErrorSet(name string, ras *l0sysman.Ras, device *device) (*errorSet, error) {
+func newErrorSet(name string, sysRas *l0sysman.Ras, device *device) (*errorSet, error) {
+	ras := l0sysmanexp.NewRas(sysRas)
+
 	props, err := ras.GetProperties()
 	if err != nil {
 		return nil, fmt.Errorf("RAS GetProperties() failed: %w", err)
