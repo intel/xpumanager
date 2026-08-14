@@ -31,22 +31,42 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_oem_serial_id"
         Version: 65536
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536
+
+    # Pending driver scoped events reported by zesIntelDriverEventListenExp
+    Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
 
     # Function-level return-value overrides for driver-scoped calls.
     # Set a non-zero ze_result_t value to inject an error.
     ReturnValues:
       zesDriverGetExtensionProperties: 0
+      zesDriverGetExtensionFunctionAddress: 0
       zesDeviceGet: 0
       zesDriverEventListen: 0
       zesDriverEventListenEx: 0
+      zesIntelDriverEnumInfoLogsExp: 0
+      zesIntelDriverEventRegisterExp: 0
+      zesIntelDriverEventListenExp: 0
 
     # List of features that return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
     # Takes precedence over ReturnValues.
     UnsupportedFeatures:
     #   - GetExtensionProperties
+    #   - GetExtensionFunctionAddress
     #   - Driver.DeviceGet
     #   - Driver.EventListen
     #   - Driver.EventListenEx
+    #   - Driver.EventRegister
+    #   - Driver.EventListenExp
+    #   - InfoLogs
+    #   - InfoLog.GetProperties
+    #   - InfoLog.Read
+    #   - InfoLog.ReadWithMetadata
+    #   - InfoLog.Enable
+    #   - InfoLog.Disable
 
     # -------------------------------------------------------------------
     # Devices
@@ -243,7 +263,8 @@ Drivers:
             SharedSize: 134217728
             Engines: 2  # ZES_ENGINE_TYPE_FLAG_COMPUTE
 
-        # zesDriverEventListen / zesDriverEventListenEx (0 == no pending events)
+        # zesDriverEventListen / zesDriverEventListenEx /
+        # zesIntelDriverEventListenExp (0 == no pending events)
         Events: 1  # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
 
         # Function-level return-value overrides for device-scoped calls.
@@ -857,6 +878,39 @@ Drivers:
           ReturnValues:
             zesDiagnosticsGetProperties: 0
             zesDiagnosticsRunTests: 0
+
+    # -------------------------------------------------------------------
+    # Info logs (zesIntelDriverEnumInfoLogsExp)
+    # -------------------------------------------------------------------
+    InfoLogs:
+      - # zesIntelInfoLogGetPropertiesExp (nullable)
+        Properties:
+          InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 4096  # in kilobytes
+          IsInstancedCollectionSupported: false
+        # Log records returned by zesIntelInfoLogReadExp and zesIntelInfoLogReadWithMetadataExp, copied out verbatim
+        Records:
+          - Data: "CPER-RECORD-1"
+            # Per-record metadata, returned by zesIntelInfoLogReadExp and
+            # zesIntelInfoLogReadWithMetadataExp.
+            Address:
+              Domain: 0
+              Bus: 1
+              Device: 0
+              Function: 0
+            Uuid:
+              Id: "12345678-000a-00b0-0c00-00000000d000"
+            Timestamp: 1234567  # microseconds since boot
+          - Data: "CPER-RECORD-2"
+        ReturnValues:
+          zesIntelInfoLogGetPropertiesExp: 0
+          # NOTE: ZE_RESULT_WARNING_DROPPED_DATA (0x70020001) is returned
+          # together with the records read, mimicking the backend driver.
+          zesIntelInfoLogReadExp: 0
+          zesIntelInfoLogReadWithMetadataExp: 0
+          zesIntelInfoLogEnableExp: 0
+          zesIntelInfoLogDisableExp: 0
 
 # ---------------------------------------------------------------------------
 # Top-level return-value overrides

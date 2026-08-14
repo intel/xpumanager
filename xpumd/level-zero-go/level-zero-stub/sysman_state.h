@@ -9,6 +9,7 @@
 
 #include "zes_stub.h"
 #include "../level-zero/zes_api.h"
+#include "../include/intel/zes_intel_gpu_sysman.h"
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -41,6 +42,7 @@ typedef enum
 	STUB_HANDLE_STANDBY = 16,
 	STUB_HANDLE_TEMP = 17,
 	STUB_HANDLE_DIAG = 18,
+	STUB_HANDLE_INFOLOG = 19, // driver level component, unlike the ones above
 } stub_handle_type_t;
 
 typedef struct
@@ -69,6 +71,7 @@ static_assert(sizeof(stub_handle_t) == sizeof(void *), "stub_handle_t must be po
 	((T)(void *)(uintptr_t)(stub_handle_t){.bits = {.type = (ht), .drv = (d), .dev = (i), .comp = (c)}}.raw)
 
 #define SYSMAN_FIRMWARE_LOG_SIZE 256
+#define SYSMAN_INFO_LOG_RECORD_SIZE 256
 #define SYSMAN_EMPTY_ARRAY_PTR ((void *)(uintptr_t)1)
 #define SYSMAN_ARRAY_PTR_IS_EMPTY(ptr) ((void *)(ptr) == SYSMAN_EMPTY_ARRAY_PTR)
 
@@ -262,10 +265,23 @@ typedef struct
 
 typedef struct
 {
+	ze_result_t zesIntelInfoLogGetPropertiesExp;
+	ze_result_t zesIntelInfoLogReadExp;
+	ze_result_t zesIntelInfoLogReadWithMetadataExp;
+	ze_result_t zesIntelInfoLogEnableExp;
+	ze_result_t zesIntelInfoLogDisableExp;
+} sysman_info_log_rv_t;
+
+typedef struct
+{
 	ze_result_t zesDriverGetExtensionProperties;
+	ze_result_t zesDriverGetExtensionFunctionAddress;
 	ze_result_t zesDeviceGet;
 	ze_result_t zesDriverEventListen;
 	ze_result_t zesDriverEventListenEx;
+	ze_result_t zesIntelDriverEnumInfoLogsExp;
+	ze_result_t zesIntelDriverEventRegisterExp;
+	ze_result_t zesIntelDriverEventListenExp;
 } sysman_driver_rv_t;
 
 typedef struct
@@ -315,6 +331,8 @@ typedef enum
 	UNSUPPORTED_FEATURE_EVENT_REGISTER,					  // gen: key=Device.EventRegister
 	UNSUPPORTED_FEATURE_EVENT_LISTEN,					  // gen: key=Driver.EventListen
 	UNSUPPORTED_FEATURE_EVENT_LISTEN_EX,				  // gen: key=Driver.EventListenEx
+	UNSUPPORTED_FEATURE_DRIVER_EVENT_REGISTER,			  // gen: key=Driver.EventRegister
+	UNSUPPORTED_FEATURE_DRIVER_EVENT_LISTEN_EXP,		  // gen: key=Driver.EventListenExp
 	UNSUPPORTED_FEATURE_FABRIC_PORT_MULTI_THROUGHPUT,	  // gen: key=FabricPort.GetMultiPortThroughput
 	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_PROPERTIES,		  // gen: key=OverclockDomain.GetProperties
 	UNSUPPORTED_FEATURE_OC_GET_DOMAIN_VF_PROPERTIES,	  // gen: key=OverclockDomain.GetVFProperties
@@ -395,6 +413,13 @@ typedef enum
 	UNSUPPORTED_FEATURE_TEMP_GET_CONFIG,				  // gen: key=TemperatureSensor.GetConfig
 	UNSUPPORTED_FEATURE_TEMP_SET_CONFIG,				  // gen: key=TemperatureSensor.SetConfig
 	UNSUPPORTED_FEATURE_TEMP_GET_STATE,					  // gen: key=TemperatureSensor.GetState
+	UNSUPPORTED_FEATURE_GET_EXT_FUNCTION_ADDRESS,		  // gen: key=GetExtensionFunctionAddress
+	UNSUPPORTED_FEATURE_INFO_LOGS,						  // gen: key=InfoLogs
+	UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES,		  // gen: key=InfoLog.GetProperties
+	UNSUPPORTED_FEATURE_INFO_LOG_READ,					  // gen: key=InfoLog.Read
+	UNSUPPORTED_FEATURE_INFO_LOG_READ_WITH_METADATA,	  // gen: key=InfoLog.ReadWithMetadata
+	UNSUPPORTED_FEATURE_INFO_LOG_ENABLE,				  // gen: key=InfoLog.Enable
+	UNSUPPORTED_FEATURE_INFO_LOG_DISABLE,				  // gen: key=InfoLog.Disable
 } sysman_unsupported_feature_t;							  // gen: enum
 
 // ------------------------------------------------------------------
@@ -722,6 +747,27 @@ typedef struct
 // Per-driver state
 // ------------------------------------------------------------------
 
+// One canned info log record handed out by zesIntelInfoLogReadExp(). The data is
+// copied out as-is (excluding the terminating NUL), i.e. only text records can
+// be configured, which is enough for testing the bindings.
+//
+// The metadata is handed out by zesIntelInfoLogReadWithMetadataExp(), except for
+// the length and the offset of the record, which the stub computes.
+typedef struct
+{
+	char data[SYSMAN_INFO_LOG_RECORD_SIZE];
+	zes_intel_info_log_metadata_exp metadata; // gen: flatten
+	sysman_uuid_t uuid;						  // YAML parsing helper for metadata.uuid
+} sysman_info_log_record_t;
+
+typedef struct
+{
+	sysman_info_log_rv_t return_values;
+	zes_intel_info_log_properties_exp_t *properties;
+	uint32_t records_count;
+	sysman_info_log_record_t *records;
+} sysman_info_log_t;
+
 typedef struct
 {
 	sysman_driver_rv_t return_values;
@@ -731,6 +777,10 @@ typedef struct
 	zes_driver_extension_properties_t *extension_properties;
 	uint32_t devices_count;
 	sysman_device_state_t *devices;
+	uint32_t info_logs_count;
+	sysman_info_log_t *info_logs;
+	// Driver scoped events, reported by zesIntelDriverEventListenExp()
+	zes_event_type_flags_t events;
 } sysman_drivers_state_t;
 
 typedef struct

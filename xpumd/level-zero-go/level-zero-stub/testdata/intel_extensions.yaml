@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Driver with the Intel experimental extensions: info logs and driver scoped events.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536 # ZES_INTEL_DRIVER_EVENT_EXP_VERSION_1_0
+    Events: 65536 # ZES_INTEL_CPER_DATA_AVAILABLE
+    Devices:
+      # A device with a pending event and one without
+      - Properties: {}
+        Events: 1 # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
+      - Properties: {}
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0 # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0 # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 4096 # kilobytes
+          IsInstancedCollectionSupported: true
+        Records:
+          - Data: "CPER-RECORD-1"
+            # Metadata, handed out by zesIntelInfoLogReadWithMetadataExp()
+            Address:
+              Domain: 0
+              Bus: 1
+              Device: 2
+              Function: 3
+            Uuid:
+              Id: "12345678-abcd-ef01-2345-6789abcdef01"
+            Timestamp: 1234567
+          - Data: "CPER-RECORD-2"
+            Address:
+              Domain: 0
+              Bus: 4
+              Device: 5
+              Function: 6
+            Timestamp: 7654321
+      # A log whose records are read together with a warning
+      - Properties:
+          MaxSize: 1 # kilobytes
+        Records:
+          - Data: "CPER-RECORD-3"
+        ReturnValues:
+          zesIntelInfoLogReadExp: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA
+          zesIntelInfoLogReadWithMetadataExp: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA

@@ -49,6 +49,13 @@ static void *resolve_handle(const void *zes_handle, stub_handle_type_t expected_
 	if (expected_type == STUB_HANDLE_DRIVER)
 		return driver;
 
+	// Driver level components
+	if (expected_type == STUB_HANDLE_INFOLOG) {
+		if (handle.bits.comp >= driver->info_logs_count)
+			return NULL;
+		return &driver->info_logs[handle.bits.comp];
+	}
+
 	// Device
 	if (handle.bits.dev >= driver->devices_count)
 		return NULL;
@@ -137,7 +144,7 @@ static bool is_unsupported(const void *zes_handle, sysman_unsupported_feature_t 
 	sysman_drivers_state_t *drv = &system->drivers[handle.bits.drv];
 
 	// Driver features
-	if (handle.bits.type == STUB_HANDLE_DRIVER) {
+	if (handle.bits.type == STUB_HANDLE_DRIVER || handle.bits.type == STUB_HANDLE_INFOLOG) {
 		for (uint32_t i = 0; i < drv->unsupported_features_count; i++)
 			if (drv->unsupported_features[i] == flag)
 				return true;
@@ -213,6 +220,45 @@ ze_result_t zesDriverGetExtensionProperties(zes_driver_handle_t hDriver, uint32_
 		pExtensionProperties[i] = drv->extension_properties[i];
 	*pCount = n;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesDriverGetExtensionFunctionAddress(zes_driver_handle_t hDriver, const char *name,
+												 void **ppFunctionAddress)
+{
+	sysman_state_lock();
+	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
+	if (!drv)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (!name || !ppFunctionAddress)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	if (is_unsupported(hDriver, UNSUPPORTED_FEATURE_GET_EXT_FUNCTION_ADDRESS))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (drv->return_values.zesDriverGetExtensionFunctionAddress)
+		return sysman_unlock_and_return(drv->return_values.zesDriverGetExtensionFunctionAddress);
+
+	static const struct
+	{
+		const char *name;
+		void *address;
+	} functions[] = {
+		{"zesIntelDriverEnumInfoLogsExp", (void *)zesIntelDriverEnumInfoLogsExp},
+		{"zesIntelInfoLogGetPropertiesExp", (void *)zesIntelInfoLogGetPropertiesExp},
+		{"zesIntelInfoLogReadExp", (void *)zesIntelInfoLogReadExp},
+		{"zesIntelInfoLogReadWithMetadataExp", (void *)zesIntelInfoLogReadWithMetadataExp},
+		{"zesIntelInfoLogEnableExp", (void *)zesIntelInfoLogEnableExp},
+		{"zesIntelInfoLogDisableExp", (void *)zesIntelInfoLogDisableExp},
+		{"zesIntelDriverEventRegisterExp", (void *)zesIntelDriverEventRegisterExp},
+		{"zesIntelDriverEventListenExp", (void *)zesIntelDriverEventListenExp},
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(functions); i++) {
+		if (strcmp(name, functions[i].name) == 0) {
+			*ppFunctionAddress = functions[i].address;
+			return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+		}
+	}
+	*ppFunctionAddress = NULL;
+	return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 ze_result_t zesDeviceGet(zes_driver_handle_t hDriver, uint32_t *pCount, zes_device_handle_t *phDevices)
@@ -1127,21 +1173,48 @@ ze_result_t zesDeviceEventRegister(zes_device_handle_t hDevice, zes_event_type_f
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
+// Different variants of the event listen API
+typedef enum
+{
+	EVENT_LISTEN_VARIANT_BASE, // zesDriverEventListen
+	EVENT_LISTEN_VARIANT_EX,   // zesDriverEventListenEx
+	EVENT_LISTEN_VARIANT_EXP,  // zesIntelDriverEventListenExp
+} event_listen_variant_t;
+
 // Caller must hold g_state_lock.
-static ze_result_t driver_event_listen_peek(ze_driver_handle_t hDriver, uint32_t count, zes_device_handle_t *phDevices,
-											uint32_t *pNumDeviceEvents, zes_event_type_flags_t *pEvents, bool is_ex)
+static ze_result_t driver_event_listen_peek(ze_driver_handle_t hDriver, event_listen_variant_t variant, uint32_t count,
+											zes_device_handle_t *phDevices, uint32_t *pNumDeviceEvents,
+											zes_event_type_flags_t *pEvents, zes_event_type_flags_t *pDriverEvents)
 {
 	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
 	if (!drv)
 		return ZE_RESULT_ERROR_INVALID_NULL_HANDLE;
-	bool unsupported = is_ex ? is_unsupported(hDriver, UNSUPPORTED_FEATURE_EVENT_LISTEN_EX)
-							 : is_unsupported(hDriver, UNSUPPORTED_FEATURE_EVENT_LISTEN);
-	if (unsupported)
+	sysman_unsupported_feature_t feature;
+	ze_result_t rv;
+	switch (variant) {
+	case EVENT_LISTEN_VARIANT_EX:
+		feature = UNSUPPORTED_FEATURE_EVENT_LISTEN_EX;
+		rv = drv->return_values.zesDriverEventListenEx;
+		break;
+	case EVENT_LISTEN_VARIANT_EXP:
+		feature = UNSUPPORTED_FEATURE_DRIVER_EVENT_LISTEN_EXP;
+		rv = drv->return_values.zesIntelDriverEventListenExp;
+		break;
+	case EVENT_LISTEN_VARIANT_BASE:
+	default:
+		feature = UNSUPPORTED_FEATURE_EVENT_LISTEN;
+		rv = drv->return_values.zesDriverEventListen;
+		break;
+	}
+	if (is_unsupported(hDriver, feature))
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	ze_result_t rv = is_ex ? drv->return_values.zesDriverEventListenEx : drv->return_values.zesDriverEventListen;
 	if (rv)
 		return rv;
-	if (!phDevices || !pNumDeviceEvents || !pEvents)
+	if (!pNumDeviceEvents)
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	// The Exp variant allows listening for driver scoped events only, i.e. without any devices.
+	bool devices_optional = variant == EVENT_LISTEN_VARIANT_EXP && count == 0;
+	if ((!phDevices || !pEvents) && !devices_optional)
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	stub_handle_t drv_h = decode_handle(hDriver);
 	uint32_t num_events = 0;
@@ -1158,17 +1231,21 @@ static ze_result_t driver_event_listen_peek(ze_driver_handle_t hDriver, uint32_t
 			num_events++;
 	}
 	*pNumDeviceEvents = num_events;
+	if (pDriverEvents)
+		*pDriverEvents = drv->events;
 	return ZE_RESULT_SUCCESS;
 }
 
 // Poll with 1-second interval, with initial delay of min(1 second, timeout) to
 // limit flooding on the caller. Error cases return without delay.
-static ze_result_t driver_event_listen_poll(ze_driver_handle_t hDriver, uint64_t timeout_ms, uint32_t count,
-											zes_device_handle_t *phDevices, uint32_t *pNumDeviceEvents,
-											zes_event_type_flags_t *pEvents, bool is_ex)
+static ze_result_t driver_event_listen_poll(ze_driver_handle_t hDriver, event_listen_variant_t variant,
+											uint64_t timeout_ms, uint32_t count, zes_device_handle_t *phDevices,
+											uint32_t *pNumDeviceEvents, zes_event_type_flags_t *pEvents,
+											zes_event_type_flags_t *pDriverEvents)
 {
 	// Initial peek to check error cases
-	ze_result_t result = driver_event_listen_peek(hDriver, count, phDevices, pNumDeviceEvents, pEvents, is_ex);
+	ze_result_t result =
+		driver_event_listen_peek(hDriver, variant, count, phDevices, pNumDeviceEvents, pEvents, pDriverEvents);
 	if (result != ZE_RESULT_SUCCESS)
 		return result;
 
@@ -1197,8 +1274,9 @@ static ze_result_t driver_event_listen_poll(ze_driver_handle_t hDriver, uint64_t
 			delay = rem;
 		sysman_state_lock();
 
-		ze_result_t result = driver_event_listen_peek(hDriver, count, phDevices, pNumDeviceEvents, pEvents, is_ex);
-		if (result != ZE_RESULT_SUCCESS || *pNumDeviceEvents > 0)
+		ze_result_t result =
+			driver_event_listen_peek(hDriver, variant, count, phDevices, pNumDeviceEvents, pEvents, pDriverEvents);
+		if (result != ZE_RESULT_SUCCESS || *pNumDeviceEvents > 0 || (pDriverEvents && *pDriverEvents))
 			return result;
 	}
 }
@@ -1209,8 +1287,8 @@ ze_result_t zesDriverEventListen(ze_driver_handle_t hDriver, uint32_t timeout, u
 {
 	sysman_state_lock();
 	uint64_t timeout_ms = (timeout == UINT32_MAX) ? UINT64_MAX : (uint64_t)timeout;
-	return sysman_unlock_and_return(
-		driver_event_listen_poll(hDriver, timeout_ms, count, phDevices, pNumDeviceEvents, pEvents, false));
+	return sysman_unlock_and_return(driver_event_listen_poll(hDriver, EVENT_LISTEN_VARIANT_BASE, timeout_ms, count,
+															 phDevices, pNumDeviceEvents, pEvents, NULL));
 }
 
 ze_result_t zesDriverEventListenEx(ze_driver_handle_t hDriver, uint64_t timeout, uint32_t count,
@@ -1218,8 +1296,8 @@ ze_result_t zesDriverEventListenEx(ze_driver_handle_t hDriver, uint64_t timeout,
 								   zes_event_type_flags_t *pEvents)
 {
 	sysman_state_lock();
-	return sysman_unlock_and_return(
-		driver_event_listen_poll(hDriver, timeout, count, phDevices, pNumDeviceEvents, pEvents, true));
+	return sysman_unlock_and_return(driver_event_listen_poll(hDriver, EVENT_LISTEN_VARIANT_EX, timeout, count,
+															 phDevices, pNumDeviceEvents, pEvents, NULL));
 }
 
 // ------------------------------------------------------------------
@@ -2865,4 +2943,209 @@ ze_result_t zesTemperatureGetState(zes_temp_handle_t hTemperature, double *pTemp
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	*pTemperature = temp->temperature;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+// ------------------------------------------------------------------
+// Info logs (Intel experimental extension)
+// ------------------------------------------------------------------
+
+ze_result_t zesIntelDriverEnumInfoLogsExp(zes_driver_handle_t hDriver, uint32_t *pCount,
+										  zes_intel_info_log_handle_t *phInfoLogs)
+{
+	sysman_state_lock();
+	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
+	if (!drv)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hDriver, UNSUPPORTED_FEATURE_INFO_LOGS))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (drv->return_values.zesIntelDriverEnumInfoLogsExp)
+		return sysman_unlock_and_return(drv->return_values.zesIntelDriverEnumInfoLogsExp);
+	uint32_t n = drv->info_logs_count;
+	if (!pCount)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	if (!phInfoLogs) {
+		*pCount = n;
+		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	}
+	n = (*pCount < n) ? *pCount : n;
+	stub_handle_t driver_handle = decode_handle(hDriver);
+	for (uint32_t i = 0; i < n; i++)
+		phInfoLogs[i] =
+			MAKE_COMPONENT_HANDLE(zes_intel_info_log_handle_t, STUB_HANDLE_INFOLOG, driver_handle.bits.drv, 0, i);
+	*pCount = n;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesIntelInfoLogGetPropertiesExp(zes_intel_info_log_handle_t hInfoLog,
+											zes_intel_info_log_properties_exp_t *pProperties)
+{
+	sysman_state_lock();
+	sysman_info_log_t *log = (sysman_info_log_t *)resolve_handle(hInfoLog, STUB_HANDLE_INFOLOG);
+	if (!log)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hInfoLog, UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (log->return_values.zesIntelInfoLogGetPropertiesExp)
+		return sysman_unlock_and_return(log->return_values.zesIntelInfoLogGetPropertiesExp);
+	if (!(log->properties))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (!pProperties)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	zes_structure_type_ext_t stype = pProperties->stype;
+	void *pNext = pProperties->pNext;
+	*pProperties = *log->properties;
+	pProperties->stype = stype;
+	pProperties->pNext = pNext;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesIntelInfoLogReadExp(zes_intel_info_log_handle_t hInfoLog, uint32_t *pSize, uint8_t *pBuffer)
+{
+	sysman_state_lock();
+	sysman_info_log_t *log = (sysman_info_log_t *)resolve_handle(hInfoLog, STUB_HANDLE_INFOLOG);
+	if (!log)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hInfoLog, UNSUPPORTED_FEATURE_INFO_LOG_READ))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	// A configured warning is returned with the data, like the backend driver
+	// does when it had to drop records that did not fit in the buffer.
+	ze_result_t ret = log->return_values.zesIntelInfoLogReadExp;
+	if (ret != ZE_RESULT_SUCCESS && ret != ZE_RESULT_WARNING_DROPPED_DATA)
+		return sysman_unlock_and_return(ret);
+
+	if (!pSize || !pBuffer || *pSize == 0)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_ARGUMENT);
+
+	// Only whole records are read. Unlike the backend driver, the stub does not
+	// consume the records: reading always starts from the first one.
+	// NOTE: unlike the records from the real driver, the records from the stub
+	// are null-terminated strings (from its config)
+	uint32_t size = 0;
+	for (uint32_t i = 0; i < log->records_count; i++) {
+		const char *record = log->records[i].data;
+		size_t len = sysman_strnlen(record, SYSMAN_INFO_LOG_RECORD_SIZE);
+		if (len > (size_t)(*pSize - size))
+			break;
+		memcpy(pBuffer + size, record, len);
+		size += (uint32_t)len;
+	}
+	*pSize = size;
+	return sysman_unlock_and_return(ret);
+}
+
+ze_result_t zesIntelInfoLogReadWithMetadataExp(zes_intel_info_log_handle_t hInfoLog, uint32_t *pSize, uint8_t *pBuffer,
+											   uint32_t *pEventCount, zes_intel_info_log_metadata_exp *pDescriptors)
+{
+	sysman_state_lock();
+	sysman_info_log_t *log = (sysman_info_log_t *)resolve_handle(hInfoLog, STUB_HANDLE_INFOLOG);
+	if (!log)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hInfoLog, UNSUPPORTED_FEATURE_INFO_LOG_READ_WITH_METADATA))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	// A configured warning is returned with the data, see zesIntelInfoLogReadExp()
+	ze_result_t ret = log->return_values.zesIntelInfoLogReadWithMetadataExp;
+	if (ret != ZE_RESULT_SUCCESS && ret != ZE_RESULT_WARNING_DROPPED_DATA)
+		return sysman_unlock_and_return(ret);
+	if (!pSize || !pEventCount)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_ARGUMENT);
+
+	// Without both output buffers, only size of pending data is returned.
+	// NOTE: unlike the records from the real driver, the records from the stub
+	// are null-terminated strings (from its config)
+	if (!pBuffer || !pDescriptors) {
+		uint32_t pending = 0;
+		for (uint32_t i = 0; i < log->records_count; i++)
+			pending += (uint32_t)sysman_strnlen(log->records[i].data, SYSMAN_INFO_LOG_RECORD_SIZE);
+		*pSize = pending;
+		*pEventCount = log->records_count;
+		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	}
+
+	// Only whole records are read and the stub does not consume them.
+	uint32_t size = 0;
+	uint32_t count = 0;
+	for (uint32_t i = 0; i < log->records_count && count < *pEventCount; i++) {
+		const sysman_info_log_record_t *record = &log->records[i];
+		size_t len = sysman_strnlen(record->data, SYSMAN_INFO_LOG_RECORD_SIZE);
+		if (len > (size_t)(*pSize - size))
+			break;
+		memcpy(pBuffer + size, record->data, len);
+
+		zes_structure_type_ext_t stype = pDescriptors[count].stype;
+		void *pNext = pDescriptors[count].pNext;
+		pDescriptors[count] = record->metadata;
+		pDescriptors[count].stype = stype;
+		pDescriptors[count].pNext = pNext;
+		// The location of the record in the buffer is not configured but computed
+		pDescriptors[count].offset = size;
+		pDescriptors[count].lengthOfData = (uint32_t)len;
+
+		size += (uint32_t)len;
+		count++;
+	}
+	*pSize = size;
+	*pEventCount = count;
+	return sysman_unlock_and_return(ret);
+}
+
+ze_result_t zesIntelInfoLogEnableExp(zes_intel_info_log_handle_t hInfoLog,
+									 zes_intel_info_log_enable_descriptor_exp *pEnableDescriptor)
+{
+	sysman_state_lock();
+	sysman_info_log_t *log = (sysman_info_log_t *)resolve_handle(hInfoLog, STUB_HANDLE_INFOLOG);
+	if (!log)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hInfoLog, UNSUPPORTED_FEATURE_INFO_LOG_ENABLE))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (log->return_values.zesIntelInfoLogEnableExp)
+		return sysman_unlock_and_return(log->return_values.zesIntelInfoLogEnableExp);
+	if (!pEnableDescriptor)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	// NOTE: The requested configuration is accepted as is, input args are not modified
+	// (i.e. rounding/setting the values to what is supported like the real backend driver does)
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesIntelInfoLogDisableExp(zes_intel_info_log_handle_t hInfoLog)
+{
+	sysman_state_lock();
+	sysman_info_log_t *log = (sysman_info_log_t *)resolve_handle(hInfoLog, STUB_HANDLE_INFOLOG);
+	if (!log)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hInfoLog, UNSUPPORTED_FEATURE_INFO_LOG_DISABLE))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (log->return_values.zesIntelInfoLogDisableExp)
+		return sysman_unlock_and_return(log->return_values.zesIntelInfoLogDisableExp);
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+// ------------------------------------------------------------------
+// Driver scoped events (Intel experimental extension)
+// ------------------------------------------------------------------
+
+ze_result_t zesIntelDriverEventRegisterExp(zes_driver_handle_t hDriver, zes_event_type_flags_t events)
+{
+	sysman_state_lock();
+	sysman_drivers_state_t *drv = (sysman_drivers_state_t *)resolve_handle(hDriver, STUB_HANDLE_DRIVER);
+	if (!drv)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hDriver, UNSUPPORTED_FEATURE_DRIVER_EVENT_REGISTER))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (drv->return_values.zesIntelDriverEventRegisterExp)
+		return sysman_unlock_and_return(drv->return_values.zesIntelDriverEventRegisterExp);
+	// Only driver scoped events can be registered, the device ones are registered with zesDeviceEventRegister().
+	if (events & ~(zes_event_type_flags_t)ZES_INTEL_CPER_DATA_AVAILABLE)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_ENUMERATION);
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesIntelDriverEventListenExp(zes_driver_handle_t hDriver, uint64_t timeout, uint32_t count,
+										 zes_device_handle_t *phDevices, uint32_t *pNumDeviceEvents,
+										 zes_event_type_flags_t *pEvents, zes_event_type_flags_t *pDriverEvents)
+{
+	sysman_state_lock();
+	if (pDriverEvents)
+		*pDriverEvents = 0;
+	return sysman_unlock_and_return(driver_event_listen_poll(hDriver, EVENT_LISTEN_VARIANT_EXP, timeout, count,
+															 phDevices, pNumDeviceEvents, pEvents, pDriverEvents));
 }

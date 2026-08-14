@@ -6,6 +6,10 @@
 
 Drivers:
   - ExtensionProperties: []
+    Events: 0
+    InfoLogs:
+      - Properties: {}
+        Records: []
     Devices:
       - Properties: {}
         State: {}

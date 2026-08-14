@@ -48,6 +48,13 @@ static int g_fail = 0;
 #define YAML_ALL_COMPONENTS "testdata/all_components.yaml"
 #define YAML_INVALID_UUID "testdata/invalid_uuid.yaml"
 #define YAML_UNSUPPORTED_FEATURES "testdata/unsupported_features.yaml"
+#define YAML_INTEL_EXTENSIONS "testdata/intel_extensions.yaml"
+
+// Info log records of the intel extensions (from the testdata)
+#define INFO_LOG_RECORD_1 "CPER-RECORD-1"
+#define INFO_LOG_RECORD_2 "CPER-RECORD-2"
+#define INFO_LOG_RECORD_3 "CPER-RECORD-3"
+#define INFO_LOG_RECORDS_ALL INFO_LOG_RECORD_1 INFO_LOG_RECORD_2
 
 // ------------------------------------------------------------------
 // Test cases
@@ -256,6 +263,12 @@ static void test_wrong_handle_type_rejected(void)
 	zes_device_properties_t dproperties = {.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES};
 	ASSERT_ZE_RET("engine handle rejected as device handle",
 				  zesDeviceGetProperties((zes_device_handle_t)engs[0], &dproperties),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+
+	// Pass device handle where info log handle is expected.
+	zes_intel_info_log_properties_exp_t lproperties = {.stype = ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_PROPERTIES_EXP};
+	ASSERT_ZE_RET("device handle rejected as info log handle",
+				  zesIntelInfoLogGetPropertiesExp((zes_intel_info_log_handle_t)devs[0], &lproperties),
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 
 	free(drvs);
@@ -598,9 +611,14 @@ static void test_error_cases(void)
 	zes_engine_handle_t eng0 = NULL;
 	ASSERT_ZE_OK("zesDeviceEnumEngineGroups", zesDeviceEnumEngineGroups(dev, &eng_n, &eng0));
 
+	uint32_t log_n = 1;
+	zes_intel_info_log_handle_t log = NULL;
+	ASSERT_ZE_OK("zesIntelDriverEnumInfoLogsExp", zesIntelDriverEnumInfoLogsExp(drv, &log_n, &log));
+
 	ze_driver_handle_t bad_drv = NULL;
 	zes_device_handle_t bad_dev = NULL;
 	zes_engine_handle_t bad_eng = NULL;
+	zes_intel_info_log_handle_t bad_log = NULL;
 
 	// zesDriverGet
 	ASSERT_ZE_RET("zesDriverGet: NULL pCount", zesDriverGet(NULL, NULL), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
@@ -611,6 +629,19 @@ static void test_error_cases(void)
 	ASSERT_ZE_RET("zesDriverGetExtensionProperties: NULL pCount with array",
 				  zesDriverGetExtensionProperties(drv, NULL, (zes_driver_extension_properties_t *)(uintptr_t)1),
 				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+
+	// zesDriverGetExtensionFunctionAddress
+	{
+		void *addr = NULL;
+		ASSERT_ZE_RET("zesDriverGetExtensionFunctionAddress: NULL handle",
+					  zesDriverGetExtensionFunctionAddress(bad_drv, "zesIntelInfoLogReadExp", &addr),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesDriverGetExtensionFunctionAddress: NULL name",
+					  zesDriverGetExtensionFunctionAddress(drv, NULL, &addr), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET("zesDriverGetExtensionFunctionAddress: NULL ppFunctionAddress",
+					  zesDriverGetExtensionFunctionAddress(drv, "zesIntelInfoLogReadExp", NULL),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	}
 
 	// zesDeviceGet
 	ASSERT_ZE_RET("zesDeviceGet: NULL handle", zesDeviceGet(bad_drv, NULL, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
@@ -816,6 +847,68 @@ static void test_error_cases(void)
 					  zesDriverEventListenEx(drv, 0, 0, (zes_device_handle_t *)&dev, &n, NULL),
 					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	}
+
+	// Driver scoped events (Intel experimental extension)
+	ASSERT_ZE_RET("zesIntelDriverEventRegisterExp: NULL handle", zesIntelDriverEventRegisterExp(bad_drv, 0),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	{
+		uint32_t n = 0;
+		zes_event_type_flags_t ev = 0;
+		zes_event_type_flags_t drv_ev = 0;
+		ASSERT_ZE_RET("zesIntelDriverEventListenExp: NULL handle",
+					  zesIntelDriverEventListenExp(bad_drv, 0, 0, NULL, &n, NULL, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesIntelDriverEventListenExp: NULL pNumDeviceEvents",
+					  zesIntelDriverEventListenExp(drv, 0, 1, &dev, NULL, &ev, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET("zesIntelDriverEventListenExp: NULL phDevices",
+					  zesIntelDriverEventListenExp(drv, 0, 1, NULL, &n, &ev, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET("zesIntelDriverEventListenExp: NULL pEvents",
+					  zesIntelDriverEventListenExp(drv, 0, 1, &dev, &n, NULL, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	}
+
+	// Info logs (Intel experimental extension)
+	ASSERT_ZE_RET("zesIntelDriverEnumInfoLogsExp: NULL handle", zesIntelDriverEnumInfoLogsExp(bad_drv, NULL, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesIntelDriverEnumInfoLogsExp: NULL pCount", zesIntelDriverEnumInfoLogsExp(drv, NULL, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	ASSERT_ZE_RET("zesIntelInfoLogGetPropertiesExp: NULL handle", zesIntelInfoLogGetPropertiesExp(bad_log, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesIntelInfoLogGetPropertiesExp: NULL pProperties", zesIntelInfoLogGetPropertiesExp(log, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	{
+		uint8_t log_buf[16];
+		uint32_t log_size = sizeof(log_buf);
+		uint32_t zero_size = 0;
+		ASSERT_ZE_RET("zesIntelInfoLogReadExp: NULL handle", zesIntelInfoLogReadExp(bad_log, &log_size, log_buf),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesIntelInfoLogReadExp: NULL pSize", zesIntelInfoLogReadExp(log, NULL, log_buf),
+					  ZE_RESULT_ERROR_INVALID_ARGUMENT);
+		ASSERT_ZE_RET("zesIntelInfoLogReadExp: NULL pBuffer", zesIntelInfoLogReadExp(log, &log_size, NULL),
+					  ZE_RESULT_ERROR_INVALID_ARGUMENT);
+		ASSERT_ZE_RET("zesIntelInfoLogReadExp: zero size", zesIntelInfoLogReadExp(log, &zero_size, log_buf),
+					  ZE_RESULT_ERROR_INVALID_ARGUMENT);
+
+		uint32_t log_count = 1;
+		zes_intel_info_log_metadata_exp descriptors[1] = {{.stype = ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_METADATA_EXP}};
+		ASSERT_ZE_RET("zesIntelInfoLogReadWithMetadataExp: NULL handle",
+					  zesIntelInfoLogReadWithMetadataExp(bad_log, &log_size, log_buf, &log_count, descriptors),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesIntelInfoLogReadWithMetadataExp: NULL pSize",
+					  zesIntelInfoLogReadWithMetadataExp(log, NULL, log_buf, &log_count, descriptors),
+					  ZE_RESULT_ERROR_INVALID_ARGUMENT);
+		ASSERT_ZE_RET("zesIntelInfoLogReadWithMetadataExp: NULL pEventCount",
+					  zesIntelInfoLogReadWithMetadataExp(log, &log_size, log_buf, NULL, descriptors),
+					  ZE_RESULT_ERROR_INVALID_ARGUMENT);
+	}
+	ASSERT_ZE_RET("zesIntelInfoLogEnableExp: NULL handle", zesIntelInfoLogEnableExp(bad_log, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesIntelInfoLogEnableExp: NULL pEnableDescriptor", zesIntelInfoLogEnableExp(log, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	ASSERT_ZE_RET("zesIntelInfoLogDisableExp: NULL handle", zesIntelInfoLogDisableExp(bad_log),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 
 	// Fabric ports
 	{
@@ -1199,17 +1292,216 @@ static void test_unsupported_features(void)
 	sysman_state_reset();
 	ASSERT("load unsupported_features.yaml", sysman_state_load(YAML_UNSUPPORTED_FEATURES) == 0);
 
+	static const sysman_unsupported_feature_t driver_features[] = {
+		UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET,
+		UNSUPPORTED_FEATURE_EVENT_LISTEN,
+		UNSUPPORTED_FEATURE_GET_EXT_FUNCTION_ADDRESS,
+		UNSUPPORTED_FEATURE_DRIVER_EVENT_REGISTER,
+		UNSUPPORTED_FEATURE_DRIVER_EVENT_LISTEN_EXP,
+		UNSUPPORTED_FEATURE_INFO_LOGS,
+		UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES,
+		UNSUPPORTED_FEATURE_INFO_LOG_READ,
+		UNSUPPORTED_FEATURE_INFO_LOG_READ_WITH_METADATA,
+		UNSUPPORTED_FEATURE_INFO_LOG_ENABLE,
+		UNSUPPORTED_FEATURE_INFO_LOG_DISABLE,
+	};
+	static const sysman_unsupported_feature_t device_features[] = {UNSUPPORTED_FEATURE_GET_STATE,
+																   UNSUPPORTED_FEATURE_FANS};
+
 	sysman_state_lock();
 	sysman_drivers_state_t *drv = &g_sysman_state.system.drivers[0];
-	ASSERT("driver UnsupportedFeatures count", drv->unsupported_features_count == 2);
-	ASSERT("driver UnsupportedFeatures[0]", drv->unsupported_features[0] == UNSUPPORTED_FEATURE_DRIVER_DEVICE_GET);
-	ASSERT("driver UnsupportedFeatures[1]", drv->unsupported_features[1] == UNSUPPORTED_FEATURE_EVENT_LISTEN);
+	ASSERT("driver UnsupportedFeatures count", drv->unsupported_features_count == ARRAY_SIZE(driver_features));
+	for (uint32_t i = 0; i < drv->unsupported_features_count && i < ARRAY_SIZE(driver_features); i++) {
+		char label[64];
+		snprintf(label, sizeof(label), "driver UnsupportedFeatures[%u]", i);
+		ASSERT(label, drv->unsupported_features[i] == driver_features[i]);
+	}
 
 	sysman_device_state_t *dev = &drv->devices[0];
-	ASSERT("device UnsupportedFeatures count", dev->unsupported_features_count == 2);
-	ASSERT("device UnsupportedFeatures[0]", dev->unsupported_features[0] == UNSUPPORTED_FEATURE_GET_STATE);
-	ASSERT("device UnsupportedFeatures[1]", dev->unsupported_features[1] == UNSUPPORTED_FEATURE_FANS);
+	ASSERT("device UnsupportedFeatures count", dev->unsupported_features_count == ARRAY_SIZE(device_features));
+	for (uint32_t i = 0; i < dev->unsupported_features_count && i < ARRAY_SIZE(device_features); i++) {
+		char label[64];
+		snprintf(label, sizeof(label), "device UnsupportedFeatures[%u]", i);
+		ASSERT(label, dev->unsupported_features[i] == device_features[i]);
+	}
 	sysman_state_unlock();
+
+	sysman_state_reset();
+}
+
+// ------------------------------------------------------------------
+// Intel experimental extensions
+// ------------------------------------------------------------------
+
+static void test_intel_extension_function_address(void)
+{
+	printf("test_intel_extension_function_address\n");
+
+	sysman_state_reset();
+	ASSERT("load intel_extensions.yaml", sysman_state_load(YAML_INTEL_EXTENSIONS) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	ASSERT_ZE_OK("zesDriverGet", zesDriverGet(&drv_n, &drv));
+
+	// Every function of the extensions is resolvable by its name
+	static const struct
+	{
+		const char *name;
+		void *address;
+	} functions[] = {
+		{"zesIntelDriverEnumInfoLogsExp", (void *)zesIntelDriverEnumInfoLogsExp},
+		{"zesIntelInfoLogGetPropertiesExp", (void *)zesIntelInfoLogGetPropertiesExp},
+		{"zesIntelInfoLogReadExp", (void *)zesIntelInfoLogReadExp},
+		{"zesIntelInfoLogReadWithMetadataExp", (void *)zesIntelInfoLogReadWithMetadataExp},
+		{"zesIntelInfoLogEnableExp", (void *)zesIntelInfoLogEnableExp},
+		{"zesIntelInfoLogDisableExp", (void *)zesIntelInfoLogDisableExp},
+		{"zesIntelDriverEventRegisterExp", (void *)zesIntelDriverEventRegisterExp},
+		{"zesIntelDriverEventListenExp", (void *)zesIntelDriverEventListenExp},
+	};
+	for (size_t i = 0; i < ARRAY_SIZE(functions); i++) {
+		void *addr = NULL;
+		ze_result_t result = zesDriverGetExtensionFunctionAddress(drv, functions[i].name, &addr);
+		char label[128];
+		snprintf(label, sizeof(label), "zesDriverGetExtensionFunctionAddress: %s", functions[i].name);
+		ASSERT_ZE_OK(label, result);
+		snprintf(label, sizeof(label), "zesDriverGetExtensionFunctionAddress: %s address", functions[i].name);
+		ASSERT(label, addr == functions[i].address);
+	}
+
+	// An unknown name is unsupported and the address is cleared
+	void *addr = (void *)(uintptr_t)1;
+	ASSERT_ZE_RET("zesDriverGetExtensionFunctionAddress: unknown name",
+				  zesDriverGetExtensionFunctionAddress(drv, "zesFooBarExp", &addr),
+				  ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	ASSERT("zesDriverGetExtensionFunctionAddress: unknown name address", addr == NULL);
+
+	sysman_state_reset();
+}
+
+static void test_intel_info_logs(void)
+{
+	printf("test_intel_info_logs\n");
+
+	sysman_state_reset();
+	ASSERT("load intel_extensions.yaml", sysman_state_load(YAML_INTEL_EXTENSIONS) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	ASSERT_ZE_OK("zesDriverGet", zesDriverGet(&drv_n, &drv));
+
+	// Enumeration
+	uint32_t count = 0;
+	ASSERT_ZE_OK("zesIntelDriverEnumInfoLogsExp: count", zesIntelDriverEnumInfoLogsExp(drv, &count, NULL));
+	ASSERT("zesIntelDriverEnumInfoLogsExp: count value", count == 2);
+	zes_intel_info_log_handle_t logs[2] = {NULL, NULL};
+	ASSERT_ZE_OK("zesIntelDriverEnumInfoLogsExp: handles", zesIntelDriverEnumInfoLogsExp(drv, &count, logs));
+	ASSERT("zesIntelDriverEnumInfoLogsExp: first handle", logs[0] != NULL);
+	ASSERT("zesIntelDriverEnumInfoLogsExp: second handle", logs[1] != NULL);
+	zes_intel_info_log_handle_t log = logs[0];
+
+	// Only whole records are read (the second record doesn't fit in the buffer)
+	uint8_t buf[16];
+	uint32_t size = sizeof(buf);
+	ASSERT_ZE_OK("zesIntelInfoLogReadExp: whole records", zesIntelInfoLogReadExp(log, &size, buf));
+	ASSERT("zesIntelInfoLogReadExp: whole records size", size == strlen(INFO_LOG_RECORD_1));
+	ASSERT("zesIntelInfoLogReadExp: whole records data", memcmp(buf, INFO_LOG_RECORD_1, size) == 0);
+	size = 4;
+	ASSERT_ZE_OK("zesIntelInfoLogReadExp: too small buffer", zesIntelInfoLogReadExp(log, &size, buf));
+	ASSERT("zesIntelInfoLogReadExp: too small buffer size", size == 0);
+
+	// Read all. Note: reading does not consume the records, all of them are read again
+	uint8_t big_buf[64];
+	size = sizeof(big_buf);
+	ASSERT_ZE_OK("zesIntelInfoLogReadExp: all records", zesIntelInfoLogReadExp(log, &size, big_buf));
+	ASSERT("zesIntelInfoLogReadExp: all records size", size == strlen(INFO_LOG_RECORDS_ALL));
+	ASSERT("zesIntelInfoLogReadExp: all records data", memcmp(big_buf, INFO_LOG_RECORDS_ALL, size) == 0);
+
+	// A configured warning is returned together with the data that was read
+	size = sizeof(buf);
+	ASSERT_ZE_RET("zesIntelInfoLogReadExp: dropped data", zesIntelInfoLogReadExp(logs[1], &size, buf),
+				  ZE_RESULT_WARNING_DROPPED_DATA);
+	ASSERT("zesIntelInfoLogReadExp: dropped data size", size == strlen(INFO_LOG_RECORD_3));
+	ASSERT("zesIntelInfoLogReadExp: dropped data content", memcmp(buf, INFO_LOG_RECORD_3, size) == 0);
+
+	// Read with metadata: without the output buffers only what is pending is reported
+	uint32_t meta_size = 0;
+	uint32_t meta_count = 0;
+	ASSERT_ZE_OK("zesIntelInfoLogReadWithMetadataExp: pending",
+				 zesIntelInfoLogReadWithMetadataExp(log, &meta_size, NULL, &meta_count, NULL));
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: pending count", meta_count == 2);
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: pending size", meta_size == strlen(INFO_LOG_RECORDS_ALL));
+	// Nothing is read, so a configured warning is not reported either
+	ASSERT_ZE_OK("zesIntelInfoLogReadWithMetadataExp: pending with a warning configured",
+				 zesIntelInfoLogReadWithMetadataExp(logs[1], &meta_size, NULL, &meta_count, NULL));
+
+	zes_intel_info_log_metadata_exp descriptors[2] = {{.stype = ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_METADATA_EXP},
+													  {.stype = ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_METADATA_EXP}};
+	meta_size = sizeof(big_buf);
+	meta_count = 2;
+	ASSERT_ZE_OK("zesIntelInfoLogReadWithMetadataExp: records",
+				 zesIntelInfoLogReadWithMetadataExp(log, &meta_size, big_buf, &meta_count, descriptors));
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: records count", meta_count == 2);
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: records size", meta_size == strlen(INFO_LOG_RECORDS_ALL));
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: records data", memcmp(big_buf, INFO_LOG_RECORDS_ALL, meta_size) == 0);
+	// The metadata comes from the configuration, the offset is computed by the stub
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: stype preserved",
+		   descriptors[0].stype == ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_METADATA_EXP);
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: second offset", descriptors[1].offset == strlen(INFO_LOG_RECORD_1));
+
+	// The descriptor array bounds the read, too
+	meta_size = sizeof(big_buf);
+	meta_count = 1;
+	ASSERT_ZE_OK("zesIntelInfoLogReadWithMetadataExp: one descriptor",
+				 zesIntelInfoLogReadWithMetadataExp(log, &meta_size, big_buf, &meta_count, descriptors));
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: one descriptor count", meta_count == 1);
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: one descriptor size", meta_size == strlen(INFO_LOG_RECORD_1));
+
+	// A configured warning is returned together with the data that was read
+	meta_size = sizeof(big_buf);
+	meta_count = 2;
+	ASSERT_ZE_RET("zesIntelInfoLogReadWithMetadataExp: dropped data",
+				  zesIntelInfoLogReadWithMetadataExp(logs[1], &meta_size, big_buf, &meta_count, descriptors),
+				  ZE_RESULT_WARNING_DROPPED_DATA);
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: dropped data count", meta_count == 1);
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: dropped data size", meta_size == strlen(INFO_LOG_RECORD_3));
+	ASSERT("zesIntelInfoLogReadWithMetadataExp: dropped data content",
+		   memcmp(big_buf, INFO_LOG_RECORD_3, meta_size) == 0);
+
+	sysman_state_reset();
+}
+
+static void test_intel_driver_events(void)
+{
+	printf("test_intel_driver_events\n");
+
+	sysman_state_reset();
+	ASSERT("load intel_extensions.yaml", sysman_state_load(YAML_INTEL_EXTENSIONS) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	ASSERT_ZE_OK("zesDriverGet", zesDriverGet(&drv_n, &drv));
+	uint32_t dev_n = 2;
+	zes_device_handle_t devs[2] = {NULL, NULL};
+	ASSERT_ZE_OK("zesDeviceGet", zesDeviceGet(drv, &dev_n, devs));
+
+	// Both the device and the driver scoped pending events are reported, only the devices that have events pending are
+	// counted
+	uint32_t num = UINT32_MAX;
+	zes_event_type_flags_t drv_events = 0;
+	zes_event_type_flags_t events[2] = {UINT32_MAX, UINT32_MAX};
+	ASSERT_ZE_OK("zesIntelDriverEventListenExp",
+				 zesIntelDriverEventListenExp(drv, 0, 2, devs, &num, events, &drv_events));
+	ASSERT("zesIntelDriverEventListenExp: num", num == 1);
+	ASSERT("zesIntelDriverEventListenExp: first device events", events[0] == ZES_EVENT_TYPE_FLAG_DEVICE_DETACH);
+	ASSERT("zesIntelDriverEventListenExp: second device events", events[1] == 0);
+	ASSERT("zesIntelDriverEventListenExp: driver events", drv_events == ZES_INTEL_CPER_DATA_AVAILABLE);
+
+	// Reporting the driver scoped events is optional
+	num = UINT32_MAX;
+	ASSERT_ZE_OK("zesIntelDriverEventListenExp: NULL pDriverEvents",
+				 zesIntelDriverEventListenExp(drv, 0, 2, devs, &num, events, NULL));
+	ASSERT("zesIntelDriverEventListenExp: NULL pDriverEvents num", num == 1);
 
 	sysman_state_reset();
 }
@@ -1236,6 +1528,9 @@ int main(void)
 	test_uuid();
 	test_uuid_invalid_load();
 	test_unsupported_features();
+	test_intel_extension_function_address();
+	test_intel_info_logs();
+	test_intel_driver_events();
 
 	printf("\n%d passed, %d failed\n", g_pass, g_fail);
 	return g_fail ? 1 : 0;

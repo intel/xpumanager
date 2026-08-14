@@ -37,6 +37,11 @@ FIELD_ANNOTATIONS_OVERRIDE = {
     # skip them here to avoid generating a CYAML schema for the raw byte-array struct.
     ("ze_device_properties_t", "uuid"): Annotations(ignore=True),
     ("zes_device_ext_properties_t", "uuid"): Annotations(ignore=True),
+    ("zes_intel_info_log_metadata_exp", "uuid"): Annotations(ignore=True),
+    # The length and the offset of an info log record are computed by the stub
+    # from the configured record data, i.e. not configured directly.
+    ("zes_intel_info_log_metadata_exp", "lengthOfData"): Annotations(ignore=True),
+    ("zes_intel_info_log_metadata_exp", "offset"): Annotations(ignore=True),
     # zes_oem_serial_id_ext_properties_t.length is derived from the parsed
     # OemSerialId string, i.e. not configured directly, so skip it.
     ("zes_oem_serial_id_ext_properties_t", "length"): Annotations(ignore=True),

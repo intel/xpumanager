@@ -58,8 +58,15 @@ static const cyaml_schema_field_t sysman_diag_rv_fields[] = {
 	RV(sysman_diag_rv_t, zesDiagnosticsRunTests), CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sysman_driver_rv_fields[] = {
-	RV(sysman_driver_rv_t, zesDriverGetExtensionProperties), RV(sysman_driver_rv_t, zesDeviceGet),
-	RV(sysman_driver_rv_t, zesDriverEventListen), RV(sysman_driver_rv_t, zesDriverEventListenEx), CYAML_FIELD_END};
+	RV(sysman_driver_rv_t, zesDriverGetExtensionProperties),
+	RV(sysman_driver_rv_t, zesDriverGetExtensionFunctionAddress),
+	RV(sysman_driver_rv_t, zesDeviceGet),
+	RV(sysman_driver_rv_t, zesDriverEventListen),
+	RV(sysman_driver_rv_t, zesDriverEventListenEx),
+	RV(sysman_driver_rv_t, zesIntelDriverEnumInfoLogsExp),
+	RV(sysman_driver_rv_t, zesIntelDriverEventRegisterExp),
+	RV(sysman_driver_rv_t, zesIntelDriverEventListenExp),
+	CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sysman_engine_rv_fields[] = {
 	RV(sysman_engine_rv_t, zesEngineGetProperties), RV(sysman_engine_rv_t, zesEngineGetActivity),
@@ -96,6 +103,11 @@ static const cyaml_schema_field_t sysman_freq_rv_fields[] = {RV(sysman_freq_rv_t
 															 RV(sysman_freq_rv_t, zesFrequencyGetState),
 															 RV(sysman_freq_rv_t, zesFrequencyGetThrottleTime),
 															 CYAML_FIELD_END};
+
+static const cyaml_schema_field_t sysman_info_log_rv_fields[] = {
+	RV(sysman_info_log_rv_t, zesIntelInfoLogGetPropertiesExp),	  RV(sysman_info_log_rv_t, zesIntelInfoLogReadExp),
+	RV(sysman_info_log_rv_t, zesIntelInfoLogReadWithMetadataExp), RV(sysman_info_log_rv_t, zesIntelInfoLogEnableExp),
+	RV(sysman_info_log_rv_t, zesIntelInfoLogDisableExp),		  CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sysman_led_rv_fields[] = {
 	RV(sysman_led_rv_t, zesLedGetProperties), RV(sysman_led_rv_t, zesLedGetState), RV(sysman_led_rv_t, zesLedSetState),
@@ -205,6 +217,8 @@ static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"Device.EventRegister", UNSUPPORTED_FEATURE_EVENT_REGISTER},
 	{"Driver.EventListen", UNSUPPORTED_FEATURE_EVENT_LISTEN},
 	{"Driver.EventListenEx", UNSUPPORTED_FEATURE_EVENT_LISTEN_EX},
+	{"Driver.EventRegister", UNSUPPORTED_FEATURE_DRIVER_EVENT_REGISTER},
+	{"Driver.EventListenExp", UNSUPPORTED_FEATURE_DRIVER_EVENT_LISTEN_EXP},
 	{"FabricPort.GetMultiPortThroughput", UNSUPPORTED_FEATURE_FABRIC_PORT_MULTI_THROUGHPUT},
 	{"OverclockDomain.GetProperties", UNSUPPORTED_FEATURE_OC_GET_DOMAIN_PROPERTIES},
 	{"OverclockDomain.GetVFProperties", UNSUPPORTED_FEATURE_OC_GET_DOMAIN_VF_PROPERTIES},
@@ -285,6 +299,13 @@ static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"TemperatureSensor.GetConfig", UNSUPPORTED_FEATURE_TEMP_GET_CONFIG},
 	{"TemperatureSensor.SetConfig", UNSUPPORTED_FEATURE_TEMP_SET_CONFIG},
 	{"TemperatureSensor.GetState", UNSUPPORTED_FEATURE_TEMP_GET_STATE},
+	{"GetExtensionFunctionAddress", UNSUPPORTED_FEATURE_GET_EXT_FUNCTION_ADDRESS},
+	{"InfoLogs", UNSUPPORTED_FEATURE_INFO_LOGS},
+	{"InfoLog.GetProperties", UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES},
+	{"InfoLog.Read", UNSUPPORTED_FEATURE_INFO_LOG_READ},
+	{"InfoLog.ReadWithMetadata", UNSUPPORTED_FEATURE_INFO_LOG_READ_WITH_METADATA},
+	{"InfoLog.Enable", UNSUPPORTED_FEATURE_INFO_LOG_ENABLE},
+	{"InfoLog.Disable", UNSUPPORTED_FEATURE_INFO_LOG_DISABLE},
 };
 static const cyaml_schema_value_t sysman_unsupported_feature_schema = {
 	CYAML_VALUE_ENUM(CYAML_FLAG_DEFAULT, sysman_unsupported_feature_t, sysman_unsupported_feature_strvals,
@@ -1057,6 +1078,35 @@ static const cyaml_schema_field_t sysman_device_state_fields[] = {
 static const cyaml_schema_value_t sysman_device_state_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_device_state_t, sysman_device_state_fields)};
 
+static const cyaml_schema_field_t zes_intel_info_log_properties_exp_fields[] = {
+	CYAML_FIELD_UINT("InfoLogType", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, infoLogType),
+	CYAML_FIELD_UINT("InfoLogFormat", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, infoLogFormat),
+	CYAML_FIELD_UINT("MaxSize", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, maxSize),
+	CYAML_FIELD_BOOL("IsInstancedCollectionSupported", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t,
+					 isInstancedCollectionSupported),
+	CYAML_FIELD_END};
+
+static const cyaml_schema_field_t sysman_info_log_record_fields[] = {
+	CYAML_FIELD_STRING("Data", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, data, 0),
+	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, metadata.address,
+						zes_pci_address_fields),
+	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, metadata.timestamp),
+	CYAML_FIELD_MAPPING("Uuid", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, uuid, sysman_uuid_fields),
+	CYAML_FIELD_END};
+static const cyaml_schema_value_t sysman_info_log_record_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_info_log_record_t, sysman_info_log_record_fields)};
+
+static const cyaml_schema_field_t sysman_info_log_fields[] = {
+	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_info_log_t, return_values,
+						sysman_info_log_rv_fields),
+	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_info_log_t, properties,
+							zes_intel_info_log_properties_exp_fields),
+	CYAML_FIELD_SEQUENCE_COUNT("Records", SYSMAN_NULLABLE_PTR_FLAGS, sysman_info_log_t, records, records_count,
+							   &sysman_info_log_record_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_END};
+static const cyaml_schema_value_t sysman_info_log_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_info_log_t, sysman_info_log_fields)};
+
 static const cyaml_schema_field_t sysman_drivers_state_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_drivers_state_t, return_values,
 						sysman_driver_rv_fields),
@@ -1068,6 +1118,9 @@ static const cyaml_schema_field_t sysman_drivers_state_fields[] = {
 							   &zes_driver_extension_properties_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_SEQUENCE_COUNT("Devices", SYSMAN_NULLABLE_PTR_FLAGS, sysman_drivers_state_t, devices, devices_count,
 							   &sysman_device_state_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_SEQUENCE_COUNT("InfoLogs", SYSMAN_NULLABLE_PTR_FLAGS, sysman_drivers_state_t, info_logs,
+							   info_logs_count, &sysman_info_log_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_UINT("Events", CYAML_FLAG_OPTIONAL, sysman_drivers_state_t, events),
 	CYAML_FIELD_END};
 static const cyaml_schema_value_t sysman_drivers_state_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_drivers_state_t, sysman_drivers_state_fields)};

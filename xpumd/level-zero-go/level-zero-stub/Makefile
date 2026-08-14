@@ -2,7 +2,8 @@
 # Copyright (C) 2026 Intel Corporation
 
 CC     = gcc
-CFLAGS = -std=c11 -O2 -Wall -Wextra -Wunused-const-variable=2 -D_POSIX_C_SOURCE=200809L -I.. $(shell pkg-config --cflags libcyaml)
+# The stub is built against the repo-local headers (never the host-installed ones).
+CFLAGS = -std=c11 -O2 -Wall -Wextra -Wunused-const-variable=2 -D_POSIX_C_SOURCE=200809L -I.. -I../level-zero $(shell pkg-config --cflags libcyaml)
 
 STUB_LDFLAGS = -shared
 STUB_LDLIBS  = -lpthread $(shell pkg-config --libs libcyaml)
@@ -54,6 +55,7 @@ generate:
 	python3 ../hack/generate-cyaml.py \
 		--header-file ../level-zero/ze_api.h \
 		--header-file ../level-zero/zes_api.h \
+		--header-file ../include/intel/zes_intel_gpu_sysman.h \
 		--header-file sysman_state.h \
 		--root-struct sysman_state_t \
 		--output-file sysman_state_cyaml.h

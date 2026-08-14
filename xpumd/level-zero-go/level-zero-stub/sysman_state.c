@@ -499,11 +499,24 @@ static void free_device(sysman_device_state_t *dev)
 	memset(dev, 0, sizeof(*dev));
 }
 
+static void free_info_logs(sysman_drivers_state_t *drv)
+{
+	if (drv->info_logs) {
+		for (uint32_t i = 0; i < drv->info_logs_count; i++) {
+			free(drv->info_logs[i].properties);
+			free(drv->info_logs[i].records);
+			memset(&drv->info_logs[i], 0, sizeof(drv->info_logs[i]));
+		}
+		free(drv->info_logs);
+	}
+}
+
 static void free_driver(sysman_drivers_state_t *drv)
 {
 	for (uint32_t i = 0; i < drv->devices_count; i++)
 		free_device(&drv->devices[i]);
 	free(drv->devices);
+	free_info_logs(drv);
 	free(drv->extension_properties);
 	free(drv->unsupported_features);
 	memset(drv, 0, sizeof(*drv));
@@ -577,6 +590,27 @@ static bool resolve_device_properties(sysman_state_t *state)
 	return true;
 }
 
+// Special post-parse handler for the info log records: resolves the UUID strings
+// of the record metadata into the binary field of the zes struct.
+// Must be called on the freshly parsed tree before it is donated to g_sysman_state.
+static bool resolve_info_log_records(sysman_state_t *state)
+{
+	for (uint32_t d = 0; d < state->system.drivers_count; d++) {
+		sysman_drivers_state_t *drv = &state->system.drivers[d];
+		for (uint32_t l = 0; l < drv->info_logs_count; l++) {
+			sysman_info_log_t *log = &drv->info_logs[l];
+			for (uint32_t r = 0; r < log->records_count; r++) {
+				sysman_info_log_record_t *record = &log->records[r];
+				if (!parse_uuid(record->uuid.id, &record->metadata.uuid.id)) {
+					LOG_ERROR("invalid Uuid '%s' in record %u of info log %u of driver %u", record->uuid.id, r, l, d);
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
 // ------------------------------------------------------------------
 // Internal state management functions
 // ------------------------------------------------------------------
@@ -624,7 +658,7 @@ static int sysman_state_load_locked(const char *path)
 		return 0;
 	}
 
-	if (!resolve_device_properties(parsed)) {
+	if (!resolve_device_properties(parsed) || !resolve_info_log_records(parsed)) {
 		free_system_state(&parsed->system);
 		free(parsed);
 		return -1;

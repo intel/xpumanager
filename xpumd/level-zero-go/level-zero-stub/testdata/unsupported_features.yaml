@@ -2,6 +2,15 @@ Drivers:
 - UnsupportedFeatures:
   - Driver.DeviceGet
   - Driver.EventListen
+  - GetExtensionFunctionAddress
+  - Driver.EventRegister
+  - Driver.EventListenExp
+  - InfoLogs
+  - InfoLog.GetProperties
+  - InfoLog.Read
+  - InfoLog.ReadWithMetadata
+  - InfoLog.Enable
+  - InfoLog.Disable
   Devices:
   - UnsupportedFeatures:
     - Device.GetState
