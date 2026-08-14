@@ -37,8 +37,15 @@ if [ -f Doxyfile ]; then
     "$SCRIPT_DIR/bin/doxygen"
 fi
 
-LEVEL_ZERO_DIR=$(realpath "$ROOT_DIR/level-zero" --relative-to .)
-go tool cgo -godefs -- -I"$LEVEL_ZERO_DIR" ./types.go > types.go.tmp
+CFLAGS="-I$(realpath "$ROOT_DIR/level-zero" --relative-to .)"
+
+# Special case for sysman/exp/intel package, which needs to include the vendored headers
+if [ "$PACKAGE" = "sysman/exp/intel" ]; then
+    CFLAGS="$CFLAGS -I$(realpath "$ROOT_DIR/include" --relative-to .)"
+fi
+
+# shellcheck disable=SC2086     # (info): Double quote to prevent globbing and word splitting
+go tool cgo -godefs -- $CFLAGS ./types.go > types.go.tmp
 
 go -C "$SCRIPT_DIR" run ./types-mangle \
     -in-place \

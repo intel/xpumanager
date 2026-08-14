@@ -1,0 +1,78 @@
+GENERATOR:
+  PackageName: intel
+  PackageDescription: "Level Zero sysman API bindings for Go - Intel experimental (Exp) extensions"
+  PackageLicense: |
+    Copyright (C) 2026 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+  PkgConfigOpts: ["level-zero"]
+  # The Intel-specific headers are vendored in this repo.
+  # Everything else is expected to come from the host-installed headers.
+  FlagGroups:
+    - name: CFLAGS
+      flags: ["-I${SRCDIR}/../../../include"]
+  Includes:
+    - ze_api.h
+    - zes_api.h
+    - intel/zes_intel_gpu_sysman.h
+    - shim.h
+
+PARSER:
+  # Needed by shim.h
+  IncludePaths:
+    - level-zero
+    - include
+  SourcesPaths:
+    - level-zero/ze_api.h
+    - level-zero/zes_api.h
+    - include/intel/zes_intel_gpu_sysman.h
+    - sysman/exp/intel/shim.h
+
+TRANSLATOR:
+  ConstRules:
+  Rules:
+    const:
+      - {action: accept, from: "^ZES_INTEL_DRIVER_INFO_LOGS_EXP_"}
+      - {action: accept, from: "^ZES_INTEL_INFO_LOG_"}
+      - {action: accept, from: "^ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_"}
+      - {action: accept, from: "^ZES_INTEL_DRIVER_EVENT_EXP_"}
+      - {action: accept, from: "^ZES_INTEL_CPER_DATA_AVAILABLE$"}
+      # Structure types are set by the bindings, not by the user
+      - {action: replace, from: "^ZES_INTEL_STRUCTURE_TYPE_", to: "_STRUCTURE_TYPE_"}
+      - {action: replace, from: "^ZES_INTEL_"}
+      - {transform: export}
+    function:
+      - {action: accept, from: "^ze_go_"}
+      - {action: replace, from: "^ze_go_"}
+      - {transform: unexport}
+    type:
+      - {action: accept, from: "^zes_intel_driver_info_logs_exp_version_t$"}
+      - {action: accept, from: "^zes_intel_info_log_"}
+      - {action: accept, from: "^zes_intel_driver_event_exp_version_t$"}
+      - {action: accept, from: "^zes_driver_handle_t$"}
+      - {action: accept, from: "^zes_device_handle_t$"}
+      - {action: accept, from: "^zes_structure_type_ext_t$"}
+      # The enable descriptor is hidden by the shim
+      - {action: ignore, from: "^zes_intel_info_log_enable_descriptor_exp$"}
+      - {action: replace, from: "^zes_intel_"}
+      - {action: replace, from: "^zes_"}
+      - {action: replace, from: "_t$"}
+      # Drop the Exp suffix to keep the stringer prefixes in sync with the ZES_INTEL_INFO_LOG_FORMAT_ constants
+      - {action: replace, from: "^info_log_format_exp$", to: "info_log_format"}
+      - {transform: export}
+      - {load: snakecase}
+      - {transform: unexport, from: "^StructureTypeExt$"}
+      - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
+      # Map Ze types to core package
+      - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
+  PtrTips:
+    function:
+      - {target: "^ze_go_zesIntelDriverEnumInfoLogsExp$", tips: [ref, ref, arr]}
+      - {target: "^ze_go_zesIntelInfoLogReadExp$", tips: [ref, ref, arr]}
+      - {target: "^ze_go_zesIntelInfoLogReadWithMetadataExp$", tips: [ref, ref, arr, ref, arr]}
+      - {target: "^ze_go_zesIntelInfoLogEnableExp$", tips: [ref, arr, ref, ref]}
+      - {target: "^ze_go_zesIntelDriverEventListenExp$", tips: [ref, ref, ref, arr, ref, arr, ref]}
+      # Default tip, everything is ref
+      - {target: ., tips: [ref, ref, ref, ref]}
+  MemTips:
+    - {target: ., self: raw}

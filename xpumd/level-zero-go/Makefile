@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 Q := @
-PACKAGES := core sysman sysman/exp
+PACKAGES := core sysman sysman/exp sysman/exp/intel
 
 # --- Helper targets ---
 

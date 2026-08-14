@@ -1,0 +1,54 @@
+#
+# Config file for the hack/types-mangle tool.
+# Targeting the auto-generated types.go
+#
+options:
+  prefix: "zes_intel"
+  doxygenPath: xml/zes__intel__gpu__sysman_8h.xml
+
+structs:
+  - name: "*"
+    fields:
+      - name: Pad_cgo_0
+        newName: _
+      - name: Stype
+        newName: stype
+        newType: structureTypeExt
+      - name: PNext
+        newName: pnext
+        newType: unsafe.Pointer
+  - name: InfoLogPropertiesExp
+    fields:
+      - name: InfoLogType
+        newType: InfoLogTypeExp
+      - name: InfoLogFormat
+        newType: InfoLogFormat
+  # The types of the stable API are not generated into this package, take them
+  # from the sysman package
+  - name: InfoLogMetadataExp
+    fields:
+      - name: Address
+        typeAssert: _Ctype_struct__zes_pci_address_t
+        newType: sysman.PciAddress
+      - name: Uuid
+        typeAssert: _Ctype_struct__zes_uuid_t
+        newType: sysman.Uuid
+
+types:
+  - name: "*"
+    newComment: |-
+      {{ .Name }} declared in include/intel/zes_intel_gpu_sysman.h
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  # The typedef of the metadata struct has no _t suffix, spell out the C name so
+  # that the documentation is still found
+  - name: InfoLogMetadataExp
+    origName: zes_intel_info_log_metadata_exp
+    newComment: |-
+      {{ .Name }} declared in include/intel/zes_intel_gpu_sysman.h
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}

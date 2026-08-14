@@ -1,0 +1,32 @@
+#
+# Config file for the hack/types-mangle tool.
+# Targeting the auto-generated const.go
+#
+options:
+  prefix: "zes_intel"
+  doxygenPath: xml/zes__intel__gpu__sysman_8h.xml
+
+types:
+  # These are Intel-specific extensions, i.e. not part of the Level Zero
+  # specification, so there is nothing to link to in the L0 docs.
+  - name: "*"
+    newComment: &typeComment |-
+      {{ .Name }} declared in include/intel/zes_intel_gpu_sysman.h
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+    typeAssert: int32
+    newType: uint32
+  # The Exp suffix was dropped from the Go type name, spell out the C name so
+  # that the documentation is still found
+  - name: InfoLogFormat
+    origName: zes_intel_info_log_format_exp_t
+    newComment: *typeComment
+
+values:
+  - name: "*"
+    newComment: |-
+      {{- with doxygen . -}}
+      {{ . }}
+      {{- end -}}
