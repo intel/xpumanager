@@ -7,7 +7,8 @@ Q := @
 
 IMAGE_REPO_BASE ?= registry.local/level-zero-go
 IMAGE_TAG ?= latest
-EXAMPLE_APPS := list-sysman events-sysman
+EXAMPLE_APPS := list-sysman list-sysman-exp events-sysman
+BIN_DIR ?= bin
 
 # PIE + full RELRO, drop all symbols
 GO_FLAGS := -buildmode=pie --ldflags="-bindnow -s -w"
@@ -25,10 +26,22 @@ help:
 
 # --- Build targets ---
 
-.PHONY: build
-build:
-	$(Q)go build $(GO_FLAGS) -o bin/list-sysman ./list-sysman/.
-	$(Q)go build $(GO_FLAGS) -o bin/events-sysman ./events-sysman/.
+BUILD_TARGETS := $(addprefix build-,$(EXAMPLE_APPS))
+
+.PHONY: build $(BUILD_TARGETS)
+build: $(BUILD_TARGETS)
+
+.PHONY: build-list-sysman
+build-list-sysman:
+	$(Q)go build $(GO_FLAGS) -o $(BIN_DIR)/list-sysman ./list-sysman/.
+
+.PHONY: build-list-sysman-exp
+build-list-sysman-exp:
+	$(Q)go build $(GO_FLAGS) -tags exp -o $(BIN_DIR)/list-sysman-exp ./list-sysman/.
+
+.PHONY: build-events-sysman
+build-events-sysman:
+	$(Q)go build $(GO_FLAGS) -o $(BIN_DIR)/events-sysman ./events-sysman/.
 
 .PHONY: build-stub
 build-stub:

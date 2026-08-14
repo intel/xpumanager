@@ -605,11 +605,7 @@ func (d *DeviceInfo) collectRasInfo(device *sysman.Device) {
 		} else {
 			result[i].State = &state
 		}
-		if states, err := ras.GetStateExp(); err != nil {
-			d.recordError("RasErrorSet.GetStateExp", err)
-		} else {
-			result[i].StateExp = states
-		}
+		d.collectRasInfoExp(ras, &result[i])
 	}
 
 	d.RasErrorSets = result

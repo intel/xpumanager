@@ -75,8 +75,8 @@ RUN mkdir /src && \
 # Build Sysman Go bindings $APP example
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,ro \
-    cd examples/${APP} && \
-    go build -o /out/usr/local/bin/ .
+    cd examples && \
+    make build-${APP} BIN_DIR=/out/usr/local/bin
 
 
 # The final image

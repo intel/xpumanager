@@ -158,11 +158,14 @@ type PsuInfo struct {
 	State      *sysman.PsuState
 }
 
-type RasInfo struct {
+// BaseRasInfo holds the RAS error set fields that are always available,
+// regardless of whether the experimental (Exp) Sysman API extension is
+// used. See types_stable.go/types_exp.go for the RasInfo variants that
+// embed this.
+type BaseRasInfo struct {
 	Properties *sysman.RasProperties
 	Config     *sysman.RasConfig
 	State      *sysman.RasState
-	StateExp   []sysman.RasStateExp
 }
 
 type SchedulerInfo struct {
