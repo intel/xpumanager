@@ -3,9 +3,10 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Intel Corporation
 
-package sysman
+package testhelper
 
 /*
+#cgo pkg-config: level-zero
 #include "sysman_state.h"
 #include <stdlib.h>
 */

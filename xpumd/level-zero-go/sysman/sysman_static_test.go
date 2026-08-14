@@ -9,59 +9,30 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
+	th "github.com/intel/level-zero-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // Driver config paths (relative to the sysman/ package directory, i.e. go test CWD).
 const (
-	driverConfigDefault       = "testdata/default.yaml"
+	driverConfigDefault       = th.ConfigDefault
 	driverConfigDriverGetErr  = "testdata/error_driver_get.yaml"
 	driverConfigDriverErrs    = "testdata/error_driver.yaml"
 	driverConfigDeviceErrs    = "testdata/error_device.yaml"
 	driverConfigComponentErrs = "testdata/error_component.yaml"
 )
 
-type fixedStringProperty interface {
-	core.StringProperty64 | core.StringProperty256
-}
-
-func stringProperty[T fixedStringProperty](value string) T {
-	var prop T
-	switch p := any(&prop).(type) {
-	case *core.StringProperty64:
-		copy(p[:], value)
-	case *core.StringProperty256:
-		copy(p[:], value)
-	default:
-		panic("unsupported string property type")
-	}
-	return prop
-}
-
-// loadDriverConfig reloads the stub with the given driver config file.
-func loadDriverConfig(t *testing.T, path string) {
-	t.Helper()
-	require.NoError(t, stubReload(path))
-}
-
 // getDriver returns drivers[idx] from the currently-loaded stub state.
 func getDriver(t *testing.T, idx int) *Driver {
 	t.Helper()
-	drivers, err := DriverGet()
-	require.NoError(t, err)
-	require.Greater(t, len(drivers), idx, "driver index out of range")
-	return drivers[idx]
+	return th.GetIndexed(t, "driver", idx, DriverGet)
 }
 
 // getDevice returns drivers[drvIdx].devices[idx] from the currently-loaded stub state.
 func getDevice(t *testing.T, drvIdx, idx int) *Device {
 	t.Helper()
-	drv := getDriver(t, drvIdx)
-	devices, err := drv.DeviceGet()
-	require.NoError(t, err)
-	require.Greater(t, len(devices), idx, "device index out of range")
-	return devices[idx]
+	return th.GetIndexed(t, "device", idx, getDriver(t, drvIdx).DeviceGet)
 }
 
 // getComponent is a generic helper that enumerates components on a device and returns
@@ -69,10 +40,7 @@ func getDevice(t *testing.T, drvIdx, idx int) *Device {
 func getComponent[C any](t *testing.T, drvIdx, devIdx, idx int, enum func(*Device) ([]*C, error)) *C {
 	t.Helper()
 	dev := getDevice(t, drvIdx, devIdx)
-	items, err := enum(dev)
-	require.NoError(t, err)
-	require.Greater(t, len(items), idx, "component index out of range")
-	return items[idx]
+	return th.GetIndexed(t, "component", idx, func() ([]*C, error) { return enum(dev) })
 }
 
 func getEngine(t *testing.T, drvIdx, devIdx, idx int) *Engine {
@@ -155,181 +123,87 @@ func getDiagnostic(t *testing.T, drvIdx, devIdx, idx int) *Diagnostics {
 	return getComponent(t, drvIdx, devIdx, idx, (*Device).EnumDiagnosticTestSuites)
 }
 
-// testBaseCfg holds the minimal config needed by the base test helpers.
-type testBaseCfg struct {
-	name    string
-	cfgFile string
-	wantErr error
-}
-
-// testCfg extends testBaseCfg with addressing fields for device/component wrappers.
-type testCfg struct {
-	testBaseCfg
-	drvIdx  int
-	devIdx  int
-	compIdx int
-}
-
-func (c *testCfg) getDriver(t *testing.T) *Driver {
-	t.Helper()
-	return getDriver(t, c.drvIdx)
-}
-
-func (c *testCfg) getDevice(t *testing.T) *Device {
-	t.Helper()
-	return getDevice(t, c.drvIdx, c.devIdx)
-}
-
-type testOpt func(*testCfg)
-
-func withConfig(cfg string) testOpt { return func(c *testCfg) { c.cfgFile = cfg } }
-func withError(err error) testOpt   { return func(c *testCfg) { c.wantErr = err } }
-func withDrvIdx(idx int) testOpt    { return func(c *testCfg) { c.drvIdx = idx } }
-func withDevIdx(idx int) testOpt    { return func(c *testCfg) { c.devIdx = idx } } //nolint: unused // Included for completeness and future use
-func withCompIdx(idx int) testOpt   { return func(c *testCfg) { c.compIdx = idx } }
-func withName(name string) testOpt  { return func(c *testCfg) { c.name = name } }
-
-func (c *testCfg) applyOpts(opts ...testOpt) {
-	for _, o := range opts {
-		o(c)
-	}
-}
-
-// testGetter is a base helper for testing getter-like functions (that return a value and an error).
-func testGetter[T, R any](t *testing.T, getObj func(*testing.T) T, method func(T) (R, error), check func(*testing.T, R), bcfg *testBaseCfg) {
-	t.Helper()
-	t.Run(bcfg.name, func(t *testing.T) {
-		cfgFile := bcfg.cfgFile
-		if cfgFile == "" {
-			cfgFile = driverConfigDefault
-		}
-		loadDriverConfig(t, cfgFile)
-		got, err := method(getObj(t))
-		if bcfg.wantErr != nil {
-			require.ErrorIs(t, err, bcfg.wantErr)
-		} else {
-			require.NoError(t, err)
-		}
-		if check != nil {
-			check(t, got)
-		}
-	})
-}
-
-// testAction is a base helper for testing action-like functions (that only return an error).
-func testAction[T any](t *testing.T, getObj func(*testing.T) T, action func(T) error, bcfg *testBaseCfg) {
-	t.Helper()
-	t.Run(bcfg.name, func(t *testing.T) {
-		cfgFile := bcfg.cfgFile
-		if cfgFile == "" {
-			cfgFile = driverConfigDefault
-		}
-		loadDriverConfig(t, cfgFile)
-		err := action(getObj(t))
-		if bcfg.wantErr != nil {
-			require.ErrorIs(t, err, bcfg.wantErr)
-		} else {
-			require.NoError(t, err)
-		}
-	})
-}
-
-func testDriverGetterError[R any](t *testing.T, method func(*Driver) (R, error), opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Error", wantErr: core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS}}
-	cfg.applyOpts(opts...)
-	testGetter(t, cfg.getDriver, method, nil, &cfg.testBaseCfg)
-}
-
-func testDriverGetterSuccess[R any](t *testing.T, method func(*Driver) (R, error), check func(*testing.T, R), opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Success"}}
-	cfg.applyOpts(opts...)
-	testGetter(t, cfg.getDriver, method, check, &cfg.testBaseCfg)
-}
-
-func testDeviceGetterError[R any](t *testing.T, method func(*Device) (R, error), opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Error", wantErr: core.RESULT_ERROR_INVALID_ARGUMENT}}
-	cfg.applyOpts(opts...)
-	testGetter(t, cfg.getDevice, method, nil, &cfg.testBaseCfg)
-}
-
-func testDeviceGetterSuccess[R any](t *testing.T, method func(*Device) (R, error), check func(*testing.T, R), opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Success"}}
-	cfg.applyOpts(opts...)
-	testGetter(t, cfg.getDevice, method, check, &cfg.testBaseCfg)
-}
-
-func testComponentGetterError[C, R any](t *testing.T, getComp func(*testing.T, int, int, int) *C, method func(*C) (R, error), opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Error", wantErr: core.RESULT_ERROR_NOT_AVAILABLE}}
-	cfg.applyOpts(opts...)
-	getter := func(t *testing.T) *C { return getComp(t, cfg.drvIdx, cfg.devIdx, cfg.compIdx) }
-	testGetter(t, getter, method, nil, &cfg.testBaseCfg)
-}
-
-func testComponentGetterSuccess[C, R any](t *testing.T, getComp func(*testing.T, int, int, int) *C, method func(*C) (R, error), check func(*testing.T, R), opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Success"}}
-	cfg.applyOpts(opts...)
-	getter := func(t *testing.T) *C { return getComp(t, cfg.drvIdx, cfg.devIdx, cfg.compIdx) }
-	testGetter(t, getter, method, check, &cfg.testBaseCfg)
-}
-
-func testDeviceActionError(t *testing.T, action func(*Device) error, opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Error", wantErr: core.RESULT_ERROR_INVALID_ARGUMENT}}
-	cfg.applyOpts(opts...)
-	testAction(t, cfg.getDevice, action, &cfg.testBaseCfg)
-}
-
-func testDeviceActionSuccess(t *testing.T, action func(*Device) error, opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Success"}}
-	cfg.applyOpts(opts...)
-	testAction(t, cfg.getDevice, action, &cfg.testBaseCfg)
-}
-
-func testComponentActionError[C any](t *testing.T, getComp func(*testing.T, int, int, int) *C, action func(*C) error, opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Error", wantErr: core.RESULT_ERROR_NOT_AVAILABLE}}
-	cfg.applyOpts(opts...)
-	getter := func(t *testing.T) *C { return getComp(t, cfg.drvIdx, cfg.devIdx, cfg.compIdx) }
-	testAction(t, getter, action, &cfg.testBaseCfg)
-}
-
-func testComponentActionSuccess[C any](t *testing.T, getComp func(*testing.T, int, int, int) *C, action func(*C) error, opts ...testOpt) {
-	t.Helper()
-	cfg := &testCfg{testBaseCfg: testBaseCfg{name: "Success"}}
-	cfg.applyOpts(opts...)
-	getter := func(t *testing.T) *C { return getComp(t, cfg.drvIdx, cfg.devIdx, cfg.compIdx) }
-	testAction(t, getter, action, &cfg.testBaseCfg)
-}
-
-// checkValue returns a check function that asserts a value.
-func checkValue[T any](want T) func(*testing.T, T) {
-	return func(t *testing.T, got T) {
+// The object getters below return the object under test, as addressed by the
+// indices of the test case config.
+func driverGetter(cfg *th.Config) func(*testing.T) *Driver {
+	return func(t *testing.T) *Driver {
 		t.Helper()
-		assert.Equal(t, want, got)
+		return getDriver(t, cfg.DrvIdx)
 	}
 }
 
-// checkValueExported returns a check function that asserts exported fields of a value.
-func checkValueExported[T any](want T) func(*testing.T, T) {
-	return func(t *testing.T, got T) {
+func deviceGetter(cfg *th.Config) func(*testing.T) *Device {
+	return func(t *testing.T) *Device {
 		t.Helper()
-		assert.EqualExportedValues(t, want, got)
+		return getDevice(t, cfg.DrvIdx, cfg.DevIdx)
 	}
 }
 
-// checkLen returns a check function that asserts the length of a slice.
-func checkLen[T any](n int) func(*testing.T, []T) {
-	return func(t *testing.T, v []T) {
+func componentGetter[C any](cfg *th.Config, getComp func(*testing.T, int, int, int) *C) func(*testing.T) *C {
+	return func(t *testing.T) *C {
 		t.Helper()
-		require.Len(t, v, n)
+		return getComp(t, cfg.DrvIdx, cfg.DevIdx, cfg.CompIdx)
 	}
+}
+
+func testDriverGetterError[R any](t *testing.T, method func(*Driver) (R, error), opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Error", core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS, opts...)
+	th.Getter(t, cfg, driverGetter(cfg), method, nil)
+}
+
+func testDriverGetterSuccess[R any](t *testing.T, method func(*Driver) (R, error), check func(*testing.T, R), opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Success", nil, opts...)
+	th.Getter(t, cfg, driverGetter(cfg), method, check)
+}
+
+func testDeviceGetterError[R any](t *testing.T, method func(*Device) (R, error), opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Error", core.RESULT_ERROR_INVALID_ARGUMENT, opts...)
+	th.Getter(t, cfg, deviceGetter(cfg), method, nil)
+}
+
+func testDeviceGetterSuccess[R any](t *testing.T, method func(*Device) (R, error), check func(*testing.T, R), opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Success", nil, opts...)
+	th.Getter(t, cfg, deviceGetter(cfg), method, check)
+}
+
+func testComponentGetterError[C, R any](t *testing.T, getComp func(*testing.T, int, int, int) *C, method func(*C) (R, error), opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Error", core.RESULT_ERROR_NOT_AVAILABLE, opts...)
+	th.Getter(t, cfg, componentGetter(cfg, getComp), method, nil)
+}
+
+func testComponentGetterSuccess[C, R any](t *testing.T, getComp func(*testing.T, int, int, int) *C, method func(*C) (R, error), check func(*testing.T, R), opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Success", nil, opts...)
+	th.Getter(t, cfg, componentGetter(cfg, getComp), method, check)
+}
+
+func testDeviceActionError(t *testing.T, action func(*Device) error, opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Error", core.RESULT_ERROR_INVALID_ARGUMENT, opts...)
+	th.Action(t, cfg, deviceGetter(cfg), action)
+}
+
+func testDeviceActionSuccess(t *testing.T, action func(*Device) error, opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Success", nil, opts...)
+	th.Action(t, cfg, deviceGetter(cfg), action)
+}
+
+func testComponentActionError[C any](t *testing.T, getComp func(*testing.T, int, int, int) *C, action func(*C) error, opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Error", core.RESULT_ERROR_NOT_AVAILABLE, opts...)
+	th.Action(t, cfg, componentGetter(cfg, getComp), action)
+}
+
+func testComponentActionSuccess[C any](t *testing.T, getComp func(*testing.T, int, int, int) *C, action func(*C) error, opts ...th.Opt) {
+	t.Helper()
+	cfg := th.NewConfig("Success", nil, opts...)
+	th.Action(t, cfg, componentGetter(cfg, getComp), action)
 }
 
 // ------------------------------------------------------------------
@@ -338,13 +212,13 @@ func checkLen[T any](n int) func(*testing.T, []T) {
 
 func TestInit(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDriverGetErr)
+		th.LoadConfig(t, driverConfigDriverGetErr)
 		err := Init(0)
 		require.ErrorIs(t, err, core.RESULT_ERROR_UNINITIALIZED)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDefault)
+		th.LoadConfig(t, driverConfigDefault)
 		err := Init(0)
 		require.NoError(t, err)
 	})
@@ -356,13 +230,13 @@ func TestInit(t *testing.T) {
 
 func TestDriverGet(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDriverGetErr)
+		th.LoadConfig(t, driverConfigDriverGetErr)
 		_, err := DriverGet()
 		require.ErrorIs(t, err, core.RESULT_ERROR_UNINITIALIZED)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDefault)
+		th.LoadConfig(t, driverConfigDefault)
 		drivers, err := DriverGet()
 		require.NoError(t, err)
 		require.Len(t, drivers, 2)
@@ -371,30 +245,30 @@ func TestDriverGet(t *testing.T) {
 
 func TestDriverGetExtensionProperties(t *testing.T) {
 	// DriverGet silently swallows GetExtensionProperties errors, so call directly.
-	testDriverGetterError(t, (*Driver).GetExtensionProperties, withConfig(driverConfigDriverErrs))
+	testDriverGetterError(t, (*Driver).GetExtensionProperties, th.WithConfig(driverConfigDriverErrs))
 	testDriverGetterSuccess(t, (*Driver).GetExtensionProperties,
-		checkValue([]DriverExtensionProperties{
-			{Name: stringProperty[core.StringProperty256]("ZES_extension_ras_state"), Version: 1},
-			{Name: stringProperty[core.StringProperty256]("ZES_extension_bar"), Version: 2},
+		th.CheckValue([]DriverExtensionProperties{
+			{Name: th.StringProperty[core.StringProperty256]("ZES_extension_ras_state"), Version: 1},
+			{Name: th.StringProperty[core.StringProperty256]("ZES_extension_bar"), Version: 2},
 		}),
 	)
 }
 
 func TestDriverDeviceGet(t *testing.T) {
-	testDriverGetterError(t, (*Driver).DeviceGet, withConfig(driverConfigDriverErrs))
-	testDriverGetterSuccess(t, (*Driver).DeviceGet, checkLen[*Device](1))
+	testDriverGetterError(t, (*Driver).DeviceGet, th.WithConfig(driverConfigDriverErrs))
+	testDriverGetterSuccess(t, (*Driver).DeviceGet, th.CheckLen[*Device](1))
 }
 
 func TestDriverEventListen(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDriverErrs)
+		th.LoadConfig(t, driverConfigDriverErrs)
 		drv := getDriver(t, 0)
 		_, _, err := drv.EventListen(time.Second, nil)
 		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDefault)
+		th.LoadConfig(t, driverConfigDefault)
 		drv := getDriver(t, 0)
 		dev := getDevice(t, 0, 0)
 		numEvents, events, err := drv.EventListen(0, []*Device{dev})
@@ -406,14 +280,14 @@ func TestDriverEventListen(t *testing.T) {
 
 func TestDriverEventListenEx(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDriverErrs)
+		th.LoadConfig(t, driverConfigDriverErrs)
 		drv := getDriver(t, 0)
 		_, _, err := drv.EventListenEx(time.Second, nil)
 		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
 	})
 
 	t.Run("Success", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDefault)
+		th.LoadConfig(t, driverConfigDefault)
 		drv := getDriver(t, 0)
 		dev := getDevice(t, 0, 0)
 		numEvents, events, err := drv.EventListenEx(0, []*Device{dev})
@@ -424,9 +298,9 @@ func TestDriverEventListenEx(t *testing.T) {
 }
 
 func TestDeviceGetProperties(t *testing.T) {
-	testDeviceGetterError(t, (*Device).GetProperties, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).GetProperties, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).GetProperties,
-		checkValueExported(DeviceProperties{
+		th.CheckValueExported(DeviceProperties{
 			DeviceBaseProperties: DeviceBaseProperties{
 				Core: core.DeviceProperties{
 					Type:                     core.DEVICE_TYPE_GPU,
@@ -449,20 +323,20 @@ func TestDeviceGetProperties(t *testing.T) {
 					Uuid: core.DeviceUuid{
 						Id: uuid.MustParse("12345678-1234-5678-9abc-def000000000"),
 					},
-					Name: stringProperty[core.StringProperty256]("ACME Data Center GPU"),
+					Name: th.StringProperty[core.StringProperty256]("ACME Data Center GPU"),
 				},
 				NumSubdevices: 2,
-				SerialNumber:  stringProperty[core.StringProperty64]("SN-0001"),
-				BoardNumber:   stringProperty[core.StringProperty64]("BOARD-0001"),
-				BrandName:     stringProperty[core.StringProperty64]("ACME"),
-				ModelName:     stringProperty[core.StringProperty64]("Stub GPU 1234"),
-				VendorName:    stringProperty[core.StringProperty64]("ACME Corporation"),
-				DriverVersion: stringProperty[core.StringProperty64]("1.2.3"),
+				SerialNumber:  th.StringProperty[core.StringProperty64]("SN-0001"),
+				BoardNumber:   th.StringProperty[core.StringProperty64]("BOARD-0001"),
+				BrandName:     th.StringProperty[core.StringProperty64]("ACME"),
+				ModelName:     th.StringProperty[core.StringProperty64]("Stub GPU 1234"),
+				VendorName:    th.StringProperty[core.StringProperty64]("ACME Corporation"),
+				DriverVersion: th.StringProperty[core.StringProperty64]("1.2.3"),
 			},
 		}),
 	)
 	testDeviceGetterSuccess(t, (*Device).GetProperties,
-		checkValueExported(DeviceProperties{
+		th.CheckValueExported(DeviceProperties{
 			DeviceExtProperties: DeviceExtProperties{
 				Uuid: Uuid{
 					Id: uuid.MustParse("abcdef01-2345-6789-abcd-ef0000000000"),
@@ -472,14 +346,14 @@ func TestDeviceGetProperties(t *testing.T) {
 			},
 			OemSerialId: "OEM-SN-0001",
 		}),
-		withDrvIdx(1), withName("SuccessWithExtProps"),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
 	)
 }
 
 func TestDeviceGetState(t *testing.T) {
-	testDeviceGetterError(t, (*Device).GetState, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).GetState, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).GetState,
-		checkValue(DeviceState{
+		th.CheckValue(DeviceState{
 			DeviceBaseState: DeviceBaseState{
 				Reset:    0,
 				Repaired: REPAIR_STATUS_NOT_PERFORMED,
@@ -487,7 +361,7 @@ func TestDeviceGetState(t *testing.T) {
 		}),
 	)
 	testDeviceGetterSuccess(t, (*Device).GetState,
-		checkValueExported(DeviceState{
+		th.CheckValueExported(DeviceState{
 			DeviceBaseState: DeviceBaseState{
 				Reset:    0,
 				Repaired: REPAIR_STATUS_NOT_PERFORMED,
@@ -496,24 +370,24 @@ func TestDeviceGetState(t *testing.T) {
 				Flags: DeviceStateExtFlags(DEVICE_STATE_EXT_FLAG_WEDGED),
 			},
 		}),
-		withDrvIdx(1), withName("SuccessWithExtProps"),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
 	)
 }
 
 func TestDeviceReset(t *testing.T) {
-	testDeviceActionError(t, func(d *Device) error { return d.Reset(false) }, withConfig(driverConfigDeviceErrs))
+	testDeviceActionError(t, func(d *Device) error { return d.Reset(false) }, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceActionSuccess(t, func(d *Device) error { return d.Reset(false) })
 }
 
 func TestDeviceResetExt(t *testing.T) {
-	testDeviceActionError(t, func(d *Device) error { return d.ResetExt(nil) }, withConfig(driverConfigDeviceErrs))
+	testDeviceActionError(t, func(d *Device) error { return d.ResetExt(nil) }, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceActionSuccess(t, func(d *Device) error { return d.ResetExt(nil) })
 }
 
 func TestDeviceProcessesGetState(t *testing.T) {
-	testDeviceGetterError(t, (*Device).ProcessesGetState, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).ProcessesGetState, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).ProcessesGetState,
-		checkValue([]ProcessState{
+		th.CheckValue([]ProcessState{
 			{
 				ProcessId:  1234,
 				MemSize:    1073741824,
@@ -534,8 +408,8 @@ func TestDeviceEventRegister(t *testing.T) {
 	events := EventTypeFlags(EVENT_TYPE_FLAG_DEVICE_DETACH | EVENT_TYPE_FLAG_DEVICE_ATTACH | EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED)
 	eventRegister := func(d *Device) (EventTypeFlags, error) { return d.EventRegister(events) }
 
-	testDeviceGetterError(t, eventRegister, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, eventRegister, checkValue(events))
+	testDeviceGetterError(t, eventRegister, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, eventRegister, th.CheckValue(events))
 }
 
 // ------------------------------------------------------------------
@@ -543,9 +417,9 @@ func TestDeviceEventRegister(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestDevicePciGetProperties(t *testing.T) {
-	testDeviceGetterError(t, (*Device).PciGetProperties, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).PciGetProperties, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).PciGetProperties,
-		checkValue(PciProperties{
+		th.CheckValue(PciProperties{
 			PciBaseProperties: PciBaseProperties{
 				Address: PciAddress{Domain: 1, Bus: 5},
 				MaxSpeed: PciSpeed{
@@ -560,7 +434,7 @@ func TestDevicePciGetProperties(t *testing.T) {
 		}),
 	)
 	testDeviceGetterSuccess(t, (*Device).PciGetProperties,
-		checkValueExported(PciProperties{
+		th.CheckValueExported(PciProperties{
 			PciBaseProperties: PciBaseProperties{
 				Address: PciAddress{Domain: 1, Bus: 2, Device: 3, Function: 4},
 				MaxSpeed: PciSpeed{
@@ -576,12 +450,12 @@ func TestDevicePciGetProperties(t *testing.T) {
 				MaxPciGenSupported:        5,
 			},
 		}),
-		withDrvIdx(1), withName("SuccessWithExt"),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExt"),
 	)
 }
 
 func TestDevicePciGetState(t *testing.T) {
-	testDeviceGetterError(t, (*Device).PciGetState, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).PciGetState, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).PciGetState,
 		func(t *testing.T, state PciState) {
 			assert.Equal(t, PciState{
@@ -600,7 +474,7 @@ func TestDevicePciGetState(t *testing.T) {
 		})
 
 	testDeviceGetterSuccess(t, (*Device).PciGetState,
-		checkValueExported(PciState{
+		th.CheckValueExported(PciState{
 			PciBaseState: PciBaseState{
 				Status:        PCI_LINK_STATUS_QUALITY_ISSUES,
 				QualityIssues: PciLinkQualIssueFlags(PCI_LINK_QUAL_ISSUE_FLAG_SPEED),
@@ -614,24 +488,24 @@ func TestDevicePciGetState(t *testing.T) {
 				PciLinkSpeedDowngradeStatus: 1,
 			},
 		}),
-		withDrvIdx(1), withName("SuccessWithExt"))
+		th.WithDrvIdx(1), th.WithName("SuccessWithExt"))
 }
 
 func TestDevicePciLinkSpeedUpdateExt(t *testing.T) {
 	testDeviceGetterError(t,
 		func(d *Device) (DeviceAction, error) { return d.PciLinkSpeedUpdateExt(true) },
-		withConfig(driverConfigDeviceErrs))
+		th.WithConfig(driverConfigDeviceErrs))
 
 	testDeviceGetterSuccess(t,
 		func(d *Device) (DeviceAction, error) { return d.PciLinkSpeedUpdateExt(true) },
-		checkValue(DEVICE_ACTION_WARM_CARD_RESET),
-		withDrvIdx(1))
+		th.CheckValue(DEVICE_ACTION_WARM_CARD_RESET),
+		th.WithDrvIdx(1))
 }
 
 func TestDevicePciGetBars(t *testing.T) {
-	testDeviceGetterError(t, (*Device).PciGetBars, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).PciGetBars, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).PciGetBars,
-		checkValue([]PciBarProperties{
+		th.CheckValue([]PciBarProperties{
 			{Type: PCI_BAR_TYPE_MMIO, Index: 0, Base: 0x80000000, Size: 16777216},
 			{Type: PCI_BAR_TYPE_MEM, Index: 2, Base: 0x100000000, Size: 268435456},
 		}),
@@ -639,9 +513,9 @@ func TestDevicePciGetBars(t *testing.T) {
 }
 
 func TestDevicePciGetStats(t *testing.T) {
-	testDeviceGetterError(t, (*Device).PciGetStats, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).PciGetStats, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).PciGetStats,
-		checkValue(PciStats{
+		th.CheckValue(PciStats{
 			Timestamp:     999999,
 			ReplayCounter: 77,
 			PacketCounter: 88,
@@ -661,36 +535,36 @@ func TestDevicePciGetStats(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestDeviceSetOverclockWaiver(t *testing.T) {
-	testDeviceActionError(t, (*Device).SetOverclockWaiver, withConfig(driverConfigDeviceErrs))
+	testDeviceActionError(t, (*Device).SetOverclockWaiver, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceActionSuccess(t, (*Device).SetOverclockWaiver)
 }
 
 func TestDeviceGetOverclockDomains(t *testing.T) {
-	testDeviceGetterError(t, (*Device).GetOverclockDomains, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).GetOverclockDomains, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).GetOverclockDomains,
-		checkValue(OverclockDomains(OVERCLOCK_DOMAIN_CARD|OVERCLOCK_DOMAIN_PACKAGE)),
+		th.CheckValue(OverclockDomains(OVERCLOCK_DOMAIN_CARD|OVERCLOCK_DOMAIN_PACKAGE)),
 	)
 }
 
 func TestDeviceGetOverclockControls(t *testing.T) {
 	getOverclockControls := func(d *Device) (OverclockControls, error) { return d.GetOverclockControls(0) }
 
-	testDeviceGetterError(t, getOverclockControls, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, getOverclockControls, th.WithConfig(driverConfigDeviceErrs))
 
 	testDeviceGetterSuccess(t, getOverclockControls,
-		checkValue(OverclockControls(OVERCLOCK_CONTROL_VF|OVERCLOCK_CONTROL_FREQ_OFFSET|OVERCLOCK_CONTROL_VMAX_OFFSET)),
+		th.CheckValue(OverclockControls(OVERCLOCK_CONTROL_VF|OVERCLOCK_CONTROL_FREQ_OFFSET|OVERCLOCK_CONTROL_VMAX_OFFSET)),
 	)
 }
 
 func TestDeviceResetOverclockSettings(t *testing.T) {
-	testDeviceActionError(t, func(d *Device) error { return d.ResetOverclockSettings(false) }, withConfig(driverConfigDeviceErrs))
+	testDeviceActionError(t, func(d *Device) error { return d.ResetOverclockSettings(false) }, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceActionSuccess(t, func(d *Device) error { return d.ResetOverclockSettings(false) })
 }
 
 func TestDeviceReadOverclockState(t *testing.T) {
-	testDeviceGetterError(t, (*Device).ReadOverclockState, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).ReadOverclockState, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).ReadOverclockState,
-		checkValue(OverclockState{
+		th.CheckValue(OverclockState{
 			Mode:          OVERCLOCK_MODE_MODE_ON,
 			WaiverSetting: true,
 			State:         false,
@@ -701,23 +575,23 @@ func TestDeviceReadOverclockState(t *testing.T) {
 }
 
 func TestDeviceEccAvailable(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EccAvailable, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).EccAvailable, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).EccAvailable,
 		func(t *testing.T, available bool) { assert.True(t, available, "EccAvailable") },
 	)
 }
 
 func TestDeviceEccConfigurable(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EccConfigurable, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).EccConfigurable, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).EccConfigurable,
 		func(t *testing.T, configurable bool) { assert.True(t, configurable, "EccConfigurable") },
 	)
 }
 
 func TestDeviceGetEccState(t *testing.T) {
-	testDeviceGetterError(t, (*Device).GetEccState, withConfig(driverConfigDeviceErrs))
+	testDeviceGetterError(t, (*Device).GetEccState, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceGetterSuccess(t, (*Device).GetEccState,
-		checkValue(EccProperties{
+		th.CheckValue(EccProperties{
 			DeviceEccProperties: DeviceEccProperties{
 				CurrentState:  DEVICE_ECC_STATE_ENABLED,
 				PendingState:  DEVICE_ECC_STATE_ENABLED,
@@ -726,13 +600,13 @@ func TestDeviceGetEccState(t *testing.T) {
 		}),
 	)
 	testDeviceGetterSuccess(t, (*Device).GetEccState,
-		checkValueExported(EccProperties{
+		th.CheckValueExported(EccProperties{
 			DeviceEccProperties: DeviceEccProperties{},
 			ExtendedProperties: &DeviceEccDefaultPropertiesExt{
 				DefaultState: DEVICE_ECC_STATE_ENABLED,
 			},
 		}),
-		withDrvIdx(1), withName("SuccessWithExtProps"),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
 	)
 }
 
@@ -740,10 +614,10 @@ func TestDeviceSetEccState(t *testing.T) {
 	setEccState := func(d *Device) (DeviceEccProperties, error) { return d.SetEccState(DeviceEccDesc{}) }
 
 	testDeviceGetterError(t, setEccState,
-		withConfig(driverConfigDeviceErrs),
+		th.WithConfig(driverConfigDeviceErrs),
 	)
 	testDeviceGetterSuccess(t, setEccState,
-		checkValue(DeviceEccProperties{
+		th.CheckValue(DeviceEccProperties{
 			CurrentState: DEVICE_ECC_STATE_ENABLED,
 			PendingState: DEVICE_ECC_STATE_ENABLED,
 		}),
@@ -755,83 +629,83 @@ func TestDeviceSetEccState(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestDeviceEnumEngineGroups(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumEngineGroups, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumEngineGroups, checkLen[*Engine](3))
+	testDeviceGetterError(t, (*Device).EnumEngineGroups, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumEngineGroups, th.CheckLen[*Engine](3))
 }
 
 func TestDeviceEnumFrequencyDomains(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumFrequencyDomains, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumFrequencyDomains, checkLen[*Frequency](2))
+	testDeviceGetterError(t, (*Device).EnumFrequencyDomains, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumFrequencyDomains, th.CheckLen[*Frequency](2))
 }
 
 func TestDeviceEnumMemoryModules(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumMemoryModules, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumMemoryModules, checkLen[*Memory](2))
+	testDeviceGetterError(t, (*Device).EnumMemoryModules, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumMemoryModules, th.CheckLen[*Memory](2))
 }
 
 func TestDeviceEnumPowerDomains(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumPowerDomains, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumPowerDomains, checkLen[*Power](2))
+	testDeviceGetterError(t, (*Device).EnumPowerDomains, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumPowerDomains, th.CheckLen[*Power](2))
 }
 
 func TestDeviceEnumSchedulers(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumSchedulers, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumSchedulers, checkLen[*Scheduler](2))
+	testDeviceGetterError(t, (*Device).EnumSchedulers, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumSchedulers, th.CheckLen[*Scheduler](2))
 }
 
 func TestDeviceEnumTemperatureSensors(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumTemperatureSensors, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumTemperatureSensors, checkLen[*Temperature](3))
+	testDeviceGetterError(t, (*Device).EnumTemperatureSensors, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumTemperatureSensors, th.CheckLen[*Temperature](3))
 }
 
 func TestDeviceEnumFabricPorts(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumFabricPorts, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumFabricPorts, checkLen[*FabricPort](2))
+	testDeviceGetterError(t, (*Device).EnumFabricPorts, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumFabricPorts, th.CheckLen[*FabricPort](2))
 }
 
 func TestDeviceEnumFans(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumFans, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumFans, checkLen[*Fan](2))
+	testDeviceGetterError(t, (*Device).EnumFans, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumFans, th.CheckLen[*Fan](2))
 }
 
 func TestDeviceEnumFirmwares(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumFirmwares, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumFirmwares, checkLen[*Firmware](2))
+	testDeviceGetterError(t, (*Device).EnumFirmwares, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumFirmwares, th.CheckLen[*Firmware](2))
 }
 
 func TestDeviceEnumLeds(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumLeds, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumLeds, checkLen[*Led](2))
+	testDeviceGetterError(t, (*Device).EnumLeds, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumLeds, th.CheckLen[*Led](2))
 }
 
 func TestDeviceEnumOverclockDomains(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumOverclockDomains, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumOverclockDomains, checkLen[*Overclock](1))
+	testDeviceGetterError(t, (*Device).EnumOverclockDomains, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumOverclockDomains, th.CheckLen[*Overclock](1))
 }
 
 func TestDeviceEnumPerformanceFactorDomains(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumPerformanceFactorDomains, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumPerformanceFactorDomains, checkLen[*Performance](2))
+	testDeviceGetterError(t, (*Device).EnumPerformanceFactorDomains, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumPerformanceFactorDomains, th.CheckLen[*Performance](2))
 }
 
 func TestDeviceEnumPsus(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumPsus, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumPsus, checkLen[*Psu](2))
+	testDeviceGetterError(t, (*Device).EnumPsus, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumPsus, th.CheckLen[*Psu](2))
 }
 
 func TestDeviceEnumRasErrorSets(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumRasErrorSets, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumRasErrorSets, checkLen[*Ras](2))
+	testDeviceGetterError(t, (*Device).EnumRasErrorSets, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumRasErrorSets, th.CheckLen[*Ras](2))
 }
 
 func TestDeviceEnumStandbyDomains(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumStandbyDomains, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumStandbyDomains, checkLen[*Standby](1))
+	testDeviceGetterError(t, (*Device).EnumStandbyDomains, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumStandbyDomains, th.CheckLen[*Standby](1))
 }
 
 func TestDeviceEnumDiagnosticTestSuites(t *testing.T) {
-	testDeviceGetterError(t, (*Device).EnumDiagnosticTestSuites, withConfig(driverConfigDeviceErrs))
-	testDeviceGetterSuccess(t, (*Device).EnumDiagnosticTestSuites, checkLen[*Diagnostics](2))
+	testDeviceGetterError(t, (*Device).EnumDiagnosticTestSuites, th.WithConfig(driverConfigDeviceErrs))
+	testDeviceGetterSuccess(t, (*Device).EnumDiagnosticTestSuites, th.CheckLen[*Diagnostics](2))
 }
 
 func TestDeviceFabricPortGetMultiPortThroughput(t *testing.T) {
@@ -842,7 +716,7 @@ func TestDeviceFabricPortGetMultiPortThroughput(t *testing.T) {
 
 	testDeviceGetterError(t,
 		fabricPortGetMultiPortThroughput,
-		withConfig(driverConfigComponentErrs), withError(core.RESULT_ERROR_NOT_AVAILABLE),
+		th.WithConfig(driverConfigComponentErrs), th.WithError(core.RESULT_ERROR_NOT_AVAILABLE),
 	)
 	testDeviceGetterSuccess(t,
 		fabricPortGetMultiPortThroughput,
@@ -855,7 +729,7 @@ func TestDeviceFabricPortGetMultiPortThroughput(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestEngineGetProperties(t *testing.T) {
-	testComponentGetterError(t, getEngine, (*Engine).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getEngine, (*Engine).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getEngine, (*Engine).GetProperties,
 		func(t *testing.T, props EngineProperties) {
 			assert.Equal(t, EngineBaseProperties{
@@ -864,7 +738,7 @@ func TestEngineGetProperties(t *testing.T) {
 		},
 	)
 	testComponentGetterSuccess(t, getEngine, (*Engine).GetProperties,
-		checkValueExported(EngineProperties{
+		th.CheckValueExported(EngineProperties{
 			EngineBaseProperties: EngineBaseProperties{
 				Type: ENGINE_GROUP_ALL,
 			},
@@ -872,14 +746,14 @@ func TestEngineGetProperties(t *testing.T) {
 				CountOfVirtualFunctionInstance: 4,
 			},
 		}),
-		withDrvIdx(1), withName("SuccessWithExtProps"),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
 	)
 }
 
 func TestEngineGetActivity(t *testing.T) {
-	testComponentGetterError(t, getEngine, (*Engine).GetActivity, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getEngine, (*Engine).GetActivity, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getEngine, (*Engine).GetActivity,
-		checkValue(EngineStats{
+		th.CheckValue(EngineStats{
 			ActiveTime: 12345678,
 			Timestamp:  87654321,
 		}),
@@ -887,7 +761,7 @@ func TestEngineGetActivity(t *testing.T) {
 }
 
 func TestEngineGetActivityExt(t *testing.T) {
-	testComponentGetterError(t, getEngine, (*Engine).GetActivityExt, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getEngine, (*Engine).GetActivityExt, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getEngine, (*Engine).GetActivityExt,
 		func(t *testing.T, stats []EngineStats) {
 			require.Empty(t, stats)
@@ -900,9 +774,9 @@ func TestEngineGetActivityExt(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestFrequencyGetProperties(t *testing.T) {
-	testComponentGetterError(t, getFrequency, (*Frequency).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFrequency, (*Frequency).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetProperties,
-		checkValue(FreqProperties{
+		th.CheckValue(FreqProperties{
 			Type:                     FREQ_DOMAIN_GPU,
 			OnSubdevice:              1,
 			SubdeviceId:              1,
@@ -915,7 +789,7 @@ func TestFrequencyGetProperties(t *testing.T) {
 }
 
 func TestFrequencyGetAvailableClocks(t *testing.T) {
-	testComponentGetterError(t, getFrequency, (*Frequency).GetAvailableClocks, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFrequency, (*Frequency).GetAvailableClocks, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetAvailableClocks,
 		func(t *testing.T, clocks []float64) {
 			require.Len(t, clocks, 3)
@@ -927,9 +801,9 @@ func TestFrequencyGetAvailableClocks(t *testing.T) {
 }
 
 func TestFrequencyGetRange(t *testing.T) {
-	testComponentGetterError(t, getFrequency, (*Frequency).GetRange, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFrequency, (*Frequency).GetRange, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetRange,
-		checkValue(FreqRange{
+		th.CheckValue(FreqRange{
 			Min: 300.0,
 			Max: 1600.0,
 		}),
@@ -937,14 +811,14 @@ func TestFrequencyGetRange(t *testing.T) {
 }
 
 func TestFrequencySetRange(t *testing.T) {
-	testComponentActionError(t, getFrequency, func(f *Frequency) error { return f.SetRange(&FreqRange{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getFrequency, func(f *Frequency) error { return f.SetRange(&FreqRange{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getFrequency, func(f *Frequency) error { return f.SetRange(&FreqRange{}) })
 }
 
 func TestFrequencyGetState(t *testing.T) {
-	testComponentGetterError(t, getFrequency, (*Frequency).GetState, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFrequency, (*Frequency).GetState, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetState,
-		checkValue(FreqState{
+		th.CheckValue(FreqState{
 			CurrentVoltage: 0.85,
 			Request:        1400.0,
 			Tdp:            1600.0,
@@ -958,9 +832,9 @@ func TestFrequencyGetState(t *testing.T) {
 }
 
 func TestFrequencyGetThrottleTime(t *testing.T) {
-	testComponentGetterError(t, getFrequency, (*Frequency).GetThrottleTime, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFrequency, (*Frequency).GetThrottleTime, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFrequency, (*Frequency).GetThrottleTime,
-		checkValue(FreqThrottleTime{
+		th.CheckValue(FreqThrottleTime{
 			ThrottleTime: 5000,
 			Timestamp:    100000,
 		}),
@@ -972,9 +846,9 @@ func TestFrequencyGetThrottleTime(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestMemoryGetProperties(t *testing.T) {
-	testComponentGetterError(t, getMemory, (*Memory).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getMemory, (*Memory).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getMemory, (*Memory).GetProperties,
-		checkValue(MemProperties{
+		th.CheckValue(MemProperties{
 			Type:         MEM_TYPE_HBM,
 			OnSubdevice:  1,
 			SubdeviceId:  1,
@@ -987,9 +861,9 @@ func TestMemoryGetProperties(t *testing.T) {
 }
 
 func TestMemoryGetState(t *testing.T) {
-	testComponentGetterError(t, getMemory, (*Memory).GetState, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getMemory, (*Memory).GetState, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getMemory, (*Memory).GetState,
-		checkValue(MemState{
+		th.CheckValue(MemState{
 			Health: MEM_HEALTH_OK,
 			Free:   8589934592,
 			Size:   17179869184,
@@ -998,9 +872,9 @@ func TestMemoryGetState(t *testing.T) {
 }
 
 func TestMemoryGetBandwidth(t *testing.T) {
-	testComponentGetterError(t, getMemory, (*Memory).GetBandwidth, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getMemory, (*Memory).GetBandwidth, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getMemory, (*Memory).GetBandwidth,
-		checkValue(MemBandwidth{
+		th.CheckValue(MemBandwidth{
 			ReadCounter:  1073741824,
 			WriteCounter: 536870912,
 			MaxBandwidth: 512000000000,
@@ -1014,7 +888,7 @@ func TestMemoryGetBandwidth(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestPowerGetProperties(t *testing.T) {
-	testComponentGetterError(t, getPower, (*Power).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPower, (*Power).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetProperties,
 		func(t *testing.T, props PowerProperties) {
 			assert.Equal(t, PowerBaseProperties{
@@ -1029,7 +903,7 @@ func TestPowerGetProperties(t *testing.T) {
 		},
 	)
 	testComponentGetterSuccess(t, getPower, (*Power).GetProperties,
-		checkValueExported(PowerProperties{
+		th.CheckValueExported(PowerProperties{
 			PowerBaseProperties: PowerBaseProperties{
 				OnSubdevice:                1,
 				SubdeviceId:                1,
@@ -1054,14 +928,14 @@ func TestPowerGetProperties(t *testing.T) {
 				},
 			},
 		}),
-		withDrvIdx(1), withName("SuccessWithExtProps"),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
 	)
 }
 
 func TestPowerGetEnergyCounter(t *testing.T) {
-	testComponentGetterError(t, getPower, (*Power).GetEnergyCounter, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPower, (*Power).GetEnergyCounter, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetEnergyCounter,
-		checkValue(PowerEnergyCounter{
+		th.CheckValue(PowerEnergyCounter{
 			Energy:    5000000,
 			Timestamp: 123456789,
 		}),
@@ -1069,9 +943,9 @@ func TestPowerGetEnergyCounter(t *testing.T) {
 }
 
 func TestPowerGetEnergyThreshold(t *testing.T) {
-	testComponentGetterError(t, getPower, (*Power).GetEnergyThreshold, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPower, (*Power).GetEnergyThreshold, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetEnergyThreshold,
-		checkValue(EnergyThreshold{
+		th.CheckValue(EnergyThreshold{
 			Enable:    1,
 			Threshold: 10.5,
 			ProcessId: 4321,
@@ -1080,14 +954,14 @@ func TestPowerGetEnergyThreshold(t *testing.T) {
 }
 
 func TestPowerSetEnergyThreshold(t *testing.T) {
-	testComponentActionError(t, getPower, func(p *Power) error { return p.SetEnergyThreshold(0) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getPower, func(p *Power) error { return p.SetEnergyThreshold(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getPower, func(p *Power) error { return p.SetEnergyThreshold(0) })
 }
 
 func TestPowerGetLimitsExt(t *testing.T) {
-	testComponentGetterError(t, getPower, (*Power).GetLimitsExt, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPower, (*Power).GetLimitsExt, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetLimitsExt,
-		checkValue([]PowerLimitExtDesc{
+		th.CheckValue([]PowerLimitExtDesc{
 			{
 				Level:               POWER_LEVEL_SUSTAINED,
 				Source:              POWER_SOURCE_ANY,
@@ -1115,14 +989,14 @@ func TestPowerGetLimitsExt(t *testing.T) {
 }
 
 func TestPowerSetLimitsExt(t *testing.T) {
-	testComponentActionError(t, getPower, func(p *Power) error { return p.SetLimitsExt(nil) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getPower, func(p *Power) error { return p.SetLimitsExt(nil) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getPower, func(p *Power) error { return p.SetLimitsExt(nil) })
 }
 
 func TestPowerGetUsage(t *testing.T) {
-	testComponentGetterError(t, getPower, (*Power).GetUsage, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPower, (*Power).GetUsage, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPower, (*Power).GetUsage,
-		checkValue(PowerUsage{
+		th.CheckValue(PowerUsage{
 			InstantPower: 180000,
 			AveragePower: 160000,
 		}),
@@ -1130,12 +1004,12 @@ func TestPowerGetUsage(t *testing.T) {
 }
 
 func TestPowerGetLimitsExt2(t *testing.T) {
-	testComponentGetterError(t, getPower, (*Power).GetLimitsExt2, withConfig(driverConfigComponentErrs))
-	testComponentGetterSuccess(t, getPower, (*Power).GetLimitsExt2, checkValue(uint32(200000)))
+	testComponentGetterError(t, getPower, (*Power).GetLimitsExt2, th.WithConfig(driverConfigComponentErrs))
+	testComponentGetterSuccess(t, getPower, (*Power).GetLimitsExt2, th.CheckValue(uint32(200000)))
 }
 
 func TestPowerSetLimitsExt2(t *testing.T) {
-	testComponentActionError(t, getPower, func(p *Power) error { return p.SetLimitsExt2(0) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getPower, func(p *Power) error { return p.SetLimitsExt2(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getPower, func(p *Power) error { return p.SetLimitsExt2(0) })
 }
 
@@ -1144,9 +1018,9 @@ func TestPowerSetLimitsExt2(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestSchedulerGetProperties(t *testing.T) {
-	testComponentGetterError(t, getScheduler, (*Scheduler).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, (*Scheduler).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler, (*Scheduler).GetProperties,
-		checkValue(SchedProperties{
+		th.CheckValue(SchedProperties{
 			OnSubdevice:    0,
 			SubdeviceId:    0,
 			CanControl:     1,
@@ -1157,27 +1031,27 @@ func TestSchedulerGetProperties(t *testing.T) {
 }
 
 func TestSchedulerGetCurrentMode(t *testing.T) {
-	testComponentGetterError(t, getScheduler, (*Scheduler).GetCurrentMode, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, (*Scheduler).GetCurrentMode, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler, (*Scheduler).GetCurrentMode,
-		checkValue(SCHED_MODE_TIMESLICE),
+		th.CheckValue(SCHED_MODE_TIMESLICE),
 	)
 }
 
 func TestSchedulerGetTimeoutModeProperties(t *testing.T) {
-	testComponentGetterError(t, getScheduler, func(s *Scheduler) (SchedTimeoutProperties, error) { return s.GetTimeoutModeProperties(false) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, func(s *Scheduler) (SchedTimeoutProperties, error) { return s.GetTimeoutModeProperties(false) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (SchedTimeoutProperties, error) { return s.GetTimeoutModeProperties(false) },
-		checkValue(SchedTimeoutProperties{
+		th.CheckValue(SchedTimeoutProperties{
 			WatchdogTimeout: 5000000,
 		}),
 	)
 }
 
 func TestSchedulerGetTimesliceModeProperties(t *testing.T) {
-	testComponentGetterError(t, getScheduler, func(s *Scheduler) (SchedTimesliceProperties, error) { return s.GetTimesliceModeProperties(false) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, func(s *Scheduler) (SchedTimesliceProperties, error) { return s.GetTimesliceModeProperties(false) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (SchedTimesliceProperties, error) { return s.GetTimesliceModeProperties(false) },
-		checkValue(SchedTimesliceProperties{
+		th.CheckValue(SchedTimesliceProperties{
 			Interval:     2000,
 			YieldTimeout: 500,
 		}),
@@ -1185,7 +1059,7 @@ func TestSchedulerGetTimesliceModeProperties(t *testing.T) {
 }
 
 func TestSchedulerSetTimeoutMode(t *testing.T) {
-	testComponentGetterError(t, getScheduler, func(s *Scheduler) (bool, error) { return s.SetTimeoutMode(&SchedTimeoutProperties{}) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, func(s *Scheduler) (bool, error) { return s.SetTimeoutMode(&SchedTimeoutProperties{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (bool, error) { return s.SetTimeoutMode(&SchedTimeoutProperties{}) },
 		func(t *testing.T, needReload bool) { assert.False(t, needReload, "needReload") },
@@ -1193,7 +1067,7 @@ func TestSchedulerSetTimeoutMode(t *testing.T) {
 }
 
 func TestSchedulerSetTimesliceMode(t *testing.T) {
-	testComponentGetterError(t, getScheduler, func(s *Scheduler) (bool, error) { return s.SetTimesliceMode(&SchedTimesliceProperties{}) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, func(s *Scheduler) (bool, error) { return s.SetTimesliceMode(&SchedTimesliceProperties{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (bool, error) { return s.SetTimesliceMode(&SchedTimesliceProperties{}) },
 		func(t *testing.T, needReload bool) { assert.False(t, needReload, "needReload") },
@@ -1201,7 +1075,7 @@ func TestSchedulerSetTimesliceMode(t *testing.T) {
 }
 
 func TestSchedulerSetExclusiveMode(t *testing.T) {
-	testComponentGetterError(t, getScheduler, func(s *Scheduler) (bool, error) { return s.SetExclusiveMode() }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getScheduler, func(s *Scheduler) (bool, error) { return s.SetExclusiveMode() }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getScheduler,
 		func(s *Scheduler) (bool, error) { return s.SetExclusiveMode() },
 		func(t *testing.T, needReload bool) { assert.False(t, needReload, "needReload") },
@@ -1213,9 +1087,9 @@ func TestSchedulerSetExclusiveMode(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestTemperatureGetProperties(t *testing.T) {
-	testComponentGetterError(t, getTemperature, (*Temperature).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getTemperature, (*Temperature).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getTemperature, (*Temperature).GetProperties,
-		checkValue(TempProperties{
+		th.CheckValue(TempProperties{
 			OnSubdevice:             1,
 			SubdeviceId:             1,
 			Type:                    TEMP_SENSORS_GLOBAL,
@@ -1228,9 +1102,9 @@ func TestTemperatureGetProperties(t *testing.T) {
 }
 
 func TestTemperatureGetConfig(t *testing.T) {
-	testComponentGetterError(t, getTemperature, (*Temperature).GetConfig, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getTemperature, (*Temperature).GetConfig, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getTemperature, (*Temperature).GetConfig,
-		checkValue(TempConfig{
+		th.CheckValue(TempConfig{
 			EnableCritical: 1,
 			Threshold1: TempThreshold{
 				EnableLowToHigh: 1,
@@ -1247,14 +1121,14 @@ func TestTemperatureGetConfig(t *testing.T) {
 }
 
 func TestTemperatureSetConfig(t *testing.T) {
-	testComponentActionError(t, getTemperature, func(temp *Temperature) error { return temp.SetConfig(&TempConfig{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getTemperature, func(temp *Temperature) error { return temp.SetConfig(&TempConfig{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getTemperature, func(temp *Temperature) error { return temp.SetConfig(&TempConfig{}) })
 }
 
 func TestTemperatureGetState(t *testing.T) {
-	testComponentGetterError(t, getTemperature, (*Temperature).GetState, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getTemperature, (*Temperature).GetState, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getTemperature, (*Temperature).GetState,
-		checkValue(48.0),
+		th.CheckValue(48.0),
 	)
 }
 
@@ -1263,10 +1137,10 @@ func TestTemperatureGetState(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestFabricPortGetProperties(t *testing.T) {
-	testComponentGetterError(t, getFabricPort, (*FabricPort).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFabricPort, (*FabricPort).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetProperties,
-		checkValue(FabricPortProperties{
-			Model:       stringProperty[core.StringProperty256]("Xe-Link"),
+		th.CheckValue(FabricPortProperties{
+			Model:       th.StringProperty[core.StringProperty256]("Xe-Link"),
 			OnSubdevice: 1,
 			SubdeviceId: 1,
 			PortId: FabricPortId{
@@ -1281,18 +1155,18 @@ func TestFabricPortGetProperties(t *testing.T) {
 }
 
 func TestFabricPortGetLinkType(t *testing.T) {
-	testComponentGetterError(t, getFabricPort, (*FabricPort).GetLinkType, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFabricPort, (*FabricPort).GetLinkType, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetLinkType,
-		checkValue(FabricLinkType{
-			Desc: stringProperty[core.StringProperty256]("Xe-Link"),
+		th.CheckValue(FabricLinkType{
+			Desc: th.StringProperty[core.StringProperty256]("Xe-Link"),
 		}),
 	)
 }
 
 func TestFabricPortGetConfig(t *testing.T) {
-	testComponentGetterError(t, getFabricPort, (*FabricPort).GetConfig, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFabricPort, (*FabricPort).GetConfig, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetConfig,
-		checkValue(FabricPortConfig{
+		th.CheckValue(FabricPortConfig{
 			Enabled:   1,
 			Beaconing: 1,
 		}),
@@ -1300,14 +1174,14 @@ func TestFabricPortGetConfig(t *testing.T) {
 }
 
 func TestFabricPortSetConfig(t *testing.T) {
-	testComponentActionError(t, getFabricPort, func(fp *FabricPort) error { return fp.SetConfig(&FabricPortConfig{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getFabricPort, func(fp *FabricPort) error { return fp.SetConfig(&FabricPortConfig{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getFabricPort, func(fp *FabricPort) error { return fp.SetConfig(&FabricPortConfig{}) })
 }
 
 func TestFabricPortGetState(t *testing.T) {
-	testComponentGetterError(t, getFabricPort, (*FabricPort).GetState, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFabricPort, (*FabricPort).GetState, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetState,
-		checkValue(FabricPortState{
+		th.CheckValue(FabricPortState{
 			Status: FABRIC_PORT_STATUS_DEGRADED,
 			QualityIssues: FabricPortQualIssueFlags(
 				FABRIC_PORT_QUAL_ISSUE_FLAG_LINK_ERRORS | FABRIC_PORT_QUAL_ISSUE_FLAG_SPEED,
@@ -1327,9 +1201,9 @@ func TestFabricPortGetState(t *testing.T) {
 }
 
 func TestFabricPortGetThroughput(t *testing.T) {
-	testComponentGetterError(t, getFabricPort, (*FabricPort).GetThroughput, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFabricPort, (*FabricPort).GetThroughput, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetThroughput,
-		checkValue(FabricPortThroughput{
+		th.CheckValue(FabricPortThroughput{
 			Timestamp: 777777,
 			RxCounter: 111111,
 			TxCounter: 222222,
@@ -1338,9 +1212,9 @@ func TestFabricPortGetThroughput(t *testing.T) {
 }
 
 func TestFabricPortGetFabricErrorCounters(t *testing.T) {
-	testComponentGetterError(t, getFabricPort, (*FabricPort).GetFabricErrorCounters, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFabricPort, (*FabricPort).GetFabricErrorCounters, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFabricPort, (*FabricPort).GetFabricErrorCounters,
-		checkValue(FabricPortErrorCounters{
+		th.CheckValue(FabricPortErrorCounters{
 			LinkFailureCount: 5,
 			FwCommErrorCount: 6,
 			FwErrorCount:     7,
@@ -1354,9 +1228,9 @@ func TestFabricPortGetFabricErrorCounters(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestFanGetProperties(t *testing.T) {
-	testComponentGetterError(t, getFan, (*Fan).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFan, (*Fan).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFan, (*Fan).GetProperties,
-		checkValue(FanProperties{
+		th.CheckValue(FanProperties{
 			OnSubdevice:    1,
 			SubdeviceId:    1,
 			CanControl:     1,
@@ -1369,9 +1243,9 @@ func TestFanGetProperties(t *testing.T) {
 }
 
 func TestFanGetConfig(t *testing.T) {
-	testComponentGetterError(t, getFan, (*Fan).GetConfig, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFan, (*Fan).GetConfig, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFan, (*Fan).GetConfig,
-		checkValue(FanConfig{
+		th.CheckValue(FanConfig{
 			Mode: FAN_SPEED_MODE_FIXED,
 			SpeedFixed: FanSpeed{
 				Speed: 1500,
@@ -1382,25 +1256,25 @@ func TestFanGetConfig(t *testing.T) {
 }
 
 func TestFanSetDefaultMode(t *testing.T) {
-	testComponentActionError(t, getFan, (*Fan).SetDefaultMode, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getFan, (*Fan).SetDefaultMode, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getFan, (*Fan).SetDefaultMode)
 }
 
 func TestFanSetFixedSpeedMode(t *testing.T) {
-	testComponentActionError(t, getFan, func(f *Fan) error { return f.SetFixedSpeedMode(FanSpeed{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getFan, func(f *Fan) error { return f.SetFixedSpeedMode(FanSpeed{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getFan, func(f *Fan) error { return f.SetFixedSpeedMode(FanSpeed{}) })
 }
 
 func TestFanSetSpeedTableMode(t *testing.T) {
-	testComponentActionError(t, getFan, func(f *Fan) error { return f.SetSpeedTableMode(&FanSpeedTable{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getFan, func(f *Fan) error { return f.SetSpeedTableMode(&FanSpeedTable{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getFan, func(f *Fan) error { return f.SetSpeedTableMode(&FanSpeedTable{}) })
 }
 
 func TestFanGetState(t *testing.T) {
-	testComponentGetterError(t, getFan, func(f *Fan) (int32, error) { return f.GetState(0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFan, func(f *Fan) (int32, error) { return f.GetState(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFan,
 		func(f *Fan) (int32, error) { return f.GetState(0) },
-		checkValue(int32(1500)),
+		th.CheckValue(int32(1500)),
 	)
 }
 
@@ -1409,34 +1283,34 @@ func TestFanGetState(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestFirmwareGetProperties(t *testing.T) {
-	testComponentGetterError(t, getFirmware, (*Firmware).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFirmware, (*Firmware).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFirmware, (*Firmware).GetProperties,
-		checkValue(FirmwareProperties{
+		th.CheckValue(FirmwareProperties{
 			OnSubdevice: 0,
 			SubdeviceId: 0,
 			CanControl:  1,
-			Name:        stringProperty[core.StringProperty64]("GFX"),
-			Version:     stringProperty[core.StringProperty64]("1.2.3.4"),
+			Name:        th.StringProperty[core.StringProperty64]("GFX"),
+			Version:     th.StringProperty[core.StringProperty64]("1.2.3.4"),
 		}),
 	)
 }
 
 func TestFirmwareFlash(t *testing.T) {
-	testComponentActionError(t, getFirmware, func(fw *Firmware) error { return fw.Flash([]byte{0x00}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getFirmware, func(fw *Firmware) error { return fw.Flash([]byte{0x00}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getFirmware, func(fw *Firmware) error { return fw.Flash([]byte{0x00}) })
 }
 
 func TestFirmwareGetFlashProgress(t *testing.T) {
-	testComponentGetterError(t, getFirmware, (*Firmware).GetFlashProgress, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFirmware, (*Firmware).GetFlashProgress, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFirmware, (*Firmware).GetFlashProgress,
-		checkValue(uint32(100)),
+		th.CheckValue(uint32(100)),
 	)
 }
 
 func TestFirmwareGetConsoleLogs(t *testing.T) {
-	testComponentGetterError(t, getFirmware, (*Firmware).GetConsoleLogs, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getFirmware, (*Firmware).GetConsoleLogs, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getFirmware, (*Firmware).GetConsoleLogs,
-		checkValue("test log\x00"),
+		th.CheckValue("test log\x00"),
 	)
 }
 
@@ -1445,9 +1319,9 @@ func TestFirmwareGetConsoleLogs(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestLedGetProperties(t *testing.T) {
-	testComponentGetterError(t, getLed, (*Led).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getLed, (*Led).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getLed, (*Led).GetProperties,
-		checkValue(LedProperties{
+		th.CheckValue(LedProperties{
 			OnSubdevice: 0,
 			SubdeviceId: 0,
 			CanControl:  1,
@@ -1457,9 +1331,9 @@ func TestLedGetProperties(t *testing.T) {
 }
 
 func TestLedGetState(t *testing.T) {
-	testComponentGetterError(t, getLed, (*Led).GetState, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getLed, (*Led).GetState, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getLed, (*Led).GetState,
-		checkValue(LedState{
+		th.CheckValue(LedState{
 			IsOn: 1,
 			Color: LedColor{
 				Red:   1.0,
@@ -1470,12 +1344,12 @@ func TestLedGetState(t *testing.T) {
 }
 
 func TestLedSetState(t *testing.T) {
-	testComponentActionError(t, getLed, func(l *Led) error { return l.SetState(false) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getLed, func(l *Led) error { return l.SetState(false) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getLed, func(l *Led) error { return l.SetState(false) })
 }
 
 func TestLedSetColor(t *testing.T) {
-	testComponentActionError(t, getLed, func(l *Led) error { return l.SetColor(LedColor{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getLed, func(l *Led) error { return l.SetColor(LedColor{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getLed, func(l *Led) error { return l.SetColor(LedColor{}) })
 }
 
@@ -1484,9 +1358,9 @@ func TestLedSetColor(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestOverclockGetDomainProperties(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, (*Overclock).GetDomainProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, (*Overclock).GetDomainProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain, (*Overclock).GetDomainProperties,
-		checkValue(OverclockProperties{
+		th.CheckValue(OverclockProperties{
 			DomainType:        OVERCLOCK_DOMAIN_CARD,
 			AvailableControls: 3,
 			VFProgramType:     VF_PROGRAM_TYPE_VF_ARBITRARY,
@@ -1496,9 +1370,9 @@ func TestOverclockGetDomainProperties(t *testing.T) {
 }
 
 func TestOverclockGetDomainVFProperties(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, (*Overclock).GetDomainVFProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, (*Overclock).GetDomainVFProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain, (*Overclock).GetDomainVFProperties,
-		checkValue(VfProperty{
+		th.CheckValue(VfProperty{
 			MinFreq:  300.0,
 			MaxFreq:  1600.0,
 			StepFreq: 25.0,
@@ -1510,10 +1384,10 @@ func TestOverclockGetDomainVFProperties(t *testing.T) {
 }
 
 func TestOverclockGetDomainControlProperties(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (ControlProperty, error) { return oc.GetDomainControlProperties(0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (ControlProperty, error) { return oc.GetDomainControlProperties(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain,
 		func(oc *Overclock) (ControlProperty, error) { return oc.GetDomainControlProperties(0) },
-		checkValue(ControlProperty{
+		th.CheckValue(ControlProperty{
 			MinValue:     100.0,
 			MaxValue:     2000.0,
 			StepValue:    50.0,
@@ -1524,37 +1398,37 @@ func TestOverclockGetDomainControlProperties(t *testing.T) {
 }
 
 func TestOverclockGetControlCurrentValue(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (float64, error) { return oc.GetControlCurrentValue(0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (float64, error) { return oc.GetControlCurrentValue(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain,
 		func(oc *Overclock) (float64, error) { return oc.GetControlCurrentValue(0) },
-		checkValue(1200.0),
+		th.CheckValue(1200.0),
 	)
 }
 
 func TestOverclockGetControlPendingValue(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (float64, error) { return oc.GetControlPendingValue(0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (float64, error) { return oc.GetControlPendingValue(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain,
 		func(oc *Overclock) (float64, error) { return oc.GetControlPendingValue(0) },
-		checkValue(1100.0),
+		th.CheckValue(1100.0),
 	)
 }
 
 func TestOverclockSetControlUserValue(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (PendingAction, error) { return oc.SetControlUserValue(0, 0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (PendingAction, error) { return oc.SetControlUserValue(0, 0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain,
 		func(oc *Overclock) (PendingAction, error) { return oc.SetControlUserValue(0, 0) },
-		checkValue(PENDING_ACTION_PENDING_NONE),
+		th.CheckValue(PENDING_ACTION_PENDING_NONE),
 	)
 }
 
 func TestOverclockGetControlState(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigComponentErrs)
+		th.LoadConfig(t, driverConfigComponentErrs)
 		_, _, err := getOcDomain(t, 0, 0, 0).GetControlState(0)
 		require.ErrorIs(t, err, core.RESULT_ERROR_NOT_AVAILABLE)
 	})
 	t.Run("Success", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDefault)
+		th.LoadConfig(t, driverConfigDefault)
 		state, action, err := getOcDomain(t, 0, 0, 0).GetControlState(0)
 		require.NoError(t, err)
 		assert.Equal(t, CONTROL_STATE_STATE_ACTIVE, state, "state")
@@ -1563,15 +1437,15 @@ func TestOverclockGetControlState(t *testing.T) {
 }
 
 func TestOverclockGetVFPointValues(t *testing.T) {
-	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (uint32, error) { return oc.GetVFPointValues(0, 0, 0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getOcDomain, func(oc *Overclock) (uint32, error) { return oc.GetVFPointValues(0, 0, 0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getOcDomain,
 		func(oc *Overclock) (uint32, error) { return oc.GetVFPointValues(0, 0, 0) },
-		checkValue(uint32(42)),
+		th.CheckValue(uint32(42)),
 	)
 }
 
 func TestOverclockSetVFPointValues(t *testing.T) {
-	testComponentActionError(t, getOcDomain, func(oc *Overclock) error { return oc.SetVFPointValues(0, 0, 0) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getOcDomain, func(oc *Overclock) error { return oc.SetVFPointValues(0, 0, 0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getOcDomain, func(oc *Overclock) error { return oc.SetVFPointValues(0, 0, 0) })
 }
 
@@ -1580,9 +1454,9 @@ func TestOverclockSetVFPointValues(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestPerformanceGetProperties(t *testing.T) {
-	testComponentGetterError(t, getPerf, (*Performance).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPerf, (*Performance).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPerf, (*Performance).GetProperties,
-		checkValue(PerfProperties{
+		th.CheckValue(PerfProperties{
 			OnSubdevice: 0,
 			SubdeviceId: 0,
 			Engines:     7,
@@ -1591,14 +1465,14 @@ func TestPerformanceGetProperties(t *testing.T) {
 }
 
 func TestPerformanceGetConfig(t *testing.T) {
-	testComponentGetterError(t, getPerf, (*Performance).GetConfig, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPerf, (*Performance).GetConfig, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPerf, (*Performance).GetConfig,
-		checkValue(1.0),
+		th.CheckValue(1.0),
 	)
 }
 
 func TestPerformanceSetConfig(t *testing.T) {
-	testComponentActionError(t, getPerf, func(p *Performance) error { return p.SetConfig(0) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getPerf, func(p *Performance) error { return p.SetConfig(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getPerf, func(p *Performance) error { return p.SetConfig(0) })
 }
 
@@ -1607,9 +1481,9 @@ func TestPerformanceSetConfig(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestPsuGetProperties(t *testing.T) {
-	testComponentGetterError(t, getPsu, (*Psu).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPsu, (*Psu).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPsu, (*Psu).GetProperties,
-		checkValue(PsuProperties{
+		th.CheckValue(PsuProperties{
 			OnSubdevice: 0,
 			SubdeviceId: 0,
 			HaveFan:     1,
@@ -1619,9 +1493,9 @@ func TestPsuGetProperties(t *testing.T) {
 }
 
 func TestPsuGetState(t *testing.T) {
-	testComponentGetterError(t, getPsu, (*Psu).GetState, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getPsu, (*Psu).GetState, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getPsu, (*Psu).GetState,
-		checkValue(PsuState{
+		th.CheckValue(PsuState{
 			VoltStatus:  PSU_VOLTAGE_STATUS_NORMAL,
 			FanFailed:   0,
 			Temperature: 45,
@@ -1635,29 +1509,29 @@ func TestPsuGetState(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestRasGetProperties(t *testing.T) {
-	testComponentGetterError(t, getRas, (*Ras).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getRas, (*Ras).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getRas, (*Ras).GetProperties,
-		checkValue(RasProperties{
+		th.CheckValue(RasProperties{
 			Type:        RAS_ERROR_TYPE_CORRECTABLE,
 			OnSubdevice: 1,
 			SubdeviceId: 1,
 		}),
-		withCompIdx(0), withName("SuccessCorrectable"),
+		th.WithCompIdx(0), th.WithName("SuccessCorrectable"),
 	)
 	testComponentGetterSuccess(t, getRas, (*Ras).GetProperties,
-		checkValue(RasProperties{
+		th.CheckValue(RasProperties{
 			Type:        RAS_ERROR_TYPE_UNCORRECTABLE,
 			OnSubdevice: 1,
 			SubdeviceId: 1,
 		}),
-		withCompIdx(1), withName("SuccessUncorrectable"),
+		th.WithCompIdx(1), th.WithName("SuccessUncorrectable"),
 	)
 }
 
 func TestRasGetConfig(t *testing.T) {
-	testComponentGetterError(t, getRas, (*Ras).GetConfig, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getRas, (*Ras).GetConfig, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getRas, (*Ras).GetConfig,
-		checkValue(RasConfig{
+		th.CheckValue(RasConfig{
 			TotalThreshold: 100,
 			DetailedThresholds: RasState{Category: [7]uint64{
 				10, 11, 12, 13, 14, 15, 16,
@@ -1667,64 +1541,64 @@ func TestRasGetConfig(t *testing.T) {
 }
 
 func TestRasSetConfig(t *testing.T) {
-	testComponentActionError(t, getRas, func(r *Ras) error { return r.SetConfig(&RasConfig{}) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getRas, func(r *Ras) error { return r.SetConfig(&RasConfig{}) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getRas, func(r *Ras) error { return r.SetConfig(&RasConfig{}) })
 }
 
 func TestRasGetState(t *testing.T) {
-	testComponentGetterError(t, getRas, func(r *Ras) (RasState, error) { return r.GetState(false) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getRas, func(r *Ras) (RasState, error) { return r.GetState(false) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getRas,
 		func(r *Ras) (RasState, error) { return r.GetState(false) },
-		checkValue(RasState{
+		th.CheckValue(RasState{
 			Category: [7]uint64{0, 0, 0, 8, 9, 10, 11},
 		}),
-		withCompIdx(0), withName("SuccessCorrectable"),
+		th.WithCompIdx(0), th.WithName("SuccessCorrectable"),
 	)
 	testComponentGetterSuccess(t, getRas,
 		func(r *Ras) (RasState, error) { return r.GetState(false) },
-		checkValue(RasState{
+		th.CheckValue(RasState{
 			Category: [7]uint64{3, 2, 1, 0, 0, 0, 0},
 		}),
-		withCompIdx(1), withName("SuccessUncorrectable"),
+		th.WithCompIdx(1), th.WithName("SuccessUncorrectable"),
 	)
 }
 
 func TestRasGetStateExp(t *testing.T) {
 	testComponentGetterError(t, getRas,
 		func(r *Ras) ([]RasStateExp, error) { return r.GetStateExp() },
-		withConfig(driverConfigComponentErrs), withError(core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS),
+		th.WithConfig(driverConfigComponentErrs), th.WithError(core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS),
 	)
 	testComponentGetterSuccess(t, getRas,
 		func(r *Ras) ([]RasStateExp, error) { return r.GetStateExp() },
-		checkValue([]RasStateExp{{
+		th.CheckValue([]RasStateExp{{
 			Category:     RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS,
 			ErrorCounter: 1,
 		}, {
 			Category:     RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS,
 			ErrorCounter: 2,
 		}}),
-		withCompIdx(0), withName("SuccessCorrectable"),
+		th.WithCompIdx(0), th.WithName("SuccessCorrectable"),
 	)
 	testComponentGetterSuccess(t, getRas,
 		func(r *Ras) ([]RasStateExp, error) { return r.GetStateExp() },
-		checkValue([]RasStateExp{{
+		th.CheckValue([]RasStateExp{{
 			Category:     RAS_ERROR_CATEGORY_EXP_RESET,
 			ErrorCounter: 3,
 		}, {
 			Category:     RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS,
 			ErrorCounter: 4,
 		}}),
-		withCompIdx(1), withName("SuccessUncorrectable"),
+		th.WithCompIdx(1), th.WithName("SuccessUncorrectable"),
 	)
 }
 
 func TestRasClearStateExp(t *testing.T) {
 	testComponentActionError(t, getRas,
 		func(r *Ras) error { return r.ClearStateExp(0) },
-		withConfig(driverConfigComponentErrs), withError(core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS),
+		th.WithConfig(driverConfigComponentErrs), th.WithError(core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS),
 	)
 	t.Run("Success", func(t *testing.T) {
-		loadDriverConfig(t, driverConfigDefault)
+		th.LoadConfig(t, driverConfigDefault)
 		// uncorrectable
 		states, err := getRas(t, 0, 0, 1).GetStateExp()
 		require.NoError(t, err)
@@ -1756,9 +1630,9 @@ func TestRasClearStateExp(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestStandbyGetProperties(t *testing.T) {
-	testComponentGetterError(t, getStandby, (*Standby).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getStandby, (*Standby).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getStandby, (*Standby).GetProperties,
-		checkValue(StandbyProperties{
+		th.CheckValue(StandbyProperties{
 			Type:        STANDBY_TYPE_GLOBAL,
 			OnSubdevice: 0,
 			SubdeviceId: 0,
@@ -1767,14 +1641,14 @@ func TestStandbyGetProperties(t *testing.T) {
 }
 
 func TestStandbyGetMode(t *testing.T) {
-	testComponentGetterError(t, getStandby, (*Standby).GetMode, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getStandby, (*Standby).GetMode, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getStandby, (*Standby).GetMode,
-		checkValue(STANDBY_PROMO_MODE_DEFAULT),
+		th.CheckValue(STANDBY_PROMO_MODE_DEFAULT),
 	)
 }
 
 func TestStandbySetMode(t *testing.T) {
-	testComponentActionError(t, getStandby, func(s *Standby) error { return s.SetMode(0) }, withConfig(driverConfigComponentErrs))
+	testComponentActionError(t, getStandby, func(s *Standby) error { return s.SetMode(0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentActionSuccess(t, getStandby, func(s *Standby) error { return s.SetMode(0) })
 }
 
@@ -1783,19 +1657,19 @@ func TestStandbySetMode(t *testing.T) {
 // ------------------------------------------------------------------
 
 func TestDiagnosticsGetProperties(t *testing.T) {
-	testComponentGetterError(t, getDiagnostic, (*Diagnostics).GetProperties, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getDiagnostic, (*Diagnostics).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getDiagnostic, (*Diagnostics).GetProperties,
-		checkValue(DiagProperties{
+		th.CheckValue(DiagProperties{
 			OnSubdevice: 0,
 			SubdeviceId: 0,
-			Name:        stringProperty[core.StringProperty64]("GPU"),
+			Name:        th.StringProperty[core.StringProperty64]("GPU"),
 			HaveTests:   0,
 		}),
 	)
 }
 
 func TestDiagnosticsGetTests(t *testing.T) {
-	testComponentGetterError(t, getDiagnostic, (*Diagnostics).GetTests, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getDiagnostic, (*Diagnostics).GetTests, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getDiagnostic, (*Diagnostics).GetTests,
 		func(t *testing.T, tests []DiagTest) {
 			require.Empty(t, tests)
@@ -1804,7 +1678,7 @@ func TestDiagnosticsGetTests(t *testing.T) {
 }
 
 func TestDiagnosticsRunTests(t *testing.T) {
-	testComponentGetterError(t, getDiagnostic, func(d *Diagnostics) ([]DiagResult, error) { return d.RunTests(0, 0) }, withConfig(driverConfigComponentErrs))
+	testComponentGetterError(t, getDiagnostic, func(d *Diagnostics) ([]DiagResult, error) { return d.RunTests(0, 0) }, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getDiagnostic,
 		func(d *Diagnostics) ([]DiagResult, error) { return d.RunTests(0, 0) },
 		func(t *testing.T, results []DiagResult) {

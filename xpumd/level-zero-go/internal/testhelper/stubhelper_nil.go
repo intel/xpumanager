@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (C) 2026 Intel Corporation
 
-package sysman
+package testhelper
 
 // stubReload nil implementation for linting unit tests.
 func stubReload(configFilePath string) error {
