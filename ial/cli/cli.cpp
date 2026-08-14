@@ -21,7 +21,6 @@
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
 #include <debug.h>
-#include <algorithm>
 #include <cctype>
 #include <iostream>
 #include <memory>
@@ -119,16 +118,16 @@ int main(int argc, char *argv[])
 {
 	TRACING();
 	arg_struct arg;
-	if (const char *envLvl = std::getenv("XPU_SMI_LOG_LEVEL")) { // NOLINT(concurrency-mt-unsafe)
-		std::string sv{envLvl};
-		std::ranges::transform(sv, sv.begin(), [](unsigned char c) { return std::toupper(c); });
-		if (sv == "TRACE") {
+	if (auto sv = getEnv("XPU_SMI_LOG_LEVEL")) {
+		std::ranges::transform(*sv, sv->begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+		const std::string_view level{*sv};
+		if (level == "TRACE") {
 			Logger::instance().setLevel(LogLevel::TRACE);
-		} else if (sv == "DBG" || sv == "DEBUG") {
+		} else if (level == "DBG" || level == "DEBUG") {
 			Logger::instance().setLevel(LogLevel::DBG);
-		} else if (sv == "INFO") {
+		} else if (level == "INFO") {
 			Logger::instance().setLevel(LogLevel::INFO);
-		} else if (sv == "ERR" || sv == "ERROR") {
+		} else if (level == "ERR" || level == "ERROR") {
 			Logger::instance().setLevel(LogLevel::ERR);
 		}
 	}

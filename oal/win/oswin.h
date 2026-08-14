@@ -151,6 +151,17 @@ inline bool hasEnv(const char *name)
 	return true;
 }
 
+inline std::optional<std::string> getEnv(const char *name)
+{
+	char *value = nullptr;
+	size_t length = 0;
+	if (_dupenv_s(&value, &length, name) != 0 || value == nullptr)
+		return std::nullopt;
+	std::string result{value};
+	free(value); // NOLINT(cppcoreguidelines-no-malloc,cppcoreguidelines-owning-memory)
+	return result;
+}
+
 using funcptr = DWORD(WINAPI *)(void *inputParams);
 extern char *optarg; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 extern int optind;

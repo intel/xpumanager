@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
+#include <optional>
 #include <stdlib.h>
 #include <cstdio>
 #include <cstring>
@@ -140,5 +141,14 @@ std::string findResourceFile(const std::string &relativePath);
 int coldResetViaSysfs(const std::string &gpuBdf);
 std::vector<uint32_t> getGpuProcessesByBdf(const std::string &gpuBdf);
 std::vector<std::string> getDevicesSharingSlotWith(const std::string &gpuBdf);
+
+// NOLINT(concurrency-mt-unsafe) — called once before any threads are created
+inline std::optional<std::string> getEnv(const char *name)
+{
+	const char *val = std::getenv(name); // NOLINT(concurrency-mt-unsafe)
+	if (!val)
+		return std::nullopt;
+	return std::string{val};
+}
 
 #endif
