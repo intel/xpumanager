@@ -21,9 +21,12 @@
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
 #include <debug.h>
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <memory>
 #include <os.h>
+#include <ranges>
 #include <string>
 #include <vector>
 #include "utility/compat/format.h"
@@ -116,6 +119,19 @@ int main(int argc, char *argv[])
 {
 	TRACING();
 	arg_struct arg;
+	if (const char *envLvl = std::getenv("XPU_SMI_LOG_LEVEL")) { // NOLINT(concurrency-mt-unsafe)
+		std::string sv{envLvl};
+		std::ranges::transform(sv, sv.begin(), [](unsigned char c) { return std::toupper(c); });
+		if (sv == "TRACE") {
+			Logger::instance().setLevel(LogLevel::TRACE);
+		} else if (sv == "DBG" || sv == "DEBUG") {
+			Logger::instance().setLevel(LogLevel::DBG);
+		} else if (sv == "INFO") {
+			Logger::instance().setLevel(LogLevel::INFO);
+		} else if (sv == "ERR" || sv == "ERROR") {
+			Logger::instance().setLevel(LogLevel::ERR);
+		}
+	}
 	LogLevel dbglvl = getDbgLvl();
 	bool priv = PRIVILEGECHECK();
 	UNUSED_VAR(priv);
