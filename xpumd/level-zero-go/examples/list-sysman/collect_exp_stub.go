@@ -14,3 +14,9 @@ import "github.com/intel/level-zero-go/sysman"
 // implementation, built with the "exp" build tag.
 func (d *DeviceInfo) collectRasInfoExp(ras *sysman.Ras, info *RasInfo) {
 }
+
+// collectInfoLogsExp is a no-op stub: this build variant does not include
+// the Intel experimental (Exp) Sysman info log API. See collect_exp.go for
+// the real implementation, built with the "exp" build tag.
+func (d *DriverInfo) collectInfoLogsExp(driver *sysman.Driver) {
+}

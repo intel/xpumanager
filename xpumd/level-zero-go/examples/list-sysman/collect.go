@@ -59,6 +59,8 @@ func collectDriverInfo(driver *sysman.Driver) *DriverInfo {
 		driverInfo.ExtensionProperties = extProps
 	}
 
+	driverInfo.collectInfoLogsExp(driver)
+
 	devices, err := driver.DeviceGet()
 	if err != nil {
 		driverInfo.recordError("Driver.DeviceGet", err)

@@ -19,7 +19,11 @@ type SystemInfo struct {
 	Drivers []DriverInfo
 }
 
-type DriverInfo struct {
+// BaseDriverInfo holds the driver fields that are always available,
+// regardless of whether the experimental (Exp) Sysman API extensions are
+// used. See types_stable.go/types_exp.go for the DriverInfo variants that
+// embed this.
+type BaseDriverInfo struct {
 	BaseInfo
 	ExtensionProperties []sysman.DriverExtensionProperties
 	Devices             []DeviceInfo

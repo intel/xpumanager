@@ -48,6 +48,7 @@ build-events-sysman:
 .PHONY: build-stub
 build-stub:
 	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -o bin/list-sysman-stub ./list-sysman/.
+	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -tags exp -o bin/list-sysman-exp-stub ./list-sysman/.
 	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -o bin/events-sysman-stub ./events-sysman/.
 	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
 	@echo "  SYSMAN_STUB_CONFIG=../level-zero-stub/example-config.yaml ./bin/list-sysman-stub"

@@ -7,6 +7,11 @@
 
 package main
 
+// DriverInfo describes an enumerated Sysman driver.
+type DriverInfo struct {
+	BaseDriverInfo
+}
+
 // RasInfo describes an enumerated Sysman RAS error set.
 type RasInfo struct {
 	BaseRasInfo
