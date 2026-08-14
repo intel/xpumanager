@@ -217,7 +217,22 @@ ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cogniti
 	// In survivability mode, zeInit might fail. However, we should not exit early
 	// because zesInit may still succeed, and the handle is needed for survivability features like
 	// upgrading the firmware of the device.
+	//
+	// ZE_RESULT_ERROR_DEPENDENCY_UNAVAILABLE means the compute runtime could not initialize
+	// the device (e.g. missing ReBAR, P2P dispatch failure, unsupported device ID). This is
+	// distinct from survivability mode — the device is healthy but the compute path is blocked.
+	// Fall back to sysman-only enumeration so the device still appears in the normal list and
+	// can be monitored via sysman (power, temperature, fan, etc.).
 	result = zeInitialize();
+	if (result == ZE_RESULT_ERROR_DEPENDENCY_UNAVAILABLE) {
+		DBG("zeInit returned DEPENDENCY_UNAVAILABLE; falling back to sysman-only enumeration.\n");
+		result = smOnlyEnumerate();
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		initialized = true;
+		return ZE_RESULT_SUCCESS;
+	}
 	if (result == ZE_RESULT_SUCCESS) {
 		// Use local vector to avoid memset on non-trivial type
 		std::vector<devGroup> localDevs(driverCount);

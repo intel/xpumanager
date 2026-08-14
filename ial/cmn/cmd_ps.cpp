@@ -221,12 +221,20 @@ int cmdPs::run(arg_struct *args)
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 
 	if (!deviceList.empty()) {
+		// Collect processes from all devices independently. A device that does not
+		// support process enumeration (e.g. sysman-only path) should not prevent
+		// results from other devices from being displayed.
+		ze_result_t firstError = ZE_RESULT_SUCCESS;
 		for (const auto &dev : deviceList) {
-			result = getProcessList(&dev, psInfoList);
+			const auto devResult = getProcessList(&dev, psInfoList);
+			if (devResult != ZE_RESULT_SUCCESS && devResult != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE &&
+				firstError == ZE_RESULT_SUCCESS) {
+				firstError = devResult;
+			}
 		}
-		if (result != ZE_RESULT_SUCCESS) {
-			DBG("Failed to get process information. Returned with error: {}\n", result);
-			return result;
+		if (firstError != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get process information. Returned with error: {}\n", firstError);
+			return firstError;
 		}
 		(*jsonObj)["device_util_by_proc_list"] = psInfoList;
 	} else {

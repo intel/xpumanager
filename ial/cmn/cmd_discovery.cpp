@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <memory.h>
 #include <pci.h>
+#include <optional>
 #include <ranges>
 #include <sstream>
 #include <string>
@@ -403,10 +404,17 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 	std::string outputLine;
 
+	// deviceType / pciDeviceID require the Level Zero compute handle (zeDevice);
+	// deviceName / socUuid fall back to sysman when it is absent.
+	// On the sysman-only path (smOnlyEnumerate) that handle is null — skip the
+	// compute-only calls silently to avoid spurious errors.
+	const bool hasZeHandle = (device->deviceHdl != nullptr);
+
 	// Get string values first, then assign to JSON (simple format for JSON output)
 	(*jsonObj)["device_function_type"] = (funcType == DEVICE_FUNCTION_TYPE_PHYSICAL) ? "physical" : "virtual";
 	(*jsonObj)["device_id"] = device->index;
 
+	outputLine.clear();
 	deviceName(device, &outputLine);
 	(*jsonObj)["device_name"] = outputLine;
 
@@ -416,20 +424,28 @@ std::unique_ptr<nlohmann::ordered_json> cmdDiscovery::printDeviceDetail(devInfo 
 		(*jsonObj)["device_state"] = DEVICE_STATE_NORMAL;
 	}
 
-	deviceType(device, &outputLine);
+	outputLine.clear();
+	if (hasZeHandle) {
+		deviceType(device, &outputLine);
+	}
 	(*jsonObj)["device_type"] = outputLine;
 
 	(*jsonObj)["drm_device"] = device->dev->getDrmDevPath();
 
+	outputLine.clear();
 	pciBDFAddress(device, &outputLine);
 	(*jsonObj)["pci_bdf_address"] = outputLine;
 
-	pciDeviceID(device, &outputLine);
+	outputLine.clear();
+	if (hasZeHandle)
+		pciDeviceID(device, &outputLine);
 	(*jsonObj)["pci_device_id"] = outputLine;
 
+	outputLine.clear();
 	socUuid(device, &outputLine);
 	(*jsonObj)["uuid"] = outputLine;
 
+	outputLine.clear();
 	vendorName(device, &outputLine);
 	(*jsonObj)["vendor_name"] = outputLine;
 
@@ -702,6 +718,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	deviceID(d, &outputLine);
 	props["device_id"] = outputLine;
 
+	outputLine.clear();
 	deviceName(d, &outputLine);
 	props["device_name"] = outputLine;
 
@@ -709,9 +726,11 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	if (d->dev->isInSurvMode()) {
 		props["recovery_action"] = "Firmware update and GPU reset";
 	}
+	outputLine.clear();
 	vendorName(d, &outputLine);
 	props["vendor_name"] = outputLine;
 
+	outputLine.clear();
 	socUuid(d, &outputLine);
 	props["uuid"] = outputLine;
 
@@ -867,10 +886,13 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 
 	props["oam_socket_id"] = "N/A";
 
-	// Get device properties for core clock rate
+	// Get device properties for core clock rate — only available on compute path.
 	auto zeDevProp = ze_device_properties_t{};
-	d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	props["core_clock_rate"] = xpum::compat::format("{} MHz", zeDevProp.coreClockRate);
+	if (d->dev->getDevProps(d->deviceHdl, &zeDevProp) == ZE_RESULT_SUCCESS) {
+		props["core_clock_rate"] = xpum::compat::format("{} MHz", zeDevProp.coreClockRate);
+	} else {
+		props["core_clock_rate"] = "N/A";
+	}
 
 	return result;
 }
@@ -906,13 +928,19 @@ ze_result_t cmdDiscovery::deviceName(devInfo *d, std::string *outputLine)
 
 	auto zeDevProp = ze_device_properties_t{};
 
-	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
+	if (const auto result = d->dev->getDevProps(d->deviceHdl, &zeDevProp); result == ZE_RESULT_SUCCESS) {
+		*outputLine = zeDevProp.name;
+		return ZE_RESULT_SUCCESS;
 	}
-	*outputLine = zeDevProp.name;
 
-	return ZE_RESULT_SUCCESS;
+	// Sysman-only path (null compute handle): fall back to zes_device_properties_t.modelName.
+	zes_device_properties_t zesProps{};
+	if (d->dev->zesGetDevProps(d->zesDeviceHdl, &zesProps) == ZE_RESULT_SUCCESS) {
+		*outputLine = zesProps.modelName;
+		return ZE_RESULT_SUCCESS;
+	}
+
+	return ZE_RESULT_ERROR_UNINITIALIZED;
 }
 
 /**
@@ -954,23 +982,31 @@ ze_result_t cmdDiscovery::socUuid(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	auto devProp = ze_device_properties_t{};
-	char output[256] = {0};
+	// Try the compute path first; fall back to zes_device_properties_t.core.uuid
+	// on the sysman-only path (null compute handle).
+	std::optional<ze_device_uuid_t> uuid;
 
-	const auto result = d->dev->getDevProps(d->deviceHdl, &devProp);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
+	ze_device_properties_t devProp{};
+	if (d->dev->getDevProps(d->deviceHdl, &devProp) == ZE_RESULT_SUCCESS) {
+		uuid = devProp.uuid;
+	} else {
+		zes_device_properties_t zesProps{};
+		if (d->dev->zesGetDevProps(d->zesDeviceHdl, &zesProps) == ZE_RESULT_SUCCESS) {
+			uuid = zesProps.core.uuid;
+		}
 	}
 
-	snprintf(output, sizeof(output), "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-			 devProp.uuid.id[15], devProp.uuid.id[14], devProp.uuid.id[13], devProp.uuid.id[12], devProp.uuid.id[11],
-			 devProp.uuid.id[10], devProp.uuid.id[9], devProp.uuid.id[8], devProp.uuid.id[7], devProp.uuid.id[6],
-			 devProp.uuid.id[5], devProp.uuid.id[4], devProp.uuid.id[3], devProp.uuid.id[2], devProp.uuid.id[1],
-			 devProp.uuid.id[0]);
+	if (!uuid) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	const auto &id = uuid->id;
+	char output[256] = {};
+	snprintf(output, sizeof(output), "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", id[15],
+			 id[14], id[13], id[12], id[11], id[10], id[9], id[8], id[7], id[6], id[5], id[4], id[3], id[2], id[1],
+			 id[0]);
 
 	*outputLine = output;
-
 	return ZE_RESULT_SUCCESS;
 }
 

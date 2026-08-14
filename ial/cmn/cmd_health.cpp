@@ -418,15 +418,26 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
+	uint32_t deviceId = 0;
 	res = d->dev->getDevProps(d->deviceHdl, &zeDevProp);
-	if (res != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x{:X} ({})\n", res, l0_error_to_string(res));
-		setHealthFailureJson(jsonObj, "power_health",
-							 std::string("Failed to get device properties: ") + l0_error_to_string(res));
-		return res;
+	if (res == ZE_RESULT_SUCCESS) {
+		deviceId = zeDevProp.deviceId;
+	} else {
+		// zeDeviceGetProperties unavailable; zesDeviceGetProperties exposes the
+		// same deviceId via the embedded core struct.
+		zes_device_properties_t zesProps{};
+		const ze_result_t zesRes = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesProps);
+		if (zesRes == ZE_RESULT_SUCCESS) {
+			deviceId = zesProps.core.deviceId;
+		} else {
+			ERR("Failed to get device properties: 0x{:X} ({})\n", zesRes, l0_error_to_string(zesRes));
+			setHealthFailureJson(jsonObj, "power_health",
+								 std::string("Failed to get device properties: ") + l0_error_to_string(zesRes));
+			return zesRes;
+		}
 	}
 
-	auto powerThreshold = pwr->getThrottlePower(zeDevProp.deviceId);
+	auto powerThreshold = pwr->getThrottlePower(deviceId);
 	if (powerThreshold <= 0) {
 		description = "Health threshold for the power domains is not set";
 		ERR("Power threshold is not set for power domain\n");

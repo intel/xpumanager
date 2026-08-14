@@ -96,11 +96,17 @@ void cmdSmi::collectStaticProps(SmiDeviceStats &stats, devInfo *di)
 	TRACING();
 	device *dev = di->dev;
 
-	// Device name
+	// Device name — prefer the compute path; fall back to sysman modelName when
+	// running in sysman-only mode (null compute handle, e.g. DEPENDENCY_UNAVAILABLE).
 	ze_device_properties_t zeDevProp = {};
 	if (dev->getDevProps(di->deviceHdl, &zeDevProp) == ZE_RESULT_SUCCESS) {
 		stats.name = zeDevProp.name;
 		stats.eccEnabled = (zeDevProp.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) != 0;
+	} else {
+		zes_device_properties_t zesDevPropFallback = {};
+		if (dev->zesGetDevProps(di->zesDeviceHdl, &zesDevPropFallback) == ZE_RESULT_SUCCESS) {
+			stats.name = zesDevPropFallback.modelName;
+		}
 	}
 
 	// Driver version + device index
