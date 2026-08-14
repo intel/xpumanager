@@ -189,7 +189,11 @@ elif is_linux
     if not cpp.version().version_compare('>=13')
       # GCC 12 LTO emits false-positive -Wstringop-overflow when inlining
       # third-party headers (e.g. fmt/core.h); suppress at link stage only.
-      add_project_link_arguments(['-Wno-error=stringop-overflow'], language: 'cpp')
+      if cpp.has_link_argument('-Wno-error=stringop-overflow')
+        add_project_link_arguments(['-Wno-error=stringop-overflow'], language: 'cpp')
+      else
+        warning('Linker does not support flag: -Wno-error=stringop-overflow')
+      endif
     endif
   endif
   compile_args += [
@@ -210,8 +214,16 @@ elif is_linux
   sanitizers = get_option('b_sanitize')
   if sanitizers != 'none'
     message('Sanitizers enabled (' + sanitizers + '), disabling LTO to avoid conflicts')
-    add_project_arguments('-fno-lto', language: ['c', 'cpp'])
-    add_project_link_arguments('-fno-lto', language: ['c', 'cpp'])
+    if cpp.has_argument('-fno-lto')
+      add_project_arguments('-fno-lto', language: ['c', 'cpp'])
+    else
+      warning('Compiler does not support flag: -fno-lto')
+    endif
+    if cpp.has_link_argument('-fno-lto')
+      add_project_link_arguments('-fno-lto', language: ['c', 'cpp'])
+    else
+      warning('Linker does not support flag: -fno-lto')
+    endif
   endif
 endif
 
@@ -270,9 +282,22 @@ endif
 global_inc = include_directories('.')
 
 # Specify compile flags before any xpum targets are compiled
-add_project_arguments(compile_args, language : 'cpp')
+foreach arg : compile_args
+  if cpp.has_argument(arg)
+    add_project_arguments(arg, language : 'cpp')
+  else
+    warning('Compiler does not support flag: ' + arg)
+  endif
+endforeach
+
 # Specify link flags
-add_project_link_arguments(link_args, language: 'cpp')
+foreach arg : link_args
+  if cpp.has_link_argument(arg)
+    add_project_link_arguments(arg, language : 'cpp')
+  else
+    warning('Linker does not support flag: ' + arg)
+  endif
+endforeach
 
 # Install-path constant: used for resource/ files
 if is_linux
