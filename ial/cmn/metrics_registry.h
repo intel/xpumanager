@@ -70,6 +70,7 @@ enum class MetricGroup : uint32_t
 
 [[nodiscard]] constexpr MetricGroup operator|(MetricGroup a, MetricGroup b) noexcept
 {
+	// NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange): MetricGroup is a bitmask enum.
 	return static_cast<MetricGroup>(detail::toUnderlying(a) | detail::toUnderlying(b));
 }
 [[nodiscard]] constexpr MetricGroup operator&(MetricGroup a, MetricGroup b) noexcept
@@ -233,6 +234,12 @@ struct QueryMetric
 	std::string_view description; /**< Shown by --list-fields / --help-query-gpu */
 	MetricSource source;
 	MetricGroup groups; /**< Bitmask of display sections this field belongs to */
+	/**
+	 * Minimum column width for space-aligned output, in characters. Set this for fields whose
+	 * value is wider than the column header (e.g. a PCI BDF address); leaving it at 0 lets the
+	 * header text alone size the column, which truncates such values with an ellipsis.
+	 */
+	int minWidth = 0;
 	ze_result_t (*getter)(devInfo &d, MetricValue &out, const MetricCache &cache);
 };
 

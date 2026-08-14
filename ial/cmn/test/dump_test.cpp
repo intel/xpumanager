@@ -38,6 +38,8 @@
 std::string progName = "test";
 
 #include "cmd_dump.h"
+#include "metrics_registry.h"
+#include "table_builder.h"
 #include "ze_api.h"
 #include <chrono>
 #include <vector>
@@ -149,6 +151,33 @@ TEST_SUITE("cmd_dump constants")
 		// parseSamplingTiming rejects intervals above MAX_INTERVAL; the default
 		// must therefore always be within the accepted range.
 		CHECK(DEFAULT_INTERVAL <= MAX_INTERVAL);
+	}
+}
+
+/**
+ * @brief Verifies aligned output preserves PCI BDF values wider than their column label.
+ *
+ * The @c pci.bus_id metric supplies a minimum display width so a full BDF,
+ * such as @c 0000:65:00.0, is not replaced with an ellipsis.
+ */
+// NOLINTNEXTLINE(cert-dcl58-cpp,cppcoreguidelines-avoid-non-const-global-variables,readability-identifier-naming)
+TEST_SUITE("cmd_dump aligned output")
+{
+	TEST_CASE("pci.bus_id BDF is not truncated")
+	{
+		const auto metric = metrics::findMetric("pci.bus_id");
+		REQUIRE(metric.has_value());
+
+		const std::string bdf = "0000:65:00.0";
+		TableBuilder formatter;
+		formatter.disableAutoSizing();
+		formatter.addColumn(std::string{metric->name}, getDumpColumnWidth(metric->name, metric->minWidth),
+							Align::Right);
+		formatter.lockWidths();
+
+		const std::string row = formatter.rowLine({bdf});
+		CHECK(row.find(bdf) != std::string::npos);
+		CHECK(row.find("...") == std::string::npos);
 	}
 }
 

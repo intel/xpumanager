@@ -8,15 +8,26 @@
 #define _CMD_DUMP_H
 
 #include "cmds.h"
-#include <os.h>
+#include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <string>
+#include <string_view>
 
 constexpr auto DEFAULT_INTERVAL = std::chrono::seconds{1};
 constexpr auto MAX_INTERVAL = std::chrono::seconds{20};
 // Maximum duration for time-based dump operations (100 million seconds, approximately 3.17 years)
 // This limit prevents extremely long-running dump tasks that could consume excessive resources
-constexpr int64_t MAX_DUMP_TIME_SECONDS = 100000000;
+constexpr std::int64_t MAX_DUMP_TIME_SECONDS = 100000000;
+
+/** Floor for metric column widths in space-aligned output, in characters. */
+constexpr int MIN_DUMP_COLUMN_WIDTH = 6;
+
+/** Return the width needed to show an aligned metric column without truncation. */
+inline int getDumpColumnWidth(std::string_view label, int minWidth)
+{
+	return std::max({static_cast<int>(label.size()), minWidth, MIN_DUMP_COLUMN_WIDTH});
+}
 
 /** Output format flags for cmdDump::runQuery. */
 struct QueryFormat

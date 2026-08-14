@@ -21,9 +21,12 @@
 #include "utility/compat/format.h"
 #include <span>
 #include <string>
-#include <utility>
+#include <string_view>
 
 namespace metrics::identity {
+
+/** Width of a BDF address rendered as "dddd:bb:dd.f" (see pci::getBDFStr). */
+inline constexpr int BDF_DISPLAY_WIDTH = sizeof("0000:00:00.0") - 1;
 
 inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 {
@@ -164,6 +167,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			.description = "PCI bus address as 'domain:bus:device.function', in hex.",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY | MetricGroup::PCI,
+			.minWidth = BDF_DISPLAY_WIDTH,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
 				auto *p = d.dev->getPCI();
 				if (p == nullptr) {

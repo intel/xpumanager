@@ -558,7 +558,10 @@ struct DumpOutput
 				const std::string label = (!nounits && !f->unit.empty())
 											  ? xpum::compat::format("{} ({})", f->name, f->unit)
 											  : std::string{f->name};
-				alignedFormatter->addColumn(label, std::max(static_cast<int>(label.size()), 6), Align::Right);
+				// Widen past the header text for fields whose value is longer than their name
+				// (e.g. pci.bus_id), otherwise the value is truncated with an ellipsis.
+				const int width = getDumpColumnWidth(label, f->minWidth);
+				alignedFormatter->addColumn(label, width, Align::Right);
 			}
 			alignedFormatter->lockWidths();
 		}
