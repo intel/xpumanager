@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Default stub state for unit testing the experimental sysman Go bindings.
+# Component counts are derived from the length of each array.
+
+Drivers:
+  - ExtensionProperties:
+      # to get the experimental RAS APIs enabled
+      - Name: "ZES_extension_ras_state"
+        Version: 1
+
+    Devices:
+      - RasErrorSets:
+          - Properties:
+              Type: 0 # ZES_RAS_ERROR_TYPE_CORRECTABLE
+              OnSubdevice: true
+              SubdeviceId: 1
+            StateExp:
+              - Category: 7 # ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS
+                ErrorCounter: 1
+              - Category: 9 # ZES_RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS
+                ErrorCounter: 2
+          - Properties:
+              Type: 1 # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+              OnSubdevice: true
+              SubdeviceId: 1
+            StateExp:
+              - Category: 0 # ZES_RAS_ERROR_CATEGORY_EXP_RESET
+                ErrorCounter: 3
+              - Category: 1 # ZES_RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS
+                ErrorCounter: 4

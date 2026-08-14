@@ -1,0 +1,50 @@
+GENERATOR:
+  PackageName: exp
+  PackageDescription: "Level Zero sysman API bindings for Go - experimental (exp) extensions"
+  PackageLicense: |
+    Copyright (C) 2026 Intel Corporation
+
+    SPDX-License-Identifier: MIT
+  PkgConfigOpts: ["level-zero"]
+  Includes:
+    - ze_api.h
+    - zes_api.h
+
+PARSER:
+  SourcesPaths:
+    - level-zero/ze_api.h
+    - level-zero/zes_api.h
+
+TRANSLATOR:
+  ConstRules:
+  Rules:
+    const:
+      - {action: accept, from: "^ZES_RAS_STATE_EXP_VERSION_"}
+      - {action: accept, from: "^ZES_RAS_ERROR_CATEGORY_EXP_"}
+      - {action: accept, from: "^ZES_RAS_GET_STATE_EXP_NAME$"}
+      - {action: replace, from: "^ZES_"}
+      - {transform: export}
+    function:
+      - {action: accept, from: "^zesRasGetStateExp$"}
+      - {action: accept, from: "^zesRasClearStateExp$"}
+      - {transform: unexport}
+    type:
+      - {action: accept, from: "^zes_ras_state_exp_version_t$"}
+      - {action: accept, from: "^zes_ras_error_category_exp_t$"}
+      - {action: accept, from: "^zes_ras_state_exp_t$"}
+      - {action: accept, from: "^zes_ras_handle_t$"}
+      - {action: replace, from: "^zes_"}
+      - {action: replace, from: "_t$"}
+      - {transform: export}
+      - {load: snakecase}
+      - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
+      # Map Ze types to core package (ze_result_t is the return type of the
+      # RAS Exp functions below)
+      - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
+  PtrTips:
+    function:
+      - {target: "^zesRasGetStateExp$", tips: [ref, ref, arr]}
+      # Default tip, everything is ref
+      - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
+  MemTips:
+    - {target: ., self: raw}

@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Stub state for testing fallback behavior.
+
+Drivers:
+  - Devices:
+      - RasErrorSets:
+          - Properties:
+              Type: 0 # ZES_RAS_ERROR_TYPE_CORRECTABLE
+            State:
+              Category: [1, 2, 3, 4, 5, 6, 7]
+          - Properties:
+              Type: 1 # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+            State:
+              Category: [1, 2, 3, 4, 5, 6, 7]
+            ReturnValues:
+              zesRasGetState: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS

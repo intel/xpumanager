@@ -1154,25 +1154,6 @@ func zesEngineGetActivityExt(HEngine engineHandle, PCount *uint32, PStats []Engi
 	return __v
 }
 
-// zesRasGetStateExp function as declared in level-zero/zes_api.h:7893
-func zesRasGetStateExp(HRas rasHandle, PCount *uint32, PState []RasStateExp) core.Result {
-	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
-	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
-	cPState, _ := (*C.zes_ras_state_exp_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PState)).Data)), cgoAllocsUnknown
-	__ret := C.zesRasGetStateExp(cHRas, cPCount, cPState)
-	__v := (core.Result)(__ret)
-	return __v
-}
-
-// zesRasClearStateExp function as declared in level-zero/zes_api.h:7939
-func zesRasClearStateExp(HRas rasHandle, Category RasErrorCategoryExp) core.Result {
-	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
-	cCategory, _ := (C.zes_ras_error_category_exp_t)(Category), cgoAllocsUnknown
-	__ret := C.zesRasClearStateExp(cHRas, cCategory)
-	__v := (core.Result)(__ret)
-	return __v
-}
-
 // zesDevicePciLinkSpeedUpdateExt function as declared in level-zero/zes_api.h:9122
 func zesDevicePciLinkSpeedUpdateExt(HDevice deviceHandle, ShouldDowngrade byte, PendingAction *DeviceAction) core.Result {
 	cHDevice, _ := *(*C.zes_device_handle_t)(unsafe.Pointer(&HDevice)), cgoAllocsUnknown
