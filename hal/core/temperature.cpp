@@ -6,10 +6,15 @@
 
 #include "temperature.h"
 #include "debug.h"
+#include "hwmon_temperature_utils.h"
+#include <os.h> // oal::getHwmonLabelPaths (OS Abstraction Layer)
 #include <cmath>
 #include <map>
 #include <memory>
 #include <vector>
+#include <string>
+#include <fstream>
+#include <cstdio>
 
 /**
  * @brief Helper function to parse device ID from hexadecimal string
@@ -338,8 +343,15 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
  * and retrieves the current temperature reading, providing targeted thermal
  * monitoring for specific device components.
  *
+ * getTemp() distinguishes two "no reading" cases via its return value, and the
+ * sysfs fallback in getCoreTemp()/getMemoryTemp() relies on that distinction:
+ *   - No sensor handle of `type` was enumerated at all -> the requested sensor
+ *     is unsupported by Level Zero      -> ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
+ *   - A matching sensor exists but its state read failed (device loss,
+ *     permission, invalid state, ...)   -> that underlying error is returned.
+ *
  * @param type The specific temperature sensor type to query
- * @param coreTemp Pointer to store the temperature value in Celsius
+ * @param temp Pointer to store the temperature value in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if temperature retrieved successfully, error code otherwise
  */
 ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
@@ -393,6 +405,12 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 	TRACING();
 	tileTemperatures.clear();
 
+	// Track whether a sensor of this type was enumerated at all, distinct from
+	// the tile map merely being empty. A matched sensor whose state read (or
+	// range filter) fails leaves the map empty WITHOUT meaning the type is
+	// unsupported, so we must not trigger the sysfs fallback in that case.
+	bool matchingSensorFound = false;
+
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		zes_temp_properties_t properties = {};
 		ze_result_t result = getProperties(temperatureHandles[i], &properties);
@@ -404,6 +422,7 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 		if (properties.type != type) {
 			continue;
 		}
+		matchingSensorFound = true;
 
 		uint32_t tileId = 0;
 		if (properties.onSubdevice) {
@@ -431,15 +450,108 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 		}
 	}
 
+	// sysfs hwmon fallback (single-tile, single-fan Arc Pro B70 / xe). Fall back
+	// only when Level Zero did not enumerate a matching sensor -- the same "no
+	// such sensor" condition getTemp() reports as ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
+	// When a matching L0 sensor IS present this branch is skipped and behavior
+	// above is byte-identical to the L0 path.
+	//
+	// The PCI device hwmon node is a single, device-level reading; representing
+	// it as tile 0 is a deliberate single-tile-B70 adapter to the tile-keyed
+	// map, NOT a claim of per-tile granularity. Do not generalize this to
+	// multi-tile parts (where each tile would need its own hwmon subdevice map).
+	if (xpum::hwmon::perTileShouldFallback(matchingSensorFound)) {
+		const char *sysfsLabel = (type == ZES_TEMP_SENSORS_GPU)	   ? "pkg"
+								 : (type == ZES_TEMP_SENSORS_MEMORY) ? "vram"
+																	 : nullptr;
+		// Only attempt the sysfs read for a type that HAS a hwmon label mapping.
+		// A type with no mapping (e.g. VOLTAGE_REGULATOR) is not an error: leave
+		// the map empty and return SUCCESS, exactly as before.
+		if (sysfsLabel != nullptr) {
+			double sysfsTemp = 0.0;
+			ze_result_t sysfsResult = readSysfsLabel(sysfsLabel, &sysfsTemp);
+			if (sysfsResult != ZE_RESULT_SUCCESS) {
+				// The sysfs path was taken and failed (label not resolved / read /
+				// bounds). Propagate that error rather than masking it with a
+				// ZE_RESULT_SUCCESS; the best-effort caller then shows this sensor
+				// as N/A instead of a false reading.
+				DBG("Tile 0 {} temperature (sysfs hwmon fallback) failed: 0x{:X} ({})\n", sysfsLabel, sysfsResult,
+					l0_error_to_string(sysfsResult));
+				return sysfsResult;
+			}
+			tileTemperatures[0] = sysfsTemp;
+			DBG("Tile 0 {} temperature (sysfs hwmon fallback): {:.2f} C\n", sysfsLabel, sysfsTemp);
+		}
+	}
+
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Resolve and cache the device's hwmon temperature nodes.
+ *
+ * Called once at init. Formats the device BDF from the Level Zero PCI address
+ * and asks the OS Abstraction Layer (oal::getHwmonLabelPaths) to walk the PCI
+ * device's hwmon nodes and return the exact tempN_input path for each label.
+ * The resolved label -> path map is cached; the getters read these cached paths
+ * back only when Level Zero reports the sensor type as unsupported. The
+ * platform-specific sysfs traversal lives in oal; the portable read / bounds
+ * logic lives in the internal xpum::hwmon utilities.
+ *
+ * Scope/limitation: this is validated on a single-tile, single-fan Intel Arc
+ * Pro B70 on the xe driver, where one device-level hwmon node carries the
+ * package ("pkg") and VRAM ("vram") temperatures. It is intentionally NOT a
+ * multi-device/multi-tile/multi-fan generalization.
+ *
+ * @param device Sysman device handle.
+ */
+void temperature::resolveSysfsHwmon(zes_device_handle_t device)
+{
+	sysfsLabelToInput.clear();
+
+	zes_pci_properties_t pci = {};
+	pci.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
+	if (zesDevicePciGetProperties(device, &pci) != ZE_RESULT_SUCCESS) {
+		DBG("sysfs hwmon fallback: could not read PCI properties; disabled\n");
+		return;
+	}
+
+	char bdf[40];
+	snprintf(bdf, sizeof(bdf), "%04x:%02x:%02x.%x", pci.address.domain, pci.address.bus, pci.address.device,
+			 pci.address.function);
+
+	// Discover the label -> tempN_input paths via the OS Abstraction Layer. The
+	// prefix is "temp" for temperatures (labels of interest: "pkg" / "vram").
+	sysfsLabelToInput = getHwmonLabelPaths(bdf, "temp");
+	DBG("sysfs hwmon fallback: bdf {}, cached {} temp label(s)\n", bdf, (int)sysfsLabelToInput.size());
+}
+
+/**
+ * @brief Read a cached hwmon temperature by label.
+ *
+ * @param label Sensor label to read ("pkg" for GPU package, "vram" for memory).
+ * @param temp Out-param receiving the Celsius value.
+ * @return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if the label was not resolved at
+ *         init; otherwise the result of readTempInputFile() (which validates).
+ */
+ze_result_t temperature::readSysfsLabel(const std::string &label, double *temp) const
+{
+	auto it = sysfsLabelToInput.find(label);
+	if (it == sysfsLabelToInput.end()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	return xpum::hwmon::readTempInputFile(it->second, temp);
 }
 
 /**
  * @brief Gets the current GPU core temperature
  *
- * This function retrieves the current temperature reading from the GPU core
- * temperature sensor, providing essential thermal monitoring for GPU performance
- * and safety management.
+ * On the tested Arc Pro B70 (xe) Level Zero exposes no GPU temperature sensor,
+ * so getTemp() returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE and we read the
+ * cached "pkg" hwmon node instead. Fall back when Level Zero reports unsupported
+ * or insufficient permissions. Device-loss, invalid-state, and other runtime
+ * errors remain authoritative. The routing decision is centralized in
+ * xpum::hwmon::decideTempSource().
  *
  * @param coreTemp Pointer to store the GPU core temperature in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if core temperature retrieved successfully, error code otherwise
@@ -447,15 +559,27 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
 ze_result_t temperature::getCoreTemp(double *coreTemp)
 {
 	TRACING();
-	return getTemp(ZES_TEMP_SENSORS_GPU, coreTemp);
+	ze_result_t result = getTemp(ZES_TEMP_SENSORS_GPU, coreTemp);
+	switch (xpum::hwmon::decideTempSource(result)) {
+	case xpum::hwmon::TempSource::UseSysfs:
+		return readSysfsLabel("pkg", coreTemp); // sysfs fallback (Arc Pro B70 / xe)
+	case xpum::hwmon::TempSource::UseLevelZero:
+	case xpum::hwmon::TempSource::PropagateError:
+	default:
+		return result;
+	}
 }
 
 /**
  * @brief Gets the current memory temperature
  *
- * This function retrieves the current temperature reading from the memory
- * temperature sensor, providing thermal monitoring capabilities for memory
- * subsystem safety and performance optimization.
+ * On the tested Arc Pro B70 (xe) Level Zero exposes no Memory temperature
+ * sensor, so getTemp() returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE and we read
+ * the cached "vram" hwmon node instead (already in Celsius; the B70 uses GDDR,
+ * not LPDDR5, so no MR4 conversion applies on this path). Fall back when Level
+ * Zero reports unsupported or insufficient permissions. Device-loss,
+ * invalid-state, and other runtime errors remain authoritative. The routing
+ * decision is centralized in xpum::hwmon::decideTempSource().
  *
  * @param memTemp Pointer to store the memory temperature in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if memory temperature retrieved successfully, error code otherwise
@@ -464,11 +588,19 @@ ze_result_t temperature::getMemoryTemp(double *memTemp)
 {
 	TRACING();
 	ze_result_t result = getTemp(ZES_TEMP_SENSORS_MEMORY, memTemp);
-	// LPDDR5 reports an MR4 thermal code (0..7); convert to Celsius.
-	if (result == ZE_RESULT_SUCCESS && hasLpddr5Memory && memTemp != nullptr) {
-		*memTemp = mr4CodeToCelsius(*memTemp);
+	switch (xpum::hwmon::decideTempSource(result)) {
+	case xpum::hwmon::TempSource::UseSysfs:
+		return readSysfsLabel("vram", memTemp); // sysfs fallback, already Celsius
+	case xpum::hwmon::TempSource::UseLevelZero:
+		// LPDDR5 reports an MR4 thermal code (0..7); convert to Celsius.
+		if (hasLpddr5Memory && memTemp != nullptr) {
+			*memTemp = mr4CodeToCelsius(*memTemp);
+		}
+		return result;
+	case xpum::hwmon::TempSource::PropagateError:
+	default:
+		return result;
 	}
-	return result;
 }
 
 /**
@@ -546,6 +678,10 @@ ze_result_t temperature::init(zes_device_handle_t device)
 {
 	TRACING();
 	ze_result_t result = enumTemperatureDomains(device);
+	// Resolve the PCI device's hwmon node so the getters can fall back to it
+	// when Level Zero reports a temperature sensor type as unsupported (Arc Pro
+	// B70 / xe). Best-effort and independent of the enumeration result.
+	resolveSysfsHwmon(device);
 	// Detect LPDDR5 memory so memory-temp getters can convert the MR4 thermal
 	// code reported by the device into a Celsius value. Best-effort: the result
 	// is intentionally ignored so a detection failure does not mask the

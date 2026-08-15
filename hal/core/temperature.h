@@ -8,6 +8,7 @@
 #define _TEMPERATURE_H
 
 #include "sysman.h"
+#include "hwmon_temperature_utils.h"
 #include <map>
 #include <sstream>
 #include <iomanip>
@@ -15,6 +16,7 @@
 #include <fstream>
 #include <memory>
 #include <functional>
+#include <string>
 
 #define CORE_THROTTLE_THRESHOLD_DEFAULT 105
 #define CORE_SHUTDOWN_THRESHOLD_DEFAULT 130
@@ -23,7 +25,8 @@
 
 // Maximum reasonable temperature threshold for filtering out erroneous sensor readings
 // Sensors returning values >= this are likely reporting errors or invalid data, set
-// in legacy code as 150.0 Celsius.
+// in legacy code as 150.0 Celsius. The shared sysfs read path validates against the
+// same value via xpum::hwmon::kMaximumReasonableTemperatureC.
 #define MAX_REASONABLE_TEMP_CELSIUS 150.0
 
 // Device-specific temperature thresholds to avoid DLL interface issues with STL containers
@@ -68,6 +71,28 @@ private:
 	// (0-7) instead of a value in Celsius. Detected at init and used by the
 	// memory-temperature getters to convert MR4 -> max-of-range Celsius.
 	bool hasLpddr5Memory;
+
+	// --- sysfs hwmon fallback (single-tile, single-fan Intel Arc Pro B70 / xe) ---
+	// On the tested Arc Pro B70 the xe driver does NOT expose package/VRAM
+	// temperature through Level Zero sysman: zesDeviceEnumTemperatureSensors
+	// enumerates no GPU/Memory sensor of the requested type, so getTemp()
+	// returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE. The same reading IS present
+	// on the PCI device's hwmon node (labelled "pkg" / "vram"). At init we
+	// resolve and cache the exact tempN_input path for each label of interest,
+	// keyed by label; the getters read it back only when Level Zero reported that
+	// specific "no such sensor" condition. The platform-specific hwmon sysfs
+	// traversal lives in the OS Abstraction Layer (oal::getHwmonLabelPaths); the
+	// portable parse/bounds/decision logic lives in the internal xpum::hwmon
+	// utilities (hwmon_temperature_utils.h) so it is shared with the unit tests
+	// without expanding this exported class. Scope and non-goals are documented
+	// on resolveSysfsHwmon() in the .cpp.
+	std::map<std::string, std::string> sysfsLabelToInput; // label -> absolute tempN_input path
+
+	void resolveSysfsHwmon(zes_device_handle_t device);
+	// Read the cached tempN_input for `label` (e.g. "pkg"/"vram"). Returns
+	// ZE_RESULT_ERROR_UNSUPPORTED_FEATURE when the label was not resolved at
+	// init; otherwise the result of the shared, bounds-checked read path.
+	ze_result_t readSysfsLabel(const std::string &label, double *temp) const;
 
 	void loadTemperatureThresholds();
 	void loadThresholdSection(const nlohmann::json &thresholdsJson, const std::string &key,
