@@ -108,6 +108,7 @@ static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> DISC_DUMP_CMDS{{
 	{&cmdDiscovery::memoryDateCode, "Memory Date Code"},							 // 52
 	{&cmdDiscovery::memoryIcDieInfo, "Memory IC/Die Info"},							 // 53
 	{&cmdDiscovery::kernelDriverVersion, "Kernel Driver Version"},					 // 54
+	{&cmdDiscovery::tdp, "Thermal Design Power"},									 // 55
 }};
 /**
  * @brief Helper function to convert internal JSON keys to user-friendly display names
@@ -180,6 +181,7 @@ std::string getDisplayName(const std::string &key)
 		{"oprom_data_firmware_version", "OPROM DATA Firmware Version"},
 		{"gfx_firmware_name", "GFX Firmware Name"},
 		{"gfx_data_firmware_name", "GFX Data Firmware Name"},
+		{"tdp", "Thermal Design Power"},
 		// clang-format on
 	};
 
@@ -302,6 +304,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("uuid", "SOC UUID");
 		addField("serial_number", "Serial Number");
 		addField("part_number", "Part Number");
+		addField("tdp", "Thermal Design Power");
 		addField("core_clock_rate", "Core Clock Rate");
 		addField("device_stepping", "Stepping");
 		addField("sku_type", "SKU Type");
@@ -690,6 +693,10 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 
 		partNumber(d, &outputLine);
 		props["part_number"] = outputLine;
+
+		if (queryTdpFromAMC(d, &outputLine) == ZE_RESULT_SUCCESS) {
+			props["tdp"] = outputLine;
+		}
 	}
 
 	deviceID(d, &outputLine);
@@ -2287,6 +2294,37 @@ ze_result_t cmdDiscovery::opromDataFirmwareVersion(devInfo *d, std::string *outp
 }
 
 /**
+ * @brief Prints Thermal Design Power (TDP) for a device when user runs discovery --dump 55
+ *
+ * TDP is read from the AMC FRU OTHER_INFORMATION field per DSP0257.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string
+ *
+ * @retval ZE_RESULT_SUCCESS TDP retrieved or left empty when not available
+ */
+ze_result_t cmdDiscovery::tdp(devInfo *d, std::string *outputLine)
+{
+	TRACING();
+
+	*outputLine = "";
+
+	if (!d->dev->hasAmc()) {
+		return ZE_RESULT_SUCCESS;
+	}
+
+	std::string tdpStr;
+	const auto result = queryTdpFromAMC(d, &tdpStr);
+	if (result == ZE_RESULT_SUCCESS && !tdpStr.empty()) {
+		*outputLine = tdpStr;
+	} else {
+		DBG("TDP not available for device {} (result: 0x{:X})\n", d->dev->getPCI()->getBDFStr().c_str(), result);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Lists all AMC firmware versions for a device when user runs discovery --listamcversions
  *
  * @param[in] d Pointer to the device info structure
@@ -2420,6 +2458,51 @@ ze_result_t cmdDiscovery::partNumber(devInfo *d, std::string *outputLine)
 		*outputLine = partNumFromAMC;
 	}
 
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Fetches the Thermal Design Power (TDP) from the AMC FRU data (per DSP0257).
+ *
+ * @param[in] d Pointer to the device info structure
+ * @param[out] tdpString Pointer to string object to populate with the TDP value
+ *
+ * @retval ZE_RESULT_SUCCESS TDP successfully retrieved from AMC FRU data
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED No AMC present or AMC not initialized
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE TDP not found in FRU OTHER_INFORMATION
+ */
+ze_result_t cmdDiscovery::queryTdpFromAMC(devInfo *d, std::string *tdpString)
+{
+	TRACING();
+
+	*tdpString = "";
+	if (!d->dev->hasAmc()) {
+		DBG("No AMC associated with device {} — skipping TDP query\n", d->dev->getPCI()->getBDFStr().c_str());
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	firmware *fw = d->dev->getFirmware();
+	if (!fw) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	char tdpBuf[MAX_PATH] = {};
+	size_t bufferSize = sizeof(tdpBuf);
+	ze_result_t result = fw->getAmcTdp(d->dev->getPCI()->getBDFStr().c_str(), tdpBuf, &bufferSize);
+	if (result != ZE_RESULT_SUCCESS || tdpBuf[0] == '\0') {
+		DBG("TDP not available from AMC for device {} (result: 0x{:X})\n", d->dev->getPCI()->getBDFStr().c_str(),
+			result);
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	uint32_t tdpWatts = 0;
+	const auto [ptr, ec] = std::from_chars(tdpBuf, tdpBuf + strlen(tdpBuf), tdpWatts, 16);
+	if (ec != std::errc{} || *ptr != '\0') {
+		DBG("Invalid hexadecimal TDP '{}' from AMC FRU\n", tdpBuf);
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	*tdpString = std::to_string(tdpWatts) + " W";
 	return ZE_RESULT_SUCCESS;
 }
 

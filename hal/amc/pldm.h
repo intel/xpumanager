@@ -317,8 +317,9 @@ public:
 	{
 		pldminit();
 	}
-	uint8_t getFruSerialNum(char *serialNumber, size_t *bufferSize);
-	uint8_t getFruPartNum(char *partNumber, size_t *bufferSize);
+	uint8_t getFruSerialNum(char *serialNumber, size_t &bufferSize);
+	uint8_t getFruPartNum(char *partNumber, size_t &bufferSize);
+	uint8_t getFruTdp(char *tdp, size_t &bufferSize);
 	uint8_t getAmcVersion(char *version, size_t *bufferSize);
 	~pldm() { cleanup(); }
 

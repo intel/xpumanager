@@ -96,6 +96,7 @@ enum discDumpType
 	DUMP_MEMORYDATECODE,
 	DUMP_MEMORYICDIEINFO,
 	DUMP_KERNELDRIVERVERSION,
+	DUMP_TDP,
 	TOTAL_DISC_DUMPS
 };
 
@@ -106,6 +107,7 @@ struct discoveryCmdStruct;
 
 class cmdDiscovery : public cmds
 {
+	ze_result_t queryTdpFromAMC(devInfo *d, std::string *tdpString);
 
 public:
 	cmdDiscovery() { name = "discovery"; };
@@ -176,6 +178,7 @@ public:
 	ze_result_t opromCodeFirmwareVersion(devInfo *d, std::string *outputLine);
 	ze_result_t opromDataFirmwareName(devInfo *d, std::string *outputLine);
 	ze_result_t opromDataFirmwareVersion(devInfo *d, std::string *outputLine);
+	ze_result_t tdp(devInfo *d, std::string *outputLine);
 	void printDeviceInfo(std::vector<devInfo> &deviceList, std::vector<devInfo> &survDeviceList,
 						 std::unique_ptr<Printer> &printer, devFuncType type);
 	ze_result_t getOemSerialNumber(const std::string &meiDevicePath, std::string &serialNumber);

@@ -274,6 +274,41 @@ ze_result_t firmware::getAmcPartNumber(const char *bdfStr, char *partNum, uint32
 }
 
 /**
+ * @brief Retrieve the Thermal Design Power (TDP) for the GPU identified by bdfStr.
+ *
+ * TDP is read from the FRU OTHER_INFORMATION field via the AMC FRU table (per DSP0257).
+ *
+ * @param[in]  bdfStr     PCI BDF string of the GPU whose TDP is requested.
+ * @param[out] tdp        Buffer to receive the null-terminated TDP string, or nullptr to query length.
+ * @param[in,out] bufferSize Pointer to buffer size; updated with required length on output.
+ * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNINITIALIZED when no AMC is available,
+ *         ZE_RESULT_ERROR_NOT_AVAILABLE when TDP is not found in FRU data.
+ */
+ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSize)
+{
+	TRACING();
+
+	if (!fwupdArray || !fwupdArray[FWUPD_PREFERENCE_AMC]) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	if (!bdfStr || !bufferSize) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
+	if (a == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	if (a->amcGetTdp(std::string(bdfStr), tdp, bufferSize) != AMC_SUCCESS) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Updates firmware with the provided firmware information
  *
  * This function performs a firmware update operation using the information

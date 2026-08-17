@@ -315,7 +315,7 @@ uint8_t pldm::ensureFruInitialized()
  * error handling is performed.
  *
  * @param serialNumber Pointer to char buffer to receive serial number, or nullptr to query length
- * @param bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null terminator)
+ * @param bufferSize INPUT = buffer size, OUTPUT = required length (including null terminator)
  *
  * @return uint8_t Status of the serial number retrieval operation
  * @retval PLDM_SUCCESS Serial number retrieved successfully or length returned successfully
@@ -327,7 +327,7 @@ uint8_t pldm::ensureFruInitialized()
  * @note Debug messages are logged when FRU table is not initialized or serial number is unavailable
  * @note Error messages are logged when FRU table initialization fails
  */
-uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
+uint8_t pldm::getFruSerialNum(char *serialNumber, size_t &bufferSize)
 {
 	TRACING();
 
@@ -350,28 +350,20 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
 
 	// If serialNumber is nullptr, this is a length query only
 	if (serialNumber == nullptr) {
-		if (bufferSize != nullptr) {
-			*bufferSize = requiredLength;
-		}
+		bufferSize = requiredLength;
 		return PLDM_SUCCESS;
 	}
 
-	// For data copy, bufferSize must be provided
-	if (bufferSize == nullptr) {
-		ERR("Buffer size parameter cannot be null when copying data\n");
-		return PLDM_ERROR;
-	}
-
 	// Check if buffer is large enough
-	if (*bufferSize < requiredLength) {
-		ERR("Buffer too small: need {}, got {}\n", requiredLength, *bufferSize);
-		*bufferSize = requiredLength; // Return required size
+	if (bufferSize < requiredLength) {
+		ERR("Buffer too small: need {}, got {}\n", requiredLength, bufferSize);
+		bufferSize = requiredLength; // Return required size
 		return PLDM_ERROR;
 	}
 
 	// Copy the serial number to the provided buffer
-	STRNCPY_S(serialNumber, mFruTable.genSerialNum, *bufferSize);
-	serialNumber[*bufferSize - 1] = '\0'; // Ensure null termination
+	STRNCPY_S(serialNumber, mFruTable.genSerialNum, bufferSize);
+	serialNumber[bufferSize - 1] = '\0'; // Ensure null termination
 
 	return PLDM_SUCCESS;
 }
@@ -389,7 +381,7 @@ uint8_t pldm::getFruSerialNum(char *serialNumber, size_t *bufferSize)
  * @retval PLDM_SUCCESS  Part number retrieved or required length returned.
  * @retval PLDM_ERROR    FRU table initialization failed, part number unavailable, or buffer too small.
  */
-uint8_t pldm::getFruPartNum(char *partNumber, size_t *bufferSize)
+uint8_t pldm::getFruPartNum(char *partNumber, size_t &bufferSize)
 {
 	TRACING();
 
@@ -408,25 +400,67 @@ uint8_t pldm::getFruPartNum(char *partNumber, size_t *bufferSize)
 	size_t requiredLength = partLen + 1;
 
 	if (partNumber == nullptr) {
-		if (bufferSize != nullptr) {
-			*bufferSize = requiredLength;
-		}
+		bufferSize = requiredLength;
 		return PLDM_SUCCESS;
 	}
 
-	if (bufferSize == nullptr) {
-		ERR("Buffer size parameter cannot be null when copying data\n");
+	if (bufferSize < requiredLength) {
+		ERR("Buffer too small: need {}, got {}\n", requiredLength, bufferSize);
+		bufferSize = requiredLength;
 		return PLDM_ERROR;
 	}
 
-	if (*bufferSize < requiredLength) {
-		ERR("Buffer too small: need {}, got {}\n", requiredLength, *bufferSize);
-		*bufferSize = requiredLength;
+	STRNCPY_S(partNumber, mFruTable.genPartNum, bufferSize);
+	partNumber[bufferSize - 1] = '\0';
+
+	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Retrieves the Thermal Design Power (TDP) from the PLDM FRU table
+ *
+ * TDP is stored in the OTHER_INFORMATION field of the FRU General Record per DSP0257.
+ * Supports the same two-call pattern as getFruSerialNum:
+ * 1. Length query: Pass nullptr for tdp to get required buffer length
+ * 2. Data copy: Pass valid buffer and bufferSize to copy the TDP string
+ *
+ * @param [out] tdp Pointer to char buffer to receive TDP string, or nullptr to query length
+ * @param [in,out] bufferSize INPUT = buffer size, OUTPUT = required length (including null terminator)
+ *
+ * @return uint8_t Status of the TDP retrieval operation
+ * @retval PLDM_SUCCESS TDP retrieved successfully or length returned successfully
+ * @retval PLDM_ERROR FRU table initialization failed, TDP not available, or buffer too small
+ */
+uint8_t pldm::getFruTdp(char *tdp, size_t &bufferSize)
+{
+	TRACING();
+
+	if (ensureFruInitialized() != PLDM_SUCCESS) {
 		return PLDM_ERROR;
 	}
 
-	STRNCPY_S(partNumber, mFruTable.genPartNum, *bufferSize - 1);
-	partNumber[*bufferSize - 1] = '\0';
+	if (mFruTable.genOtherInfoCount == 0) {
+		DBG("FRU TDP not available\n");
+		return PLDM_ERROR;
+	}
+
+	// The first OTHER_INFORMATION entry (index 0) is TDP per platform CRI FRU sequence
+	const char *tdpValue = mFruTable.genOtherInfo[0];
+	size_t requiredLength = strnlen(tdpValue, sizeof(mFruTable.genOtherInfo[0]) - 1) + 1;
+
+	if (tdp == nullptr) {
+		bufferSize = requiredLength;
+		return PLDM_SUCCESS;
+	}
+
+	if (bufferSize < requiredLength) {
+		ERR("Buffer too small: need {}, got {}\n", requiredLength, bufferSize);
+		bufferSize = requiredLength;
+		return PLDM_ERROR;
+	}
+
+	STRNCPY_S(tdp, tdpValue, bufferSize);
+	tdp[bufferSize - 1] = '\0';
 
 	return PLDM_SUCCESS;
 }

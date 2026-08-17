@@ -66,7 +66,7 @@ enum fruOemRecordFields
 
 // FRU Data Sizes
 #define FRU_DATA_MAX_LENGTH 255
-#define FRU_MAX_OTHER_INFO_RECORDS 10
+#define FRU_MAX_OTHER_INFO_RECORDS 20
 
 #pragma pack(push, 1)
 struct fruTableMetadata
@@ -125,7 +125,7 @@ struct fruTable
 	char genAssetTag[FRU_DATA_MAX_LENGTH];
 	char genDesc[FRU_DATA_MAX_LENGTH];
 	char genEngChangeLevel[FRU_DATA_MAX_LENGTH];
-	char genOtherInfo[FRU_MAX_OTHER_INFO_RECORDS][FRU_DATA_MAX_LENGTH];
+	char genOtherInfo[FRU_MAX_OTHER_INFO_RECORDS][FRU_DATA_MAX_LENGTH]; // [0] is TDP per platform FRU sequence
 	uint8_t genOtherInfoCount;
 	uint32_t genVendorIana;
 	char genSparePartNum[FRU_DATA_MAX_LENGTH];

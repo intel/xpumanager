@@ -218,6 +218,32 @@ int amcupd::amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum)
 }
 
 /**
+ * @brief Retrieve Thermal Design Power (TDP) for the AMC card associated with a GPU BDF
+ *
+ * @param [in]  gpuBDF The BDF string of the GPU
+ * @param [out] tdp Pointer to char buffer to receive TDP string, or nullptr to query length
+ * @param [in,out] bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length
+ * @return int AMC_SUCCESS on success, AMC_ERROR on failure
+ */
+int amcupd::amcGetTdp(const std::string &gpuBDF, char *tdp, size_t *bufferSize)
+{
+	ze_result_t initResult = init();
+	if (initResult != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize AMC devices before querying TDP\n");
+		return AMC_ERROR;
+	}
+
+	amclib *amc = getAmcObj();
+	int cardIndex = amc->amcGetIndex(gpuBDF);
+	if (cardIndex < 0) {
+		DBG("No AMC card found for BDF {}\n", gpuBDF.c_str());
+		return AMC_ERROR;
+	}
+
+	return amc->amcGetTdp(static_cast<uint8_t>(cardIndex), tdp, bufferSize);
+}
+
+/**
  * @brief Prepares the AMC (Add-in Management Controller) for firmware update
  *
  * This function performs pre-update operations including opening the I2C

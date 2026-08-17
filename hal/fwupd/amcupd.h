@@ -41,6 +41,7 @@ public:
 	static int getNumOfCards();
 	int amcGetCardInfo(std::string gpuBDF, std::string &serialNum, std::string &version);
 	int amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum);
+	int amcGetTdp(const std::string &gpuBDF, char *tdp, size_t *bufferSize);
 };
 
 #endif

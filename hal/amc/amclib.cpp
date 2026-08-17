@@ -393,14 +393,19 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 		return AMC_ERROR;
 	}
 
+	if (bufferSize == nullptr) {
+		ERR("Buffer size parameter cannot be null\n");
+		return AMC_ERROR;
+	}
+
 	// Call the underlying PLDM function directly
-	if (pldmobj[cardNum]->getFruSerialNum(serialNum, bufferSize) != PLDM_SUCCESS) {
+	if (pldmobj[cardNum]->getFruSerialNum(serialNum, *bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get serial number for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
 	// Log the serial number if fetched successfully
-	if (serialNum != nullptr && bufferSize != nullptr) {
+	if (serialNum != nullptr) {
 		DBG("Serial Number of card {}: {}\n", cardNum, serialNum);
 	}
 
@@ -435,12 +440,17 @@ int amclib::amcGetPartNumber(uint8_t cardNum, char *partNum, size_t *bufferSize)
 		return AMC_ERROR;
 	}
 
-	if (pldmobj[cardNum]->getFruPartNum(partNum, bufferSize) != PLDM_SUCCESS) {
+	if (bufferSize == nullptr) {
+		ERR("Buffer size parameter cannot be null\n");
+		return AMC_ERROR;
+	}
+
+	if (pldmobj[cardNum]->getFruPartNum(partNum, *bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get part number for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
 
-	if (partNum != nullptr && bufferSize != nullptr) {
+	if (partNum != nullptr) {
 		DBG("Part Number of card {}: {}\n", cardNum, partNum);
 	}
 
@@ -491,6 +501,49 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 	// Log the amc version if fetched successfully
 	if (amcVersion != nullptr && bufferSize != nullptr) {
 		DBG("AMC Version of card {}: {}\n", cardNum, amcVersion);
+	}
+
+	return AMC_SUCCESS;
+}
+
+/**
+ * @brief Get the Thermal Design Power (TDP) value for a specified AMC card
+ *
+ * @param [in] cardNum Card number to query (0-based index, must be less than numCards)
+ * @param [out] tdp Pointer to char buffer to receive TDP string, or nullptr to query length
+ * @param [in,out] bufferSize Pointer to size_t: INPUT = buffer size, OUTPUT = required length (including null
+ * terminator)
+ *
+ * @return Status of the TDP retrieval operation
+ * @retval AMC_SUCCESS TDP retrieved successfully or length returned successfully
+ * @retval AMC_ERROR Operation failed due to invalid card number, uninitialized PLDM object, or TDP not available
+ */
+int amclib::amcGetTdp(uint8_t cardNum, char *tdp, size_t *bufferSize)
+{
+	TRACING();
+
+	if (cardNum >= numCards) {
+		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
+		return AMC_ERROR;
+	}
+
+	if (pldmobj[cardNum] == nullptr) {
+		ERR("PLDM object not initialized for card {}\n", cardNum);
+		return AMC_ERROR;
+	}
+
+	if (bufferSize == nullptr) {
+		ERR("Buffer size parameter cannot be null\n");
+		return AMC_ERROR;
+	}
+
+	if (pldmobj[cardNum]->getFruTdp(tdp, *bufferSize) != PLDM_SUCCESS) {
+		DBG("TDP not available for card {}\n", cardNum);
+		return AMC_ERROR;
+	}
+
+	if (tdp != nullptr) {
+		DBG("TDP of card {}: {}\n", cardNum, tdp);
 	}
 
 	return AMC_SUCCESS;
