@@ -918,3 +918,4 @@ Drivers:
 ReturnValues:
   zesInit: 0
   zesDriverGet: 0
+  zelLoaderTranslateHandle: 0

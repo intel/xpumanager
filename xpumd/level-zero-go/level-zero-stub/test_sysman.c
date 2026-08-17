@@ -1329,6 +1329,29 @@ static void test_unsupported_features(void)
 	sysman_state_reset();
 }
 
+static void test_loader_translate_handle(void)
+{
+	printf("test_loader_translate_handle\n");
+
+	sysman_state_reset();
+	ASSERT("load one_device.yaml", sysman_state_load(YAML_ONE_ENGINE) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	ASSERT_ZE_OK("zesDriverGet", zesDriverGet(&drv_n, &drv));
+
+	// The stub does not wrap handles, translation hands back what it got
+	void *out = NULL;
+	ASSERT_ZE_OK("zelLoaderTranslateHandle", zelLoaderTranslateHandle(ZEL_HANDLE_DRIVER, drv, &out));
+	ASSERT("zelLoaderTranslateHandle: handle", out == (void *)drv);
+	ASSERT_ZE_OK("zelLoaderTranslateHandle: NULL handleIn", zelLoaderTranslateHandle(ZEL_HANDLE_DRIVER, NULL, &out));
+	ASSERT("zelLoaderTranslateHandle: NULL handleIn handle", out == NULL);
+	ASSERT_ZE_RET("zelLoaderTranslateHandle: NULL handleOut", zelLoaderTranslateHandle(ZEL_HANDLE_DRIVER, drv, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+
+	sysman_state_reset();
+}
+
 // ------------------------------------------------------------------
 // Intel experimental extensions
 // ------------------------------------------------------------------
@@ -1528,6 +1551,7 @@ int main(void)
 	test_uuid();
 	test_uuid_invalid_load();
 	test_unsupported_features();
+	test_loader_translate_handle();
 	test_intel_extension_function_address();
 	test_intel_info_logs();
 	test_intel_driver_events();

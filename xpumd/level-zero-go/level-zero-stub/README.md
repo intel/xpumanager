@@ -1,7 +1,9 @@
 # level-zero-stub
 
 A shared-library stub (`libze_stub.so`) that implements the Level Zero Sysman
-API. The stub driver is intended for use in unit and integration tests.
+API, plus the parts of the Level Zero loader (`zel*`) API that the Sysman
+bindings need. The stub driver is intended for use in unit and integration
+tests.
 
 ## Requirements
 

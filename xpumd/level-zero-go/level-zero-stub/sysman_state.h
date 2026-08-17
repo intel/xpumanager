@@ -9,6 +9,8 @@
 
 #include "zes_stub.h"
 #include "../level-zero/zes_api.h"
+#include <stdbool.h>
+#include "../level-zero/loader/ze_loader.h"
 #include "../include/intel/zes_intel_gpu_sysman.h"
 #include <assert.h>
 #include <stddef.h>
@@ -288,6 +290,7 @@ typedef struct
 {
 	ze_result_t zesInit;
 	ze_result_t zesDriverGet;
+	ze_result_t zelLoaderTranslateHandle;
 } sysman_system_rv_t;
 
 typedef enum

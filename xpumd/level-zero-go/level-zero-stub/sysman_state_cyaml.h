@@ -164,8 +164,9 @@ static const cyaml_schema_field_t sysman_standby_rv_fields[] = {
 	RV(sysman_standby_rv_t, zesStandbyGetProperties), RV(sysman_standby_rv_t, zesStandbyGetMode),
 	RV(sysman_standby_rv_t, zesStandbySetMode), CYAML_FIELD_END};
 
-static const cyaml_schema_field_t sysman_system_rv_fields[] = {RV(sysman_system_rv_t, zesInit),
-															   RV(sysman_system_rv_t, zesDriverGet), CYAML_FIELD_END};
+static const cyaml_schema_field_t sysman_system_rv_fields[] = {
+	RV(sysman_system_rv_t, zesInit), RV(sysman_system_rv_t, zesDriverGet),
+	RV(sysman_system_rv_t, zelLoaderTranslateHandle), CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sysman_temp_rv_fields[] = {
 	RV(sysman_temp_rv_t, zesTemperatureGetProperties), RV(sysman_temp_rv_t, zesTemperatureGetConfig),

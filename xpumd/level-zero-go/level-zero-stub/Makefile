@@ -13,7 +13,7 @@ TESTER_LDLIBS  = -L. -lze_stub $(shell pkg-config --libs libcyaml)
 
 LIB    = libze_stub.so
 SOLINK = libze_loader.so.1
-SRCS  = zes_stub.c sysman_state.c
+SRCS  = zes_stub.c zel_stub.c sysman_state.c
 OBJS  = $(SRCS:.c=.o)
 TESTS = test_sysman
 
