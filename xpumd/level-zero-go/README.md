@@ -70,5 +70,5 @@ No yet.
 **What Level-Zero features are supported?**
 
 Go bindings currently cover the Sysman API part of Level-Zero, except
-for the functions for custom extensions (which are not yet supported),
-and deprecated functions (which will not be supported).
+for the deprecated functions (which will not be supported). Experimental
+functionality lives in the `sysman/exp` package.
