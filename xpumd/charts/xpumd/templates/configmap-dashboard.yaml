@@ -2335,8 +2335,8 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Intel XPU Manager v2 Exporter",
-      "uid": "{{ include "xpumd.fullname" . }}-dashboard",
+      "title": "Intel XPU Manager Daemon {{ .Chart.Version }}",
+      "uid": "xpumd-{{ .Chart.Version }}",
       "version": 1
     }
 kind: ConfigMap

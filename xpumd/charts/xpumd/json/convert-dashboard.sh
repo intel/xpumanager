@@ -124,10 +124,9 @@ for file in "$@"; do
 	  -e 's/\({{[a-z_]\+}}\)/{{ printf "\1" }}/g' \
 	  -e 's/name:.*$/name: {{ include "'$prefix_macro'" . }}'"-${k8name}/" \
 	  -e 's/space:.*$/space: {{ .Values.'$grafana_namespace' }}/' \
-	  -e "s/${uid}/"'{{ include "'$prefix_macro'" . }}'"-${k8name}/" \
+	  -e "s/${title}/Intel XPU Manager Daemon {{ .Chart.Version }}/" \
+	  -e "s/${uid}/"'xpumd-{{ .Chart.Version }}'"/" \
 	  "$dst"
-	  # override dashboard title
-	  # -e "s/${title}/XPUMD $name/" \
 done
 
 echo
