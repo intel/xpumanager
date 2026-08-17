@@ -22,6 +22,7 @@ const (
 	driverConfigNoInfoLogExt   = "testdata/no_info_log_extension.yaml"
 	driverConfigExtVersionErr  = "testdata/unsupported_extension_version.yaml"
 	driverConfigResolveErr     = "testdata/error_resolve.yaml"
+	driverConfigTranslateErr   = "testdata/error_translate.yaml"
 	driverConfigDriverErrs     = "testdata/error_driver.yaml"
 	driverConfigComponentErrs  = "testdata/error_component.yaml"
 	driverConfigNoMaxSize      = "testdata/no_maxsize.yaml"
@@ -62,6 +63,10 @@ func TestEnumInfoLogs(t *testing.T) {
 	t.Run("ErrorResolve", func(t *testing.T) {
 		_, err := getDriver(t, driverConfigResolveErr).EnumInfoLogs()
 		require.ErrorIs(t, err, core.RESULT_ERROR_UNSUPPORTED_FEATURE)
+	})
+	t.Run("ErrorTranslate", func(t *testing.T) {
+		_, err := getDriver(t, driverConfigTranslateErr).EnumInfoLogs()
+		require.ErrorIs(t, err, core.RESULT_ERROR_UNINITIALIZED)
 	})
 	t.Run("ErrorFromDriver", func(t *testing.T) {
 		_, err := getDriver(t, driverConfigDriverErrs).EnumInfoLogs()
@@ -206,6 +211,10 @@ func TestDriverEventRegister(t *testing.T) {
 		err := getDriver(t, driverConfigResolveErr).EventRegister(CPER_DATA_AVAILABLE)
 		require.ErrorIs(t, err, core.RESULT_ERROR_UNSUPPORTED_FEATURE)
 	})
+	t.Run("ErrorTranslate", func(t *testing.T) {
+		err := getDriver(t, driverConfigTranslateErr).EventRegister(CPER_DATA_AVAILABLE)
+		require.ErrorIs(t, err, core.RESULT_ERROR_UNINITIALIZED)
+	})
 	t.Run("ErrorFromDriver", func(t *testing.T) {
 		err := getDriver(t, driverConfigDriverErrs).EventRegister(CPER_DATA_AVAILABLE)
 		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
@@ -232,6 +241,10 @@ func TestDriverEventListenExp(t *testing.T) {
 	t.Run("ErrorResolve", func(t *testing.T) {
 		_, _, _, err := getDriver(t, driverConfigResolveErr).EventListenExp(0, nil)
 		require.ErrorIs(t, err, core.RESULT_ERROR_UNSUPPORTED_FEATURE)
+	})
+	t.Run("ErrorTranslate", func(t *testing.T) {
+		_, _, _, err := getDriver(t, driverConfigTranslateErr).EventListenExp(0, nil)
+		require.ErrorIs(t, err, core.RESULT_ERROR_UNINITIALIZED)
 	})
 	t.Run("ErrorFromDriver", func(t *testing.T) {
 		_, _, _, err := getDriver(t, driverConfigDriverErrs).EventListenExp(0, nil)
