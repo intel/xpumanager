@@ -7,6 +7,8 @@ Q := @
 
 IMAGE_REPO_BASE ?= registry.local/level-zero-go
 IMAGE_TAG ?= latest
+# Where the images get the Level-Zero GPU backend from: "deb" or "src" (see Dockerfile)
+BACKEND ?= deb
 EXAMPLE_APPS := list-sysman list-sysman-exp events-sysman
 BIN_DIR ?= bin
 
@@ -57,6 +59,7 @@ images:
 	$(Q)for app in $(EXAMPLE_APPS); do \
 	    docker build -t $(IMAGE_REPO_BASE)/$$app:$(IMAGE_TAG) \
 	                 --build-arg APP=$$app \
+	                 --build-arg BACKEND=$(BACKEND) \
 	                 --security-opt label=disable \
 	                 --progress=plain \
 	                 -f Dockerfile .. || exit 1; \

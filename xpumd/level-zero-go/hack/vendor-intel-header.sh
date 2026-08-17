@@ -4,7 +4,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Vendors the Intel-specific headers from a compute-runtime source tree.
+# Vendors the Intel-specific headers from a compute-runtime source tree, and pins the
+# examples/ container images to the same sources.
 #
 # NOTE: the original upstream headers are not consumable as plain C (and thus not by c-for-go which we
 # depend on) because the Sysman header includes the C++ only ze_stypes.h.
@@ -19,6 +20,11 @@ SRC_DIR="$1"
 HEADER="level_zero/include/level_zero/zes_intel_gpu_sysman.h"
 STYPES="level_zero/include/level_zero/ze_stypes.h"
 
+# Component versions for sources that the examples/ images build their backend from,
+# are pinned by the manifest of the source tree.
+MANIFEST="manifests/manifest.yml"
+DOCKERFILE="$ROOT_DIR/examples/Dockerfile"
+
 # Own include root, holding nothing but the intel/ subdir, so that the vendored
 # headers and the host-installed ones cannot shadow each other.
 OUT_DIR="$ROOT_DIR/include/intel"
@@ -30,11 +36,14 @@ if [ -z "$SRC_DIR" ]; then
     exit 1
 fi
 
-# Record exact source revision for traceability.
+# Record exact source revision for traceability, and for pinning the images to it.
 if ! SHA=$(git -C "$SRC_DIR" rev-parse HEAD 2>/dev/null); then
     echo "ERROR: $SRC_DIR is not a git tree" 1>&2
     exit 1
 fi
+
+# Date (committer date) of the revision).
+DATE=$(git -C "$SRC_DIR" show -s --format=%cs HEAD)
 
 mkdir -p "$OUT_DIR"
 
@@ -54,7 +63,7 @@ sed -e 's|^#include "level_zero/ze_stypes.h"$|#include "ze_stypes.h"|' \
 // DO NOT EDIT.
 //
 // Source:   intel/compute-runtime $STYPES
-// Revision: $SHA
+// Revision: $SHA ($DATE)
 //
 // Pruned and mangled copy of the Intel compute-runtime header of the same name.
 // Only the Sysman structure types of the upstream header are included, converted to plain C.
@@ -84,7 +93,33 @@ else
     echo "WARNING: '$CC' not found, skipping the syntax check!" 1>&2
 fi
 
-echo "Vendored headers from compute-runtime $SHA:"
+echo "Vendored headers from compute-runtime $SHA ($DATE):"
 for out in "$OUT_HEADER" "$OUT_STYPES"; do
     echo "  ${out#"$ROOT_DIR"/}"
 done
+
+# Pin the versions for images that build the backend from sources.
+# For now, the Graphics Compiler is left out to avoid building it from sources, too (if the manifest pins it to a commit).
+GMMLIB_REPO=$(yq -e '.components.gmmlib.repository' "$SRC_DIR/$MANIFEST")
+GMMLIB_REV=$(yq -e '.components.gmmlib.revision' "$SRC_DIR/$MANIFEST")
+LEVEL_ZERO_REV=$(yq -e '.components.level_zero.revision' "$SRC_DIR/$MANIFEST")
+
+# GmmLib is pinned to a tag by the manifest but built from a git clone. Pin us to the commit the tag points to.
+GMMLIB_SHA=$(git ls-remote "$GMMLIB_REPO" "refs/tags/$GMMLIB_REV" "refs/tags/$GMMLIB_REV^{}" | tail -n1 | cut -f1)
+if [ -z "$GMMLIB_SHA" ]; then
+    echo "ERROR: cannot resolve GmmLib $GMMLIB_REV in $GMMLIB_REPO" 1>&2
+    exit 1
+fi
+
+# Only the build args (and the comment recording the revision) of the "backend-src" stage are modified
+sed -i -E "/^FROM .* AS backend-src\$/,/^FROM /{
+    s|^# Compute-runtime commit date .*|# Compute-runtime commit date $DATE|
+    s|^ARG COMPUTE_RUNTIME_COMMIT=.*|ARG COMPUTE_RUNTIME_COMMIT=$SHA|
+    s|^ARG LIBIGDGMM12_VERSION=.*|ARG LIBIGDGMM12_VERSION=${GMMLIB_REV#intel-gmmlib-}|
+    s|^ARG LIBIGDGMM12_COMMIT=.*|ARG LIBIGDGMM12_COMMIT=$GMMLIB_SHA|
+    s|^ARG LEVEL_ZERO_VERSION=.*|ARG LEVEL_ZERO_VERSION=${LEVEL_ZERO_REV#v}|
+}" "$DOCKERFILE"
+
+echo ""
+echo "Updated the backend-src stage of ${DOCKERFILE#"$ROOT_DIR"/} from $MANIFEST, check the diff."
+echo "NOTE: refresh the checksums in level-zero/ if the package versions changed."

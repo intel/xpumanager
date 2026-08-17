@@ -36,6 +36,48 @@ for details.
 > ../core/core_static.go:29:5: invalid array length _level_zero_header_minor_API_version_too_old (constant -2 of type int)
 > ```
 
+## Examples
+
+The [examples/](./examples) directory is a separate Go module with small
+programs built on top of the bindings. Build binaries with:
+
+```bash
+make -C examples build
+```
+
+Container images can be built with:
+
+```bash
+make -C examples images
+```
+
+By default, the images are built with a released and packaged version of the
+Level-Zero backend GPU driver. However, the container images also support
+building the backend driver from sources
+([Intel Graphics Compute Runtime](https://github.com/intel/compute-runtime),
+pinned to the revision that the vendored Intel headers come from):
+
+```bash
+make -C examples images BACKEND=src
+```
+
+This is needed for experimental extensions which are not yet in any released
+version of the backend.
+
+Run an image with the GPU devices passed in, and with the tracefs of the host
+mounted for the info log functionality:
+
+```bash
+docker run --rm --device /dev/dri --cap-drop ALL --cap-add PERFMON \
+           -v /sys/kernel/tracing:/sys/kernel/tracing \
+           registry.local/level-zero-go/list-sysman-exp:latest /entrypoint -infolog-format metadata
+```
+
+> [!NOTE]
+> The info log functionality does not require any additional capabilities, but the
+> container has to run as root (the default) as the tracefs of the host is only
+> accessible to root. `PERFMON` is needed for the engine information.
+
 ## Development
 
 Re-generate the bindings with
@@ -71,6 +113,9 @@ Copies of the required headers are vendored in `include/intel/`. Update them aga
 ```bash
 ./hack/vendor-intel-header.sh <path-to-compute-runtime>
 ```
+
+The script also updates the `examples/Dockerfile` so that the same git commit
+and correct dependencies are used when doing the `BACKEND=src` build.
 
 ## FAQ
 
