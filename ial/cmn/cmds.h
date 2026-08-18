@@ -51,7 +51,7 @@ struct helpCmd
 	helpCmd(GAP gap)
 	{
 		char_gap = (int)gap;
-		line[0] = '\0';
+		memset(line, 0, MAX_PATH);
 	}
 };
 
