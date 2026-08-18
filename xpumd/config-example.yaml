@@ -13,6 +13,15 @@ receivers:
     # Whether to fail collector startup if the L0 Sysman API cannot be
     # initialized (e.g. no GPU driver or device access). Defaults to false.
     fail_on_sysman_init_error: false
+    # Collection of the GPU info logs, i.e. the CPER records provided by the GPU driver.
+    info_logs:
+      # Whether the info logs are collected. Enabling requires elevated
+      # privileges (for the CPER records, access to the kernel tracing filesystem).
+      enabled: false
+      # Name of the collection instance that the records are collected into
+      # (a tracefs instance in the case of the CPER records).
+      # Required, and must not contain '/'.
+      instance_name: xpumd
     # Configuration for enabling/disabling individual metrics.
     # See receiver/intelxpu/sysman/documentation.md for list of available metrics.
     metrics:
