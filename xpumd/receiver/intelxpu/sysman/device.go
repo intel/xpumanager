@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 
 	l0sysman "github.com/intel/level-zero-go/sysman"
+	l0intel "github.com/intel/level-zero-go/sysman/exp/intel"
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
 
@@ -23,9 +24,15 @@ type deviceRegistry struct {
 	drivers []*driver
 }
 
+// driver is one Sysman driver and everything enumerated from it. It is wrapped
+// for the Intel experimental extensions that provide also the non-experimental
+// Sysman functionality.
 type driver struct {
-	driver  *l0sysman.Driver
+	*l0intel.Driver
 	devices []*device
+	// infoLogs are the info logs of the driver whose records can be collected,
+	// empty when it has none or when their collection is disabled.
+	infoLogs []*infoLogSource
 }
 
 type device struct {
@@ -86,7 +93,7 @@ type deviceAttributes struct {
 	eccSupport        metadata.AttributeHwMemoryEcc
 }
 
-func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize int) (*deviceRegistry, error) {
+func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
 	reg := &deviceRegistry{}
 
 	drivers, err := l0sysman.DriverGet()
@@ -96,12 +103,19 @@ func newDeviceRegistry(logger *zap.SugaredLogger, aggregatedMetricsBufferSize in
 	logger.Debugw("Sysman drivers", "enumerated", len(drivers))
 
 	for i, drv := range drivers {
-		devs, err := enumDevices(drv, logger, aggregatedMetricsBufferSize)
+		devs, err := enumDevices(drv, logger, cfg.aggregatedMetricsBufferSize)
 		if err != nil {
 			return nil, fmt.Errorf("failed to enumerate devices for driver %d/%d: %w", i+1, len(drivers), err)
 		}
 
-		reg.drivers = append(reg.drivers, &driver{driver: drv, devices: devs})
+		d := &driver{Driver: l0intel.NewDriver(drv), devices: devs}
+		// We only enumerate info logs if collection is enabled
+		// TODO: consider simplifying (always enumerate) when the extension is stable
+		if cfg.InfoLogs.Enabled {
+			d.infoLogs = enumInfoLogs(d, i, cfg.InfoLogs, logger)
+		}
+
+		reg.drivers = append(reg.drivers, d)
 	}
 
 	return reg, nil
@@ -212,7 +226,7 @@ func (d *device) init() error {
 	if pci, err := d.PciGetProperties(); err != nil {
 		d.logger.Errorw("Device PciGetProperties() failed: no PCI attributes", "error", err, "deviceAttributes", d.attributes)
 	} else {
-		d.attributes.pciBDF = fmt.Sprintf("%04x:%02x:%02x.%x", pci.Address.Domain, pci.Address.Bus, pci.Address.Device, pci.Address.Function)
+		d.attributes.pciBDF = pciBDF(pci.Address)
 		if pci.MaxSpeed.Gen > 0 {
 			d.attributes.pciLinkGen = fmt.Sprintf("%d", pci.MaxSpeed.Gen)
 		}

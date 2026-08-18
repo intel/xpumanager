@@ -6,9 +6,12 @@
 package sysman
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
+
+	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
 func subDeviceIdString(onSubdevice uint8, subdeviceId uint32) string {
@@ -22,6 +25,11 @@ func subDeviceIdString(onSubdevice uint8, subdeviceId uint32) string {
 // hw.<type> attribute value (lower-cased, with underscores replaced by dashes)
 func hwTypeString(name string) string {
 	return strings.ToLower(strings.ReplaceAll(name, "_", "-"))
+}
+
+// pciBDF returns the PCI address as a domain:bus:device.function string
+func pciBDF(addr l0sysman.PciAddress) string {
+	return fmt.Sprintf("%04x:%02x:%02x.%x", addr.Domain, addr.Bus, addr.Device, addr.Function)
 }
 
 // u64CounterDiff returns diff from old to new value, assuming that if

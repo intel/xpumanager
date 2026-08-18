@@ -66,7 +66,7 @@ func (p *sysmanProvider) get(logger *zap.SugaredLogger, cfg *Config) (*deviceReg
 			return
 		}
 		logger.Debug("Sysman drivers/devices/metrics enumeration starting")
-		p.devices, p.err = newDeviceRegistry(logger, cfg.aggregatedMetricsBufferSize)
+		p.devices, p.err = newDeviceRegistry(logger, cfg)
 		if p.err != nil {
 			p.err = fmt.Errorf("failed to initialize device registry: %w", p.err)
 		}
