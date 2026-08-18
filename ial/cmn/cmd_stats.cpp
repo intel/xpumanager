@@ -1093,6 +1093,33 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		metrics.pcieWriteKBpsSamples.push_back(0.0);
 	}
 
+	// Same for per-tile memory bandwidth: handler was present but timestamp didn't advance.
+	if (memoryBaseline.valid) {
+		for (const auto &[tileId, _] : memoryBaseline.readCounter) {
+			if (metrics.memoryReadKBpsPerTile[tileId].empty()) {
+				metrics.memoryReadKBpsPerTile[tileId].push_back(0.0);
+			}
+			if (metrics.memoryWriteKBpsPerTile[tileId].empty()) {
+				metrics.memoryWriteKBpsPerTile[tileId].push_back(0.0);
+			}
+			if (metrics.memoryBandwidthPercentPerTile[tileId].empty() && memoryBaseline.maxBandwidth.count(tileId) &&
+				memoryBaseline.maxBandwidth.at(tileId) > 0) {
+				metrics.memoryBandwidthPercentPerTile[tileId].push_back(0.0);
+			}
+		}
+	} else if (memoryHandler != nullptr) {
+		// Bandwidth counter query unsupported but usage query succeeded: show 0 for tiles
+		// that have a memory module rather than N/A, which implies the handler is absent.
+		for (const auto &[tileId, _] : metrics.memoryUsedMiBPerTile) {
+			if (metrics.memoryReadKBpsPerTile[tileId].empty()) {
+				metrics.memoryReadKBpsPerTile[tileId].push_back(0.0);
+			}
+			if (metrics.memoryWriteKBpsPerTile[tileId].empty()) {
+				metrics.memoryWriteKBpsPerTile[tileId].push_back(0.0);
+			}
+		}
+	}
+
 	auto endTime = std::chrono::system_clock::now();
 	metrics.endTimeIso = formatIso8601Timestamp(endTime);
 	metrics.elapsedSeconds = std::chrono::duration<double>(endTime - startTime).count();
