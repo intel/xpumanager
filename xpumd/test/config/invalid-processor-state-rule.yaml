@@ -1,0 +1,12 @@
+# State rule without a name
+#
+# expect-error: state_name cannot be empty
+
+processors:
+  intel_xpu_status:
+    rules:
+      - name: "invalid state rule"
+        source_metric: "hw.temperature"
+        states:
+          - conditions:
+              - value: 95.0

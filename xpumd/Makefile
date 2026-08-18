@@ -80,7 +80,7 @@ install-protoc:
 # --- Test / lint targets
 
 .PHONY: test
-test: test-daemon test-bindings
+test: test-daemon test-config test-bindings
 
 .PHONY: test-daemon
 test-daemon:
@@ -99,6 +99,11 @@ test-daemon:
 test-bindings:
 	@echo "Running Level-Zero Go bindings tests..."
 	make -C level-zero-go test
+
+.PHONY: test-config
+# Validate example config (and invalid test configs) with the built xpumd binary
+test-config: build
+	scripts/run-config-tests.sh
 
 .PHONY: test-integration-kind
 test-integration-kind: docker-build

@@ -1,0 +1,11 @@
+# Attribute filter without a key in hw_status_mappings
+#
+# expect-error: filter key is required
+
+exporters:
+  intel_xpu_info:
+    hw_status_mappings:
+      - health_domain: "gpu"
+        filters:
+          - values: ["gpu"]
+        state_mapping: {}

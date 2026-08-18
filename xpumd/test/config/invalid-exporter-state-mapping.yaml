@@ -1,0 +1,11 @@
+# Unknown severity in a state mapping
+#
+# expect-error: invalid severity "foobar"
+
+exporters:
+  intel_xpu_info:
+    hw_status_mappings:
+      - health_domain: "gpu"
+        state_mapping:
+          degraded:
+            severity: foobar

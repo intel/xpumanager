@@ -1,0 +1,7 @@
+# Negative timeout
+#
+# expect-error: "timeout": requires positive value
+
+receivers:
+  intel_xpu:
+    timeout: -1s

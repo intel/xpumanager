@@ -1,0 +1,13 @@
+# Attribute filter without a key, nested in component_filters
+#
+# expect-error: filter key is required
+
+processors:
+  intel_xpu_status:
+    rules:
+      - name: "invalid component filter"
+        source_metric: "hw.temperature"
+        states:
+          - state_name: "ok"
+        component_filters:
+          - values: ["gpu"]
