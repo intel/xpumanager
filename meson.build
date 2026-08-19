@@ -299,9 +299,18 @@ foreach arg : link_args
   endif
 endforeach
 
+# meson's built-in default prefix is /usr/local; on Linux the FHS standard is
+# /usr. If the user didn't pass -Dprefix=, apply the platform-appropriate
+# default instead of the generic meson one. Windows keeps the meson default.
+if is_linux and get_option('prefix') == '/usr/local'
+  _install_prefix = '/usr'
+else
+  _install_prefix = get_option('prefix')
+endif
+
 # Install-path constant: used for resource/ files
 if is_linux
-  xpum_data_dir = get_option('prefix') / get_option('datadir') / 'xpum'
+  xpum_data_dir = _install_prefix / get_option('datadir') / 'xpum'
   add_project_arguments('-DXPUM_DATA_DIR="' + xpum_data_dir + '"', language : 'cpp')
 endif
 
@@ -354,9 +363,9 @@ elif is_windows
 endif
 
 # Install resources under the FHS data directory.
-# Results in: <prefix>/share/xpum/resources/
+# Results in: /usr/share/xpum/resources/ (Linux default), or <prefix>/share/xpum/resources/
 install_subdir('resources',
-  install_dir: get_option('datadir') / 'xpum',
+  install_dir: _install_prefix / get_option('datadir') / 'xpum',
   strip_directory: false)
 
 

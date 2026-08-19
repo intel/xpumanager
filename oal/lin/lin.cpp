@@ -940,6 +940,18 @@ std::string findResourceFile(const std::string &relativePath)
 	namespace fs = std::filesystem;
 	std::error_code ec;
 
+	// Reject absolute paths and any traversal component before touching the filesystem.
+	if (relativePath.empty() || fs::path(relativePath).is_absolute()) {
+		ERR("findResourceFile: relativePath must be a non-empty relative path: {}\n", relativePath.c_str());
+		return "";
+	}
+	for (const auto &component : fs::path(relativePath)) {
+		if (component == "..") {
+			ERR("findResourceFile: relativePath contains traversal component: {}\n", relativePath.c_str());
+			return "";
+		}
+	}
+
 	// Explicit allow-list of search roots, tried in priority order.
 	// If the resource files are not within these locations, they are
 	// considered malicious and disregarded.
@@ -988,6 +1000,18 @@ std::string findResourceFile(const std::string &relativePath)
 		fs::path sysCandidate = fs::path(kXpumDataDir) / relativePath;
 		if (fs::exists(sysCandidate, ec) && !ec) {
 			return sysCandidate.string();
+		}
+		// If DATA_DIR has no "local" component (e.g. /usr/share/xpum), also probe /usr/local.
+		if constexpr (kXpumDataDir.find("local") == std::string_view::npos) {
+			std::string localDataDir{kXpumDataDir};
+			constexpr std::string_view kUsrSlash = "/usr/";
+			if (localDataDir.starts_with(kUsrSlash)) {
+				localDataDir.insert(kUsrSlash.size(), "local/");
+				fs::path localCandidate = fs::path(localDataDir) / relativePath;
+				if (fs::exists(localCandidate, ec) && !ec) {
+					return localCandidate.string();
+				}
+			}
 		}
 	}
 
