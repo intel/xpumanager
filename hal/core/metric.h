@@ -20,14 +20,18 @@
 // Add EU metrics data structure
 struct EuMetricsData
 {
-	uint64_t euActive = 0;			   ///< EU active time in per-mille (75.5% = 75500)
-	uint64_t euStall = 0;			   ///< EU stall time in per-mille (15.2% = 15200)
-	uint64_t euIdle = 0;			   ///< EU idle time in per-mille (9.3% = 9300)
+	uint64_t euActive = 0;			   ///< EU active %×scaleFactor (e.g. 75.5% → 75500 when scaleFactor=1000)
+	uint64_t euStall = 0;			   ///< EU stall %×scaleFactor
+	uint64_t euIdle = 0;			   ///< EU idle  %×scaleFactor
 	uint32_t subdeviceId = UINT32_MAX; ///< Subdevice ID (UINT32_MAX for root device)
 	int scaleFactor = 1000; ///< Scale factor for converting per-mille metrics to percentage (default: 1000 = per-mille)
 
 	EuMetricsData() = default;
 };
+
+/// Divisor to convert EuMetricsData fields to percent: value / EU_PERMILLE_SCALE → 0–100.
+/// Must equal EuMetricsData::scaleFactor (set to 1000 by getEuActiveStallIdleCore).
+inline constexpr double EU_PERMILLE_SCALE = 1000.0;
 
 /// Structure containing performance metric data
 struct PerfMetricData

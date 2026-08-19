@@ -13,7 +13,12 @@
  * @brief Queries all processes currently using @p device.
  *
  * Calls zesDeviceProcessesGetState() to enumerate active processes, removes
- * entries with no known engine activity (engines == 0 or OTHER-only), then
+ * entries with no engine activity AND no GPU memory (engines == 0 or OTHER-only
+ * AND memSize == 0).  Processes that hold GPU memory but submit no active
+ * commands are kept so memory-holding tools (e.g. xpu-smi dump) remain visible.
+ * When debug logging is enabled the filter decision is printed per PID.
+ *
+ * Removes
  * replaces memSize with fdinfo-based values that correctly deduplicate by
  * drm-client-id across both multiple fds and forked children.
  *
@@ -45,7 +50,22 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 	}
 
 	std::erase_if(*processList, [](const zes_process_state_t &ps) {
-		return ps.engines == 0 || ps.engines == ZES_ENGINE_TYPE_FLAG_OTHER;
+		const bool noEngines =
+			(ps.engines == 0 || ps.engines == static_cast<zes_engine_type_flags_t>(ZES_ENGINE_TYPE_FLAG_OTHER));
+		if (!noEngines) {
+			return false;
+		}
+
+		// Keep processes that hold GPU memory — they are meaningful even without
+		// active engine submissions (e.g. drivers holding render contexts open,
+		// tools that query sysman while keeping a DRM context alive).
+		if (ps.memSize > 0 || ps.sharedSize > 0) {
+			DBG("  - PID {} kept: engines=0 but memSize={}B sharedSize={}B\n", ps.processId, ps.memSize, ps.sharedSize);
+			return false;
+		}
+
+		DBG("  - PID {} filtered: no engines, no memory\n", ps.processId);
+		return true;
 	});
 
 	if (!processList->empty()) {

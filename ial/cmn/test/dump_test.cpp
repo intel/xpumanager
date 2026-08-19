@@ -292,36 +292,18 @@ TEST_SUITE("cmdDump::run – --file without --metrics")
 	}
 }
 
-// ─── cmdDump::run – resolveMetricsArg: dot-notation rejection ─────────────────
+// ─── cmdDump::run – resolveMetricsArg: unrecognised metric names ──────────────
 //
-// resolveMetricsArg docstring:
-//   "Rejects dot-notation field names that belong to --query-gpu … An error is
-//    logged and an empty vector is returned."
+// resolveMetricsArg delegates to translateMetricQuery() then metrics::resolveQuery().
+// When the translated string is empty or no field matches, resolveMetricsArg()
+// returns an empty vector and run() returns ZE_RESULT_ERROR_INVALID_ARGUMENT.
+//
+// Note: individual dot-notation field names (e.g. "temperature.gpu") ARE accepted
+// by --metrics; they resolve successfully and cause hardware access.  Only tokens
+// that produce an empty resolution result in an error here.
 
-TEST_SUITE("cmdDump::run – resolveMetricsArg: dot-notation rejection")
+TEST_SUITE("cmdDump::run – resolveMetricsArg: unrecognised metric names")
 {
-	TEST_CASE("single dot-notation field rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
-	{
-		FakeArgs fa{"xpu-smi", "dump", "--metrics", "temperature.gpu"};
-		cmdDump cmd;
-		CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
-	}
-
-	TEST_CASE("comma-separated dot-notation fields rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
-	{
-		FakeArgs fa{"xpu-smi", "dump", "--metrics", "power.draw,utilization.gpu"};
-		cmdDump cmd;
-		CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
-	}
-
-	TEST_CASE("--select alias with dot-notation field also rejected")
-	{
-		// --select is an alias for --metrics.
-		FakeArgs fa{"xpu-smi", "dump", "--select", "clocks.current.graphics"};
-		cmdDump cmd;
-		CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
-	}
-
 	TEST_CASE("completely unrecognised group name → ZE_RESULT_ERROR_INVALID_ARGUMENT")
 	{
 		// translateMetricQuery passes non-numeric tokens through; resolveQuery

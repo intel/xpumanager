@@ -41,6 +41,8 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  actions: read
 
 jobs:
   # Coverage on the head branch
@@ -51,7 +53,7 @@ jobs:
       - name: Checkout head branch
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
         with:
-          ref: ${{ inputs.head_ref || github.head_ref }}
+          ref: ${{ inputs.head_ref || github.event.pull_request.head.sha || github.head_ref }}
 
       - name: Build coverage image
         run: |
@@ -71,8 +73,6 @@ jobs:
           rm -f *.pc
           conan install . --build=missing \
             -s build_type=Release \
-            -o '&:use_system_levelzero=True' \
-            -o '&:use_system_igsc=True' \
             -o '&:use_system_hwloc=True' \
             -o '&:use_system_curl=True' \
             -o '&:with_tests=True'
@@ -82,8 +82,6 @@ jobs:
             -Db_lto=false \
             -Db_coverage=true \
             -Dwith_tests=true \
-            -Duse_system_levelzero=true \
-            -Duse_system_igsc=true \
             --native-file conan_meson_native.ini
           SCRIPT
 
@@ -144,7 +142,7 @@ jobs:
       - name: Checkout head branch (for Dockerfile and conanfile.py)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
         with:
-          ref: ${{ inputs.head_ref || github.head_ref }}
+          ref: ${{ inputs.head_ref || github.event.pull_request.head.sha || github.head_ref }}
 
       - name: Build coverage image
         run: |
@@ -164,8 +162,6 @@ jobs:
           rm -f *.pc
           conan install . --build=missing \
             -s build_type=Release \
-            -o '&:use_system_levelzero=True' \
-            -o '&:use_system_igsc=True' \
             -o '&:use_system_hwloc=True' \
             -o '&:use_system_curl=True' \
             -o '&:with_tests=True'
@@ -191,8 +187,6 @@ jobs:
             -Db_lto=false \
             -Db_coverage=true \
             -Dwith_tests=true \
-            -Duse_system_levelzero=true \
-            -Duse_system_igsc=true \
             --native-file conan_meson_native.ini
           SCRIPT
 
@@ -255,10 +249,6 @@ jobs:
       (github.event_name == 'pull_request' || inputs.pr_number != '')
     runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
     timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: write
-      actions: read
     steps:
       - name: Checkout repository (for compare script)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
