@@ -14,6 +14,7 @@ if is_windows
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
     'win/path_lookup_win.cpp',
+    'win/proc_fdinfo.cpp',
     'win/process_platform.cpp',
     'win/thread.cpp',
     'win/win.cpp',
@@ -33,6 +34,7 @@ elif is_linux
     'lin/linvf.cpp',
     'lin/path_lookup.cpp',
     'lin/pci_database.cpp',
+    'lin/proc_fdinfo.cpp',
     'lin/process_platform.cpp',
     'lin/topology.cpp',
   )
