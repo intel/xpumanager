@@ -375,6 +375,7 @@ TEST_CASE("findMetric resolves Temperature metric names")
 {
 	CHECK(findMetric("temperature.gpu").has_value());
 	CHECK(findMetric("temperature.memory").has_value());
+	CHECK(findMetric("temperature.composite").has_value());
 }
 
 TEST_CASE("getMetricsByGroup TEMPERATURE matches getTemperatureMetrics")
@@ -383,6 +384,7 @@ TEST_CASE("getMetricsByGroup TEMPERATURE matches getTemperatureMetrics")
 	REQUIRE(byTemp.size() == metrics::temperature::getTemperatureMetrics().size());
 	CHECK(byTemp[0]->name == "temperature.gpu");
 	CHECK(byTemp[1]->name == "temperature.memory");
+	CHECK(byTemp[2]->name == "temperature.composite");
 }
 
 TEST_CASE("findMetric resolves clock metric names")

@@ -191,6 +191,7 @@ struct DeviceMetrics
 	std::map<uint32_t, std::vector<double>> gpuCoreTempPerTile;		// tile_id -> GPU core temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> memoryTempPerTile;		// tile_id -> memory temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> vrTempPerTile; // tile_id -> voltage regulator temp samples in Celsius
+	std::map<uint32_t, std::vector<double>> compositeTempPerTile; // tile_id -> composite temp samples in Celsius
 	std::map<uint32_t, std::vector<double>> fanSpeedPercentSamplesPerFan; // fan_id -> fan speed samples in percent
 
 	std::map<uint32_t, std::vector<double>> memoryReadKBpsPerTile;	// tile_id -> read throughput samples in kB/s
@@ -333,7 +334,8 @@ private:
 	static ze_result_t collectTemperatureMetricsPerTile(temperature *tempHandler,
 														std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
 														std::map<uint32_t, std::vector<double>> &memoryTempPerTile,
-														std::map<uint32_t, std::vector<double>> &vrTempPerTile);
+														std::map<uint32_t, std::vector<double>> &vrTempPerTile,
+														std::map<uint32_t, std::vector<double>> &compositeTempPerTile);
 	static ze_result_t collectFanMetrics(fan *fanHandler,
 										 std::map<uint32_t, std::vector<double>> &fanSpeedPercentSamplesPerFan);
 	static ze_result_t

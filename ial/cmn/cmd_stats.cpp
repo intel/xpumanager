@@ -470,22 +470,24 @@ cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
 }
 
 /**
- * @brief Collect GPU core, memory, and voltage regulator temperature metrics per tile
+ * @brief Collect GPU core, memory, voltage regulator, and composite temperature metrics per tile
  *
  * This function captures current temperature readings for GPU core,
- * memory, and voltage regulator sensors per tile. Temperatures are sampled from the HAL temperature
+ * memory, voltage regulator, and composite sensors per tile. Temperatures are sampled from the HAL temperature
  * layer and stored in Celsius for summary statistics computation.
  *
  * @param [in] tempHandler The HAL temperature instance
  * @param [out] gpuCoreTempPerTile Map of tile_id -> vector of GPU core temp samples in Celsius
  * @param [out] memoryTempPerTile Map of tile_id -> vector of memory temp samples in Celsius
  * @param [out] vrTempPerTile Map of tile_id -> vector of voltage regulator temp samples in Celsius
+ * @param [out] compositeTempPerTile Map of tile_id -> vector of composite temp samples in Celsius
  * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
  */
 ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 													   std::map<uint32_t, std::vector<double>> &gpuCoreTempPerTile,
 													   std::map<uint32_t, std::vector<double>> &memoryTempPerTile,
-													   std::map<uint32_t, std::vector<double>> &vrTempPerTile)
+													   std::map<uint32_t, std::vector<double>> &vrTempPerTile,
+													   std::map<uint32_t, std::vector<double>> &compositeTempPerTile)
 {
 	TRACING();
 	if (tempHandler == nullptr) {
@@ -517,6 +519,15 @@ ze_result_t cmdStats::collectTemperatureMetricsPerTile(temperature *tempHandler,
 		for (const auto &[tileId, temp] : vrTileTemps) {
 			vrTempPerTile[tileId].push_back(temp);
 			DBG("Tile {} voltage regulator temperature sample: {:.2f} C\n", tileId, temp);
+		}
+	}
+
+	std::map<uint32_t, double> compositeTileTemps;
+	result = tempHandler->getTempPerTile(ZES_TEMP_SENSORS_COMPOSITE, compositeTileTemps);
+	if (result == ZE_RESULT_SUCCESS) {
+		for (const auto &[tileId, temp] : compositeTileTemps) {
+			compositeTempPerTile[tileId].push_back(temp);
+			DBG("Tile {} composite temperature sample: {:.2f} C\n", tileId, temp);
 		}
 	}
 	return ZE_RESULT_SUCCESS;
@@ -1167,7 +1178,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectFrequencyMetricsPerTile(frequencyHandler, metrics.gpuFrequencyPerTile, metrics.mediaFrequencyPerTile,
 									   metrics.memoryFrequencyPerTile, metrics.memoryVoltagePerTile);
 		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile,
-										 metrics.vrTempPerTile);
+										 metrics.vrTempPerTile, metrics.compositeTempPerTile);
 		collectFanMetrics(fanHandler, metrics.fanSpeedPercentSamplesPerFan);
 		collectMemoryMetricsPerTile(memoryHandler, memoryBaseline, metrics.memoryReadKBpsPerTile,
 									metrics.memoryWriteKBpsPerTile, metrics.memoryBandwidthPercentPerTile,
@@ -1338,6 +1349,18 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		if (stats.valid) {
 			std::string tileKey = makeTileKey(tileId);
 			auto &tileTempJson = deviceJson["temperature"]["vr_celsius"][tileKey];
+			tileTempJson["avg"] = stats.avg;
+			tileTempJson["min"] = stats.min;
+			tileTempJson["max"] = stats.max;
+			tileTempJson["current"] = stats.current;
+		}
+	}
+
+	for (const auto &[tileId, samples] : metrics.compositeTempPerTile) {
+		SummaryStats stats = computeSummaryStats(samples);
+		if (stats.valid) {
+			std::string tileKey = makeTileKey(tileId);
+			auto &tileTempJson = deviceJson["temperature"]["composite_celsius"][tileKey];
 			tileTempJson["avg"] = stats.avg;
 			tileTempJson["min"] = stats.min;
 			tileTempJson["max"] = stats.max;
@@ -1694,6 +1717,9 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	table.addRow("(Degrees Celsius)", "");
 
 	addPerTileMetricRows(table, deviceJson, "GPU VR Temperature", {"temperature", "vr_celsius"}, 0);
+	table.addRow("(Degrees Celsius)", "");
+
+	addPerTileMetricRows(table, deviceJson, "GPU Composite Temperature", {"temperature", "composite_celsius"}, 0);
 	table.addRow("(Degrees Celsius)", "");
 
 	addPerFanMetricRows(table, deviceJson, "Fan Speed (%)", {"fan", "speed_percent"}, 0);

@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Temperature metrics: GPU core and memory temperatures.
+ * Temperature metrics: GPU core, memory, and composite temperatures.
  * Getters call the HAL directly — no MetricCache involvement.
  */
 
@@ -54,7 +54,15 @@ constexpr auto mem = // NOLINT(readability-identifier-naming)
 				.groups = MetricGroup::TEMPERATURE,
 				.getter = tempGetter<&::temperature::getMemoryTemp>};
 
-constexpr auto ALL = std::to_array<QueryMetric>({gpu, mem});
+constexpr auto composite = // NOLINT(readability-identifier-naming)
+	QueryMetric{.name = "temperature.composite",
+				.unit = "C",
+				.description = "GPU composite temperature; reports the first matching sensor",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::TEMPERATURE,
+				.getter = tempGetter<&::temperature::getCompositeTemp>};
+
+constexpr auto ALL = std::to_array<QueryMetric>({gpu, mem, composite});
 
 } // namespace
 

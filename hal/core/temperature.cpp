@@ -269,7 +269,7 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_
 	DBG("Temperature Properties:\n");
 	DBG("  onSubdevice: {}\n", properties->onSubdevice);
 	DBG("  subdeviceId: {}\n", properties->subdeviceId);
-	switch (properties->type) {
+	switch (static_cast<uint32_t>(properties->type)) {
 	case ZES_TEMP_SENSORS_GLOBAL:
 		DBG("  type: Global\n");
 		break;
@@ -293,6 +293,9 @@ ze_result_t temperature::getProperties(zes_temp_handle_t temperatureHandle, zes_
 		break;
 	case ZES_TEMP_SENSORS_GPU_BOARD_MIN:
 		DBG("  type: GPU Board Min\n");
+		break;
+	case ZES_TEMP_SENSORS_COMPOSITE:
+		DBG("  type: Composite\n");
 		break;
 	default:
 		DBG("  type: Unknown ({})\n", properties->type);
@@ -448,6 +451,21 @@ ze_result_t temperature::getCoreTemp(double *coreTemp)
 {
 	TRACING();
 	return getTemp(ZES_TEMP_SENSORS_GPU, coreTemp);
+}
+
+/**
+ * @brief Gets the current composite (overall device) temperature
+ *
+ * This function retrieves the current temperature reading from the composite
+ * temperature sensor, which reports an overall thermal reading for the device.
+ *
+ * @param compositeTemp Pointer to store the composite temperature in Celsius
+ * @return ze_result_t ZE_RESULT_SUCCESS if composite temperature retrieved successfully, error code otherwise
+ */
+ze_result_t temperature::getCompositeTemp(double *compositeTemp)
+{
+	TRACING();
+	return getTemp(ZES_TEMP_SENSORS_COMPOSITE, compositeTemp);
 }
 
 /**

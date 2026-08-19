@@ -84,6 +84,7 @@ public:
 	ze_result_t getTempPerTile(zes_temp_sensors_t type, std::map<uint32_t, double> &tileTemperatures);
 	ze_result_t getCoreTemp(double *coreTemp);
 	ze_result_t getMemoryTemp(double *memTemp);
+	ze_result_t getCompositeTemp(double *compositeTemp);
 	ze_result_t getCoreThreshold(zes_device_handle_t device, uint32_t *throttleThreshold, uint32_t *shutdownThreshold);
 	ze_result_t getMemoryThreshold(zes_device_handle_t device, uint32_t *throttleThreshold,
 								   uint32_t *shutdownThreshold);

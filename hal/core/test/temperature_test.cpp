@@ -14,6 +14,11 @@
 #include <cmath>
 #include <limits>
 
+TEST_CASE("composite temperature sensor uses the Level Zero value")
+{
+	CHECK(static_cast<uint32_t>(ZES_TEMP_SENSORS_COMPOSITE) == 9U);
+}
+
 // Tests for temperature::mr4CodeToCelsius(), which converts a JEDEC LPDDR5
 // MR4 thermal refresh code (0..7) to the max-of-range Celsius value. Values
 // outside [0, 7], non-finite values, and non-integer values must be returned
