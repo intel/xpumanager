@@ -245,10 +245,6 @@ jobs:
   # Post coverage delta as a PR comment
   comment:
     needs: [coverage-pr, coverage-base]
-    permissions:
-      contents: read
-      pull-requests: write
-      actions: read       # download artifacts from earlier jobs in this run
     # Skip when dispatched without a PR number
     if: >-
       needs.coverage-pr.result == 'success' &&

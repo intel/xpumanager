@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: MIT
  *
  * Utilization metrics: overall GPU, engine groups (compute/render/media/copy) and memory
- * utilization %.  utilization.gpu is the busiest engine on the device rather than
- * ZES_ENGINE_GROUP_ALL, which reports the average across every engine; the per-class
- * metrics below are the aggregated groups the driver exposes for that class.  Both are
- * derived per tile and averaged over tiles by populateMetricCacheEnd, so the getters here
- * only have to render what the cache already holds.
+ * utilization %.
+ *
+ * utilization.gpu reports EU active% (shader execution unit active time) when
+ * CAP_PERFMON is available, falls back to the busiest sysman engine when EU counters
+ * are unavailable, and further falls back to fdinfo compute-engine scheduling time
+ * when sysman counters require elevated privilege.
  *
  * utilization.compute, .render, and .copy carry aliases for the legacy xpum-style
  * .single and .group suffixes; .media uses sub-engine forms (.decode.single,
@@ -20,11 +21,9 @@
 #include "device.h"
 #include "metrics_registry.h"
 #include "ze_api.h"
-#include <memory.h>
 #include <array>
 #include "utility/compat/format.h"
 #include <span>
-#include <string>
 #include <string_view>
 
 namespace metrics::utilization {
@@ -62,19 +61,42 @@ constexpr auto COPY_ALIASES = std::to_array<std::string_view>({
 	"utilization.copy.group",
 });
 
-constexpr auto GPU =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "utilization.gpu",
-				.unit = "%",
-				.description = "Busiest engine's active time as a fraction of elapsed time; per tile or device, "
-							   "device-level is the tile average for multi-tile GPUs",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::UTILIZATION,
-				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					// The busiest engine, not ZES_ENGINE_GROUP_ALL: that group averages every
-					// engine on the device, so a workload saturating one of nine reads as 11%.
-					return formatUtil(cache.engines.gpu, out);
-				}};
+constexpr auto GPU_ALIASES = std::to_array<std::string_view>({"sm", "utilization.shader"});
+
+constexpr auto GPU = QueryMetric{
+	// NOLINT(readability-identifier-naming)
+	.name = "utilization.gpu",
+	.aliases = GPU_ALIASES,
+	.unit = "%",
+	.description = "Shader (EU) execution unit active time as a fraction of elapsed time.  Falls back "
+				   "to the busiest sysman engine when EU metrics are unavailable, then to fdinfo "
+				   "compute-engine scheduling when sysman requires elevated privilege.  Per tile or "
+				   "device, device-level is the tile average for multi-tile GPUs.",
+	.source = MetricSource::Live,
+	.groups = MetricGroup::UTILIZATION,
+	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
+		// Primary: EU active% (0-1000 per-mille → divide by 10 for %).
+		// Measures fraction of EU execution slots actively executing instructions,
+		// unaffected by copy/media engine activity that inflates ZES_ENGINE_GROUP_ALL.
+		if (cache.euAvail) {
+			out = xpum::compat::format("{:.2f}", static_cast<double>(cache.euSample.euActive) / EU_PERMILLE_SCALE);
+			return ZE_RESULT_SUCCESS;
+		}
+		// Secondary: busiest sysman engine (needs CAP_PERFMON).
+		// Not ZES_ENGINE_GROUP_ALL: that group averages every engine on the device,
+		// so a single saturated engine on a 9-engine GPU reads as 11%.
+		if (const auto r = formatUtil(cache.engines.gpu, out); r == ZE_RESULT_SUCCESS) {
+			return r;
+		}
+		// Tertiary: fdinfo compute-engine scheduling time (no elevated privilege needed).
+		// Measures engine-scheduled time rather than shader execution, so it reads
+		// higher than EU active% under the same workload — but it's non-zero without root.
+		if (cache.fdinfoCompute) {
+			out = xpum::compat::format("{:.2f}", static_cast<double>(*cache.fdinfoCompute));
+			return ZE_RESULT_SUCCESS;
+		}
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}};
 
 constexpr auto COMPUTE =
 	QueryMetric{// NOLINT(readability-identifier-naming)
@@ -86,7 +108,14 @@ constexpr auto COMPUTE =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					return formatUtil(cache.engines.compute, out);
+					if (const auto r = formatUtil(cache.engines.compute, out); r == ZE_RESULT_SUCCESS) {
+						return r;
+					}
+					if (cache.fdinfoCompute) {
+						out = xpum::compat::format("{:.2f}", static_cast<double>(*cache.fdinfoCompute));
+						return ZE_RESULT_SUCCESS;
+					}
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 				}};
 
 constexpr auto RENDER =
@@ -99,7 +128,14 @@ constexpr auto RENDER =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					return formatUtil(cache.engines.render, out);
+					if (const auto r = formatUtil(cache.engines.render, out); r == ZE_RESULT_SUCCESS) {
+						return r;
+					}
+					if (cache.fdinfoRender) {
+						out = xpum::compat::format("{:.2f}", static_cast<double>(*cache.fdinfoRender));
+						return ZE_RESULT_SUCCESS;
+					}
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 				}};
 
 constexpr auto MEDIA = QueryMetric{
@@ -112,7 +148,14 @@ constexpr auto MEDIA = QueryMetric{
 	.source = MetricSource::Live,
 	.groups = MetricGroup::UTILIZATION,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-		return formatUtil(cache.engines.media, out);
+		if (const auto r = formatUtil(cache.engines.media, out); r == ZE_RESULT_SUCCESS) {
+			return r;
+		}
+		if (cache.fdinfoMedia) {
+			out = xpum::compat::format("{:.2f}", static_cast<double>(*cache.fdinfoMedia));
+			return ZE_RESULT_SUCCESS;
+		}
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}};
 
 constexpr auto COPY =
@@ -125,7 +168,14 @@ constexpr auto COPY =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					return formatUtil(cache.engines.copy, out);
+					if (const auto r = formatUtil(cache.engines.copy, out); r == ZE_RESULT_SUCCESS) {
+						return r;
+					}
+					if (cache.fdinfoCopy) {
+						out = xpum::compat::format("{:.2f}", static_cast<double>(*cache.fdinfoCopy));
+						return ZE_RESULT_SUCCESS;
+					}
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 				}};
 
 constexpr auto MEM_UTIL =

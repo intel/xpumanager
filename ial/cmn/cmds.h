@@ -8,6 +8,7 @@
 #define _CMDS_H
 
 #include <cstdarg>
+#include <device.h>
 #include <driver.h>
 #include <list>
 #include <string>
@@ -84,5 +85,15 @@ struct cmd_struct
 	helpFunc hf;
 	runFunc rf;
 };
+
+/// Return the "DDDD:BB:DD.F" PCI address for a device.
+/// Used by IAL callers to pass a plain BDF to OAL fdinfo functions.
+inline std::string devPciAddr(const devInfo &dev)
+{
+	if (dev.dev == nullptr) {
+		return {};
+	}
+	return dev.dev->getBDFStr();
+}
 
 #endif

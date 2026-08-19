@@ -8,6 +8,7 @@
 #define METRICS_REGISTRY_H
 
 #include "device.h"
+#include "proc_fdinfo.h"
 #include "ze_api.h"
 #include <enginegroup.h>
 #include <cstddef>
@@ -176,6 +177,12 @@ struct MetricCache
 	EuMetricsData euSample{};
 	bool euAvail = false; /**< true when getEuActiveStallIdle succeeded */
 	bool populated = false;
+	std::vector<fdinfo::ProcessSnapshot>
+		fdinfoSnap;						///< rolling fdinfo snapshot (Begin writes, End updates for Continuous)
+	std::optional<float> fdinfoCompute; ///< device-level compute util from fdinfo (available without root)
+	std::optional<float> fdinfoRender;
+	std::optional<float> fdinfoMedia;
+	std::optional<float> fdinfoCopy;
 };
 
 /**

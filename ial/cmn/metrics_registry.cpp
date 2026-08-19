@@ -5,6 +5,7 @@
  */
 
 #include "metrics_registry.h"
+#include "cmds.h"
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
 #include "metrics/pci.h"
@@ -121,6 +122,7 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 	if (mem != nullptr) {
 		mem->getMemoryRW(&cache.memBefore.read, &cache.memBefore.write, &cache.memMaxBandwidth, &cache.memBefore.ts);
 	}
+	cache.fdinfoSnap = fdinfo::capture(devPciAddr(dev));
 	return cache;
 }
 
@@ -186,6 +188,15 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 		}
 	}
 
+	{
+		auto fdAfter = fdinfo::capture(devPciAddr(dev));
+		const auto devUtil = fdinfo::aggregateDeviceUtil(cache.fdinfoSnap, fdAfter);
+		cache.fdinfoSnap = std::move(fdAfter);
+		cache.fdinfoCompute = devUtil.compute;
+		cache.fdinfoRender = devUtil.render;
+		cache.fdinfoMedia = devUtil.media;
+		cache.fdinfoCopy = devUtil.copy;
+	}
 	cache.populated = true;
 }
 
@@ -219,7 +230,10 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 
 	curr.memBefore = prev.memAfter;
 	curr.memMaxBandwidth = prev.memMaxBandwidth;
-	// EU metrics are re-sampled fresh each tick; no before/after state to carry over.
+
+	// fdinfo fallback: carry the previous snapshot forward so populateMetricCacheEnd()
+	// can compute per-tick deltas; EU metrics are re-sampled fresh each tick.
+	curr.fdinfoSnap = prev.fdinfoSnap;
 
 	populateMetricCacheEnd(dev, curr);
 	return curr;
