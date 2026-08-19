@@ -13,7 +13,7 @@ import (
 	"github.com/intel/level-zero-go/sysman"
 )
 
-// allEventFlags registers interest in every defined event type.
+// allEventFlags registers interest in every defined device scoped event type.
 const allEventFlags = sysman.EventTypeFlags(
 	sysman.EVENT_TYPE_FLAG_DEVICE_DETACH |
 		sysman.EVENT_TYPE_FLAG_DEVICE_ATTACH |
@@ -107,14 +107,16 @@ func pollDriver(idx int, driver *sysman.Driver) {
 		return
 	}
 
+	listener := newEventListener(idx, driver)
+
 	for {
-		numEvents, events, err := driver.EventListenEx(pollTimeout, devices)
+		hasDeviceEvents, events, err := listener.listen(pollTimeout, devices)
 		if err != nil {
-			log.Printf("Error: driver %d: EventListenEx: %v", idx, err)
+			log.Printf("Error: driver %d: event listen: %v", idx, err)
 			time.Sleep(pollRetryDelay)
 			continue
 		}
-		if numEvents == 0 {
+		if !hasDeviceEvents {
 			continue
 		}
 		for j, flags := range events {

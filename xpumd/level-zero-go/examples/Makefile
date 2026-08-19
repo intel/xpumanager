@@ -9,7 +9,7 @@ IMAGE_REPO_BASE ?= registry.local/level-zero-go
 IMAGE_TAG ?= latest
 # Where the images get the Level-Zero GPU backend from: "deb" or "src" (see Dockerfile)
 BACKEND ?= deb
-EXAMPLE_APPS := list-sysman list-sysman-exp events-sysman
+EXAMPLE_APPS := list-sysman list-sysman-exp events-sysman events-sysman-exp
 BIN_DIR ?= bin
 
 # PIE + full RELRO, drop all symbols
@@ -45,11 +45,16 @@ build-list-sysman-exp:
 build-events-sysman:
 	$(Q)go build $(GO_FLAGS) -o $(BIN_DIR)/events-sysman ./events-sysman/.
 
+.PHONY: build-events-sysman-exp
+build-events-sysman-exp:
+	$(Q)go build $(GO_FLAGS) -tags exp -o $(BIN_DIR)/events-sysman-exp ./events-sysman/.
+
 .PHONY: build-stub
 build-stub:
 	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -o bin/list-sysman-stub ./list-sysman/.
 	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -tags exp -o bin/list-sysman-exp-stub ./list-sysman/.
 	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -o bin/events-sysman-stub ./events-sysman/.
+	$(Q)$(BUILD_STUB_ENV) go build $(GO_FLAGS) -tags exp -o bin/events-sysman-exp-stub ./events-sysman/.
 	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
 	@echo "  SYSMAN_STUB_CONFIG=../level-zero-stub/example-config.yaml ./bin/list-sysman-stub"
 	@echo ""
