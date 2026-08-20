@@ -18,6 +18,7 @@ enum configCmdType
 	CONFIGJSON,
 	CONFIGDEVICE,
 	TILE,
+	SET_HEALTH_STATUS,
 	FREQUENCYRANGE,
 	FREQUENCYLOCK,
 	RESETFREQUENCYRANGE,
@@ -56,6 +57,8 @@ constexpr std::string_view configCmdName(configCmdType t) noexcept
 		return "--device";
 	case TILE:
 		return "--tile";
+	case SET_HEALTH_STATUS:
+		return "--set-health-status";
 	case FREQUENCYRANGE:
 		return "--frequencyrange";
 	case FREQUENCYLOCK:
@@ -108,6 +111,7 @@ public:
 	~cmdConfig() {}
 	void help(HELP helpType = FULL_HELP);
 	void displayDeviceConfig(devInfo *d);
+	ze_result_t setHealthStatus(devInfo *d);
 	ze_result_t setFrequencyRange(devInfo *d);
 	ze_result_t setFrequencyLock(devInfo *d);
 	ze_result_t resetFrequencyRange(devInfo *d);

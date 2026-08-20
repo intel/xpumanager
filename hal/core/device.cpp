@@ -693,6 +693,63 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 	return result;
 }
 
+/**
+ * @brief Retrieves the current device health status.
+ *
+ * @param[out] pHealth Pointer to receive the current device health status.
+ * @return ZE_RESULT_SUCCESS on success; otherwise an argument, initialization, or driver error.
+ */
+ze_result_t device::getDeviceHealth(zes_device_health_status_ext_t *pHealth)
+{
+	if (pHealth == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	if (zesDevice == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	ze_result_t result = zesDeviceGetHealthStatusExt(zesDevice, pHealth);
+	if (result != ZE_RESULT_SUCCESS) {
+		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			DBG("Device health status unsupported by driver. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		} else {
+			ERR("Failed to get device health status. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		}
+	}
+	return result;
+}
+
+/**
+ * @brief Sets the device health status.
+ *
+ * This API is consumed by the CLI config setter path (`xpu-smi config --set`).
+ *
+ * @param[in] health Health status to set.
+ * @return ZE_RESULT_SUCCESS on success; otherwise an initialization or driver error.
+ */
+ze_result_t device::setDeviceHealth(zes_device_health_status_ext_t health)
+{
+	if (zesDevice == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	ze_result_t result = zesDeviceSetHealthStatusExt(zesDevice, health);
+	if (result != ZE_RESULT_SUCCESS) {
+		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			DBG("Setting device health status unsupported by driver. 0x{:X} ({})\n", result,
+				l0_error_to_string(result));
+		} else if (result == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+			ERR("Insufficient permissions to set device health status (e.g. from config --set-health-status). Root "
+				"privileges may be required. 0x{:X} ({})\n",
+				result, l0_error_to_string(result));
+		} else {
+			ERR("Failed to set device health status. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		}
+	}
+	return result;
+}
+
 /*
  * @brief Returns a vector of pointers to sysman instances for ZES functions.
  *

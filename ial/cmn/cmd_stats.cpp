@@ -103,6 +103,28 @@ static constexpr double MICROJOULES_TO_JOULES = 1000000.0;
 static constexpr double MICROSECONDS_PER_SECOND = 1000000.0;
 
 /**
+ * @brief Converts a device health status to display text.
+ *
+ * @param[in] status Device health status returned by the Sysman device health API.
+ * @return Health status text, or "N/A" for an unrecognized status.
+ */
+static const char *healthStatusToString(zes_device_health_status_ext_t status)
+{
+	switch (status) {
+	case ZES_DEVICE_HEALTH_STATUS_EXT_OK:
+		return "OK";
+	case ZES_DEVICE_HEALTH_STATUS_EXT_WARNING:
+		return "Warning";
+	case ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL:
+		return "Critical";
+	case ZES_DEVICE_HEALTH_STATUS_EXT_FAILED:
+		return "Failed";
+	default:
+		return "N/A";
+	}
+}
+
+/**
  * @brief Safely get a nested JSON object by path
  *
  * This helper function navigates through nested JSON objects using a vector
@@ -1043,6 +1065,11 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	deviceJson["device_index"] = metrics.deviceIndex;
 	deviceJson["pci_bdf"] = metrics.pciBdf;
 	deviceJson["device_type"] = metrics.deviceType;
+	deviceJson["health_status"] = "N/A";
+	zes_device_health_status_ext_t healthStatus = ZES_DEVICE_HEALTH_STATUS_EXT_OK;
+	if (dev->getDeviceHealth(&healthStatus) == ZE_RESULT_SUCCESS) {
+		deviceJson["health_status"] = healthStatusToString(healthStatus);
+	}
 
 	auto startTime = std::chrono::system_clock::now();
 	metrics.startTimeIso = formatIso8601Timestamp(startTime);
@@ -1604,6 +1631,7 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	table.addRow("Start Time", startTime);
 	table.addRow("End Time", endTime);
 	table.addRow("Elapsed Time (seconds)", xpum::compat::format("{:.2f}", elapsedSeconds));
+	table.addRow("Health Status", deviceJson.value("health_status", "N/A"));
 
 	if (deviceJson.contains("power") && deviceJson["power"].contains("energy_consumed_j")) {
 		double energyJ = deviceJson["power"]["energy_consumed_j"].get<double>();

@@ -134,6 +134,8 @@ public:
 	ze_result_t getDriverProperties(ze_driver_properties_t *driverProps);
 
 	ze_result_t zesGetDevProps(zes_device_handle_t dev, zes_device_properties_t *zesDevProp);
+	ze_result_t getDeviceHealth(zes_device_health_status_ext_t *pHealth);
+	ze_result_t setDeviceHealth(zes_device_health_status_ext_t health);
 	bool isIGPU() const { return igpu; }
 	int getAmcIndex() const { return amc; }
 	bool hasAmc() const { return amc != -1; }

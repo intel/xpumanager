@@ -53,6 +53,7 @@ static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGJSON, {}},
 	{configCmdType::CONFIGDEVICE, {}},
 	{configCmdType::TILE, {}},
+	{configCmdType::SET_HEALTH_STATUS, {.func = &cmdConfig::setHealthStatus}},
 	{configCmdType::FREQUENCYRANGE, {.func = &cmdConfig::setFrequencyRange, .canRunOnIGPU = true}},
 	{configCmdType::FREQUENCYLOCK, {.func = &cmdConfig::setFrequencyLock, .canRunOnIGPU = true}},
 	{configCmdType::RESETFREQUENCYRANGE, {.func = &cmdConfig::resetFrequencyRange, .canRunOnIGPU = true}},
@@ -651,6 +652,8 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s config [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --set-health-status ok|warning|critical|failed",
+							   progName.c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencyrange [minFrequency,maxFrequency]",
 				progName.c_str()));
@@ -687,6 +690,8 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address to query"));
+	helpList.push_back(
+		helpCmd(HEADING, "--set-health-status         Set device health status (ok|warning|critical|failed)"));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(
 		HEADING,
@@ -1180,6 +1185,86 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 			PRINT("Succeeded in changing the core frequency range on GPU {} tile {} to {:.0f}-{:.0f} MHz.\n", d->index,
 				  tileId, minFreq, maxFreq);
 		}
+	}
+
+	return result;
+}
+
+/**
+ * @brief Sets the device health status via the standard Sysman device health API.
+ *
+ * Parses the requested status string (ok, warning, critical, or failed), invokes
+ * zesDeviceSetHealthStatusExt, and prints the outcome.
+ *
+ * @param[in] d Pointer to device information structure containing device handles.
+ * @return ZE_RESULT_SUCCESS on success, or an argument or driver error otherwise.
+ */
+ze_result_t cmdConfig::setHealthStatus(devInfo *d)
+{
+	TRACING();
+
+	const std::string &statusStr = configCmds[configCmdType::SET_HEALTH_STATUS].val;
+	std::string status = statusStr;
+	std::transform(status.begin(), status.end(), status.begin(),
+				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+	zes_device_health_status_ext_t targetStatus;
+	if (status == "ok") {
+		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_OK;
+	} else if (status == "warning") {
+		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_WARNING;
+	} else if (status == "critical") {
+		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL;
+	} else if (status == "failed") {
+		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_FAILED;
+	} else {
+		ERR("Invalid health status '{}'. Valid values are: ok, warning, critical, failed.\n", statusStr.c_str());
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	ze_result_t result = d->dev->setDeviceHealth(targetStatus);
+	if (result == ZE_RESULT_SUCCESS) {
+		PRINT("Succeeded in setting the health status to {} on GPU {}\n", status.c_str(), d->index);
+		return result;
+	}
+
+	switch (result) {
+	case ZE_RESULT_ERROR_UNINITIALIZED:
+		ERR("Unable to set health status on GPU {} because the device management driver is not initialized. "
+			"Restart xpu-smi after the driver is ready.\n",
+			d->index);
+		break;
+	case ZE_RESULT_ERROR_DEVICE_LOST:
+		ERR("Unable to set health status on GPU {} because the device was lost or reset. Wait for it to "
+			"re-enumerate, then retry.\n",
+			d->index);
+		break;
+	case ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY:
+		ERR("Unable to set health status on GPU {} because the host is out of memory. Free system memory and retry.\n",
+			d->index);
+		break;
+	case ZE_RESULT_ERROR_OUT_OF_DEVICE_MEMORY:
+		ERR("Unable to set health status on GPU {} because the device has insufficient resources. Retry after "
+			"reducing GPU workload.\n",
+			d->index);
+		break;
+	case ZE_RESULT_ERROR_UNSUPPORTED_FEATURE:
+		ERR("Setting health status is not supported on GPU {} by the installed driver. Update the driver or use "
+			"a supported device.\n",
+			d->index);
+		break;
+	case ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS:
+		ERR("Error: Insufficient permissions to set health status on GPU {}. Root privileges are required.\n",
+			d->index);
+		break;
+	case ZE_RESULT_ERROR_UNKNOWN:
+		ERR("The driver reported an unknown error while setting health status on GPU {}. 0x{:X} ({})\n", d->index,
+			result, l0_error_to_string(result));
+		break;
+	default:
+		ERR("Error: Failed to set health status on GPU {}. 0x{:X} ({})\n", d->index, result,
+			l0_error_to_string(result));
+		break;
 	}
 
 	return result;
@@ -2299,6 +2384,12 @@ int cmdConfig::run(arg_struct *args)
 	sub.add_option("-t,--tile", configCmds[configCmdType::TILE].val, "Tile ID")->each([&](const std::string &) {
 		configCmds[configCmdType::TILE].enabled = true;
 	});
+	sub.add_option("--set-health-status", configCmds[configCmdType::SET_HEALTH_STATUS].val,
+				   "Set device health status (ok|warning|critical|failed), requires root privileges")
+		->each([&](const std::string &) {
+			configCmds[configCmdType::SET_HEALTH_STATUS].enabled = true;
+			isQueryMode = false;
+		});
 	sub.add_option("--frequencyrange", configCmds[configCmdType::FREQUENCYRANGE].val,
 				   "Set frequency range (MHz), e.g. minFreq:maxFreq")
 		->each([&](const std::string &) {
