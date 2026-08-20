@@ -152,6 +152,23 @@ if is_linux
 
   test('offline_pages_test', offline_pages_test)
 
+  cmd_stats_fdinfo_test = executable(
+    'cmd_stats_fdinfo_test',
+    'cmd_stats_fdinfo_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: ial_cmn_lib,
+    dependencies: ial_cmn_test_deps,
+    cpp_args: ial_cmn_cpp_args,
+    link_args: ['-pie'],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('cmd_stats_fdinfo_test', cmd_stats_fdinfo_test)
+
   crashlog_test = executable(
     'crashlog_test',
     'crashlog_test.cpp',
