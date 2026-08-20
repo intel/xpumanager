@@ -88,10 +88,11 @@ ARG APP=list-sysman
 COPY --from=builder /out/ /
 COPY --from=builder /igsc-install/usr/local/lib /usr/local/lib
 
-# Install Sysman dep & strace tool from distro & symlink example to entrypoint
+# Install Sysman deps & strace tool from distro & symlink example to entrypoint
 RUN apt-get update && \
-    # Sysman does not link netlink lib but loads it at runtime, for RAS & fabric metrics
-    apt-get install -y libnl-genl-3-200 strace && \
+    # Sysman does not link these libs but loads them at runtime: netlink for RAS &
+    # fabric metrics, tracefs for reading CPER events/logs from the kernel
+    apt-get install -y libnl-genl-3-200 libtracefs1 strace && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     ln -s /usr/local/bin/${APP} /entrypoint
 
