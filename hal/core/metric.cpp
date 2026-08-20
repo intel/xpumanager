@@ -751,14 +751,14 @@ findEuMetricGroupLocked(ze_device_handle_t device,
 ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t subdeviceId, ze_driver_handle_t driver,
 											 EuMetricsData &data) // NOLINT(readability-function-cognitive-complexity)
 {
-	if (euMetricDisabledDevices.contains(device)) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-
-	// Get or create per-device mutex to serialize EU metric collection for this device
+	// Check disabled flag and get/create per-device mutex under one lock so
+	// euMetricDisabledDevices is never read while another thread writes it.
 	std::mutex *deviceMutex = nullptr;
 	{
 		std::lock_guard<std::mutex> lock(metricMutex);
+		if (euMetricDisabledDevices.contains(device)) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
 		if (deviceEuMetricMutexes.find(device) == deviceEuMetricMutexes.end()) {
 			deviceEuMetricMutexes[device] = std::make_unique<std::mutex>();
 		}
@@ -767,6 +767,15 @@ ze_result_t metric::getEuActiveStallIdleCore(ze_device_handle_t device, uint32_t
 
 	// Lock this device for the entire EU metric collection to prevent concurrent access
 	std::lock_guard<std::mutex> deviceLock(*deviceMutex);
+
+	// Re-check under the device lock: a concurrent caller may have marked this
+	// device disabled between the first check and acquiring deviceLock.
+	{
+		std::lock_guard<std::mutex> lock(metricMutex);
+		if (euMetricDisabledDevices.contains(device)) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+	}
 
 	ze_result_t res;
 	zet_metric_group_handle_t hMetricGroup = nullptr;

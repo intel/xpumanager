@@ -29,30 +29,25 @@ static uint64_t monotonicNs() noexcept
 	return static_cast<uint64_t>(ts.tv_sec) * NS_PER_SEC + static_cast<uint64_t>(ts.tv_nsec);
 }
 
-// Normalise i915 engine names to the same tokens the xe driver uses.
-//   "render/0" → "rcs"   "copy/0" → "bcs"
-//   "video/0"  → "vcs"   "video-enhance/0" → "vecs"   "compute/0" → "ccs"
-static std::string normaliseI915(std::string_view raw)
+// Normalise engine names from both i915 (slash-suffix) and xe (digit-suffix) formats
+// to canonical short tokens.
+//   i915 drm-engine-*: "render/0" → "rcs", "compute/0" → "ccs", "copy/0" → "bcs"
+//   xe   drm-cycles-*: "rcs0"     → "rcs", "ccs1"      → "ccs", "bcs0"   → "bcs"
+static std::string normaliseEngine(std::string_view raw)
 {
 	std::string name{raw};
-	if (const auto p = name.rfind('/'); p != std::string::npos) {
-		name.resize(p);
+	if (const auto p = name.find('/'); p != std::string::npos) {
+		name.resize(p); // strip slash-based instance suffix ("render/0" -> "render")
+	} else {
+		while (!name.empty() && std::isdigit(static_cast<unsigned char>(name.back()))) {
+			name.pop_back(); // strip digit-based instance suffix ("rcs0" -> "rcs")
+		}
 	}
-	if (name == "render") {
-		return "rcs";
-	}
-	if (name == "copy") {
-		return "bcs";
-	}
-	if (name == "video") {
-		return "vcs";
-	}
-	if (name == "video-enhance") {
-		return "vecs";
-	}
-	if (name == "compute") {
-		return "ccs";
-	}
+	if (name == "render")        { return "rcs"; }
+	if (name == "copy")          { return "bcs"; }
+	if (name == "video")         { return "vcs"; }
+	if (name == "video-enhance") { return "vecs"; }
+	if (name == "compute")       { return "ccs"; }
 	return name;
 }
 
@@ -102,12 +97,12 @@ parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-paramet
 		} else if (key == pdevKey) {
 			pdev = std::string{val};
 		} else if (key.starts_with(cycPfx)) {
-			engines[std::string{key.substr(cycPfx.size())}].cycles = parseU64(val);
+			engines[normaliseEngine(key.substr(cycPfx.size()))].cycles = parseU64(val);
 		} else if (key.starts_with(totPfx)) {
-			engines[std::string{key.substr(totPfx.size())}].totalCycles = parseU64(val);
+			engines[normaliseEngine(key.substr(totPfx.size()))].totalCycles = parseU64(val);
 		} else if (key.starts_with(engPfx) && !key.starts_with(capPfx)) {
 			// i915: "drm-engine-render/0:\t12345 ns"
-			const std::string eng = normaliseI915(key.substr(engPfx.size()));
+			const std::string eng = normaliseEngine(key.substr(engPfx.size()));
 			engines[eng].cycles = parseU64(val);
 			engines[eng].totalCycles = 0; // sentinel: use wall-clock delta
 		}
