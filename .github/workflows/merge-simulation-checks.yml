@@ -118,8 +118,7 @@ jobs:
 
       - name: Check Go module validity after merge
         run: |
-          cd xpumd
-          go mod tidy --check || {
+          ./xpumd/scripts/make-dockerized.sh check-modfiles || {
             echo "❌ go.mod/go.sum would be out of sync after merge"
             echo "Run 'go mod tidy' and commit changes"
             exit 1
