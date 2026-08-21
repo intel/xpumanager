@@ -136,13 +136,19 @@ Options
       * - 42
         - AMC Firmware Version
       * - 43
-        - OPROM Code Firmware Name
+        - GFX PSCBIN Firmware Name
       * - 44
-        - OPROM Code Firmware Version
+        - GFX PSCBIN Firmware Version
       * - 45
-        - OPROM Data Firmware Name
+        - OPROM Code Firmware Name
       * - 46
+        - OPROM Code Firmware Version
+      * - 47
+        - OPROM Data Firmware Name
+      * - 48
         - OPROM Data Firmware Version
+      * - 49
+        - Part Number
 
 .. option:: --listamcversions
 
