@@ -46,7 +46,7 @@ images:
 	                 --build-arg APP=$$app \
 	                 --security-opt label=disable \
 	                 --progress=plain \
-	                 -f Dockerfile .. ; \
+	                 -f Dockerfile .. || exit 1; \
 	done
 
 .PHONY: clean
