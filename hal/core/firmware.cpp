@@ -128,7 +128,7 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
 		index = FDO;
 	} else if (STRCASECMP(properties.name, "OPTIONROM") == 0) {
 		index = OP_CODE;
-	} else if (STRCASECMP(properties.name, "GFX_PSCBIN") == 0) {
+	} else if (STRCASECMP(properties.name, "PSC") == 0) {
 		index = GFX_PSCBIN;
 	} else if (STRCASECMP(properties.name, "FANTABLE") == 0) {
 		index = FAN_TABLE;
