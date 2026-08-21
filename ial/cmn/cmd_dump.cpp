@@ -529,18 +529,35 @@ struct DumpOutput
 	bool showDate;
 	bool useFile;
 	std::ofstream *dumpFile;
-	bool json{false};			 // emit JSON Lines instead of CSV
-	bool prependTimestamp{true}; // false for --query-gpu (timestamp is an explicit field)
-	bool prependDeviceId{true};	 // false for --query-gpu (index is an explicit field)
-	bool aligned{false};		 // true when stdout is a TTY: use space-padded columns instead of CSV
-	bool noheader{false};		 // suppress header row entirely
-	bool nounits{false};		 // strip unit suffixes from column headers
+	bool json{false};					  // emit JSON Lines instead of CSV
+	bool prependTimestamp{true};		  // false for --query-gpu (timestamp is an explicit field)
+	bool prependDeviceId{true};			  // false for --query-gpu (index is an explicit field)
+	bool aligned{false};				  // true when stdout is a TTY: use space-padded columns instead of CSV
+	bool noheader{false};				  // suppress header row entirely
+	bool nounits{false};				  // strip unit suffixes from column headers
+	std::vector<int> alignedColumnWidths; // maximum observed width for each aligned output column
 
 	DumpOutput(bool date, bool toFile, std::ofstream *file) : showDate{date}, useFile{toFile}, dumpFile{file} {}
 
 	void onBegin(std::span<const metrics::QueryMetric *> fields)
 	{
 		fieldDefs.assign(fields.begin(), fields.end());
+		if (aligned) {
+			alignedLabels.clear();
+			alignedLabelViews.clear();
+			alignedMinWidths.clear();
+			alignedLabels.reserve((prependTimestamp ? 1u : 0u) + (prependDeviceId ? 1u : 0u) + fieldDefs.size());
+			alignedLabelViews.reserve(alignedLabels.capacity());
+			alignedMinWidths.reserve(alignedLabels.capacity());
+			if (prependTimestamp) {
+				alignedLabels.emplace_back("Timestamp");
+				alignedMinWidths.push_back(0);
+			}
+			if (prependDeviceId) {
+				alignedLabels.emplace_back("DeviceId");
+				alignedMinWidths.push_back(0);
+			}
+		}
 
 		// Build the column formatter for use in onEndDevice() regardless of header suppression.
 		if (!json) {
@@ -562,8 +579,17 @@ struct DumpOutput
 				// (e.g. pci.bus_id), otherwise the value is truncated with an ellipsis.
 				const int width = getDumpColumnWidth(label, f->minWidth);
 				alignedFormatter->addColumn(label, width, Align::Right);
+				if (aligned) {
+					alignedLabels.push_back(label);
+					alignedMinWidths.push_back(f->minWidth);
+				}
 			}
 			alignedFormatter->lockWidths();
+		}
+		if (aligned) {
+			for (const auto &label : alignedLabels) {
+				alignedLabelViews.emplace_back(label);
+			}
 		}
 
 		// Emit header unless suppressed (file headers written by run(); JSON has none).
@@ -571,8 +597,14 @@ struct DumpOutput
 			headerEmitted = true;
 			return;
 		}
+		if (aligned) {
+			// Keep the aligned header until the first row so column widths can expand to
+			// the current value lengths; otherwise the header-only width estimate would
+			// still allow later field truncation.
+			return;
+		}
 		headerEmitted = true;
-		emit(aligned ? alignedFormatter->headerLine() : alignedFormatter->headerLine(TableBuilder::LineStyle::Csv));
+		emit(alignedFormatter->headerLine(TableBuilder::LineStyle::Csv));
 	}
 
 	void onBeginDevice(devInfo &dev)
@@ -618,11 +650,37 @@ struct DumpOutput
 		for (const auto &v : row) {
 			rowValues.push_back(v);
 		}
-		emit(aligned ? alignedFormatter->rowLine(rowValues)
-					 : alignedFormatter->rowLine(rowValues, TableBuilder::LineStyle::Csv));
+		if (aligned) {
+			const auto currentWidths = getDumpColumnWidths(alignedLabelViews, rowValues, alignedMinWidths);
+			if (alignedColumnWidths.empty()) {
+				alignedColumnWidths = currentWidths;
+			} else {
+				for (std::size_t i = 0; i < currentWidths.size(); ++i) {
+					alignedColumnWidths[i] = std::max(alignedColumnWidths[i], currentWidths[i]);
+				}
+			}
+			for (std::size_t i = 0; i < alignedColumnWidths.size(); ++i) {
+				alignedFormatter->setColumnWidth(i, alignedColumnWidths[i]);
+			}
+			if (!headerEmitted) {
+				emit(alignedFormatter->headerLine());
+				headerEmitted = true;
+			}
+			emit(alignedFormatter->rowLine(rowValues));
+			return;
+		}
+		emit(alignedFormatter->rowLine(rowValues, TableBuilder::LineStyle::Csv));
 	}
 
-	void onEnd() {}
+	void onEnd()
+	{
+		// For aligned stdout output, header emission is deferred until the first row.
+		// If there are no devices/rows, emit a header-only line here.
+		if (aligned && !json && !noheader && !headerEmitted && alignedFormatter.has_value()) {
+			emit(alignedFormatter->headerLine());
+			headerEmitted = true;
+		}
+	}
 
 private:
 	void emit(const std::string &line) const
@@ -637,6 +695,9 @@ private:
 
 	std::vector<std::string> row;
 	std::vector<const metrics::QueryMetric *> fieldDefs;
+	std::vector<std::string> alignedLabels;
+	std::vector<std::string_view> alignedLabelViews;
+	std::vector<int> alignedMinWidths;
 	std::optional<TableBuilder> alignedFormatter;
 	bool headerEmitted{false};
 	devInfo *currentDev{nullptr};
@@ -1231,7 +1292,7 @@ int cmdDump::run(arg_struct *args)
 			PRINT("Dump data to file {}.\n", opts.file->c_str());
 		}
 	} else if (!opts.json) {
-		// TTY: aligned header emitted by DumpOutput::onBegin().
+		// TTY: aligned header deferred to DumpOutput::onEndDevice() / onEnd().
 	}
 
 	DumpOutput out{opts.date, useFile, useFile ? &dumpFile : nullptr};

@@ -39,6 +39,7 @@ std::string progName = "test";
 
 #include "cmd_dump.h"
 #include "metrics_registry.h"
+#include "metrics/identity.h"
 #include "table_builder.h"
 #include "ze_api.h"
 #include <chrono>
@@ -125,6 +126,73 @@ TEST_SUITE("QueryFormat defaults")
 	{
 		const QueryFormat fmt{};
 		CHECK(fmt.count == 0);
+	}
+}
+
+// ─── aligned dump widths ─────────────────────────────────────────────────────
+
+TEST_SUITE("cmd_dump aligned widths")
+{
+	TEST_CASE("row values wider than headers widen the dump column instead of truncating")
+	{
+		const std::vector<std::string_view> labels = {"name", "pci.bus_id"};
+		const std::vector<int> minWidths = {0, metrics::identity::BDF_DISPLAY_WIDTH};
+		const std::vector<std::string> values = {"Intel(R) Arc(TM) Pro B65 Graphics", "0000:65:00.0"};
+		const auto widths = getDumpColumnWidths(labels, values, minWidths);
+		CHECK(widths[0] >= static_cast<int>(values[0].size()));
+		CHECK(widths[1] >= static_cast<int>(values[1].size()));
+		CHECK(widths[0] > static_cast<int>(labels[0].size()));
+		CHECK(widths[1] >= metrics::identity::BDF_DISPLAY_WIDTH);
+	}
+
+	TEST_CASE("empty inputs produce no column widths")
+	{
+		const std::vector<std::string_view> labels;
+		const std::vector<std::string> values;
+		const std::vector<int> minWidths;
+		CHECK(getDumpColumnWidths(labels, values, minWidths).empty());
+	}
+
+	TEST_CASE("mismatched labels and values produce one width per label")
+	{
+		const std::vector<std::string_view> labels = {"first", "second"};
+		const std::vector<std::string> values = {"value", "ignored extra value", "also ignored"};
+		const std::vector<int> minWidths;
+		const auto widths = getDumpColumnWidths(labels, values, minWidths);
+		REQUIRE(widths.size() == labels.size());
+		CHECK(widths[0] == MIN_DUMP_COLUMN_WIDTH);
+		CHECK(widths[1] == static_cast<int>(values[1].size()));
+	}
+
+	TEST_CASE("missing values use the label and minimum widths")
+	{
+		const std::vector<std::string_view> labels = {"first", "second"};
+		const std::vector<std::string> values = {"value"};
+		const std::vector<int> minWidths;
+		const auto widths = getDumpColumnWidths(labels, values, minWidths);
+		REQUIRE(widths.size() == labels.size());
+		CHECK(widths[0] == MIN_DUMP_COLUMN_WIDTH);
+		CHECK(widths[1] == static_cast<int>(labels[1].size()));
+	}
+
+	TEST_CASE("short values use the minimum dump column width")
+	{
+		const std::vector<std::string_view> labels = {"id"};
+		const std::vector<std::string> values = {"0"};
+		const std::vector<int> minWidths = {0};
+		const auto widths = getDumpColumnWidths(labels, values, minWidths);
+		REQUIRE(widths.size() == 1);
+		CHECK(widths[0] == MIN_DUMP_COLUMN_WIDTH);
+	}
+
+	TEST_CASE("metric minimum widths take precedence over shorter labels and values")
+	{
+		const std::vector<std::string_view> labels = {"id"};
+		const std::vector<std::string> values = {"0"};
+		const std::vector<int> minWidths = {12};
+		const auto widths = getDumpColumnWidths(labels, values, minWidths);
+		REQUIRE(widths.size() == 1);
+		CHECK(widths[0] == minWidths[0]);
 	}
 }
 
