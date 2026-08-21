@@ -131,6 +131,19 @@ if get_option('with_tests')
   test('temperature_tests', temperature_test)
   message('Temperature unit tests enabled')
 
+  memory_test = executable(
+    'memory_test',
+    files('test/memory_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('memory_tests', memory_test)
+  message('Memory unit tests enabled')
+
   if is_linux
     process_test = executable(
       'process_test',

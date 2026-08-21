@@ -91,6 +91,10 @@ enum discDumpType
 	DUMP_OPROMDATAFIRMWARENAME,
 	DUMP_OPROMDATAFIRMWAREVERSION,
 	DUMP_PARTNUMBER,
+	DUMP_MEMORYTYPE,
+	DUMP_MEMORYVENDOR,
+	DUMP_MEMORYDATECODE,
+	DUMP_MEMORYICDIEINFO,
 	TOTAL_DISC_DUMPS
 };
 
@@ -136,6 +140,10 @@ public:
 	ze_result_t memoryPhysicalSize(devInfo *d, std::string *outputLine);
 	ze_result_t memoryChannels(devInfo *d, std::string *outputLine);
 	ze_result_t memoryBusWidth(devInfo *d, std::string *outputLine);
+	ze_result_t memoryType(devInfo *d, std::string *outputLine);
+	ze_result_t memoryVendor(devInfo *d, std::string *outputLine);
+	ze_result_t memoryDateCode(devInfo *d, std::string *outputLine);
+	ze_result_t memoryIcDieInfo(devInfo *d, std::string *outputLine);
 	ze_result_t eus(devInfo *d, std::string *outputLine);
 	ze_result_t mediaEngines(devInfo *d, std::string *outputLine);
 	ze_result_t mediaEnhancementEngines(devInfo *d, std::string *outputLine);

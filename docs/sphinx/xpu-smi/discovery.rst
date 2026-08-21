@@ -149,10 +149,76 @@ Options
         - OPROM Data Firmware Version
       * - 49
         - Part Number
+      * - 50
+        - Memory Type
+      * - 51
+        - Memory Vendor
+      * - 52
+        - Memory Date Code
+      * - 53
+        - Memory IC/Die Info
 
 .. option:: --listamcversions
 
    Show all AMC firmware versions.
+
+Device Properties
+-----------------
+
+``xpu-smi discovery --device <deviceId>`` prints the properties of a single device,
+grouped and ordered as follows:
+
+.. list-table::
+   :widths: 30 70
+   :header-rows: 1
+
+   * - Group
+     - Properties (in display order)
+   * - Basic Device Information
+     - Device Type, Device Name, Device State, Recovery Action, PCI Device ID,
+       Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
+       Stepping, SKU Type
+   * - Driver and Firmware
+     - Driver Version, Kernel Version, GFX Firmware Name, GFX Firmware Version,
+       GFX Firmware Status
+   * - PCIe Information
+     - PCI BDF Address, PCI Slot, PCIe Generation, PCIe Max Link Width,
+       PCIe Max Bandwidth
+   * - Memory Information
+     - Memory Type, Memory Physical Size, Memory Vendor, Memory Date Code,
+       Memory IC/Die Info, Max Mem Alloc Size, ECC State,
+       Number of Memory Channels, Memory Bus Width, Max Hardware Contexts,
+       Max Command Queue Priority
+   * - EU and Architecture Information
+     - Number of EUs, Number of Tiles, Number of Slices,
+       Number of Sub Slices per Slice, Number of Threads per EU,
+       Physical EU SIMD Width, Number of Media Engines,
+       Number of Media Enhancement Engines
+   * - AMC Firmware Information
+     - AMC Firmware Name, AMC Firmware Version
+
+Properties that the platform does not report are shown as ``N/A``, ``unknown``, or
+are omitted.
+
+.. note::
+
+   **Memory Type** is resolved from two Level Zero sources, because neither is
+   complete on its own: the sysman memory type is per memory module and is the
+   only source that names a product-specific type such as ``LPDDR5X``, while the
+   core device memory extension type distinguishes memory generations the sysman
+   enumeration cannot express (it has a single ``HBM`` value, where the core type
+   separates HBM2/HBM2E/HBM3/HBM3E/HBM4). Whichever source names the memory more
+   specifically is reported, so the property is populated on platforms whose
+   sysman layer reports no type at all. It reads ``unknown`` when neither source
+   names a type.
+
+   **Memory Vendor**, **Memory Date Code** and **Memory IC/Die Info** report
+   ``unknown`` on all currently supported platforms: no Level Zero interface
+   (core, sysman, or the Intel sysman extensions), no kernel-mode driver
+   interface (sysfs or debugfs) and no ``igsc`` entry point exposes memory
+   manufacturer, date-code or IC/die data. Populating them requires a new driver
+   or firmware interface; the properties are present so that no CLI change is
+   needed once such an interface exists.
 
 Examples
 --------
