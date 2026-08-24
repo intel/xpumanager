@@ -569,6 +569,81 @@ ze_result_t driver::getLogs(UNUSED std::string fileName)
 	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
 }
 
+/*
+ * @brief Reports whether crash log management is available on this platform.
+ *
+ * @return true when the OS layer can drive crash log operations (Linux with the
+ *         iclg utility present), false otherwise.
+ */
+bool driver::crashlogSupported()
+{
+	TRACING();
+	return CRASHLOG_AVAILABLE();
+}
+
+/*
+ * @brief Queries the BDFs of every device that exposes a crash log source.
+ *
+ * @param[out] bdfs   Set filled with the BDF address of each available source.
+ * @param[out] output Any diagnostic text produced while querying the sources.
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t driver::crashlogListSources(UNUSED std::set<std::string> &bdfs, UNUSED std::string &output)
+{
+	TRACING();
+	int result = CRASHLOG_LIST_SOURCES(bdfs, output);
+	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/*
+ * @brief Runs an enable/disable/trigger/clear crash log operation for a device.
+ *
+ * @param[in]  verb   The iclg operation verb (e.g. "enable").
+ * @param[in]  bdf    The target device's BDF address.
+ * @param[out] output Any diagnostic text produced by the operation.
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t driver::crashlogControl(UNUSED const std::string &verb, UNUSED const std::string &bdf,
+									UNUSED std::string &output)
+{
+	TRACING();
+	int result = CRASHLOG_CONTROL(verb, bdf, output);
+	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/*
+ * @brief Extracts crash log records for a device into a directory.
+ *
+ * @param[in]  bdf       The target device's BDF address.
+ * @param[in]  outputDir Directory to write records to; empty for the default.
+ * @param[out] files     The path of each record actually written.
+ * @param[out] output    Any diagnostic text produced by the operation.
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t driver::crashlogExtract(UNUSED const std::string &bdf, UNUSED const std::string &outputDir,
+									UNUSED std::vector<std::string> &files, UNUSED std::string &output)
+{
+	TRACING();
+	int result = CRASHLOG_EXTRACT(bdf, outputDir, files, output);
+	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/*
+ * @brief Decodes a single extracted crash log record to JSON.
+ *
+ * @param[in]  inputFile The extracted record to decode.
+ * @param[in]  jsonFile  Destination path for the decoded JSON.
+ * @param[out] output    Any diagnostic text produced by the operation.
+ * @return ze_result_t indicating success or failure.
+ */
+ze_result_t driver::crashlogDecode(UNUSED const std::string &inputFile, UNUSED const std::string &jsonFile,
+								   UNUSED std::string &output)
+{
+	TRACING();
+	int result = CRASHLOG_DECODE(inputFile, jsonFile, output);
+	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
+}
+
 /**
  * @brief Resolves a single non-comma token (BDF address, numeric index, or empty) to a device.
  *

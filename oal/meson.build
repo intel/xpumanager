@@ -13,6 +13,7 @@ if is_windows
     'win/fs_lock.cpp',
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
+    'win/path_lookup_win.cpp',
     'win/process_platform.cpp',
     'win/thread.cpp',
     'win/win.cpp',
@@ -21,6 +22,8 @@ if is_windows
   oal_deps += windows_deps
 elif is_linux
   oal_sources = files(
+    'lin/crashlog_lin.cpp',
+    'lin/crashlog_lin_exec.cpp',
     'lin/dbg_log.cpp',
     'lin/dmi_reader.cpp',
     'lin/fs_lock.cpp',
@@ -28,6 +31,7 @@ elif is_linux
     'lin/i2c_interface.cpp',
     'lin/lin.cpp',
     'lin/linvf.cpp',
+    'lin/path_lookup.cpp',
     'lin/pci_database.cpp',
     'lin/process_platform.cpp',
     'lin/topology.cpp',

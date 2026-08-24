@@ -23,6 +23,7 @@
 #include <vector>
 #include <osvf.h>
 #include "topology.h"
+#include "crashlog_lin.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
@@ -64,6 +65,11 @@ inline auto GET_PCIE_PATHS(const std::vector<std::string> &bdfs)
 } // NOLINT(readability-identifier-naming) // Match MACRO style while providing a better interface for navigation
 typedef wchar_t TCHAR;
 #define GETLOGS(f) getLinLogs(f)
+#define CRASHLOG_AVAILABLE() linCrashlogAvailable()
+#define CRASHLOG_LIST_SOURCES(bdfs, out) linCrashlogListSources(bdfs, out)
+#define CRASHLOG_CONTROL(verb, bdf, out) linCrashlogControl(verb, bdf, out)
+#define CRASHLOG_EXTRACT(bdf, dir, files, out) linCrashlogExtract(bdf, dir, files, out)
+#define CRASHLOG_DECODE(in, json, out) linCrashlogDecode(in, json, out)
 #define GETDRMPATH(bdf) getDrmPath(bdf)
 #define CREATEVFS(deviceInfoPtr) linCreateVFs(deviceInfoPtr)
 #define REMOVEVFS(deviceInfoPtr) removeAllVFs(deviceInfoPtr)

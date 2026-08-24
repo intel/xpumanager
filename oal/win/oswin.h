@@ -120,6 +120,11 @@ struct option
 #define GET_TOPOLOGY(bdf, e) (UNUSED_VAR(bdf), UNUSED_VAR(e), 0)
 #define EXPORT_TOPOLOGY_XML(filename, gpuDevices) (UNUSED_VAR(filename), UNUSED_VAR(gpuDevices), 0)
 #define GETLOGS(f) 0
+#define CRASHLOG_AVAILABLE() false
+#define CRASHLOG_LIST_SOURCES(bdfs, out) (UNUSED_VAR(bdfs), UNUSED_VAR(out), 1)
+#define CRASHLOG_CONTROL(verb, bdf, out) (UNUSED_VAR(verb), UNUSED_VAR(bdf), UNUSED_VAR(out), 1)
+#define CRASHLOG_EXTRACT(bdf, dir, files, out) (UNUSED_VAR(bdf), UNUSED_VAR(dir), UNUSED_VAR(files), UNUSED_VAR(out), 1)
+#define CRASHLOG_DECODE(in, json, out) (UNUSED_VAR(in), UNUSED_VAR(json), UNUSED_VAR(out), 1)
 #define GETDRMPATH(bdf) ""
 #define CREATEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define REMOVEVFS(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
@@ -192,6 +197,17 @@ std::string getLocalCpus(const std::string &bdf);
 std::string getCpuList(const std::string &bdf);
 std::string timestamp();
 int amcCardDiscovery(std::vector<amcCardInfo> *amcDeviceList);
+
+/**
+ * @brief Report whether an executable named @p name is reachable via %PATH%.
+ *
+ * Windows counterpart of the Linux helper, provided for future commands that
+ * shell out on Windows. Only files matching the executable/script policy
+ * (%PATHEXT%, or a built-in fallback including .ps1 when it is unset) count: a
+ * @p name that carries an extension is accepted only when that extension is in
+ * the policy, and a bare name is tried against each policy extension.
+ */
+bool isExecutableInPath(const std::string &name);
 
 #endif // defined(_WIN32) && defined(_MSC_VER)
 

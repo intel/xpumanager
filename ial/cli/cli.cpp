@@ -9,6 +9,7 @@
 #include <cmd_amc.h>
 #include <cmd_listpciinfo.h>
 #include <cmd_config.h>
+#include <cmd_crashlog.h>
 #include <cmd_discovery.h>
 #include <cmd_dump.h>
 #include <cmd_health.h>
@@ -83,6 +84,7 @@ std::vector<function_entry> defaultCommandTable()
 		{.createFunc = createInstance<cmdHealth>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdAmc>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdListpciinfo>, .osType = OSTYPE::LINUX},
+		{.createFunc = createInstance<cmdCrashlog>, .osType = OSTYPE::LINUX},
 	};
 }
 

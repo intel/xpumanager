@@ -48,6 +48,15 @@ public:
 };
 
 SystemCommandResult execCommand(const std::string &command);
+
+/**
+ * @brief Report whether an executable named @p name is reachable via $PATH.
+ *
+ * Answers the same question as `command -v <name>` for an external program,
+ * without spawning a shell. A @p name containing a '/' is tested directly.
+ */
+bool isExecutableInPath(const std::string &name);
+
 std::string findResourceFile(const std::string &relativePath);
 
 #endif

@@ -13,6 +13,7 @@ ial_cmn_sources = files(
   'metrics/ecc.cpp',
   'cmd_amc.cpp',
   'cmd_config.cpp',
+  'cmd_crashlog.cpp',
   'cmd_discovery.cpp',
   'cmd_dump.cpp',
   'cmd_health.cpp',

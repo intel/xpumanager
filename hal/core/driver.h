@@ -7,6 +7,7 @@
 #ifndef _DRIVER_H
 #define _DRIVER_H
 
+#include <set>
 #include <string_view>
 #include <vector>
 #include "device.h"
@@ -67,6 +68,16 @@ public:
 	ze_result_t findDevice(const char *bdf, std::vector<devInfo> *dev);
 	void findSurvDevice(const char *bdf, std::vector<devInfo> *survDev);
 	ze_result_t getLogs(std::string fileName);
+
+	// Crash log management, delegated to the OS layer (Intel Crash Log CLI on
+	// Linux; unsupported on Windows).
+	bool crashlogSupported();
+	ze_result_t crashlogListSources(std::set<std::string> &bdfs, std::string &output);
+	ze_result_t crashlogControl(const std::string &verb, const std::string &bdf, std::string &output);
+	ze_result_t crashlogExtract(const std::string &bdf, const std::string &outputDir, std::vector<std::string> &files,
+								std::string &output);
+	ze_result_t crashlogDecode(const std::string &inputFile, const std::string &jsonFile, std::string &output);
+
 	ze_result_t run();
 };
 
