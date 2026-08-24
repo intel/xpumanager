@@ -1,0 +1,90 @@
+service:
+  create: false
+
+config:
+  receivers:
+    intel_xpu:
+      info_logs:
+        enabled: true
+  exporters:
+    otlp:
+      endpoint: "127.0.0.1:4317"
+      tls:
+        insecure: true
+  service:
+    pipelines:
+      logs:
+        exporters: [otlp]
+
+# NOTE: volumes from the test base values file are repeated here
+# (because Helm replaces lists instead of merging them).
+extraVolumes:
+  - name: stub-driver-config
+    emptyDir: {}
+  - name: stub-driver-config-cm
+    configMap:
+      name: level-zero-stub-driver-config
+  - name: otelcol-data
+    emptyDir: {}
+
+# Sidecars for this test. The first one is repeated from the test base values
+# (because Helm replaces lists instead of merging them):
+#   1. the stub driver config writer
+#   2. upstream opentelemetry-collector to receive log records from xpumd
+#   3. plain busybox to read back the output of the upstream collector
+initContainers:
+  - name: stub-driver-config-writer
+    image: busybox:1.37.0
+    restartPolicy: Always
+    command: ["sh", "-c", "cp /etc/level-zero-stub-cm/stub.yaml /etc/level-zero-stub/stub.yaml.tmp && mv /etc/level-zero-stub/stub.yaml.tmp /etc/level-zero-stub/stub.yaml && sleep inf"]
+    volumeMounts:
+      - name: stub-driver-config-cm
+        mountPath: /etc/level-zero-stub-cm
+        readOnly: true
+      - name: stub-driver-config
+        mountPath: /etc/level-zero-stub
+    startupProbe:
+      exec:
+        command: ["test", "-f", "/etc/level-zero-stub/stub.yaml"]
+      initialDelaySeconds: 1
+      periodSeconds: 1
+  - name: otel-collector
+    image: otel/opentelemetry-collector:0.157.0
+    restartPolicy: Always
+    args:
+      - |-
+        --config=yaml:receivers:
+          otlp:
+            protocols:
+              grpc:
+                # Bind to all IPs: the startupProbe connects to the pod IP
+                # and the receiver must accept a connection from xpumd (to 127.0.0.1)
+                endpoint: 0.0.0.0:4317
+        exporters:
+          file:
+            path: /data/output.json
+        service:
+          telemetry:
+            # Disable self-metrics endpoint (collides with xpumd)
+            metrics:
+              level: none
+          pipelines:
+            logs:
+              receivers: [otlp]
+              exporters: [file]
+    volumeMounts:
+      - name: otelcol-data
+        mountPath: /data
+    startupProbe:
+      tcpSocket:
+        port: 4317
+      periodSeconds: 1
+      failureThreshold: 30
+  - name: test-helper
+    image: busybox:1.37.0
+    restartPolicy: Always
+    command: ["sleep", "inf"]
+    volumeMounts:
+      - name: otelcol-data
+        mountPath: /data
+        readOnly: true

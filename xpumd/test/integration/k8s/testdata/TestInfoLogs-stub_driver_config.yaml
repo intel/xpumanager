@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536
+
+    # CPER data is pending from the start, i.e. the records are read as soon as
+    # the collection has been enabled.
+    Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
+
+    Devices:
+      - Properties:
+          Core:
+            Type: 1       # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x1234
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "12345678-0000-0000-0000-000000000000"
+          ModelName: "Super 3000"
+          VendorName: "ACME Inc."
+          SerialNumber: "SN-0001"
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 4096  # in kilobytes
+          IsInstancedCollectionSupported: true
+        Records:
+          # A record of the device above, i.e. attributed to it
+          - Data: "CPER-RECORD-DEVICE"
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            Uuid:
+              Id: "12345678-000a-00b0-0c00-00000000d000"
+            Timestamp: 1234567  # microseconds since boot
+          # A record of a device that Sysman does not report
+          - Data: "CPER-RECORD-UNKNOWN"
+            Address:
+              Domain: 0
+              Bus: 6
+              Device: 0
+              Function: 0
+            Uuid:
+              Id: "12345678-000a-00b0-0c00-00000000d001"
+            Timestamp: 7654321

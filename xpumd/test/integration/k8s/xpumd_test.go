@@ -330,3 +330,59 @@ func TestCrashlog(t *testing.T) {
 		assert.Equal(t, crashlogData, rec.Body, "crashlog record body mismatch")
 	})
 }
+
+// TestInfoLogs verifies the info log collection of the intel_xpu receiver, i.e.
+// the CPER records that the GPU driver provides.
+//
+// Like in TestCrashlog, the emitted records are collected with a stock
+// opentelemetry-collector receiving them through our otlp exporter.
+func TestInfoLogs(t *testing.T) {
+	tc := newTestConfig(t)
+	t.Cleanup(func() { tc.cleanup(t) })
+	tc.setup(t)
+
+	records := waitForInfoLogRecords(t, tc, 2, 60*time.Second)
+
+	// Keep the first record of each PCI address, the rest are repeats of them.
+	recordByBDF := map[string]logRecord{}
+	for _, rec := range records {
+		bdf := rec.Attributes["pci.bdf"]
+		if _, seen := recordByBDF[bdf]; !seen {
+			recordByBDF[bdf] = rec
+		}
+	}
+
+	t.Run("KnownDevice", func(t *testing.T) {
+		rec, found := recordByBDF["0000:05:00.0"]
+		require.True(t, found, "no info log record of the Sysman device found, got: %v", recordByBDF)
+
+		assert.Equal(t, []byte("CPER-RECORD-DEVICE"), rec.Body, "info log record body mismatch")
+		assert.Equal(t, "Error", rec.SeverityText, "info log record severity mismatch")
+		// The record is attributed to the device that reported it.
+		want := map[string]string{
+			"cper.timestamp_us": "1234567",
+			"cper.platform_id":  "12345678-000a-00b0-0c00-00000000d000",
+			"pci.bdf":           "0000:05:00.0",
+			"hw.id":             "12345678-0000-0000-0000-000000000000",
+			"hw.name":           "gpu-1",
+			"hw.model":          "Super 3000",
+			"pci.device_id":     "0bd5",
+			"pci.vendor_id":     "1234",
+		}
+		assert.Equal(t, want, rec.Attributes, "info log record attributes mismatch")
+	})
+
+	t.Run("UnknownDevice", func(t *testing.T) {
+		rec, found := recordByBDF["0000:06:00.0"]
+		require.True(t, found, "no info log record of the unknown device found, got: %v", recordByBDF)
+
+		assert.Equal(t, []byte("CPER-RECORD-UNKNOWN"), rec.Body, "info log record body mismatch")
+		// Only the metadata of the record itself, there is no device to attribute it to.
+		want := map[string]string{
+			"cper.timestamp_us": "7654321",
+			"cper.platform_id":  "12345678-000a-00b0-0c00-00000000d001",
+			"pci.bdf":           "0000:06:00.0",
+		}
+		assert.Equal(t, want, rec.Attributes, "info log record attributes mismatch")
+	})
+}
