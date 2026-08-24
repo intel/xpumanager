@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cmd_smi.h>
 #include <cmd_dump.h>
+#include <metrics_registry.h>
 #include <array>
 #include <charconv>
 #include <exception>
@@ -39,6 +40,9 @@ struct PreArgs
 	std::string queryGpu;
 	std::string deviceSpec;
 	std::string displayType;
+	// Which of --display / --metrics supplied displayType, so a rejection can name the flag the
+	// user actually typed. Points at a FlagSpec::longName literal, or empty if neither was given.
+	std::string_view displayFlag;
 	std::string loopStr;
 	std::string countStr;
 	std::string logFilePath;
@@ -53,6 +57,9 @@ struct FlagSpec
 	std::string *value;			// receives the extracted value (always non-null)
 	std::optional<std::reference_wrapper<bool>> matchedFlag; // set to true when matched; nullopt = unused
 	std::string_view defaultIfBare; // stored when flag has no trailing argument; empty = disallow bare
+	// Receives longName when this flag matches, so aliases writing one `value` can be told apart.
+	// Assigned on every match, so it always agrees with whichever flag wrote `value` last.
+	std::string_view *matchedName = nullptr;
 };
 
 // Try to extract one flag from argv[i], advancing i if the value is space-separated.
@@ -122,12 +129,14 @@ std::pair<PreArgs, std::vector<std::string>> extractPreArgs(arg_struct *args)
 		 .shortFlag = "",
 		 .value = &pre.displayType,
 		 .matchedFlag = std::nullopt,
-		 .defaultIfBare = ""},
+		 .defaultIfBare = "",
+		 .matchedName = &pre.displayFlag},
 		{.longName = "--metrics",
 		 .shortFlag = "",
 		 .value = &pre.displayType,
 		 .matchedFlag = std::nullopt,
-		 .defaultIfBare = ""},
+		 .defaultIfBare = "",
+		 .matchedName = &pre.displayFlag},
 		{.longName = "--loop-ms",
 		 .shortFlag = "",
 		 .value = &pre.loopStr,
@@ -166,8 +175,15 @@ std::pair<PreArgs, std::vector<std::string>> extractPreArgs(arg_struct *args)
 			}
 			continue;
 		}
-		if (std::ranges::any_of(
-				flagSpecs, [&](const FlagSpec &spec) { return tryExtractFlag(spec, a, i, args->argc, args->argv); })) {
+		if (std::ranges::any_of(flagSpecs, [&](const FlagSpec &spec) {
+				if (!tryExtractFlag(spec, a, i, args->argc, args->argv)) {
+					return false;
+				}
+				if (spec.matchedName != nullptr) {
+					*spec.matchedName = spec.longName;
+				}
+				return true;
+			})) {
 			continue;
 		}
 		argvVec.emplace_back(a);
@@ -248,8 +264,14 @@ void DefaultParser::printExtraOptions()
 	PRINT("  --query-gpu=<fields>        Single-shot query of per-GPU metrics (comma-separated field names)\n");
 	PRINT("                              Example: --query-gpu=temperature.gpu,power.draw --id=0\n");
 	PRINT("  --id=<n>                    Select GPU by index or PCI BDF\n");
-	PRINT("  --display=TYPE[,TYPE]       Show only selected sections (MEMORY,UTILIZATION,ECC,\n");
-	PRINT("                              TEMPERATURE,POWER,CLOCK,COMPUTE,PIDS,...)\n");
+	PRINT("  --display=TYPE[,TYPE]       Query whole metric sections, or individual fields:\n");
+	// Generated from the registry's GROUP_TABLE rather than written out here, so this can
+	// never again advertise a section that --display does not actually accept (XPUM-1480).
+	// The width leaves the wrapped lines inside the 30-column gutter used above, whose
+	// widest existing description is 66 columns.
+	for (const auto &line : metrics::formatSectionNames(metrics::SECTION_LIST_HELP_WIDTH)) {
+		PRINT("                              {}\n", line.c_str());
+	}
 	PRINT("  --loop[=<sec>]              Repeat query every <sec> seconds (default: 1)\n");
 	PRINT("  --loop-ms=<ms>              Repeat query every <ms> milliseconds\n");
 	PRINT("  --count=<n>                 Number of loop iterations (default: infinite)\n");
@@ -351,8 +373,15 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 		}
 		// If only --display was given (no --query-gpu), treat the display type as the
 		// metric group selector — equivalent to --query-gpu=<displayType>.
-		const std::string &effectiveQuery = pre.queryGpu.empty() ? pre.displayType : pre.queryGpu;
-		return cmdDump::runQuery(effectiveQuery, pre.deviceSpec, args, buildQueryFormat(pre, formatStr));
+		const bool fromDisplay = pre.queryGpu.empty();
+		const std::string &effectiveQuery = fromDisplay ? pre.displayType : pre.queryGpu;
+		// --metrics is an alias for --display, so pick the selector by the flag that was actually
+		// typed; otherwise a rejected --metrics value would be blamed on --display (XPUM-1480).
+		QuerySelector selector = QuerySelector::QueryGpu;
+		if (fromDisplay) {
+			selector = pre.displayFlag == "--metrics" ? QuerySelector::Metrics : QuerySelector::Display;
+		}
+		return cmdDump::runQuery(effectiveQuery, pre.deviceSpec, args, buildQueryFormat(pre, formatStr), selector);
 	}
 
 	// No query/version/list-gpus flags, but options like -f may have been extracted —

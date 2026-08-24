@@ -898,13 +898,70 @@ void addFieldHelp(std::vector<helpCmd> &list, const std::string &fieldName, std:
 	}
 }
 
+/**
+ * @brief Spells the top-level flag a runQuery() selector came from, for diagnostics that name it.
+ *
+ * @param selector  Which flag supplied the metrics string.
+ * @return          The flag as the user would have typed it, e.g. "--metrics".
+ */
+[[nodiscard]] const char *selectorFlagName(QuerySelector selector)
+{
+	switch (selector) {
+	case QuerySelector::Display:
+		return "--display";
+	case QuerySelector::Metrics:
+		return "--metrics";
+	case QuerySelector::QueryGpu:
+		break;
+	}
+	return "--query-gpu";
+}
+
+/**
+ * @brief Whether @p selector's flag is documented in terms of display sections.
+ *
+ * @param selector  Which flag supplied the metrics string.
+ * @return          True for --display and its --metrics alias; false for --query-gpu.
+ */
+[[nodiscard]] bool selectorNamesSections(QuerySelector selector) { return selector != QuerySelector::QueryGpu; }
+
+// Width budget for the section-name list below. ERR() prefixes "[Error] " and the list is
+// indented two more spaces, so 68 keeps the emitted lines within 78 columns.
+constexpr std::size_t QUERY_ERROR_WRAP_WIDTH = 68;
+
+/**
+ * @brief Tell the user what @p selector's flag *will* accept, after rejecting what they typed.
+ *
+ * Both of runQuery()'s selector-rejection paths — a numeric metric ID, and a value that resolves
+ * to no fields — route through here, so a --display (or --metrics) mistake is always answered with
+ * the section names and a --query-gpu mistake with field names (XPUM-1480). Later failures such as
+ * an unknown device return without guidance, since the metrics string was not the problem.
+ *
+ * @param selector  Which flag supplied the rejected metrics string.
+ */
+void printSelectorGuidance(QuerySelector selector)
+{
+	if (selectorNamesSections(selector)) {
+		ERR("Valid sections are:\n");
+		for (const auto &line : metrics::formatSectionNames(QUERY_ERROR_WRAP_WIDTH)) {
+			ERR("  {}\n", line.c_str());
+		}
+		ERR("Individual field names like 'temperature.gpu' are also accepted.\n");
+	} else {
+		ERR("Use field names like 'temperature.gpu,power.draw', section names like 'POWER', or "
+			"aliases like 'pu' (POWER+TEMPERATURE+UTILIZATION).\n");
+	}
+}
+
 } // namespace
 
 // -- runQuery ---------------------------------------------------------
 
-int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec, arg_struct *args, QueryFormat fmt)
+int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec, arg_struct *args, QueryFormat fmt,
+					  QuerySelector selector)
 {
-	// --query-gpu accepts dot-notation field names and group aliases, not legacy numeric IDs.
+	// Neither --query-gpu nor --display takes the legacy numeric metric IDs that
+	// `dump --metrics` still accepts; both want dot-notation fields or section names.
 	for (auto &&rng : std::string_view{metrics} | std::views::split(',')) {
 		std::string_view sv{rng.begin(), rng.end()};
 		const auto b = sv.find_first_not_of(" \t");
@@ -912,16 +969,20 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 			continue;
 		}
 		if (parseInteger<int>(sv.substr(b, sv.find_last_not_of(" \t") - b + 1)).has_value()) {
-			ERR("Numeric metric IDs are not supported by --query-gpu.\n");
-			ERR("Use field names like 'temperature.gpu,power.draw' or group aliases like 'pu'.\n");
+			ERR("Numeric metric IDs are not supported by {}.\n", selectorFlagName(selector));
+			printSelectorGuidance(selector);
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
 	}
 
 	auto fields = metrics::resolveQuery(metrics);
 	if (fields.empty()) {
-		ERR("No valid metrics matched: '{}'", metrics.c_str());
-		ERR("Use field names like 'temperature.gpu,power.draw' or aliases like 'pu' (POWER+UTILIZATION).\n");
+		if (selectorNamesSections(selector)) {
+			ERR("No valid display section matched: '{}'\n", metrics.c_str());
+		} else {
+			ERR("No valid metrics matched: '{}'\n", metrics.c_str());
+		}
+		printSelectorGuidance(selector);
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 

@@ -28,6 +28,7 @@
 #include <pci.h>
 #include <power.h>
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <chrono>
 #include <iterator>
@@ -373,6 +374,69 @@ std::vector<const QueryMetric *> resolveQuery(std::string_view csv)
 		}
 	}
 	return result;
+}
+
+/**
+ * @brief Snapshots the names in detail::GROUP_TABLE into a contiguous static array.
+ *
+ * The array is sized from and filled by GROUP_TABLE at compile time, so it always holds exactly
+ * that many names and in that order; adding or renaming a section needs no change here. See
+ * metrics_registry.h for what callers may rely on.
+ *
+ * @return  Span over function-local static storage, valid for the lifetime of the program.
+ */
+std::span<const std::string_view> sectionNames() noexcept
+{
+	static constexpr auto NAMES = []() constexpr {
+		std::array<std::string_view, detail::GROUP_TABLE.size()> names{};
+		std::size_t n = 0;
+		for (const auto &entry : detail::GROUP_TABLE) {
+			names[n++] = entry.name;
+		}
+		return names;
+	}();
+	return NAMES;
+}
+
+/**
+ * @brief Greedily wraps sectionNames() into lines, packing each line until the next name overflows.
+ *
+ * The separating comma is appended to a name before the fit is tested, so a comma can never be
+ * left dangling at the start of the next line. @p width is a budget rather than a hard limit: a
+ * single name longer than it still gets a line to itself instead of being split or dropped.
+ *
+ * @param width  Preferred maximum line length, in characters.
+ * @return       The rendered lines, in GROUP_TABLE order; see metrics_registry.h for guarantees.
+ */
+std::vector<std::string> formatSectionNames(std::size_t width)
+{
+	std::vector<std::string> lines;
+	std::string current;
+
+	const auto names = sectionNames();
+	for (std::size_t i = 0; i < names.size(); ++i) {
+		std::string token{names[i]};
+		if (i + 1 < names.size()) {
+			token += ',';
+		}
+		if (current.empty()) {
+			current = std::move(token);
+		} else if (current.size() + 1 + token.size() > width) {
+			lines.push_back(std::move(current));
+			current = std::move(token);
+		} else {
+			current += ' ';
+			current += token;
+		}
+	}
+
+	if (!current.empty()) {
+		lines.push_back(std::move(current));
+	}
+	if (lines.empty()) {
+		lines.emplace_back();
+	}
+	return lines;
 }
 
 std::string formatGroups(MetricGroup groups)

@@ -432,6 +432,42 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  */
 [[nodiscard]] std::string formatGroups(MetricGroup groups);
 
+/**
+ * Every section name accepted by @c --display / @c --metrics, in GROUP_TABLE order.
+ *
+ * Unlike @ref formatGroups (which renders the names present in a bitmask, and so cannot
+ * represent @c ALL) this is the full set of canonical section names, including @c IDENTITY
+ * and @c ALL. Help text and error messages must be built from this rather than from a
+ * hand-written list, so they can never advertise a section that @ref parseGroupMask
+ * does not accept.
+ *
+ * The single-letter shortcuts and their multi-character combinations (see @ref parseGroupMask)
+ * are also accepted but deliberately unlisted here; @c "dump --help" renders them as aliases.
+ *
+ * @return  Span over a static array; valid for the lifetime of the program.
+ */
+[[nodiscard]] std::span<const std::string_view> sectionNames() noexcept;
+
+/**
+ * Render @ref sectionNames() as comma-separated text, wrapped to @p width columns.
+ *
+ * Shared by the @c --display help text and the unrecognised-section error path so both
+ * stay in lock-step with GROUP_TABLE.
+ *
+ * @param width  Maximum line length in characters, excluding any indent the caller adds.
+ *               A @p width shorter than a single name still emits that name on its own line.
+ * @return       One or more lines; never empty.
+ */
+[[nodiscard]] std::vector<std::string> formatSectionNames(std::size_t width);
+
+/**
+ * Width the top-level @c --display help text renders @ref formatSectionNames() at.
+ *
+ * Lives here rather than beside the help printer so the renderer and its tests cannot drift
+ * apart — the same reason the section list itself is generated instead of written out.
+ */
+inline constexpr std::size_t SECTION_LIST_HELP_WIDTH = 65;
+
 // ── MetricOutput concept ───────────────────────────────────────────────────────
 
 /** Any type satisfying MetricOutput can serve as a sink for evaluated metric results.

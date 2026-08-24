@@ -39,6 +39,19 @@ struct QueryFormat
 	int count = 0;		   /**< Number of iterations (0 = run until Ctrl-C) */
 };
 
+/**
+ * Which flag supplied runQuery()'s metrics string — controls the wording of rejection diagnostics.
+ *
+ * Display and Metrics behave identically; they are distinct only so a diagnostic can quote the
+ * flag the user actually typed instead of its alias.
+ */
+enum class QuerySelector
+{
+	QueryGpu, /**< --query-gpu: the user is naming individual fields */
+	Display,  /**< --display: the user is naming display sections */
+	Metrics,  /**< --metrics: the --display alias */
+};
+
 class cmdDump : public cmds
 {
 public:
@@ -49,8 +62,9 @@ public:
 
 	// Single-shot query: resolves `metrics` (comma-separated field names / legacy IDs),
 	// samples all devices (filtered by `deviceSpec`, empty = all), and prints one row.
+	// `selector` only affects the wording of the diagnostics emitted when `metrics` is rejected.
 	static int runQuery(const std::string &metrics, const std::string &deviceSpec, arg_struct *args,
-						QueryFormat fmt = QueryFormat{});
+						QueryFormat fmt = QueryFormat{}, QuerySelector selector = QuerySelector::QueryGpu);
 
 	// prints one line per GPU in the format:
 	//   GPU <index>: <name> (UUID: <uuid>)

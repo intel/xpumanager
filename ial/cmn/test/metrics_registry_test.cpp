@@ -95,6 +95,131 @@ TEST_CASE("formatGroups emits canonical group names")
 
 TEST_CASE("formatGroups returns empty string for NONE") { CHECK(formatGroups(MetricGroup::NONE).empty()); }
 
+// ── sectionNames / formatSectionNames ─────────────────────────────────────────
+// These back the --display help text and its error message. The invariant they exist to
+// protect is that neither can advertise a section name that parseGroupMask rejects — the
+// XPUM-1480 defect, where hand-written help offered COMPUTE and PIDS.
+
+TEST_CASE("sectionNames lists every GROUP_TABLE entry")
+{
+	const auto names = sectionNames();
+	// metrics::detail must be spelled out — doctest::detail is also in scope here.
+	REQUIRE(names.size() == metrics::detail::GROUP_TABLE.size());
+	for (const auto &entry : metrics::detail::GROUP_TABLE) {
+		CHECK_MESSAGE(std::ranges::find(names, entry.name) != names.end(), entry.name, " missing from sectionNames()");
+	}
+}
+
+TEST_CASE("every advertised section name is accepted by parseGroupMask")
+{
+	// The regression guard for XPUM-1480: help text is generated from this list, so anything
+	// it contains must round-trip back to a real group mask.
+	for (const std::string_view name : sectionNames()) {
+		CHECK_MESSAGE(parseGroupMask(name) != MetricGroup::NONE, name, " is advertised but not parseable");
+	}
+}
+
+TEST_CASE("XPUM-1480: COMPUTE and PIDS are not display sections")
+{
+	// Both were advertised by the top-level --display help text but never existed in
+	// GROUP_TABLE, so --display=COMPUTE / --display=PIDS failed. If either is ever
+	// implemented as a real section, it must appear in sectionNames() too.
+	for (const std::string_view bogus : std::to_array<std::string_view>({"COMPUTE", "PIDS"})) {
+		CHECK_MESSAGE(parseGroupMask(bogus) == MetricGroup::NONE, bogus, " unexpectedly parses as a group");
+		CHECK_MESSAGE(std::ranges::find(sectionNames(), bogus) == sectionNames().end(), bogus,
+					  " is advertised but parseGroupMask rejects it");
+	}
+}
+
+TEST_CASE("XPUM-1480: --display resolves individual field names, as its help text claims")
+{
+	// The help text reads "--display=TYPE[,TYPE]  Query whole metric sections, or individual
+	// fields", and the rejection guidance likewise offers 'temperature.gpu'. Both promises rest on
+	// runQuery() handing --display's value to resolveQuery(), which takes dotted field names as
+	// well as section names. Were that to stop holding, the help would again be advertising a
+	// syntax the flag rejects, which is the drift XPUM-1480 was filed for.
+	const auto field = resolveQuery("temperature.gpu");
+	CHECK_FALSE(field.empty());
+
+	// A section and a field in one value must both contribute, so mixing the two is really
+	// supported rather than the first token silently winning.
+	const auto section = resolveQuery("POWER");
+	REQUIRE_FALSE(section.empty());
+	CHECK(resolveQuery("POWER,temperature.gpu").size() > section.size());
+}
+
+TEST_CASE("formatSectionNames wraps to the requested width without losing names")
+{
+	// Rejoining the wrapped lines must reproduce the comma-separated list exactly.
+	std::string expected;
+	for (const std::string_view name : sectionNames()) {
+		if (!expected.empty()) {
+			expected += ", ";
+		}
+		expected.append(name);
+	}
+
+	for (const std::size_t width : std::to_array<std::size_t>({20, 40, 70, 1000})) {
+		const auto lines = formatSectionNames(width);
+		REQUIRE_FALSE(lines.empty());
+
+		std::string joined;
+		for (const auto &line : lines) {
+			if (!joined.empty()) {
+				joined += ' ';
+			}
+			joined += line;
+		}
+		CHECK_MESSAGE(joined == expected, "width ", width, ": got '", joined, "'");
+	}
+}
+
+TEST_CASE("formatSectionNames honours the width budget where a name allows it")
+{
+	// Every line must fit the budget, except a line holding a single name longer than it.
+	constexpr std::size_t WIDTH = 40;
+	for (const auto &line : formatSectionNames(WIDTH)) {
+		// Extra parens: doctest cannot decompose an expression containing '||'.
+		const bool fits = (line.size() <= WIDTH) || (line.find(' ') == std::string::npos);
+		CHECK_MESSAGE(fits, "over-long line: '", line, "'");
+	}
+}
+
+TEST_CASE("formatSectionNames actually packs names onto shared lines")
+{
+	// Guards the other direction from the width-budget check above: without this, a wrapper
+	// that emitted every name on its own line would still satisfy "no line is too long" and
+	// "no name is lost", and the help text would silently grow to one section per line.
+	const auto names = sectionNames();
+	REQUIRE(names.size() > 2);
+
+	// Wide enough for the whole list: it must collapse to a single line.
+	std::size_t total = 0;
+	for (const std::string_view name : names) {
+		total += name.size() + 2; // ", "
+	}
+	CHECK(formatSectionNames(total + 1).size() == 1);
+
+	// At the width the help text actually renders, at least one line must hold two names.
+	// Phrased against names.size() rather than a fixed line count so that adding, removing or
+	// renaming a section cannot make this unsatisfiable.
+	const auto helpLines = formatSectionNames(SECTION_LIST_HELP_WIDTH);
+	CHECK(helpLines.size() < names.size());
+
+	// Each line except the last must be too full to accept the first name off the next line.
+	for (std::size_t i = 0; i + 1 < helpLines.size(); ++i) {
+		const auto nextName = helpLines[i + 1].substr(0, helpLines[i + 1].find(' '));
+		CHECK_MESSAGE(helpLines[i].size() + 1 + nextName.size() > SECTION_LIST_HELP_WIDTH, "line ", i,
+					  " left room for '", nextName, "'");
+	}
+}
+
+TEST_CASE("formatSectionNames emits one name per line at a tiny width")
+{
+	const auto lines = formatSectionNames(1);
+	CHECK(lines.size() == sectionNames().size());
+}
+
 // ── Shared fixture ────────────────────────────────────────────────────────────
 // A zero-initialised device has default-constructed HAL sub-objects.
 // All HAL calls fail gracefully and write zeros, so availability flags stay false.
@@ -106,6 +231,15 @@ struct ZeroDeviceFixture
 };
 
 // ── Registry API ──────────────────────────────────────────────────────────────
+
+TEST_CASE("every advertised section resolves to at least one metric")
+{
+	// Stronger than the parseGroupMask round-trip: a section that parses but selects no
+	// columns would still leave `--display=<that section>` looking broken to a user.
+	for (const std::string_view name : sectionNames()) {
+		CHECK_MESSAGE(!resolveQuery(name).empty(), name, " is advertised but selects no metrics");
+	}
+}
 
 TEST_CASE("getQueryMetrics equals getMetricsByGroup ALL")
 {
