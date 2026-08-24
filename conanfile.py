@@ -42,7 +42,7 @@ class XpumConan(ConanFile):
 
     def requirements(self):
         if not self.options.use_system_levelzero:
-            self.requires("level-zero/1.27.0")
+            self.requires("level-zero/1.33.0")
         if not self.options.use_system_igsc:
             self.requires("igsc/1.2.0")
         self.requires("nlohmann_json/3.10.2")

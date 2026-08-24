@@ -9,6 +9,20 @@
 
 #include "sysman.h"
 #include <map>
+#include <vector>
+
+/**
+ * @brief Experimental per-category RAS error state entry.
+ *
+ * Holds the error counter reported by the experimental RAS API for a single
+ * error category.
+ */
+struct ras_state_exp_t
+{
+	zes_ras_error_category_exp_t category;
+	uint64_t errorCount;
+	uint32_t tileId;
+};
 
 class LIBXPUM_API ras : public sysman
 {
@@ -26,6 +40,7 @@ public:
 	ze_result_t getErrors(zes_ras_error_cat_t type, zes_ras_error_type_t errorType, uint64_t *rasCounter);
 	ze_result_t getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t errorType,
 								 std::map<uint32_t, uint64_t> &countersPerTile, uint64_t *totalCounter);
+	ze_result_t getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> &rasErrStates);
 	ze_result_t clearErrors();
 	ze_result_t init(zes_device_handle_t device);
 	ze_result_t zesRun(zes_device_handle_t device);

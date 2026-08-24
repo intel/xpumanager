@@ -225,7 +225,7 @@ struct DeviceMetrics
 	SummaryStats fabricRxKBps;
 	SummaryStats fabricTxKBps;
 
-	std::map<zes_ras_error_cat_t, RasCounter> rasCounters;
+	std::map<zes_ras_error_category_exp_t, RasCounter> rasCounters;
 	EuArrayMetrics euMetrics;
 
 	uint32_t offlinePageCount = 0;

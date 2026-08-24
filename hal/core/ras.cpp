@@ -44,6 +44,8 @@ ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 	result = zesDeviceEnumRasErrorSets(device, &rasCount, rasHandles);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get RAS error sets. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		delete[] rasHandles;
+		rasHandles = nullptr;
 		return result;
 	}
 
@@ -298,6 +300,87 @@ ze_result_t ras::clearErrors()
 	}
 
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Retrieves per-tile RAS information using the experimental RAS API.
+ *
+ * This function queries the supported error categories for each enumerated RAS
+ * handle and populates @p rasErrStates for the corresponding @c zes_ras_error_type_t
+ * values. It uses the standard Level Zero experimental RAS entry points
+ * @c zesRasGetSupportedCategoriesExp and @c zesRasGetStateExp2 directly.
+ *
+ * The returned map is keyed by RAS error type and each value contains the per-tile
+ * experimental RAS state entries collected for that type.
+ *
+ * @param [out] rasErrStates Map of RAS error type to the per-tile experimental RAS states
+ *                           collected for that type.
+ * @return ze_result_t @c ZE_RESULT_SUCCESS on successful retrieval, or an error code otherwise.
+ */
+ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> &rasErrStates)
+{
+	TRACING();
+
+	rasErrStates.clear();
+
+	if (rasHandles == nullptr || rasCount == 0) {
+		ERR("No RAS handles available to query experimental RAS state.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	for (uint32_t i = 0; i < rasCount; i++) {
+		zes_ras_properties_t properties = {};
+		result = zesRasGetProperties(rasHandles[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get RAS properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		if (properties.type != ZES_RAS_ERROR_TYPE_CORRECTABLE && properties.type != ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
+			continue; // Skip non-correctable/uncorrectable types for now
+		}
+
+		uint32_t categoryCount = 0;
+		result = zesRasGetSupportedCategoriesExp(rasHandles[i], &categoryCount, nullptr);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get supported RAS categories count. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			return result;
+		}
+		DBG("RAS handle supports {} categories.\n", categoryCount);
+
+		if (categoryCount == 0) {
+			continue;
+		}
+
+		std::vector<zes_ras_error_category_exp_t> categories(categoryCount);
+		result = zesRasGetSupportedCategoriesExp(rasHandles[i], &categoryCount, categories.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get supported RAS categories. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		std::vector<zes_ras_state_exp2_t> states(categoryCount);
+		for (uint32_t j = 0; j < categoryCount; j++) {
+			states[j].stype = ZES_STRUCTURE_TYPE_RAS_STATE_EXP2;
+			states[j].pNext = nullptr;
+			states[j].errorCounter = 0;
+		}
+
+		result = zesRasGetStateExp2(rasHandles[i], categoryCount, categories.data(), states.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get RAS state. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			return result;
+		}
+
+		uint32_t tileId = properties.onSubdevice ? properties.subdeviceId : 0;
+		for (uint32_t j = 0; j < categoryCount; j++) {
+			rasErrStates[properties.type].push_back({categories[j], states[j].errorCounter, tileId});
+		}
+	}
+
+	return result;
 }
 
 /**

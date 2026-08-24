@@ -27,7 +27,6 @@
 #include "standby.h"
 #include "temperature.h"
 #include "vf.h"
-#include "rasexp.h"
 #include "offline_page.h"
 #include "powerexp.h"
 
@@ -106,7 +105,6 @@ private:
 	temperature temperatureInstance;
 	vf vfInstance;
 	metric metricInstance;
-	rasExp rasExpInstance;
 	pageOffline pageOfflineInstance;
 	powerExp powerExpInstance;
 
@@ -170,7 +168,6 @@ public:
 	standby *getStandby() { return &standbyInstance; }
 	temperature *getTemperature() { return &temperatureInstance; }
 	vf *getVF() { return &vfInstance; }
-	rasExp *getRASExp() { return &rasExpInstance; }
 	pageOffline *getPageOffline() { return &pageOfflineInstance; }
 	powerExp *getPowerExp() { return &powerExpInstance; }
 

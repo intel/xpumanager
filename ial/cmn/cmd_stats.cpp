@@ -21,31 +21,70 @@
 #include <thread>
 
 /**
- * @brief Structure pairing RAS error category enum with its display name
+ * @brief Structure pairing an experimental RAS error category enum with its display name
  *
- * This structure maintains the mapping between Level Zero RAS error category
- * enums and their human-readable string representations.
+ * This structure maintains the mapping between Level Zero experimental RAS error
+ * category enums (zes_ras_error_category_exp_t) and their human-readable string
+ * representations, matching the categories reported by zello_sysman.
  */
 struct RasCategoryInfo
 {
-	zes_ras_error_cat_t category;
+	zes_ras_error_category_exp_t category;
 	const char *name;
 };
 
 /**
- * @brief Global list of all RAS error categories with their display names
+ * @brief Global list of all experimental RAS error categories with their display names
  *
- * This vector defines all supported RAS error categories, pairing each
- * Level Zero enum value with its corresponding user-friendly name. This
- * serves as the definitive list for iteration and lookup operations.
+ * This vector defines the experimental RAS error categories reported by the
+ * Level Zero experimental RAS API (zesRasGetSupportedCategoriesExp /
+ * zesRasGetStateExp2), pairing each enum value with its user-friendly name.
+ * The set mirrors what zello_sysman prints: the standard categories (Reset,
+ * Programming, Driver, Compute, Non-Compute, Cache, Display, Memory, Scale,
+ * L3 Fabric) plus the Intel experimental categories (PCIe, Fabric, SOC Internal).
+ * This is the definitive ordered list used to render the stats table so that
+ * xpu-smi output matches sysman.
  */
 static const std::vector<RasCategoryInfo> RAS_CATEGORIES = {
-	{ZES_RAS_ERROR_CAT_RESET, "Reset"},
-	{ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS, "Programming Errors"},
-	{ZES_RAS_ERROR_CAT_DRIVER_ERRORS, "Driver Errors"},
-	{ZES_RAS_ERROR_CAT_CACHE_ERRORS, "Cache Errors"},
-	{ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, "Mem Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_RESET, "Reset"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS, "Programming Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_DRIVER_ERRORS, "Driver Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_COMPUTE_ERRORS, "Compute Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS, "Non-Compute Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, "Cache Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_DISPLAY_ERRORS, "Display Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS, "Memory Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_SCALE_ERRORS, "Scale Errors"},
+	{ZES_RAS_ERROR_CATEGORY_EXP_L3FABRIC_ERRORS, "L3 Fabric Errors"},
+	// Intel experimental RAS categories (zes_intel_ras_error_category_exp_t in
+	// hal/core/extensions/zes_intel_gpu_sysman.h). These extend the standard
+	// zes_ras_error_category_exp_t enum and are reported by the driver through the
+	// same category field, so they are matched here by their literal values. The
+	// extension header is not visible to this layer, hence the explicit casts.
+	{static_cast<zes_ras_error_category_exp_t>(10), "PCIe Errors"},			// PCIE_ERRORS
+	{static_cast<zes_ras_error_category_exp_t>(11), "Fabric Errors"},		// FABRIC_ERRORS
+	{static_cast<zes_ras_error_category_exp_t>(12), "SOC Internal Errors"}, // SOC_INTERNAL_ERRORS
 };
+
+/**
+ * @brief Resolve an experimental RAS category enum to its display name
+ *
+ * RAS_CATEGORIES covers every category defined by zes_ras_error_category_exp_t.
+ * Returns nullptr for an unrecognized category (e.g. a newer category not yet in
+ * the list); callers must guard against a null name.
+ *
+ * @param [in] category The experimental RAS error category enum value
+ * @return const char* The display name for the category, or nullptr if unknown
+ */
+static const char *rasExpCategoryName(zes_ras_error_category_exp_t category)
+{
+	for (const auto &info : RAS_CATEGORIES) {
+		if (info.category == category) {
+			return info.name;
+		}
+	}
+	return nullptr;
+}
 
 /**
  * @brief Conversion factor from microjoules to joules
@@ -213,11 +252,13 @@ SummaryStats cmdStats::computeSummaryStats(const std::vector<double> &samples)
 /**
  * @brief Collect RAS (Reliability, Availability, Serviceability) error counters
  *
- * This function queries the HAL RAS layer to collect error counts for all RAS
- * error categories including Reset, Programming Errors, Driver Errors, Cache Errors
- * (Correctable/Uncorrectable), and Memory Errors (Correctable/Uncorrectable).
- * For each category, it retrieves both correctable and uncorrectable error counts
- * and populates the DeviceMetrics rasCounters map.
+ * This function queries the HAL RAS layer via the experimental RAS API
+ * (getErrorsPerTileRasExp) and folds the returned per-type, per-tile error states
+ * into DeviceMetrics::rasCounters, keyed by experimental error category
+ * (Reset, Programming, Driver, Compute, Non-Compute, Cache, Display, Memory,
+ * Scale, L3 Fabric, plus the Intel PCIe/Fabric/SOC Internal categories).
+ * Correctable and uncorrectable counts are split by the RAS error set type so
+ * the output matches zello_sysman.
  *
  * @param [in] device The device to collect RAS counters from
  * @param [out] metrics Output structure to store RAS counter data
@@ -231,43 +272,45 @@ ze_result_t cmdStats::collectRasCounters(devInfo *device, DeviceMetrics &metrics
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	rasExp *rasExpInstance = device->dev->getRASExp();
-	if (rasExpInstance != nullptr && rasExpInstance->isRasExpEnabled()) {
-		DBG("Using RAS Experimental extension for error collection.\n");
-		std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> rasErrStates;
-		return rasExpInstance->getErrorsPerTileRasExp(rasErrStates);
-	}
-
 	auto *rasHandler = reinterpret_cast<::ras *>(device->dev->getRAS());
 	if (rasHandler == nullptr) {
 		DBG("RAS handler not available for device {}.\n", device->index);
 		return ZE_RESULT_SUCCESS; // Not an error, just not supported
 	}
 
-	for (const auto &categoryInfo : RAS_CATEGORIES) {
-		RasCounter counter;
-		counter.categoryName = categoryInfo.name;
+	DBG("Using RAS Experimental extension for error collection.\n");
+	std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> rasErrStates;
+	ze_result_t result = rasHandler->getErrorsPerTileRasExp(rasErrStates);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to collect experimental RAS error state: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
 
-		ze_result_t result = rasHandler->getErrorsPerTile(categoryInfo.category, ZES_RAS_ERROR_TYPE_CORRECTABLE,
-														  counter.correctablePerTile, &counter.correctableTotal);
-		if (result == ZE_RESULT_SUCCESS) {
+	// Fold the per-type/per-tile experimental RAS states into rasCounters keyed by
+	// experimental category. The correctable/uncorrectable split comes from the
+	// zes_ras_error_type_t of the enumerated RAS error set (matching zello_sysman).
+	for (const auto &[errorType, states] : rasErrStates) {
+		const bool correctable = (errorType == ZES_RAS_ERROR_TYPE_CORRECTABLE);
+		for (const auto &state : states) {
+			RasCounter &counter = metrics.rasCounters[state.category];
 			counter.valid = true;
+			counter.categoryName = rasExpCategoryName(state.category);
+
+			if (correctable) {
+				counter.correctablePerTile[state.tileId] += state.errorCount;
+				counter.correctableTotal += state.errorCount;
+			} else {
+				counter.uncorrectablePerTile[state.tileId] += state.errorCount;
+				counter.uncorrectableTotal += state.errorCount;
+			}
 		}
+	}
 
-		result = rasHandler->getErrorsPerTile(categoryInfo.category, ZES_RAS_ERROR_TYPE_UNCORRECTABLE,
-											  counter.uncorrectablePerTile, &counter.uncorrectableTotal);
-		if (result == ZE_RESULT_SUCCESS) {
-			counter.valid = true;
-		}
-
-		if (counter.valid) {
-			counter.total = counter.correctableTotal + counter.uncorrectableTotal;
-		}
-
-		metrics.rasCounters[categoryInfo.category] = counter;
-
-		DBG("RAS Category {}: correctable={}, uncorrectable={}, total={}\n", counter.categoryName,
-			counter.correctableTotal, counter.uncorrectableTotal, counter.total);
+	for (auto &[category, counter] : metrics.rasCounters) {
+		counter.total = counter.correctableTotal + counter.uncorrectableTotal;
+		DBG("RAS Category {}: correctable={}, uncorrectable={}, total={}\n",
+			counter.categoryName != nullptr ? counter.categoryName : "Unknown", counter.correctableTotal,
+			counter.uncorrectableTotal, counter.total);
 	}
 
 	return ZE_RESULT_SUCCESS;
@@ -1430,7 +1473,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		if (rasResult == ZE_RESULT_SUCCESS && !metrics.rasCounters.empty()) {
 			auto &rasJson = deviceJson["ras_errors"];
 			for (const auto &[category, counter] : metrics.rasCounters) {
-				if (counter.valid) {
+				if (counter.valid && counter.categoryName != nullptr) {
 					auto &categoryJson = rasJson[counter.categoryName];
 					categoryJson["correctable_total"] = counter.correctableTotal;
 					categoryJson["uncorrectable_total"] = counter.uncorrectableTotal;
@@ -1890,8 +1933,9 @@ void StatsTextPrinter::addRasCounterRows(TableBuilder &table, const nlohmann::or
 
 	auto &rasJson = deviceJson["ras_errors"];
 
-	// For legacy compatibility, we show cache errors separately as correctable/uncorrectable
-	// and map memory errors from Non-Compute errors category
+	// Each experimental RAS category is shown split into correctable and
+	// uncorrectable rows, matching the categories and counts reported by
+	// zello_sysman.
 	auto addRasCategory = [&](const std::string &jsonKey, const std::string &errorType = "") {
 		std::string displayName = jsonKey;
 		if (errorType == "correctable") {
@@ -1969,13 +2013,11 @@ void StatsTextPrinter::addRasCounterRows(TableBuilder &table, const nlohmann::or
 	};
 
 	for (const auto &categoryInfo : RAS_CATEGORIES) {
-		if (categoryInfo.category == ZES_RAS_ERROR_CAT_CACHE_ERRORS ||
-			categoryInfo.category == ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS) {
-			addRasCategory(categoryInfo.name, "correctable");
-			addRasCategory(categoryInfo.name, "uncorrectable");
-		} else {
-			addRasCategory(categoryInfo.name);
+		if (!rasJson.contains(categoryInfo.name)) {
+			continue;
 		}
+		addRasCategory(categoryInfo.name, "correctable");
+		addRasCategory(categoryInfo.name, "uncorrectable");
 	}
 }
 

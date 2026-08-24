@@ -880,11 +880,6 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	// Pass the zesDriver to the pci class
 	pciInstance.setZesDriver(zesDriver);
 
-	// Initialize RAS experimental instance and check if it's supported
-	if (rasExpInstance.init(zesDriver, zesDevice) != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize RAS experimental instance.\n");
-	}
-
 	// Initialize page offline module with sysman device context
 	result = pageOfflineInstance.init(zesDri, zesDev);
 	if (result != ZE_RESULT_SUCCESS) {
