@@ -1,5 +1,9 @@
 # XPUM daemon user visible changes
 
+## XPUM 2.x.x
+
+* XPUMD image: L0 driver stack update to 26.27.39122.11
+
 ## XPUM 2.1.0
 
 * XPUMD config: Module name changes for readability / consistency
