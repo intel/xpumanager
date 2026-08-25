@@ -162,7 +162,17 @@ And add following option to chart install:
 |-----|------|---------|-------------|
 | config.exporters | object |   | [Configuration for exporters](https://opentelemetry.io/docs/collector/configuration/#exporters) |
 | config.exporters.intel_xpu_info | object | `{}` | Override configuration for the Intel XPU info exporter. Should only be used for advanced use cases. See `intel_xpu_info` README for details. |
-| config.extensions | object | `{}` | [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions) |
+| config.extensions | object |   | [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions) |
+| config.extensions.intel_device_watch | object |   | Configuration for the Intel device watch extension. It detects GPUs that appeared or disappeared after the L0 Sysman API was initialized, which the running process cannot pick up. See `intel_device_watch` README for details. |
+| config.extensions.intel_device_watch.change_action | string | `"log"` | What to do once a change has settled: `log` it, or `exit` so that the collector re-enumerates the devices when its supervisor starts it again. The shutdown is graceful, which exits 0, so it needs a supervisor that restarts on a clean exit too: the pod's `restartPolicy: Always` does. |
+| config.extensions.intel_device_watch.max_restarts | int | `3` | Restarts allowed within `restart_window` before falling back to logging only. Zero effectively disables restarting, but changes are still reported and counted as suppressed exits. |
+| config.extensions.intel_device_watch.report_interval | string | `"10m"` | How often a persisting condition is re-logged. Changes are always logged immediately. |
+| config.extensions.intel_device_watch.restart_window | string | `"10m"` | Period over which `max_restarts` is counted. |
+| config.extensions.intel_device_watch.scan_interval | string | `"30s"` | How often sysfs is compared against the device files. |
+| config.extensions.intel_device_watch.settle_scans | int | `2` | Number of consecutive scans that must agree before a change is acted on. |
+| config.extensions.intel_device_watch.state_file | string | `"/var/lib/xpumd/device-watch/restarts.json"` | State file for the restart limiter. Must persist over container restarts. Empty disables restart limiting. |
+| config.extensions.intel_device_watch.subsystems | list | `["drm","mei"]` | sysfs device classes to watch. Supported: `drm`, `mei` |
+| config.extensions.intel_device_watch.vendor_ids | list | `["8086"]` | PCI vendor IDs to watch, empty for all vendors. |
 | config.processors | object | `{"intel_xpu_status":{}}` | [Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors) |
 | config.processors.intel_xpu_status | object | `{}` | Override configuration for the Intel XPU processor. Should only be used for advanced use cases. See `intel_xpu_status` README for details. |
 | config.receivers | object |   | [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers) |
@@ -174,7 +184,8 @@ And add following option to chart install:
 | config.receivers.intel_xpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intel_xpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
 | config.receivers.intel_xpu.timeout | int | `0` | Metrics collection timeout. |
-| config.service | object | `{"pipelines":{"logs":{"exporters":["intel_xpu_info"],"receivers":["intel_xpu","intel_crashlog"]},"metrics":{"exporters":["intel_xpu_info"],"processors":["intel_xpu_status"],"receivers":["intel_xpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service | object | `{"extensions":["intel_device_watch"],"pipelines":{"logs":{"exporters":["intel_xpu_info"],"receivers":["intel_xpu","intel_crashlog"]},"metrics":{"exporters":["intel_xpu_info"],"processors":["intel_xpu_status"],"receivers":["intel_xpu"]}},"telemetry":{"logs":{"disable_stacktrace":true,"level":"info"}}}` | [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service) |
+| config.service.extensions | list | `["intel_device_watch"]` | Extensions to enable |
 
 ### Other Values
 

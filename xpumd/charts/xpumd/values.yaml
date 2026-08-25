@@ -184,12 +184,58 @@ config:
       endpoint: "0.0.0.0:8080"
 
   # -- [Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)
+  # @default --  
   # @section -- XPUM Daemon Configuration
-  extensions: {}
+  extensions:
+    # @schema additionalProperties:false
+    # -- Configuration for the Intel device watch extension. It detects GPUs that
+    # appeared or disappeared after the L0 Sysman API was initialized, which the
+    # running process cannot pick up. See `intel_device_watch` README for details.
+    # @default --  
+    # @section -- XPUM Daemon Configuration
+    intel_device_watch:
+      # -- How often sysfs is compared against the device files.
+      # @section -- XPUM Daemon Configuration
+      scan_interval: 30s
+      # -- Number of consecutive scans that must agree before a change is acted on.
+      # @section -- XPUM Daemon Configuration
+      settle_scans: 2
+      # @schema enum: [log, exit]
+      # -- What to do once a change has settled: `log` it, or `exit` so that the
+      # collector re-enumerates the devices when its supervisor starts it again.
+      # The shutdown is graceful, which exits 0, so it needs a supervisor that
+      # restarts on a clean exit too: the pod's `restartPolicy: Always` does.
+      # @section -- XPUM Daemon Configuration
+      change_action: log
+      # -- How often a persisting condition is re-logged. Changes are always
+      # logged immediately.
+      # @section -- XPUM Daemon Configuration
+      report_interval: 10m
+      # -- Restarts allowed within `restart_window` before falling back to
+      # logging only. Zero effectively disables restarting, but changes are still
+      # reported and counted as suppressed exits.
+      # @section -- XPUM Daemon Configuration
+      max_restarts: 3
+      # -- Period over which `max_restarts` is counted.
+      # @section -- XPUM Daemon Configuration
+      restart_window: 10m
+      # -- State file for the restart limiter. Must persist over container restarts.
+      # Empty disables restart limiting.
+      # @section -- XPUM Daemon Configuration
+      state_file: /var/lib/xpumd/device-watch/restarts.json
+      # -- sysfs device classes to watch. Supported: `drm`, `mei`
+      # @section -- XPUM Daemon Configuration
+      subsystems: [drm, mei]
+      # -- PCI vendor IDs to watch, empty for all vendors.
+      # @section -- XPUM Daemon Configuration
+      vendor_ids: ["8086"]
 
   # -- [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)
   # @section -- XPUM Daemon Configuration
   service:
+    # -- Extensions to enable
+    # @section -- XPUM Daemon Configuration
+    extensions: [intel_device_watch]
     # @schema hidden
     telemetry:
       logs:

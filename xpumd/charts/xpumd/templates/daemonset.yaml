@@ -102,6 +102,9 @@ spec:
           readOnly: true
         - name: rundir
           mountPath: /run/xpumd
+        # Backs intel_device_watch's restart-limiter state_file.
+        - name: device-watch-state
+          mountPath: /var/lib/xpumd/device-watch
         - name: crashlog
           mountPath: /var/log/crashlog
           readOnly: true
@@ -133,6 +136,8 @@ spec:
         hostPath:
           path: /run/xpumd
           type: DirectoryOrCreate
+      - name: device-watch-state
+        emptyDir: {}
       - name: crashlog
       {{- if .Values.crashlog.directory }}
         hostPath:

@@ -24,7 +24,62 @@
                 },
                 "extensions": {
                     "description": "[Configuration for extensions](https://opentelemetry.io/docs/collector/configuration/#extensions)",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "intel_device_watch": {
+                            "description": "Configuration for the Intel device watch extension. It detects GPUs that appeared or disappeared after the L0 Sysman API was initialized, which the running process cannot pick up. See `intel_device_watch` README for details.",
+                            "type": "object",
+                            "properties": {
+                                "change_action": {
+                                    "description": "What to do once a change has settled: `log` it, or `exit` so that the collector re-enumerates the devices when its supervisor starts it again. The shutdown is graceful, which exits 0, so it needs a supervisor that restarts on a clean exit too: the pod's `restartPolicy: Always` does.",
+                                    "type": "string",
+                                    "enum": [
+                                        "log",
+                                        "exit"
+                                    ]
+                                },
+                                "max_restarts": {
+                                    "description": "Restarts allowed within `restart_window` before falling back to logging only. Zero effectively disables restarting, but changes are still reported and counted as suppressed exits.",
+                                    "type": "integer"
+                                },
+                                "report_interval": {
+                                    "description": "How often a persisting condition is re-logged. Changes are always logged immediately.",
+                                    "type": "string"
+                                },
+                                "restart_window": {
+                                    "description": "Period over which `max_restarts` is counted.",
+                                    "type": "string"
+                                },
+                                "scan_interval": {
+                                    "description": "How often sysfs is compared against the device files.",
+                                    "type": "string"
+                                },
+                                "settle_scans": {
+                                    "description": "Number of consecutive scans that must agree before a change is acted on.",
+                                    "type": "integer"
+                                },
+                                "state_file": {
+                                    "description": "State file for the restart limiter. Must persist over container restarts. Empty disables restart limiting.",
+                                    "type": "string"
+                                },
+                                "subsystems": {
+                                    "description": "sysfs device classes to watch. Supported: `drm`, `mei`",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "vendor_ids": {
+                                    "description": "PCI vendor IDs to watch, empty for all vendors.",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    }
                 },
                 "processors": {
                     "description": "[Configuration for processors](https://opentelemetry.io/docs/collector/configuration/#processors)",
@@ -83,7 +138,16 @@
                 },
                 "service": {
                     "description": "[Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)",
-                    "type": "object"
+                    "type": "object",
+                    "properties": {
+                        "extensions": {
+                            "description": "Extensions to enable",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
                 }
             },
             "additionalProperties": false
