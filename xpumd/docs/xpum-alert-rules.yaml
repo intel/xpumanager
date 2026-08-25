@@ -65,3 +65,49 @@ spec:
         summary: "Uncorrectable GPU error(s) on {{ $labels.node }}/{{ $labels.pci_bdf }}"
       labels:
         severity: warning
+    # NOTE: the rules below are on the XPUM daemon's own (OTel collector
+    # internal) telemetry, not on GPU metrics.  Scraping those requires XPUMD
+    # internal telemetry to be exposed, see ALERTS.md.
+    - alert: GpuNotAccessibleToXpumd
+      # GPU device files the daemon is not permitted to open. The container's
+      # devices cgroup is generated when the pod is admitted, so this does not
+      # heal by itself. The daemon container pod has to be re-created before the GPUs added
+      # to the node are assigned for it.
+      expr: otelcol_device_watch_devices{state="denied"} > 0
+      for: 5m
+      annotations:
+        description: "{{ $value }} GPU device file(s) not accessible to the XPUM daemon over 5m on '{{ $labels.node }}' node, re-create its pod to have the device(s) allocated to it"
+        summary: "GPU(s) not accessible to XPUM daemon 5+m on {{ $labels.node }}"
+      labels:
+        severity: warning
+    - alert: XpumdDeviceFilesOutOfSync
+      # Device files that do not match sysfs. 'change_action: exit' restarts the
+      # daemon to have the files re-created, which only helps with
+      # gpuAccess=privileged, otherwise the pod has to be re-created.
+      expr: sum without (state)(otelcol_device_watch_devices{state=~"missing|mismatch|stale|orphan|blocked"}) > 0
+      for: 15m
+      annotations:
+        description: "{{ $value }} GPU device file(s) out of sync with sysfs over 15m on '{{ $labels.node }}' node, the XPUM daemon cannot monitor those GPUs"
+        summary: "XPUM daemon device files out of sync 15+m on {{ $labels.node }}"
+      labels:
+        severity: warning
+    - alert: XpumdRestartLimitExhausted
+      # The daemon detected a GPU set change it cannot pick up without a restart,
+      # but has already restarted 'max_restarts' times within 'restart_window'.
+      # NOTE: the counter is incremented at most once per daemon process, and
+      # reset when the daemon restarts
+      expr: otelcol_device_watch_exits_suppressed_total{reason="max_restarts"} > 0
+      annotations:
+        description: "XPUM daemon on '{{ $labels.node }}' node stopped restarting on GPU set changes after reaching its restart limit, it monitors only the GPUs present at its startup"
+        summary: "XPUM daemon restart limit exhausted on {{ $labels.node }}"
+      labels:
+        severity: warning
+    - alert: XpumdRestartStateUnwritable
+      # The daemon could not persist its restart record and refuses to exit/restart.
+      # Typically the 'state_file' path is not writable.
+      expr: otelcol_device_watch_exits_suppressed_total{reason="state_error"} > 0
+      annotations:
+        description: "XPUM daemon on '{{ $labels.node }}' node cannot record its restarts and does not restart on GPU set changes, check that its 'state_file' path is writable"
+        summary: "XPUM daemon restart record unwritable on {{ $labels.node }}"
+      labels:
+        severity: warning

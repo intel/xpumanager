@@ -5,6 +5,7 @@ Contents:
 * [Description](#description)
 * [Alert rules](#alert-rules)
   - [Alert resolving on rule changes](#alert-resolving-on-rule-changes)
+  - [Daemon internal telemetry alerts](#daemon-internal-telemetry-alerts)
 * [Setup](#setup)
 
 
@@ -61,6 +62,33 @@ will resolve that alert if its new rule conditions do not trigger any
 more with metric values.  E.g. after power limit for an alert is
 increased.
 
+
+### Daemon internal telemetry alerts
+
+The last rules in the file (`GpuNotAccessibleToXpumd`,
+`XpumdDeviceFilesOutOfSync`, `XpumdRestartLimitExhausted`,
+`XpumdRestartStateUnwritable`) are about xpumd
+itself (rather than GPU device health). They fire when non-monitored GPU
+devices are detected. The related metrics come from the
+[`intel_device_watch`](../extension/inteldevicewatch/README.md) extension.
+
+These are `otelcol_*` metrics, i.e. part of the collector's *internal*
+telemetry, which is served separately from the Prometheus exporter endpoint the
+GPU metrics come from.  By default it is bound to `localhost`, which is not
+reachable from outside the container, so it needs to be exposed:
+
+```bash
+  --set 'config.service.telemetry.metrics.readers[0].pull.exporter.prometheus.host=0.0.0.0' \
+  --set 'config.service.telemetry.metrics.readers[0].pull.exporter.prometheus.port=8888'
+```
+
+Also, Prometheus needs to scrape that port. The `ServiceMonitor` created by the
+chart covers only the GPU metrics port, so add a scrape target for port 8888 of
+the daemon pods, e.g. with an additional `ServiceMonitor` or `PodMonitor`.
+
+These alerts name the node in their annotations, so that target needs to relabel
+`__meta_kubernetes_pod_node_name` to `node`, the way the chart's `ServiceMonitor`
+does for the GPU metrics port.
 
 ## Setup
 
