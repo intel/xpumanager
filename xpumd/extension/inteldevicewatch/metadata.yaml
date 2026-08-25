@@ -1,0 +1,74 @@
+display_name: Intel Device Watch Extension
+type: intel_device_watch
+
+status:
+  class: extension
+  stability:
+    development: [extension]
+  codeowners:
+    active: [marquiz]
+
+attributes:
+  state:
+    description: How a device relates to its device file.
+    type: string
+    enum:
+      - ok
+      - missing
+      - mismatch
+      - stale
+      - denied
+      - orphan
+      - blocked
+      - error
+
+telemetry:
+  metrics:
+    device_watch_device_changes:
+      enabled: true
+      stability: development
+      description: Number of settled changes detected in the device set.
+      unit: "{change}"
+      sum:
+        value_type: int
+        monotonic: true
+    device_watch_devices:
+      enabled: true
+      stability: development
+      description: Number of devices per device state, as observed by the latest scan.
+      unit: "{device}"
+      gauge:
+        value_type: int
+      attributes: [state]
+    device_watch_exits_requested:
+      enabled: true
+      stability: development
+      description: Number of collector shutdowns requested because the device set changed.
+      unit: "{exit}"
+      sum:
+        value_type: int
+        monotonic: true
+    device_watch_exits_suppressed:
+      enabled: true
+      stability: development
+      description: Number of shutdowns not requested because the restart rate limit was exhausted.
+      unit: "{exit}"
+      sum:
+        value_type: int
+        monotonic: true
+    device_watch_scan_errors:
+      enabled: true
+      stability: development
+      description: Number of device inventory scans that failed, wholly or partially.
+      unit: "{error}"
+      sum:
+        value_type: int
+        monotonic: true
+    device_watch_scans:
+      enabled: true
+      stability: development
+      description: Number of device inventory scans performed.
+      unit: "{scan}"
+      sum:
+        value_type: int
+        monotonic: true
