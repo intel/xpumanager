@@ -5,6 +5,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"sync"
@@ -39,6 +40,8 @@ const (
 )
 
 func main() {
+	flag.Parse()
+
 	if ret := sysman.Init(0); ret != nil {
 		log.Fatalf("Failed to initialize sysman: %v", ret)
 	}
