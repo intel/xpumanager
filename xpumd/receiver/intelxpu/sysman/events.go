@@ -41,35 +41,18 @@ const allEventTypeFlags = l0sysman.EventTypeFlags(
 		l0sysman.EVENT_TYPE_FLAG_SURVIVABILITY_MODE_DETECTED,
 )
 
+// sysmanEventsReceiver runs one event listener per Sysman driver.
 type sysmanEventsReceiver struct {
-	drivers  []*driver
-	consumer consumer.Logs
-	logger   *zap.SugaredLogger
-	wg       sync.WaitGroup
-	stop     context.CancelFunc
+	listeners []*driverEventListener
+	wg        sync.WaitGroup
+	stop      context.CancelFunc
 }
 
 func newSysmanEventsReceiver(devices *deviceRegistry, logger *zap.SugaredLogger, nextConsumer consumer.Logs) (*sysmanEventsReceiver, error) {
-	r := &sysmanEventsReceiver{
-		drivers:  devices.drivers,
-		consumer: nextConsumer,
-		logger:   logger,
-	}
+	r := &sysmanEventsReceiver{}
 
-	// Register for all event types on every device.
-	for i, drv := range r.drivers {
-		registered := 0
-		for j, dev := range drv.devices {
-			eventsMask, err := dev.EventRegister(allEventTypeFlags)
-			if err != nil {
-				r.logger.Errorw("Device EventRegister() failed: device events unavailable",
-					zap.Error(err), "deviceID", j+1, "deviceAttributes", dev.attributes)
-				continue
-			}
-			logger.Debugw("Registered Sysman device events", "eventsMask", eventsMask, "deviceAttributes", dev.attributes)
-			registered++
-		}
-		logger.Infow("Sysman devices registered for events", "registered", registered, "enumerated", len(drv.devices), "driverIndex", i)
+	for i, drv := range devices.drivers {
+		r.listeners = append(r.listeners, newDriverEventListener(i, drv, logger, nextConsumer))
 	}
 
 	return r, nil
@@ -78,9 +61,9 @@ func newSysmanEventsReceiver(devices *deviceRegistry, logger *zap.SugaredLogger,
 // Start implements collector component.Component.Start.
 func (r *sysmanEventsReceiver) Start(ctx context.Context, _ component.Host) error {
 	ctx, r.stop = context.WithCancel(ctx)
-	for _, drv := range r.drivers {
+	for _, l := range r.listeners {
 		r.wg.Go(func() {
-			r.runEventListener(ctx, drv)
+			l.run(ctx)
 		})
 	}
 	return nil
@@ -99,11 +82,36 @@ func (r *sysmanEventsReceiver) Shutdown(_ context.Context) error {
 // poll interval when there are no events.
 const listenTimeout = 1 * time.Second
 
-func (r *sysmanEventsReceiver) runEventListener(ctx context.Context, drv *driver) {
+// driverEventListener listens for the events of one Sysman driver and emits them.
+type driverEventListener struct {
+	// drvIdx identifies the driver in the logged messages.
+	drvIdx int
+	drv    *driver
+	// l0Devices are the devices of the driver, in the form the listen calls take.
+	l0Devices []*l0sysman.Device
+	consumer  consumer.Logs
+	logger    *zap.SugaredLogger
+}
+
+func newDriverEventListener(index int, drv *driver, logger *zap.SugaredLogger, nextConsumer consumer.Logs) *driverEventListener {
 	l0Devices := make([]*l0sysman.Device, len(drv.devices))
-	for i, d := range drv.devices {
-		l0Devices[i] = d.Device
+	for i, dev := range drv.devices {
+		l0Devices[i] = dev.Device
 	}
+
+	return &driverEventListener{
+		drvIdx:    index,
+		drv:       drv,
+		l0Devices: l0Devices,
+		consumer:  nextConsumer,
+		logger:    logger,
+	}
+}
+
+// run registers for the events of the driver and listens for them until the
+// context is cancelled.
+func (l *driverEventListener) run(ctx context.Context) {
+	l.registerDeviceEvents()
 
 	var prevZeroTime time.Time
 	for {
@@ -113,11 +121,11 @@ func (r *sysmanEventsReceiver) runEventListener(ctx context.Context, drv *driver
 		default:
 		}
 
-		deviceCount, deviceEvents, err := drv.driver.EventListenEx(listenTimeout, l0Devices)
+		deviceCount, deviceEvents, err := l.drv.driver.EventListenEx(listenTimeout, l.l0Devices)
 		// TODO: revisit error handling, bail out on all errors except perhaps
 		// RESULT_ERROR_DEVICE_LOST, rescan drivers and devices on some others(?)
 		if err != nil {
-			r.logger.Warnw("EventListenEx failed", zap.Error(err))
+			l.logger.Warnw("EventListenEx failed", zap.Error(err))
 			// Brief back-off to avoid flooding on persistent errors.
 			select {
 			case <-time.After(5 * time.Second):
@@ -135,39 +143,66 @@ func (r *sysmanEventsReceiver) runEventListener(ctx context.Context, drv *driver
 			continue
 		}
 
-		ld := plog.NewLogs()
-		rl := ld.ResourceLogs().AppendEmpty()
-		sl := rl.ScopeLogs().AppendEmpty()
-		sl.Scope().SetName(metadata.ScopeName)
-
-		ts := pcommon.NewTimestampFromTime(time.Now())
-
-		for i, flags := range deviceEvents {
-			if flags != 0 {
-				appendDeviceEventLogs(sl, drv.devices[i], flags, ts)
-			}
-		}
-		if err := r.consumer.ConsumeLogs(ctx, ld); err != nil {
-			r.logger.Warnw("ConsumeLogs failed", zap.Error(err))
-		}
-
+		l.emitDeviceEvents(ctx, deviceEvents)
 		// Rescan on DEVICE_ATTACH, after ConsumeLogs so that events are
 		// delivered before re-init (case of hangs or crashes).
-		// NOTE: rescan is inline here for simplicity; it stalls event processing
-		// for this driver briefly. If that proves disruptive, move to a
-		// dedicated per-device worker goroutine with a coalescing channel.
-		for i, flags := range deviceEvents {
-			if flags&l0sysman.EventTypeFlags(l0sysman.EVENT_TYPE_FLAG_DEVICE_ATTACH) != 0 {
-				dev := drv.devices[i]
-				dev.Lock()
-				r.logger.Infow("Rescanning device on DEVICE_ATTACH", "deviceAttributes", dev.attributes)
-				if err := dev.init(); err != nil {
-					r.logger.Errorw("Device rescan failed", zap.Error(err))
-				} else {
-					r.logger.Debugw("Device rescanned successfully", "deviceAttributes", dev.attributes)
-				}
-				dev.Unlock()
+		l.rescanAttachedDevices(deviceEvents)
+	}
+}
+
+// registerDeviceEvents registers all the known event types on every device of the
+// driver.
+func (l *driverEventListener) registerDeviceEvents() {
+	registered := 0
+	for i, dev := range l.drv.devices {
+		eventsMask, err := dev.EventRegister(allEventTypeFlags)
+		if err != nil {
+			l.logger.Errorw("Device EventRegister() failed: device events unavailable",
+				zap.Error(err), "deviceID", i+1, "deviceAttributes", dev.attributes)
+			continue
+		}
+		l.logger.Debugw("Registered Sysman device events", "eventsMask", eventsMask, "deviceAttributes", dev.attributes)
+		registered++
+	}
+	l.logger.Infow("Sysman devices registered for events", "registered", registered,
+		"enumerated", len(l.drv.devices), "driverIndex", l.drvIdx)
+}
+
+// emitDeviceEvents emits the given device events of the driver as logs.
+func (l *driverEventListener) emitDeviceEvents(ctx context.Context, deviceEvents []l0sysman.EventTypeFlags) {
+	ld := plog.NewLogs()
+	rl := ld.ResourceLogs().AppendEmpty()
+	sl := rl.ScopeLogs().AppendEmpty()
+	sl.Scope().SetName(metadata.ScopeName)
+
+	ts := pcommon.NewTimestampFromTime(time.Now())
+
+	for i, flags := range deviceEvents {
+		if flags != 0 {
+			appendDeviceEventLogs(sl, l.drv.devices[i], flags, ts)
+		}
+	}
+	if err := l.consumer.ConsumeLogs(ctx, ld); err != nil {
+		l.logger.Warnw("ConsumeLogs failed", zap.Error(err))
+	}
+}
+
+// rescanAttachedDevices re-initializes the devices that reported DEVICE_ATTACH.
+func (l *driverEventListener) rescanAttachedDevices(deviceEvents []l0sysman.EventTypeFlags) {
+	// NOTE: rescan is synchronous for simplicity; it stalls event processing for this
+	// driver briefly. If that proves disruptive, move to a dedicated per-device worker
+	// goroutine with a coalescing channel.
+	for i, flags := range deviceEvents {
+		if flags&l0sysman.EventTypeFlags(l0sysman.EVENT_TYPE_FLAG_DEVICE_ATTACH) != 0 {
+			dev := l.drv.devices[i]
+			dev.Lock()
+			l.logger.Infow("Rescanning device on DEVICE_ATTACH", "deviceAttributes", dev.attributes)
+			if err := dev.init(); err != nil {
+				l.logger.Errorw("Device rescan failed", zap.Error(err))
+			} else {
+				l.logger.Debugw("Device rescanned successfully", "deviceAttributes", dev.attributes)
 			}
+			dev.Unlock()
 		}
 	}
 }
