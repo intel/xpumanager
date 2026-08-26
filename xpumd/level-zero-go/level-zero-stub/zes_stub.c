@@ -365,6 +365,42 @@ ze_result_t zesDeviceGetState(zes_device_handle_t hDevice, zes_device_state_t *p
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
+ze_result_t zesDeviceGetHealthStatusExt(zes_device_handle_t hDevice, zes_device_health_status_ext_t *pHealth)
+{
+	sysman_state_lock();
+	sysman_device_state_t *dev = (sysman_device_state_t *)resolve_handle(hDevice, STUB_HANDLE_DEVICE);
+	if (!dev)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hDevice, UNSUPPORTED_FEATURE_GET_HEALTH_STATUS_EXT))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (dev->return_values.zesDeviceGetHealthStatusExt)
+		return sysman_unlock_and_return(dev->return_values.zesDeviceGetHealthStatusExt);
+	if (!(dev->health))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (!pHealth)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	*pHealth = *dev->health;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesDeviceSetHealthStatusExt(zes_device_handle_t hDevice, zes_device_health_status_ext_t health)
+{
+	sysman_state_lock();
+	sysman_device_state_t *dev = (sysman_device_state_t *)resolve_handle(hDevice, STUB_HANDLE_DEVICE);
+	if (!dev)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hDevice, UNSUPPORTED_FEATURE_SET_HEALTH_STATUS_EXT))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (dev->return_values.zesDeviceSetHealthStatusExt)
+		return sysman_unlock_and_return(dev->return_values.zesDeviceSetHealthStatusExt);
+	if (!(dev->health))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (health > ZES_DEVICE_HEALTH_STATUS_EXT_FAILED)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_ENUMERATION);
+	*dev->health = health;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
 ze_result_t zesDeviceReset(zes_device_handle_t hDevice, ze_bool_t force)
 {
 	sysman_state_lock();
@@ -2032,9 +2068,18 @@ ze_result_t zesMemoryGetProperties(zes_mem_handle_t hMemory, zes_mem_properties_
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	zes_structure_type_t stype = pProperties->stype;
 	void *pNext = pProperties->pNext;
-	*pProperties = *mem->properties;
+	*pProperties = mem->properties->base;
 	pProperties->stype = stype;
 	pProperties->pNext = pNext;
+	if (pNext) {
+		zes_memory_vendor_info_ext_properties_t *ext = (zes_memory_vendor_info_ext_properties_t *)pNext;
+		if (ext->stype == ZES_STRUCTURE_TYPE_MEMORY_VENDOR_INFO_EXT_PROPERTIES) {
+			void *next = ext->pNext;
+			*ext = mem->properties->vendor_info;
+			ext->stype = ZES_STRUCTURE_TYPE_MEMORY_VENDOR_INFO_EXT_PROPERTIES;
+			ext->pNext = next;
+		}
+	}
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
@@ -2290,10 +2335,13 @@ ze_result_t zesPowerGetUsage(zes_pwr_handle_t hPower, uint32_t *pInstantPower, u
 		return sysman_unlock_and_return(pw->return_values.zesPowerGetUsage);
 	if (!(pw->usage))
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
-	if (!pInstantPower || !pAveragePower)
+	// Both output pointers are optional, but at least one must be given.
+	if (!pInstantPower && !pAveragePower)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	*pInstantPower = pw->usage->instant_power;
-	*pAveragePower = pw->usage->average_power;
+	if (pInstantPower)
+		*pInstantPower = pw->usage->instant_power;
+	if (pAveragePower)
+		*pAveragePower = pw->usage->average_power;
 	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 

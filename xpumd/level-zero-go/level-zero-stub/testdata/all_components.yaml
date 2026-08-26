@@ -13,6 +13,7 @@ Drivers:
     Devices:
       - Properties: {}
         State: {}
+        Health: 0
         PCI:
           Properties: {}
           State: {}
@@ -80,6 +81,7 @@ Drivers:
             EnergyCounter: {}
             EnergyThreshold: {}
             Limits: []
+            Usage: {}
         Psus:
           - Properties: {}
             State: {}

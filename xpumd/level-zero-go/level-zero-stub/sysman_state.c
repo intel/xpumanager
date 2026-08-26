@@ -473,6 +473,7 @@ static void free_device(sysman_device_state_t *dev)
 {
 	free(dev->properties);
 	free(dev->state);
+	free(dev->health);
 	free(dev->pci.properties);
 	free(dev->pci.state);
 	free(dev->pci.bars);
@@ -558,16 +559,28 @@ static bool parse_uuid(const char str[SYSMAN_UUID_STR_SIZE], uint8_t (*id)[16])
 	return true;
 }
 
-// Special post-parse handler for device property fields that cannot be
-// mapped directly from YAML: resolves UUID strings into the binary fields in
-// the ze/zes structs, and derives the OEM serial ID length from its string.
+// Special post-parse handler for fields that cannot be mapped directly from
+// YAML: resolves UUID strings into the binary fields in the ze/zes structs, and
+// derives the OEM serial ID and memory vendor name lengths from their strings.
 // Must be called on the freshly parsed tree before it is donated to g_sysman_state.
-static bool resolve_device_properties(sysman_state_t *state)
+static bool resolve_parsed_state(sysman_state_t *state)
 {
 	for (uint32_t d = 0; d < state->system.drivers_count; d++) {
 		sysman_drivers_state_t *drv = &state->system.drivers[d];
 		for (uint32_t i = 0; i < drv->devices_count; i++) {
-			sysman_device_properties_info_t *p = drv->devices[i].properties;
+			sysman_device_state_t *dev = &drv->devices[i];
+
+			for (uint32_t m = 0; m < dev->memory_modules_count; m++) {
+				sysman_mem_properties_info_t *mp = dev->memory_modules[m].properties;
+				if (!mp)
+					continue;
+				// Derive the memory vendor name length from the parsed string,
+				// since only the string itself is configurable via YAML.
+				mp->vendor_info.length =
+					(uint16_t)strnlen(mp->vendor_info.vendorName, sizeof(mp->vendor_info.vendorName));
+			}
+
+			sysman_device_properties_info_t *p = dev->properties;
 			if (!p)
 				continue;
 			// Copy all Core fields parsed into .core.ze back to .base.core,
@@ -658,7 +671,7 @@ static int sysman_state_load_locked(const char *path)
 		return 0;
 	}
 
-	if (!resolve_device_properties(parsed) || !resolve_info_log_records(parsed)) {
+	if (!resolve_parsed_state(parsed) || !resolve_info_log_records(parsed)) {
 		free_system_state(&parsed->system);
 		free(parsed);
 		return -1;

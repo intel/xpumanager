@@ -45,6 +45,9 @@ FIELD_ANNOTATIONS_OVERRIDE = {
     # zes_oem_serial_id_ext_properties_t.length is derived from the parsed
     # OemSerialId string, i.e. not configured directly, so skip it.
     ("zes_oem_serial_id_ext_properties_t", "length"): Annotations(ignore=True),
+    # zes_memory_vendor_info_ext_properties_t.length is derived from the parsed
+    # VendorName string, i.e. not configured directly, so skip it.
+    ("zes_memory_vendor_info_ext_properties_t", "length"): Annotations(ignore=True),
     # zes_device_properties_t.core is handled by the sysman_device_core_properties_t
     # helper field in sysman_device_properties_info_t, which adds a Uuid string parser.
     # Skipping it here avoids a duplicate "Core" YAML key when zes_device_properties_t

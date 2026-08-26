@@ -229,6 +229,8 @@ typedef struct
 {
 	ze_result_t zesDeviceGetProperties;
 	ze_result_t zesDeviceGetState;
+	ze_result_t zesDeviceGetHealthStatusExt;
+	ze_result_t zesDeviceSetHealthStatusExt;
 	ze_result_t zesDeviceReset;
 	ze_result_t zesDeviceResetExt;
 	ze_result_t zesDeviceProcessesGetState;
@@ -297,6 +299,8 @@ typedef enum
 {
 	UNSUPPORTED_FEATURE_GET_PROPERTIES = 0,				  // gen: key=Device.GetProperties
 	UNSUPPORTED_FEATURE_GET_STATE,						  // gen: key=Device.GetState
+	UNSUPPORTED_FEATURE_GET_HEALTH_STATUS_EXT,			  // gen: key=Device.GetHealthStatusExt
+	UNSUPPORTED_FEATURE_SET_HEALTH_STATUS_EXT,			  // gen: key=Device.SetHealthStatusExt
 	UNSUPPORTED_FEATURE_PROCESSES_GET_STATE,			  // gen: key=Device.ProcessesGetState
 	UNSUPPORTED_FEATURE_PCI_GET_PROPERTIES,				  // gen: key=PCI.GetProperties
 	UNSUPPORTED_FEATURE_PCI_GET_STATE,					  // gen: key=PCI.GetState
@@ -491,8 +495,14 @@ typedef struct
 
 typedef struct
 {
+	zes_mem_properties_t base;							 // gen: flatten
+	zes_memory_vendor_info_ext_properties_t vendor_info; // gen: flatten
+} sysman_mem_properties_info_t;
+
+typedef struct
+{
 	sysman_mem_rv_t return_values;
-	zes_mem_properties_t *properties;
+	sysman_mem_properties_info_t *properties;
 	zes_mem_state_t *state;
 	zes_mem_bandwidth_t *bandwidth;
 } sysman_mem_t;
@@ -708,6 +718,7 @@ typedef struct
 	sysman_unsupported_feature_t *unsupported_features;
 	sysman_device_properties_info_t *properties;
 	sysman_device_state_info_t *state;
+	zes_device_health_status_ext_t *health;
 	sysman_pci_info_t pci;	// gen: key=PCI
 	sysman_ecc_info_t *ecc; // gen: key=ECC
 	sysman_overclock_info_t *overclock;

@@ -35,6 +35,10 @@ Drivers:
         Version: 65536
       - Name: "ZES_intel_experimental_driver_event"
         Version: 65536
+      - Name: "ZES_extension_device_health"
+        Version: 65536
+      - Name: "ZES_extension_memory_vendor_info"
+        Version: 65536
 
     # Pending driver scoped events reported by zesIntelDriverEventListenExp
     Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
@@ -117,6 +121,10 @@ Drivers:
           # Extended state for ZES_extension_device_state
           ExtendedState:
             Flags: 1  # ZES_DEVICE_STATE_EXT_FLAG_NORMAL
+
+        # zesDeviceGetHealthStatusExt / zesDeviceSetHealthStatusExt (nullable),
+        # requires ZES_extension_device_health
+        Health: 0  # ZES_DEVICE_HEALTH_STATUS_EXT_OK
 
         # PCI info
         PCI:
@@ -271,6 +279,8 @@ Drivers:
         ReturnValues:
           zesDeviceGetProperties: 0
           zesDeviceGetState: 0
+          zesDeviceGetHealthStatusExt: 0
+          zesDeviceSetHealthStatusExt: 0
           zesDevicePciGetProperties: 0
           zesDevicePciGetState: 0
           zesDevicePciGetStats: 0
@@ -301,6 +311,8 @@ Drivers:
         UnsupportedFeatures:
         #   - Device.GetProperties
         #   - Device.GetState
+        #   - Device.GetHealthStatusExt
+        #   - Device.SetHealthStatusExt
         #   - Device.ProcessesGetState
         #   - Device.Reset
         #   - Device.ResetExt
@@ -630,6 +642,9 @@ Drivers:
             PhysicalSize: 17179869184
             BusWidth: 128
             NumChannels: 4
+            # Extended properties for ZES_extension_memory_vendor_info
+            VendorId: 44032
+            VendorName: "ACME Memory"
           # zesMemoryGetState (nullable)
           State:
             Health: 1  # ZES_MEM_HEALTH_OK

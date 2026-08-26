@@ -17,6 +17,8 @@
 static const cyaml_schema_field_t sysman_device_rv_fields[] = {
 	RV(sysman_device_rv_t, zesDeviceGetProperties),
 	RV(sysman_device_rv_t, zesDeviceGetState),
+	RV(sysman_device_rv_t, zesDeviceGetHealthStatusExt),
+	RV(sysman_device_rv_t, zesDeviceSetHealthStatusExt),
 	RV(sysman_device_rv_t, zesDeviceReset),
 	RV(sysman_device_rv_t, zesDeviceResetExt),
 	RV(sysman_device_rv_t, zesDeviceProcessesGetState),
@@ -181,6 +183,8 @@ static const cyaml_schema_value_t uint64_schema = {CYAML_VALUE_UINT(CYAML_FLAG_D
 static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"Device.GetProperties", UNSUPPORTED_FEATURE_GET_PROPERTIES},
 	{"Device.GetState", UNSUPPORTED_FEATURE_GET_STATE},
+	{"Device.GetHealthStatusExt", UNSUPPORTED_FEATURE_GET_HEALTH_STATUS_EXT},
+	{"Device.SetHealthStatusExt", UNSUPPORTED_FEATURE_SET_HEALTH_STATUS_EXT},
 	{"Device.ProcessesGetState", UNSUPPORTED_FEATURE_PROCESSES_GET_STATE},
 	{"PCI.GetProperties", UNSUPPORTED_FEATURE_PCI_GET_PROPERTIES},
 	{"PCI.GetState", UNSUPPORTED_FEATURE_PCI_GET_STATE},
@@ -770,14 +774,16 @@ static const cyaml_schema_field_t sysman_led_fields[] = {
 static const cyaml_schema_value_t sysman_led_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_led_t, sysman_led_fields)};
 
-static const cyaml_schema_field_t zes_mem_properties_fields[] = {
-	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, type),
-	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, onSubdevice),
-	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, subdeviceId),
-	CYAML_FIELD_UINT("Location", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, location),
-	CYAML_FIELD_UINT("PhysicalSize", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, physicalSize),
-	CYAML_FIELD_INT("BusWidth", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, busWidth),
-	CYAML_FIELD_INT("NumChannels", CYAML_FLAG_OPTIONAL, zes_mem_properties_t, numChannels),
+static const cyaml_schema_field_t sysman_mem_properties_info_fields[] = {
+	CYAML_FIELD_UINT("Type", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.type),
+	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.onSubdevice),
+	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.subdeviceId),
+	CYAML_FIELD_UINT("Location", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.location),
+	CYAML_FIELD_UINT("PhysicalSize", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.physicalSize),
+	CYAML_FIELD_INT("BusWidth", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.busWidth),
+	CYAML_FIELD_INT("NumChannels", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, base.numChannels),
+	CYAML_FIELD_UINT("VendorId", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, vendor_info.vendorId),
+	CYAML_FIELD_STRING("VendorName", CYAML_FLAG_OPTIONAL, sysman_mem_properties_info_t, vendor_info.vendorName, 0),
 	CYAML_FIELD_END};
 
 static const cyaml_schema_field_t zes_mem_state_fields[] = {
@@ -794,7 +800,7 @@ static const cyaml_schema_field_t zes_mem_bandwidth_fields[] = {
 static const cyaml_schema_field_t sysman_mem_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_mem_t, return_values, sysman_mem_rv_fields),
 	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_mem_t, properties,
-							zes_mem_properties_fields),
+							sysman_mem_properties_info_fields),
 	CYAML_FIELD_MAPPING_PTR("State", SYSMAN_NULLABLE_PTR_FLAGS, sysman_mem_t, state, zes_mem_state_fields),
 	CYAML_FIELD_MAPPING_PTR("Bandwidth", SYSMAN_NULLABLE_PTR_FLAGS, sysman_mem_t, bandwidth, zes_mem_bandwidth_fields),
 	CYAML_FIELD_END};
@@ -1038,6 +1044,7 @@ static const cyaml_schema_field_t sysman_device_state_fields[] = {
 							sysman_device_properties_info_fields),
 	CYAML_FIELD_MAPPING_PTR("State", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, state,
 							sysman_device_state_info_fields),
+	CYAML_FIELD_UINT_PTR("Health", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, health),
 	CYAML_FIELD_MAPPING("PCI", CYAML_FLAG_OPTIONAL, sysman_device_state_t, pci, sysman_pci_info_fields),
 	CYAML_FIELD_MAPPING_PTR("ECC", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, ecc, sysman_ecc_info_fields),
 	CYAML_FIELD_MAPPING_PTR("Overclock", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, overclock,

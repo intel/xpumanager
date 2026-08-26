@@ -662,6 +662,15 @@ static void test_error_cases(void)
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesDeviceGetState: NULL pState", zesDeviceGetState(dev, NULL), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 
+	// zesDeviceGetHealthStatusExt / zesDeviceSetHealthStatusExt
+	ASSERT_ZE_RET("zesDeviceGetHealthStatusExt: NULL handle", zesDeviceGetHealthStatusExt(bad_dev, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesDeviceGetHealthStatusExt: NULL pHealth", zesDeviceGetHealthStatusExt(dev, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	ASSERT_ZE_RET("zesDeviceSetHealthStatusExt: NULL handle",
+				  zesDeviceSetHealthStatusExt(bad_dev, ZES_DEVICE_HEALTH_STATUS_EXT_OK),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+
 	// zesDeviceReset / zesDeviceResetExt
 	ASSERT_ZE_RET("zesDeviceReset: NULL handle", zesDeviceReset(bad_dev, 0), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesDeviceResetExt: NULL handle", zesDeviceResetExt(bad_dev, NULL),
@@ -1115,6 +1124,14 @@ static void test_error_cases(void)
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesPowerGetUsage: NULL handle", zesPowerGetUsage(bad_pwr, NULL, NULL),
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	{
+		// Both output pointers of zesPowerGetUsage are optional, but at least one must be given
+		uint32_t pwr_n = 1;
+		zes_pwr_handle_t pwr = NULL;
+		ASSERT_ZE_OK("zesDeviceEnumPowerDomains", zesDeviceEnumPowerDomains(dev, &pwr_n, &pwr));
+		ASSERT_ZE_RET("zesPowerGetUsage: no output pointers", zesPowerGetUsage(pwr, NULL, NULL),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	}
 	ASSERT_ZE_RET("zesPowerGetLimitsExt2: NULL handle", zesPowerGetLimitsExt2(bad_pwr, NULL),
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesPowerSetLimitsExt2: NULL handle", zesPowerSetLimitsExt2(bad_pwr, 0),
