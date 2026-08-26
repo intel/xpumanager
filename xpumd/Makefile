@@ -30,6 +30,8 @@ OTEL_VERSION ?= 0.159.0
 IMAGE_REPOSITORY ?= registry.local/xpumd
 IMAGE_TAG ?= latest
 IMAGE_PULL_POLICY ?= IfNotPresent
+# Where the image gets the Level-Zero GPU backend from: "deb" or "src" (see Dockerfile)
+BACKEND ?= deb
 
 # PIE + full RELRO, drop all symbols
 GO_FLAGS := -buildmode=pie -bindnow -s -w
@@ -51,7 +53,7 @@ race:
 
 .PHONY: docker-build
 docker-build:
-	docker build -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
+	docker build --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate
 generate: generate-bindings generate-mods generate-proto

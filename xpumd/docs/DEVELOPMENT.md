@@ -95,6 +95,22 @@ health:
 docker build -t registry.local/xpumd:latest .
 ```
 
+By default the image gets the Level-Zero GPU backend from the released
+`libze-intel-gpu1` package. It can also be built from the
+[compute-runtime](https://github.com/intel/compute-runtime) sources, pinned to
+the revision that the experimental extensions in the Go bindings are generated from:
+
+```bash
+docker build --build-arg BACKEND=src -t registry.local/xpumd:latest .
+```
+
+That is how the published images are built, as no released package implements
+the experimental extensions yet. It takes considerably longer, so the local
+default is the released package.
+
+Either way, the package info and the license notice that the image carries
+describe the backend it actually ships.
+
 ## Testing container image
 
 Test the container with example config from the image:
