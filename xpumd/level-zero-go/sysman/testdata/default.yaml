@@ -494,6 +494,10 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_oem_serial_id"
         Version: 65536
+      - Name: "ZES_extension_device_health"
+        Version: 65536
+      - Name: "ZES_extension_memory_vendor_info"
+        Version: 65536
 
     Devices:
       - Properties:
@@ -507,6 +511,7 @@ Drivers:
           Repaired: 1 # ZES_REPAIR_STATUS_NOT_PERFORMED
           ExtendedState:
             Flags: 2 # ZES_DEVICE_STATE_EXT_FLAG_WEDGED
+        Health: 1 # ZES_DEVICE_HEALTH_STATUS_EXT_WARNING
         ECC:
           Available: true
           Configurable: true
@@ -553,7 +558,15 @@ Drivers:
         Firmwares: []
         FrequencyDomains: []
         Leds: []
-        MemoryModules: []
+        MemoryModules:
+          - Properties:
+              Type: 21 # ZES_MEM_TYPE_HBM2
+              Location: 1 # ZES_MEM_LOC_DEVICE
+              PhysicalSize: 34359738368 # 32 GiB
+              BusWidth: 256
+              NumChannels: 16
+              VendorId: 44032
+              VendorName: "ACME Memory"
         PerformanceDomains: []
         PowerDomains:
           - Properties:

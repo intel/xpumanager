@@ -477,6 +477,40 @@ func TestDeviceGetState(t *testing.T) {
 	)
 }
 
+func TestDeviceGetHealthStatusExt(t *testing.T) {
+	testDeviceGetterError(t, (*Device).GetHealthStatusExt, th.WithConfig(driverConfigDeviceErrs))
+	// driver 0 does not advertise the device health extension
+	testDeviceGetterError(t, (*Device).GetHealthStatusExt,
+		th.WithError(core.RESULT_ERROR_UNSUPPORTED_FEATURE), th.WithName("ErrorUnsupported"),
+	)
+	testDeviceGetterSuccess(t, (*Device).GetHealthStatusExt,
+		th.CheckValue(DEVICE_HEALTH_STATUS_EXT_WARNING),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
+	)
+}
+
+func TestDeviceSetHealthStatusExt(t *testing.T) {
+	setHealth := func(h DeviceHealthStatusExt) func(*Device) error {
+		return func(d *Device) error { return d.SetHealthStatusExt(h) }
+	}
+
+	testDeviceActionError(t, setHealth(DEVICE_HEALTH_STATUS_EXT_OK), th.WithConfig(driverConfigDeviceErrs))
+	// driver 0 does not advertise the device health extension
+	testDeviceActionError(t, setHealth(DEVICE_HEALTH_STATUS_EXT_OK),
+		th.WithError(core.RESULT_ERROR_UNSUPPORTED_FEATURE), th.WithName("ErrorUnsupported"),
+	)
+	testDeviceActionError(t, setHealth(DEVICE_HEALTH_STATUS_EXT_FORCE_UINT32),
+		th.WithDrvIdx(1), th.WithError(core.RESULT_ERROR_INVALID_ENUMERATION), th.WithName("ErrorInvalidEnumeration"),
+	)
+	t.Run("Success", func(t *testing.T) {
+		th.LoadConfig(t, driverConfigDefault)
+		require.NoError(t, getDevice(t, 1, 0).SetHealthStatusExt(DEVICE_HEALTH_STATUS_EXT_CRITICAL))
+		health, err := getDevice(t, 1, 0).GetHealthStatusExt()
+		require.NoError(t, err)
+		assert.Equal(t, DEVICE_HEALTH_STATUS_EXT_CRITICAL, health)
+	})
+}
+
 func TestDeviceReset(t *testing.T) {
 	testDeviceActionError(t, func(d *Device) error { return d.Reset(false) }, th.WithConfig(driverConfigDeviceErrs))
 	testDeviceActionSuccess(t, func(d *Device) error { return d.Reset(false) })
@@ -963,6 +997,20 @@ func TestMemoryGetProperties(t *testing.T) {
 			},
 		}),
 	)
+	testComponentGetterSuccess(t, getMemory, (*Memory).GetProperties,
+		th.CheckValueExported(MemProperties{
+			MemBaseProperties: MemBaseProperties{
+				Type:         MEM_TYPE_HBM2,
+				Location:     MEM_LOC_DEVICE,
+				PhysicalSize: 34359738368,
+				BusWidth:     256,
+				NumChannels:  16,
+			},
+			VendorId:   44032,
+			VendorName: "ACME Memory",
+		}),
+		th.WithDrvIdx(1), th.WithName("SuccessWithExtProps"),
+	)
 }
 
 func TestMemoryGetState(t *testing.T) {
@@ -1106,6 +1154,11 @@ func TestPowerGetUsage(t *testing.T) {
 			AveragePower: 160000,
 		}),
 	)
+}
+
+func TestPowerGetUsageInstant(t *testing.T) {
+	testComponentGetterError(t, getPower, (*Power).GetUsageInstant, th.WithConfig(driverConfigComponentErrs))
+	testComponentGetterSuccess(t, getPower, (*Power).GetUsageInstant, th.CheckValue(uint32(180000)))
 }
 
 func TestPowerGetLimitsExt2(t *testing.T) {

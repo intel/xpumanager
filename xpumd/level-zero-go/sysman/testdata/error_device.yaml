@@ -7,11 +7,17 @@
 
 EventNumDeviceEvents: 0
 Drivers:
-  - ExtensionProperties: []
+  - ExtensionProperties:
+      # to get specified errors for the device health extension APIs
+      - Name: "ZES_extension_device_health"
+        Version: 65536
     Devices:
-      - ReturnValues:
+      - Health: 0 # ZES_DEVICE_HEALTH_STATUS_EXT_OK
+        ReturnValues:
           zesDeviceGetProperties: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceGetState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceGetHealthStatusExt: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
+          zesDeviceSetHealthStatusExt: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceReset: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceResetExt: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
           zesDeviceProcessesGetState: 0x78000004 # ZE_RESULT_ERROR_INVALID_ARGUMENT
