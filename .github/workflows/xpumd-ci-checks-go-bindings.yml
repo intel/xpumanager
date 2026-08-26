@@ -33,4 +33,7 @@ jobs:
       with:
         context: ./xpumd/level-zero-go
         file: ./xpumd/level-zero-go/examples/Dockerfile
-        build-args: APP=${{ matrix.app }}
+        # Where the GPU backend comes from, "deb" (a released package) by default.
+        build-args: |
+          BACKEND=${{ vars.XPUMD_BACKEND || 'deb' }}
+          APP=${{ matrix.app }}

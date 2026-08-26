@@ -17,6 +17,9 @@ permissions:
 jobs:
   checks:
     runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    # Use the same Level-Zero version as the image build (see xpumd-image.yml)
+    env:
+      BACKEND: ${{ vars.XPUMD_BACKEND || 'deb' }}
     steps:
     - name: Check out code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -90,7 +90,9 @@ jobs:
         tags: ${{ env.IMAGE_TAG }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        # Where the GPU backend comes from, "deb" (a released package) by default.
         build-args: |
+          BACKEND=${{ vars.XPUMD_BACKEND || 'deb' }}
           http_proxy=${{ vars.HTTP_PROXY }}
           https_proxy=${{ vars.HTTPS_PROXY }}
           no_proxy=${{ vars.NO_PROXY }}
