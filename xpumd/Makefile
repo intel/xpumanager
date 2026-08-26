@@ -56,7 +56,7 @@ docker-build:
 	docker build --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate
-generate: generate-bindings generate-mods generate-proto
+generate: generate-bindings generate-mods generate-proto generate-dockerfile-args
 
 .PHONY: generate-bindings
 # Generate Go bindings for Level-Zero
@@ -74,6 +74,11 @@ generate-proto: install-protoc
 	PATH=tools/bin/ protoc --go_out=. --go_opt=paths=source_relative \
 	                       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
 	                       exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto
+
+.PHONY: generate-dockerfile-args
+# Sync the compute-runtime backend build args from the Level-Zero Go example Dockerfile
+generate-dockerfile-args:
+	scripts/sync-dockerfile-args.sh
 
 .PHONY: install-protoc
 install-protoc:

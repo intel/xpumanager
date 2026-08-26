@@ -289,6 +289,10 @@ make test-integration-existing-cluster IMAGE_REPOSITORY=ghcr.io/intel/xpumanager
 
 ## Driver stack updates
 
+The build args of the `BACKEND=src` Dockerfile stage are copied from the
+Level-Zero Go [example Dockerfile](../level-zero-go/examples/Dockerfile) by
+`make generate-dockerfile-args` (part of `make generate`), so update them there.
+
 XPUMD [helper scripts](../scripts/README.md) and Docker files validate
 directly downloaded (driver) DEB and ZIP files against hard-coded
 checksums.  If DEB / ZIP file versions are changed, build will error

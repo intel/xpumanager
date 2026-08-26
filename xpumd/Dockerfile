@@ -183,7 +183,8 @@ RUN /debs/copy-files-and-package-info.sh /backend \
 # level-zero-go/include/intel/ are vendored from, and the dependencies to the versions
 # that the compute-runtime manifests/manifest.yml pins for that revision. The build
 # args of this stage are pinned by level-zero-go/hack/vendor-intel-header.sh, in
-# level-zero-go/examples/Dockerfile, which they have to be kept in sync with.
+# level-zero-go/examples/Dockerfile, and copied over from there by
+# scripts/sync-dockerfile-args.sh.
 FROM golang:1.26-trixie AS backend-src
 
 # Compute-runtime commit date 2026-08-25
