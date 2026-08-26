@@ -115,6 +115,18 @@ crashlog:
 
 
 # @schema additionalProperties:false
+infoLogs:
+  # -- Collect the GPU info logs, i.e. the CPER records that the GPU driver
+  # exposes via the kernel tracing filesystem. Mounts the tracing
+  # filesystem of the node writable to the container, which the daemon needs
+  # root privileges to configure (the default, see `securityContextOverride`)
+  enabled: false
+  # -- Host path of the kernel tracing filesystem, mounted (writable) to the
+  # container when the info logs are enabled
+  tracefsPath: /sys/kernel/tracing
+
+
+# @schema additionalProperties:false
 config:
   # -- [Configuration for receivers](https://opentelemetry.io/docs/collector/configuration/#receivers)
   # @default --  
@@ -140,6 +152,11 @@ config:
       # -- Whether to fail collector startup if the L0 Sysman API cannot be
       # initialized (e.g. no GPU driver or device access).
       fail_on_sysman_init_error: false
+      # -- Override configuration for the GPU info log collection, see the
+      # `intel_xpu` README for details. Collection is enabled with `infoLogs`,
+      # this should only be used for advanced use cases.
+      # @section -- XPUM Daemon Configuration
+      info_logs: {}
       # -- Configuration for enabling/disabling individual metrics.
       # @section -- XPUM Daemon Configuration
       metrics: {}

@@ -95,6 +95,12 @@ See [OTEL_STACK](../../docs/OTEL_STACK.md) on how to setup OTel collector, and
 [OTLP HTTP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter#readme)
 on how to configure OTel exporter for gRPC or HTTP transport.
 
+If collection of the GPU info logs (CPER records that the GPU driver exposes
+via kernel tracefs) is enabled (`infoLogs.enabled`), the tracefs of the host is
+mounted (as writable) to the xpumd container. See
+[Intel XPU receiver README](../../receiver/intelxpu/README.md#gpu-info-logs)
+for details on the info log collection.
+
 ### XPUMD privileges
 
 By default, Helm chart provides XPUMD [the privileges needed to access all
@@ -163,6 +169,7 @@ And add following option to chart install:
 | config.receivers.intel_crashlog | object | `{}` | Override configuration for the Intel Crashlog receiver. Should only be used for advanced use cases. See `intel_crashlog` README for details. |
 | config.receivers.intel_xpu | object |   | Configuration for the Intel XPU receiver. |
 | config.receivers.intel_xpu.collection_interval | string | `"5s"` | Metrics data collection interval. Must be at least twice the sampling_interval. |
+| config.receivers.intel_xpu.info_logs | object | `{}` | Override configuration for the GPU info log collection, see the `intel_xpu` README for details. Collection is enabled with `infoLogs`, this should only be used for advanced use cases. |
 | config.receivers.intel_xpu.initial_delay | string | `"1s"` | Initial start delay for metrics collection, any non positive value is assumed to be immediately. |
 | config.receivers.intel_xpu.metrics | object | `{}` | Configuration for enabling/disabling individual metrics. |
 | config.receivers.intel_xpu.sampling_interval | string | `"1s"` | Sampling interval for the high-frequency metrics. |
@@ -187,6 +194,8 @@ And add following option to chart install:
 | image.repository | string | `"ghcr.io/intel/xpumanager/xpumd"` | Image repository |
 | image.tag | string | `""` | Image tag, defaults to Chart.AppVersion |
 | imagePullSecrets | list | `[]` | [Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod) |
+| infoLogs.enabled | bool | `false` | Collect the GPU info logs, i.e. the CPER records that the GPU driver exposes via the kernel tracing filesystem. Mounts the tracing filesystem of the node writable to the container, which the daemon needs root privileges to configure (the default, see `securityContextOverride`) |
+| infoLogs.tracefsPath | string | `"/sys/kernel/tracing"` | Host path of the kernel tracing filesystem, mounted (writable) to the container when the info logs are enabled |
 | initContainers | list | `[]` | Init containers to run |
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |

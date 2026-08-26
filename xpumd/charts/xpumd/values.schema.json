@@ -56,6 +56,10 @@
                                     "description": "Whether to fail collector startup if the L0 Sysman API cannot be initialized (e.g. no GPU driver or device access).",
                                     "type": "boolean"
                                 },
+                                "info_logs": {
+                                    "description": "Override configuration for the GPU info log collection, see the `intel_xpu` README for details. Collection is enabled with `infoLogs`, this should only be used for advanced use cases.",
+                                    "type": "object"
+                                },
                                 "initial_delay": {
                                     "description": "Initial start delay for metrics collection, any non positive value is assumed to be immediately.",
                                     "type": "string"
@@ -173,6 +177,20 @@
             "description": "[Image pull secrets](https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod)",
             "$ref": "https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.34.2/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/imagePullSecrets",
             "type": "array"
+        },
+        "infoLogs": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "description": "Collect the GPU info logs, i.e. the CPER records that the GPU driver exposes via the kernel tracing filesystem. Mounts the tracing filesystem of the node writable to the container, which the daemon needs root privileges to configure (the default, see `securityContextOverride`)",
+                    "type": "boolean"
+                },
+                "tracefsPath": {
+                    "description": "Host path of the kernel tracing filesystem, mounted (writable) to the container when the info logs are enabled",
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
         },
         "initContainers": {
             "description": "Init containers to run",

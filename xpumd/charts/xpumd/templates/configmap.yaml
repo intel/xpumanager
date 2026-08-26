@@ -13,6 +13,14 @@ data:
         directory: /var/log/crashlog
         glob: "*.bin"
         ignore_older_than: 0s
+  # Default configuration for the GPU info log collection of the Intel XPU
+  # receiver. Can be overridden in config.yaml (via .Values.config).
+  config-receiver-infolog.yaml: |-
+    receivers:
+      intel_xpu:
+        info_logs:
+          enabled: {{ .Values.infoLogs.enabled }}
+          instance_name: xpumd
   # Default configuration for the Intel XPU status processor. Can be overridden
   # in config.yaml (via .Values.config).
   config-processor-xpustatus.yaml: |-

@@ -98,6 +98,11 @@ See [OTEL_STACK](../../docs/OTEL_STACK.md) on how to setup OTel collector, and
 [OTLP HTTP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter#readme)
 on how to configure OTel exporter for gRPC or HTTP transport.
 
+If collection of the GPU info logs (CPER records that the GPU driver exposes
+via kernel tracefs) is enabled (`infoLogs.enabled`), the tracefs of the host is
+mounted (as writable) to the xpumd container. See
+[Intel XPU receiver README](../../receiver/intelxpu/README.md#gpu-info-logs)
+for details on the info log collection.
 
 ### XPUMD privileges
 
