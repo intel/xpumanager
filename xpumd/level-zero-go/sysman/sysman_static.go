@@ -183,6 +183,21 @@ func (z *Device) GetState() (DeviceState, error) {
 	return state, ret.ToError()
 }
 
+// GetHealthStatusExt wraps the zesDeviceGetHealthStatusExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicegethealthstatusext
+func (z *Device) GetHealthStatusExt() (DeviceHealthStatusExt, error) {
+	var health DeviceHealthStatusExt
+	ret := zesDeviceGetHealthStatusExt(z.handle, &health)
+	return health, ret.ToError()
+}
+
+// SetHealthStatusExt wraps the zesDeviceSetHealthStatusExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicesethealthstatusext
+func (z *Device) SetHealthStatusExt(health DeviceHealthStatusExt) error {
+	ret := zesDeviceSetHealthStatusExt(z.handle, health)
+	return ret.ToError()
+}
+
 // Reset wraps the zesDeviceReset function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicereset
 func (z *Device) Reset(force bool) error {
@@ -924,7 +939,28 @@ func (z *Device) EnumMemoryModules() ([]*Memory, error) {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesmemorygetproperties
 func (z *Memory) GetProperties() (MemProperties, error) {
 	var props MemProperties
-	ret := zesMemoryGetProperties(z.handle, &props)
+
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
+
+	var vendorInfo memoryVendorInfoExtProperties
+	hasExtension := z.device.extensions.has(MEMORY_VENDOR_INFO_EXT_NAME, uint32(MEMORY_VENDOR_INFO_EXT_VERSION_CURRENT))
+	if hasExtension {
+		vendorInfo.stype = _STRUCTURE_TYPE_MEMORY_VENDOR_INFO_EXT_PROPERTIES
+		pinner.Pin(&vendorInfo)
+
+		//nolint:staticcheck // could remove embedded field from selector
+		props.MemBaseProperties.pnext = unsafe.Pointer(&vendorInfo)
+	}
+
+	ret := zesMemoryGetProperties(z.handle, &props.MemBaseProperties)
+
+	if hasExtension && ret == core.RESULT_SUCCESS {
+		length := min(int(vendorInfo.Length), len(vendorInfo.VendorName))
+		props.VendorId = vendorInfo.VendorId
+		props.VendorName = string(vendorInfo.VendorName[:length])
+	}
+
 	return props, ret.ToError()
 }
 
@@ -1048,6 +1084,20 @@ func (z *Power) GetUsage() (PowerUsage, error) {
 	var instant, average uint32
 	ret := zesPowerGetUsage(z.handle, &instant, &average)
 	return PowerUsage{InstantPower: instant, AveragePower: average}, ret.ToError()
+}
+
+// GetUsageInstant wraps the zesPowerGetUsage function, only querying the
+// instantaneous power usage:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zespowergetusage
+//
+// Returns the instantaneous power usage in milliwatts for the power domain.
+// Computing the average power usage may cause the driver to wait for an
+// averaging interval to elapse, so prefer this method over GetUsage when the
+// average power usage is not needed.
+func (z *Power) GetUsageInstant() (uint32, error) {
+	var instant uint32
+	ret := zesPowerGetUsage(z.handle, &instant, nil)
+	return instant, ret.ToError()
 }
 
 // GetLimitsExt wraps the zesPowerGetLimitsExt function:

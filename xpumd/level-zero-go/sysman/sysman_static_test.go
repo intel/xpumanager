@@ -952,13 +952,15 @@ func TestMemoryGetProperties(t *testing.T) {
 	testComponentGetterError(t, getMemory, (*Memory).GetProperties, th.WithConfig(driverConfigComponentErrs))
 	testComponentGetterSuccess(t, getMemory, (*Memory).GetProperties,
 		th.CheckValue(MemProperties{
-			Type:         MEM_TYPE_HBM,
-			OnSubdevice:  1,
-			SubdeviceId:  1,
-			Location:     MEM_LOC_DEVICE,
-			PhysicalSize: 17179869184,
-			BusWidth:     128,
-			NumChannels:  8,
+			MemBaseProperties: MemBaseProperties{
+				Type:         MEM_TYPE_HBM,
+				OnSubdevice:  1,
+				SubdeviceId:  1,
+				Location:     MEM_LOC_DEVICE,
+				PhysicalSize: 17179869184,
+				BusWidth:     128,
+				NumChannels:  8,
+			},
 		}),
 	)
 }

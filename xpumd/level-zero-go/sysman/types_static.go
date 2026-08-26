@@ -306,6 +306,17 @@ type EngineProperties struct {
 	ExtendedProperties *EngineExtProperties
 }
 
+// MemProperties wraps the memory property structures from the Sysman API.
+type MemProperties struct {
+	MemBaseProperties
+	// VendorId provides the memory vendor ID of the memory module.
+	// Value is zero if not available or could not be determined.
+	VendorId uint32
+	// VendorName provides the memory vendor name of the memory module.
+	// Value is empty if not available or could not be determined.
+	VendorName string
+}
+
 // PciProperties wraps the PCI property structures from the Sysman API.
 type PciProperties struct {
 	PciBaseProperties

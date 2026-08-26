@@ -703,13 +703,13 @@ type LedState struct {
 	Color LedColor
 }
 
-// MemProperties declared in:
+// MemBaseProperties is the memory properties type declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-properties-t
 //
 // Memory properties. To get the memory vendor ID and memory vendor name, pNext
 // member of this structure should point to an instance of zes_memory_vendor_info_ext_properties_t
 // with its stype set to ZES_STRUCTURE_TYPE_MEMORY_VENDOR_INFO_EXT_PROPERTIES.
-type MemProperties struct {
+type MemBaseProperties struct {
 	stype        structureType
 	pnext        unsafe.Pointer
 	Type         MemType
@@ -1093,7 +1093,7 @@ type oemSerialIdExtProperties struct {
 	_           [6]byte
 }
 
-// MemoryVendorInfoExtProperties declared in:
+// memoryVendorInfoExtProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-memory-vendor-info-ext-properties-t
 //
 // Memory Vendor Info Extension Properties structure.
@@ -1101,12 +1101,12 @@ type oemSerialIdExtProperties struct {
 //   - This structure can be passed as an extension structure to zesMemoryGetProperties
 //     via pNext member
 //   - Returns the memory vendor ID and the memory vendor name
-type MemoryVendorInfoExtProperties struct {
+type memoryVendorInfoExtProperties struct {
 	stype      structureType
 	pnext      unsafe.Pointer
 	VendorId   uint32
 	Length     uint16
-	VendorName [256]int8
+	VendorName [256]byte
 	_          [2]byte
 }
 

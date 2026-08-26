@@ -752,7 +752,7 @@ func zesDeviceEnumMemoryModules(HDevice deviceHandle, PCount *uint32, PhMemory [
 }
 
 // zesMemoryGetProperties function as declared in level-zero/zes_api.h:5419
-func zesMemoryGetProperties(HMemory memHandle, PProperties *MemProperties) core.Result {
+func zesMemoryGetProperties(HMemory memHandle, PProperties *MemBaseProperties) core.Result {
 	cHMemory, _ := *(*C.zes_mem_handle_t)(unsafe.Pointer(&HMemory)), cgoAllocsUnknown
 	cPProperties, _ := (*C.zes_mem_properties_t)(unsafe.Pointer(PProperties)), cgoAllocsUnknown
 	__ret := C.zesMemoryGetProperties(cHMemory, cPProperties)

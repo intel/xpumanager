@@ -142,12 +142,17 @@ structs:
     fields:
       - name: ThrottleReasons
         newType: FreqThrottleReasonFlags
-  - name: MemProperties
+  - name: MemBaseProperties
     fields:
       - name: Location
         newType: MemLoc
       - name: Type
         newType: MemType
+  - name: memoryVendorInfoExtProperties
+    fields:
+      - name: VendorName
+        typeAssert: "[256]int8"
+        newType: "[256]byte"
   - name: MemState
     fields:
       - name: Health
@@ -263,6 +268,15 @@ types:
     origName: zes_engine_properties_t
     newComment: |-
       EngineBaseProperties is the engine properties type declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: MemBaseProperties
+    origName: zes_mem_properties_t
+    newComment: |-
+      MemBaseProperties is the memory properties type declared in:
       https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
