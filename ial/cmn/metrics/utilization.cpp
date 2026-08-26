@@ -2,7 +2,12 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Utilization metrics: engine groups (ALL/compute/render/media/copy) and memory utilization %.
+ * Utilization metrics: overall GPU, engine groups (compute/render/media/copy) and memory
+ * utilization %.  utilization.gpu is the busiest engine on the device rather than
+ * ZES_ENGINE_GROUP_ALL, which reports the average across every engine; the per-class
+ * metrics below are the aggregated groups the driver exposes for that class.  Both are
+ * derived per tile and averaged over tiles by populateMetricCacheEnd, so the getters here
+ * only have to render what the cache already holds.
  *
  * utilization.compute, .render, and .copy carry aliases for the legacy xpum-style
  * .single and .group suffixes; .media uses sub-engine forms (.decode.single,
@@ -12,7 +17,6 @@
  */
 
 #include "utilization.h"
-#include "debug.h"
 #include "device.h"
 #include "metrics_registry.h"
 #include "ze_api.h"
@@ -27,16 +31,14 @@ namespace metrics::utilization {
 
 namespace {
 
-// Precondition: callers must verify s.before.ts != 0 && s.after.ts > s.before.ts
-// before calling this function.
-[[nodiscard]] double utilFromCache(const EngineSample &s)
+/** Renders one derived utilization figure, or reports that the device did not produce it. */
+[[nodiscard]] ze_result_t formatUtil(const UtilSample &util, MetricValue &out)
 {
-	if (s.after.active < s.before.active) {
-		DBG("utilization: engine counter regression (active {} -> {}), reporting 0\n", s.before.active, s.after.active);
-		return 0.0;
+	if (!util.valid) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	return (static_cast<double>(s.after.active) - static_cast<double>(s.before.active)) * 100.0 /
-		   (static_cast<double>(s.after.ts) - static_cast<double>(s.before.ts));
+	out = xpum::compat::format("{:.2f}", util.percent);
+	return ZE_RESULT_SUCCESS;
 }
 
 // ── Alias name arrays ─────────────────────────────────────────────────────────
@@ -64,17 +66,14 @@ constexpr auto GPU =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.gpu",
 				.unit = "%",
-				.description = "GPU active time as a fraction of elapsed time; per tile or device, device-level is the "
-							   "tile average for multi-tile GPUs",
+				.description = "Busiest engine's active time as a fraction of elapsed time; per tile or device, "
+							   "device-level is the tile average for multi-tile GPUs",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					const auto &s = cache.engines.all;
-					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					out = xpum::compat::format("{:.2f}", utilFromCache(s));
-					return ZE_RESULT_SUCCESS;
+					// The busiest engine, not ZES_ENGINE_GROUP_ALL: that group averages every
+					// engine on the device, so a workload saturating one of nine reads as 11%.
+					return formatUtil(cache.engines.gpu, out);
 				}};
 
 constexpr auto COMPUTE =
@@ -87,12 +86,7 @@ constexpr auto COMPUTE =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					const auto &s = cache.engines.compute;
-					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					out = xpum::compat::format("{:.2f}", utilFromCache(s));
-					return ZE_RESULT_SUCCESS;
+					return formatUtil(cache.engines.compute, out);
 				}};
 
 constexpr auto RENDER =
@@ -105,12 +99,7 @@ constexpr auto RENDER =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					const auto &s = cache.engines.render;
-					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					out = xpum::compat::format("{:.2f}", utilFromCache(s));
-					return ZE_RESULT_SUCCESS;
+					return formatUtil(cache.engines.render, out);
 				}};
 
 constexpr auto MEDIA = QueryMetric{
@@ -123,12 +112,7 @@ constexpr auto MEDIA = QueryMetric{
 	.source = MetricSource::Live,
 	.groups = MetricGroup::UTILIZATION,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-		const auto &s = cache.engines.media;
-		if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
-			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-		}
-		out = xpum::compat::format("{:.2f}", utilFromCache(s));
-		return ZE_RESULT_SUCCESS;
+		return formatUtil(cache.engines.media, out);
 	}};
 
 constexpr auto COPY =
@@ -141,12 +125,7 @@ constexpr auto COPY =
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					const auto &s = cache.engines.copy;
-					if (s.before.ts == 0 || s.after.ts <= s.before.ts) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					out = xpum::compat::format("{:.2f}", utilFromCache(s));
-					return ZE_RESULT_SUCCESS;
+					return formatUtil(cache.engines.copy, out);
 				}};
 
 constexpr auto MEM_UTIL =

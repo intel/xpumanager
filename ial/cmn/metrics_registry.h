@@ -9,6 +9,7 @@
 
 #include "device.h"
 #include "ze_api.h"
+#include <enginegroup.h>
 #include <cstddef>
 #include <algorithm>
 #include <array>
@@ -98,12 +99,6 @@ enum class MetricSource
 
 // ── Snapshot types: a single point-in-time reading ────────────────────────────
 
-/** Single engine utilisation reading. */
-struct EngineSnapshot
-{
-	uint64_t active = 0, ts = 0;
-};
-
 /** Single energy reading for one power domain. */
 struct EnergySnapshot
 {
@@ -122,28 +117,46 @@ struct MemSnapshot
 	uint64_t read = 0, write = 0, ts = 0;
 };
 
-// ── Delta sample types: before/after snapshot pair for rate calculation ────────
+// ── Derived types: a rate or percentage computed from two snapshots ────────────
 
-/** Before/after pair for a single engine group, used to compute utilisation %. */
-struct EngineSample
+/**
+ * One derived utilization figure, in percent, plus whether the device produced it.
+ *
+ * @c valid distinguishes "not measurable" from "idle": busyness counters need CAP_PERFMON, so
+ * an unprivileged run reports N/A where an idle GPU reports 0.00.
+ */
+struct UtilSample
 {
-	EngineSnapshot before{};
-	EngineSnapshot after{};
+	double percent = 0.0;
+	bool valid = false;
 };
 
-/** Named slots for each sampled engine group. */
+/**
+ * Utilization derived from one pair of engine busyness snapshots.
+ *
+ * Every figure is a device-level percentage: per tile first, then averaged over the tiles that
+ * reported, matching how the other per-tile metrics are collapsed for the device.
+ */
 struct EngineCache
 {
-	EngineSample all{};
-	EngineSample compute{};
-	EngineSample render{};
-	EngineSample media{};
-	EngineSample copy{};
+	/**
+	 * The busiest engine on each tile. Deliberately not ZES_ENGINE_GROUP_ALL, which averages
+	 * every engine on the device and so divides a single-engine workload by the engine count
+	 * (XPUM-1483).
+	 */
+	UtilSample gpu{};
+	UtilSample compute{}; /**< ZES_ENGINE_GROUP_COMPUTE_ALL, as the driver aggregates it */
+	UtilSample render{};  /**< ZES_ENGINE_GROUP_RENDER_ALL */
+	UtilSample media{};	  /**< ZES_ENGINE_GROUP_MEDIA_ALL */
+	UtilSample copy{};	  /**< ZES_ENGINE_GROUP_COPY_ALL */
 };
 
 struct MetricCache
 {
+	/** Utilization derived from the raw samples below by @ref populateMetricCacheEnd. */
 	EngineCache engines{};
+	/** One busyness counter reading per engine group the device exposes, per tile. */
+	std::vector<EngineActivitySample> engineSamplesBefore{}, engineSamplesAfter{};
 	EnergySnapshot cardPowerBefore{}, cardPowerAfter{}; /**< whole-card energy domain (forGPU=false) */
 	EnergySnapshot gpuPowerBefore{}, gpuPowerAfter{};	/**< GPU energy domain (forGPU=true) */
 	PcieSnapshot pcieBefore{}, pcieAfter{};				/**< PCIe Rx/Tx byte counters + µs timestamp */
@@ -154,13 +167,32 @@ struct MetricCache
 	MemSnapshot memBefore{}, memAfter{}; /**< memory read/write counters + µs timestamp */
 	uint64_t memMaxBandwidth = 0;		 /**< peak bandwidth in bytes/s */
 	bool memAvail = false;
-	bool engineAvail = false; /**< true when engine HAL present and both snapshots taken */
-	bool powerAvail = false;  /**< true when power HAL is present */
+	/** true when the engine HAL produced snapshots at both ends of the window; see the
+	 *  individual @ref EngineCache figures for whether any of them yielded a percentage. */
+	bool engineAvail = false;
+	bool powerAvail = false; /**< true when power HAL is present */
 	/** EU active/stall/idle — populated once per tick by populateMetricCacheEnd */
 	EuMetricsData euSample{};
 	bool euAvail = false; /**< true when getEuActiveStallIdle succeeded */
 	bool populated = false;
 };
+
+/**
+ * Derive every @ref EngineCache figure from one pair of engine busyness snapshots.
+ *
+ * Each figure is computed per tile and then averaged over the tiles that reported it, so a
+ * multi-tile device does not describe itself by whichever handle the driver enumerated first.
+ * A class that no tile exposed with a usable measurement window is left invalid.
+ *
+ * Called by @ref populateMetricCacheEnd; exposed because it is the whole mapping from engine
+ * group to reported metric, and testing it needs synthetic snapshots rather than a GPU.
+ *
+ * @param before  Snapshot opening the window, from @c enginegroup::getAllEngineActivity.
+ * @param after   Snapshot closing it, from the same device.
+ * @return        Every figure the two snapshots support; all of them invalid if none.
+ */
+[[nodiscard]] EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
+										   const std::vector<EngineActivitySample> &after);
 
 /**
  * Convenience one-shot wrapper: takes before-samples, sleeps @ref detail::SAMPLE_WINDOW, then takes

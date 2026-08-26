@@ -95,7 +95,7 @@ Metrics Reference
    * - ID
      - Metric
    * - 0
-     - GPU Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.
+     - GPU Utilization (%) of the busiest engine, per tile or device. Device-level is the average value of tiles for multi-tile devices.
    * - 1
      - GPU Power (W), per tile or device
    * - 2

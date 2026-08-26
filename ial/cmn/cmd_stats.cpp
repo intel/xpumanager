@@ -777,6 +777,44 @@ ze_result_t cmdStats::collectEngineUtilPerTile(enginegroup *engineGroup, zes_eng
 }
 
 /**
+ * @brief Collect per-tile GPU utilization samples
+ *
+ * Overall GPU utilization is the busyness of the busiest engine on each tile, which is
+ * what identifies the engine bottlenecking a workload. ZES_ENGINE_GROUP_ALL is not used
+ * for this: it averages the busyness of every engine on the device, so a workload
+ * saturating one of nine engines would be reported as 11%.
+ *
+ * @param [in] engineGroup The HAL enginegroup instance
+ * @param [in,out] baseline Previous engine activity snapshot; replaced with the current one
+ * @param [out] utilPerTile Map of tile_id -> vector of utilization samples %
+ * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
+ */
+ze_result_t cmdStats::collectGpuUtilPerTile(enginegroup *engineGroup, std::vector<EngineActivitySample> &baseline,
+											std::map<uint32_t, std::vector<double>> &utilPerTile)
+{
+	TRACING();
+	if (engineGroup == nullptr) {
+		DBG("Engine group handler not available.\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	std::vector<EngineActivitySample> current;
+	ze_result_t result = engineGroup->getAllEngineActivity(current);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	for (const auto &[tileId, util] : enginegroup::computeGpuUtilPerTile(baseline, current)) {
+		utilPerTile[tileId].push_back(util);
+		DBG("GPU util tile {}: {:.2f}%\n", tileId, util);
+	}
+
+	baseline = std::move(current);
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Collects EU Array metrics (Active/Stall/Idle) per tile using Level Zero metrics API
  *
  * This function uses the HAL metric class to collect Execution Unit utilization metrics
@@ -1025,7 +1063,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	PcieBandwidthSnapshot pcieBaseline{};
 
 	// Per-tile engine utilization baselines
-	TileEngineSnapshot allEnginesUtilBaseline{};
+	std::vector<EngineActivitySample> gpuUtilBaseline{};
 	TileEngineSnapshot computeUtilBaseline{};
 	TileEngineSnapshot renderUtilBaseline{};
 	TileEngineSnapshot mediaUtilBaseline{};
@@ -1110,9 +1148,8 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectPcieMetrics(pciHandler, device->zesDeviceHdl, pcieBaseline, metrics.pcieReadKBpsSamples,
 						   metrics.pcieWriteKBpsSamples);
 
-		// Per-tile engine utilization (aggregated)
-		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_ALL, allEnginesUtilBaseline,
-								 metrics.allEnginesUtilPerTile);
+		// Overall GPU utilization (busiest engine per tile) and per-engine-class aggregates
+		collectGpuUtilPerTile(engineGroup, gpuUtilBaseline, metrics.gpuUtilPerTile);
 		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_COMPUTE_ALL, computeUtilBaseline,
 								 metrics.computeUtilPerTile);
 		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_RENDER_ALL, renderUtilBaseline,
@@ -1371,7 +1408,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		}
 	}
 
-	for (const auto &[tileId, samples] : metrics.allEnginesUtilPerTile) {
+	for (const auto &[tileId, samples] : metrics.gpuUtilPerTile) {
 		SummaryStats stats = computeSummaryStats(samples);
 		if (stats.valid) {
 			std::string tileKey = makeTileKey(tileId);

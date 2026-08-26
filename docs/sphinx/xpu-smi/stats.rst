@@ -79,9 +79,9 @@ The following metrics are reported per device and per tile where applicable:
    * - Metric
      - Notes
    * - GPU Utilization (%)
-     - Per tile; device average for multi-tile
+     - Busiest engine on the tile; device average for multi-tile
    * - Compute / Render / Media / Copy Engine Utilization (%)
-     - Per tile
+     - Per tile; averaged over the engines of that class
    * - EU Array Active / Stall / Idle (%)
      - Per tile; shown with ``-e``
    * - GPU Power (W)

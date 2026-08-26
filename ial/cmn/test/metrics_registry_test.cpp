@@ -610,6 +610,144 @@ TEST_CASE("power QueryMetric fields: unit, source, and group membership")
 	}
 }
 
+// ── Utilization getter logic ──────────────────────────────────────────────────
+// Every utilization.* engine metric renders one figure that populateMetricCacheEnd already
+// derived per tile and averaged over tiles. utilization.gpu is the busiest engine on the
+// device: ZES_ENGINE_GROUP_ALL is deliberately not its source, because that group averages
+// every engine on the device (XPUM-1483).
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "utilization.gpu getter: UNSUPPORTED when no engine data was collected")
+{
+	MetricValue out;
+	MetricCache c; // all zeros — engines.gpu.valid == false
+	CHECK(findMetric("utilization.gpu").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "utilization.gpu getter: reports the busiest-engine percentage")
+{
+	MetricValue out;
+	MetricCache c;
+	c.engines.gpu = {.percent = 99.994, .valid = true};
+	CHECK(findMetric("utilization.gpu").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "99.99");
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "utilization.gpu getter: an idle GPU reports 0.00, not N/A")
+{
+	MetricValue out;
+	MetricCache c;
+	c.engines.gpu.valid = true; // percent stays 0.0
+	CHECK(findMetric("utilization.gpu").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "0.00");
+}
+
+// ── deriveEngineUtil ──────────────────────────────────────────────────────────
+// The mapping from engine group to reported metric. Snapshots are synthetic: a window of
+// 1000 driver clock units, with activeTime set to the percentage under test.
+
+namespace {
+
+/** Sample pair for one engine group on one tile that was `busyPercent` busy over the window. */
+void addEngine(std::vector<EngineActivitySample> &before, std::vector<EngineActivitySample> &after,
+			   zes_engine_group_t type, uint32_t tileId, double busyPercent)
+{
+	constexpr uint64_t WINDOW = 1000;
+	const auto active = static_cast<uint64_t>(busyPercent / 100.0 * static_cast<double>(WINDOW));
+	before.push_back({.type = type, .tileId = tileId, .activeTime = 0, .timestamp = 0});
+	after.push_back({.type = type, .tileId = tileId, .activeTime = active, .timestamp = WINDOW});
+}
+
+} // namespace
+
+TEST_CASE("deriveEngineUtil: each metric reads its own engine group")
+{
+	// Every figure comes out of the same snapshot pair, so a mis-wired group would show up as
+	// one metric reporting another's busyness.
+	std::vector<EngineActivitySample> before, after;
+	addEngine(before, after, ZES_ENGINE_GROUP_COMPUTE_ALL, 0, 90.0);
+	addEngine(before, after, ZES_ENGINE_GROUP_RENDER_ALL, 0, 70.0);
+	addEngine(before, after, ZES_ENGINE_GROUP_MEDIA_ALL, 0, 50.0);
+	addEngine(before, after, ZES_ENGINE_GROUP_COPY_ALL, 0, 30.0);
+
+	const EngineCache engines = deriveEngineUtil(before, after);
+
+	CHECK(engines.compute.percent == doctest::Approx(90.0));
+	CHECK(engines.render.percent == doctest::Approx(70.0));
+	CHECK(engines.media.percent == doctest::Approx(50.0));
+	CHECK(engines.copy.percent == doctest::Approx(30.0));
+	// Overall utilization is the busiest of them, not their average and not the device-wide
+	// ZES_ENGINE_GROUP_ALL average — the XPUM-1483 defect.
+	CHECK(engines.gpu.percent == doctest::Approx(90.0));
+	for (const auto &util : {engines.gpu, engines.compute, engines.render, engines.media, engines.copy}) {
+		CHECK(util.valid);
+	}
+}
+
+TEST_CASE("deriveEngineUtil: a four-tile device reports the average of its tiles, not tile 0")
+{
+	// Reading only the first handle of each group, as the per-class metrics used to, would
+	// report tile 0's 80% as the whole device.
+	std::vector<EngineActivitySample> before, after;
+	for (const auto &[tile, busy] :
+		 std::to_array<std::pair<uint32_t, double>>({{0, 80.0}, {1, 40.0}, {2, 20.0}, {3, 0.0}})) {
+		addEngine(before, after, ZES_ENGINE_GROUP_COMPUTE_ALL, tile, busy);
+	}
+
+	const EngineCache engines = deriveEngineUtil(before, after);
+
+	CHECK(engines.compute.percent == doctest::Approx(35.0)); // (80 + 40 + 20 + 0) / 4
+	CHECK(engines.gpu.percent == doctest::Approx(35.0));
+	// No handle of any other class was exposed, so those stay N/A rather than reading 0%.
+	CHECK_FALSE(engines.render.valid);
+	CHECK_FALSE(engines.media.valid);
+	CHECK_FALSE(engines.copy.valid);
+}
+
+TEST_CASE("deriveEngineUtil: overall utilization uses the per-engine counters, the classes their aggregate")
+{
+	// A driver exposing both tiers: the aggregate averages the class's engines, so the class
+	// figure is diluted while utilization.gpu must still name the busiest single engine.
+	std::vector<EngineActivitySample> before, after;
+	addEngine(before, after, ZES_ENGINE_GROUP_COMPUTE_SINGLE, 0, 100.0);
+	addEngine(before, after, ZES_ENGINE_GROUP_COMPUTE_SINGLE, 0, 0.0);
+	addEngine(before, after, ZES_ENGINE_GROUP_COMPUTE_ALL, 0, 50.0);
+	addEngine(before, after, ZES_ENGINE_GROUP_ALL, 0, 25.0);
+
+	const EngineCache engines = deriveEngineUtil(before, after);
+
+	CHECK(engines.gpu.percent == doctest::Approx(100.0));
+	CHECK(engines.compute.percent == doctest::Approx(50.0));
+}
+
+TEST_CASE("deriveEngineUtil: no snapshots means no figures, which is not the same as idle")
+{
+	const EngineCache engines = deriveEngineUtil({}, {});
+	for (const auto &util : {engines.gpu, engines.compute, engines.render, engines.media, engines.copy}) {
+		CHECK_FALSE(util.valid);
+		CHECK(util.percent == doctest::Approx(0.0));
+	}
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "utilization per-engine-class getters: each reads only its own figure")
+{
+	// A device that exposes one engine class but not another must report the class it has and
+	// N/A for the rest, rather than borrowing another class's number or reporting it as idle.
+	MetricCache c;
+	c.engines.compute = {.percent = 42.5, .valid = true};
+	c.engines.media = {.percent = 7.25, .valid = true};
+
+	for (const auto &[name, expected] : std::to_array<std::pair<std::string_view, std::string_view>>(
+			 {{"utilization.compute", "42.50"}, {"utilization.media", "7.25"}})) {
+		MetricValue out;
+		CHECK(findMetric(name).value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+		CHECK(out == expected);
+	}
+	for (const auto name : std::to_array<std::string_view>({"utilization.render", "utilization.copy"})) {
+		MetricValue out;
+		CHECK(findMetric(name).value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	}
+}
+
 // ── Power getter logic ────────────────────────────────────────────────────────
 // Live metrics (DRAW, DRAW_GPU, ENERGY_CONSUMED) ignore devInfo entirely,
 // so a zero-device is sufficient — no HAL calls occur.
@@ -757,11 +895,14 @@ TEST_CASE("MetricCache default values are zero and all flags false")
 	CHECK(cache.memAfter.write == 0);
 	CHECK(cache.memAfter.ts == 0);
 	CHECK(cache.memMaxBandwidth == 0);
-	// Engine snapshots (before and after slots)
-	CHECK(cache.engines.all.before.active == 0);
-	CHECK(cache.engines.all.before.ts == 0);
-	CHECK(cache.engines.all.after.active == 0);
-	CHECK(cache.engines.all.after.ts == 0);
+	// Engine samples and the figures derived from them
+	CHECK(cache.engineSamplesBefore.empty());
+	CHECK(cache.engineSamplesAfter.empty());
+	for (const auto &util :
+		 {cache.engines.gpu, cache.engines.compute, cache.engines.render, cache.engines.media, cache.engines.copy}) {
+		CHECK(util.percent == doctest::Approx(0.0));
+		CHECK_FALSE(util.valid);
+	}
 	// EU metrics
 	CHECK(cache.euSample.euActive == 0);
 	CHECK(cache.euSample.euStall == 0);
@@ -836,16 +977,12 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous promotes pre
 	prev.memAfter.write = 77777;
 	prev.memAfter.ts = 88888;
 	prev.memMaxBandwidth = 10000;
-	prev.engines.all.after.active = 500;
-	prev.engines.all.after.ts = 1000;
-	prev.engines.compute.after.active = 600;
-	prev.engines.compute.after.ts = 1100;
-	prev.engines.render.after.active = 400;
-	prev.engines.render.after.ts = 900;
-	prev.engines.media.after.active = 300;
-	prev.engines.media.after.ts = 800;
-	prev.engines.copy.after.active = 200;
-	prev.engines.copy.after.ts = 700;
+	prev.engines.gpu = {.percent = 75.0, .valid = true};
+	prev.engines.compute = {.percent = 60.0, .valid = true};
+	prev.engineSamplesAfter = {
+		{.type = ZES_ENGINE_GROUP_COMPUTE_SINGLE, .tileId = 0, .activeTime = 700, .timestamp = 1200},
+		{.type = ZES_ENGINE_GROUP_COPY_SINGLE, .tileId = 1, .activeTime = 50, .timestamp = 1200},
+	};
 	prev.populated = true;
 
 	const MetricCache curr = populateMetricCacheContinuous(di, prev);
@@ -864,16 +1001,19 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous promotes pre
 	CHECK(curr.memBefore.write == prev.memAfter.write);
 	CHECK(curr.memBefore.ts == prev.memAfter.ts);
 	CHECK(curr.memMaxBandwidth == prev.memMaxBandwidth);
-	CHECK(curr.engines.all.before.active == prev.engines.all.after.active);
-	CHECK(curr.engines.all.before.ts == prev.engines.all.after.ts);
-	CHECK(curr.engines.compute.before.active == prev.engines.compute.after.active);
-	CHECK(curr.engines.compute.before.ts == prev.engines.compute.after.ts);
-	CHECK(curr.engines.render.before.active == prev.engines.render.after.active);
-	CHECK(curr.engines.render.before.ts == prev.engines.render.after.ts);
-	CHECK(curr.engines.media.before.active == prev.engines.media.after.active);
-	CHECK(curr.engines.media.before.ts == prev.engines.media.after.ts);
-	CHECK(curr.engines.copy.before.active == prev.engines.copy.after.active);
-	CHECK(curr.engines.copy.before.ts == prev.engines.copy.after.ts);
+	// The percentages prev derived describe prev's window, so they must not be carried over;
+	// with a null device handle the fresh sample fails and they revert to unavailable.
+	CHECK_FALSE(curr.engines.gpu.valid);
+	CHECK_FALSE(curr.engines.compute.valid);
+	// The raw counters they were derived from are what a new window needs as its baseline;
+	// without them every continuous tick would report no utilization at all.
+	REQUIRE(curr.engineSamplesBefore.size() == prev.engineSamplesAfter.size());
+	for (std::size_t i = 0; i < curr.engineSamplesBefore.size(); ++i) {
+		CHECK(curr.engineSamplesBefore[i].type == prev.engineSamplesAfter[i].type);
+		CHECK(curr.engineSamplesBefore[i].tileId == prev.engineSamplesAfter[i].tileId);
+		CHECK(curr.engineSamplesBefore[i].activeTime == prev.engineSamplesAfter[i].activeTime);
+		CHECK(curr.engineSamplesBefore[i].timestamp == prev.engineSamplesAfter[i].timestamp);
+	}
 	CHECK(curr.populated);
 }
 
@@ -942,17 +1082,19 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous: pcieAvail r
 	CHECK_FALSE(curr.pcieAvail); // end sample failed on ZeroDeviceFixture, as expected
 }
 
-TEST_CASE_FIXTURE(ZeroDeviceFixture,
-				  "populateMetricCacheContinuous: engineAvail is false when after.ts does not advance beyond before.ts")
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous: engineAvail is false when the end sample fails")
 {
+	// A promoted baseline is only half of a window: engineAvail must stay false until the
+	// device also produces the closing snapshot, which a null device handle never does.
 	MetricCache prev;
-	prev.engines.all.after.ts = 1000;
+	prev.engineSamplesAfter = {
+		{.type = ZES_ENGINE_GROUP_COMPUTE_ALL, .tileId = 0, .activeTime = 100, .timestamp = 1000}};
 	prev.populated = true;
 
 	const MetricCache curr = populateMetricCacheContinuous(di, prev);
 
-	// curr.engines.all.before.ts = 1000 (promoted), after.ts = 0 (HAL failure).
-	// Condition: (before.ts != 0) && (after.ts > before.ts) ≡ true && (0 > 1000) = false.
+	REQUIRE_FALSE(curr.engineSamplesBefore.empty());
+	CHECK(curr.engineSamplesAfter.empty());
 	CHECK_FALSE(curr.engineAvail);
 }
 

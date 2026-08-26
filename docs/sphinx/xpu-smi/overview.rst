@@ -66,7 +66,26 @@ Synopsis
    xpu-smi --query-gpu=<fields> [--id <n>] [--loop[=<sec>]|--loop-ms=<ms>] [--count=<n>] [--format=csv[,...]]
    xpu-smi <command> [command-options]
 
-Running ``xpu-smi`` with no arguments displays a GPU status summary of all detected devices.
+Default Output
+--------------
+
+Running ``xpu-smi`` with no arguments displays a GPU status summary of all detected devices,
+followed by the processes using them.
+
+``GPU-Util`` is the utilization of the busiest engine on the device: the fraction of the
+sample window during which that engine was executing work. It is not the average across
+all engines — a workload that saturates the compute engine while leaving the media and
+copy engines idle reports close to 100%, because the compute engine is the bottleneck.
+Use :doc:`stats` for the per-engine-class breakdown behind that figure.
+
+.. note::
+
+   Engine utilization is read from the GPU's busyness counters, which the kernel exposes
+   only to callers holding ``CAP_PERFMON`` (or ``CAP_SYS_ADMIN`` on older kernels).
+   ``GPU-Util`` shows ``N/A`` when they are inaccessible — typically an unprivileged user,
+   or a container started without the capability. Add it with
+   ``docker run --cap-add=PERFMON ...``, or run the container privileged. ``N/A`` means
+   "not measurable here", as opposed to ``0%``, which means the engines were idle.
 
 Command Categories
 ------------------
@@ -271,7 +290,7 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Total energy consumed
    * - ``utilization.gpu``
      - %
-     - Overall GPU utilization
+     - Overall GPU utilization: the busiest engine on the device
    * - ``utilization.compute``
      - %
      - Compute engine utilization

@@ -144,6 +144,19 @@ if get_option('with_tests')
   test('memory_tests', memory_test)
   message('Memory unit tests enabled')
 
+  enginegroup_test = executable(
+    'enginegroup_test',
+    files('test/enginegroup_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('enginegroup_tests', enginegroup_test)
+  message('Engine group unit tests enabled')
+
   if is_linux
     process_test = executable(
       'process_test',

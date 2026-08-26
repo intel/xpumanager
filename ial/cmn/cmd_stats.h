@@ -10,6 +10,7 @@
 #include "cmds.h"
 #include "printer.h"
 #include "table_builder.h"
+#include <enginegroup.h>
 #include <os.h>
 #include <chrono>
 #include <string>
@@ -202,12 +203,13 @@ struct DeviceMetrics
 	std::vector<double> pcieReadKBpsSamples;  // PCIe read throughput samples in kB/s
 	std::vector<double> pcieWriteKBpsSamples; // PCIe write throughput samples in kB/s
 
-	// Per-tile engine utilization samples (aggregated across all engines of each type per tile)
-	std::map<uint32_t, std::vector<double>> allEnginesUtilPerTile; // tile_id -> all engines utilization samples %
-	std::map<uint32_t, std::vector<double>> computeUtilPerTile;	   // tile_id -> compute engine utilization samples %
-	std::map<uint32_t, std::vector<double>> renderUtilPerTile;	   // tile_id -> render engine utilization samples %
-	std::map<uint32_t, std::vector<double>> mediaUtilPerTile;	   // tile_id -> media engine utilization samples %
-	std::map<uint32_t, std::vector<double>> copyUtilPerTile;	   // tile_id -> copy engine utilization samples %
+	// Per-tile utilization samples: overall GPU (the busiest engine on the tile), then one
+	// entry per engine class aggregated across the engines of that class
+	std::map<uint32_t, std::vector<double>> gpuUtilPerTile;		// tile_id -> busiest engine utilization samples %
+	std::map<uint32_t, std::vector<double>> computeUtilPerTile; // tile_id -> compute engine utilization samples %
+	std::map<uint32_t, std::vector<double>> renderUtilPerTile;	// tile_id -> render engine utilization samples %
+	std::map<uint32_t, std::vector<double>> mediaUtilPerTile;	// tile_id -> media engine utilization samples %
+	std::map<uint32_t, std::vector<double>> copyUtilPerTile;	// tile_id -> copy engine utilization samples %
 
 	SummaryStats gpuCoreTemp;
 	SummaryStats memoryTemp;
@@ -347,6 +349,8 @@ private:
 	static ze_result_t collectEngineUtilPerTile(enginegroup *engineGroup, zes_engine_group_t engineType,
 												TileEngineSnapshot &baseline,
 												std::map<uint32_t, std::vector<double>> &utilPerTile);
+	static ze_result_t collectGpuUtilPerTile(enginegroup *engineGroup, std::vector<EngineActivitySample> &baseline,
+											 std::map<uint32_t, std::vector<double>> &utilPerTile);
 	static ze_result_t collectEuMetricsPerTile(metric *metricHandler, ze_device_handle_t device,
 											   ze_driver_handle_t driver, EuArrayMetrics &euMetrics);
 	static ze_result_t collectDeviceStats(devInfo *device, size_t sampleCount, std::chrono::milliseconds sampleInterval,

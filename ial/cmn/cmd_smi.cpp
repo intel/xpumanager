@@ -14,7 +14,6 @@
 #include <enginegroup.h>
 #include "table_builder.h"
 #include <chrono>
-#include <cmath>
 #include "utility/compat/format.h"
 #include <ranges>
 #include <thread>
@@ -107,8 +106,16 @@ void cmdSmi::collectStaticProps(SmiDeviceStats &stats, devInfo *di)
 	// Driver version + device index
 	stats.devIndex = di->index;
 	zes_device_properties_t zesDevProp = {};
+	zesDevProp.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
 	if (dev->zesGetDevProps(di->zesDeviceHdl, &zesDevProp) == ZE_RESULT_SUCCESS) {
 		stats.driverVersion = zesDevProp.driverVersion;
+		// The core query above is unavailable where only sysman is initialized — a container
+		// without a render node, or the paths that skip zeInit — and leaves the name blank.
+		// zes_device_properties_t embeds the same core properties, so use them as a fallback.
+		if (stats.name.empty()) {
+			stats.name = zesDevProp.core.name;
+			stats.eccEnabled = (zesDevProp.core.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) != 0;
+		}
 	}
 
 	// PCI BDF address
@@ -254,12 +261,13 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
 		}
 	}
 
-	// Engine activity baseline (all-engine group for a GPU-utilization-like metric)
+	// Engine activity baseline: every engine group, so utilization can be taken from the
+	// busiest engine rather than from the device-wide average (see computeFromBaseline).
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
 	if (engGroup != nullptr) {
-		std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileActivity;
-		if (engGroup->getEngineActivityPerTile(ZES_ENGINE_GROUP_ALL, tileActivity) == ZE_RESULT_SUCCESS) {
-			baseline.tileEngineActivity = std::move(tileActivity);
+		std::vector<EngineActivitySample> engineActivity;
+		if (engGroup->getAllEngineActivity(engineActivity) == ZE_RESULT_SUCCESS) {
+			baseline.engineActivity = std::move(engineActivity);
 		}
 	}
 }
@@ -301,32 +309,16 @@ void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &basel
 		}
 	}
 
-	// GPU utilization: average across all tiles
+	// GPU utilization: busiest engine per tile, averaged across tiles. Sysman's
+	// ZES_ENGINE_GROUP_ALL cannot be used here: it averages the busyness of every engine on
+	// the device, so a compute-only workload saturating one of nine engines reads as 11%.
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
-	if (engGroup != nullptr && !baseline.tileEngineActivity.empty()) {
-		std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileActivity;
-		if (engGroup->getEngineActivityPerTile(ZES_ENGINE_GROUP_ALL, tileActivity) == ZE_RESULT_SUCCESS) {
-			double totalUtil = 0.0;
-			int tileCount = 0;
-			for (const auto &[tid, cur] : tileActivity) {
-				auto it = baseline.tileEngineActivity.find(tid);
-				if (it == baseline.tileEngineActivity.end()) {
-					continue;
-				}
-				uint64_t prevActive = it->second.first;
-				uint64_t prevTs = it->second.second;
-				uint64_t curActive = cur.first;
-				uint64_t curTs = cur.second;
-				if (curTs > prevTs && curActive >= prevActive) {
-					double util =
-						static_cast<double>(curActive - prevActive) / static_cast<double>(curTs - prevTs) * 100.0;
-					util = std::clamp(util, 0.0, 100.0);
-					totalUtil += util;
-					++tileCount;
-				}
-			}
-			if (tileCount > 0) {
-				stats.gpuUtilPercent = totalUtil / static_cast<double>(tileCount);
+	if (engGroup != nullptr && !baseline.engineActivity.empty()) {
+		std::vector<EngineActivitySample> engineActivity;
+		if (engGroup->getAllEngineActivity(engineActivity) == ZE_RESULT_SUCCESS) {
+			const auto utilPerTile = enginegroup::computeGpuUtilPerTile(baseline.engineActivity, engineActivity);
+			if (const auto deviceUtil = enginegroup::deviceUtilFromTiles(utilPerTile)) {
+				stats.gpuUtilPercent = *deviceUtil;
 				stats.utilValid = true;
 			}
 		}

@@ -53,7 +53,7 @@ bool iequal(std::string_view a, std::string_view b) noexcept
 
 namespace metrics {
 
-using EngineSlot = EngineSample EngineCache::*;
+using EngineSlot = UtilSample EngineCache::*;
 
 struct EngineEntry
 {
@@ -61,13 +61,29 @@ struct EngineEntry
 	zes_engine_group_t group;
 };
 
+/** The per-engine-class figures, each taken from the aggregated group the driver exposes. */
 static constexpr auto ENGINE_MAP = std::to_array<EngineEntry>({
-	{&EngineCache::all, ZES_ENGINE_GROUP_ALL},
 	{&EngineCache::compute, ZES_ENGINE_GROUP_COMPUTE_ALL},
 	{&EngineCache::render, ZES_ENGINE_GROUP_RENDER_ALL},
 	{&EngineCache::media, ZES_ENGINE_GROUP_MEDIA_ALL},
 	{&EngineCache::copy, ZES_ENGINE_GROUP_COPY_ALL},
 });
+
+EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
+							 const std::vector<EngineActivitySample> &after)
+{
+	EngineCache engines;
+	if (const auto gpu = enginegroup::deviceUtilFromTiles(enginegroup::computeGpuUtilPerTile(before, after))) {
+		engines.gpu = {.percent = *gpu, .valid = true};
+	}
+	for (const auto &entry : ENGINE_MAP) {
+		const auto perTile = enginegroup::computeGroupUtilPerTile(before, after, entry.group);
+		if (const auto util = enginegroup::deviceUtilFromTiles(perTile)) {
+			engines.*entry.slot = {.percent = *util, .valid = true};
+		}
+	}
+	return engines;
+}
 
 MetricCache populateMetricCacheBegin(devInfo &dev)
 {
@@ -77,15 +93,10 @@ MetricCache populateMetricCacheBegin(devInfo &dev)
 	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
-	for (const auto &entry : ENGINE_MAP) {
-		auto &s = cache.engines.*entry.slot;
-		if (eg != nullptr) {
-			const auto [r, active, ts] = eg->getUtilization(std::span{&entry.group, 1});
-			if (r == ZE_RESULT_SUCCESS) {
-				s.before.active = active;
-				s.before.ts = ts;
-			}
-		}
+	if (eg != nullptr && eg->getAllEngineActivity(cache.engineSamplesBefore) != ZE_RESULT_SUCCESS) {
+		// Nothing for the end-of-window snapshot to pair against, so every utilization
+		// figure will report N/A. Cleared rather than trusted to be empty on failure.
+		cache.engineSamplesBefore.clear();
 	}
 	if (pw != nullptr) {
 		pw->getEnergy(&cache.cardPowerBefore.energy, &cache.cardPowerBefore.ts, false);
@@ -120,15 +131,12 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
-	for (const auto &entry : ENGINE_MAP) {
-		auto &s = cache.engines.*entry.slot;
-		if (eg != nullptr) {
-			const auto [r, active, ts] = eg->getUtilization(std::span{&entry.group, 1});
-			if (r == ZE_RESULT_SUCCESS) {
-				s.after.active = active;
-				s.after.ts = ts;
-			}
-		}
+	// Assigned wholesale rather than updated in place, so a cache that is sampled twice cannot
+	// keep a figure derived from the previous window or a group the device no longer reports.
+	cache.engineSamplesAfter.clear();
+	cache.engines = {};
+	if (eg != nullptr && eg->getAllEngineActivity(cache.engineSamplesAfter) == ZE_RESULT_SUCCESS) {
+		cache.engines = deriveEngineUtil(cache.engineSamplesBefore, cache.engineSamplesAfter);
 	}
 	bool cardPowerAfterOk = false;
 	if (pw != nullptr) {
@@ -154,8 +162,7 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 						 ZE_RESULT_SUCCESS);
 		cache.memAvail = ok && (cache.memBefore.ts != 0) && (cache.memAfter.ts > cache.memBefore.ts);
 	}
-	cache.engineAvail = (eg != nullptr) && (cache.engines.all.before.ts != 0) &&
-						(cache.engines.all.after.ts > cache.engines.all.before.ts);
+	cache.engineAvail = !cache.engineSamplesBefore.empty() && !cache.engineSamplesAfter.empty();
 	// Mirror pcieAvail/memAvail: require a successful HAL call in both Begin and End, plus
 	// advancing timestamps. cardPowerBefore.ts == 0 when the Begin call failed or Begin was
 	// never called, which correctly prevents powerAvail from being set.
@@ -196,9 +203,9 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
 	MetricCache curr;
 
 	// Promote prev's after-snapshots into curr's before-slots (no sleep needed).
-	for (const auto &entry : ENGINE_MAP) {
-		(curr.engines.*entry.slot).before = (prev.engines.*entry.slot).after;
-	}
+	// The engine figures are derived rather than carried over: what a new window needs is the
+	// raw counters prev ended on, not the percentages they produced.
+	curr.engineSamplesBefore = prev.engineSamplesAfter;
 	curr.cardPowerBefore = prev.cardPowerAfter;
 	curr.gpuPowerBefore = prev.gpuPowerAfter;
 	curr.pcieBefore = prev.pcieAfter;

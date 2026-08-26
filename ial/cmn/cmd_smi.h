@@ -9,6 +9,7 @@
 
 #include "cmds.h"
 #include "table_builder.h"
+#include <enginegroup.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -22,8 +23,8 @@ struct SmiBaseline
 	// power: tile_id -> (energy_microjoules, timestamp_microseconds)
 	std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEnergy;
 
-	// engine util: tile_id -> (activeTime, timestamp)
-	std::map<uint32_t, std::pair<uint64_t, uint64_t>> tileEngineActivity;
+	// engine util: one busyness counter reading per engine group the device exposes
+	std::vector<EngineActivitySample> engineActivity;
 };
 
 /**

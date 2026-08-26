@@ -383,6 +383,350 @@ ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 }
 
 /**
+ * @brief Reads the busyness counter of every engine group exposed by the device
+ *
+ * One sample is produced per engine group handle, tagged with the group type and tile so
+ * callers can tell instance-level counters (@c *_SINGLE) apart from the aggregated ones.
+ * Unlike getEngineActivityPerTile(), a handle that cannot be read is skipped instead of
+ * failing the whole query: on some drivers only a subset of the engine groups is
+ * accessible, and a partial answer still yields a usable utilization figure.
+ *
+ * @param [out] samples One entry per readable engine group handle, in enumeration order.
+ * @return ZE_RESULT_SUCCESS if at least one engine group was read, otherwise the last
+ *         Level Zero error, or ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if the device has none.
+ *         Engine busyness counters typically require CAP_PERFMON, so an unprivileged
+ *         caller (including a container that does not add the capability) gets an error.
+ */
+ze_result_t enginegroup::getAllEngineActivity(std::vector<EngineActivitySample> &samples)
+{
+	TRACING();
+
+	samples.clear();
+	if (engineGroups == nullptr || engineGroupCount == 0) {
+		DBG("No engine groups enumerated.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	samples.reserve(engineGroupCount);
+
+	ze_result_t lastError = ZE_RESULT_SUCCESS;
+	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+		// Queried directly rather than via getProperties()/getActivity() so that an
+		// unreadable handle logs at DBG rather than ERR. Those two log at ERR because a
+		// failure there aborts the caller's query; here it does not, and a device that
+		// denies access to its busyness counters denies access to all of them. Since stats
+		// and dump sample twice per tick for as long as the command runs, ERR would repeat
+		// one line per engine group per tick. What the user needs is the N/A the caller
+		// prints for the metric, which happens whether or not this line is logged.
+		zes_engine_properties_t engineProperties = {};
+		engineProperties.stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+		ze_result_t result = zesEngineGetProperties(engineGroups[i], &engineProperties);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Engine group {}: properties unavailable: 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			lastError = result;
+			continue;
+		}
+
+		zes_engine_stats_t engineStats = {};
+		result = zesEngineGetActivity(engineGroups[i], &engineStats);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Engine group {} (type {}): activity unavailable: 0x{:X} ({})\n", i, engineProperties.type, result,
+				l0_error_to_string(result));
+			lastError = result;
+			continue;
+		}
+
+		samples.push_back({.type = engineProperties.type,
+						   .tileId = engineProperties.onSubdevice ? engineProperties.subdeviceId : 0U,
+						   .activeTime = engineStats.activeTime,
+						   .timestamp = engineStats.timestamp});
+		DBG("Engine group {} (type {}) tile {}: activeTime={}, timestamp={}\n", i, engineProperties.type,
+			samples.back().tileId, engineStats.activeTime, engineStats.timestamp);
+	}
+
+	if (samples.empty()) {
+		return (lastError != ZE_RESULT_SUCCESS) ? lastError : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+namespace {
+
+/**
+ * @brief How directly an engine group type reports the busyness of one physical engine.
+ *
+ * Level Zero aggregates the members of a group by *averaging* their busyness, so the
+ * broader the group the more a single busy engine is diluted: on a device with nine
+ * engines, ZES_ENGINE_GROUP_ALL reports 11% while the one compute engine doing the work
+ * is at 100%. Preferring the narrowest available group keeps "GPU utilization" meaning
+ * "the busiest engine" rather than "the average engine".
+ */
+enum class EngineTier : int
+{
+	Instance = 0, /**< one physical engine (*_SINGLE) */
+	Class = 1,	  /**< every engine of one class (COMPUTE_ALL, RENDER_ALL, ...) */
+	Device = 2,	  /**< every engine on the device (ALL) */
+};
+
+/**
+ * @brief Which engines a group covers, so groups reporting the same ones can be compared.
+ *
+ * The tier is chosen per class rather than per device: a driver that exposes per-engine
+ * counters for one class but only the aggregate for another must still contribute the
+ * aggregate, otherwise a workload running on that class would read as idle.
+ */
+enum class EngineClass : int
+{
+	Compute,
+	Render,
+	ThreeD,
+	RenderCompute, /**< the deprecated 3D+render+compute aggregate */
+	Media,
+	Copy,
+	Device,	 /**< ZES_ENGINE_GROUP_ALL: no class of its own */
+	Unknown, /**< group type this build does not know */
+};
+
+struct EngineKind
+{
+	EngineClass cls;
+	EngineTier tier;
+};
+
+[[nodiscard]] EngineKind engineKind(zes_engine_group_t type) noexcept
+{
+	switch (type) {
+	case ZES_ENGINE_GROUP_COMPUTE_SINGLE:
+		return {EngineClass::Compute, EngineTier::Instance};
+	case ZES_ENGINE_GROUP_COMPUTE_ALL:
+		return {EngineClass::Compute, EngineTier::Class};
+	case ZES_ENGINE_GROUP_RENDER_SINGLE:
+		return {EngineClass::Render, EngineTier::Instance};
+	case ZES_ENGINE_GROUP_RENDER_ALL:
+		return {EngineClass::Render, EngineTier::Class};
+	case ZES_ENGINE_GROUP_3D_SINGLE:
+		return {EngineClass::ThreeD, EngineTier::Instance};
+	case ZES_ENGINE_GROUP_3D_ALL:
+		return {EngineClass::ThreeD, EngineTier::Class};
+	case ZES_ENGINE_GROUP_3D_RENDER_COMPUTE_ALL:
+		return {EngineClass::RenderCompute, EngineTier::Class};
+	case ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE:
+	case ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE:
+	case ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE:
+	case ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE:
+		return {EngineClass::Media, EngineTier::Instance};
+	case ZES_ENGINE_GROUP_MEDIA_ALL:
+		return {EngineClass::Media, EngineTier::Class};
+	case ZES_ENGINE_GROUP_COPY_SINGLE:
+		return {EngineClass::Copy, EngineTier::Instance};
+	case ZES_ENGINE_GROUP_COPY_ALL:
+		return {EngineClass::Copy, EngineTier::Class};
+	case ZES_ENGINE_GROUP_ALL:
+		return {EngineClass::Device, EngineTier::Device};
+	default:
+		// Unknown scope: it could be as broad as ALL, so only use it if nothing else
+		// reported anything.
+		return {EngineClass::Unknown, EngineTier::Device};
+	}
+}
+
+/** True for the groups that do not identify a single engine class. */
+[[nodiscard]] bool isDeviceWide(EngineClass cls) noexcept
+{
+	return cls == EngineClass::Device || cls == EngineClass::Unknown;
+}
+
+/**
+ * @brief Busyness of one engine group over the window between two of its samples, in percent
+ *
+ * noexcept despite the DBG below: both the DBG constructor and Logger::write() are themselves
+ * noexcept, and write() catches the only throwing call (vformat) to route it through
+ * handleFormatError. See utility/logger/logger.h.
+ */
+[[nodiscard]] double utilFromSamples(const EngineActivitySample &before, const EngineActivitySample &after) noexcept
+{
+	if (after.timestamp <= before.timestamp) {
+		// No window to divide by. Guarded here as well as at the call site because the
+		// division would otherwise yield infinity, which clamps to a bogus 100%.
+		return 0.0;
+	}
+	if (after.activeTime < before.activeTime) {
+		// Counter went backwards (driver reload, GPU reset): report idle rather than a
+		// huge value from the unsigned wrap.
+		DBG("Engine busyness counter regression ({} -> {}), reporting 0\n", before.activeTime, after.activeTime);
+		return 0.0;
+	}
+	const double activeDelta = static_cast<double>(after.activeTime - before.activeTime);
+	const double timeDelta = static_cast<double>(after.timestamp - before.timestamp);
+	return std::clamp(activeDelta * 100.0 / timeDelta, 0.0, 100.0);
+}
+
+/**
+ * @brief Pairs up two snapshots and reports the busyness of every engine group in both
+ *
+ * Samples are paired by (tile, group type) in enumeration order rather than by index, so a
+ * handle that failed to read in only one of the two snapshots cannot shift the pairing of the
+ * others. Pairs with no window to measure over are dropped, which is why an engine whose
+ * counter has stalled cannot suppress a usable reading from another group.
+ *
+ * @param [in] before  Earlier snapshot.
+ * @param [in] after   Later snapshot from the same device.
+ * @param [in] visit   Called as visit(sample, util) once per paired group, where @c sample is
+ *                     the later of the two samples and @c util its busyness in percent.
+ */
+template <typename Visitor>
+void forEachPairedSample(const std::vector<EngineActivitySample> &before,
+						 const std::vector<EngineActivitySample> &after, Visitor visit)
+{
+	using SampleKey = std::pair<uint32_t, zes_engine_group_t>; // (tileId, type)
+
+	std::map<SampleKey, std::vector<const EngineActivitySample *>> beforeByKey;
+	for (const auto &sample : before) {
+		beforeByKey[SampleKey{sample.tileId, sample.type}].push_back(&sample);
+	}
+
+	std::map<SampleKey, size_t> paired;
+	for (const auto &current : after) {
+		const SampleKey key{current.tileId, current.type};
+		const auto match = beforeByKey.find(key);
+		if (match == beforeByKey.end()) {
+			continue;
+		}
+		size_t &nextIndex = paired[key];
+		if (nextIndex >= match->second.size()) {
+			continue; // more handles of this type in `after` than in `before`
+		}
+		const EngineActivitySample &previous = *match->second[nextIndex++];
+		if (current.timestamp <= previous.timestamp) {
+			continue; // no window to measure over
+		}
+		visit(current, utilFromSamples(previous, current));
+	}
+}
+
+} // namespace
+
+/**
+ * @brief Derives per-tile GPU utilization (%) from two getAllEngineActivity() snapshots
+ *
+ * For each tile the busiest engine wins, which is the figure a user watching for a
+ * bottleneck wants and the closest analogue of the "GPU-Util" other SMI tools show.
+ * Within an engine class only the narrowest group the driver exposes is used (see
+ * EngineTier), so the per-engine counters win over the class aggregate that averages
+ * them. ZES_ENGINE_GROUP_ALL, which averages the whole device, is used only when no
+ * class reported anything at all.
+ *
+ * Samples are paired by (tile, group type) in enumeration order rather than by index,
+ * so a handle that failed in only one of the two snapshots cannot shift the pairing.
+ * A tile appears in the result only if at least one of its engine groups produced a
+ * usable delta; an empty result means "no utilization data", not "idle".
+ *
+ * @param [in] before Earlier snapshot.
+ * @param [in] after  Later snapshot, taken from the same device.
+ * @return Map of tile_id -> utilization percentage in [0, 100].
+ */
+std::map<uint32_t, double> enginegroup::computeGpuUtilPerTile(const std::vector<EngineActivitySample> &before,
+															  const std::vector<EngineActivitySample> &after)
+{
+	using ClassKey = std::pair<uint32_t, EngineClass>; // (tileId, engine class)
+
+	// Best (narrowest tier, then highest utilization) reading for each tile's engine class.
+	struct ClassUtil
+	{
+		EngineTier tier;
+		double util;
+	};
+	std::map<ClassKey, ClassUtil> perClass;
+
+	forEachPairedSample(before, after, [&perClass](const EngineActivitySample &sample, double util) {
+		const EngineKind kind = engineKind(sample.type);
+		const auto [entry, inserted] =
+			perClass.try_emplace(ClassKey{sample.tileId, kind.cls}, ClassUtil{.tier = kind.tier, .util = util});
+		if (inserted) {
+			return;
+		}
+		if (kind.tier < entry->second.tier) {
+			entry->second = {.tier = kind.tier, .util = util};
+		} else if (kind.tier == entry->second.tier) {
+			entry->second.util = std::max(entry->second.util, util);
+		}
+	});
+
+	// Busiest class per tile. The device-wide groups are a fallback for tiles where no
+	// individual class was measurable, not another candidate for the maximum.
+	std::map<uint32_t, double> utilPerTile;
+	std::map<uint32_t, double> deviceWidePerTile;
+	for (const auto &[classKey, classUtil] : perClass) {
+		const auto &[tileId, cls] = classKey;
+		auto &target = isDeviceWide(cls) ? deviceWidePerTile : utilPerTile;
+		const auto [entry, inserted] = target.try_emplace(tileId, classUtil.util);
+		if (!inserted) {
+			entry->second = std::max(entry->second, classUtil.util);
+		}
+	}
+	for (const auto &[tileId, util] : deviceWidePerTile) {
+		utilPerTile.try_emplace(tileId, util);
+	}
+
+	return utilPerTile;
+}
+
+/**
+ * @brief Derives per-tile utilization (%) of one engine group type from two snapshots
+ *
+ * Unlike computeGpuUtilPerTile() this reports exactly the group asked for, so the caller
+ * decides what the figure means: passing an aggregated type (ZES_ENGINE_GROUP_COMPUTE_ALL and
+ * friends) yields that class's busyness as the driver aggregates it. Every tile that exposes
+ * the group gets its own entry, rather than only the first handle enumerated, so a multi-tile
+ * device does not silently report tile 0 alone.
+ *
+ * Should a driver expose several handles of one type on a single tile, the busiest wins, for
+ * the same reason computeGpuUtilPerTile() takes the maximum.
+ *
+ * @param [in] before Earlier snapshot.
+ * @param [in] after  Later snapshot, taken from the same device.
+ * @param [in] group  Engine group type to report on.
+ * @return Map of tile_id -> utilization percentage in [0, 100]; empty when no tile exposed
+ *         the group with a usable window, which is not the same as the group being idle.
+ */
+std::map<uint32_t, double> enginegroup::computeGroupUtilPerTile(const std::vector<EngineActivitySample> &before,
+																const std::vector<EngineActivitySample> &after,
+																zes_engine_group_t group)
+{
+	std::map<uint32_t, double> utilPerTile;
+	forEachPairedSample(before, after, [&utilPerTile, group](const EngineActivitySample &sample, double util) {
+		if (sample.type != group) {
+			return;
+		}
+		const auto [entry, inserted] = utilPerTile.try_emplace(sample.tileId, util);
+		if (!inserted) {
+			entry->second = std::max(entry->second, util);
+		}
+	});
+	return utilPerTile;
+}
+
+/**
+ * @brief Collapses per-tile utilization into a single device-level figure
+ *
+ * The average across tiles, matching how the other per-tile metrics are reported at
+ * device level.
+ *
+ * @param [in] utilPerTile Output of computeGpuUtilPerTile().
+ * @return The device-level percentage, or std::nullopt when no tile reported data.
+ */
+std::optional<double> enginegroup::deviceUtilFromTiles(const std::map<uint32_t, double> &utilPerTile)
+{
+	if (utilPerTile.empty()) {
+		return std::nullopt;
+	}
+	double total = 0.0;
+	for (const auto &[tileId, util] : utilPerTile) {
+		total += util;
+	}
+	return total / static_cast<double>(utilPerTile.size());
+}
+
+/**
  * @brief Initializes the engine group management subsystem for a device
  *
  * This function initializes engine group management by enumerating all
