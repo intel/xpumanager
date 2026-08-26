@@ -3,10 +3,14 @@
 # Copyright (C) 2026 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+#
+# Generate the auto-generated parts of the Go bindings of one Level-Zero package.
+# Code generation is done in the caller's directory
 
 set -o pipefail
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
+ROOT_DIR=$(pwd)
 PACKAGE="$1"
 
 gotool() {
@@ -18,14 +22,23 @@ if [ -z "$PACKAGE" ] || [ ! -d "$PACKAGE" ]; then
     exit 1
 fi
 
-gotool c-for-go -ccincl -nostamp "$PACKAGE.yml"
+# For nested packages replace '/' with '-'
+CONFIG="$(echo "$PACKAGE.yml" | tr / -)"
+
+# The name of the auto-generated main .go file, expected to match
+# GENERATOR.PackageName in the c-for-go config file.
+PKGNAME=$(basename "$PACKAGE")
+
+# NOTE: -out must point at PACKAGE's parent dir
+gotool c-for-go -ccincl -nostamp -out "$ROOT_DIR/$(dirname "$PACKAGE")" "$CONFIG"
 
 cd "$PACKAGE"
 if [ -f Doxyfile ]; then
     "$SCRIPT_DIR/bin/doxygen"
 fi
 
-go tool cgo -godefs -- -I../level-zero ./types.go > types.go.tmp
+LEVEL_ZERO_DIR=$(realpath "$ROOT_DIR/level-zero" --relative-to .)
+go tool cgo -godefs -- -I"$LEVEL_ZERO_DIR" ./types.go > types.go.tmp
 
 go -C "$SCRIPT_DIR" run ./types-mangle \
     -in-place \
@@ -42,7 +55,7 @@ rm -f types.go.tmp
 # Hack to replace uint with uint64 within auto-generated function prototypes.
 # There is a bug in c-for-go (in the version that we're using) that causes it
 # to translate uint64_t function arguments to uint.
-sed -E '/^func / s/\buint\b/uint64/g' -i "$PACKAGE.go"
+sed -E '/^func / s/\buint\b/uint64/g' -i "$PKGNAME.go"
 
 # Re-format generated files
 gofmt -w types.go const.go

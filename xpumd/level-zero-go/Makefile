@@ -51,7 +51,7 @@ clean-generated:
 	for pkg in $(PACKAGES); do \
 	    rm -f $$pkg/cgo_helpers.go $$pkg/cgo_helpers.h $$pkg/cgo_helpers.c; \
 	    rm -f $$pkg/const.go $$pkg/doc.go $$pkg/types.go; \
-	    rm -f $$pkg/$$pkg.go; \
+	    rm -f $$pkg/$$(basename $$pkg).go; \
 	    rm -f $$pkg/zz_*; \
 	done
 
