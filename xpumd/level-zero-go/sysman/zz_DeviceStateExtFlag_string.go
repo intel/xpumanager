@@ -12,6 +12,8 @@ func _() {
 	_ = x[DEVICE_STATE_EXT_FLAG_WEDGED-2]
 	_ = x[DEVICE_STATE_EXT_FLAG_SURVIVABILITY-4]
 	_ = x[DEVICE_STATE_EXT_FLAG_FLASH_OVERRIDE-8]
+	_ = x[DEVICE_STATE_EXT_FLAG_GPU_LOST-16]
+	_ = x[DEVICE_STATE_EXT_FLAG_DRIVER_NOT_LOADED-32]
 	_ = x[DEVICE_STATE_EXT_FLAG_FORCE_UINT32-2147483647]
 }
 
@@ -19,7 +21,9 @@ const (
 	_DeviceStateExtFlag_name_0 = "NORMALWEDGED"
 	_DeviceStateExtFlag_name_1 = "SURVIVABILITY"
 	_DeviceStateExtFlag_name_2 = "FLASH_OVERRIDE"
-	_DeviceStateExtFlag_name_3 = "FORCE_UINT32"
+	_DeviceStateExtFlag_name_3 = "GPU_LOST"
+	_DeviceStateExtFlag_name_4 = "DRIVER_NOT_LOADED"
+	_DeviceStateExtFlag_name_5 = "FORCE_UINT32"
 )
 
 var (
@@ -35,8 +39,12 @@ func (i DeviceStateExtFlag) String() string {
 		return _DeviceStateExtFlag_name_1
 	case i == 8:
 		return _DeviceStateExtFlag_name_2
-	case i == 2147483647:
+	case i == 16:
 		return _DeviceStateExtFlag_name_3
+	case i == 32:
+		return _DeviceStateExtFlag_name_4
+	case i == 2147483647:
+		return _DeviceStateExtFlag_name_5
 	default:
 		return "DeviceStateExtFlag(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

@@ -17,21 +17,22 @@ func _() {
 	_ = x[TEMP_SENSORS_GPU_BOARD-6]
 	_ = x[TEMP_SENSORS_GPU_BOARD_MIN-7]
 	_ = x[TEMP_SENSORS_VOLTAGE_REGULATOR-8]
+	_ = x[TEMP_SENSORS_COMPOSITE-9]
 	_ = x[TEMP_SENSORS_FORCE_UINT32-2147483647]
 }
 
 const (
-	_TempSensors_name_0 = "GLOBALGPUMEMORYGLOBAL_MINGPU_MINMEMORY_MINGPU_BOARDGPU_BOARD_MINVOLTAGE_REGULATOR"
+	_TempSensors_name_0 = "GLOBALGPUMEMORYGLOBAL_MINGPU_MINMEMORY_MINGPU_BOARDGPU_BOARD_MINVOLTAGE_REGULATORCOMPOSITE"
 	_TempSensors_name_1 = "FORCE_UINT32"
 )
 
 var (
-	_TempSensors_index_0 = [...]uint8{0, 6, 9, 15, 25, 32, 42, 51, 64, 81}
+	_TempSensors_index_0 = [...]uint8{0, 6, 9, 15, 25, 32, 42, 51, 64, 81, 90}
 )
 
 func (i TempSensors) String() string {
 	switch {
-	case i <= 8:
+	case i <= 9:
 		return _TempSensors_name_0[_TempSensors_index_0[i]:_TempSensors_index_0[i+1]]
 	case i == 2147483647:
 		return _TempSensors_name_1

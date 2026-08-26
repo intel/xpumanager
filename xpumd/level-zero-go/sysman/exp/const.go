@@ -19,7 +19,7 @@ import "C"
 
 // RAS Get State Extension Name.
 const (
-	// RAS_GET_STATE_EXP_NAME as defined in level-zero/zes_api.h:7790
+	// RAS_GET_STATE_EXP_NAME as defined in level-zero/zes_api.h:7811
 	RAS_GET_STATE_EXP_NAME = "ZES_extension_ras_state"
 )
 
@@ -29,7 +29,7 @@ const (
 // RAS Get State Extension Version(s).
 type RasStateExpVersion uint32
 
-// RasStateExpVersion enumeration from level-zero/zes_api.h:7802
+// RasStateExpVersion enumeration from level-zero/zes_api.h:7823
 const (
 	// version 1.0
 	RAS_STATE_EXP_VERSION_1_0 RasStateExpVersion = 65536
@@ -47,7 +47,7 @@ const (
 // RAS error categories.
 type RasErrorCategoryExp uint32
 
-// RasErrorCategoryExp enumeration from level-zero/zes_api.h:7828
+// RasErrorCategoryExp enumeration from level-zero/zes_api.h:7849
 const (
 	// The number of accelerator engine resets attempted by the driver.
 	RAS_ERROR_CATEGORY_EXP_RESET RasErrorCategoryExp = iota

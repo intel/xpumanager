@@ -8,21 +8,31 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[INIT_FLAG_PLACEHOLDER-1]
+	_ = x[INIT_FLAG_GPU_ONLY-1]
+	_ = x[INIT_FLAG_VPU_ONLY-2]
+	_ = x[INIT_FLAG_NO_DEVICES-4]
 	_ = x[INIT_FLAG_FORCE_UINT32-2147483647]
 }
 
 const (
-	_InitFlag_name_0 = "PLACEHOLDER"
-	_InitFlag_name_1 = "FORCE_UINT32"
+	_InitFlag_name_0 = "GPU_ONLYVPU_ONLY"
+	_InitFlag_name_1 = "NO_DEVICES"
+	_InitFlag_name_2 = "FORCE_UINT32"
+)
+
+var (
+	_InitFlag_index_0 = [...]uint8{0, 8, 16}
 )
 
 func (i InitFlag) String() string {
 	switch {
-	case i == 1:
-		return _InitFlag_name_0
-	case i == 2147483647:
+	case 1 <= i && i <= 2:
+		i -= 1
+		return _InitFlag_name_0[_InitFlag_index_0[i]:_InitFlag_index_0[i+1]]
+	case i == 4:
 		return _InitFlag_name_1
+	case i == 2147483647:
+		return _InitFlag_name_2
 	default:
 		return "InitFlag(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

@@ -22,7 +22,7 @@ import (
 	"github.com/intel/level-zero-go/core"
 )
 
-// zesRasGetStateExp function as declared in level-zero/zes_api.h:7893
+// zesRasGetStateExp function as declared in level-zero/zes_api.h:7914
 func zesRasGetStateExp(HRas rasHandle, PCount *uint32, PState []RasStateExp) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cPCount, _ := (*C.uint32_t)(unsafe.Pointer(PCount)), cgoAllocsUnknown
@@ -32,7 +32,7 @@ func zesRasGetStateExp(HRas rasHandle, PCount *uint32, PState []RasStateExp) cor
 	return __v
 }
 
-// zesRasClearStateExp function as declared in level-zero/zes_api.h:7939
+// zesRasClearStateExp function as declared in level-zero/zes_api.h:7960
 func zesRasClearStateExp(HRas rasHandle, Category RasErrorCategoryExp) core.Result {
 	cHRas, _ := *(*C.zes_ras_handle_t)(unsafe.Pointer(&HRas)), cgoAllocsUnknown
 	cCategory, _ := (C.zes_ras_error_category_exp_t)(Category), cgoAllocsUnknown

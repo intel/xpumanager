@@ -307,7 +307,7 @@ type PciStats struct {
 //
 // Overclock properties.
 //
-//   - Information on the overclock domain type and all the contols that are part of
+//   - Information on the overclock domain type and all the controls that are part of
 //     the domain.
 type OverclockProperties struct {
 	stype             structureType
@@ -435,9 +435,9 @@ type EngineStats struct {
 //
 // Unique identifier for a fabric port.
 //
-//   - This not a universal identifier. The identified is garanteed to be unique for
-//     the current hardware configuration of the system. Changes in the hardware may
-//     result in a different identifier for a given port.
+//   - This is not a universal identifier. The identified is guaranteed to be unique
+//     for the current hardware configuration of the system. Changes in the hardware
+//     may result in a different identifier for a given port.
 //   - The main purpose of this identifier to build up an instantaneous topology map
 //     of system connectivity. An application should enumerate all fabric ports and
 //     match the member of zes_fabric_port_state_t to the member of zes_fabric_port_properties_t.
@@ -706,7 +706,9 @@ type LedState struct {
 // MemProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-properties-t
 //
-// Memory properties.
+// Memory properties. To get the memory vendor ID and memory vendor name, pNext
+// member of this structure should point to an instance of zes_memory_vendor_info_ext_properties_t
+// with its stype set to ZES_STRUCTURE_TYPE_MEMORY_VENDOR_INFO_EXT_PROPERTIES.
 type MemProperties struct {
 	stype        structureType
 	pnext        unsafe.Pointer
@@ -724,7 +726,7 @@ type MemProperties struct {
 //
 // Memory state - health, allocated.
 //
-// - Percent free is given by 100 * free / pysical mem size.
+// - Percent free is given by 100 * free / physical mem size.
 type MemState struct {
 	stype  structureType
 	pnext  unsafe.Pointer
@@ -1066,7 +1068,8 @@ type PciLinkSpeedDowngradeExtProperties struct {
 //   - This structure may be returned from zesDeviceGetState via the member of
 //     zes_device_state_t
 //   - Provides extended device state information including wedged state, survivability
-//     mode, and flash override status
+//     mode, flash override status, GPU lost condition, and kernel driver binding
+//     status
 type DeviceExtState struct {
 	stype structureType
 	pnext unsafe.Pointer
@@ -1088,6 +1091,23 @@ type oemSerialIdExtProperties struct {
 	Length      uint16
 	OemSerialId [1024]byte
 	_           [6]byte
+}
+
+// MemoryVendorInfoExtProperties declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-memory-vendor-info-ext-properties-t
+//
+// Memory Vendor Info Extension Properties structure.
+//
+//   - This structure can be passed as an extension structure to zesMemoryGetProperties
+//     via pNext member
+//   - Returns the memory vendor ID and the memory vendor name
+type MemoryVendorInfoExtProperties struct {
+	stype      structureType
+	pnext      unsafe.Pointer
+	VendorId   uint32
+	Length     uint16
+	VendorName [256]int8
+	_          [2]byte
 }
 
 // InitFlags declared in:
