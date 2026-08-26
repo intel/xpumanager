@@ -33,6 +33,7 @@ type DeviceInfo struct {
 	BaseInfo
 	Properties         *sysman.DeviceProperties
 	State              *sysman.DeviceState
+	HealthStatus       *sysman.DeviceHealthStatusExt
 	Processes          []sysman.ProcessState
 	PCI                PCIInfo
 	Overclock          *OverclockInfo

@@ -89,6 +89,12 @@ func (d *DeviceInfo) collect(device *sysman.Device) {
 		d.State = &state
 	}
 
+	if health, err := device.GetHealthStatusExt(); err != nil {
+		d.recordError("Device.GetHealthStatusExt", err)
+	} else {
+		d.HealthStatus = &health
+	}
+
 	if procs, err := device.ProcessesGetState(); err != nil {
 		d.recordError("Device.ProcessesGetState", err)
 	} else {
