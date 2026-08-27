@@ -8,7 +8,7 @@ Drivers:
   - ExtensionProperties:
       # to get the experimental RAS APIs enabled
       - Name: "ZES_extension_ras_state"
-        Version: 1
+        Version: 65537 # ZES_RAS_STATE_EXP_VERSION_CURRENT
 
     Devices:
       - RasErrorSets:

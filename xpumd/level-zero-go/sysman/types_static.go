@@ -101,25 +101,37 @@ func wrappersToHandles[V any, H zesHandle, W interface {
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#driver-functions
 type Driver struct {
 	handleWrapper[driverHandle]
-	extensions map[string]bool
+	extensions extensionTable
 }
 
-// HasExtension reports whether the driver advertises the given extension.
-func (w *Driver) HasExtension(name string) bool {
-	return w.extensions[name]
+// HasExtension reports whether the given version of an extension is supported by the driver.
+func (w *Driver) HasExtension(name string, version uint32) bool {
+	return w.extensions.has(name, version)
 }
 
 // Device provides access to Sysman API device functions:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#device-functions
 type Device struct {
 	handleWrapper[deviceHandle]
-	extensions map[string]bool
+	extensions extensionTable
+}
+
+// extensionTable maps the name of each extension to the version advertised.
+type extensionTable map[string]uint32
+
+// has reports whether a given version of an extension is supported.
+//
+// NOTE: We assume backwards compatibility, i.e. a driver advertising version
+// 1.2 of an extension also supports 1.0 and 1.1 (but not 2.0).
+func (t extensionTable) has(name string, version uint32) bool {
+	advertised, found := t[name]
+	return found && advertised>>16 == version>>16 && advertised&0xffff >= version&0xffff
 }
 
 // HasExtension reports whether the driver of this device advertises the given
-// extension.
-func (w *Device) HasExtension(name string) bool {
-	return w.extensions[name]
+// extension, see Driver.HasExtension.
+func (w *Device) HasExtension(name string, version uint32) bool {
+	return w.extensions.has(name, version)
 }
 
 // Overclock provides access to Sysman API overclock functions:

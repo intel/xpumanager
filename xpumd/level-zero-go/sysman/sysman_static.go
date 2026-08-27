@@ -57,9 +57,9 @@ func DriverGet() ([]*Driver, error) {
 			continue
 		}
 
-		driver.extensions = make(map[string]bool, len(extProps))
+		driver.extensions = make(extensionTable, len(extProps))
 		for _, ext := range extProps {
-			driver.extensions[ext.Name.String()] = true
+			driver.extensions[ext.Name.String()] = ext.Version
 		}
 	}
 
@@ -141,7 +141,8 @@ func (z *Device) GetProperties() (DeviceProperties, error) {
 
 	// Chained on the DeviceExtProperties extension that is always present
 	var extProps oemSerialIdExtProperties
-	if z.extensions[OEM_SERIAL_ID_EXT_NAME] {
+	hasOemSerialId := z.extensions.has(OEM_SERIAL_ID_EXT_NAME, uint32(OEM_SERIAL_ID_EXT_VERSION_CURRENT))
+	if hasOemSerialId {
 		extProps.stype = _STRUCTURE_TYPE_OEM_SERIAL_ID_EXT_PROPERTIES
 		pinner.Pin(&extProps)
 
@@ -151,7 +152,7 @@ func (z *Device) GetProperties() (DeviceProperties, error) {
 
 	ret := zesDeviceGetProperties(z.handle, &props.DeviceBaseProperties)
 
-	if z.extensions[OEM_SERIAL_ID_EXT_NAME] && ret == core.RESULT_SUCCESS {
+	if hasOemSerialId && ret == core.RESULT_SUCCESS {
 		length := min(int(extProps.Length), len(extProps.OemSerialId))
 		props.OemSerialId = string(extProps.OemSerialId[:length])
 	}
@@ -167,7 +168,7 @@ func (z *Device) GetState() (DeviceState, error) {
 	var pinner runtime.Pinner
 	defer pinner.Unpin()
 
-	if z.extensions[DEVICE_EXT_STATE_NAME] {
+	if z.extensions.has(DEVICE_EXT_STATE_NAME, uint32(DEVICE_EXT_STATE_VERSION_CURRENT)) {
 		state.ExtendedState = &DeviceExtState{
 			stype: _STRUCTURE_TYPE_DEVICE_EXT_STATE,
 		}
@@ -254,7 +255,7 @@ func (z *Device) EventRegister(flags EventTypeFlags) (EventTypeFlags, error) {
 func (z *Device) PciGetProperties() (PciProperties, error) {
 	var props PciProperties
 
-	if z.extensions[PCI_LINK_SPEED_DOWNGRADE_EXT_NAME] {
+	if z.extensions.has(PCI_LINK_SPEED_DOWNGRADE_EXT_NAME, uint32(PCI_LINK_SPEED_DOWNGRADE_EXT_VERSION_CURRENT)) {
 		props.LinkSpeedDowngrade = &PciLinkSpeedDowngradeExtProperties{
 			stype: _STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_PROPERTIES,
 		}
@@ -276,7 +277,7 @@ func (z *Device) PciGetProperties() (PciProperties, error) {
 func (z *Device) PciGetState() (PciState, error) {
 	var state PciState
 
-	if z.extensions[PCI_LINK_SPEED_DOWNGRADE_EXT_NAME] {
+	if z.extensions.has(PCI_LINK_SPEED_DOWNGRADE_EXT_NAME, uint32(PCI_LINK_SPEED_DOWNGRADE_EXT_VERSION_CURRENT)) {
 		state.LinkSpeedDowngrade = &PciLinkSpeedDowngradeExtState{
 			stype: _STRUCTURE_TYPE_PCI_LINK_SPEED_DOWNGRADE_EXT_STATE,
 		}
@@ -391,7 +392,7 @@ func (z *Device) EccConfigurable() (bool, error) {
 func (z *Device) GetEccState() (EccProperties, error) {
 	props := EccProperties{}
 
-	if z.extensions[DEVICE_ECC_DEFAULT_PROPERTIES_EXT_NAME] {
+	if z.extensions.has(DEVICE_ECC_DEFAULT_PROPERTIES_EXT_NAME, uint32(DEVICE_ECC_DEFAULT_PROPERTIES_EXT_VERSION_CURRENT)) {
 		props.ExtendedProperties = &DeviceEccDefaultPropertiesExt{
 			stype: _STRUCTURE_TYPE_DEVICE_ECC_DEFAULT_PROPERTIES_EXT,
 		}
@@ -580,7 +581,7 @@ func (z *Device) EnumEngineGroups() ([]*Engine, error) {
 func (z *Engine) GetProperties() (EngineProperties, error) {
 	props := EngineProperties{}
 
-	if z.device.extensions[ENGINE_ACTIVITY_EXT_NAME] {
+	if z.device.extensions.has(ENGINE_ACTIVITY_EXT_NAME, uint32(ENGINE_ACTIVITY_EXT_VERSION_CURRENT)) {
 		props.ExtendedProperties = &EngineExtProperties{
 			stype: _STRUCTURE_TYPE_ENGINE_EXT_PROPERTIES,
 		}
@@ -996,7 +997,7 @@ func (z *Device) EnumPowerDomains() ([]*Power, error) {
 func (z *Power) GetProperties() (PowerProperties, error) {
 	props := PowerProperties{}
 
-	if z.device.extensions[POWER_LIMITS_EXT_NAME] {
+	if z.device.extensions.has(POWER_LIMITS_EXT_NAME, uint32(POWER_LIMITS_EXT_VERSION_CURRENT)) {
 		props.ExtendedProperties = &PowerExtProperties{
 			stype:        _STRUCTURE_TYPE_POWER_EXT_PROPERTIES,
 			DefaultLimit: &PowerLimitExtDesc{},

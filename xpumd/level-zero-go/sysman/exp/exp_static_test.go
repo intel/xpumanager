@@ -20,6 +20,7 @@ import (
 const (
 	driverConfigDefault       = th.ConfigDefault
 	driverConfigNoExtension   = "testdata/no_extension.yaml"
+	driverConfigExtVersionErr = "testdata/unsupported_extension_version.yaml"
 	driverConfigComponentErrs = "testdata/error_component.yaml"
 )
 
@@ -99,6 +100,10 @@ func TestRasGetStateExp(t *testing.T) {
 	}
 	testRasGetterSuccess(t, (*Ras).GetStateExp, th.CheckValue(expected),
 		th.WithName("SuccessNoExtension"), th.WithConfig(driverConfigNoExtension),
+	)
+	// extension of an older version than the bindings implement is not used either
+	testRasGetterSuccess(t, (*Ras).GetStateExp, th.CheckValue(expected),
+		th.WithName("SuccessExtensionVersion"), th.WithConfig(driverConfigExtVersionErr),
 	)
 }
 

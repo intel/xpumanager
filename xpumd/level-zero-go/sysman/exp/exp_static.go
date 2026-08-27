@@ -17,7 +17,7 @@ import (
 func (z *Ras) GetStateExp() ([]RasStateExp, error) {
 	// experimental API supported by backend?
 	ret := core.RESULT_ERROR_UNSUPPORTED_FEATURE
-	if z.Device().HasExtension(RAS_GET_STATE_EXP_NAME) {
+	if z.Device().HasExtension(RAS_GET_STATE_EXP_NAME, uint32(RAS_STATE_EXP_VERSION_CURRENT)) {
 		count := uint32(0)
 		if ret = zesRasGetStateExp(z.handle, &count, nil); ret == core.RESULT_SUCCESS {
 			states := make([]RasStateExp, count)
@@ -54,7 +54,7 @@ func (z *Ras) GetStateExp() ([]RasStateExp, error) {
 // is returned if the experimental API is not available.
 func (z *Ras) ClearStateExp(cat RasErrorCategoryExp) error {
 	ret := core.RESULT_ERROR_UNSUPPORTED_FEATURE
-	if z.Device().HasExtension(RAS_GET_STATE_EXP_NAME) {
+	if z.Device().HasExtension(RAS_GET_STATE_EXP_NAME, uint32(RAS_STATE_EXP_VERSION_CURRENT)) {
 		ret = zesRasClearStateExp(z.handle, cat)
 	}
 	return ret.ToError()

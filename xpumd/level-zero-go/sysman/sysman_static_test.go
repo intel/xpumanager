@@ -253,6 +253,14 @@ func TestHandleGetters(t *testing.T) {
 	testHandleGetters(t, "Temperature", getTemperature)
 }
 
+// Extension versions of the stub config, encoded with ZE_MAKE_VERSION
+const (
+	extVersion1_0 = 65536
+	extVersion1_1 = 65537
+	extVersion1_2 = 65538
+	extVersion2_0 = 131072
+)
+
 func testHasExtension(t *testing.T, name string, drvIdx int, extensions []string) {
 	t.Helper()
 	t.Run(name, func(t *testing.T) {
@@ -261,11 +269,11 @@ func testHasExtension(t *testing.T, name string, drvIdx int, extensions []string
 
 		// Devices see the extensions of their driver
 		for _, ext := range extensions {
-			assert.True(t, drv.HasExtension(ext), "driver extension %q", ext)
-			assert.True(t, dev.HasExtension(ext), "device extension %q", ext)
+			assert.True(t, drv.HasExtension(ext, extVersion1_0), "driver extension %q", ext)
+			assert.True(t, dev.HasExtension(ext, extVersion1_0), "device extension %q", ext)
 		}
-		assert.False(t, drv.HasExtension("ZES_extension_nonexistent"))
-		assert.False(t, dev.HasExtension("ZES_extension_nonexistent"))
+		assert.False(t, drv.HasExtension("ZES_extension_nonexistent", extVersion1_0))
+		assert.False(t, dev.HasExtension("ZES_extension_nonexistent", extVersion1_0))
 	})
 }
 
@@ -282,6 +290,22 @@ func TestHasExtension(t *testing.T) {
 		OEM_SERIAL_ID_EXT_NAME,
 		PCI_LINK_SPEED_DOWNGRADE_EXT_NAME,
 		POWER_LIMITS_EXT_NAME,
+	})
+	t.Run("Version", func(t *testing.T) {
+		// The stub driver 0 advertises ras_state at 1.2 and bar at 1.0
+		drv := getDriver(t, 0)
+		// Newer minor versions are backwards compatible
+		assert.True(t, drv.HasExtension("ZES_extension_ras_state", extVersion1_1))
+		assert.True(t, drv.HasExtension("ZES_extension_ras_state", extVersion1_2))
+		// An older minor version does not provide what a newer one does
+		assert.False(t, drv.HasExtension("ZES_extension_bar", extVersion1_1))
+		// Major versions are not compatible with each other
+		assert.False(t, drv.HasExtension("ZES_extension_ras_state", extVersion2_0))
+
+		// Devices see the extension versions of their driver
+		dev := getDevice(t, 0, 0)
+		assert.True(t, dev.HasExtension("ZES_extension_ras_state", extVersion1_2))
+		assert.False(t, dev.HasExtension("ZES_extension_ras_state", extVersion2_0))
 	})
 }
 
@@ -327,8 +351,8 @@ func TestDriverGetExtensionProperties(t *testing.T) {
 	testDriverGetterError(t, (*Driver).GetExtensionProperties, th.WithConfig(driverConfigDriverErrs))
 	testDriverGetterSuccess(t, (*Driver).GetExtensionProperties,
 		th.CheckValue([]DriverExtensionProperties{
-			{Name: th.StringProperty[core.StringProperty256]("ZES_extension_ras_state"), Version: 1},
-			{Name: th.StringProperty[core.StringProperty256]("ZES_extension_bar"), Version: 2},
+			{Name: th.StringProperty[core.StringProperty256]("ZES_extension_ras_state"), Version: extVersion1_2},
+			{Name: th.StringProperty[core.StringProperty256]("ZES_extension_bar"), Version: extVersion1_0},
 		}),
 	)
 }

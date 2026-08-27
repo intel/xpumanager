@@ -5,7 +5,7 @@ Drivers:
       - Name: "ZES_extension_power_limits"
         Version: 65536
       - Name: "ZES_extension_ras_state"
-        Version: 65536
+        Version: 65537
       - Name: "ZES_extension_device_state"
         Version: 65536
     Devices:
