@@ -14,7 +14,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: gh-pages
@@ -23,6 +23,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ${{ fromJson(vars.RUNS_ON || '"ubuntu-latest"') }}
+    permissions:
+      contents: write
     steps:
       - name: Checkout main branch (2.x docs, with full history for worktree)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -18,7 +18,6 @@ concurrency:
 
 permissions:
   contents: read
-  statuses: write
 
 jobs:
   validate-after-merge:

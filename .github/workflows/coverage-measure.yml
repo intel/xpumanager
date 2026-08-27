@@ -41,8 +41,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  actions: read
 
 jobs:
   # Coverage on the head branch
@@ -257,6 +255,10 @@ jobs:
       (github.event_name == 'pull_request' || inputs.pr_number != '')
     runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read
     steps:
       - name: Checkout repository (for compare script)
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v4
