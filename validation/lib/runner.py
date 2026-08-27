@@ -621,6 +621,21 @@ class CLITestRunner:
                     continue
             return False
 
+        if name == "root_euid":
+            # Generic gate for operations that only work as the superuser.
+            # Combine it with a feature capability in a requires_capability
+            # list, e.g. ["crashlog", "root_euid"].
+            return not self.is_windows and os.geteuid() == 0
+
+        if name == "crashlog":
+            # The crashlog subcommand shells out to the Intel Crash Log CLI
+            # (iclg) and needs a device to target. Read-only extract works as
+            # any user, so root is not required here.
+            import shutil
+            if self.is_windows or shutil.which("iclg") is None:
+                return False
+            return len(self._auto_discover_device_ids()) >= 1
+
         self.logger.warning(f"Unknown capability '{name}'; treating as unavailable")
         return False
 

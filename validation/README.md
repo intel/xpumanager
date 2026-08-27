@@ -55,6 +55,9 @@ into the tooling.
 
 ### 1. Install `uv` (if not already present)
 
+Check with `uv --version` first — many distros already package it. Use the
+installer below only if yours does not:
+
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
