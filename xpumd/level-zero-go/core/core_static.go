@@ -15,15 +15,18 @@ package core
 */
 import "C"
 
-// Check that the API version of the C headers used for compilation is at least
-// the version that was used to generate the bindings.
+// Check that the API major version of the C headers matches the version used to
+// generate the bindings, and that the minor version is not older.
+const (
+	_level_zero_header_major_API_version_too_old = int(C.ZE_API_VERSION_CURRENT>>16) - int(API_VERSION_CURRENT>>16)
+	_level_zero_header_major_API_version_too_new = int(API_VERSION_CURRENT>>16) - int(C.ZE_API_VERSION_CURRENT>>16)
+	_level_zero_header_minor_API_version_too_old = int(C.ZE_API_VERSION_CURRENT&0xffff) - int(API_VERSION_CURRENT&0xffff)
+)
+
 var (
-	// Fails with "cannot use type" compiler error if the major version from the C
-	// headers does not match that from the bindings.
-	_ [1]struct{} = [int(C.ZE_API_VERSION_CURRENT>>16) - int(API_VERSION_CURRENT>>16) + 1]struct{}{}
-	// Fails with "invalid array length" compiler error if the minor version
-	// from the C headers is less than that from the bindings.
-	_ [int(C.ZE_API_VERSION_CURRENT&0xffff) - int(API_VERSION_CURRENT&0xffff)]struct{}
+	_ [_level_zero_header_major_API_version_too_old]struct{}
+	_ [_level_zero_header_major_API_version_too_new]struct{}
+	_ [_level_zero_header_minor_API_version_too_old]struct{}
 )
 
 func (r Result) Error() string {
