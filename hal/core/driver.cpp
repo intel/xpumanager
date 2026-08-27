@@ -6,6 +6,9 @@
 
 #include "driver.h"
 #include "driver_util.h"
+#include "cperlog.h"
+#include "hal.h"
+#include "sysman.h"
 #include <loader/ze_loader.h>
 #include <os.h>
 #include <charconv>
@@ -643,6 +646,63 @@ ze_result_t driver::crashlogDecode(UNUSED const std::string &inputFile, UNUSED c
 	int result = CRASHLOG_DECODE(inputFile, jsonFile, output);
 	return (result == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNKNOWN;
 }
+
+/**
+ * @brief Reads a snapshot of the driver-scoped CPER (Common Platform Error Record) info log buffer.
+ *
+ * The CPER records are exposed through the Level Zero sysman experimental info log extension and
+ * are shared across all devices of the driver (single ring buffer). This reads whatever is
+ * currently buffered into @p cperBlob.
+ *
+ * @param [out] cperBlob Receives the raw CPER buffer bytes.
+ * @retval ZE_RESULT_SUCCESS
+ * @retval ZE_RESULT_WARNING_DROPPED_DATA some records were too large for the ring buffer
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED  driver not initialized
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE extension unavailable
+ */
+ze_result_t driver::getCperLog(std::vector<uint8_t> &cperBlob, std::optional<std::string_view> instanceName,
+							   CperBufferSizeKb bufferSizeKb, bool peek)
+{
+	TRACING();
+	if (zesDrivers == nullptr) {
+		ERR("Driver is not initialized.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	return collectCperLog(zesDrivers[0], cperBlob, instanceName, bufferSizeKb, peek);
+}
+
+/**
+ * @brief Reads the driver-scoped CPER info log buffer with per-record metadata.
+ *
+ * Forwards to collectCperLogWithMetadata for the first initialized ZES driver handle.
+ *
+ * @param [out] cperBlob     Receives the raw CPER buffer bytes.
+ * @param [out] metadata     Receives one descriptor per CPER record.
+ * @param [in]  instanceName Optional named tracefs instance; nullopt uses the global buffer.
+ * @param [in]  bufferSizeKb Optional per-CPU ring-buffer size in KB; nullopt keeps the driver default.
+ * @retval ZE_RESULT_SUCCESS
+ * @retval ZE_RESULT_WARNING_DROPPED_DATA some records were too large for the ring buffer
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED  driver not initialized
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE extension unavailable
+ */
+ze_result_t driver::getCperLogWithMetadata(std::vector<uint8_t> &cperBlob,
+										   std::vector<zes_intel_info_log_metadata_exp> &metadata,
+										   std::optional<std::string_view> instanceName, CperBufferSizeKb bufferSizeKb,
+										   bool peek)
+{
+	TRACING();
+	if (zesDrivers == nullptr) {
+		ERR("Driver is not initialized.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	return collectCperLogWithMetadata(zesDrivers[0], cperBlob, metadata, instanceName, bufferSizeKb, peek);
+}
+
+namespace hal {
+std::string_view resultToString(ze_result_t result) { return l0_error_to_string(result); }
+} // namespace hal
 
 /**
  * @brief Resolves a single non-comma token (BDF address, numeric index, or empty) to a device.

@@ -282,4 +282,40 @@ jobs:
           BASE_REF: ${{ inputs.base_ref || github.base_ref }}
           PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
         with:
-          script-path: .github/scripts/post_coverage_comment.ts
+          script: |
+            const { spawnSync } = require('child_process');
+            const baseRef = process.env.BASE_REF;
+            const prNumber = parseInt(process.env.PR_NUMBER ?? '', 10);
+            if (!baseRef) { core.setFailed('BASE_REF env var is not set.'); return; }
+            if (isNaN(prNumber) || prNumber <= 0) { core.setFailed('No valid PR number available to post a comment on.'); return; }
+            const result = spawnSync(
+              'python3',
+              ['.github/scripts/compare_coverage.py', 'coverage_base.json', 'coverage_pr.json', '--base-ref', baseRef],
+              { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] },
+            );
+            if (result.status !== 0) { core.setFailed(`compare_coverage.py exited with status ${result.status}`); return; }
+            const reportBody = result.stdout;
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: context.runId,
+            });
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const links = [['coverage-pr', 'Head HTML report'], ['coverage-base', `${baseRef} baseline HTML report`]]
+              .map(([name, label]) => { const art = artifacts.find(a => a.name === name); return art ? `[${label}](${runUrl}/artifacts/${art.id})` : null; })
+              .filter(l => l !== null).join(' | ');
+            const marker = '<!-- xpum-coverage-report -->';
+            const fullBody = `${marker}\n${reportBody}\n\n${links}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body: fullBody,
+              });
+              core.info(`Updated coverage comment (id ${existing.id}) on PR #${prNumber}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: fullBody,
+              });
+              core.info(`Created coverage comment on PR #${prNumber}`);
+            }

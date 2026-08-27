@@ -28,9 +28,9 @@ def fmt(pct: float) -> str:
 
 
 def direction(delta: float) -> str:
-    if delta > 0.5:
+    if delta > 0:
         return "increased"
-    if delta < -0.5:
+    if delta < 0:
         return "decreased"
     return "unchanged"
 

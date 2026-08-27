@@ -10,6 +10,7 @@
 #include <set>
 #include <string_view>
 #include <vector>
+#include "cperlog.h"
 #include "device.h"
 
 struct survivabilityDevices
@@ -78,6 +79,14 @@ public:
 								std::string &output);
 	ze_result_t crashlogDecode(const std::string &inputFile, const std::string &jsonFile, std::string &output);
 
+	[[nodiscard("ZE_RESULT_WARNING_DROPPED_DATA signals partial data; callers must not treat it as success")]]
+	ze_result_t getCperLog(std::vector<uint8_t> &cperBlob, std::optional<std::string_view> instanceName = std::nullopt,
+						   CperBufferSizeKb bufferSizeKb = std::nullopt, bool peek = false);
+	[[nodiscard("ZE_RESULT_WARNING_DROPPED_DATA signals partial data; callers must not treat it as success")]]
+	ze_result_t getCperLogWithMetadata(std::vector<uint8_t> &cperBlob,
+									   std::vector<zes_intel_info_log_metadata_exp> &metadata,
+									   std::optional<std::string_view> instanceName = std::nullopt,
+									   CperBufferSizeKb bufferSizeKb = std::nullopt, bool peek = false);
 	ze_result_t run();
 };
 

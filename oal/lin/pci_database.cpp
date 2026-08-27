@@ -5,7 +5,6 @@
  */
 
 #include <unistd.h>
-#include <algorithm>
 #include <array>
 #include <cctype>
 #include <cstddef>
@@ -18,6 +17,7 @@
 #include "debug.h"
 #include "os.h"
 #include "pci_database.h"
+#include "pci_switch_name.h"
 #include "lin.h"
 
 /**
@@ -54,9 +54,10 @@ PciDatabase &PciDatabase::instance()
 // Distro-provided copies of the upstream PCI ID database, kept current by the package manager.
 // Fixed, root-owned paths, so they carry the same trust as an installed resource. Supplied by
 // hwdata/pciutils, which minimal container images may omit.
-static constexpr std::array<std::string_view, 2> PCI_IDS_SYSTEM_PATHS = {
+static constexpr std::array<std::string_view, 3> PCI_IDS_SYSTEM_PATHS = {
 	"/usr/share/hwdata/pci.ids",
 	"/usr/share/misc/pci.ids",
+	"/usr/share/pci.ids",
 };
 
 /**
@@ -90,7 +91,7 @@ bool PciDatabase::init()
 	std::string fileName;
 	bool ret = true;
 
-	// Try to find pci.ids file
+	// Load the bundled PCI IDs snapshot as the baseline.
 	fileName = findResourceFile("resources/config/" + std::string(PCI_IDS_FILE));
 	infile.open(fileName.data());
 
@@ -490,39 +491,6 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 			}
 		}
 	}
-}
-
-/**
- * @brief Tests whether a PCI device name identifies it as a PCIe switch.
- *
- * Matches the whole word "switch" (case-insensitive) anywhere in @p name,
- * requiring a word boundary on both sides so that e.g. "SwitchNIC" is not
- * mistaken for a switch. Unlike the previous " Switch " (space-delimited)
- * test, this also matches names that *end* in "Switch" — such as the
- * Broadcom "PEX890xx PCIe Gen 5 Switch" (1000:c030) — which the old check
- * silently dropped, leaving those bridges uncounted in `topology` output.
- *
- * @param name Device or subsystem name from the PCI IDs database.
- * @return true if @p name contains "switch" as a standalone word.
- */
-static bool nameIndicatesSwitch(const std::string &name)
-{
-	static constexpr std::string_view kWord = "switch";
-	const auto isWordChar = [](unsigned char c) { return (std::isalnum(c) != 0) || c == '_'; };
-
-	std::string lower(name.size(), '\0');
-	std::transform(name.begin(), name.end(), lower.begin(),
-				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-	for (std::size_t pos = lower.find(kWord); pos != std::string::npos; pos = lower.find(kWord, pos + 1)) {
-		const bool leftBoundary = (pos == 0) || !isWordChar(static_cast<unsigned char>(lower[pos - 1]));
-		const std::size_t after = pos + kWord.size();
-		const bool rightBoundary = (after >= lower.size()) || !isWordChar(static_cast<unsigned char>(lower[after]));
-		if (leftBoundary && rightBoundary) {
-			return true;
-		}
-	}
-	return false;
 }
 
 /**

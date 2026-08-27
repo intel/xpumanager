@@ -45,6 +45,16 @@ if get_option('with_tests')
   )
 
   test('path_lookup_test', path_lookup_test)
+  pci_switch_test = executable(
+    'pci_switch_test',
+    'pci_switch_test.cpp',
+    include_directories: [include_directories('..')],
+    dependencies: [doctest_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('pci_switch_tests', pci_switch_test)
 
   # Kernel-mode driver identification tests (driver resolution and srcversion
   # reads against a fake sysfs tree). Compiles kernel_driver.cpp directly so the

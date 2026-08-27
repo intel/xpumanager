@@ -13,6 +13,7 @@
 #include <cmd_discovery.h>
 #include <cmd_dump.h>
 #include <cmd_health.h>
+#include <cmd_raslog.h>
 #include <cmd_log.h>
 #include <cmd_ps.h>
 #include <cmd_stats.h>
@@ -81,6 +82,7 @@ std::vector<function_entry> defaultCommandTable()
 		{.createFunc = createInstance<cmdStats>, .osType = OSTYPE::BOTH},
 		{.createFunc = createInstance<cmdDump>, .osType = OSTYPE::BOTH},
 		{.createFunc = createInstance<cmdLogs>, .osType = OSTYPE::LINUX},
+		{.createFunc = createInstance<cmdRasLog>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdHealth>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdAmc>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdListpciinfo>, .osType = OSTYPE::LINUX},
