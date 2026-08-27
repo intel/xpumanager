@@ -16,6 +16,15 @@
 #include <zes_api.h>
 
 /**
+ * @brief Memory vendor information collected from the memory vendor ID extension.
+ */
+struct MemoryVendorData
+{
+	uint32_t vendorId = 0;	///< Memory vendor ID (0 when it could not be determined)
+	std::string vendorName; ///< Memory vendor name (empty when it could not be determined)
+};
+
+/**
  * @brief Display string for memory specification data the platform exposes no source for
  */
 inline constexpr std::string_view MEMORY_SPEC_UNKNOWN{"unknown"};
@@ -98,6 +107,15 @@ class LIBXPUM_API memory : public sysman
 private:
 	uint32_t memoryModulesCount = 0;
 	zes_mem_handle_t *memoryModules = nullptr;
+	zes_driver_handle_t zesDriver = nullptr;
+
+	// Cached result of the memory vendor ID extension support check (see isMemoryVendorSupported).
+	// -1 = not yet queried, 0 = unsupported, 1 = supported.
+	int memoryVendorSupported = -1;
+
+	// Returns true when the driver advertises the memory vendor ID extension. The result is cached
+	// so the driver extension list is only enumerated once per device.
+	bool isMemoryVendorSupported();
 
 	zes_mem_type_t collectSysmanMemoryType(bool &anySourceAnswered, ze_result_t &lastError);
 	static ze_device_memory_ext_type_t collectCoreMemoryType(ze_device_handle_t coreDevice, bool &anySourceAnswered,
@@ -106,6 +124,7 @@ private:
 public:
 	memory() = default;
 	~memory() override;
+	void setZesDriver(zes_driver_handle_t zesD) { zesDriver = zesD; }
 	ze_result_t enumMemoryModules(zes_device_handle_t device);
 	ze_result_t getProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties);
 	ze_result_t getState(zes_mem_handle_t memhandle, zes_mem_state_t *state);
@@ -114,6 +133,7 @@ public:
 	ze_result_t getMemoryHealth(zes_mem_health_t *health);
 	ze_result_t getMemoryChannels(int32_t *channels);
 	ze_result_t getMemoryBusWidth(int32_t *busWidth);
+	ze_result_t getMemoryVendor(MemoryVendorData *vendor);
 	ze_result_t getMemoryUsed(uint64_t *used, double *utilization);
 	ze_result_t getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBandwidth, uint64_t *timeStamp);
 	ze_result_t getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidthData> &tileBandwidth);

@@ -43,6 +43,7 @@ if extensions_enabled
 else
   hal_core_sources += files('offline_page.cpp')
   hal_core_sources += files('powerexp.cpp')
+  hal_core_sources += files('memory_vendor.cpp')
 endif
 
 # Shared library

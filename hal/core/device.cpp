@@ -880,6 +880,10 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	// Pass the zesDriver to the pci class
 	pciInstance.setZesDriver(zesDriver);
 
+	// Pass the zesDriver to the memory class so it can gate the memory vendor ID extension on driver
+	// support (older drivers crash when handed the unknown extension pNext).
+	memoryInstance.setZesDriver(zesDriver);
+
 	// Initialize page offline module with sysman device context
 	result = pageOfflineInstance.init(zesDri, zesDev);
 	if (result != ZE_RESULT_SUCCESS) {

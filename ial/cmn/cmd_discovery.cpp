@@ -730,6 +730,9 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	memoryBusWidth(d, &outputLine);
 	props["memory_bus_width"] = outputLine;
 
+	memoryVendor(d, &outputLine);
+	props["memory_vendor"] = outputLine;
+
 	eus(d, &outputLine);
 	props["number_of_eus"] = outputLine;
 
@@ -782,7 +785,8 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 		DBG("Memory specification unavailable: 0x{:X} ({})\n", specResult, l0_error_to_string(specResult));
 	}
 	props["memory_type"] = memSpec.typeName;
-	props["memory_vendor"] = memSpec.vendor;
+	// memory_vendor is set from the real vendor-ID sysman extension above (memoryVendor()),
+	// not from memSpec.vendor which has no platform source and is always "unknown".
 	props["memory_date_code"] = memSpec.dateCode;
 	props["memory_ic_die_info"] = memSpec.dieInfo;
 
@@ -1383,21 +1387,43 @@ ze_result_t cmdDiscovery::memoryType(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the memory vendor for a device when user runs discovery --dump 51.
  *
- * No Level Zero interface, kernel-mode driver interface or igsc entry point
- * exposes the memory manufacturer, so this is "unknown" on every platform today.
- * See MemorySpecData in hal/core/memory.h for what populating it would require.
+ * The memory vendor is read from the memory vendor ID sysman extension (an extension to
+ * zesMemoryGetProperties). When the vendor name is available it is rendered together with
+ * the vendor ID, e.g. "Hynix (0x8600)".
  *
- * @param[in] d Pointer to the device info structure (unused)
- * @param[out] outputLine Pointer to the output line string
+ * @param[in] d Pointer to the device info structure
+ * @param[out] outputLine Pointer to the output line string. Set to "N/A" when the vendor
+ *                        cannot be determined (e.g. unsupported hardware/driver).
  *
- * @retval ZE_RESULT_SUCCESS Always succeeds
+ * @retval ZE_RESULT_SUCCESS Successfully produced an output line (including the "N/A" case)
+ * @retval ZE_RESULT_ERROR_* Failed to get memory information
  */
-// Bound as a pointer-to-member in DISC_DUMP_CMDS, so it cannot be static.
-// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-ze_result_t cmdDiscovery::memoryVendor(UNUSED devInfo *d, std::string *outputLine)
+ze_result_t cmdDiscovery::memoryVendor(devInfo *d, std::string *outputLine)
 {
-	TRACING(); // NOLINT(misc-const-correctness)
-	*outputLine = MEMORY_SPEC_UNKNOWN;
+	TRACING();
+
+	*outputLine = "N/A";
+
+	MemoryVendorData vendor;
+	auto *const m = d->dev->getMemory();
+
+	// Hardware/drivers that lack the vendor-ID extension still return SUCCESS here with an
+	// empty vendor (the unknown pNext struct is ignored), which is rendered as "N/A" below.
+	// A non-SUCCESS result therefore signals a genuine operational failure and is propagated,
+	// consistent with the neighboring memoryChannels/memoryBusWidth handlers.
+	if (const auto result = m->getMemoryVendor(&vendor); result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get memory vendor: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	if (!vendor.vendorName.empty() && vendor.vendorId != 0) {
+		*outputLine = xpum::compat::format("{} (0x{:X})", vendor.vendorName, vendor.vendorId);
+	} else if (!vendor.vendorName.empty()) {
+		*outputLine = vendor.vendorName;
+	} else if (vendor.vendorId != 0) {
+		*outputLine = xpum::compat::format("0x{:X}", vendor.vendorId);
+	}
+
 	return ZE_RESULT_SUCCESS;
 }
 
