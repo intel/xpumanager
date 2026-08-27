@@ -7,11 +7,14 @@ package inteldevicewatch
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/extension"
 
 	"github.com/intel/xpumanager/xpumd/extension/inteldevicewatch/internal/metadata"
+	"github.com/intel/xpumanager/xpumd/extension/inteldevicewatch/internal/sysdev"
 )
 
 // NewFactory creates a factory for the extension.
@@ -24,19 +27,22 @@ func NewFactory() extension.Factory {
 	)
 }
 
-// Config defines configuration for the Intel device watch extension.
-type Config struct{}
-
 func createDefaultConfig() component.Config {
-	return &Config{}
+	return &Config{
+		ScanInterval:   30 * time.Second,
+		SettleScans:    2,
+		ReportInterval: 10 * time.Minute,
+		Subsystems:     []string{string(sysdev.SubsystemDRM), string(sysdev.SubsystemMEI)},
+		VendorIDs:      []string{sysdev.VendorIDIntel},
+		SysfsRoot:      "/sys",
+		DevRoot:        "/dev",
+	}
 }
 
-// deviceWatch is a placeholder that does nothing, yet.
-type deviceWatch struct {
-	component.StartFunc
-	component.ShutdownFunc
-}
-
-func createExtension(_ context.Context, _ extension.Settings, _ component.Config) (extension.Extension, error) {
-	return &deviceWatch{}, nil
+func createExtension(_ context.Context, settings extension.Settings, cfg component.Config) (extension.Extension, error) {
+	c, ok := cfg.(*Config)
+	if !ok {
+		return nil, fmt.Errorf("invalid config type: %T", cfg)
+	}
+	return newDeviceWatch(settings, c)
 }

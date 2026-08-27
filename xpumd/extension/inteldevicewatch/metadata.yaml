@@ -72,3 +72,7 @@ telemetry:
       sum:
         value_type: int
         monotonic: true
+
+tests:
+  config:
+    scan_interval: 1h

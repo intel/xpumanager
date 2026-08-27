@@ -160,8 +160,34 @@ exporters:
     endpoint: "127.0.0.1:8080"
 
 extensions:
+  # Watches for changes in the set of GPU devices this process can use.
+  #
+  # The L0 Sysman API enumerates devices once, at zesInit: a device that was not
+  # there then is never reported, and one that has gone stays in the inventory.
+  # In a container the device files under /dev/dri can also drift from the host.
+  # This extension compares sysfs against the device files and reports what it
+  # finds; picking the changes up needs a restart.
+  intel_device_watch:
+    # How often to compare sysfs against the device files.
+    scan_interval: 30s
+    # Number of consecutive scans that must agree before a change is reported.
+    # PCI rescan and driver rebind produce transients.
+    settle_scans: 2
+    # How often a persisting condition is re-logged. Changes are always logged
+    # immediately; zero logs each condition only when it appears or changes.
+    report_interval: 10m
+    # sysfs device classes to watch. Supported: "drm", "mei". A subsystem whose
+    # nodes are not mapped into the container reports as inaccessible forever.
+    subsystems: [drm, mei]
+    # PCI vendor IDs to watch, without the "0x" prefix. Empty watches all.
+    vendor_ids: ["8086"]
+    # sysfs mount point to read the device inventory from.
+    #sysfs_root: /sys
+    # Root of the device file tree compared against sysfs.
+    #dev_root: /dev
 
 service:
+  extensions: [intel_device_watch]
   telemetry:
     logs:
       level: info
