@@ -70,17 +70,15 @@ for file in "$@"; do
 	fi
 
 	# Both dashboard 'uid'...
-	uid=$(jq .uid "$file" | tail -1 | tr -d '"')
-	if [ -z "$uid" ]; then
-		error_exit "'$file' dashboard has invalid JSON"
-	elif [ "$uid" = "null" ]; then
-		error_exit "'$file' dashboard has no 'uid' field (to override with Helm chart specific one)"
+	uid=$(jq -r .metadata.uid//.uid "$file" | tail -1) || error_exit "'$file' dashboard has invalid JSON"
+	if [ -z "$uid" ] || [ "$uid" = "null" ]; then
+		error_exit "'$file' dashboard '[metadata.]uid' value missing (to override with Helm chart specific one)"
 	fi
 
 	# ...and 'title' needed.
-	title=$(jq .title "$file" | tail -1 | tr -d '"')
-	if [ "$title" = "null" ]; then
-		error_exit "'$file' dashboard has no 'title' field (to show in Grafana Dashboards list)"
+	title=$(jq -r .spec.title//.title "$file" | tail -1)
+	if [ -z "$title" ] || [ "$title" = "null" ]; then
+		error_exit "'$file' dashboard '[spec.]title' value missing (to show in Grafana Dashboards list)"
 	fi
 
 	echo "- file: $file, uid: '$uid', title: '$title'"
@@ -93,8 +91,8 @@ for file in "$@"; do
 	name=${base%.json}
 	dst="configmap-${name}.yaml"
 
-	uid=$(jq .uid "$file" | tail -1 | tr -d '"')
-	title=$(jq .title "$file" | tail -1 | tr -d '"')
+	uid=$(jq -r .metadata.uid//.uid "$file" | tail -1)
+	title=$(jq -r .spec.title//.title "$file" | tail -1)
 
 	# convert to k8s object name ("[a-z0-9][-a-z0-9]*[a-z0-9]"):
 	# - upper-case -> lowercase, '_' -> '-'
