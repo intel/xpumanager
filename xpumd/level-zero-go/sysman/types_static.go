@@ -20,7 +20,8 @@ import (
 
 // Wrappers for handles
 //
-// This section defines wrapper types for the Sysman API handles
+// This section defines wrapper types for the Sysman API handles, plus generic
+// helpers for converting between handles and the wrapper types
 
 // zesHandle is the set of Level Zero handle types that the higher level wrapper types are built on.
 type zesHandle interface {
@@ -65,6 +66,35 @@ func (w *deviceRef) Device() *Device {
 
 func (w *deviceRef) setDevice(d *Device) {
 	w.device = d
+}
+
+// handlesToWrappers converts a slice of L0 handles to higher-level wrapper types.
+func handlesToWrappers[V any, H zesHandle, W interface {
+	*V
+	setHandle(H)
+	setDevice(*Device)
+}](handles []H, device *Device) []W {
+	wrappers := make([]W, len(handles))
+	for i, handle := range handles {
+		v := new(V)
+		w := W(v)
+		w.setHandle(handle)
+		w.setDevice(device)
+		wrappers[i] = w
+	}
+	return wrappers
+}
+
+// wrappersToHandles converts a slice of higher-level wrapper types back into their underlying L0 handles.
+func wrappersToHandles[V any, H zesHandle, W interface {
+	*V
+	getHandle() H
+}](wrappers []W) []H {
+	handles := make([]H, len(wrappers))
+	for i, wrapper := range wrappers {
+		handles[i] = wrapper.getHandle()
+	}
+	return handles
 }
 
 // Driver provides access to Sysman API driver functions:
@@ -202,51 +232,6 @@ type Standby struct {
 type Temperature struct {
 	handleWrapper[tempHandle]
 	deviceRef
-}
-
-// Generics for handle wrappers
-//
-// This section defines generic functions to convert between Sysman handles and the Golang wrapper types.
-
-func handlesToWrappers[H any, V any, W interface {
-	*V
-	setHandle(H)
-}](handles []H) []W {
-	wrappers := make([]W, len(handles))
-	for i, handle := range handles {
-		v := new(V)
-		w := W(v)
-		w.setHandle(handle)
-		wrappers[i] = w
-	}
-	return wrappers
-}
-
-func handlesToWrappersWithDevice[H any, V any, W interface {
-	*V
-	setHandle(H)
-	setDevice(*Device)
-}](handles []H, device *Device) []W {
-	wrappers := make([]W, len(handles))
-	for i, handle := range handles {
-		v := new(V)
-		w := W(v)
-		w.setHandle(handle)
-		w.setDevice(device)
-		wrappers[i] = w
-	}
-	return wrappers
-}
-
-func wrappersToHandles[H any, V any, W interface {
-	*V
-	getHandle() H
-}](wrappers []W) []H {
-	handles := make([]H, len(wrappers))
-	for i, wrapper := range wrappers {
-		handles[i] = wrapper.getHandle()
-	}
-	return handles
 }
 
 // Types for the higher level golang API

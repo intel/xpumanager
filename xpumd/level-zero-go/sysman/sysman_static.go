@@ -43,10 +43,13 @@ func DriverGet() ([]*Driver, error) {
 		return nil, ret.ToError()
 	}
 
-	drivers := handlesToWrappers[driverHandle, Driver](handles)
+	// Create wrappers and populate extensions for each driver
+	drivers := make([]*Driver, len(handles))
+	for i, handle := range handles {
+		driver := &Driver{}
+		driver.setHandle(handle)
+		drivers[i] = driver
 
-	// Populate extensions for each driver
-	for _, driver := range drivers {
 		extProps, ret := driver.GetExtensionProperties()
 		if ret != nil {
 			// TODO: should we somehow communicate if error != RESULT_ERROR_UNSUPPORTED_FEATURE?
@@ -88,11 +91,12 @@ func (z *Driver) DeviceGet() ([]*Device, error) {
 		return nil, ret.ToError()
 	}
 
-	devices := handlesToWrappers[deviceHandle, Device](handles)
-
-	// Pass driver extensions to devices
-	for _, device := range devices {
-		device.extensions = z.extensions
+	// Create wrappers, passing the driver extensions to the devices
+	devices := make([]*Device, len(handles))
+	for i, handle := range handles {
+		device := &Device{extensions: z.extensions}
+		device.setHandle(handle)
+		devices[i] = device
 	}
 
 	return devices, nil
@@ -101,7 +105,7 @@ func (z *Driver) DeviceGet() ([]*Device, error) {
 // EventListen wraps the zesDriverEventListen function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdrivereventlisten
 func (z *Driver) EventListen(timeout time.Duration, devices []*Device) (uint32, []EventTypeFlags, error) {
-	handles := wrappersToHandles[deviceHandle, Device](devices)
+	handles := wrappersToHandles[Device](devices)
 	var numEvents uint32
 	events := make([]EventTypeFlags, len(handles))
 	ms := durationToMillisecondsUint32(timeout)
@@ -112,7 +116,7 @@ func (z *Driver) EventListen(timeout time.Duration, devices []*Device) (uint32, 
 // EventListenEx wraps the zesDriverEventListenEx function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdrivereventlistenex
 func (z *Driver) EventListenEx(timeout time.Duration, devices []*Device) (uint32, []EventTypeFlags, error) {
-	handles := wrappersToHandles[deviceHandle, Device](devices)
+	handles := wrappersToHandles[Device](devices)
 	var numEvents uint32
 	events := make([]EventTypeFlags, len(handles))
 	ms := durationToMillisecondsUint64(timeout)
@@ -421,13 +425,13 @@ func (z *Device) EnumOverclockDomains() ([]*Overclock, error) {
 	}
 	handles := make([]overclockHandle, count)
 	ret := zesDeviceEnumOverclockDomains(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[overclockHandle, Overclock](handles, z), ret.ToError()
+	return handlesToWrappers[Overclock](handles, z), ret.ToError()
 }
 
 // FabricPortGetMultiPortThroughput wraps the zesFabricPortGetMultiPortThroughput function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesfabricportgetmultiportthroughput
 func (z *Device) FabricPortGetMultiPortThroughput(ports []*FabricPort) ([]FabricPortThroughput, error) {
-	handles := wrappersToHandles[fabricPortHandle, FabricPort](ports)
+	handles := wrappersToHandles[FabricPort](ports)
 	count := uint32(len(handles))
 	throughputs := make([]*FabricPortThroughput, count)
 	for i := range throughputs {
@@ -524,7 +528,7 @@ func (z *Device) EnumDiagnosticTestSuites() ([]*Diagnostics, error) {
 	}
 	handles := make([]diagHandle, count)
 	ret := zesDeviceEnumDiagnosticTestSuites(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[diagHandle, Diagnostics](handles, z), ret.ToError()
+	return handlesToWrappers[Diagnostics](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesDiagnosticsGetProperties function:
@@ -567,7 +571,7 @@ func (z *Device) EnumEngineGroups() ([]*Engine, error) {
 	}
 	handles := make([]engineHandle, count)
 	ret := zesDeviceEnumEngineGroups(z.handle, &count, handles)
-	engines := handlesToWrappersWithDevice[engineHandle, Engine](handles, z)
+	engines := handlesToWrappers[Engine](handles, z)
 	return engines, ret.ToError()
 }
 
@@ -622,7 +626,7 @@ func (z *Device) EnumFabricPorts() ([]*FabricPort, error) {
 	}
 	handles := make([]fabricPortHandle, count)
 	ret := zesDeviceEnumFabricPorts(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[fabricPortHandle, FabricPort](handles, z), ret.ToError()
+	return handlesToWrappers[FabricPort](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesFabricPortGetProperties function:
@@ -689,7 +693,7 @@ func (z *Device) EnumFans() ([]*Fan, error) {
 	}
 	handles := make([]fanHandle, count)
 	ret := zesDeviceEnumFans(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[fanHandle, Fan](handles, z), ret.ToError()
+	return handlesToWrappers[Fan](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesFanGetProperties function:
@@ -746,7 +750,7 @@ func (z *Device) EnumFirmwares() ([]*Firmware, error) {
 	}
 	handles := make([]firmwareHandle, count)
 	ret := zesDeviceEnumFirmwares(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[firmwareHandle, Firmware](handles, z), ret.ToError()
+	return handlesToWrappers[Firmware](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesFirmwareGetProperties function:
@@ -807,7 +811,7 @@ func (z *Device) EnumFrequencyDomains() ([]*Frequency, error) {
 	}
 	handles := make([]freqHandle, count)
 	ret := zesDeviceEnumFrequencyDomains(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[freqHandle, Frequency](handles, z), ret.ToError()
+	return handlesToWrappers[Frequency](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesFrequencyGetProperties function:
@@ -870,7 +874,7 @@ func (z *Device) EnumLeds() ([]*Led, error) {
 	}
 	handles := make([]ledHandle, count)
 	ret := zesDeviceEnumLeds(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[ledHandle, Led](handles, z), ret.ToError()
+	return handlesToWrappers[Led](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesLedGetProperties function:
@@ -912,7 +916,7 @@ func (z *Device) EnumMemoryModules() ([]*Memory, error) {
 	}
 	handles := make([]memHandle, count)
 	ret := zesDeviceEnumMemoryModules(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[memHandle, Memory](handles, z), ret.ToError()
+	return handlesToWrappers[Memory](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesMemoryGetProperties function:
@@ -948,7 +952,7 @@ func (z *Device) EnumPerformanceFactorDomains() ([]*Performance, error) {
 	}
 	handles := make([]perfHandle, count)
 	ret := zesDeviceEnumPerformanceFactorDomains(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[perfHandle, Performance](handles, z), ret.ToError()
+	return handlesToWrappers[Performance](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesPerformanceFactorGetProperties function:
@@ -983,7 +987,7 @@ func (z *Device) EnumPowerDomains() ([]*Power, error) {
 	}
 	handles := make([]pwrHandle, count)
 	ret := zesDeviceEnumPowerDomains(z.handle, &count, handles)
-	powers := handlesToWrappersWithDevice[pwrHandle, Power](handles, z)
+	powers := handlesToWrappers[Power](handles, z)
 	return powers, ret.ToError()
 }
 
@@ -1091,7 +1095,7 @@ func (z *Device) EnumPsus() ([]*Psu, error) {
 	}
 	handles := make([]psuHandle, count)
 	ret := zesDeviceEnumPsus(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[psuHandle, Psu](handles, z), ret.ToError()
+	return handlesToWrappers[Psu](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesPsuGetProperties function:
@@ -1119,7 +1123,7 @@ func (z *Device) EnumRasErrorSets() ([]*Ras, error) {
 	}
 	handles := make([]rasHandle, count)
 	ret := zesDeviceEnumRasErrorSets(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[rasHandle, Ras](handles, z), ret.ToError()
+	return handlesToWrappers[Ras](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesRasGetProperties function:
@@ -1162,7 +1166,7 @@ func (z *Device) EnumSchedulers() ([]*Scheduler, error) {
 	}
 	handles := make([]schedHandle, count)
 	ret := zesDeviceEnumSchedulers(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[schedHandle, Scheduler](handles, z), ret.ToError()
+	return handlesToWrappers[Scheduler](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesSchedulerGetProperties function:
@@ -1230,7 +1234,7 @@ func (z *Device) EnumStandbyDomains() ([]*Standby, error) {
 	}
 	handles := make([]standbyHandle, count)
 	ret := zesDeviceEnumStandbyDomains(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[standbyHandle, Standby](handles, z), ret.ToError()
+	return handlesToWrappers[Standby](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesStandbyGetProperties function:
@@ -1265,7 +1269,7 @@ func (z *Device) EnumTemperatureSensors() ([]*Temperature, error) {
 	}
 	handles := make([]tempHandle, count)
 	ret := zesDeviceEnumTemperatureSensors(z.handle, &count, handles)
-	return handlesToWrappersWithDevice[tempHandle, Temperature](handles, z), ret.ToError()
+	return handlesToWrappers[Temperature](handles, z), ret.ToError()
 }
 
 // GetProperties wraps the zesTemperatureGetProperties function:
