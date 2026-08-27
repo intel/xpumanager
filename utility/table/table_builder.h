@@ -205,7 +205,8 @@ private:
 		std::vector<std::string> extraHeaders; // Additional header lines (second and further header rows)
 		mutable int width;
 		Align alignment;
-		bool wrap = true; // Participate in word-wrap when TableBuilder::wordWrap is enabled
+		bool wrap = true;      // Participate in word-wrap when TableBuilder::wordWrap is enabled
+		char wrapDelim = ' ';  // Delimiter to split and rejoin on (',' for CPU lists, etc.)
 
 		Column(std::string h, int w, Align a) : header(std::move(h)), width(w), alignment(a) {}
 	};
@@ -255,7 +256,7 @@ private:
 	 * @brief Split @p text into lines of at most @p width display characters, breaking at word boundaries.
 	 * Words longer than @p width are hard-broken at the character level.
 	 */
-	[[nodiscard]] std::vector<std::string> wrapText(std::string_view text, int width) const;
+	[[nodiscard]] std::vector<std::string> wrapText(std::string_view text, int width, char extraDelim = ' ') const;
 
 	std::string toTableString() const;
 
@@ -455,6 +456,13 @@ public:
 	 * Setting @p enable to true also turns on the global word-wrap flag.
 	 */
 	TableBuilder &setColumnWrap(size_t colIndex, bool enable);
+
+	/**
+	 * @brief Set an extra break-after character for a column's word-wrap (default: space only).
+	 * Tokens ending with @p delim are kept intact and joined without an added space, so
+	 * "0,2,4," and "6" on the same line produce "0,2,4,6" rather than "0,2,4, 6".
+	 */
+	TableBuilder &setColumnWrapDelimiter(size_t colIndex, char delim);
 
 	/**
 	 * @brief Set output format (Table or JSON)

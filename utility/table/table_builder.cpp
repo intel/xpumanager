@@ -229,7 +229,7 @@ void TableBuilder::alignTextDirect(std::string &result, std::string_view text, i
 	}
 }
 
-std::vector<std::string> TableBuilder::wrapText(std::string_view text, int width) const
+std::vector<std::string> TableBuilder::wrapText(std::string_view text, int width, char extraDelim) const
 {
 	if (width <= 0 || text.empty()) {
 		return {std::string{text}};
@@ -277,7 +277,7 @@ std::vector<std::string> TableBuilder::wrapText(std::string_view text, int width
 		curW    = displayWidth(rem);
 	};
 
-	for (auto token : text | std::views::split(' ')) {
+	for (auto token : text | std::views::split(extraDelim)) {
 		std::string_view const word{token.begin(), token.end()};
 		if (word.empty()) {
 			continue;
@@ -288,7 +288,7 @@ std::vector<std::string> TableBuilder::wrapText(std::string_view text, int width
 		if (current.empty()) {
 			beginLine(word, wordW);
 		} else if (curW + 1 + wordW <= width) {
-			current += ' ';
+			current += extraDelim;
 			current += word;
 			curW    += 1 + wordW;
 		} else {
@@ -512,7 +512,7 @@ std::string TableBuilder::toTableString() const
 																? std::string_view{row.cells[i]}
 																: std::string_view{config.emptyCellText};
 						wrappedCells[i] = columns[i].wrap
-								? wrapText(rawContent, columns[i].width)
+								? wrapText(rawContent, columns[i].width, columns[i].wrapDelim)
 								: std::vector{std::string{rawContent}};
 						numLines = std::max(numLines, wrappedCells[i].size());
 					}
@@ -746,6 +746,15 @@ TableBuilder &TableBuilder::setColumnWrap(size_t colIndex, bool enable)
 	if (enable) {
 		wordWrap = true;
 	}
+	return *this;
+}
+
+TableBuilder &TableBuilder::setColumnWrapDelimiter(size_t colIndex, char delim)
+{
+	if (colIndex >= columns.size()) {
+		throw std::out_of_range("Column index out of range");
+	}
+	columns[colIndex].wrapDelim = delim;
 	return *this;
 }
 

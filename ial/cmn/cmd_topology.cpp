@@ -31,7 +31,7 @@
 namespace {
 constexpr int MATRIX_TILE_COL_WIDTH = 9;
 constexpr int MATRIX_CONNECTION_COL_WIDTH = 7;
-constexpr int MATRIX_AFFINITY_COL_WIDTH = 15;
+constexpr int MATRIX_AFFINITY_WRAP_WIDTH = 72;
 
 /**
  * @brief CPU information structure for parsed /proc/cpuinfo data
@@ -174,6 +174,7 @@ static void printMatrixBlock(nlohmann::ordered_json *jsonObj)
 	const bool isP2P = jsonObj->value("p2p", false);
 
 	TableBuilder table;
+
 	table.addColumn("", MATRIX_TILE_COL_WIDTH);
 	for (const auto &header : headers) {
 		const auto &name = header.get<std::string>();
@@ -182,12 +183,13 @@ static void printMatrixBlock(nlohmann::ordered_json *jsonObj)
 	}
 
 	if (!isP2P) {
-		int affinityWidth = MATRIX_AFFINITY_COL_WIDTH;
-		for (const auto &row : matrix) {
-			const auto affinity = row["cpu_affinity"].get<std::string>();
-			affinityWidth = std::max(affinityWidth, static_cast<int>(affinity.size()));
-		}
-		table.addColumn("CPU Affinity", affinityWidth);
+		table.addColumn("CPU Affinity", MATRIX_AFFINITY_WRAP_WIDTH);
+		// Cap auto-sizing at the wrap width so the column never expands beyond it.
+		// Small values (few CPUs) will still shrink to fit their content.
+		table.setMaxCellWidth(MATRIX_AFFINITY_WRAP_WIDTH + 2);
+		const size_t affinityCol = table.columnCount() - 1;
+		table.setColumnWrap(affinityCol, true);
+		table.setColumnWrapDelimiter(affinityCol, ',');
 	}
 
 	for (const auto &row : matrix) {
