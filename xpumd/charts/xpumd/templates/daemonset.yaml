@@ -66,9 +66,8 @@ spec:
             drop:
               - ALL
             add:
-              # required for engine utilization
-              # (bug in underlying layers, PERFMON should be enough)
-              - SYS_ADMIN
+              # required for engine utilization (old systems may require SYS_ADMIN capability instead)
+              - PERFMON
           {{- end }}
         ports:
         - name: http

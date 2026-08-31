@@ -100,7 +100,7 @@ docker build -t registry.local/xpumd:latest .
 Test the container with example config from the image:
 
 ```bash
-docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
+docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON \
   --device /dev/dri --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config-example.yaml
 ```
@@ -114,7 +114,7 @@ sed -i s/intel_xpu_info,// config-example.yaml
 Map the modified config inside container, and ask daemon to use it:
 
 ```bash
-docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
+docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON \
   --volume $PWD/config-example.yaml:/etc/xpumd/config.yaml:ro \
   --device /dev/dri --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config.yaml

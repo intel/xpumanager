@@ -108,7 +108,7 @@ graph TB
 Run XPUM daemon with its example config (with `$TAG` being the desired release tag):
 
 ```bash
-docker run -it --rm --user 0 --cap-drop ALL --cap-add SYS_ADMIN \
+docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON \
   --device /dev/dri --publish 8080:8080 ghcr.io/intel/xpumanager/xpumd:$TAG \
   --config /etc/xpumd/config-example.yaml
 ```
@@ -162,12 +162,18 @@ metrics:
 * User 0:
   - Docker options: `--user 0`
   - Adds metrics: temperature, memory + PCIe bandwidth
-* SYS_ADMIN capability:
-  - Docker options: `--cap-add SYS_ADMIN`
+* PERFMON (or SYS_ADMIN) capability:
+  - Docker options: `--cap-add PERFMON`
   - Adds PMU metrics: GPU engine utilization
 * Access to MEI devices:
-  - Docker options: `--device /dev/mei<idx>`
+  - Docker options: `$(for dev in /dev/mei[0-9]*; do [ -e "$dev" ] && echo "--device $dev"; done)`
   - Required for information on subset of the firmware types
+
+> [!NOTE]
+> If GPU utilization metrics are missing with the user `0` and the `PERFMON` capability,
+> or container fails to start, underlying system (kernel or container engine) may be too
+> old to support `PERFMON` capability. This can be worked around by using the (much wider)
+> SYS_ADMIN capability instead (`--cap-add SYS_ADMIN`).
 
 ### Device info exporter
 

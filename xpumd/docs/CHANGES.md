@@ -2,7 +2,11 @@
 
 ## XPUM 2.x.x
 
+* Privileges: XPUMD Helm chart ask now for PERFMON capability instead of SYS_ADMIN one
+  * This improves security, but there may still be some (typically very old) setups
+    that require much wider SYS_ADMIN capability for GPU utilization metrics access
 * XPUMD image: L0 driver stack update to 26.27.39122.11
+
 
 ## XPUM 2.1.0
 

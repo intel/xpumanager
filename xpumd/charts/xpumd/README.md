@@ -95,6 +95,35 @@ See [OTEL_STACK](../../docs/OTEL_STACK.md) on how to setup OTel collector, and
 [OTLP HTTP exporter README](https://github.com/open-telemetry/opentelemetry-collector/tree/main/exporter/otlphttpexporter#readme)
 on how to configure OTel exporter for gRPC or HTTP transport.
 
+### XPUMD privileges
+
+By default, Helm chart provides XPUMD [the privileges needed to access all
+the metrics it supports](https://github.com/intel/xpumanager/tree/v2.x/xpumd#metrics).
+
+However, in some environments extra privileges may be required for specific metrics,
+or it may be desirable to reduce set of privileges to conform [to cluster security
+policies](https://kubernetes.io/docs/concepts/security/pod-security-standards/).
+
+You can test former by running XPUMD with unrestricted privileges:
+
+```bash
+  --set securityContextOverride.privileged=true
+```
+
+And if that helps, try narrowing down the required extra privileges before filing
+[XPUMD ticket](https://github.com/intel/xpumanager/issues) (with details of
+the environment requiring additional privileges), e.g:
+
+```bash
+  --set securityContextOverride.capabilities.add="{SYS_ADMIN}" \
+  --set securityContextOverride.runAsUser=0
+```
+
+> [!NOTE]
+> Above examples override whole XPUM pod container `securityContext`, and are intended
+> only for testing, not for production (see [XPUMD `DaemonSet` template](templates/daemonset.yaml)
+> for original `securityContext` values).
+
 ### Using private GitHub registry
 
 If image is in a private GitHub registry to which you have access, Helm login to ghcr.io:
