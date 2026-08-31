@@ -1,0 +1,7 @@
+# Unknown action for a settled device set change
+#
+# expect-error: change_action must be "log" or "exit", got "reboot"
+
+extensions:
+  intel_device_watch:
+    change_action: reboot

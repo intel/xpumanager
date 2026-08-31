@@ -6,6 +6,7 @@
 package inteldevicewatch
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -26,8 +27,16 @@ func TestConfigValidate(t *testing.T) {
 			mutate: func(*Config) {},
 		},
 		{
+			name:   "exit mode",
+			mutate: func(c *Config) { c.ChangeAction = ActionExit },
+		},
+		{
 			name:   "report interval may be zero",
 			mutate: func(c *Config) { c.ReportInterval = 0 },
+		},
+		{
+			name:   "max restarts may be zero",
+			mutate: func(c *Config) { c.MaxRestarts = 0 },
 		},
 		{
 			name:    "zero scan interval",
@@ -40,9 +49,29 @@ func TestConfigValidate(t *testing.T) {
 			wantErr: errSettleScans,
 		},
 		{
+			name:    "unknown action",
+			mutate:  func(c *Config) { c.ChangeAction = "reboot" },
+			wantErr: fmt.Sprintf(errChangeAction, ActionLog, ActionExit, "reboot"),
+		},
+		{
 			name:    "negative report interval",
 			mutate:  func(c *Config) { c.ReportInterval = -time.Second },
 			wantErr: errReportInterval,
+		},
+		{
+			name:    "negative max restarts",
+			mutate:  func(c *Config) { c.MaxRestarts = -1 },
+			wantErr: errMaxRestarts,
+		},
+		{
+			name:    "zero restart window",
+			mutate:  func(c *Config) { c.RestartWindow = 0 },
+			wantErr: errRestartWindow,
+		},
+		{
+			name:    "relative state file",
+			mutate:  func(c *Config) { c.StateFile = "restarts.json" },
+			wantErr: errStateFile,
 		},
 		{
 			name:    "no subsystems",

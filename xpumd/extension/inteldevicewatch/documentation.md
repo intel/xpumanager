@@ -38,11 +38,17 @@ Number of collector shutdowns requested because the device set changed.
 
 ### otelcol_device_watch_exits_suppressed
 
-Number of shutdowns not requested because the restart rate limit was exhausted.
+Number of shutdowns not requested although the device set changed.
 
 | Unit | Metric Type | Value Type | Monotonic | Stability |
 | ---- | ----------- | ---------- | --------- | --------- |
 | {exit} | Sum | Int | true | Development |
+
+#### Attributes
+
+| Name | Description | Values | Semantic Convention |
+| ---- | ----------- | ------ | ------------------- |
+| reason | Why an exit was suppressed although the device set changed. | Str: ``max_restarts``, ``state_error`` | - |
 
 ### otelcol_device_watch_scan_errors
 

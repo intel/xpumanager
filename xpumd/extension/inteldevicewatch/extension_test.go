@@ -6,6 +6,7 @@
 package inteldevicewatch
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -59,6 +60,7 @@ func TestBaseline(t *testing.T) {
 		before := f.logs.Len()
 		f.scan(7)
 		assert.Equal(t, before, f.logs.Len())
+		assert.Empty(t, f.host.fatalErrors())
 	})
 
 	t.Run("NoDevices", func(t *testing.T) {
@@ -74,7 +76,10 @@ func TestBaseline(t *testing.T) {
 	})
 
 	t.Run("UnreadableSysfs", func(t *testing.T) {
-		f := newWatchFixture(t, func(c *Config) { c.SettleScans = 1 })
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
 		f.tree.addCard("card0", 0)
 		fix := breakClassDir(t, f.tree, "drm")
 
@@ -90,12 +95,13 @@ func TestBaseline(t *testing.T) {
 		require.NotNil(t, f.watch.baseline)
 		assert.Equal(t, []string{"drm/card0"}, f.watch.baseline.Devices.IDs())
 		assert.Contains(t, f.messages(), msgWatching)
+		assert.Empty(t, f.host.fatalErrors())
 		assert.NotContains(t, f.messages(), msgDeviceSetChanged)
 
 		// From there on it behaves like any other baseline.
 		f.tree.addCard("card1", 1)
 		f.scan(1)
-		assert.Contains(t, f.messages(), msgDeviceSetChanged)
+		assert.Len(t, f.host.fatalErrors(), 1)
 	})
 }
 
@@ -114,10 +120,36 @@ func TestChangeDetection(t *testing.T) {
 		assert.Contains(t, f.messages(), msgDeviceSetChanged)
 	})
 
+	t.Run("TransientAppearance", func(t *testing.T) {
+		// A device that turns up and is gone again before the change settles costs
+		// nothing. The process never enumerated it in the first place.
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 3
+			c.ChangeAction = ActionExit
+		})
+		f.tree.addCard("card0", 0)
+		f.start(t)
+
+		f.tree.addCard("card1", 1)
+		f.scan(2)
+		f.tree.removeSysfsCardSymlink("card1")
+		f.tree.setDevNode("card1", 1, false)
+		f.scan(3)
+
+		assert.Empty(t, f.host.fatalErrors())
+		assert.NotContains(t, f.messages(), msgDeviceSetChanged)
+
+		// The settle counter is reset to start tracking the next change from scratch
+		assert.Equal(t, 0, f.watch.pending.Count)
+	})
+
 	t.Run("TransientDisappearance", func(t *testing.T) {
-		// A device of the baseline that goes away and comes back costs nothing:
-		// Sysman rescans its devices on the DEVICE_ATTACH that ends the flap.
-		f := newWatchFixture(t, func(c *Config) { c.SettleScans = 3 })
+		// A device of the baseline that goes away and comes back costs nothing
+		// either. Sysman rescans its devices on the DEVICE_ATTACH that ends the flap.
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 3
+			c.ChangeAction = ActionExit
+		})
 		f.tree.addCard("card0", 0)
 		f.tree.addCard("card1", 1)
 		f.start(t)
@@ -128,6 +160,7 @@ func TestChangeDetection(t *testing.T) {
 		f.tree.setDevNode("card1", 1, true)
 		f.scan(3)
 
+		assert.Empty(t, f.host.fatalErrors())
 		assert.NotContains(t, f.messages(), msgDeviceSetChanged)
 		assert.Zero(t, f.count(msgDeviceSetStale))
 		assert.Equal(t, 0, f.watch.pending.Count)
@@ -160,18 +193,18 @@ func TestDeviceSetStaleReport(t *testing.T) {
 
 		f.tree.addCard("card1", 1)
 		f.scan(2)
-		require.Equal(t, 1, f.count(msgDeviceSetStale))
+		require.Equal(t, 1, f.count(msgDeviceSetStaleRestart))
 
 		// A further change restarts the settle counters but the first
 		// condition is still standing (until the new set settles)
 		f.tree.addCard("card2", 2)
 		f.scan(1)
 		assert.Zero(t, f.count(msgDeviceSetRestored))
-		assert.Equal(t, 1, f.count(msgDeviceSetStale))
+		assert.Equal(t, 1, f.count(msgDeviceSetStaleRestart))
 
 		// Settled on a different set, so the warning is repeated for that set.
 		f.scan(1)
-		assert.Equal(t, 2, f.count(msgDeviceSetStale))
+		assert.Equal(t, 2, f.count(msgDeviceSetStaleRestart))
 
 		// Return to the startup set resolves the condition
 		f.tree.removeSysfsCardSymlink("card1")
@@ -194,7 +227,7 @@ func TestDeviceSetStaleReport(t *testing.T) {
 		f.start(t)
 		f.tree.addCard("card1", 1)
 		f.scan(3)
-		require.Equal(t, 1, f.count(msgDeviceSetStale))
+		require.Equal(t, 1, f.count(msgDeviceSetStaleRestart))
 
 		// A further change, still short of settling, and the report falls due
 		f.tree.addCard("card2", 2)
@@ -202,27 +235,31 @@ func TestDeviceSetStaleReport(t *testing.T) {
 		now = now.Add(11 * time.Minute)
 		f.scan(1)
 
-		require.Equal(t, 2, f.count(msgDeviceSetStale))
-		entries := f.logs.FilterMessage(msgDeviceSetStale).All()
+		require.Equal(t, 2, f.count(msgDeviceSetStaleRestart))
+		entries := f.logs.FilterMessage(msgDeviceSetStaleRestart).All()
 		assert.Equal(t, []any{"drm/card1"}, entries[len(entries)-1].ContextMap()["appeared"])
 	})
 }
 
-// TestDeviceConditions covers the device node states that are reported on their own.
+// TestDeviceConditions covers the device node states that are reported but not exited over.
 func TestDeviceConditions(t *testing.T) {
 	t.Run("Denied", func(t *testing.T) {
-		f := newWatchFixture(t, func(c *Config) { c.SettleScans = 1 })
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
 		f.tree.addCard("card0", 0)
 		f.start(t)
 
+		// A restart would find the device just as inaccessible
 		f.tree.addCard("card1", 1)
 		f.tree.setProbeResult("card1", unix.EPERM)
 		f.scan(5)
 
-		// A device the devices cgroup refuses is both a change of the set and a
-		// condition of its own
 		assert.Contains(t, f.messages(), msgDevicesDenied)
 		assert.Contains(t, f.messages(), msgDeviceSetChanged)
+		assert.Equal(t, 1, f.count(msgChangeNotRestartable))
+		assert.Empty(t, f.host.fatalErrors())
 	})
 
 	t.Run("StaleNode", func(t *testing.T) {
@@ -253,26 +290,220 @@ func TestDeviceConditions(t *testing.T) {
 	})
 }
 
+// TestRestartable covers which settled differences are worth exiting over.
+func TestRestartable(t *testing.T) {
+	inventory := func(state sysdev.DevNodeState) sysdev.Inventory {
+		return sysdev.Inventory{{Subsystem: "drm", Name: "card1", State: state}}
+	}
+	appeared := sysdev.InventoryDiff{Added: []string{"drm/card1"}}
+
+	// A usable device, and one whose node a restart can bring in
+	assert.True(t, restartable(appeared, inventory(sysdev.DevNodeStateOK)))
+	assert.True(t, restartable(appeared, inventory(sysdev.DevNodeStateMissing)))
+
+	// A device a restart would find exactly as it is
+	assert.False(t, restartable(appeared, inventory(sysdev.DevNodeStateDenied)))
+	assert.False(t, restartable(appeared, inventory(sysdev.DevNodeStateBlocked)))
+
+	// A device gone from the inventory needs re-enumeration whatever the rest is
+	assert.True(t, restartable(sysdev.InventoryDiff{Removed: []string{"drm/card0"}},
+		inventory(sysdev.DevNodeStateDenied)))
+}
+
+// TestExitRestart covers the exit action and the rate limit guarding it.
+func TestExitRestart(t *testing.T) {
+	t.Run("ExitsDescribingTheChange", func(t *testing.T) {
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
+		f.tree.addCard("card0", 0)
+		f.tree.addCard("card1", 1)
+		f.start(t)
+
+		// One device replaced by another, so the error has to name both directions.
+		f.tree.addCard("card2", 2)
+		f.tree.removeSysfsCardSymlink("card1")
+		f.tree.setDevNode("card1", 1, false)
+		f.scan(1)
+
+		errs := f.host.fatalErrors()
+		require.Len(t, errs, 1)
+		assert.Equal(t, fmt.Sprintf(errDeviceSetChanged, "drm/card2", "drm/card1", ""), errs[0].Error())
+		assert.Contains(t, f.messages(), msgShuttingDown)
+	})
+
+	t.Run("ExitsOnNodeGone", func(t *testing.T) {
+		// The node of a device sysfs still lists is what a restart re-creates.
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
+		f.tree.addCard("card0", 0)
+		f.tree.addCard("card1", 1)
+		f.start(t)
+
+		f.tree.setDevNode("card1", 1, false)
+		f.scan(1)
+
+		errs := f.host.fatalErrors()
+		require.Len(t, errs, 1)
+		assert.Equal(t, fmt.Sprintf(errDeviceSetChanged, "", "", "drm/card1"), errs[0].Error())
+	})
+
+	t.Run("RestartThatBringsNothing", func(t *testing.T) {
+		// A device directory fixed for the container's lifetime (device plugin or
+		// DRA): the GPU that appeared has no node there, and a restart brings none.
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
+		f.tree.addCard("card0", 0)
+		f.start(t)
+
+		f.tree.addSysfsCard("card1", 1)
+		f.scan(1)
+		require.Len(t, f.host.fatalErrors(), 1)
+
+		// The restarted process adopts the very same devices, and has to say so
+		next := f.restart(t)
+		next.start(t)
+		assert.Contains(t, next.messages(), msgExitIneffective)
+		assert.NotContains(t, next.messages(), msgDeviceSetChanged)
+
+		next.scan(3)
+		assert.Empty(t, next.host.fatalErrors())
+	})
+
+	t.Run("RestartThatReEnumerates", func(t *testing.T) {
+		// A restart that did what it was asked for finds the same set too: the nodes
+		// were there all along, only sysman had not enumerated them.
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
+		f.tree.addCard("card0", 0)
+		f.start(t)
+
+		f.tree.addCard("card1", 1)
+		f.scan(1)
+		require.Len(t, f.host.fatalErrors(), 1)
+
+		next := f.restart(t)
+		next.start(t)
+		assert.NotContains(t, next.messages(), msgExitIneffective)
+	})
+
+	t.Run("MaxRestartsZero", func(t *testing.T) {
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+			c.MaxRestarts = 0
+		})
+		f.tree.addCard("card0", 0)
+		f.start(t)
+
+		f.tree.addCard("card1", 1)
+		f.scan(1)
+		assert.Empty(t, f.host.fatalErrors())
+		assert.True(t, f.watch.exitDisabled)
+		assert.Contains(t, f.messages(), msgRestartsLimitZeroReached)
+		// Reported all the same, just not acted on.
+		assert.Contains(t, f.messages(), msgDeviceSetChanged)
+	})
+
+	t.Run("RestartRateLimit", func(t *testing.T) {
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+			c.MaxRestarts = 2
+		})
+		f.tree.addCard("card0", 0)
+		f.start(t)
+
+		// Each new device is a fresh settled change, so each one asks to exit
+		steps := []struct {
+			card      string
+			minor     uint32
+			wantFatal int
+		}{
+			{"card1", 1, 1},
+			{"card2", 2, 2},
+			{"card3", 3, 2},
+			{"card4", 4, 2},
+		}
+		for _, s := range steps {
+			f.tree.addCard(s.card, s.minor)
+			f.scan(1)
+			require.Len(t, f.host.fatalErrors(), s.wantFatal)
+		}
+
+		assert.Contains(t, f.messages(), msgRestartLimitReached)
+		assert.True(t, f.watch.exitDisabled)
+	})
+
+	t.Run("UnrecordableExit", func(t *testing.T) {
+		if os.Geteuid() == 0 {
+			t.Skip("root ignores directory permissions")
+		}
+		dir := t.TempDir()
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+			c.StateFile = filepath.Join(dir, "restarts.json")
+		})
+		f.tree.addCard("card0", 0)
+		f.start(t)
+
+		require.NoError(t, os.Chmod(dir, 0o500))
+		t.Cleanup(func() { require.NoError(t, os.Chmod(dir, 0o700)) })
+
+		f.tree.addCard("card1", 1)
+		f.scan(1)
+
+		assert.Empty(t, f.host.fatalErrors())
+		assert.Contains(t, f.messages(), msgStateSaveFailed)
+		// Reported all the same, just not acted on.
+		assert.Contains(t, f.messages(), msgDeviceSetChanged)
+		assertSuppressedExits(t, f, reasonStateError, 1)
+		assertSuppressedExits(t, f, reasonMaxRestarts, 0)
+		assertCounter(t, f, metricExitsRequested, 0)
+		// A write that fails once is no reason to stop trying.
+		assert.False(t, f.watch.exitDisabled)
+
+		// Once the state file is writable again, the same device set is retried.
+		require.NoError(t, os.Chmod(dir, 0o700))
+		f.scan(1)
+		assert.Len(t, f.host.fatalErrors(), 1)
+		assertCounter(t, f, metricExitsRequested, 1)
+	})
+}
+
 // TestScanError covers a scan that could not read the whole device tree.
 func TestScanError(t *testing.T) {
 	t.Run("IsNoChange", func(t *testing.T) {
-		f := newWatchFixture(t, func(c *Config) { c.SettleScans = 1 })
+		// Run in exit mode to test that a scan error does not trigger the action
+		f := newWatchFixture(t, func(c *Config) {
+			c.SettleScans = 1
+			c.ChangeAction = ActionExit
+		})
 		f.tree.addCard("card0", 0)
 		f.start(t)
 		fix := breakClassDir(t, f.tree, "drm")
 
 		f.scan(3)
 		assert.Contains(t, f.messages(), msgScanFailed)
-		// It must not settle on what it could not read
+		// It must neither settle nor exit
+		assert.Empty(t, f.host.fatalErrors())
 		assert.Empty(t, f.watch.pending.Fingerprint)
 		assert.Equal(t, 0, f.watch.pending.Count)
 		assert.NotContains(t, f.messages(), msgDeviceSetChanged)
 
-		// A real change is picked up by the next scan that succeeds
+		// The next scan that succeeds and triggers an exit
 		fix()
 		f.tree.addCard("card1", 1)
 		f.scan(1)
-		assert.Contains(t, f.messages(), msgDeviceSetChanged)
+		assert.Len(t, f.host.fatalErrors(), 1)
 	})
 
 	t.Run("HoldsConditions", func(t *testing.T) {
@@ -317,7 +548,11 @@ func TestScanError(t *testing.T) {
 }
 
 func TestTelemetry(t *testing.T) {
-	f := newWatchFixture(t, func(c *Config) { c.SettleScans = 1 })
+	f := newWatchFixture(t, func(c *Config) {
+		c.SettleScans = 1
+		c.ChangeAction = ActionExit
+		c.MaxRestarts = 1
+	})
 	f.tree.addCard("card0", 0)
 	f.tree.addSysfsCard("card1", 1) // missing node
 	f.tree.addCard("card2", 2)
@@ -341,4 +576,10 @@ func TestTelemetry(t *testing.T) {
 	f.scan(1)
 	assertCounter(t, f, metricScans, 2)
 	assertCounter(t, f, metricDeviceChanges, 1)
+	assertCounter(t, f, metricExitsRequested, 1)
+
+	f.tree.addCard("card4", 4)
+	f.scan(1)
+	assertCounter(t, f, metricExitsSuppressed, 1)
+	assertSuppressedExits(t, f, reasonMaxRestarts, 1)
 }

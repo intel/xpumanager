@@ -31,11 +31,16 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		ScanInterval:   30 * time.Second,
 		SettleScans:    2,
+		ChangeAction:   ActionLog,
 		ReportInterval: 10 * time.Minute,
-		Subsystems:     []string{string(sysdev.SubsystemDRM), string(sysdev.SubsystemMEI)},
-		VendorIDs:      []string{sysdev.VendorIDIntel},
-		SysfsRoot:      "/sys",
-		DevRoot:        "/dev",
+		MaxRestarts:    3,
+		RestartWindow:  10 * time.Minute,
+		// StateFile has no default: rate limiting needs a path the deployment knows
+		StateFile:  "",
+		Subsystems: []string{string(sysdev.SubsystemDRM), string(sysdev.SubsystemMEI)},
+		VendorIDs:  []string{sysdev.VendorIDIntel},
+		SysfsRoot:  "/sys",
+		DevRoot:    "/dev",
 	}
 }
 

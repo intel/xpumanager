@@ -16,6 +16,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/component/componentstatus"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/extension/extensiontest"
 	"go.opentelemetry.io/otel/sdk/metric/metricdata"
@@ -33,10 +35,12 @@ const drmMajor = 226
 // The internal telemetry the extension records, named as the collector exports
 // it. mdatagen does not generate constants for these.
 const (
-	metricDevices       = "otelcol_device_watch_devices"
-	metricDeviceChanges = "otelcol_device_watch_device_changes"
-	metricScans         = "otelcol_device_watch_scans"
-	metricScanErrors    = "otelcol_device_watch_scan_errors"
+	metricDevices         = "otelcol_device_watch_devices"
+	metricDeviceChanges   = "otelcol_device_watch_device_changes"
+	metricScans           = "otelcol_device_watch_scans"
+	metricScanErrors      = "otelcol_device_watch_scan_errors"
+	metricExitsRequested  = "otelcol_device_watch_exits_requested"
+	metricExitsSuppressed = "otelcol_device_watch_exits_suppressed"
 )
 
 // devTree is a fake sysfs plus device directory the test mutates between scans.
@@ -164,6 +168,7 @@ type watchFixture struct {
 	tree  *devTree
 	logs  *observer.ObservedLogs
 	tel   *componenttest.Telemetry
+	host  *statusHost
 }
 
 func newWatchFixture(t *testing.T, mutate func(*Config)) *watchFixture {
@@ -174,6 +179,7 @@ func newWatchFixture(t *testing.T, mutate func(*Config)) *watchFixture {
 	require.True(t, ok)
 	cfg.SysfsRoot = tree.sysfs
 	cfg.DevRoot = tree.dev
+	cfg.StateFile = filepath.Join(t.TempDir(), "restarts.json")
 	if mutate != nil {
 		mutate(cfg)
 	}
@@ -202,13 +208,26 @@ func newWatchFixture(t *testing.T, mutate func(*Config)) *watchFixture {
 		tree:  tree,
 		logs:  logs,
 		tel:   tel,
+		host:  &statusHost{},
 	}
+}
+
+// restart builds a second watch on the same device tree and state file, standing
+// in for the container being restarted.
+func (f *watchFixture) restart(t *testing.T) *watchFixture {
+	t.Helper()
+	cfg := *f.watch.cfg
+	next := newWatchFixture(t, func(c *Config) { *c = cfg })
+	next.tree = f.tree
+	next.watch.scanner.StatNode = f.tree.statNode
+	next.watch.scanner.Probe = f.tree.probeNode
+	return next
 }
 
 // start starts the watch and stops it when the test ends.
 func (f *watchFixture) start(t *testing.T) {
 	t.Helper()
-	require.NoError(t, f.watch.Start(context.Background(), componenttest.NewNopHost()))
+	require.NoError(t, f.watch.Start(context.Background(), f.host))
 	t.Cleanup(func() { require.NoError(t, f.watch.Shutdown(context.Background())) })
 }
 
@@ -239,6 +258,38 @@ func (f *watchFixture) count(msg string) int {
 	return n
 }
 
+// statusHost is a component.Host that records the status events reported to it,
+// standing in for the collector service's async error channel.
+type statusHost struct {
+	mu     sync.Mutex
+	events []*componentstatus.Event
+}
+
+var (
+	_ component.Host           = (*statusHost)(nil)
+	_ componentstatus.Reporter = (*statusHost)(nil)
+)
+
+func (h *statusHost) GetExtensions() map[component.ID]component.Component { return nil }
+
+func (h *statusHost) Report(event *componentstatus.Event) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.events = append(h.events, event)
+}
+
+func (h *statusHost) fatalErrors() []error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	var errs []error
+	for _, e := range h.events {
+		if e.Status() == componentstatus.StatusFatalError {
+			errs = append(errs, e.Err())
+		}
+	}
+	return errs
+}
+
 func gaugePoints(t *testing.T, m metricdata.Metrics) []metricdata.DataPoint[int64] {
 	t.Helper()
 	gauge, ok := m.Data.(metricdata.Gauge[int64])
@@ -258,6 +309,21 @@ func assertDeviceGauge(t *testing.T, f *watchFixture, state sysdev.DevNodeState,
 		}
 	}
 	assert.True(t, found, "no data point for state %s", state)
+}
+
+func assertSuppressedExits(t *testing.T, f *watchFixture, reason string, want int64) {
+	t.Helper()
+	m, err := f.tel.GetMetric(metricExitsSuppressed)
+	require.NoError(t, err)
+	sum, ok := m.Data.(metricdata.Sum[int64])
+	require.True(t, ok, "%s is not an int64 sum but %T", m.Name, m.Data)
+	var total int64
+	for _, dp := range sum.DataPoints {
+		if value, ok := dp.Attributes.Value(attributeKeyReason); ok && value.AsString() == reason {
+			total += dp.Value
+		}
+	}
+	assert.Equal(t, want, total, "%s reason %s", metricExitsSuppressed, reason)
 }
 
 func assertCounter(t *testing.T, f *watchFixture, name string, want int64) {

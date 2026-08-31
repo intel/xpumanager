@@ -9,6 +9,12 @@ status:
     active: [marquiz]
 
 attributes:
+  reason:
+    description: Why an exit was suppressed although the device set changed.
+    type: string
+    enum:
+      - max_restarts
+      - state_error
   state:
     description: How a device relates to its device file.
     type: string
@@ -51,11 +57,12 @@ telemetry:
     device_watch_exits_suppressed:
       enabled: true
       stability: development
-      description: Number of shutdowns not requested because the restart rate limit was exhausted.
+      description: Number of shutdowns not requested although the device set changed.
       unit: "{exit}"
       sum:
         value_type: int
         monotonic: true
+      attributes: [reason]
     device_watch_scan_errors:
       enabled: true
       stability: development

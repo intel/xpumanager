@@ -70,7 +70,7 @@ func AssertEqualDeviceWatchExitsRequested(t *testing.T, tt *componenttest.Teleme
 func AssertEqualDeviceWatchExitsSuppressed(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_device_watch_exits_suppressed",
-		Description: "Number of shutdowns not requested because the restart rate limit was exhausted. [Development]",
+		Description: "Number of shutdowns not requested although the device set changed. [Development]",
 		Unit:        "{exit}",
 		Data: metricdata.Sum[int64]{
 			Temporality: metricdata.CumulativeTemporality,

@@ -170,12 +170,24 @@ extensions:
   intel_device_watch:
     # How often to compare sysfs against the device files.
     scan_interval: 30s
-    # Number of consecutive scans that must agree before a change is reported.
+    # Number of consecutive scans that must agree before a change is acted on.
     # PCI rescan and driver rebind produce transients.
     settle_scans: 2
+    # Action to take once a change has settled: "log" or "exit". Exiting shuts
+    # the collector down gracefully (with exit code 0).
+    change_action: log
     # How often a persisting condition is re-logged. Changes are always logged
     # immediately; zero logs each condition only when it appears or changes.
     report_interval: 10m
+    # Time window for counting collector restarts initiated by the
+    # intel_device_watch extension.
+    restart_window: 10m
+    # Restarts allowed within the restart_window before falling back to "log" action.
+    # Zero disables exiting. Counted in restarts, not exits: what it guards
+    # against is the loop of exiting, getting restarted and exiting again.
+    max_restarts: 3
+    # State file for restart limiter. Unset disables restart limiting.
+    #state_file: /run/xpumd/device-watch-restarts.json
     # sysfs device classes to watch. Supported: "drm", "mei". A subsystem whose
     # nodes are not mapped into the container reports as inaccessible forever.
     subsystems: [drm, mei]

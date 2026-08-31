@@ -83,7 +83,7 @@ func NewTelemetryBuilder(settings component.TelemetrySettings, options ...Teleme
 	errs = errors.Join(errs, err)
 	builder.DeviceWatchExitsSuppressed, err = builder.meter.Int64Counter(
 		"otelcol_device_watch_exits_suppressed",
-		metric.WithDescription("Number of shutdowns not requested because the restart rate limit was exhausted. [Development]"),
+		metric.WithDescription("Number of shutdowns not requested although the device set changed. [Development]"),
 		metric.WithUnit("{exit}"),
 	)
 	errs = errors.Join(errs, err)
