@@ -42,10 +42,13 @@ on:
 permissions:
   contents: read
 
+
 jobs:
   # Coverage on the head branch
   coverage-pr:
     runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    permissions:
+      contents: read
     timeout-minutes: 60
     steps:
       - name: Checkout head branch
@@ -135,6 +138,8 @@ jobs:
   # Coverage on the base branch
   coverage-base:
     runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    permissions:
+      contents: read
     timeout-minutes: 60
     steps:
       - name: Checkout head branch (for Dockerfile and conanfile.py)
@@ -240,6 +245,10 @@ jobs:
   # Post coverage delta as a PR comment
   comment:
     needs: [coverage-pr, coverage-base]
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read       # download artifacts from earlier jobs in this run
     # Skip when dispatched without a PR number
     if: >-
       needs.coverage-pr.result == 'success' &&
