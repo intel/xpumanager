@@ -229,6 +229,12 @@ config:
       # -- PCI vendor IDs to watch, empty for all vendors.
       # @section -- XPUM Daemon Configuration
       vendor_ids: ["8086"]
+      # -- sysfs mount point to read the device inventory from. Mainly for testing.
+      # @section -- XPUM Daemon Configuration
+      sysfs_root: /sys
+      # -- Root of the device file tree compared against sysfs. Mainly for testing.
+      # @section -- XPUM Daemon Configuration
+      dev_root: /dev
 
   # -- [Configuration for service](https://opentelemetry.io/docs/collector/configuration/#service)
   # @section -- XPUM Daemon Configuration
