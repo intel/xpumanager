@@ -5,8 +5,15 @@
  */
 
 #include <unistd.h>
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <cstddef>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <string>
+#include <string_view>
 #include <sys/stat.h>
 #include "debug.h"
 #include "os.h"
@@ -44,13 +51,36 @@ PciDatabase &PciDatabase::instance()
 	return instance;
 }
 
+// Distro-provided copies of the upstream PCI ID database, kept current by the package manager.
+// Fixed, root-owned paths, so they carry the same trust as an installed resource. Supplied by
+// hwdata/pciutils, which minimal container images may omit.
+static constexpr std::array<std::string_view, 2> PCI_IDS_SYSTEM_PATHS = {
+	"/usr/share/hwdata/pci.ids",
+	"/usr/share/misc/pci.ids",
+};
+
+/**
+ * @brief Locates the distro copy of the PCI ID database
+ *
+ * @return std::string Path to the file, or empty if the distro provides none
+ */
+static std::string findDistroPciIdsFile()
+{
+	std::error_code ec;
+	for (const std::string_view path : PCI_IDS_SYSTEM_PATHS) {
+		if (std::filesystem::is_regular_file(path, ec) && !ec) {
+			return std::string(path);
+		}
+	}
+	return "";
+}
+
 /**
  * @brief Initializes the PCI database by loading configuration files
  *
- * This function loads PCI device information from two configuration files:
- * - PCI IDs file containing standard PCI vendor and device information
- * - Device configuration file containing custom device classifications
- * It attempts to find these files in the resources/config directory.
+ * The bundled PCI IDs snapshot is loaded first, then the distro copy is layered over it so that
+ * newer upstream entries win while the snapshot still provides a floor on systems whose hwdata
+ * predates it. Custom classifications from pci.conf are applied last and override both.
  *
  * @return bool true if initialization was successful, false otherwise
  */
@@ -73,6 +103,24 @@ bool PciDatabase::init()
 	} else {
 		ERR("PciDatabase::init()- open file {} error.\n", fileName.c_str());
 		ret = false;
+	}
+
+	// Layer the distro database on top when present. Its absence is not an error, and a parse
+	// failure only costs us the newer entries, so neither affects the return value.
+	fileName = findDistroPciIdsFile();
+	if (fileName.empty()) {
+		DBG("PciDatabase::init()- no distro PCI ID database found, using bundled snapshot only.\n");
+	} else {
+		infile.open(fileName.data());
+		if (infile.is_open()) {
+			DBG("PciDatabase::init()- layering distro PCI ID database {}.\n", fileName.c_str());
+			if (!parsePciDevice(infile)) {
+				ERR("PciDatabase::init()- parsePciDevice error for {}.\n", fileName.c_str());
+			}
+			infile.close();
+		} else {
+			ERR("PciDatabase::init()- open file {} error.\n", fileName.c_str());
+		}
 	}
 
 	// Try to find pci.conf file
@@ -445,6 +493,39 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 }
 
 /**
+ * @brief Tests whether a PCI device name identifies it as a PCIe switch.
+ *
+ * Matches the whole word "switch" (case-insensitive) anywhere in @p name,
+ * requiring a word boundary on both sides so that e.g. "SwitchNIC" is not
+ * mistaken for a switch. Unlike the previous " Switch " (space-delimited)
+ * test, this also matches names that *end* in "Switch" — such as the
+ * Broadcom "PEX890xx PCIe Gen 5 Switch" (1000:c030) — which the old check
+ * silently dropped, leaving those bridges uncounted in `topology` output.
+ *
+ * @param name Device or subsystem name from the PCI IDs database.
+ * @return true if @p name contains "switch" as a standalone word.
+ */
+static bool nameIndicatesSwitch(const std::string &name)
+{
+	static constexpr std::string_view kWord = "switch";
+	const auto isWordChar = [](unsigned char c) { return (std::isalnum(c) != 0) || c == '_'; };
+
+	std::string lower(name.size(), '\0');
+	std::transform(name.begin(), name.end(), lower.begin(),
+				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+	for (std::size_t pos = lower.find(kWord); pos != std::string::npos; pos = lower.find(kWord, pos + 1)) {
+		const bool leftBoundary = (pos == 0) || !isWordChar(static_cast<unsigned char>(lower[pos - 1]));
+		const std::size_t after = pos + kWord.size();
+		const bool rightBoundary = (after >= lower.size()) || !isWordChar(static_cast<unsigned char>(lower[after]));
+		if (leftBoundary && rightBoundary) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/**
  * @brief Adds a PCIe switch device to the database
  *
  * This function identifies and adds PCIe switch devices to the database
@@ -461,15 +542,14 @@ void PciDatabase::parseDeviceConfig(std::ifstream &fstream)
 void PciDatabase::addSwitchDevice(int32_t vendorId, int32_t deviceId, const std::string &deviceName,
 								  int32_t subVendorId, int32_t subDeviceId, const std::string &subsystemName)
 {
-	std::string switchString = std::string(" Switch ");
 	PcieDevice device = {DV_SWITCH, false, vendorId, deviceId, subVendorId, subDeviceId, ""};
 
 	if (subVendorId >= 0 && subDeviceId >= 0 && !subsystemName.empty()) {
-		if (subsystemName.find(switchString) != std::string::npos) {
+		if (nameIndicatesSwitch(subsystemName)) {
 			devices[std::make_pair(vendorId, deviceId)] = device;
 		}
 	} else if (vendorId >= 0 && deviceId >= 0 && !deviceName.empty()) {
-		if (deviceName.find(switchString) != std::string::npos) {
+		if (nameIndicatesSwitch(deviceName)) {
 			devices[std::make_pair(vendorId, deviceId)] = device;
 		}
 	} else {

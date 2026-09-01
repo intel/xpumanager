@@ -564,20 +564,241 @@ void getSwitchDevicePath(hwloc_obj_t parObj, std::string *switchDevicePath)
 	}
 }
 
+// PCI Express Capability structure fields (PCI Express Base Specification). Offsets are
+// relative to the start of the capability, which lives in the legacy capability list
+// within the first 256 bytes -- not in the 4 KiB extended region, whose separate 16-bit
+// ID space uses 0x10 for SR-IOV.
+static constexpr uint8_t PCI_CAP_ID_EXP = 0x10;		   // PCI Express Capability ID
+static constexpr uint8_t PCI_EXP_FLAGS_OFFSET = 0x02;  // PCI Express Capabilities Register
+static constexpr uint16_t PCI_EXP_FLAGS_VERS = 0x000F; // Capability Version field (bits 3:0)
+static constexpr uint16_t PCI_EXP_FLAGS_TYPE = 0x00F0; // Device/Port Type field (bits 7:4)
+static constexpr uint8_t PCI_EXP_TYPE_SHIFT = 4;	   // Right-shift to extract the type
+static constexpr uint8_t PCI_EXP_TYPE_UPSTREAM = 0x5;  // Upstream Port of a PCIe Switch
+
+// Capabilities may only live in 0x40-0xFF; below that is the standard config header.
+static constexpr uint8_t PCI_CAP_LIST_MIN_OFFSET = 0x40;
+
+// True if a raw (unmasked) capability pointer could name a real capability. Rejects
+// pointers into the config header and 0xFF (an aborted read). Zero is excluded here
+// because it is the spec's end-of-list terminator, which callers handle separately.
+static bool isPlausibleCapPtr(uint8_t capPtr) { return capPtr >= PCI_CAP_LIST_MIN_OFFSET && capPtr != 0xFF; }
+
+// Negative results of readPciePortType(), kept distinct because they demand different
+// handling: no PCIe capability means definitively not a switch, whereas unreadable means
+// unclassifiable, so the caller must fall back to the PCI ID database.
+static constexpr int PCIE_PORT_TYPE_READ_ERROR = -1; // config space could not be read
+static constexpr int PCIE_PORT_TYPE_NO_CAP = -2;	 // conventional PCI device, no PCIe capability
+
+/**
+ * @brief Reads the PCIe "Device/Port Type" for a PCI function from sysfs config space.
+ *
+ * Walks the legacy capability list (the 8-bit-ID chain rooted at offset 0x34, entirely
+ * within the first 256 bytes) in @c /sys/bus/pci/devices/<bdf>/config to find the PCI
+ * Express Capability, then returns its Device/Port Type field. Every PCIe function is
+ * required to place that capability in this chain, so the 4 KiB extended region -- which
+ * carries no Device/Port Type -- is not needed.
+ *
+ * This is the authoritative, vendor-independent way to classify a PCIe port:
+ * 0x4 = root port, 0x5 = switch upstream port, 0x6 = switch downstream port,
+ * 0x0/0x1 = endpoint, 0x7/0x8 = PCIe-to-PCI/PCI-to-PCIe bridge. It requires no
+ * vendor/device ID database, so it recognizes any spec-conforming switch (Broadcom,
+ * Intel, ...) without configuration updates.
+ *
+ * The capability normally sits beyond offset 0x40, and the kernel exposes only the first
+ * 64 bytes to unprivileged readers, so expect @c PCIE_PORT_TYPE_READ_ERROR without
+ * CAP_SYS_ADMIN.
+ *
+ * @param bdf BDF string of the PCI function (e.g. "0000:01:00.0").
+ * @return The 4-bit Device/Port Type on success, @c PCIE_PORT_TYPE_NO_CAP if the device
+ *         has no PCIe capability, or @c PCIE_PORT_TYPE_READ_ERROR if config space could
+ *         not be read, its capability list is unusable, or the capabilities register
+ *         holds an implausible value (all-ones or an invalid Capability Version).
+ */
+static int readPciePortType(const std::string &bdf)
+{
+	if (!isValidBdf(bdf)) {
+		return PCIE_PORT_TYPE_READ_ERROR;
+	}
+
+	std::ifstream config("/sys/bus/pci/devices/" + bdf + "/config", std::ios::binary);
+	if (!config) {
+		return PCIE_PORT_TYPE_READ_ERROR;
+	}
+
+	uint8_t capPtr = 0;
+	config.seekg(PCI_CAPABILITY_LIST);
+	config.read(reinterpret_cast<char *>(&capPtr), sizeof(capPtr));
+	if (!config) {
+		return PCIE_PORT_TYPE_READ_ERROR;
+	}
+	if (capPtr == 0) {
+		return PCIE_PORT_TYPE_NO_CAP; // declares no capabilities at all
+	}
+	if (!isPlausibleCapPtr(capPtr)) {
+		DBG("readPciePortType: implausible capability pointer {:#04x} for {}\n", capPtr, bdf);
+		return PCIE_PORT_TYPE_READ_ERROR;
+	}
+	capPtr &= 0xFC; // capability pointers are DWORD-aligned (bits 1:0 = 0)
+
+	// A capability list can only occupy the 48 DWORD-aligned offsets in 0x40-0xFC, so one
+	// 64-bit word tracks every offset already visited. Rejecting a repeat catches firmware
+	// that chains backwards or in a cycle, and bounds the walk without a separate iteration
+	// cap: each pass consumes one of the 48 bits, so the loop cannot run longer than that.
+	uint64_t visited = 0;
+	while (true) {
+		const uint64_t visitedBit = 1ULL << ((capPtr - PCI_CAP_LIST_MIN_OFFSET) / 4);
+		if ((visited & visitedBit) != 0) {
+			DBG("readPciePortType: capability list of {} revisits offset {:#04x}\n", bdf, capPtr);
+			return PCIE_PORT_TYPE_READ_ERROR;
+		}
+		visited |= visitedBit;
+
+		uint8_t capId = 0;
+		config.seekg(capPtr);
+		config.read(reinterpret_cast<char *>(&capId), sizeof(capId));
+		if (!config) {
+			return PCIE_PORT_TYPE_READ_ERROR;
+		}
+
+		if (capId == PCI_CAP_ID_EXP) {
+			uint16_t flags = 0; // config space is little-endian, matching x86 host order
+			config.seekg(capPtr + PCI_EXP_FLAGS_OFFSET);
+			config.read(reinterpret_cast<char *>(&flags), sizeof(flags));
+			if (!config) {
+				return PCIE_PORT_TYPE_READ_ERROR;
+			}
+			// All-ones means an aborted read (device removed mid-walk) and a zero
+			// Capability Version is invalid, so the type bits are garbage either way --
+			// 0x0000 would otherwise decode as a plausible-looking "endpoint".
+			if (flags == 0xFFFF || (flags & PCI_EXP_FLAGS_VERS) == 0) {
+				DBG("readPciePortType: implausible PCIe capabilities register {:#06x} for {}\n", flags, bdf);
+				return PCIE_PORT_TYPE_READ_ERROR;
+			}
+			return (flags & PCI_EXP_FLAGS_TYPE) >> PCI_EXP_TYPE_SHIFT;
+		}
+
+		uint8_t nextPtr = 0;
+		config.seekg(capPtr + 1);
+		config.read(reinterpret_cast<char *>(&nextPtr), sizeof(nextPtr));
+		if (!config) {
+			return PCIE_PORT_TYPE_READ_ERROR;
+		}
+		if (nextPtr == 0) {
+			// Walked the entire list without finding a PCI Express Capability.
+			return PCIE_PORT_TYPE_NO_CAP;
+		}
+		if (!isPlausibleCapPtr(nextPtr)) {
+			DBG("readPciePortType: implausible next-capability pointer {:#04x} for {}\n", nextPtr, bdf);
+			return PCIE_PORT_TYPE_READ_ERROR;
+		}
+		capPtr = nextPtr & 0xFC;
+	}
+}
+
+/**
+ * @brief Counts PCIe switches between a device and the root complex using sysfs.
+ *
+ * Resolves the canonical sysfs path of @p gpuBdf and walks upward through its PCI
+ * ancestors. Each ancestor whose PCIe Device/Port Type is "switch upstream port"
+ * (0x5) marks exactly one physical switch: a switch presents a single upstream
+ * port toward the root regardless of how many downstream ports it fans out to, so
+ * counting upstream ports counts switches without double-counting.
+ *
+ * Fully dynamic — relies on the standardized PCIe capability structure rather than
+ * a vendor/device ID database, so it recognizes any conforming switch without
+ * configuration file updates.
+ *
+ * @param[in]  gpuBdf           BDF string of the GPU device.
+ * @param[out] switchDevicePath Set to the sysfs path of the switch upstream port
+ *                              closest to the GPU, if one is found. Left untouched
+ *                              when its current value is not the "N/A" sentinel, and
+ *                              when -1 is returned.
+ * @return Number of PCIe switches in the path (>= 0), or -1 if the topology could not be
+ *         classified: the sysfs path did not resolve, or an ancestor's port type was
+ *         unreadable (typically without CAP_SYS_ADMIN). The caller must then fall back to
+ *         the database method rather than treat the result as a count.
+ */
+static int countSwitchesDynamic(const std::string &gpuBdf, std::string *switchDevicePath)
+{
+	namespace fs = std::filesystem;
+
+	if (!isValidBdf(gpuBdf)) {
+		return -1;
+	}
+
+	std::error_code ec;
+	fs::path realPath = fs::canonical("/sys/bus/pci/devices/" + gpuBdf, ec);
+	if (ec) {
+		DBG("countSwitchesDynamic: cannot resolve sysfs path for {}: {}\n", gpuBdf, ec.message());
+		return -1;
+	}
+
+	int count = 0;
+	// Local so that bailing out mid-walk leaves the caller's value untouched for the
+	// fallback path, keeping the reported count and switch path consistent.
+	std::string nearestSwitchPath;
+	// Walk up through PCI ancestors until the parent is a PCI domain root
+	// ("pciDDDD:BB"), i.e. we have passed the root port. A device on the root bus
+	// (e.g. an iGPU) has no such ancestors and correctly counts 0.
+	for (fs::path current = realPath.parent_path();
+		 current.has_parent_path() && !current.filename().string().starts_with("pci");
+		 current = current.parent_path()) {
+		const std::string name = current.filename().string();
+		if (!isValidBdf(name)) {
+			continue;
+		}
+		const int portType = readPciePortType(name);
+		if (portType == PCIE_PORT_TYPE_READ_ERROR) {
+			// An unclassifiable ancestor may itself be a switch upstream port, so the count
+			// would be too low. Defer to the database method instead.
+			DBG("countSwitchesDynamic: cannot read PCIe port type of ancestor {} of {}\n", name, gpuBdf);
+			return -1;
+		}
+		if (portType == PCI_EXP_TYPE_UPSTREAM) {
+			++count;
+			DBG("countSwitchesDynamic: switch upstream port {} (count {})\n", name, count);
+			if (nearestSwitchPath.empty()) {
+				nearestSwitchPath = current.string();
+			}
+		}
+	}
+
+	if (switchDevicePath != nullptr && *switchDevicePath == "N/A" && !nearestSwitchPath.empty()) {
+		*switchDevicePath = nearestSwitchPath;
+	}
+
+	return count;
+}
+
 /**
  * @brief Analyzes system topology and counts PCIe switches for a specific device
  *
- * This function initializes the hardware locality (hwloc) topology, searches for
- * a specific PCI device using its domain:bus:device:function coordinates, and
- * counts the number of PCIe switches in the path from that device to the root
- * complex. It provides topology analysis capabilities for performance optimization.
+ * Primary path: dynamic detection that walks the device's sysfs ancestry and
+ * classifies each bridge by its standardized PCIe Device/Port Type read from
+ * config space (see countSwitchesDynamic). This is vendor-independent and needs
+ * no PCI ID database.
+ *
+ * Fallback path (only when config space cannot be read): the legacy hwloc
+ * traversal combined with the pci.ids/pci.conf switch-ID database.
  *
  * @param bdf BDF ID structure containing the PCI coordinates of the target device
  * @return int Number of PCIe switches in the path to the specified device
  */
 int getTopology(bdfID bdf, std::string *switchDevicePath)
 {
-	// Initialize the topology object
+	// Build the canonical BDF string (DDDD:BB:DD.F) for sysfs lookups.
+	const std::string bdfStr =
+		xpum::compat::format("{:04x}:{:02x}:{:02x}.{:x}", bdf.domain, bdf.bus, bdf.device, bdf.function);
+
+	// Primary: dynamic, database-free detection via PCIe port type in sysfs.
+	const int dynamicCount = countSwitchesDynamic(bdfStr, switchDevicePath);
+	if (dynamicCount >= 0) {
+		return dynamicCount;
+	}
+
+	DBG("getTopology: dynamic detection unavailable for {}, falling back to PCI ID database\n", bdfStr);
+
+	// Fallback: hwloc traversal + pci.ids/pci.conf database lookup.
 	hwloc_topology_t topology;
 	SETENV("HWLOC_COMPONENTS", "linux,stop");
 	hwloc_topology_init(&topology);
@@ -1028,9 +1249,6 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 
 	return 0;
 }
-
-// PCI Express Capability ID
-static constexpr uint8_t PCI_CAP_ID_EXP = 0x10;
 
 // Offset of Slot Capabilities register within the PCIe Capability structure
 static constexpr uint8_t PCI_EXP_SLTCAP_OFFSET = 0x14;
