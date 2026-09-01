@@ -57,6 +57,16 @@ SystemCommandResult execCommand(const std::string &command);
  */
 bool isExecutableInPath(const std::string &name);
 
+/**
+ * @brief Resolve the debugfs entry describing a device's VRAM manager.
+ *
+ * Newer kernels expose it as <device>/tile0/vram_mm, older ones as
+ * <device>/vram0_mm; the per-tile entry is preferred and the legacy name is the
+ * fallback. Returns the per-tile path when neither is present, so callers report
+ * the layout they expect.
+ */
+std::string resolveVramMgrDebugfsPath(const std::string &deviceDebugfsPath);
+
 std::string findResourceFile(const std::string &relativePath);
 
 #endif

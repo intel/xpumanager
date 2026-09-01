@@ -70,6 +70,19 @@ if get_option('with_tests')
 
   test('kernel_driver_test', kernel_driver_test)
 
+  # VRAM manager debugfs path resolution tests. Compiles vram_debugfs.cpp
+  # directly so the test needs no OAL link.
+  vram_debugfs_test = executable(
+    'vram_debugfs_test',
+    ['vram_debugfs_test.cpp', '../vram_debugfs.cpp'],
+    include_directories: [global_inc, include_directories('..')],
+    dependencies: [doctest_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('vram_debugfs_test', vram_debugfs_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')

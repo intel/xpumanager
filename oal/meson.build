@@ -38,6 +38,7 @@ elif is_linux
     'lin/proc_fdinfo.cpp',
     'lin/process_platform.cpp',
     'lin/topology.cpp',
+    'lin/vram_debugfs.cpp',
   )
   oal_inc_dirs += [include_directories('lin')]
   # Add hwloc dependency for Linux topology functionality

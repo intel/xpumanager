@@ -330,14 +330,14 @@ static uint64_t parseVramValueInBytes(const std::string &line)
 /**
  * @brief Read available VRAM size from xe debugfs
  *
- * Reads the "size" entry from tile0/vram_mm and returns the parsed value.
+ * Reads the "size" entry from the VRAM manager entry and returns the parsed value.
  *
  * @param[in] bdfAddress PCI BDF address (e.g., "0000:03:00.0")
  * @return uint64_t Available VRAM size in bytes, or 0 on failure
  */
 static uint64_t readAvailableVram(const std::string &bdfAddress)
 {
-	std::string mmPath = "/sys/kernel/debug/dri/" + bdfAddress + "/tile0/vram_mm";
+	std::string mmPath = resolveVramMgrDebugfsPath("/sys/kernel/debug/dri/" + bdfAddress);
 	std::ifstream ifs(mmPath);
 	std::string line;
 
@@ -364,25 +364,27 @@ static uint64_t readAvailableVram(const std::string &bdfAddress)
 /**
  * @brief Get the amount of free local memory (LMEM) available on the device
  *
- * Reads the visible_avail entry from tile0/vram_mm to determine the
+ * Reads the visible_avail entry of the device's VRAM manager to determine the
  * amount of visible available memory on the GPU device.
+ *
+ * The figure is informational - no caller treats its absence as a failure - so an
+ * entry that is missing or unreadable is reported at debug level only, on any
+ * device type. VF creation sizes its LMEM quota through readAvailableVram(),
+ * which does report an error, and the spare-resource reads in loadSriovData()
+ * still decide whether the device is in SR-IOV mode.
  *
  * @param[in] path The debugfs path for the device (e.g., /sys/kernel/debug/dri/0000:03:00.0)
  * @return uint64_t Free LMEM size in bytes, or 0 if unable to read or parse the information
  */
-static uint64_t getFreeLmemSize(const std::string &path, bool isIGPU)
+static uint64_t getFreeLmemSize(const std::string &path)
 {
-	std::string mmPath = path + "/tile0/vram_mm";
+	std::string mmPath = resolveVramMgrDebugfsPath(path);
 	std::ifstream ifs(mmPath);
 	std::string line;
 
 	if (!ifs.is_open()) {
-		if (isIGPU) {
-			DBG("{} {}, continuing with LMEM=0.\n", errno == EACCES ? "Permission denied opening" : "Failed to open",
-				mmPath.c_str());
-		} else {
-			ERR("{} {}\n", errno == EACCES ? "Permission denied opening" : "Failed to open", mmPath.c_str());
-		}
+		DBG("{} {}, continuing with LMEM=0.\n", errno == EACCES ? "Permission denied opening" : "Failed to open",
+			mmPath.c_str());
 		return 0;
 	}
 
@@ -397,7 +399,7 @@ static uint64_t getFreeLmemSize(const std::string &path, bool isIGPU)
 		return parseVramValueInBytes(line);
 	}
 
-	ERR("Failed to parse visible_avail from {}\n", mmPath.c_str());
+	DBG("Failed to parse visible_avail from {}, continuing with LMEM=0.\n", mmPath.c_str());
 	return 0;
 }
 
@@ -456,7 +458,7 @@ static bool loadSriovData(DeviceSriovInfo *data)
 {
 	std::string lmem, ggtt, doorbell, context;
 	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + data->bdfAddress;
-	data->lmemSizeFree = getFreeLmemSize(debugfsPath, data->isIGPU);
+	data->lmemSizeFree = getFreeLmemSize(debugfsPath);
 
 	std::string pfIovPath = debugfsPath + "/gt" + std::to_string(0) + "/pf/";
 	if (data->isIGPU) {
