@@ -120,23 +120,21 @@ func (kc k8sClient) getDaemonSetPods(name string) ([]corev1.Pod, error) {
 }
 
 // waitForRollout waits for a DaemonSet to have at least one desired pod and all desired pods ready.
-func (kc k8sClient) waitForRollout(name string, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
-	for {
+func (kc k8sClient) waitForRollout(t *testing.T, name string, timeout time.Duration) {
+	t.Helper()
+
+	pollUntil(t, fmt.Sprintf("daemonset %q rollout", name), timeout, time.Second, func() error {
 		ds, err := kc.AppsV1().DaemonSets(kc.namespace).Get(context.Background(), name, metav1.GetOptions{})
 		if err != nil {
-			return err
+			t.Fatalf("failed to get daemonset %q: %v", name, err)
 		}
 		if ds.Status.ObservedGeneration >= ds.Generation &&
 			ds.Status.DesiredNumberScheduled > 0 &&
 			ds.Status.NumberReady >= ds.Status.DesiredNumberScheduled {
 			return nil
 		}
-		if time.Now().After(deadline) {
-			return fmt.Errorf("timed out after %v waiting for daemonset %q rollout", timeout, name)
-		}
-		time.Sleep(time.Second)
-	}
+		return fmt.Errorf("daemonset %q rollout: %d/%d ready", name, ds.Status.NumberReady, ds.Status.DesiredNumberScheduled)
+	})
 }
 
 func (kc k8sClient) createConfigMap(name string, data map[string]string) error {
@@ -149,6 +147,41 @@ func (kc k8sClient) createConfigMap(name string, data map[string]string) error {
 	}
 	_, err := kc.CoreV1().ConfigMaps(kc.namespace).Create(context.Background(), cm, metav1.CreateOptions{})
 	return err
+}
+
+// podRequest starts a POST request against a pod's named sub-resource
+// (exec, portforward, ...).
+func (kc k8sClient) podRequest(pod, subresource string) *rest.Request {
+	return kc.CoreV1().RESTClient().Post().
+		Namespace(kc.namespace).
+		Resource("pods").
+		Name(pod).
+		SubResource(subresource)
+}
+
+// execIO runs command in a container, feeding it stdin (nil for none), and
+// returns what it wrote to stdout/stderr.
+func (kc k8sClient) execIO(ctx context.Context, pod, container string, command []string, stdin io.Reader) (stdout, stderr []byte, err error) {
+	req := kc.podRequest(pod, "exec").VersionedParams(&corev1.PodExecOptions{
+		Container: container,
+		Command:   command,
+		Stdin:     stdin != nil,
+		Stdout:    true,
+		Stderr:    true,
+	}, scheme.ParameterCodec)
+
+	executor, err := remotecommand.NewSPDYExecutor(kc.restConfig, http.MethodPost, req.URL())
+	if err != nil {
+		return nil, nil, fmt.Errorf("creating executor for pod %q: %w", pod, err)
+	}
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	err = executor.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdin:  stdin,
+		Stdout: &stdoutBuf,
+		Stderr: &stderrBuf,
+	})
+	return stdoutBuf.Bytes(), stderrBuf.Bytes(), err
 }
 
 // copyFile copies a local file to a container. See writeFile for details.
@@ -172,63 +205,21 @@ func (kc k8sClient) writeFile(t *testing.T, pod, container string, data []byte, 
 
 	tmpPath := remotePath + ".tmp"
 	script := fmt.Sprintf("cat > %q && mv %q %q", tmpPath, tmpPath, remotePath)
-	req := kc.CoreV1().RESTClient().Post().
-		Namespace(kc.namespace).
-		Resource("pods").
-		Name(pod).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: container,
-			Command:   []string{"sh", "-c", script},
-			Stdin:     true,
-			Stdout:    false,
-			Stderr:    true,
-		}, scheme.ParameterCodec)
-
-	executor, err := remotecommand.NewSPDYExecutor(kc.restConfig, http.MethodPost, req.URL())
-	if err != nil {
-		t.Fatalf("execing shell+cat in pod %q failed: %v", pod, err)
-	}
-
-	var stderr bytes.Buffer
-	if err := executor.StreamWithContext(context.Background(), remotecommand.StreamOptions{
-		Stdin:  bytes.NewReader(data),
-		Stderr: &stderr,
-	}); err != nil {
-		t.Fatalf("failed to write to %s/%s:%s: %v (stderr: %q)", pod, container, remotePath, err, stderr.String())
+	if _, stderr, err := kc.execIO(context.Background(), pod, container, []string{"sh", "-c", script}, bytes.NewReader(data)); err != nil {
+		t.Fatalf("failed to write to %s/%s:%s: %v (stderr: %q)", pod, container, remotePath, err, stderr)
 	}
 }
 
-// readFile reads a file from a container by execing "cat <path>" and
-// capturing stdout. It mirrors copyFile but in the opposite direction.
-// Unlike copyFile it returns an error instead of failing the test, so callers
-// can poll for a file that may not exist (or be readable) yet.
+// readFile reads a file from a container by execing "cat <path>". It mirrors
+// copyFile but in the opposite direction. Unlike copyFile it returns an error
+// instead of failing the test, so callers can poll for a file that may not
+// exist (or be readable) yet.
 func (kc k8sClient) readFile(ctx context.Context, pod, container, remotePath string) ([]byte, error) {
-	req := kc.CoreV1().RESTClient().Post().
-		Namespace(kc.namespace).
-		Resource("pods").
-		Name(pod).
-		SubResource("exec").
-		VersionedParams(&corev1.PodExecOptions{
-			Container: container,
-			Command:   []string{"cat", remotePath},
-			Stdout:    true,
-			Stderr:    true,
-		}, scheme.ParameterCodec)
-
-	executor, err := remotecommand.NewSPDYExecutor(kc.restConfig, http.MethodPost, req.URL())
+	stdout, stderr, err := kc.execIO(ctx, pod, container, []string{"cat", remotePath}, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create executor for pod %q: %w", pod, err)
+		return nil, fmt.Errorf("failed to read %s/%s:%s: %w (stderr: %q)", pod, container, remotePath, err, stderr)
 	}
-
-	var stdout, stderr bytes.Buffer
-	if err := executor.StreamWithContext(ctx, remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}); err != nil {
-		return nil, fmt.Errorf("failed to read %s/%s:%s: %w (stderr: %q)", pod, container, remotePath, err, stderr.String())
-	}
-	return stdout.Bytes(), nil
+	return stdout, nil
 }
 
 // forwardPort imitates kubectl forward, sets up a port-forward to the given
@@ -236,26 +227,21 @@ func (kc k8sClient) readFile(ctx context.Context, pod, container, remotePath str
 func (kc k8sClient) forwardPort(t *testing.T, pod string, remotePort int) *portForwarder {
 	t.Helper()
 
-	deadline := time.Now().Add(portForwardRetryTimeout)
-	for {
-		pf, err := kc.forwardPortOnce(pod, remotePort)
-		if err == nil {
-			return pf
+	var pf *portForwarder
+	pollUntil(t, fmt.Sprintf("port-forward to pod %s port %d", pod, remotePort), portForwardRetryTimeout, time.Second, func() error {
+		var err error
+		pf, err = kc.forwardPortOnce(pod, remotePort)
+		if err != nil {
+			t.Logf("port-forward to pod %s port %d failed (retrying): %v", pod, remotePort, err)
+			return fmt.Errorf("port-forward to pod %s port %d: %w", pod, remotePort, err)
 		}
-		t.Logf("port-forward to pod %s port %d failed (retrying): %v", pod, remotePort, err)
-		if time.Now().After(deadline) {
-			t.Fatalf("timed out after %v waiting for port-forward to pod %s port %d: %v", portForwardRetryTimeout, pod, remotePort, err)
-		}
-		time.Sleep(time.Second)
-	}
+		return nil
+	})
+	return pf
 }
 
 func (kc k8sClient) forwardPortOnce(pod string, remotePort int) (*portForwarder, error) {
-	req := kc.CoreV1().RESTClient().Post().
-		Namespace(kc.namespace).
-		Resource("pods").
-		Name(pod).
-		SubResource("portforward")
+	req := kc.podRequest(pod, "portforward")
 
 	transport, upgrader, err := clientspdy.RoundTripperFor(kc.restConfig)
 	if err != nil {

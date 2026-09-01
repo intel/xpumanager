@@ -113,11 +113,6 @@ func newTestConfig(t *testing.T) testConfig {
 	}
 }
 
-func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
-}
-
 func (tc *testConfig) addCleanup(fn func(*testing.T)) {
 	tc.cleanupFuncs = append(tc.cleanupFuncs, fn)
 }
@@ -150,9 +145,7 @@ func (tc *testConfig) setup(t *testing.T) {
 		}
 	})
 
-	if err := tc.k8sClient.waitForRollout(tc.releaseName, defaultTimeout); err != nil {
-		t.Fatalf("wait for xpumd rollout: %v", err)
-	}
+	tc.k8sClient.waitForRollout(t, tc.releaseName, defaultTimeout)
 	pods, err := tc.k8sClient.getDaemonSetPods(tc.releaseName)
 	if err != nil {
 		t.Fatalf("get xpumd pod: %v", err)

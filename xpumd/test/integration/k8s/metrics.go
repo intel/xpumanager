@@ -101,23 +101,17 @@ func (a metricAssertion) findMetric(families map[string]*dto.MetricFamily) (*dto
 func (a metricAssertion) waitFor(t *testing.T, endpoint string, timeout time.Duration) map[string]*dto.MetricFamily {
 	t.Helper()
 
-	var lastErr error
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		families, err := fetchMetrics(endpoint)
-		if err == nil {
-			_, lastErr = a.findMetric(families)
-			if lastErr == nil {
-				return families
-			}
-		} else {
-			lastErr = err
+	var families map[string]*dto.MetricFamily
+	pollUntil(t, fmt.Sprintf("metric %s{%s}", a.Name, a.Labels), timeout, metricPollInterval, func() error {
+		var err error
+		families, err = fetchMetrics(endpoint)
+		if err != nil {
+			return err
 		}
-		time.Sleep(metricPollInterval)
-	}
-
-	t.Fatalf("timed out after %v waiting for metric: %v", timeout, lastErr)
-	return nil
+		_, err = a.findMetric(families)
+		return err
+	})
+	return families
 }
 
 // waitForMetricsEndpoint polls the metrics endpoint until it responds successfully,
@@ -125,19 +119,13 @@ func (a metricAssertion) waitFor(t *testing.T, endpoint string, timeout time.Dur
 func waitForMetricsEndpoint(t *testing.T, endpoint string, timeout time.Duration) map[string]*dto.MetricFamily {
 	t.Helper()
 
-	var lastErr error
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		families, err := fetchMetrics(endpoint)
-		if err == nil {
-			return families
-		}
-		lastErr = err
-		time.Sleep(metricPollInterval)
-	}
-
-	t.Fatalf("timed out after %v waiting for metrics endpoint to become ready: %v", timeout, lastErr)
-	return nil
+	var families map[string]*dto.MetricFamily
+	pollUntil(t, "metrics endpoint "+endpoint, timeout, metricPollInterval, func() error {
+		var err error
+		families, err = fetchMetrics(endpoint)
+		return err
+	})
+	return families
 }
 
 func fetchMetrics(endpoint string) (map[string]*dto.MetricFamily, error) {
