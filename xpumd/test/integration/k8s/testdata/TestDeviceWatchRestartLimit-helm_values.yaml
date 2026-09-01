@@ -1,0 +1,44 @@
+service:
+  create: false
+
+# GPU (stub) driver not needed. This test only exercises the device watch extension
+extraEnv: []
+
+config:
+  extensions:
+    intel_device_watch:
+      scan_interval: 2s
+      settle_scans: 1
+      change_action: exit
+      max_restarts: 1
+      restart_window: 10m
+      # Use fake dirs instead of the real /sys and /dev, to enable testing without real HW.
+      sysfs_root: /test/sysfs
+      dev_root: /test/dev
+
+extraVolumes:
+  - name: fake-sysfs
+    emptyDir: {}
+  - name: fake-dev
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: fake-sysfs
+    mountPath: /test/sysfs
+  - name: fake-dev
+    mountPath: /test/dev
+
+# Helper sidecar through which the content of above fake directories can be mutated
+initContainers:
+  - name: test-helper
+    image: busybox:1.37.0
+    restartPolicy: Always
+    command: ["sleep", "inf"]
+    securityContext:
+      capabilities:
+        add: ["MKNOD"]
+    volumeMounts:
+      - name: fake-sysfs
+        mountPath: /test/sysfs
+      - name: fake-dev
+        mountPath: /test/dev

@@ -6,7 +6,9 @@
 package k8s
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -33,4 +35,17 @@ func pollUntil(t *testing.T, what string, timeout, interval time.Duration, cond 
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
+}
+
+// scriptBuilder assembles a shell script one command at a time.
+type scriptBuilder struct {
+	lines []string
+}
+
+func (b *scriptBuilder) addf(format string, args ...any) {
+	b.lines = append(b.lines, fmt.Sprintf(format, args...))
+}
+
+func (b *scriptBuilder) String() string {
+	return "set -e\n" + strings.Join(b.lines, "\n")
 }

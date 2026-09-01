@@ -210,6 +210,19 @@ func (kc k8sClient) writeFile(t *testing.T, pod, container string, data []byte, 
 	}
 }
 
+// execShell runs a shell script in a container and returns its stdout,
+// failing the test on a non-zero exit or a transport error.
+func (kc k8sClient) execShell(t *testing.T, pod, container, script string) string {
+	t.Helper()
+
+	stdout, stderr, err := kc.execIO(context.Background(), pod, container, []string{"sh", "-c", script}, nil)
+	if err != nil {
+		t.Fatalf("shell script failed in %s/%s: %v\nscript:\n%s\nstdout: %s\nstderr: %s",
+			pod, container, err, script, stdout, stderr)
+	}
+	return string(stdout)
+}
+
 // readFile reads a file from a container by execing "cat <path>". It mirrors
 // copyFile but in the opposite direction. Unlike copyFile it returns an error
 // instead of failing the test, so callers can poll for a file that may not
@@ -401,4 +414,60 @@ func (kc k8sClient) podLogs(ctx context.Context, pod, container string) ([]byte,
 	}
 	defer stream.Close() //nolint:errcheck
 	return io.ReadAll(stream)
+}
+
+func (kc k8sClient) getPod(ctx context.Context, name string) (*corev1.Pod, error) {
+	return kc.CoreV1().Pods(kc.namespace).Get(ctx, name, metav1.GetOptions{})
+}
+
+func containerStatus(p *corev1.Pod, name string) *corev1.ContainerStatus {
+	for i, cs := range p.Status.ContainerStatuses {
+		if cs.Name == name {
+			return &p.Status.ContainerStatuses[i]
+		}
+	}
+	for i, cs := range p.Status.InitContainerStatuses {
+		if cs.Name == name {
+			return &p.Status.InitContainerStatuses[i]
+		}
+	}
+	return nil
+}
+
+// waitForContainerLog polls the log of a container until it contains want.
+func (kc k8sClient) waitForContainerLog(t *testing.T, pod, container, want string, timeout time.Duration) {
+	t.Helper()
+
+	pollUntil(t, fmt.Sprintf("%q in the log of container %q", want, container), timeout, time.Second, func() error {
+		out, err := kc.podLogs(context.Background(), pod, container)
+		if err != nil {
+			return err
+		}
+		if !bytes.Contains(out, []byte(want)) {
+			return fmt.Errorf("%d bytes of log without it", len(out))
+		}
+		return nil
+	})
+}
+
+func (kc k8sClient) waitForContainerRestarts(t *testing.T, pod, container string, restartCount int32, timeout time.Duration) corev1.ContainerStatus {
+	t.Helper()
+
+	var last corev1.ContainerStatus
+	pollUntil(t, fmt.Sprintf("%d restart(s) of container %q", restartCount, container), timeout, time.Second, func() error {
+		p, err := kc.getPod(context.Background(), pod)
+		if err != nil {
+			t.Fatalf("failed to get pod %q: %v", pod, err)
+		}
+		cs := containerStatus(p, container)
+		if cs == nil {
+			return fmt.Errorf("container %q not found in pod %q", container, pod)
+		}
+		last = *cs
+		if cs.RestartCount < restartCount {
+			return fmt.Errorf("container %q has %d restarts, want %d", container, cs.RestartCount, restartCount)
+		}
+		return nil
+	})
+	return last
 }
