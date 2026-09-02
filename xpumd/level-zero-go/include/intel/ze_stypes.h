@@ -9,7 +9,7 @@
 // DO NOT EDIT.
 //
 // Source:   intel/compute-runtime level_zero/include/level_zero/ze_stypes.h
-// Revision: 9c2abbc844661895dc8c45ad84cdc50eb19e146c (2026-08-25)
+// Revision: 9b578ced3e1e40905d312e5e9b7bb4dd6d45f46e (2026-10-21)
 //
 // Pruned and mangled copy of the Intel compute-runtime header of the same name.
 // Only the Sysman structure types of the upstream header are included, converted to plain C.
@@ -31,7 +31,13 @@ typedef uint32_t zes_structure_type_ext_t;
 #define ZES_INTEL_STRUCTURE_TYPE_MEMORY_PAGE_OFFLINE_PROPERTIES_EXP ((zes_structure_type_ext_t)(0x00040008))
 #define ZES_INTEL_STRUCTURE_TYPE_DEVICE_STATE_PENDING_ACTION_EXP ((zes_structure_type_ext_t)(0x00040009))
 #define ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_PROPERTIES_EXP ((zes_structure_type_ext_t)(0x0004000D))
-#define ZES_INTEL_STRUCTURE_TYPE_MEMORY_VENDOR_ID_PROPERTIES_EXP ((zes_structure_type_ext_t)(0x0004000E))
 #define ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_METADATA_EXP ((zes_structure_type_ext_t)(0x0004000F))
+#define ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_INSTANCE_EXP_DESC ((zes_structure_type_ext_t)(0x00040010))
+#define ZES_INTEL_STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXP ((zes_structure_type_ext_t)(0x00040011))
+#define ZES_INTEL_STRUCTURE_TYPE_DRIVER_PROPERTIES_EXP ((zes_structure_type_ext_t)(0x00040012))
+#define ZES_INTEL_STRUCTURE_TYPE_DEVICE_POWER_OFF_REASON_EXP ((zes_structure_type_ext_t)(0x00040013))
+#define ZES_INTEL_STRUCTURE_TYPE_DEVICE_INDEX_EXP_PROPERTIES ((zes_structure_type_ext_t)(0x00040014))
+#define ZES_INTEL_STRUCTURE_TYPE_PCI_CONFIG_EXP_PROPERTIES ((zes_structure_type_ext_t)(0x00040015))
+#define ZES_INTEL_STRUCTURE_TYPE_DEVICE_COMPUTE_EXP_PROPERTIES ((zes_structure_type_ext_t)(0x00040016))
 
 #endif // _ZE_STYPES_H

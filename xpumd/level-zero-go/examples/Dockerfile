@@ -116,11 +116,11 @@ FROM builder AS backend-deb
 # at the top of this file by hand.
 FROM buildpack-deps:24.04 AS backend-src
 
-# Compute-runtime commit date 2026-08-25
-ARG COMPUTE_RUNTIME_COMMIT=9c2abbc844661895dc8c45ad84cdc50eb19e146c
-ARG LIBIGDGMM12_VERSION=22.10.0
-ARG LIBIGDGMM12_COMMIT=0246660b2ade17afc1c9c4c510368fa649ca809f
-ARG LEVEL_ZERO_VERSION=1.32.0
+# Compute-runtime commit date 2026-10-21
+ARG COMPUTE_RUNTIME_COMMIT=9b578ced3e1e40905d312e5e9b7bb4dd6d45f46e
+ARG LIBIGDGMM12_VERSION=22.10.2
+ARG LIBIGDGMM12_COMMIT=733c91a19baa65c40f4b1cf95a3991cc8c84d866
+ARG LEVEL_ZERO_VERSION=1.34.0
 
 # The Graphics Compiler is NOT taken from the manifest to avoid compiling it from sources, too.
 ARG IGC_CORE_VERSION=2.40.13+22418
