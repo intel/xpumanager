@@ -7,12 +7,12 @@
 Drivers:
   - ExtensionProperties:
       - Name: "ZES_intel_experimental_driver_info_logs"
-        Version: 131072 # ZE_MAKE_VERSION(2, 0)
+        Version: 196608 # ZE_MAKE_VERSION(3, 0)
       - Name: "ZES_intel_experimental_driver_event"
         Version: 131072 # ZE_MAKE_VERSION(2, 0)
 
     Devices:
       - Properties: {}
 
-    InfoLogs:
+    IntelInfoLogs:
       - Properties: {}

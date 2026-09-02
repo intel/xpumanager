@@ -7,7 +7,7 @@ Drivers:
   - ExtensionProperties:
       # to get the Intel experimental info log APIs enabled
       - Name: "ZES_intel_experimental_driver_info_logs"
-        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+        Version: 131072 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_2_0
       # to get the Intel experimental driver scoped event APIs enabled
       - Name: "ZES_intel_experimental_driver_event"
         Version: 65536 # ZES_INTEL_DRIVER_EVENT_EXP_VERSION_1_0
@@ -20,27 +20,40 @@ Drivers:
         # pending device scoped event
         Events: 1 # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
 
-    InfoLogs:
+    IntelInfoLogs:
       - Properties:
           InfoLogType: 0 # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
           InfoLogFormat: 0 # ZES_INTEL_INFO_LOG_FORMAT_CPER
-          MaxSize: 1 # kilobytes
-          IsInstancedCollectionSupported: true
-        # reading does not consume the records, only whole records are returned
-        Records:
-          - Data: "CPER-RECORD-1"
-            # per-record metadata, the length and the offset of the record are
-            # computed by the stub
-            Address:
-              Domain: 0
-              Bus: 1
-              Device: 2
-              Function: 3
-            Uuid:
-              Id: "12345678-abcd-ef01-2345-6789abcdef01"
-            Timestamp: 1234567
-          - Data: "CPER-RECORD-2"
-      # a log that only supports collection into the global trace buffer
+          IsNamedInstancedCollectionSupported: true
+          IsPeekSupported: true
+        # buffer size reported as applied, whatever the caller requests
+        BufferSizeInKb: 8
+        # what the reads and the peeks return
+        Collection:
+          # reported by every call, i.e. by the query call of a read as well
+          Status:
+            DroppedRecordCount: 2
+            IsDroppedRecordCountValid: true
+            HasDataToRead: true
+          # only whole records are returned, reading does not consume them
+          Records:
+            - Data: "CPER-RECORD-1"
+              Address:
+                Domain: 0
+                Bus: 1
+                Device: 2
+                Function: 3
+              Uuid:
+                Id: "12345678-abcd-ef01-2345-6789abcdef01"
+              Timestamp: 1234567
+              RecordType: 2 # ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED
+            - Data: "CPER-RECORD-2"
+      # a log without records and without the optional capabilities, reporting dropped records
       - Properties:
-          MaxSize: 1 # kilobytes
-          IsInstancedCollectionSupported: false
+          IsNamedInstancedCollectionSupported: false
+          IsPeekSupported: false
+        Collection:
+          # the status fields left out of the configuration are reported as zero
+          Status:
+            DroppedRecordCount: 5
+            IsDroppedRecordCountValid: true
