@@ -29,6 +29,9 @@ Specify which type of Intel [GPU monitoring access](#other-values) is used in th
 * `i915`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `i915` kernel driver
 * `xe`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `none`: Do not request GPU resources. Useful for stub-driver testing on generic clusters.
+* `privileged`: Run the daemon with full privileges instead of requesting more limited set of them.
+  Required for monitoring GPU devices that appear after the daemon pod is created on the node, see
+  [monitoring hot-plugged GPUs](#monitoring-hot-plugged-gpus) below.
 
 For example:
 
@@ -100,6 +103,30 @@ via kernel tracefs) is enabled (`infoLogs.enabled`), the tracefs of the host is
 mounted (as writable) to the xpumd container. See
 [Intel XPU receiver README](../../receiver/intelxpu/README.md#gpu-info-logs)
 for details on the info log collection.
+
+### Monitoring hot-plugged GPUs
+
+The daemon monitors the GPU devices enumerated at startup. Picking up devices
+that appear (or disappear) afterwards takes two things, as each covers a different
+obstacle:
+
+```bash
+  --set config.extensions.intel_device_watch.change_action=exit \
+  --set gpuAccess=privileged
+```
+
+* `change_action=exit`: lets the [`intel_device_watch`](../../extension/inteldevicewatch/README.md)
+  extension exit the daemon once the set of devices changes, so that Kubernetes restarts it.
+  A container's `/dev` is a copy the container runtime populates when it starts the container
+  (unlike sysfs, of which the container engines share the host's content), so the restart is
+  also what brings in the device files of the GPUs that appeared meanwhile.
+* `gpuAccess=privileged`: lets Level-Zero driver (used by the daemon) request
+   metrics from the new GPU device files after container restart.
+  The `devices` cgroup of the container will otherwise prevent device query writes / reads.
+
+Leaving either of them out is supported and still useful: the extension reports what it sees
+in the logs and as internal telemetry, which is enough for alerting on GPUs that are
+present but unmonitored.
 
 ### XPUMD privileges
 
@@ -200,7 +227,7 @@ And add following option to chart install:
 | extraVolumeMounts | list | `[]` | Additional volume mounts for the xpumd container |
 | extraVolumes | list | `[]` | Additional volumes for the xpumd pod |
 | fullnameOverride | string | `""` | Override the fully qualified app name |
-| gpuAccess | string | `"dra"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `plugin` (K8s GPU plugin), `i915` / `xe` (old K8s GPU plugin KMD-based resource names), `none` (no GPU resource request, useful for stub-driver testing) |
+| gpuAccess | string | `"dra"` | method for requesting monitoring access to Intel GPUs: `dra` (K8s DRA GPU driver), `plugin` (K8s GPU plugin), `i915` / `xe` (old K8s GPU plugin KMD-based resource names), `none` (no GPU resource request, useful for stub-driver testing), `privileged` (privileged container instead of a GPU resource request). NOTE: the `devices` cgroup of a container is fixed when the pod is admitted, so `privileged` is the only option that can reach GPUs that appear on the node after that |
 | grafana.dashboards | bool | `false` | Install XPUMD dashboard(s) for Grafana |
 | grafana.namespace | string | `"monitoring"` | Namespace for Grafana install. Needed when Grafana dashboard auto-loader sidecar `searchNamespace: ALL` option is not used |
 | image.pullPolicy | string | `"Always"` | Image pull policy |

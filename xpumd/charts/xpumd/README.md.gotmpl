@@ -32,6 +32,9 @@ Specify which type of Intel [GPU monitoring access](#other-values) is used in th
 * `i915`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `i915` kernel driver
 * `xe`: Intel GPU plugin (legacy) resource for monitoring Intel GPUs supported by the `xe` kernel driver
 * `none`: Do not request GPU resources. Useful for stub-driver testing on generic clusters.
+* `privileged`: Run the daemon with full privileges instead of requesting more limited set of them.
+  Required for monitoring GPU devices that appear after the daemon pod is created on the node, see
+  [monitoring hot-plugged GPUs](#monitoring-hot-plugged-gpus) below.
 
 For example:
 
@@ -103,6 +106,30 @@ via kernel tracefs) is enabled (`infoLogs.enabled`), the tracefs of the host is
 mounted (as writable) to the xpumd container. See
 [Intel XPU receiver README](../../receiver/intelxpu/README.md#gpu-info-logs)
 for details on the info log collection.
+
+### Monitoring hot-plugged GPUs
+
+The daemon monitors the GPU devices enumerated at startup. Picking up devices
+that appear (or disappear) afterwards takes two things, as each covers a different
+obstacle:
+
+```bash
+  --set config.extensions.intel_device_watch.change_action=exit \
+  --set gpuAccess=privileged
+```
+
+* `change_action=exit`: lets the [`intel_device_watch`](../../extension/inteldevicewatch/README.md)
+  extension exit the daemon once the set of devices changes, so that Kubernetes restarts it.
+  A container's `/dev` is a copy the container runtime populates when it starts the container
+  (unlike sysfs, of which the container engines share the host's content), so the restart is
+  also what brings in the device files of the GPUs that appeared meanwhile.
+* `gpuAccess=privileged`: lets Level-Zero driver (used by the daemon) request
+   metrics from the new GPU device files after container restart.
+  The `devices` cgroup of the container will otherwise prevent device query writes / reads.
+
+Leaving either of them out is supported and still useful: the extension reports what it sees
+in the logs and as internal telemetry, which is enough for alerting on GPUs that are
+present but unmonitored.
 
 ### XPUMD privileges
 

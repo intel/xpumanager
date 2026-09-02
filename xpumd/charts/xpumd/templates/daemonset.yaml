@@ -58,17 +58,25 @@ spec:
           {{- toYaml .Values.securityContextOverride | nindent 10 }}
           {{- else }}
           readOnlyRootFilesystem: true
-          allowPrivilegeEscalation: false
           # Required for GPU device access, unless container runtime allows device file owner override:
           # - https://kubernetes.io/blog/2021/11/09/non-root-containers-and-devices/
           # Required also for all other metrics than frequency, memory usage, power
           runAsUser: 0
+          {{- if eq .Values.gpuAccess "privileged" }}
+          # Privileged mode grants the device access that a GPU resource request would.
+          # It is also the only way to access devices that appeared on the node after the
+          # pod was started as the devices cgroup (controlling access to device
+          # files in non-privileged mode) is fixed at that point.
+          privileged: true
+          {{- else }}
+          allowPrivilegeEscalation: false
           capabilities:
             drop:
               - ALL
             add:
               # required for engine utilization (old systems may require SYS_ADMIN capability instead)
               - PERFMON
+          {{- end }}
           {{- end }}
         ports:
         - name: http

@@ -253,8 +253,7 @@ devices without Kubernetes resource drivers:
 
 ```bash
 helm install xpumd charts/xpumd --set image.repository=registry.local/xpumd --set image.pullPolicy=Never \
-        --set gpuAccess=none \
-        --set securityContextOverride.runAsUser=0 --set securityContextOverride.privileged=true
+        --set gpuAccess=privileged
 ```
 
 See [Helm chart README](../charts/xpumd/README.md) for other deployment scenarios
