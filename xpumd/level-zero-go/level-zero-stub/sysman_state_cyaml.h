@@ -107,10 +107,13 @@ static const cyaml_schema_field_t sysman_freq_rv_fields[] = {RV(sysman_freq_rv_t
 															 RV(sysman_freq_rv_t, zesFrequencyGetThrottleTime),
 															 CYAML_FIELD_END};
 
-static const cyaml_schema_field_t sysman_info_log_rv_fields[] = {
-	RV(sysman_info_log_rv_t, zesIntelInfoLogGetPropertiesExp),	  RV(sysman_info_log_rv_t, zesIntelInfoLogReadExp),
-	RV(sysman_info_log_rv_t, zesIntelInfoLogReadWithMetadataExp), RV(sysman_info_log_rv_t, zesIntelInfoLogEnableExp),
-	RV(sysman_info_log_rv_t, zesIntelInfoLogDisableExp),		  CYAML_FIELD_END};
+static const cyaml_schema_field_t sysman_intel_info_log_rv_fields[] = {
+	RV(sysman_intel_info_log_rv_t, zesIntelInfoLogGetPropertiesExp),
+	RV(sysman_intel_info_log_rv_t, zesIntelInfoLogCreateInstanceExp),
+	RV(sysman_intel_info_log_rv_t, zesIntelInfoLogInstanceReadWithMetadataExp),
+	RV(sysman_intel_info_log_rv_t, zesIntelInfoLogInstancePeekWithMetadataExp),
+	RV(sysman_intel_info_log_rv_t, zesIntelInfoLogInstanceDeleteExp),
+	CYAML_FIELD_END};
 
 static const cyaml_schema_field_t sysman_led_rv_fields[] = {
 	RV(sysman_led_rv_t, zesLedGetProperties), RV(sysman_led_rv_t, zesLedGetState), RV(sysman_led_rv_t, zesLedSetState),
@@ -315,12 +318,12 @@ static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"TemperatureSensor.SetConfig", UNSUPPORTED_FEATURE_TEMP_SET_CONFIG},
 	{"TemperatureSensor.GetState", UNSUPPORTED_FEATURE_TEMP_GET_STATE},
 	{"GetExtensionFunctionAddress", UNSUPPORTED_FEATURE_GET_EXT_FUNCTION_ADDRESS},
-	{"InfoLogs", UNSUPPORTED_FEATURE_INFO_LOGS},
-	{"InfoLog.GetProperties", UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES},
-	{"InfoLog.Read", UNSUPPORTED_FEATURE_INFO_LOG_READ},
-	{"InfoLog.ReadWithMetadata", UNSUPPORTED_FEATURE_INFO_LOG_READ_WITH_METADATA},
-	{"InfoLog.Enable", UNSUPPORTED_FEATURE_INFO_LOG_ENABLE},
-	{"InfoLog.Disable", UNSUPPORTED_FEATURE_INFO_LOG_DISABLE},
+	{"IntelInfoLogs", UNSUPPORTED_FEATURE_INTEL_INFO_LOGS},
+	{"IntelInfoLog.GetProperties", UNSUPPORTED_FEATURE_INTEL_INFO_LOG_GET_PROPERTIES},
+	{"IntelInfoLog.CreateInstance", UNSUPPORTED_FEATURE_INTEL_INFO_LOG_CREATE_INSTANCE},
+	{"IntelInfoLogInstance.ReadWithMetadata", UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_READ},
+	{"IntelInfoLogInstance.PeekWithMetadata", UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_PEEK},
+	{"IntelInfoLogInstance.Delete", UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_DELETE},
 };
 static const cyaml_schema_value_t sysman_unsupported_feature_schema = {
 	CYAML_VALUE_ENUM(CYAML_FLAG_DEFAULT, sysman_unsupported_feature_t, sysman_unsupported_feature_strvals,
@@ -1132,31 +1135,48 @@ static const cyaml_schema_value_t sysman_device_state_schema = {
 static const cyaml_schema_field_t zes_intel_info_log_properties_exp_fields[] = {
 	CYAML_FIELD_UINT("InfoLogType", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, infoLogType),
 	CYAML_FIELD_UINT("InfoLogFormat", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, infoLogFormat),
-	CYAML_FIELD_UINT("MaxSize", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, maxSize),
-	CYAML_FIELD_BOOL("IsInstancedCollectionSupported", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t,
-					 isInstancedCollectionSupported),
+	CYAML_FIELD_BOOL("IsNamedInstancedCollectionSupported", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t,
+					 isNamedInstancedCollectionSupported),
+	CYAML_FIELD_BOOL("IsPeekSupported", CYAML_FLAG_OPTIONAL, zes_intel_info_log_properties_exp_t, isPeekSupported),
 	CYAML_FIELD_END};
 
-static const cyaml_schema_field_t sysman_info_log_record_fields[] = {
-	CYAML_FIELD_STRING("Data", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, data, 0),
-	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, metadata.address,
+static const cyaml_schema_field_t zes_intel_info_log_read_status_exp_fields[] = {
+	CYAML_FIELD_UINT("DroppedRecordCount", CYAML_FLAG_OPTIONAL, zes_intel_info_log_read_status_exp_t,
+					 droppedRecordCount),
+	CYAML_FIELD_BOOL("IsDroppedRecordCountValid", CYAML_FLAG_OPTIONAL, zes_intel_info_log_read_status_exp_t,
+					 isDroppedRecordCountValid),
+	CYAML_FIELD_BOOL("HasDataToRead", CYAML_FLAG_OPTIONAL, zes_intel_info_log_read_status_exp_t, hasDataToRead),
+	CYAML_FIELD_END};
+
+static const cyaml_schema_field_t sysman_intel_info_log_record_fields[] = {
+	CYAML_FIELD_STRING("Data", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_record_t, data, 0),
+	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_record_t, metadata.address,
 						zes_pci_address_fields),
-	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, metadata.timestamp),
-	CYAML_FIELD_MAPPING("Uuid", CYAML_FLAG_OPTIONAL, sysman_info_log_record_t, uuid, sysman_uuid_fields),
+	CYAML_FIELD_UINT("Timestamp", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_record_t, metadata.timestamp),
+	CYAML_FIELD_UINT("RecordType", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_record_t, metadata.recordType),
+	CYAML_FIELD_MAPPING("Uuid", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_record_t, uuid, sysman_uuid_fields),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_info_log_record_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_info_log_record_t, sysman_info_log_record_fields)};
+static const cyaml_schema_value_t sysman_intel_info_log_record_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_intel_info_log_record_t, sysman_intel_info_log_record_fields)};
 
-static const cyaml_schema_field_t sysman_info_log_fields[] = {
-	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_info_log_t, return_values,
-						sysman_info_log_rv_fields),
-	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_info_log_t, properties,
-							zes_intel_info_log_properties_exp_fields),
-	CYAML_FIELD_SEQUENCE_COUNT("Records", SYSMAN_NULLABLE_PTR_FLAGS, sysman_info_log_t, records, records_count,
-							   &sysman_info_log_record_schema, 0, CYAML_UNLIMITED),
+static const cyaml_schema_field_t sysman_intel_info_log_collection_fields[] = {
+	CYAML_FIELD_MAPPING_PTR("Status", SYSMAN_NULLABLE_PTR_FLAGS, sysman_intel_info_log_collection_t, status,
+							zes_intel_info_log_read_status_exp_fields),
+	CYAML_FIELD_SEQUENCE_COUNT("Records", SYSMAN_NULLABLE_PTR_FLAGS, sysman_intel_info_log_collection_t, records,
+							   records_count, &sysman_intel_info_log_record_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_END};
-static const cyaml_schema_value_t sysman_info_log_schema = {
-	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_info_log_t, sysman_info_log_fields)};
+
+static const cyaml_schema_field_t sysman_intel_info_log_fields[] = {
+	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_t, return_values,
+						sysman_intel_info_log_rv_fields),
+	CYAML_FIELD_MAPPING_PTR("Properties", SYSMAN_NULLABLE_PTR_FLAGS, sysman_intel_info_log_t, properties,
+							zes_intel_info_log_properties_exp_fields),
+	CYAML_FIELD_UINT("BufferSizeInKb", CYAML_FLAG_OPTIONAL, sysman_intel_info_log_t, buffer_size_in_kb),
+	CYAML_FIELD_MAPPING_PTR("Collection", SYSMAN_NULLABLE_PTR_FLAGS, sysman_intel_info_log_t, collection,
+							sysman_intel_info_log_collection_fields),
+	CYAML_FIELD_END};
+static const cyaml_schema_value_t sysman_intel_info_log_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_intel_info_log_t, sysman_intel_info_log_fields)};
 
 static const cyaml_schema_field_t sysman_drivers_state_fields[] = {
 	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_drivers_state_t, return_values,
@@ -1169,8 +1189,8 @@ static const cyaml_schema_field_t sysman_drivers_state_fields[] = {
 							   &zes_driver_extension_properties_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_SEQUENCE_COUNT("Devices", SYSMAN_NULLABLE_PTR_FLAGS, sysman_drivers_state_t, devices, devices_count,
 							   &sysman_device_state_schema, 0, CYAML_UNLIMITED),
-	CYAML_FIELD_SEQUENCE_COUNT("InfoLogs", SYSMAN_NULLABLE_PTR_FLAGS, sysman_drivers_state_t, info_logs,
-							   info_logs_count, &sysman_info_log_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_SEQUENCE_COUNT("IntelInfoLogs", SYSMAN_NULLABLE_PTR_FLAGS, sysman_drivers_state_t, intel_info_logs,
+							   intel_info_logs_count, &sysman_intel_info_log_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_UINT("Events", CYAML_FLAG_OPTIONAL, sysman_drivers_state_t, events),
 	CYAML_FIELD_END};
 static const cyaml_schema_value_t sysman_drivers_state_schema = {
