@@ -21,30 +21,49 @@ type deviceHandle *_Ctype_struct__ze_device_handle_t
 // Handle to an info log instance.
 type infoLogHandle *_Ctype_struct__zes_intel_info_log_handle_t
 
+// infoLogInstanceHandle declared in include/intel/zes_intel_gpu_sysman.h
+//
+// Handle to an info log collection instance.
+type infoLogInstanceHandle *_Ctype_struct__zes_intel_info_log_instance_handle_t
+
 // InfoLogPropertiesExp declared in include/intel/zes_intel_gpu_sysman.h
 //
 // Info log properties structure.
 type InfoLogPropertiesExp struct {
-	stype                          structureTypeExt
-	pnext                          unsafe.Pointer
-	InfoLogType                    InfoLogTypeExp `yaml:"InfoLogType"`
-	InfoLogFormat                  InfoLogFormat  `yaml:"InfoLogFormat"`
-	MaxSize                        uint32         `yaml:"MaxSize"`
-	IsInstancedCollectionSupported core.Bool      `yaml:"IsInstancedCollectionSupported"`
-	_                              [3]byte
+	stype                               structureTypeExt
+	pnext                               unsafe.Pointer
+	InfoLogType                         InfoLogTypeExp `yaml:"InfoLogType"`
+	InfoLogFormat                       InfoLogFormat  `yaml:"InfoLogFormat"`
+	IsNamedInstancedCollectionSupported core.Bool      `yaml:"IsNamedInstancedCollectionSupported"`
+	IsPeekSupported                     core.Bool      `yaml:"IsPeekSupported"`
+	_                                   [6]byte
+}
+
+// InfoLogReadStatusExp declared in include/intel/zes_intel_gpu_sysman.h
+//
+// Status of a read from an info log collection instance.
+type InfoLogReadStatusExp struct {
+	stype                     structureTypeExt
+	pnext                     unsafe.Pointer
+	DroppedRecordCount        uint32    `yaml:"DroppedRecordCount"`
+	IsDroppedRecordCountValid core.Bool `yaml:"IsDroppedRecordCountValid"`
+	HasDataToRead             core.Bool `yaml:"HasDataToRead"`
+	_                         [2]byte
 }
 
 // InfoLogMetadataExp declared in include/intel/zes_intel_gpu_sysman.h
 //
-// Per-record metadata returned by zesIntelInfoLogReadWithMetadataExp.
+// Per-record metadata returned when reading or peeking info log records.
 type InfoLogMetadataExp struct {
 	stype        structureTypeExt
 	pnext        unsafe.Pointer
-	Address      sysman.PciAddress `yaml:"Address"`
-	Uuid         sysman.Uuid       `yaml:"Uuid"`
-	Timestamp    uint64            `yaml:"Timestamp"`
-	LengthOfData uint32            `yaml:"LengthOfData"`
-	Offset       uint32            `yaml:"Offset"`
+	Address      sysman.PciAddress    `yaml:"Address"`
+	Uuid         sysman.Uuid          `yaml:"Uuid"`
+	Timestamp    uint64               `yaml:"Timestamp"`
+	LengthOfData uint32               `yaml:"LengthOfData"`
+	Offset       uint32               `yaml:"Offset"`
+	RecordType   InfoLogRecordTypeExp `yaml:"RecordType"`
+	_            [4]byte
 }
 
 // structureTypeExt declared in include/intel/zes_intel_gpu_sysman.h

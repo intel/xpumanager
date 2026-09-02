@@ -29,8 +29,12 @@ const (
 	CPER_DATA_AVAILABLE = 65536
 	// _STRUCTURE_TYPE_INFO_LOG_PROPERTIES_EXP as defined in intel/ze_stypes.h:33
 	_STRUCTURE_TYPE_INFO_LOG_PROPERTIES_EXP = ((structureTypeExt)(0x0004000D))
-	// _STRUCTURE_TYPE_INFO_LOG_METADATA_EXP as defined in intel/ze_stypes.h:35
+	// _STRUCTURE_TYPE_INFO_LOG_METADATA_EXP as defined in intel/ze_stypes.h:34
 	_STRUCTURE_TYPE_INFO_LOG_METADATA_EXP = ((structureTypeExt)(0x0004000F))
+	// _STRUCTURE_TYPE_INFO_LOG_INSTANCE_EXP_DESC as defined in intel/ze_stypes.h:35
+	_STRUCTURE_TYPE_INFO_LOG_INSTANCE_EXP_DESC = ((structureTypeExt)(0x00040010))
+	// _STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXP as defined in intel/ze_stypes.h:36
+	_STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXP = ((structureTypeExt)(0x00040011))
 )
 
 // DriverInfoLogsExpVersion declared in include/intel/zes_intel_gpu_sysman.h
@@ -38,12 +42,14 @@ const (
 // Driver info logs extension Version(s).
 type DriverInfoLogsExpVersion uint32
 
-// DriverInfoLogsExpVersion enumeration from intel/zes_intel_gpu_sysman.h:529
+// DriverInfoLogsExpVersion enumeration from intel/zes_intel_gpu_sysman.h:562
 const (
-	// version 1.0
+	// version 1.0, no longer implemented
 	DRIVER_INFO_LOGS_EXP_VERSION_1_0 DriverInfoLogsExpVersion = 65536
+	// version 2.0, collection instances. Not backward compatible with version 1.0.
+	DRIVER_INFO_LOGS_EXP_VERSION_2_0 DriverInfoLogsExpVersion = 131072
 	// latest known version
-	DRIVER_INFO_LOGS_EXP_VERSION_CURRENT      DriverInfoLogsExpVersion = 65536
+	DRIVER_INFO_LOGS_EXP_VERSION_CURRENT      DriverInfoLogsExpVersion = 131072
 	DRIVER_INFO_LOGS_EXP_VERSION_FORCE_UINT32 DriverInfoLogsExpVersion = 2147483647
 )
 
@@ -52,7 +58,7 @@ const (
 // Info log type.
 type InfoLogTypeExp uint32
 
-// InfoLogTypeExp enumeration from intel/zes_intel_gpu_sysman.h:572
+// InfoLogTypeExp enumeration from intel/zes_intel_gpu_sysman.h:609
 const (
 	// Device info log.
 	INFO_LOG_TYPE_EXP_DEVICE       InfoLogTypeExp = iota
@@ -64,10 +70,33 @@ const (
 // Info Log format.
 type InfoLogFormat uint32
 
-// InfoLogFormat enumeration from intel/zes_intel_gpu_sysman.h:579
+// InfoLogFormat enumeration from intel/zes_intel_gpu_sysman.h:616
 const (
 	INFO_LOG_FORMAT_CPER         InfoLogFormat = iota
 	INFO_LOG_FORMAT_FORCE_UINT32 InfoLogFormat = 2147483647
+)
+
+// InfoLogRecordTypeExp declared in include/intel/zes_intel_gpu_sysman.h
+//
+//   - The numeric values do not express an order of severity and must not be compared
+//     for magnitude.
+//   - A value the application does not recognize must be treated as
+//     ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_UNKNOWN.
+type InfoLogRecordTypeExp uint32
+
+// InfoLogRecordTypeExp enumeration from intel/zes_intel_gpu_sysman.h:632
+const (
+	// The type of the record could not be determined.
+	INFO_LOG_RECORD_TYPE_EXP_UNKNOWN InfoLogRecordTypeExp = iota
+	// The record does not report an error.
+	INFO_LOG_RECORD_TYPE_EXP_INFORMATIONAL InfoLogRecordTypeExp = 1
+	// The error was corrected by the device.
+	INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED InfoLogRecordTypeExp = 2
+	// The error was not corrected and is not fatal.
+	INFO_LOG_RECORD_TYPE_EXP_ERROR_RECOVERABLE InfoLogRecordTypeExp = 3
+	// The error was not corrected and is fatal.
+	INFO_LOG_RECORD_TYPE_EXP_ERROR_FATAL  InfoLogRecordTypeExp = 4
+	INFO_LOG_RECORD_TYPE_EXP_FORCE_UINT32 InfoLogRecordTypeExp = 2147483647
 )
 
 // DriverEventExpVersion declared in include/intel/zes_intel_gpu_sysman.h
@@ -75,7 +104,7 @@ const (
 // Driver scoped event extension Version(s).
 type DriverEventExpVersion uint32
 
-// DriverEventExpVersion enumeration from intel/zes_intel_gpu_sysman.h:769
+// DriverEventExpVersion enumeration from intel/zes_intel_gpu_sysman.h:871
 const (
 	// version 1.0
 	DRIVER_EVENT_EXP_VERSION_1_0 DriverEventExpVersion = 65536
