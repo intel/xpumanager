@@ -119,6 +119,10 @@ Command Categories
      - Yes
      - No
      - List processes using GPU resources
+   * - :doc:`crashlog`
+     - Yes
+     - No
+     - Manage Intel Crash Log collection via the ``iclg`` utility
    * - :doc:`log`
      - Yes
      - No

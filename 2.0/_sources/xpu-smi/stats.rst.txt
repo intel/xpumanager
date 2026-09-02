@@ -52,6 +52,12 @@ Options
    List offline memory pages. This option is exclusive — no other stats are
    shown when it is used.
 
+   Requires offline-page reporting support from the GPU and its driver. Where it
+   is unavailable the command reports ``Offline memory page reporting is not
+   supported on this device or driver`` and exits non-zero; with ``-j`` each
+   device object carries ``"supported": false`` together with ``error`` and
+   ``error_code`` fields.
+
 .. option:: --samples <count>
 
    Number of samples to collect before computing the displayed statistics.

@@ -1,0 +1,310 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crashlog &mdash; Intel XPU Manager 2.0</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=60dbed4a"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Log" href="log.html" />
+    <link rel="prev" title="PS" href="ps.html" />
+ 
+<style>
+  .version-switcher-bar {
+    background: #2980b9;
+    color: #fff;
+    padding: 6px 14px;
+    font-size: 0.85em;
+    border-bottom: 2px solid #1a5276;
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .version-switcher-bar label { font-weight: bold; }
+  .version-switcher-bar select {
+    background: #1a5276;
+    color: #fff;
+    border: 1px solid #aed6f1;
+    padding: 2px 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function docRoot() {
+    var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+    var idx = parts.indexOf('2.0');
+    if (idx === -1) idx = parts.indexOf('1.x');
+    if (idx === -1) return './';
+    return parts.slice(0, idx).join('/') + '/';
+  }
+
+  // Only inject switcher when served under a versioned path (2.0/ or 1.x/)
+  var parts = window.location.pathname.replace(/\\/g, '/').split('/');
+  if (parts.indexOf('2.0') === -1 && parts.indexOf('1.x') === -1) { return; }
+
+  var bar = document.createElement('div');
+  bar.className = 'version-switcher-bar';
+  bar.innerHTML = '<label>Version:</label>'
+    + '<select id="vsw-select">'
+    + '<option value="2.0" selected>2.0 (latest)</option>'
+    + '</select>';
+
+  var wrap = document.querySelector('.wy-nav-content-wrap');
+  if (wrap) {
+    wrap.insertBefore(bar, wrap.firstChild);
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+  }
+
+  document.getElementById('vsw-select').addEventListener('change', function() {
+    window.location = docRoot() + this.value + '/index.html';
+  });
+});
+</script>
+
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Intel XPU Manager
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">xpu-smi Command Reference</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="discovery.html">Discovery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
+<li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="updatefw.html">UpdateFW</a></li>
+<li class="toctree-l1"><a class="reference internal" href="amc.html">AMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vgpu.html">vGPU</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Crashlog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#device-support">Device Support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Intel XPU Manager</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Crashlog</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/xpu-smi/crashlog.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="crashlog">
+<h1>Crashlog<a class="headerlink" href="#crashlog" title="Link to this heading"></a></h1>
+<p>Manage Intel Crash Log collection for a GPU.</p>
+<p>The command drives the Intel Crash Log CLI (<code class="docutils literal notranslate"><span class="pre">iclg</span></code>) for enable, disable,
+trigger, clear, and extract operations. It resolves an xpu-smi device index or
+PCI BDF address to the <code class="docutils literal notranslate"><span class="pre">pmt:&lt;bdf&gt;</span></code> source string that <code class="docutils literal notranslate"><span class="pre">iclg</span></code> expects, then
+runs <code class="docutils literal notranslate"><span class="pre">iclg</span></code> for each selected device.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This command is supported on Linux only.</p>
+<p>It requires the <code class="docutils literal notranslate"><span class="pre">iclg</span></code> utility, which is not part of xpu-smi. Install it
+from the Intel Crash Log project at <a class="reference external" href="https://github.com/intel/crashlog">https://github.com/intel/crashlog</a>. If
+<code class="docutils literal notranslate"><span class="pre">iclg</span></code> is not found in <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, the command reports an error and does
+nothing. Most operations also require root privileges.</p>
+</div>
+<section id="synopsis">
+<h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi crashlog --enable  -d [deviceId]
+xpu-smi crashlog --disable -d [deviceId]
+xpu-smi crashlog --trigger -d [deviceId]
+xpu-smi crashlog --clear   -d [deviceId]
+xpu-smi crashlog --extract -d [deviceId] --output [dir]
+xpu-smi crashlog --extract -d [deviceId] --output [dir] --decode
+</pre></div>
+</div>
+<p>Exactly one of <code class="docutils literal notranslate"><span class="pre">--enable</span></code>, <code class="docutils literal notranslate"><span class="pre">--disable</span></code>, <code class="docutils literal notranslate"><span class="pre">--trigger</span></code>, <code class="docutils literal notranslate"><span class="pre">--clear</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">--extract</span></code> must be given. <code class="docutils literal notranslate"><span class="pre">--output</span></code> and <code class="docutils literal notranslate"><span class="pre">--decode</span></code> are valid only with
+<code class="docutils literal notranslate"><span class="pre">--extract</span></code>.</p>
+</section>
+<section id="options">
+<h2>Options<a class="headerlink" href="#options" title="Link to this heading"></a></h2>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-h">
+<span id="cmdoption-help"></span><span class="sig-name descname"><span class="pre">-h</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--help</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-h" title="Link to this definition"></a></dt>
+<dd><p>Print this help message and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-enable">
+<span class="sig-name descname"><span class="pre">--enable</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-enable" title="Link to this definition"></a></dt>
+<dd><p>Enable crash log collection on the device.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-disable">
+<span class="sig-name descname"><span class="pre">--disable</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-disable" title="Link to this definition"></a></dt>
+<dd><p>Disable crash log collection on the device.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-trigger">
+<span class="sig-name descname"><span class="pre">--trigger</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-trigger" title="Link to this definition"></a></dt>
+<dd><p>Trigger an on-demand crash log collection.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-clear">
+<span class="sig-name descname"><span class="pre">--clear</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-clear" title="Link to this definition"></a></dt>
+<dd><p>Clear the crash log storage.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-extract">
+<span class="sig-name descname"><span class="pre">--extract</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-extract" title="Link to this definition"></a></dt>
+<dd><p>Extract crash log records to a directory. Each path <code class="docutils literal notranslate"><span class="pre">iclg</span></code> writes is
+reported in the command output.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-output">
+<span class="sig-name descname"><span class="pre">--output</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;dir&gt;</span></span><a class="headerlink" href="#cmdoption-output" title="Link to this definition"></a></dt>
+<dd><p>Output directory for <code class="docutils literal notranslate"><span class="pre">--extract</span></code>. Defaults to the current directory. It
+must be an existing directory: a single source can produce several records,
+and <code class="docutils literal notranslate"><span class="pre">iclg</span></code> names them uniquely only when writing into a directory.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-decode">
+<span class="sig-name descname"><span class="pre">--decode</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-decode" title="Link to this definition"></a></dt>
+<dd><p>With <code class="docutils literal notranslate"><span class="pre">--extract</span></code>, also decode each extracted record to JSON, written next
+to the binary record as <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;.json</span></code>.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-d">
+<span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
+<dd><p>The device ID or PCI BDF address. Accepts a comma-separated list to act on
+several devices at once (e.g., <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,1</span></code>). Required.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-j">
+<span id="cmdoption-json"></span><span class="sig-name descname"><span class="pre">-j</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--json</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-j" title="Link to this definition"></a></dt>
+<dd><p>Print result in JSON format.</p>
+</dd></dl>
+
+</section>
+<section id="device-support">
+<h2>Device Support<a class="headerlink" href="#device-support" title="Link to this heading"></a></h2>
+<p>Not every GPU exposes an Intel Crash Log source. Before acting, the command
+queries the sources <code class="docutils literal notranslate"><span class="pre">iclg</span></code> reports and rejects any device that is not among
+them, reporting it as <code class="docutils literal notranslate"><span class="pre">unsupported</span></code> rather than falsely reporting success. The
+exit status reflects the outcome: success when every device succeeded, an
+unsupported-feature error when every failure was an unsupported device, and a
+general error otherwise.</p>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+<p>Enable crash log collection on device 0:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>crashlog<span class="w"> </span>--enable<span class="w"> </span>-d<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+<p>Trigger an on-demand collection on device 0:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>crashlog<span class="w"> </span>--trigger<span class="w"> </span>-d<span class="w"> </span><span class="m">0</span>
+</pre></div>
+</div>
+<p>Extract the crash log for device 0 into <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> and decode it to JSON:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>crashlog<span class="w"> </span>--extract<span class="w"> </span>-d<span class="w"> </span><span class="m">0</span><span class="w"> </span>--output<span class="w"> </span>/tmp<span class="w"> </span>--decode
+</pre></div>
+</div>
+<p>Clear the crash log storage on devices 0 and 1, in JSON format:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>crashlog<span class="w"> </span>--clear<span class="w"> </span>-d<span class="w"> </span><span class="m">0</span>,1<span class="w"> </span>-j
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ps.html" class="btn btn-neutral float-left" title="PS" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="log.html" class="btn btn-neutral float-right" title="Log" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Intel Corporation.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

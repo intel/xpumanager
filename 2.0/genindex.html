@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="xpu-smi/amc.html">AMC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="xpu-smi/vgpu.html">vGPU</a></li>
 <li class="toctree-l1"><a class="reference internal" href="xpu-smi/ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xpu-smi/crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="xpu-smi/log.html">Log</a></li>
 </ul>
 
@@ -157,6 +158,13 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
       </ul></li>
       <li>
+    --clear
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-clear">command line option</a>
+</li>
+      </ul></li>
+      <li>
     --clear-ras-errors
 
       <ul>
@@ -199,6 +207,13 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
       </ul></li>
       <li>
+    --decode
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-decode">command line option</a>
+</li>
+      </ul></li>
+      <li>
     --delay
 
       <ul>
@@ -209,7 +224,14 @@ document.addEventListener('DOMContentLoaded', function() {
     --device
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-d">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[4]</a>, <a href="xpu-smi/health.html#cmdoption-d">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[11]</a>
+</li>
+      </ul></li>
+      <li>
+    --disable
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-disable">command line option</a>
 </li>
       </ul></li>
       <li>
@@ -220,10 +242,24 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
       </ul></li>
       <li>
+    --enable
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-enable">command line option</a>
+</li>
+      </ul></li>
+      <li>
     --eu
 
       <ul>
         <li><a href="xpu-smi/stats.html#cmdoption-e">command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --extract
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-extract">command line option</a>
 </li>
       </ul></li>
       <li>
@@ -314,14 +350,14 @@ document.addEventListener('DOMContentLoaded', function() {
     --help
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-h">command line option</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">command line option</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-h">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[4]</a>, <a href="xpu-smi/health.html#cmdoption-h">[5]</a>, <a href="xpu-smi/log.html#cmdoption-h">[6]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[7]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[8]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[9]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[10]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[11]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[12]</a>
 </li>
       </ul></li>
       <li>
     --id
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-d">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[4]</a>, <a href="xpu-smi/health.html#cmdoption-d">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[11]</a>
 </li>
       </ul></li>
       <li>
@@ -342,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
     --json
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-j">command line option</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">command line option</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-j">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[4]</a>, <a href="xpu-smi/health.html#cmdoption-j">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[10]</a>
 </li>
       </ul></li>
       <li>
@@ -415,6 +451,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <li><a href="xpu-smi/dump.html#cmdoption-metrics">command line option</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     --number
 
@@ -422,8 +460,13 @@ document.addEventListener('DOMContentLoaded', function() {
         <li><a href="xpu-smi/dump.html#cmdoption-number">command line option</a>, <a href="xpu-smi/vgpu.html#cmdoption-n">[1]</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    --output
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-output">command line option</a>
+</li>
+      </ul></li>
       <li>
     --p2p
 
@@ -565,6 +608,13 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
       </ul></li>
       <li>
+    --trigger
+
+      <ul>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-trigger">command line option</a>
+</li>
+      </ul></li>
+      <li>
     --type
 
       <ul>
@@ -610,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function() {
     -d
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[9]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">command line option</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-d">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[4]</a>, <a href="xpu-smi/health.html#cmdoption-d">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
 </li>
       </ul></li>
       <li>
@@ -631,14 +681,14 @@ document.addEventListener('DOMContentLoaded', function() {
     -h
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-h">command line option</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">command line option</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-h">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[4]</a>, <a href="xpu-smi/health.html#cmdoption-h">[5]</a>, <a href="xpu-smi/log.html#cmdoption-h">[6]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[7]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[8]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[9]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[10]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[11]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[12]</a>
 </li>
       </ul></li>
       <li>
     -j
 
       <ul>
-        <li><a href="xpu-smi/amc.html#cmdoption-j">command line option</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">command line option</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-j">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[4]</a>, <a href="xpu-smi/health.html#cmdoption-j">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[10]</a>
 </li>
       </ul></li>
       <li>
@@ -709,6 +759,8 @@ document.addEventListener('DOMContentLoaded', function() {
       <ul>
         <li><a href="xpu-smi/updatefw.html#cmdoption-y">--assumeyes</a>
 </li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-clear">--clear</a>
+</li>
         <li><a href="xpu-smi/config.html#cmdoption-clear-ras-errors">--clear-ras-errors</a>
 </li>
         <li><a href="xpu-smi/config.html#cmdoption-coldreset">--coldreset</a>
@@ -721,13 +773,21 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
         <li><a href="xpu-smi/dump.html#cmdoption-date">--date</a>
 </li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-decode">--decode</a>
+</li>
         <li><a href="xpu-smi/dump.html#cmdoption-interval">--delay</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-d">--device</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">--device</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-d">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[4]</a>, <a href="xpu-smi/health.html#cmdoption-d">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[11]</a>
+</li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-disable">--disable</a>
 </li>
         <li><a href="xpu-smi/discovery.html#cmdoption-dump">--dump</a>
 </li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-enable">--enable</a>
+</li>
         <li><a href="xpu-smi/stats.html#cmdoption-e">--eu</a>
+</li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-extract">--extract</a>
 </li>
         <li><a href="xpu-smi/config.html#cmdoption-fancurve">--fancurve</a>
 </li>
@@ -753,15 +813,15 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
         <li><a href="xpu-smi/amc.html#cmdoption-gpureset">--gpureset</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-h">--help</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">--help</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-h">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[4]</a>, <a href="xpu-smi/health.html#cmdoption-h">[5]</a>, <a href="xpu-smi/log.html#cmdoption-h">[6]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[7]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[8]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[9]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[10]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[11]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[12]</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-d">--id</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">--id</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-d">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[4]</a>, <a href="xpu-smi/health.html#cmdoption-d">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-id">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[11]</a>
 </li>
         <li><a href="xpu-smi/config.html#cmdoption-ignore-gpu-user-processes">--ignore-gpu-user-processes</a>
 </li>
         <li><a href="xpu-smi/dump.html#cmdoption-interval">--interval</a>, <a href="xpu-smi/stats.html#cmdoption-interval">[1]</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-j">--json</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">--json</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-j">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[4]</a>, <a href="xpu-smi/health.html#cmdoption-j">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[10]</a>
 </li>
         <li><a href="xpu-smi/health.html#cmdoption-l">--list</a>, <a href="xpu-smi/vgpu.html#cmdoption-l">[1]</a>
 </li>
@@ -784,6 +844,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <li><a href="xpu-smi/dump.html#cmdoption-metrics">--metrics</a>
 </li>
         <li><a href="xpu-smi/dump.html#cmdoption-number">--number</a>, <a href="xpu-smi/vgpu.html#cmdoption-n">[1]</a>
+</li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-output">--output</a>
 </li>
         <li><a href="xpu-smi/topology.html#cmdoption-p2p">--p2p</a>
 </li>
@@ -825,6 +887,8 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
         <li><a href="xpu-smi/dump.html#cmdoption-time">--time</a>
 </li>
+        <li><a href="xpu-smi/crashlog.html#cmdoption-trigger">--trigger</a>
+</li>
         <li><a href="xpu-smi/updatefw.html#cmdoption-t">--type</a>
 </li>
         <li><a href="xpu-smi/overview.html#cmdoption-v">--version</a>
@@ -837,15 +901,15 @@ document.addEventListener('DOMContentLoaded', function() {
 </li>
         <li><a href="xpu-smi/health.html#cmdoption-c">-c</a>, <a href="xpu-smi/overview.html#cmdoption-count">[1]</a>, <a href="xpu-smi/vgpu.html#cmdoption-c">[2]</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-d">-d</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[3]</a>, <a href="xpu-smi/health.html#cmdoption-d">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[9]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-d">-d</a>, <a href="xpu-smi/config.html#cmdoption-d">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-d">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-d">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-d">[4]</a>, <a href="xpu-smi/health.html#cmdoption-d">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-d">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-d">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-d">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-d">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-d">[10]</a>
 </li>
         <li><a href="xpu-smi/stats.html#cmdoption-e">-e</a>
 </li>
         <li><a href="xpu-smi/dump.html#cmdoption-f">-f</a>, <a href="xpu-smi/log.html#cmdoption-f">[1]</a>, <a href="xpu-smi/overview.html#cmdoption-f">[2]</a>, <a href="xpu-smi/topology.html#cmdoption-f">[3]</a>, <a href="xpu-smi/updatefw.html#cmdoption-f">[4]</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-h">-h</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[3]</a>, <a href="xpu-smi/health.html#cmdoption-h">[4]</a>, <a href="xpu-smi/log.html#cmdoption-h">[5]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[6]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[7]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[8]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[9]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[10]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[11]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-h">-h</a>, <a href="xpu-smi/config.html#cmdoption-h">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-h">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-h">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-h">[4]</a>, <a href="xpu-smi/health.html#cmdoption-h">[5]</a>, <a href="xpu-smi/log.html#cmdoption-h">[6]</a>, <a href="xpu-smi/overview.html#cmdoption-h">[7]</a>, <a href="xpu-smi/ps.html#cmdoption-h">[8]</a>, <a href="xpu-smi/stats.html#cmdoption-h">[9]</a>, <a href="xpu-smi/topology.html#cmdoption-h">[10]</a>, <a href="xpu-smi/updatefw.html#cmdoption-h">[11]</a>, <a href="xpu-smi/vgpu.html#cmdoption-h">[12]</a>
 </li>
-        <li><a href="xpu-smi/amc.html#cmdoption-j">-j</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[2]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[3]</a>, <a href="xpu-smi/health.html#cmdoption-j">[4]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[5]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[6]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[7]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[8]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[9]</a>
+        <li><a href="xpu-smi/amc.html#cmdoption-j">-j</a>, <a href="xpu-smi/config.html#cmdoption-j">[1]</a>, <a href="xpu-smi/crashlog.html#cmdoption-j">[2]</a>, <a href="xpu-smi/discovery.html#cmdoption-j">[3]</a>, <a href="xpu-smi/dump.html#cmdoption-j">[4]</a>, <a href="xpu-smi/health.html#cmdoption-j">[5]</a>, <a href="xpu-smi/ps.html#cmdoption-j">[6]</a>, <a href="xpu-smi/stats.html#cmdoption-j">[7]</a>, <a href="xpu-smi/topology.html#cmdoption-j">[8]</a>, <a href="xpu-smi/updatefw.html#cmdoption-j">[9]</a>, <a href="xpu-smi/vgpu.html#cmdoption-j">[10]</a>
 </li>
         <li><a href="xpu-smi/health.html#cmdoption-l">-l</a>, <a href="xpu-smi/vgpu.html#cmdoption-l">[1]</a>
 </li>

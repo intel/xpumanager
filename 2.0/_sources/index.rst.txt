@@ -19,4 +19,5 @@ It provides a command-line interface (``xpu-smi``) for local GPU management.
    xpu-smi/amc
    xpu-smi/vgpu
    xpu-smi/ps
+   xpu-smi/crashlog
    xpu-smi/log

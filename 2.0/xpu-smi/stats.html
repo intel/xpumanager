@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="amc.html">AMC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="vgpu.html">vGPU</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
 </ul>
 
@@ -208,6 +209,11 @@ correctable and uncorrectable error counters per category.</p>
 <span class="sig-name descname"><span class="pre">--list-offline-pages</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-list-offline-pages" title="Link to this definition"></a></dt>
 <dd><p>List offline memory pages. This option is exclusive — no other stats are
 shown when it is used.</p>
+<p>Requires offline-page reporting support from the GPU and its driver. Where it
+is unavailable the command reports <code class="docutils literal notranslate"><span class="pre">Offline</span> <span class="pre">memory</span> <span class="pre">page</span> <span class="pre">reporting</span> <span class="pre">is</span> <span class="pre">not</span>
+<span class="pre">supported</span> <span class="pre">on</span> <span class="pre">this</span> <span class="pre">device</span> <span class="pre">or</span> <span class="pre">driver</span></code> and exits non-zero; with <code class="docutils literal notranslate"><span class="pre">-j</span></code> each
+device object carries <code class="docutils literal notranslate"><span class="pre">&quot;supported&quot;:</span> <span class="pre">false</span></code> together with <code class="docutils literal notranslate"><span class="pre">error</span></code> and
+<code class="docutils literal notranslate"><span class="pre">error_code</span></code> fields.</p>
 </dd></dl>
 
 <dl class="std option">
