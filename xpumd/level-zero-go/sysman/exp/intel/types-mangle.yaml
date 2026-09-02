@@ -38,6 +38,8 @@ structs:
       - name: Uuid
         typeAssert: _Ctype_struct__zes_uuid_t
         newType: sysman.Uuid
+      - name: RecordType
+        newType: InfoLogRecordTypeExp
 
 types:
   - name: "*"
