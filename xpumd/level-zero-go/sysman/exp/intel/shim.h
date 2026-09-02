@@ -24,20 +24,28 @@ ze_result_t ze_go_zesIntelDriverEnumInfoLogsExp(zes_driver_handle_t hDriver, uin
 ze_result_t ze_go_zesIntelInfoLogGetPropertiesExp(zes_intel_info_log_handle_t hInfoLog,
 												  zes_intel_info_log_properties_exp_t *pInfoLogProperties);
 
-ze_result_t ze_go_zesIntelInfoLogReadExp(zes_intel_info_log_handle_t hInfoLog, uint32_t *pSize, uint8_t *pBuffer);
+// ze_go_zesIntelInfoLogCreateInstanceExp creates a collection instance of the info log. The instance descriptor is
+// assembled here so that the bindings do not have to hand a struct holding pointers over to C, which the cgo pointer
+// passing rules do not allow. A NULL instanceName selects the default buffer of the info log. The collection buffer
+// size, in kilobytes, is requested and reported back in pBufferSizeInKb; zero keeps the size that is currently in
+// effect and NULL leaves the size to the driver, without reporting it.
+ze_result_t ze_go_zesIntelInfoLogCreateInstanceExp(zes_intel_info_log_handle_t hInfoLog, char *instanceName,
+												   uint32_t *pBufferSizeInKb,
+												   zes_intel_info_log_instance_handle_t *phInfoLogInstance);
 
-ze_result_t ze_go_zesIntelInfoLogReadWithMetadataExp(zes_intel_info_log_handle_t hInfoLog, uint32_t *pSize,
-													 uint8_t *pBuffer, uint32_t *pEventCount,
-													 zes_intel_info_log_metadata_exp *pDescriptors);
+ze_result_t ze_go_zesIntelInfoLogInstanceReadWithMetadataExp(zes_intel_info_log_instance_handle_t hInfoLogInstance,
+															 uint64_t timeout, uint32_t *pSize, uint8_t *pBuffer,
+															 uint32_t *pRecordCount,
+															 zes_intel_info_log_metadata_exp *pDescriptors,
+															 zes_intel_info_log_read_status_exp_t *pReadStatus);
 
-// ze_go_zesIntelInfoLogEnableExp enables the collection of the info log records. The enable descriptor is assembled
-// here so that the bindings do not have to hand a struct holding pointers over to C, which the cgo pointer passing
-// rules do not allow. A NULL instanceName selects the global trace buffer, a NULL pBufferSizeInKb or
-// pPercentFullThreshold the default of the driver.
-ze_result_t ze_go_zesIntelInfoLogEnableExp(zes_intel_info_log_handle_t hInfoLog, char *instanceName,
-										   uint32_t *pBufferSizeInKb, uint32_t *pPercentFullThreshold);
+ze_result_t ze_go_zesIntelInfoLogInstancePeekWithMetadataExp(zes_intel_info_log_instance_handle_t hInfoLogInstance,
+															 uint64_t timeout, uint32_t *pSize, uint8_t *pBuffer,
+															 uint32_t *pRecordCount,
+															 zes_intel_info_log_metadata_exp *pDescriptors,
+															 zes_intel_info_log_read_status_exp_t *pReadStatus);
 
-ze_result_t ze_go_zesIntelInfoLogDisableExp(zes_intel_info_log_handle_t hInfoLog);
+ze_result_t ze_go_zesIntelInfoLogInstanceDeleteExp(zes_intel_info_log_instance_handle_t hInfoLogInstance);
 
 // ze_go_driverEventResolveFunctions resolves the driver scoped event functions. Must be called before any of the
 // driver event functions below. Returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if the driver does not provide them.
