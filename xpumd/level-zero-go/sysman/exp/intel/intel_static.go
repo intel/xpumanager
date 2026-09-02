@@ -54,6 +54,10 @@ func (z *Driver) resolveDriverEventFunctions() core.Result {
 // EnumInfoLogs wraps the (experimental) zesIntelDriverEnumInfoLogsExp function
 // declared in include/intel/zes_intel_gpu_sysman.h.
 //
+// It returns core.RESULT_ERROR_UNSUPPORTED_FEATURE if the driver does not
+// advertise the info logs extension in a supported version, or if its functions
+// cannot be resolved.
+//
 // NOTE: not thread-safe, see the note on the InfoLog type.
 func (z *Driver) EnumInfoLogs() ([]*InfoLog, error) {
 	if ret := z.resolveInfoLogFunctions(); ret != core.RESULT_SUCCESS {
@@ -84,95 +88,82 @@ func (z *InfoLog) GetProperties() (InfoLogPropertiesExp, error) {
 	return props, ret.ToError()
 }
 
-// Read wraps the (experimental) zesIntelInfoLogReadExp function declared in
-// include/intel/zes_intel_gpu_sysman.h.
-//
-// It reads pending info log records into the buffer and returns the number of
-// bytes read. Reading consumes the records, i.e. subsequent calls do not
-// return the same data again. Only whole records are read. As many pending
-// records as fit are copied into buffer and nothing is read if the next
-// pending record does not fit into the buffer. Thus, zero bytes read does not
-// necessarily mean that the log is empty. Use ReadAll or a buffer of size
-// InfoLogPropertiesExp.MaxSize to always read all pending records.
-//
-// The core.RESULT_WARNING_DROPPED_DATA error means that one record did not fit
-// in the buffer and was lost. The data that was read is valid (and consumed),
-// i.e. it should be processed despite the error. Reading with a buffer of size
-// InfoLogPropertiesExp.MaxSize or using InfoLog.ReadAll() avoids this.
-//
-// NOTE: not thread-safe, see the note on the InfoLog type.
-func (z *InfoLog) Read(buf []byte) (int, error) {
-	size := uint32(len(buf))
-	ret := zesIntelInfoLogReadExp(z.handle, &size, buf)
-	if ret != core.RESULT_SUCCESS && ret != core.RESULT_WARNING_DROPPED_DATA {
-		return 0, ret.ToError()
-	}
-	return int(size), ret.ToError()
-}
-
-// ReadAll reads all pending info log records, see Read for the semantics of
-// reading. The read buffer is sized according to the MaxSize property of the
-// info log, i.e. the size of the log buffer of the driver, so that the read
-// cannot be cut short because of a too small buffer.
-//
-// A core.RESULT_ERROR_NOT_AVAILABLE error is returned if the driver does not
-// report the maximum size of the log.
-//
-// NOTE: not thread-safe, see the note on the InfoLog type.
-func (z *InfoLog) ReadAll() ([]byte, error) {
-	props, err := z.GetProperties()
-	if err != nil {
-		return nil, err
-	}
-	if props.MaxSize == 0 {
-		return nil, core.RESULT_ERROR_NOT_AVAILABLE
-	}
-	// MaxSize is in kilobytes
-	buf := make([]byte, int(props.MaxSize)*1024)
-	n, err := z.Read(buf)
-	return buf[:n], err
-}
-
-// ReadWithMetadata wraps the (experimental) zesIntelInfoLogReadWithMetadataExp
+// CreateInstance wraps the (experimental) zesIntelInfoLogCreateInstanceExp
 // function declared in include/intel/zes_intel_gpu_sysman.h.
 //
-// It reads the pending info log records with their metadata. Reading consumes the
-// records, i.e. subsequent calls do not return the same records again.
+// It creates a collection instance of the info log, which collects the records
+// for the caller to read with InfoLogInstance.ReadWithMetadata. An empty
+// instanceName selects the default buffer of the info log, which may be shared
+// with other consumers and carry data from other sources. A named instance
+// collects into a buffer of its own, which requires the
+// IsNamedInstancedCollectionSupported property, and holds the name until it is
+// deleted: creating another instance with the same name, in this or in another
+// process, fails with core.RESULT_ERROR_HANDLE_OBJECT_IN_USE.
 //
-// The core.RESULT_WARNING_DROPPED_DATA error means that one record did not fit
-// in the read buffer and was lost. Only that one record is lost, the records
-// that follow it are left pending, and the ones that were read are valid (and
-// consumed), i.e. they are returned despite the error.
+// The bufferSizeInKb argument requests the total size of the collection
+// buffer, in kilobytes, a zero value keeps the current size. The size that the
+// driver actually applied is reported in the BufferSizeInKb field of the
+// instance.
 //
-// A core.RESULT_ERROR_UNKNOWN error means that the driver located a record
-// outside the data that it read, i.e. the metadata does not match the data.
+// The instance must be deleted with InfoLogInstance.Delete when it is not
+// needed anymore.
 //
 // NOTE: not thread-safe, see the note on the InfoLog type.
-func (z *InfoLog) ReadWithMetadata() ([]InfoLogRecord, error) {
-	// Without the output buffers the driver only reports what is pending
-	var size, count uint32
-	if ret := zesIntelInfoLogReadWithMetadataExp(z.handle, &size, nil, &count, nil); ret != core.RESULT_SUCCESS {
-		return nil, ret.ToError()
-	}
-	if count == 0 || size == 0 {
-		return nil, nil
+func (z *InfoLog) CreateInstance(instanceName string, bufferSizeInKb uint32) (*InfoLogInstance, error) {
+	var name []byte
+	if instanceName != "" {
+		// The driver expects a C string
+		name = append([]byte(instanceName), 0)
 	}
 
-	// NOTE: what the driver reports as pending is a non-consuming snapshot of
-	// its trace buffer, while the read below consumes it, i.e. records may
-	// arrive in between and the buffers sized here do not account for them.
-	// That is harmless (as long as the driver doesn't read beyond the
-	// requested size).
+	// NOTE: the driver reports the size that it applied back in bufferSizeInKb
+	var handle infoLogInstanceHandle
+	if ret := zesIntelInfoLogCreateInstanceExp(z.handle, name, &bufferSizeInKb, &handle); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	return &InfoLogInstance{handle: handle, BufferSizeInKb: bufferSizeInKb}, nil
+}
+
+type infoLogCollectFunc func(infoLogInstanceHandle, uint64, *uint32, []byte, *uint32, []InfoLogMetadataExp,
+	*InfoLogReadStatusExp) core.Result
+
+// collect asks the collection instance what it holds and then reads (or peeks) that
+func (z *InfoLogInstance) collect(timeout time.Duration,
+	collect infoLogCollectFunc) ([]InfoLogRecord, InfoLogReadStatusExp, error) {
+	ms := internal.DurationToMillisecondsUint64(timeout)
+
+	// With no output buffer it only reports what the instance holds
+	var size, count uint32
+	status := InfoLogReadStatusExp{stype: _STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXP}
+	if ret := collect(z.handle, ms, &size, nil, &count, nil, &status); ret != core.RESULT_SUCCESS {
+		return nil, status, ret.ToError()
+	}
+	if count == 0 || size == 0 {
+		return nil, status, nil
+	}
+
+	// NOTE: what the query above reports is a non-consuming snapshot, while the
+	// call below consumes what it returned. I.e. records may arrive in between
+	// and the buffers sized here do not account for them. That is harmless, a
+	// record that does not fit is not consumed but left for the next call, which
+	// the HasDataToRead field of the read status reports.
 	buf := make([]byte, size)
 	metadata := make([]InfoLogMetadataExp, count)
 	for i := range metadata {
 		metadata[i].stype = _STRUCTURE_TYPE_INFO_LOG_METADATA_EXP
 	}
 
-	// NOTE: the data read is valid (and consumed) even if the driver had to drop records
-	ret := zesIntelInfoLogReadWithMetadataExp(z.handle, &size, buf, &count, metadata)
-	if ret != core.RESULT_SUCCESS && ret != core.RESULT_WARNING_DROPPED_DATA {
-		return nil, ret.ToError()
+	// NOTE: the dropped record count is reported since the previous call, the
+	// query above included, so the counts of both calls add up to the one for
+	// the interval. A count that the query above could not determine is
+	// reported by the read, i.e. status.IsDroppedRecordCountValid from the
+	// read is correct.
+	queryStatus := status
+	status = InfoLogReadStatusExp{stype: _STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXP}
+	ret := collect(z.handle, ms, &size, buf, &count, metadata, &status)
+	status.DroppedRecordCount += queryStatus.DroppedRecordCount
+	if ret != core.RESULT_SUCCESS {
+		return nil, status, ret.ToError()
 	}
 
 	// The Offset and LengthOfData fields of the metadata locate each record in buf
@@ -180,54 +171,71 @@ func (z *InfoLog) ReadWithMetadata() ([]InfoLogRecord, error) {
 	for i, meta := range metadata[:count] {
 		end := int(meta.Offset) + int(meta.LengthOfData)
 		if end > int(size) {
-			return nil, fmt.Errorf(
-				"invalid info log metadata from the driver: record %d at offset %d with length %d is outside the %d bytes read: %w",
-				i, meta.Offset, meta.LengthOfData, size, core.RESULT_ERROR_UNKNOWN)
+			return nil, status,
+				fmt.Errorf("invalid info log metadata from the driver: record %d at offset %d with length %d is outside the %d bytes read: %w",
+					i, meta.Offset, meta.LengthOfData, size, core.RESULT_ERROR_UNKNOWN)
 		}
 		records[i] = InfoLogRecord{Metadata: meta, Data: buf[meta.Offset:end]}
 	}
-	return records, ret.ToError()
+	return records, status, nil
 }
 
-// Enable wraps the (experimental) zesIntelInfoLogEnableExp function declared in
+// ReadWithMetadata wraps the (experimental)
+// zesIntelInfoLogInstanceReadWithMetadataExp function declared in
 // include/intel/zes_intel_gpu_sysman.h.
 //
-// It enables the collection of the info log records into the tracefs instance
-// named by instanceName, using a per-CPU trace buffer of bufferSizeInKb kilobytes
-// and waking up the listeners of the CPER_DATA_AVAILABLE event when the buffer is
-// percentFullThreshold percent full. An empty instanceName selects the global
-// trace buffer and a zero value the default of the driver.
+// It reads the records that the collection instance holds, with their metadata,
+// and the status of the read. Reading consumes the records, i.e. subsequent
+// calls do not return the same records again.
+//
+// The timeout bounds the search for the records, it is not a wait for records to
+// arrive. The driver returns as soon as it has searched what the instance holds.
+// A zero timeout returns immediately, without searching, and a negative one
+// searches everything that the instance holds (mapped to UINT64_MAX by
+// internal.DurationToMillisecondsUint64).
+//
+// The HasDataToRead field of the status tells whether the instance still has
+// records left, e.g. because one of them did not fit in the read buffer, i.e.
+// whether it is worth reading again. The DroppedRecordCount field counts the
+// records dropped since the previous call of this method or of
+// PeekWithMetadata, even though the driver is called twice, see collect.
+//
+// A core.RESULT_ERROR_UNKNOWN error means that the driver located a record
+// outside the data that it read, i.e. the metadata does not match the data.
 //
 // NOTE: not thread-safe, see the note on the InfoLog type.
-func (z *InfoLog) Enable(instanceName string, bufferSizeInKb, percentFullThreshold uint32) error {
-	var name []byte
-	if instanceName != "" {
-		// The driver expects a C string
-		name = append([]byte(instanceName), 0)
-	}
-
-	// A nil pointer selects the default of the driver, which is what zero means here
-	var pBufferSizeInKb, pPercentFullThreshold *uint32
-	if bufferSizeInKb != 0 {
-		pBufferSizeInKb = &bufferSizeInKb
-	}
-	if percentFullThreshold != 0 {
-		pPercentFullThreshold = &percentFullThreshold
-	}
-
-	ret := zesIntelInfoLogEnableExp(z.handle, name, pBufferSizeInKb, pPercentFullThreshold)
-	return ret.ToError()
+func (z *InfoLogInstance) ReadWithMetadata(timeout time.Duration) ([]InfoLogRecord, InfoLogReadStatusExp, error) {
+	return z.collect(timeout, zesIntelInfoLogInstanceReadWithMetadataExp)
 }
 
-// Disable wraps the (experimental) zesIntelInfoLogDisableExp function declared in
+// PeekWithMetadata wraps the (experimental)
+// zesIntelInfoLogInstancePeekWithMetadataExp function declared in
 // include/intel/zes_intel_gpu_sysman.h.
 //
-// It disables the collection of the info log records, tearing down the named
-// tracefs instance that Enable created, if any.
+// It is ReadWithMetadata without consuming the records: they are handed out
+// again by the calls that follow. Peeking requires the IsPeekSupported property,
+// otherwise it fails with core.RESULT_ERROR_UNSUPPORTED_FEATURE.
+//
+// A core.RESULT_ERROR_UNKNOWN error means that the driver located a record
+// outside the data that it read, i.e. the metadata does not match the data.
 //
 // NOTE: not thread-safe, see the note on the InfoLog type.
-func (z *InfoLog) Disable() error {
-	ret := zesIntelInfoLogDisableExp(z.handle)
+func (z *InfoLogInstance) PeekWithMetadata(timeout time.Duration) ([]InfoLogRecord, InfoLogReadStatusExp, error) {
+	return z.collect(timeout, zesIntelInfoLogInstancePeekWithMetadataExp)
+}
+
+// Delete wraps the (experimental) zesIntelInfoLogInstanceDeleteExp function
+// declared in include/intel/zes_intel_gpu_sysman.h.
+//
+// It stops the collection into the instance and releases the resources of the
+// instance, including the name that it held, if any. The records that the
+// instance has not handed out are lost. No other call may be in progress on the
+// instance, and it must not be used anymore after this, not even to delete it
+// again.
+//
+// NOTE: not thread-safe, see the note on the InfoLog type.
+func (z *InfoLogInstance) Delete() error {
+	ret := zesIntelInfoLogInstanceDeleteExp(z.handle)
 	return ret.ToError()
 }
 
@@ -240,8 +248,12 @@ func (z *InfoLog) Disable() error {
 // Only driver scoped events are accepted, the standard event flags must be
 // registered per device with sysman.Device.EventRegister.
 //
-// CPER_DATA_AVAILABLE requires the collection of the info log records to have
-// been enabled with InfoLog.Enable before listening.
+// CPER_DATA_AVAILABLE requires a collection instance of the info log to have
+// been created with InfoLog.CreateInstance before listening.
+//
+// Calling this function while another thread is blocked in EventListenExp
+// updates that call, so an event registered after a listen has started can
+// still be reported by it.
 //
 // NOTE: this function itself may be called from simultaneous threads, but
 // listening for CPER_DATA_AVAILABLE must be serialized with the info log calls,

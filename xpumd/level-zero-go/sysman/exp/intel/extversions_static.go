@@ -14,7 +14,7 @@ package intel
 // The bitwise XOR is zero if and only if the versions are equal, otherwise non-zero and we get a negative array size.
 const (
 	driver_info_logs_exp_version_mismatch = -(int(DRIVER_INFO_LOGS_EXP_VERSION_CURRENT) ^
-		int(DRIVER_INFO_LOGS_EXP_VERSION_1_0))
+		int(DRIVER_INFO_LOGS_EXP_VERSION_2_0))
 	driver_event_exp_version_mismatch = -(int(DRIVER_EVENT_EXP_VERSION_CURRENT) ^
 		int(DRIVER_EVENT_EXP_VERSION_1_0))
 )
