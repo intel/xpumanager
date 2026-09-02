@@ -9,21 +9,25 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[DRIVER_INFO_LOGS_EXP_VERSION_1_0-65536]
-	_ = x[DRIVER_INFO_LOGS_EXP_VERSION_CURRENT-65536]
+	_ = x[DRIVER_INFO_LOGS_EXP_VERSION_2_0-131072]
+	_ = x[DRIVER_INFO_LOGS_EXP_VERSION_CURRENT-131072]
 	_ = x[DRIVER_INFO_LOGS_EXP_VERSION_FORCE_UINT32-2147483647]
 }
 
 const (
 	_DriverInfoLogsExpVersion_name_0 = "1_0"
-	_DriverInfoLogsExpVersion_name_1 = "FORCE_UINT32"
+	_DriverInfoLogsExpVersion_name_1 = "2_0"
+	_DriverInfoLogsExpVersion_name_2 = "FORCE_UINT32"
 )
 
 func (i DriverInfoLogsExpVersion) String() string {
 	switch {
 	case i == 65536:
 		return _DriverInfoLogsExpVersion_name_0
-	case i == 2147483647:
+	case i == 131072:
 		return _DriverInfoLogsExpVersion_name_1
+	case i == 2147483647:
+		return _DriverInfoLogsExpVersion_name_2
 	default:
 		return "DriverInfoLogsExpVersion(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

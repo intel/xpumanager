@@ -52,48 +52,54 @@ func zesIntelInfoLogGetPropertiesExp(HInfoLog infoLogHandle, PInfoLogProperties 
 	return __v
 }
 
-// zesIntelInfoLogReadExp function as declared in intel/shim.h:27
-func zesIntelInfoLogReadExp(HInfoLog infoLogHandle, PSize *uint32, PBuffer []byte) core.Result {
-	cHInfoLog, _ := *(*C.zes_intel_info_log_handle_t)(unsafe.Pointer(&HInfoLog)), cgoAllocsUnknown
-	cPSize, _ := (*C.uint32_t)(unsafe.Pointer(PSize)), cgoAllocsUnknown
-	cPBuffer, _ := (*C.uint8_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PBuffer)).Data)), cgoAllocsUnknown
-	__ret := C.ze_go_zesIntelInfoLogReadExp(cHInfoLog, cPSize, cPBuffer)
-	__v := (core.Result)(__ret)
-	return __v
-}
-
-// zesIntelInfoLogReadWithMetadataExp function as declared in intel/shim.h:29
-func zesIntelInfoLogReadWithMetadataExp(HInfoLog infoLogHandle, PSize *uint32, PBuffer []byte, PEventCount *uint32, PDescriptors []InfoLogMetadataExp) core.Result {
-	cHInfoLog, _ := *(*C.zes_intel_info_log_handle_t)(unsafe.Pointer(&HInfoLog)), cgoAllocsUnknown
-	cPSize, _ := (*C.uint32_t)(unsafe.Pointer(PSize)), cgoAllocsUnknown
-	cPBuffer, _ := (*C.uint8_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PBuffer)).Data)), cgoAllocsUnknown
-	cPEventCount, _ := (*C.uint32_t)(unsafe.Pointer(PEventCount)), cgoAllocsUnknown
-	cPDescriptors, _ := (*C.zes_intel_info_log_metadata_exp)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PDescriptors)).Data)), cgoAllocsUnknown
-	__ret := C.ze_go_zesIntelInfoLogReadWithMetadataExp(cHInfoLog, cPSize, cPBuffer, cPEventCount, cPDescriptors)
-	__v := (core.Result)(__ret)
-	return __v
-}
-
-// zesIntelInfoLogEnableExp function as declared in intel/shim.h:37
-func zesIntelInfoLogEnableExp(HInfoLog infoLogHandle, InstanceName []byte, PBufferSizeInKb *uint32, PPercentFullThreshold *uint32) core.Result {
+// zesIntelInfoLogCreateInstanceExp function as declared in intel/shim.h:32
+func zesIntelInfoLogCreateInstanceExp(HInfoLog infoLogHandle, InstanceName []byte, PBufferSizeInKb *uint32, PhInfoLogInstance *infoLogInstanceHandle) core.Result {
 	cHInfoLog, _ := *(*C.zes_intel_info_log_handle_t)(unsafe.Pointer(&HInfoLog)), cgoAllocsUnknown
 	cInstanceName, _ := (*C.char)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&InstanceName)).Data)), cgoAllocsUnknown
 	cPBufferSizeInKb, _ := (*C.uint32_t)(unsafe.Pointer(PBufferSizeInKb)), cgoAllocsUnknown
-	cPPercentFullThreshold, _ := (*C.uint32_t)(unsafe.Pointer(PPercentFullThreshold)), cgoAllocsUnknown
-	__ret := C.ze_go_zesIntelInfoLogEnableExp(cHInfoLog, cInstanceName, cPBufferSizeInKb, cPPercentFullThreshold)
+	cPhInfoLogInstance, _ := (*C.zes_intel_info_log_instance_handle_t)(unsafe.Pointer(PhInfoLogInstance)), cgoAllocsUnknown
+	__ret := C.ze_go_zesIntelInfoLogCreateInstanceExp(cHInfoLog, cInstanceName, cPBufferSizeInKb, cPhInfoLogInstance)
 	__v := (core.Result)(__ret)
 	return __v
 }
 
-// zesIntelInfoLogDisableExp function as declared in intel/shim.h:40
-func zesIntelInfoLogDisableExp(HInfoLog infoLogHandle) core.Result {
-	cHInfoLog, _ := *(*C.zes_intel_info_log_handle_t)(unsafe.Pointer(&HInfoLog)), cgoAllocsUnknown
-	__ret := C.ze_go_zesIntelInfoLogDisableExp(cHInfoLog)
+// zesIntelInfoLogInstanceReadWithMetadataExp function as declared in intel/shim.h:36
+func zesIntelInfoLogInstanceReadWithMetadataExp(HInfoLogInstance infoLogInstanceHandle, Timeout uint64, PSize *uint32, PBuffer []byte, PRecordCount *uint32, PDescriptors []InfoLogMetadataExp, PReadStatus *InfoLogReadStatusExp) core.Result {
+	cHInfoLogInstance, _ := *(*C.zes_intel_info_log_instance_handle_t)(unsafe.Pointer(&HInfoLogInstance)), cgoAllocsUnknown
+	cTimeout, _ := (C.uint64_t)(Timeout), cgoAllocsUnknown
+	cPSize, _ := (*C.uint32_t)(unsafe.Pointer(PSize)), cgoAllocsUnknown
+	cPBuffer, _ := (*C.uint8_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PBuffer)).Data)), cgoAllocsUnknown
+	cPRecordCount, _ := (*C.uint32_t)(unsafe.Pointer(PRecordCount)), cgoAllocsUnknown
+	cPDescriptors, _ := (*C.zes_intel_info_log_metadata_exp)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PDescriptors)).Data)), cgoAllocsUnknown
+	cPReadStatus, _ := (*C.zes_intel_info_log_read_status_exp_t)(unsafe.Pointer(PReadStatus)), cgoAllocsUnknown
+	__ret := C.ze_go_zesIntelInfoLogInstanceReadWithMetadataExp(cHInfoLogInstance, cTimeout, cPSize, cPBuffer, cPRecordCount, cPDescriptors, cPReadStatus)
 	__v := (core.Result)(__ret)
 	return __v
 }
 
-// driverEventResolveFunctions function as declared in intel/shim.h:44
+// zesIntelInfoLogInstancePeekWithMetadataExp function as declared in intel/shim.h:42
+func zesIntelInfoLogInstancePeekWithMetadataExp(HInfoLogInstance infoLogInstanceHandle, Timeout uint64, PSize *uint32, PBuffer []byte, PRecordCount *uint32, PDescriptors []InfoLogMetadataExp, PReadStatus *InfoLogReadStatusExp) core.Result {
+	cHInfoLogInstance, _ := *(*C.zes_intel_info_log_instance_handle_t)(unsafe.Pointer(&HInfoLogInstance)), cgoAllocsUnknown
+	cTimeout, _ := (C.uint64_t)(Timeout), cgoAllocsUnknown
+	cPSize, _ := (*C.uint32_t)(unsafe.Pointer(PSize)), cgoAllocsUnknown
+	cPBuffer, _ := (*C.uint8_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PBuffer)).Data)), cgoAllocsUnknown
+	cPRecordCount, _ := (*C.uint32_t)(unsafe.Pointer(PRecordCount)), cgoAllocsUnknown
+	cPDescriptors, _ := (*C.zes_intel_info_log_metadata_exp)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PDescriptors)).Data)), cgoAllocsUnknown
+	cPReadStatus, _ := (*C.zes_intel_info_log_read_status_exp_t)(unsafe.Pointer(PReadStatus)), cgoAllocsUnknown
+	__ret := C.ze_go_zesIntelInfoLogInstancePeekWithMetadataExp(cHInfoLogInstance, cTimeout, cPSize, cPBuffer, cPRecordCount, cPDescriptors, cPReadStatus)
+	__v := (core.Result)(__ret)
+	return __v
+}
+
+// zesIntelInfoLogInstanceDeleteExp function as declared in intel/shim.h:48
+func zesIntelInfoLogInstanceDeleteExp(HInfoLogInstance infoLogInstanceHandle) core.Result {
+	cHInfoLogInstance, _ := *(*C.zes_intel_info_log_instance_handle_t)(unsafe.Pointer(&HInfoLogInstance)), cgoAllocsUnknown
+	__ret := C.ze_go_zesIntelInfoLogInstanceDeleteExp(cHInfoLogInstance)
+	__v := (core.Result)(__ret)
+	return __v
+}
+
+// driverEventResolveFunctions function as declared in intel/shim.h:52
 func driverEventResolveFunctions(HDriver driverHandle) core.Result {
 	cHDriver, _ := *(*C.zes_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	__ret := C.ze_go_driverEventResolveFunctions(cHDriver)
@@ -101,7 +107,7 @@ func driverEventResolveFunctions(HDriver driverHandle) core.Result {
 	return __v
 }
 
-// zesIntelDriverEventRegisterExp function as declared in intel/shim.h:46
+// zesIntelDriverEventRegisterExp function as declared in intel/shim.h:54
 func zesIntelDriverEventRegisterExp(HDriver driverHandle, Events uint32) core.Result {
 	cHDriver, _ := *(*C.zes_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cEvents, _ := (C.zes_event_type_flags_t)(Events), cgoAllocsUnknown
@@ -110,7 +116,7 @@ func zesIntelDriverEventRegisterExp(HDriver driverHandle, Events uint32) core.Re
 	return __v
 }
 
-// zesIntelDriverEventListenExp function as declared in intel/shim.h:48
+// zesIntelDriverEventListenExp function as declared in intel/shim.h:56
 func zesIntelDriverEventListenExp(HDriver driverHandle, Timeout uint64, Count uint32, PhDevices []deviceHandle, PNumDeviceEvents *uint32, PEvents []uint32, PDriverEvents *uint32) core.Result {
 	cHDriver, _ := *(*C.zes_driver_handle_t)(unsafe.Pointer(&HDriver)), cgoAllocsUnknown
 	cTimeout, _ := (C.uint64_t)(Timeout), cgoAllocsUnknown
