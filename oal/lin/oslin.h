@@ -24,6 +24,7 @@
 #include <osvf.h>
 #include "topology.h"
 #include "crashlog_lin.h"
+#include "kernel_driver.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
@@ -79,6 +80,8 @@ typedef wchar_t TCHAR;
 #define SRIOVSUPPORT(deviceInfoPtr) isSriovSupported(deviceInfoPtr)
 #define GETKERNELVERSION() getKernelVersion()
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
+#define GETKERNELDRIVERVERSION(bdf) getKernelDriverVersion(bdf)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define GETPCISLOTLABEL(bdf) getPciSlotLabel(bdf)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define FINDRESOURCEFILE(relativePath) findResourceFile(relativePath)
@@ -129,6 +132,7 @@ bool isVmxSupported();
 bool isIommuSupported();
 bool isSriovSupported(DeviceSriovInfo *di);
 std::string getKernelVersion();
+std::string getKernelDriverVersion(const std::string &bdf);
 bool isLgciXeDebugKernel(const std::string &release);
 bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease = nullptr);
 std::string getPciSlotLabel(const std::string &bdf);

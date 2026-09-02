@@ -1036,6 +1036,38 @@ std::string getKernelVersion()
 }
 
 /**
+ * @brief Get a version string identifying the kernel-mode driver build behind a GPU
+ *
+ * Reports the driver's `srcversion` (the source checksum `modinfo xe` prints),
+ * which is the only value that changes on every driver source revision and so
+ * traces the running driver back to the package it was built from, including a
+ * DKMS rebuild on an unchanged kernel.
+ *
+ * When the driver is built into the kernel it has no srcversion, and the kernel
+ * release then identifies the driver build, so that is reported instead. That
+ * substitution only holds once a driver has been identified: when no driver can be
+ * named at all (sysfs unreadable, nothing bound to the device and no Intel GPU
+ * module loaded) the kernel release says nothing about the driver, so nothing is
+ * reported and callers surface the value as unavailable.
+ *
+ * @param bdf PCI BDF address of the device, or "" to use whichever Intel GPU module is loaded
+ * @return std::string srcversion (e.g. "85B7CA089405934276CBAD3"), else the kernel
+ *         release (e.g. "5.15.0-56-generic") when the driver is known but exposes no
+ *         srcversion, else an empty string
+ */
+std::string getKernelDriverVersion(const std::string &bdf)
+{
+	if (getKernelDriverName(bdf).empty()) {
+		return "";
+	}
+	std::string srcVersion = getKernelDriverSrcVersion(bdf);
+	if (!srcVersion.empty()) {
+		return srcVersion;
+	}
+	return getKernelVersion();
+}
+
+/**
  * @brief Checks whether the current kernel matches the known-broken xe debug pattern.
  *
  * @param [in] release Kernel release string returned by getKernelVersion().
@@ -1424,26 +1456,6 @@ static constexpr int REENUM_TIMEOUT_MS = 10000;		 // 10s max wait for re-enumera
 static constexpr int BIND_TIMEOUT_MS = 5000;		 // 5s max wait for driver auto-bind
 
 /**
- * @brief Resolves the kernel driver currently bound to a PCI device
- *
- * Reads the symlink at /sys/bus/pci/devices/<bdf>/driver and returns its
- * basename (e.g. "xe", "i915").
- *
- * @param bdf PCI BDF string
- * @return Driver name on success, empty string if no driver is bound
- */
-static std::string getPciDriverName(const std::string &bdf)
-{
-	std::error_code ec;
-	std::filesystem::path link = "/sys/bus/pci/devices/" + bdf + "/driver";
-	std::filesystem::path target = std::filesystem::read_symlink(link, ec);
-	if (ec) {
-		return "";
-	}
-	return target.filename().string();
-}
-
-/**
  * @brief Writes a PCI BDF to a driver sysfs control file (bind or unbind)
  *
  * @param driverName Kernel driver name (e.g. "xe")
@@ -1534,7 +1546,7 @@ int coldResetViaSysfs(const std::string &gpuBdf)
 	INFO("Performing cold reset on {} via slot {} power cycle\n", gpuBdf, slotNum);
 
 	// Unbind the kernel driver before power-off
-	std::string driverName = getPciDriverName(gpuBdf);
+	std::string driverName = getBoundPciDriverName(gpuBdf);
 	if (!driverName.empty()) {
 		INFO("Unbinding driver '{}' from {} before reset\n", driverName, gpuBdf);
 		if (!writeToPciDriverFile(driverName, "unbind", gpuBdf)) {
@@ -1618,7 +1630,7 @@ int coldResetViaSysfs(const std::string &gpuBdf)
 		int bindElapsed = 0;
 		std::string boundDriver;
 		while (bindElapsed < BIND_TIMEOUT_MS) {
-			boundDriver = getPciDriverName(gpuBdf);
+			boundDriver = getBoundPciDriverName(gpuBdf);
 			if (!boundDriver.empty()) {
 				break;
 			}

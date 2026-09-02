@@ -56,7 +56,8 @@ template <typename Enum> [[nodiscard]] constexpr auto toUnderlying(Enum e) noexc
 enum class MetricGroup : uint32_t
 {
 	NONE = 0,
-	IDENTITY = 1U << 0,	   /**< name, index, uuid, serial, driver_version, vbios_version + PCI IDs */
+	IDENTITY = 1U << 0,	   /**< name, index, uuid, serial, driver_version, kernel_driver_version,
+								vbios_version + PCI IDs */
 	MEMORY = 1U << 1,	   /**< memory.total/used/free, utilization.memory */
 	UTILIZATION = 1U << 2, /**< utilization.gpu/compute/render/media/copy */
 	TEMPERATURE = 1U << 3, /**< temperature.gpu/memory */

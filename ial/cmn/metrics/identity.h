@@ -14,6 +14,7 @@
 #include "zes_api.h"
 #include <cstdint>
 #include <firmware.h>
+#include <os.h>
 #include <pci.h>
 #include <array>
 #include <chrono>
@@ -22,6 +23,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace metrics::identity {
 
@@ -134,6 +136,29 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 					out = std::to_string(props.driverVersion);
 				}
 				return r;
+			},
+		},
+		{
+			.name = "kernel_driver_version",
+			.unit = "",
+			.description = "Source checksum (modinfo srcversion) of the kernel-mode GPU driver, which identifies the "
+						   "driver build including a DKMS rebuild. Reads the kernel release when the driver is built "
+						   "into the kernel and so has no checksum.",
+			.source = MetricSource::Static,
+			.groups = MetricGroup::IDENTITY,
+			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+				// The BDF selects the driver bound to this GPU: xe and i915 can both be
+				// loaded, each driving different devices.
+				std::string bdf;
+				if (auto *p = d.dev->getPCI(); p != nullptr) {
+					bdf = p->getBDFStr();
+				}
+				std::string version = GETKERNELDRIVERVERSION(bdf);
+				if (version.empty()) {
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+				}
+				out = std::move(version);
+				return ZE_RESULT_SUCCESS;
 			},
 		},
 		{

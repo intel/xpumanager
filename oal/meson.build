@@ -30,6 +30,7 @@ elif is_linux
     'lin/fs_lock.cpp',
     'lin/http_client.cpp',
     'lin/i2c_interface.cpp',
+    'lin/kernel_driver.cpp',
     'lin/lin.cpp',
     'lin/linvf.cpp',
     'lin/path_lookup.cpp',

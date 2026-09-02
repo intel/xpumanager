@@ -95,6 +95,7 @@ enum discDumpType
 	DUMP_MEMORYVENDOR,
 	DUMP_MEMORYDATECODE,
 	DUMP_MEMORYICDIEINFO,
+	DUMP_KERNELDRIVERVERSION,
 	TOTAL_DISC_DUMPS
 };
 
@@ -162,6 +163,7 @@ public:
 	ze_result_t memoryFreeSize(devInfo *d, std::string *outputLine);
 	ze_result_t memoryEccState(devInfo *d, std::string *outputLine);
 	ze_result_t kernelVersion(devInfo *d, std::string *outputLine);
+	ze_result_t kernelDriverVersion(devInfo *d, std::string *outputLine);
 	ze_result_t drmDevice(devInfo *d, std::string *outputLine);
 	ze_result_t deviceType(devInfo *d, std::string *outputLine);
 	ze_result_t skuType(devInfo *d, std::string *outputLine);

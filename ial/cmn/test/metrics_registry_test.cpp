@@ -273,6 +273,7 @@ TEST_CASE("findMetric resolves identity metric names")
 	CHECK(findMetric("serial").has_value());
 	CHECK(findMetric("timestamp").has_value());
 	CHECK(findMetric("driver_version").has_value());
+	CHECK(findMetric("kernel_driver_version").has_value());
 	CHECK(findMetric("vbios_version").has_value());
 	CHECK(findMetric("pci.bus_id").has_value());
 	CHECK(findMetric("pci.device_id").has_value());

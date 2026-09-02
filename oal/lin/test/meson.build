@@ -46,6 +46,20 @@ if get_option('with_tests')
 
   test('path_lookup_test', path_lookup_test)
 
+  # Kernel-mode driver identification tests (driver resolution and srcversion
+  # reads against a fake sysfs tree). Compiles kernel_driver.cpp directly so the
+  # test needs no OAL link.
+  kernel_driver_test = executable(
+    'kernel_driver_test',
+    ['kernel_driver_test.cpp', '../kernel_driver.cpp'],
+    include_directories: [global_inc, include_directories('..')],
+    dependencies: [doctest_dep, bdf_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('kernel_driver_test', kernel_driver_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')

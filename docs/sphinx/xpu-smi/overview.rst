@@ -254,7 +254,11 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Serial number
    * - ``driver_version``
      - —
-     - Driver version string
+     - Level Zero user-mode driver version string
+   * - ``kernel_driver_version``
+     - —
+     - Kernel-mode driver source checksum (``modinfo`` ``srcversion``); kernel
+       release when the driver is built into the kernel
    * - ``vbios_version``
      - —
      - VBIOS version string

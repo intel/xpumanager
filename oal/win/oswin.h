@@ -133,6 +133,7 @@ struct option
 #define IOMMUSUPPORT() 0
 #define SRIOVSUPPORT(deviceInfoPtr) (UNUSED_VAR(deviceInfoPtr), 0)
 #define GETKERNELVERSION() std::string("")
+#define GETKERNELDRIVERVERSION(bdf) (UNUSED_VAR(bdf), std::string(""))
 #define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
 static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relativePath) { return std::string{}; }
 static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -1; }
