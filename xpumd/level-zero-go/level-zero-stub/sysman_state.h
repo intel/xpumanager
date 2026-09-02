@@ -44,8 +44,9 @@ typedef enum
 	STUB_HANDLE_STANDBY = 16,
 	STUB_HANDLE_TEMP = 17,
 	STUB_HANDLE_DIAG = 18,
-	STUB_HANDLE_INFOLOG = 19, // driver level component
+	STUB_HANDLE_INTEL_INFOLOG = 19, // driver level component, unlike the ones above
 	STUB_HANDLE_VF = 20,
+	STUB_HANDLE_INTEL_INFOLOG_INSTANCE = 21, // collection instance of an info log
 } stub_handle_type_t;
 
 typedef struct
@@ -279,11 +280,11 @@ typedef struct
 typedef struct
 {
 	ze_result_t zesIntelInfoLogGetPropertiesExp;
-	ze_result_t zesIntelInfoLogReadExp;
-	ze_result_t zesIntelInfoLogReadWithMetadataExp;
-	ze_result_t zesIntelInfoLogEnableExp;
-	ze_result_t zesIntelInfoLogDisableExp;
-} sysman_info_log_rv_t;
+	ze_result_t zesIntelInfoLogCreateInstanceExp;
+	ze_result_t zesIntelInfoLogInstanceReadWithMetadataExp;
+	ze_result_t zesIntelInfoLogInstancePeekWithMetadataExp;
+	ze_result_t zesIntelInfoLogInstanceDeleteExp;
+} sysman_intel_info_log_rv_t;
 
 typedef struct
 {
@@ -434,12 +435,12 @@ typedef enum
 	UNSUPPORTED_FEATURE_TEMP_SET_CONFIG,				  // gen: key=TemperatureSensor.SetConfig
 	UNSUPPORTED_FEATURE_TEMP_GET_STATE,					  // gen: key=TemperatureSensor.GetState
 	UNSUPPORTED_FEATURE_GET_EXT_FUNCTION_ADDRESS,		  // gen: key=GetExtensionFunctionAddress
-	UNSUPPORTED_FEATURE_INFO_LOGS,						  // gen: key=InfoLogs
-	UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES,		  // gen: key=InfoLog.GetProperties
-	UNSUPPORTED_FEATURE_INFO_LOG_READ,					  // gen: key=InfoLog.Read
-	UNSUPPORTED_FEATURE_INFO_LOG_READ_WITH_METADATA,	  // gen: key=InfoLog.ReadWithMetadata
-	UNSUPPORTED_FEATURE_INFO_LOG_ENABLE,				  // gen: key=InfoLog.Enable
-	UNSUPPORTED_FEATURE_INFO_LOG_DISABLE,				  // gen: key=InfoLog.Disable
+	UNSUPPORTED_FEATURE_INTEL_INFO_LOGS,				  // gen: key=IntelInfoLogs
+	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_GET_PROPERTIES,	  // gen: key=IntelInfoLog.GetProperties
+	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_CREATE_INSTANCE,	  // gen: key=IntelInfoLog.CreateInstance
+	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_READ,	  // gen: key=IntelInfoLogInstance.ReadWithMetadata
+	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_PEEK,	  // gen: key=IntelInfoLogInstance.PeekWithMetadata
+	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_DELETE,	  // gen: key=IntelInfoLogInstance.Delete
 } sysman_unsupported_feature_t;							  // gen: enum
 
 // ------------------------------------------------------------------
@@ -786,26 +787,35 @@ typedef struct
 // Per-driver state
 // ------------------------------------------------------------------
 
-// One canned info log record handed out by zesIntelInfoLogReadExp(). The data is
-// copied out as-is (excluding the terminating NUL), i.e. only text records can
+// One canned info log record handed out by the read and peek functions. The data
+// is copied out as-is (excluding the terminating NUL), i.e. only text records can
 // be configured, which is enough for testing the bindings.
 //
-// The metadata is handed out by zesIntelInfoLogReadWithMetadataExp(), except for
-// the length and the offset of the record, which the stub computes.
+// The metadata is handed out as configured, except for the length and the offset
+// of the record, which the stub computes.
 typedef struct
 {
 	char data[SYSMAN_INFO_LOG_RECORD_SIZE];
 	zes_intel_info_log_metadata_exp metadata; // gen: flatten
 	sysman_uuid_t uuid;						  // YAML parsing helper for metadata.uuid
-} sysman_info_log_record_t;
+} sysman_intel_info_log_record_t;
+
+// What one collection instance of an info log hands out: the status and the
+// records of a read and of a peek, both handed out as configured.
+typedef struct
+{
+	zes_intel_info_log_read_status_exp_t *status;
+	uint32_t records_count;
+	sysman_intel_info_log_record_t *records;
+} sysman_intel_info_log_collection_t;
 
 typedef struct
 {
-	sysman_info_log_rv_t return_values;
+	sysman_intel_info_log_rv_t return_values;
 	zes_intel_info_log_properties_exp_t *properties;
-	uint32_t records_count;
-	sysman_info_log_record_t *records;
-} sysman_info_log_t;
+	uint32_t buffer_size_in_kb;						// the applied collection buffer size, zero keeps the request
+	sysman_intel_info_log_collection_t *collection; // a log without it hands out nothing, with a zeroed read status
+} sysman_intel_info_log_t;
 
 typedef struct
 {
@@ -816,8 +826,8 @@ typedef struct
 	zes_driver_extension_properties_t *extension_properties;
 	uint32_t devices_count;
 	sysman_device_state_t *devices;
-	uint32_t info_logs_count;
-	sysman_info_log_t *info_logs;
+	uint32_t intel_info_logs_count;
+	sysman_intel_info_log_t *intel_info_logs;
 	// Driver scoped events, reported by zesIntelDriverEventListenExp()
 	zes_event_type_flags_t events;
 } sysman_drivers_state_t;

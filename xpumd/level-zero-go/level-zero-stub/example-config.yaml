@@ -32,7 +32,7 @@ Drivers:
       - Name: "ZES_extension_oem_serial_id"
         Version: 65536
       - Name: "ZES_intel_experimental_driver_info_logs"
-        Version: 65536
+        Version: 131072  # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_2_0
       - Name: "ZES_intel_experimental_driver_event"
         Version: 65536
       - Name: "ZES_extension_device_health"
@@ -67,12 +67,12 @@ Drivers:
     #   - Driver.EventListenEx
     #   - Driver.EventRegister
     #   - Driver.EventListenExp
-    #   - InfoLogs
-    #   - InfoLog.GetProperties
-    #   - InfoLog.Read
-    #   - InfoLog.ReadWithMetadata
-    #   - InfoLog.Enable
-    #   - InfoLog.Disable
+    #   - IntelInfoLogs
+    #   - IntelInfoLog.GetProperties
+    #   - IntelInfoLog.CreateInstance
+    #   - IntelInfoLogInstance.ReadWithMetadata
+    #   - IntelInfoLogInstance.PeekWithMetadata
+    #   - IntelInfoLogInstance.Delete
 
     # -------------------------------------------------------------------
     # Devices
@@ -953,35 +953,44 @@ Drivers:
     # -------------------------------------------------------------------
     # Info logs (zesIntelDriverEnumInfoLogsExp)
     # -------------------------------------------------------------------
-    InfoLogs:
+    IntelInfoLogs:
       - # zesIntelInfoLogGetPropertiesExp (nullable)
         Properties:
           InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
           InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
-          MaxSize: 4096  # in kilobytes
-          IsInstancedCollectionSupported: false
-        # Log records returned by zesIntelInfoLogReadExp and zesIntelInfoLogReadWithMetadataExp, copied out verbatim
-        Records:
-          - Data: "CPER-RECORD-1"
-            # Per-record metadata, returned by zesIntelInfoLogReadExp and
-            # zesIntelInfoLogReadWithMetadataExp.
-            Address:
-              Domain: 0
-              Bus: 1
-              Device: 0
-              Function: 0
-            Uuid:
-              Id: "12345678-000a-00b0-0c00-00000000d000"
-            Timestamp: 1234567  # microseconds since boot
-          - Data: "CPER-RECORD-2"
+          IsNamedInstancedCollectionSupported: true
+          IsPeekSupported: true
+        # Collection buffer size, in kilobytes, reported as applied by
+        # zesIntelInfoLogCreateInstanceExp (the requested one is applied when unset)
+        BufferSizeInKb: 8
+        # What zesIntelInfoLogInstanceReadWithMetadataExp and
+        # zesIntelInfoLogInstancePeekWithMetadataExp hand out
+        Collection:
+          # Status of the read and of the peek (nullable)
+          Status:
+            DroppedRecordCount: 0
+            IsDroppedRecordCountValid: true  # false: records may have been dropped, count unknown
+            HasDataToRead: false
+          # Log records, copied out verbatim
+          Records:
+            - Data: "CPER-RECORD-1"
+              # Per-record metadata, handed out with the record
+              Address:
+                Domain: 0
+                Bus: 1
+                Device: 0
+                Function: 0
+              Uuid:
+                Id: "12345678-000a-00b0-0c00-00000000d000"
+              Timestamp: 1234567  # nanoseconds
+              RecordType: 2  # ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED
+            - Data: "CPER-RECORD-2"
         ReturnValues:
           zesIntelInfoLogGetPropertiesExp: 0
-          # NOTE: ZE_RESULT_WARNING_DROPPED_DATA (0x70020001) is returned
-          # together with the records read, mimicking the backend driver.
-          zesIntelInfoLogReadExp: 0
-          zesIntelInfoLogReadWithMetadataExp: 0
-          zesIntelInfoLogEnableExp: 0
-          zesIntelInfoLogDisableExp: 0
+          zesIntelInfoLogCreateInstanceExp: 0
+          zesIntelInfoLogInstanceReadWithMetadataExp: 0
+          zesIntelInfoLogInstancePeekWithMetadataExp: 0
+          zesIntelInfoLogInstanceDeleteExp: 0
 
 # ---------------------------------------------------------------------------
 # Top-level return-value overrides
