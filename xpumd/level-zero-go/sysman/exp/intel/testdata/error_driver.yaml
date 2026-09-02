@@ -11,7 +11,7 @@ Drivers:
 
     ExtensionProperties:
       - Name: "ZES_intel_experimental_driver_info_logs"
-        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+        Version: 131072 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_2_0
       # to get the Intel experimental driver scoped event APIs enabled
       - Name: "ZES_intel_experimental_driver_event"
         Version: 65536 # ZES_INTEL_DRIVER_EVENT_EXP_VERSION_1_0
@@ -19,5 +19,5 @@ Drivers:
     Devices:
       - Properties: {}
 
-    InfoLogs:
+    IntelInfoLogs:
       - Properties: {}

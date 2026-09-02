@@ -6,15 +6,18 @@
 Drivers:
   - ExtensionProperties:
       - Name: "ZES_intel_experimental_driver_info_logs"
-        Version: 65536 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_1_0
+        Version: 131072 # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_2_0
 
     Devices:
       - Properties: {}
 
-    InfoLogs:
+    IntelInfoLogs:
       - ReturnValues:
           zesIntelInfoLogGetPropertiesExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
-          zesIntelInfoLogReadExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
-          zesIntelInfoLogReadWithMetadataExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
-          zesIntelInfoLogEnableExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
-          zesIntelInfoLogDisableExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+          zesIntelInfoLogCreateInstanceExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      # InfoLog where creating a collection instance succeeds so that the failures of the instance methods can be reached
+      - Properties: {}
+        ReturnValues:
+          zesIntelInfoLogInstanceReadWithMetadataExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+          zesIntelInfoLogInstancePeekWithMetadataExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+          zesIntelInfoLogInstanceDeleteExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS

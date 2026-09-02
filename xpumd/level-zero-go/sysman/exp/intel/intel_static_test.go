@@ -7,6 +7,7 @@ package intel
 
 import (
 	"testing"
+	"time"
 
 	"github.com/intel/level-zero-go/core"
 	th "github.com/intel/level-zero-go/internal/testhelper"
@@ -17,17 +18,18 @@ import (
 
 // Driver config paths (relative to this package)
 const (
-	driverConfigDefault        = th.ConfigDefault
-	driverConfigNoExtension    = "testdata/no_extension.yaml"
-	driverConfigNoInfoLogExt   = "testdata/no_info_log_extension.yaml"
-	driverConfigExtVersionErr  = "testdata/unsupported_extension_version.yaml"
-	driverConfigResolveErr     = "testdata/error_resolve.yaml"
-	driverConfigTranslateErr   = "testdata/error_translate.yaml"
-	driverConfigDriverErrs     = "testdata/error_driver.yaml"
-	driverConfigComponentErrs  = "testdata/error_component.yaml"
-	driverConfigNoMaxSize      = "testdata/no_maxsize.yaml"
-	driverConfigWarningDropped = "testdata/warning_dropped.yaml"
+	driverConfigDefault       = th.ConfigDefault
+	driverConfigNoExtension   = "testdata/no_extension.yaml"
+	driverConfigNoInfoLogExt  = "testdata/no_info_log_extension.yaml"
+	driverConfigExtVersionErr = "testdata/unsupported_extension_version.yaml"
+	driverConfigResolveErr    = "testdata/error_resolve.yaml"
+	driverConfigTranslateErr  = "testdata/error_translate.yaml"
+	driverConfigDriverErrs    = "testdata/error_driver.yaml"
+	driverConfigComponentErrs = "testdata/error_component.yaml"
 )
+
+// infoLogTimeOutReadAll is the read timeout that searches all the records that a collection instance holds
+const infoLogTimeOutReadAll = -1 * time.Millisecond
 
 // getDriver reloads the stub with the given driver config file and returns intel.Driver
 func getDriver(t *testing.T, path string) *Driver {
@@ -39,6 +41,14 @@ func getDriver(t *testing.T, path string) *Driver {
 func getInfoLog(t *testing.T, path string, idx int) *InfoLog {
 	t.Helper()
 	return th.GetIndexed(t, "component", idx, getDriver(t, path).EnumInfoLogs)
+}
+
+// getInfoLogInstance returns a collection instance of the default buffer of one info log
+func getInfoLogInstance(t *testing.T, path string, idx int) *InfoLogInstance {
+	t.Helper()
+	instance, err := getInfoLog(t, path, idx).CreateInstance("", 0)
+	require.NoError(t, err)
+	return instance
 }
 
 func TestNewDriver(t *testing.T) {
@@ -88,112 +98,182 @@ func TestInfoLogGetProperties(t *testing.T) {
 		props, err := getInfoLog(t, driverConfigDefault, 0).GetProperties()
 		require.NoError(t, err)
 		assert.EqualExportedValues(t, InfoLogPropertiesExp{
-			InfoLogType:                    INFO_LOG_TYPE_EXP_DEVICE,
-			InfoLogFormat:                  INFO_LOG_FORMAT_CPER,
-			MaxSize:                        1,
-			IsInstancedCollectionSupported: 1,
+			InfoLogType:                         INFO_LOG_TYPE_EXP_DEVICE,
+			InfoLogFormat:                       INFO_LOG_FORMAT_CPER,
+			IsNamedInstancedCollectionSupported: core.NewBool(true),
+			IsPeekSupported:                     core.NewBool(true),
 		}, props)
 	})
 }
 
-func TestInfoLogRead(t *testing.T) {
+func TestInfoLogCreateInstance(t *testing.T) {
 	t.Run("ErrorFromDriver", func(t *testing.T) {
-		_, err := getInfoLog(t, driverConfigComponentErrs, 0).Read(make([]byte, 16))
+		_, err := getInfoLog(t, driverConfigComponentErrs, 0).CreateInstance("", 0)
 		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
 	})
-	t.Run("ErrorEmptyBuffer", func(t *testing.T) {
-		_, err := getInfoLog(t, driverConfigDefault, 0).Read(nil)
-		require.ErrorIs(t, err, core.RESULT_ERROR_INVALID_ARGUMENT)
-	})
-	t.Run("SuccessTooSmallBuffer", func(t *testing.T) {
-		// only whole records are read, nothing is returned if the buffer cannot
-		// hold one
-		infoLog := getInfoLog(t, driverConfigDefault, 0)
-		buf := make([]byte, 4)
-		n, err := infoLog.Read(buf)
+	t.Run("SuccessDefaults", func(t *testing.T) {
+		// zero values collect from the default buffer of the log, leaving the size
+		// of the buffer as it is
+		instance, err := getInfoLog(t, driverConfigDefault, 1).CreateInstance("", 0)
 		require.NoError(t, err)
-		assert.Zero(t, n)
+		assert.Zero(t, instance.BufferSizeInKb)
 	})
-	t.Run("SuccessOneRecord", func(t *testing.T) {
-		// only one record is returned as the buffer below has room for one only
-		infoLog := getInfoLog(t, driverConfigDefault, 0)
-		buf := make([]byte, 16)
-		n, err := infoLog.Read(buf)
+	t.Run("SuccessRequestedBufferSize", func(t *testing.T) {
+		// without a configured size the stub applies the requested one
+		instance, err := getInfoLog(t, driverConfigDefault, 1).CreateInstance("", 6)
 		require.NoError(t, err)
-		assert.Equal(t, "CPER-RECORD-1", string(buf[:n]))
+		assert.Equal(t, uint32(6), instance.BufferSizeInKb)
 	})
-	t.Run("SuccessMultipleRecords", func(t *testing.T) {
-		infoLog := getInfoLog(t, driverConfigDefault, 0)
-		buf := make([]byte, 4096)
-		n, err := infoLog.Read(buf)
+	t.Run("SuccessAllArguments", func(t *testing.T) {
+		// the driver reports the buffer size that it applied, which may differ from
+		// the requested one
+		instance, err := getInfoLog(t, driverConfigDefault, 0).CreateInstance("level-zero-go", 6)
 		require.NoError(t, err)
-		assert.Equal(t, "CPER-RECORD-1CPER-RECORD-2", string(buf[:n]))
-	})
-	t.Run("WarningDropped", func(t *testing.T) {
-		// the records that were read are returned despite the warning
-		infoLog := getInfoLog(t, driverConfigWarningDropped, 0)
-		buf := make([]byte, 16)
-		n, err := infoLog.Read(buf)
-		require.ErrorIs(t, err, core.RESULT_WARNING_DROPPED_DATA)
-		assert.Equal(t, "CPER-RECORD-1", string(buf[:n]))
+		assert.Equal(t, uint32(8), instance.BufferSizeInKb)
 	})
 }
 
-func TestInfoLogReadAll(t *testing.T) {
+func TestInfoLogInstanceReadWithMetadata(t *testing.T) {
 	t.Run("ErrorFromDriver", func(t *testing.T) {
-		_, err := getInfoLog(t, driverConfigComponentErrs, 0).ReadAll()
-		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
-	})
-	t.Run("ErrorNoMaxSize", func(t *testing.T) {
-		_, err := getInfoLog(t, driverConfigNoMaxSize, 0).ReadAll()
-		require.ErrorIs(t, err, core.RESULT_ERROR_NOT_AVAILABLE)
-	})
-	t.Run("WarningDropped", func(t *testing.T) {
-		data, err := getInfoLog(t, driverConfigWarningDropped, 0).ReadAll()
-		require.ErrorIs(t, err, core.RESULT_WARNING_DROPPED_DATA)
-		assert.Equal(t, "CPER-RECORD-1", string(data))
-	})
-	t.Run("Success", func(t *testing.T) {
-		// all pending records are read in one go
-		data, err := getInfoLog(t, driverConfigDefault, 0).ReadAll()
-		require.NoError(t, err)
-		assert.Equal(t, "CPER-RECORD-1CPER-RECORD-2", string(data))
-	})
-}
-
-func TestInfoLogReadWithMetadata(t *testing.T) {
-	t.Run("ErrorFromDriver", func(t *testing.T) {
-		_, err := getInfoLog(t, driverConfigComponentErrs, 0).ReadWithMetadata()
+		_, _, err := getInfoLogInstance(t, driverConfigComponentErrs, 1).ReadWithMetadata(infoLogTimeOutReadAll)
 		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
 	})
 	t.Run("SuccessNothingPending", func(t *testing.T) {
-		// nothing is read if the driver reports nothing pending
-		records, err := getInfoLog(t, driverConfigDefault, 1).ReadWithMetadata()
+		// nothing is read if the instance holds nothing, the status is reported anyway
+		records, status, err := getInfoLogInstance(t, driverConfigDefault, 1).ReadWithMetadata(infoLogTimeOutReadAll)
 		require.NoError(t, err)
 		assert.Empty(t, records)
+		assert.False(t, status.HasDataToRead.IsTrue())
+		assert.Equal(t, uint32(5), status.DroppedRecordCount)
+		assert.True(t, status.IsDroppedRecordCountValid.IsTrue())
 	})
-	t.Run("WarningDropped", func(t *testing.T) {
-		// the records that were read are returned despite the warning
-		records, err := getInfoLog(t, driverConfigWarningDropped, 0).ReadWithMetadata()
-		require.ErrorIs(t, err, core.RESULT_WARNING_DROPPED_DATA)
-		require.Len(t, records, 1)
-		assert.Equal(t, "CPER-RECORD-1", string(records[0].Data))
+	t.Run("SuccessZeroTimeout", func(t *testing.T) {
+		// returns immediately, without searching for records, the status still reporting that the instance holds records
+		records, status, err := getInfoLogInstance(t, driverConfigDefault, 0).ReadWithMetadata(0)
+		require.NoError(t, err)
+		assert.Empty(t, records)
+		assert.True(t, status.HasDataToRead.IsTrue())
 	})
 	t.Run("Success", func(t *testing.T) {
-		// all pending records are read in one go, each one located by its metadata
-		records, err := getInfoLog(t, driverConfigDefault, 0).ReadWithMetadata()
+		// all the records read in one go
+		instance := getInfoLogInstance(t, driverConfigDefault, 0)
+		records, status, err := instance.ReadWithMetadata(infoLogTimeOutReadAll)
 		require.NoError(t, err)
 		require.Len(t, records, 2)
 		assert.Equal(t, "CPER-RECORD-1", string(records[0].Data))
 		assert.Equal(t, "CPER-RECORD-2", string(records[1].Data))
+		// NOTE: the stub always returns the status as configured, also when it returned every record that it holds
+		assert.True(t, status.HasDataToRead.IsTrue())
+		// the records dropped since the previous read are reported by both the query and the read call
+		assert.Equal(t, uint32(4), status.DroppedRecordCount)
+		assert.True(t, status.IsDroppedRecordCountValid.IsTrue())
 
 		meta := records[0].Metadata
 		assert.Equal(t, sysman.PciAddress{Bus: 1, Device: 2, Function: 3}, meta.Address)
 		assert.Equal(t, "12345678-abcd-ef01-2345-6789abcdef01", meta.Uuid.Id.String())
 		assert.Equal(t, uint64(1234567), meta.Timestamp)
+		assert.Equal(t, INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED, meta.RecordType)
 		assert.Equal(t, uint32(len("CPER-RECORD-1")), meta.LengthOfData)
 		assert.Zero(t, meta.Offset)
 		assert.Equal(t, uint32(len("CPER-RECORD-1")), records[1].Metadata.Offset)
+
+		// NOTE: the stub does not consume the records, so they are read again here
+		records, _, err = instance.ReadWithMetadata(infoLogTimeOutReadAll)
+		require.NoError(t, err)
+		assert.Len(t, records, 2)
+	})
+}
+
+func TestInfoLogInstanceCollect(t *testing.T) {
+	const data = "CPER-RECORD-1"
+	// The stub reports the same result and status for the query and the read
+	// call, so a fake collect function is used to make them differ.
+	fake := func(query InfoLogReadStatusExp, readRet core.Result, read InfoLogReadStatusExp,
+		offset uint32) infoLogCollectFunc {
+		return func(_ infoLogInstanceHandle, _ uint64, pSize *uint32, buf []byte, pCount *uint32,
+			metadata []InfoLogMetadataExp, status *InfoLogReadStatusExp) core.Result {
+			if *pSize == 0 || *pCount == 0 {
+				*pSize, *pCount = uint32(len(data)), 1
+				*status = query
+				return core.RESULT_SUCCESS
+			}
+			copy(buf, data)
+			metadata[0].Offset = offset
+			metadata[0].LengthOfData = uint32(len(data))
+			*status = read
+			return readRet
+		}
+	}
+	valid := func(dropped uint32) InfoLogReadStatusExp {
+		return InfoLogReadStatusExp{DroppedRecordCount: dropped, IsDroppedRecordCountValid: core.NewBool(true)}
+	}
+
+	t.Run("Success", func(t *testing.T) {
+		// the counts of the query and the read add up
+		records, status, err := (&InfoLogInstance{}).collect(time.Second, fake(valid(3), core.RESULT_SUCCESS, valid(2), 0))
+		require.NoError(t, err)
+		require.Len(t, records, 1)
+		assert.Equal(t, data, string(records[0].Data))
+		assert.Equal(t, uint32(5), status.DroppedRecordCount)
+		assert.True(t, status.IsDroppedRecordCountValid.IsTrue())
+	})
+	t.Run("QueryCountIncomplete", func(t *testing.T) {
+		// the driver reports what the query could not count with the read, i.e.
+		// the sum is complete when the count of the read is
+		_, status, err := (&InfoLogInstance{}).collect(time.Second,
+			fake(InfoLogReadStatusExp{}, core.RESULT_SUCCESS, valid(5), 0))
+		require.NoError(t, err)
+		assert.Equal(t, uint32(5), status.DroppedRecordCount)
+		assert.True(t, status.IsDroppedRecordCountValid.IsTrue())
+	})
+	t.Run("ReadCountIncomplete", func(t *testing.T) {
+		// what the read could not count is reported by a later call
+		_, status, err := (&InfoLogInstance{}).collect(time.Second,
+			fake(valid(3), core.RESULT_SUCCESS, InfoLogReadStatusExp{}, 0))
+		require.NoError(t, err)
+		assert.Equal(t, uint32(3), status.DroppedRecordCount)
+		assert.False(t, status.IsDroppedRecordCountValid.IsTrue())
+	})
+	t.Run("ReadError", func(t *testing.T) {
+		// the status is returned also when the read fails
+		records, status, err := (&InfoLogInstance{}).collect(time.Second,
+			fake(valid(3), core.RESULT_ERROR_NOT_AVAILABLE, valid(2), 0))
+		require.ErrorIs(t, err, core.RESULT_ERROR_NOT_AVAILABLE)
+		assert.Empty(t, records)
+		assert.Equal(t, uint32(5), status.DroppedRecordCount)
+	})
+	t.Run("ErrorRecordOutsideData", func(t *testing.T) {
+		_, _, err := (&InfoLogInstance{}).collect(time.Second, fake(valid(0), core.RESULT_SUCCESS, valid(0), 1))
+		require.ErrorIs(t, err, core.RESULT_ERROR_UNKNOWN)
+	})
+}
+
+func TestInfoLogInstancePeekWithMetadata(t *testing.T) {
+	t.Run("ErrorFromDriver", func(t *testing.T) {
+		_, _, err := getInfoLogInstance(t, driverConfigComponentErrs, 1).PeekWithMetadata(infoLogTimeOutReadAll)
+		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
+	})
+	t.Run("Success", func(t *testing.T) {
+		// peeking does not consume the records, they are read again in the next iteration
+		instance := getInfoLogInstance(t, driverConfigDefault, 0)
+		for i := 0; i < 2; i++ {
+			records, status, err := instance.PeekWithMetadata(infoLogTimeOutReadAll)
+			require.NoError(t, err)
+			require.Len(t, records, 2)
+			assert.Equal(t, "CPER-RECORD-1", string(records[0].Data))
+			assert.Equal(t, "CPER-RECORD-2", string(records[1].Data))
+			assert.True(t, status.HasDataToRead.IsTrue())
+		}
+	})
+}
+
+func TestInfoLogInstanceDelete(t *testing.T) {
+	t.Run("ErrorFromDriver", func(t *testing.T) {
+		err := getInfoLogInstance(t, driverConfigComponentErrs, 1).Delete()
+		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
+	})
+	t.Run("Success", func(t *testing.T) {
+		require.NoError(t, getInfoLogInstance(t, driverConfigDefault, 0).Delete())
 	})
 }
 
@@ -274,29 +354,5 @@ func TestDriverEventListenExp(t *testing.T) {
 		deviceEvent := sysman.EventTypeFlags(sysman.EVENT_TYPE_FLAG_DEVICE_DETACH)
 		assert.Equal(t, []sysman.EventTypeFlags{deviceEvent}, deviceEvents)
 		assert.Equal(t, sysman.EventTypeFlags(CPER_DATA_AVAILABLE), driverEvents)
-	})
-}
-
-func TestInfoLogEnable(t *testing.T) {
-	t.Run("ErrorFromDriver", func(t *testing.T) {
-		err := getInfoLog(t, driverConfigComponentErrs, 0).Enable("", 0, 0)
-		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
-	})
-	t.Run("SuccessDefaults", func(t *testing.T) {
-		// zero values leave the whole configuration to the driver
-		require.NoError(t, getInfoLog(t, driverConfigDefault, 0).Enable("", 0, 0))
-	})
-	t.Run("SuccessAllArguments", func(t *testing.T) {
-		require.NoError(t, getInfoLog(t, driverConfigDefault, 0).Enable("level-zero-go", 4096, 50))
-	})
-}
-
-func TestInfoLogDisable(t *testing.T) {
-	t.Run("ErrorFromDriver", func(t *testing.T) {
-		err := getInfoLog(t, driverConfigComponentErrs, 0).Disable()
-		require.ErrorIs(t, err, core.RESULT_ERROR_INSUFFICIENT_PERMISSIONS)
-	})
-	t.Run("Success", func(t *testing.T) {
-		require.NoError(t, getInfoLog(t, driverConfigDefault, 0).Disable())
 	})
 }
