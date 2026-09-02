@@ -71,7 +71,7 @@ mounted for the info log functionality:
 ```bash
 docker run --rm --device /dev/dri --cap-drop ALL --cap-add PERFMON \
            -v /sys/kernel/tracing:/sys/kernel/tracing \
-           registry.local/level-zero-go/list-sysman-exp:latest /entrypoint -infolog-format metadata
+           registry.local/level-zero-go/list-sysman-exp:latest /entrypoint -infolog-dump
 ```
 
 > [!NOTE]
