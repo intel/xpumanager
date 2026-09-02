@@ -52,8 +52,8 @@ TRANSLATOR:
       - {action: accept, from: "^zes_driver_handle_t$"}
       - {action: accept, from: "^zes_device_handle_t$"}
       - {action: accept, from: "^zes_structure_type_ext_t$"}
-      # The enable descriptor is hidden by the shim
-      - {action: ignore, from: "^zes_intel_info_log_enable_descriptor_exp$"}
+      # The collection instance descriptor is hidden by the shim
+      - {action: ignore, from: "^zes_intel_info_log_instance_exp_desc_t$"}
       - {action: replace, from: "^zes_intel_"}
       - {action: replace, from: "^zes_"}
       - {action: replace, from: "_t$"}
@@ -68,9 +68,9 @@ TRANSLATOR:
   PtrTips:
     function:
       - {target: "^ze_go_zesIntelDriverEnumInfoLogsExp$", tips: [ref, ref, arr]}
-      - {target: "^ze_go_zesIntelInfoLogReadExp$", tips: [ref, ref, arr]}
-      - {target: "^ze_go_zesIntelInfoLogReadWithMetadataExp$", tips: [ref, ref, arr, ref, arr]}
-      - {target: "^ze_go_zesIntelInfoLogEnableExp$", tips: [ref, arr, ref, ref]}
+      - {target: "^ze_go_zesIntelInfoLogCreateInstanceExp$", tips: [ref, arr, ref, ref]}
+      - {target: "^ze_go_zesIntelInfoLogInstanceReadWithMetadataExp$", tips: [ref, ref, ref, arr, ref, arr, ref]}
+      - {target: "^ze_go_zesIntelInfoLogInstancePeekWithMetadataExp$", tips: [ref, ref, ref, arr, ref, arr, ref]}
       - {target: "^ze_go_zesIntelDriverEventListenExp$", tips: [ref, ref, ref, arr, ref, arr, ref]}
       # Default tip, everything is ref
       - {target: ., tips: [ref, ref, ref, ref]}
