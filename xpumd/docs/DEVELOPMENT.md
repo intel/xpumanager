@@ -14,6 +14,11 @@
     - [Kind cluster](#kind-cluster)
     - [Containerd-based cluster](#containerd-based-cluster)
   - [Deploy with Helm](#deploy-with-helm)
+- [Integration tests](#integration-tests)
+  - [Kind cluster](#kind-cluster-1)
+  - [Existing cluster](#existing-cluster)
+- [Test coverage](#test-coverage)
+  - [Integration test coverage](#integration-test-coverage)
 - [Driver stack updates](#driver-stack-updates)
 
 ## Building
@@ -287,6 +292,47 @@ make test-integration-existing-cluster IMAGE_REPOSITORY=ghcr.io/intel/xpumanager
 
 > [!IMPORTANT]
 > Ensure that the container image is present in/reachable by the cluster.
+
+## Test coverage
+
+Measure unit test coverage, with per-module HTML reports split by hand-written
+and generated code under `coverage/<module>/`:
+
+```bash
+make coverage
+```
+
+The Level-Zero Go bindings are reported the same way, under `level-zero-go/coverage/`:
+
+```bash
+make -C level-zero-go coverage
+```
+
+### Integration test coverage
+
+Run the integration tests in an ephemeral Kind cluster with
+coverage-instrumented binaries and write the result into
+`coverage/integration-tests.cov`:
+
+```bash
+make coverage-integration-test-kind
+```
+
+To run against an existing cluster instead (faster for development/debugging):
+
+```bash
+make coverage-integration-test-existing-cluster
+```
+
+> [!IMPORTANT]
+> With `coverage-integration-test-existing-cluster`, you must build an
+> coverage-instrumented image with `make docker-build-cover` and make the image
+> available to the cluster.
+
+> [!WARNING]
+> Don't run multiple `coverage-integration-test-existing-cluster` concurrently
+> in the same cluster as coverage collection uses fixed hostPath mount and
+> namespace.
 
 ## Driver stack updates
 

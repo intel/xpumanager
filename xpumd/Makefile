@@ -199,6 +199,27 @@ test-integration-existing-cluster:
 		--use-existing-cluster \
 		--image-pull-policy=$(IMAGE_PULL_POLICY)
 
+.PHONY: coverage-integration-test-kind
+# Measure integration test coverage in an ephemeral Kind cluster.
+coverage-integration-test-kind: docker-build-cover
+	TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
+		$(CURDIR)/$(COVERAGE_DIR)/covdata $(COVERAGE_DIR)/integration-tests.cov \
+		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-tag=$(IMAGE_TAG) \
+		--kind-load-image
+
+.PHONY: coverage-integration-test-existing-cluster
+# Measure integration test coverage in the currently configured cluster.
+# Build the image with 'make docker-build-cover' first, and make sure it is reachable by the cluster.
+# NOTE: not safe to run concurrently in the same cluster (coverage collection uses fixed hostPath mount and namespace).
+coverage-integration-test-existing-cluster:
+	TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
+		$(CURDIR)/$(COVERAGE_DIR)/covdata $(COVERAGE_DIR)/integration-tests.cov \
+		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-tag=$(IMAGE_TAG) \
+		--use-existing-cluster \
+		--image-pull-policy=$(IMAGE_PULL_POLICY)
+
 # --- Lint targets
 
 .PHONY: lint
