@@ -3,6 +3,7 @@ module github.com/intel/xpumanager/xpumd/processor/intelxpustatus
 go 1.26.0
 
 require (
+	github.com/intel/xpumanager/xpumd/common v0.0.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/component v1.66.0
 	go.opentelemetry.io/collector/component/componenttest v0.160.0
@@ -25,7 +26,6 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
-	github.com/intel/xpumanager/xpumd/common v0.0.0
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/knadh/koanf/maps v0.1.3 // indirect
 	github.com/knadh/koanf/providers/confmap v1.0.1 // indirect

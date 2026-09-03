@@ -9,6 +9,7 @@ replace (
 
 require (
 	github.com/google/go-cmp v0.7.0
+	github.com/intel/xpumanager/xpumd/common v0.0.0
 	github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api v0.0.0
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/component v1.66.0
@@ -30,10 +31,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require github.com/cenkalti/backoff/v7 v7.0.0 // indirect
-
 require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/cenkalti/backoff/v7 v7.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20251226215517-609e4778396f // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
@@ -45,7 +45,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-version v1.9.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
-	github.com/intel/xpumanager/xpumd/common v0.0.0
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/knadh/koanf/maps v0.1.3 // indirect
