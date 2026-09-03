@@ -131,7 +131,7 @@ golint:
 	@echo -e "\ngolint: linting Go code...\n"
 	docker run --rm -v $$PWD:/app -w /app --security-opt label=disable \
 	  -e PKG_CONFIG_PATH=/app/level-zero-stub \
-	  golangci/golangci-lint:v2.6.2 golangci-lint run --color=always
+	  golangci/golangci-lint:v2.13.2 golangci-lint run --color=always
 
 .PHONY: check-format
 check-format: check-go-format check-c-format
