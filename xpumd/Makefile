@@ -186,7 +186,7 @@ check-modfiles:
 	@error=""; for module in $(GO_MODULES); do \
 		echo "Checking module '$$module'"; \
 		if ! (cd $$module && go mod tidy -diff 2> /dev/null); then \
-			echo "ERROR: go.mod file in '$$module' is out of sync. Run 'go mod tidy' in that directory to fix it."; \
+			echo "ERROR: go.mod file in '$$module' is out of sync. Run 'make go-tidy' to fix it."; \
 			error=1; \
 		fi; \
 	done; \
@@ -194,6 +194,13 @@ check-modfiles:
 		exit 1; \
 	fi; \
 	echo "✓ All go.mod files are in sync"
+
+.PHONY: go-tidy
+go-tidy:
+	for module in $(GO_MODULES); do \
+		echo "Running go mod tidy in '$$module'"; \
+		go -C $$module mod tidy || exit 1; \
+	done; \
 
 .PHONY: go-fix
 go-fix:
