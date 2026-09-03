@@ -104,7 +104,7 @@ public:
 	virtual ze_result_t updateGfx(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateGfx(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
+	virtual ze_result_t updateGfxData(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t preUpdateFdo(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateFdo(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateFdo(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
