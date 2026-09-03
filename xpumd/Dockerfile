@@ -11,31 +11,18 @@ ARG TOOLS=""
 
 ARG BASE_IMAGE=scratch
 
-# Where the final image gets the Level-Zero GPU backend from:
-# - "deb": the released libze-intel-gpu1 package (default)
-# - "src": a build of the compute-runtime sources, needed for the experimental
-#   Sysman extensions that no released package implements yet. The published
-#   images are built with this.
+# BACKEND sets where the final image gets the Level-Zero driver stack from:
+# - "deb": downloads driver packages from their GitHub project pages & builds IGSC + MeTee (default)
+# - "src": like "deb", but builds also "libze-intel-gpu1" library from the compute-runtime sources
+#   (needed for the experimental Sysman extensions not supported (yet) by the driver packages)
+# - "local": uses locally downloaded DEB packages from FILES_DIR directory for whole driver stack.
+#    Requires also suitable FILES_DIR variable (see debs/docker-build.sh):
+#      FILES_DIR=debs/<package-dir>
 ARG BACKEND=deb
 
-# The build stage
-FROM golang:1.26-trixie AS builder
 
-# driver stack DEB package versions
-ARG IGC_CORE_VERSION=2.40.13+22418
-ARG COMPUTE_RUNTIME_RELEASE=26.31.39395.13
-ARG LIBIGDGMM12_VERSION=22.10.0
-ARG LEVEL_ZERO_VERSION=1.33.1
-
-# SHA256 checksums for those
-ARG CHECKSUMS_LOADER=checksums-loader.txt
-ARG CHECKSUMS_BACKEND=checksums-backend.txt
-
-# Git repo tags & commit hashes to match against them
-ARG IGSC_VERSION=V1.3.1
-ARG IGSC_COMMIT=483f0b91d4636cbdc8f0503343f858ff2da45432
-ARG METEE_VERSION=6.2.4
-ARG METEE_COMMIT=2e9390294f47c3d88590cb4a6e0293e31fd4a9db
+# --- Base build stage with necessary distro setup / packages ---
+FROM golang:1.26-trixie AS builder-base
 
 # Enable source packages, install IGSC build dependencies and extra Sysman dependencies
 # (Sysman does not link the latter but loads them at runtime: netlink for RAS and
@@ -52,16 +39,58 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.s
     libtracefs1
 
 WORKDIR /debs/
-COPY level-zero-go/level-zero/$CHECKSUMS_LOADER level-zero-go/level-zero/$CHECKSUMS_BACKEND ./
 
-# Download and install Level-Zero and its dependencies
+COPY scripts/copy-files-and-package-info.sh .
+
+
+# --- Build stage for using local driver DEBs ---
+FROM builder-base AS builder-local
+
+# User needs to override this
+ARG FILES_DIR="unspecified-FILES_DIR"
+
+# All driver stack packages, including IGSC + MeTee
+COPY $FILES_DIR/*.deb .
+
+# Install them & show compiler lib names & versions
+RUN dpkg -i ./*.deb  &&  ls -l /usr/lib/x86_64-linux-gnu/libig*.so.*
+
+
+# --- Build stage for downloading driver DEBs ---
+#
+# IGSC + MeTee libraries are built to get a specific version of them
+# (they are not available from their project's releases pages, and
+# Intel Kobuk PPA driver repo offers only single _rolling_ version)
+FROM builder-base AS builder-deb
+
+# driver stack DEB package versions
+ARG IGC_CORE_VERSION=2.40.13+22418
+ARG COMPUTE_RUNTIME_RELEASE=26.31.39395.13
+ARG LIBIGDGMM12_VERSION=22.10.0
+ARG LEVEL_ZERO_VERSION=1.33.1
+
+# Git repo tags & commit hashes to match against them for IGSC source build
+ARG IGSC_VERSION=V1.3.1
+ARG IGSC_COMMIT=483f0b91d4636cbdc8f0503343f858ff2da45432
+ARG METEE_VERSION=6.2.4
+ARG METEE_COMMIT=2e9390294f47c3d88590cb4a6e0293e31fd4a9db
+
+# SHA256 checksums for packages
+ARG CHECKSUMS_LOADER=checksums-loader.txt
+ARG CHECKSUMS_BACKEND=checksums-backend.txt
+
+ARG FILES_DIR=level-zero-go/level-zero
+COPY $FILES_DIR/$CHECKSUMS_LOADER $FILES_DIR/$CHECKSUMS_BACKEND ./
+
+# Download and install Level-Zero and its dependencies.
 RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
     curl -fS --fail-early \
          -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb \
          -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
          -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
-         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb && \
+         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
+	 && \
     if ! sha256sum --check --strict $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
         echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
         cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
@@ -71,44 +100,6 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
         exit 1; \
     fi && \
     dpkg -i ./*.deb
-
-# Copy runtime libraries and their package info.
-# Placed here so that this layer is cached (avoid downloading of deb source packages, in particular).
-# The GPU backend library is not here, the selected "backend" stage provides it with
-# the package info matching that build.
-COPY scripts/copy-files-and-package-info.sh .
-RUN ./copy-files-and-package-info.sh /out \
-        /lib64/ld-linux-x86-64.so.2 \
-        /usr/lib/x86_64-linux-gnu/libc.so.6 \
-        /usr/lib/x86_64-linux-gnu/libcap.so.2 \
-        /usr/lib/x86_64-linux-gnu/libcyaml.so.1 \
-        /usr/lib/x86_64-linux-gnu/libyaml-0.so.2 \
-        /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
-        /usr/lib/x86_64-linux-gnu/libm.so.6 \
-        /usr/lib/x86_64-linux-gnu/libnl-3.so.200 \
-        /usr/lib/x86_64-linux-gnu/libnl-genl-3.so.200 \
-        /usr/lib/x86_64-linux-gnu/libresolv.so.2 \
-        /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
-        /usr/lib/x86_64-linux-gnu/libtraceevent.so.1 \
-        /usr/lib/x86_64-linux-gnu/libtracefs.so.1 \
-        /usr/lib/x86_64-linux-gnu/libudev.so.1 \
-        /usr/lib/x86_64-linux-gnu/libigdgmm.so.12 \
-        /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
-        /usr/local/lib/libigc.so.2
-
-# Install debug tool binary & its libs to where they get copied to final image
-ARG TOOLS
-RUN if [ -n "$TOOLS" ]; then \
-      apt-get update && \
-      apt-get install -y --no-install-recommends $TOOLS && \
-      ./copy-files-and-package-info.sh /out \
-      $(for pkg in $TOOLS; do \
-        for bin in $(dpkg -L $pkg | grep bin/); do \
-          echo $bin; \
-          ldd $bin | awk '/=>/{lib=$3; if(lib=="not") lib="missing:"$1; print lib}'; \
-        done \
-      done); \
-    fi
 
 WORKDIR /go/src/work
 
@@ -127,9 +118,11 @@ RUN mkdir /src && \
     ninja -C build install && \
     ldconfig
 
-# libigsc and libmetee are source-built (not DEB packages): copy manually and add synthetic dpkg status entries for scanners
+# libigsc and libmetee are source-built (not DEB packages):
+# copy manually to output dir and add synthetic dpkg status entries for scanners
 RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.1 \
                /out/usr/lib/x86_64-linux-gnu/libigsc.so.1 && \
+    install -d /out/var/lib/dpkg/ && \
     /usr/bin/echo -e "\
 Package: libigsc1\n\
 Status: install ok installed\n\
@@ -145,6 +138,67 @@ Version: ${METEE_VERSION}\n\
 Homepage: https://github.com/intel/metee\n\
 Description: Intel(R) ME TEE Library (statically linked to libigsc)\n\
 \n" >> /out/var/lib/dpkg/status
+
+
+# --- Alias for source build builder stage ---
+FROM builder-deb AS builder-src
+
+
+# --- Final build stage ---
+#
+# Copy dependencies + build XPUMD binaries required on the final image to a suitable location
+FROM builder-${BACKEND} AS builder
+
+ARG BACKEND
+
+# Copy runtime libraries and their package info:
+# - Placed here so that this layer is cached (avoid downloading of deb source packages, in particular)
+# - The GPU backend library is not here, the selected "backend" stage provides it with
+#   the package info matching that build
+# - Some IGC packages install compute compiler to incorrect (/usr/local) location
+# - IGSC package can be either v0 or v1 version, but Sysman can load/use at runtime either version
+# - MeTee version (IGSC dep) in repos differs a lot, and its package does not provide *.so.[0-9] symlink
+RUN /debs/copy-files-and-package-info.sh /out \
+        /lib64/ld-linux-x86-64.so.2 \
+        /usr/lib/x86_64-linux-gnu/libc.so.6 \
+        /usr/lib/x86_64-linux-gnu/libcap.so.2 \
+        /usr/lib/x86_64-linux-gnu/libcyaml.so.1 \
+        /usr/lib/x86_64-linux-gnu/libyaml-0.so.2 \
+        /usr/lib/x86_64-linux-gnu/libgcc_s.so.1 \
+        /usr/lib/x86_64-linux-gnu/libm.so.6 \
+        /usr/lib/x86_64-linux-gnu/libnl-3.so.200 \
+        /usr/lib/x86_64-linux-gnu/libnl-genl-3.so.200 \
+        /usr/lib/x86_64-linux-gnu/libresolv.so.2 \
+        /usr/lib/x86_64-linux-gnu/libstdc++.so.6 \
+        /usr/lib/x86_64-linux-gnu/libtraceevent.so.1 \
+        /usr/lib/x86_64-linux-gnu/libtracefs.so.1 \
+        /usr/lib/x86_64-linux-gnu/libudev.so.1 \
+        /usr/lib/x86_64-linux-gnu/libigdgmm.so.12 \
+        /usr/lib/x86_64-linux-gnu/libze_loader.so.1 \
+      $(if [ -e /usr/local/lib/libigc.so.2 ]; then \
+          echo /usr/local/lib/libigc.so.2; \
+	else \
+          echo /usr/lib/x86_64-linux-gnu/libigc.so.2; \
+        fi) \
+      $(if [ "$BACKEND" = "local" ]; then \
+          echo \
+            /usr/lib/x86_64-linux-gnu/libigsc.so.[01] \
+            /lib/x86_64-linux-gnu/libmetee.so.*.*.* \
+        ; fi)
+
+# Install debug tool binary & its libs to where they get copied to final image
+ARG TOOLS
+RUN if [ -n "$TOOLS" ]; then \
+      apt-get update && \
+      apt-get install -y --no-install-recommends $TOOLS && \
+      /debs/copy-files-and-package-info.sh /out \
+      $(for pkg in $TOOLS; do \
+        for bin in $(dpkg -L $pkg | grep bin/); do \
+          echo $bin; \
+          ldd $bin | awk '/=>/{lib=$3; if(lib=="not") lib="missing:"$1; print lib}'; \
+        done \
+      done); \
+    fi
 
 # Build xpumd / xpuinfo-cli + stub driver & install them
 RUN --mount=type=cache,target=/go/pkg/mod/ \
@@ -170,14 +224,18 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
 RUN sed -i 's/127.0.0.1:/0.0.0.0:/' /out/etc/xpumd/config-example.yaml
 
 
-# The backend from the released DEB package (BACKEND=deb)
+# --- Backend from the released DEB package (BACKEND=deb) ---
 FROM builder AS backend-deb
 
 RUN /debs/copy-files-and-package-info.sh /backend \
         /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
 
 
-# The backend built from the compute-runtime sources (BACKEND=src)
+# --- Alias for local DEB package usage (BACKEND=local) ---
+FROM backend-deb AS backend-local
+
+
+# --- The backend built from the compute-runtime sources (BACKEND=src) ---
 #
 # The sources are pinned to the revision that the Intel headers in
 # level-zero-go/include/intel/ are vendored from, and the dependencies to the versions
@@ -185,7 +243,7 @@ RUN /debs/copy-files-and-package-info.sh /backend \
 # args of this stage are pinned by level-zero-go/hack/vendor-intel-header.sh, in
 # level-zero-go/examples/Dockerfile, and copied over from there by
 # scripts/sync-dockerfile-args.sh.
-FROM golang:1.26-trixie AS backend-src
+FROM builder-base AS backend-src
 
 # Compute-runtime commit date 2026-08-25
 ARG COMPUTE_RUNTIME_COMMIT=9c2abbc844661895dc8c45ad84cdc50eb19e146c
@@ -242,10 +300,7 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
 # - libtracefs-dev: needed by Sysman for the info log extension functionality
 # - libudev-dev: needed by Sysman for the (udev) events (e.g. device attach/detach)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    cmake \
-    libtracefs-dev \
-    libudev-dev \
-    ninja-build
+    libtracefs-dev libudev-dev
 
 # GmmLib provides the graphics memory management library to build against.
 # No devel package is released, so it is built from sources here
@@ -301,11 +356,11 @@ Description: Intel(R) Graphics Compute Runtime for oneAPI Level Zero\n\
 \n" > /backend/var/lib/dpkg/status
 
 
-# The backend selected with BACKEND
+# --- The backend selected with BACKEND ---
 FROM backend-${BACKEND} AS backend
 
 
-# The image content, with the selected backend and its package info
+# --- The image content, with the selected backend and its package info ---
 FROM builder AS out
 
 # Only the files of the backend: its dpkg status entry is appended to the database
@@ -315,7 +370,7 @@ COPY --from=backend /backend/var/lib/dpkg/status /backend-package-info
 RUN cat /backend-package-info >> /out/var/lib/dpkg/status
 
 
-# The final image
+# --- The final image ---
 FROM ${BASE_IMAGE} AS final
 
 COPY --from=out /out/ /

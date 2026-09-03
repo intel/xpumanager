@@ -96,9 +96,11 @@ docker build -t registry.local/xpumd:latest .
 ```
 
 By default the image gets the Level-Zero GPU backend from the released
-`libze-intel-gpu1` package. It can also be built from the
-[compute-runtime](https://github.com/intel/compute-runtime) sources, pinned to
-the revision that the experimental extensions in the Go bindings are generated from:
+`libze-intel-gpu1` package. It can also be built from driver packages
+loaded locally (see [README](../debs/README.md)) or using the
+[compute-runtime](https://github.com/intel/compute-runtime) built from
+sources and pinned to the revision that the experimental extensions in
+the Go bindings are generated from:
 
 ```bash
 docker build --build-arg BACKEND=src -t registry.local/xpumd:latest .

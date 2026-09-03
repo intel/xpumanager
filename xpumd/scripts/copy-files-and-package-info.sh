@@ -43,7 +43,7 @@ for pkg in $PKGS; do
                     "/usr/share/doc/$pkg/copyright" 2>/dev/null || true
             ;;
         # Non-(L)GPL packages: copyright notice only
-        libigdgmm12|libze-intel-gpu1|libcyaml1|libyaml-0-2)
+        libigc1|libigdgmm12|libigsc[01]|libmetee*|libze-intel-gpu1|libcyaml1|libyaml-0-2)
             install -Dt "$OUT/usr/share/doc/$pkg" \
                     "/usr/share/doc/$pkg/copyright"
             ;;
