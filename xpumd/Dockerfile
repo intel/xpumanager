@@ -20,9 +20,8 @@ ARG BASE_IMAGE=scratch
 #      FILES_DIR=debs/<package-dir>
 ARG BACKEND=deb
 
-
 # --- Base build stage with necessary distro setup / packages ---
-FROM golang:1.26-trixie AS builder-base
+FROM golang:1.27-trixie AS builder-base
 
 # Enable source packages, install IGSC build dependencies and extra Sysman dependencies
 # (Sysman does not link the latter but loads them at runtime: netlink for RAS and

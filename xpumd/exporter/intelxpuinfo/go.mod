@@ -1,6 +1,6 @@
 module github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo
 
-go 1.26.0
+go 1.27.0
 
 replace (
 	github.com/intel/xpumanager/xpumd/common => ../../common

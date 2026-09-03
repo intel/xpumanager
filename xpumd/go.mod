@@ -1,3 +1,3 @@
 module github.com/intel/xpumanager/xpumd
 
-go 1.26.0
+go 1.27.0
