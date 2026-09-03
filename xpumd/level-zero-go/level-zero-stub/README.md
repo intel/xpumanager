@@ -59,6 +59,34 @@ The `SYSMAN_STUB_CONFIG` environment variable is used in startup to specify the
 path to the configuration file. If it is not set, the stub starts with an empty
 state.
 
+> **IMPORTANT:** The stub driver is stateless and idempotent. The state is
+> owned by the configuration file alone. No Level-Zero API call may modify the
+> state, and every call must return exactly and only what the loaded
+> configuration says. That is, the same call with the same arguments always
+> returns the same thing.
+>
+> In other words, the stub driver does not remember what was written (through
+> setters), does not allocate or free anything that an API call created or
+> deleted, and does not consume the data that it hands out. Setters validate
+> their arguments and return. Values that an API returns are either configured
+> in the YAML or derived from the configuration and the arguments of the call
+> where applicable. Anything that a real driver tracks at run time is expressed
+> as an error injected with `ReturnValues` or as configured state, not as stub
+> state. Also, the stub driver does not cross-check the properties / configuration
+> between functions: e.g. `X.Properties` (returned by `XGetProperties()`) does
+> not affect how `X.GetState()` behaves (this is solely determined by `X.State`
+> from the configuration file). A call that must report an unsupported feature
+> is told so with `UnsupportedFeatures` or `ReturnValues`, or an empty value
+> for nullable fields.
+>
+> This keeps the tests reproducible and independent of their execution order,
+> and keeps the configuration file a complete description of what a test sees.
+>
+> **NOTE:** Functionality for plugging in custom state handlers (e.g. to enable
+> round-trip testing of setters and getters, or to simulate a device that
+> changes state over time) is planned for as a future enhancement. The
+> idempotent behavior described above is also an essential enabler for this.
+
 ## Configuration file format
 
 An example:
