@@ -35,6 +35,7 @@ type helmClient struct {
 	imageRepository string
 	imageTag        string
 	imagePullPolicy string
+	coverage        bool
 }
 
 // newHelmClient creates a helmClient capturing the test-specific fields and the
@@ -50,6 +51,7 @@ func newHelmClient(namespace, releaseName string, valuesPaths ...string) helmCli
 		imageRepository: suite.imageRepository,
 		imageTag:        suite.imageTag,
 		imagePullPolicy: suite.imagePullPolicy,
+		coverage:        suite.coverageEnabled(),
 	}
 }
 
@@ -132,6 +134,11 @@ func (h helmClient) mergeValues() (map[string]interface{}, error) {
 		// ParseStringInto preserves values as strings (e.g. not convert numeric image tags like "20260521" to numbers)
 		if err := strvals.ParseIntoString(overrides, vals); err != nil {
 			return nil, fmt.Errorf("failed to parse overrides: %w", err)
+		}
+	}
+	if h.coverage {
+		if err := injectCoverageHelmValues(vals); err != nil {
+			return nil, err
 		}
 	}
 	return vals, nil

@@ -39,6 +39,7 @@ var (
 	imageTag           = flag.String("image-tag", defaultImageTag, "Container image tag to deploy")
 	imagePullPolicy    = flag.String("image-pull-policy", "", "Container image pull policy override")
 	kubeContext        = flag.String("kube-context", "", "kubectl/helm context to use (for --use-existing-cluster)")
+	coverageDir        = flag.String("coverage-dir", "", "Collect coverage data of the deployed binaries into this directory (needs a 'make docker-build-cover' image)")
 
 	suite suiteConfig
 )
@@ -52,6 +53,7 @@ type suiteConfig struct {
 	imagePullPolicy string
 	kubeContext     string
 	kubeconfigPath  string // path to kubeconfig for tmp kind cluster, unused with existing cluster
+	coverageDir     string
 
 	k8s *k8sClient
 }
@@ -63,6 +65,15 @@ func newSuiteConfig() (suiteConfig, error) {
 	}
 	repoRoot := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", ".."))
 	fmt.Printf("Using xpumd source tree root directory: %s\n", repoRoot)
+
+	coverage := *coverageDir
+	if coverage != "" {
+		abs, err := filepath.Abs(coverage)
+		if err != nil {
+			return suiteConfig{}, fmt.Errorf("invalid coverage directory: %w", err)
+		}
+		coverage = abs
+	}
 
 	pullPolicy := *imagePullPolicy
 	if pullPolicy == "" {
@@ -81,6 +92,7 @@ func newSuiteConfig() (suiteConfig, error) {
 		imageTag:        *imageTag,
 		imagePullPolicy: pullPolicy,
 		kubeContext:     *kubeContext,
+		coverageDir:     coverage,
 	}, nil
 }
 
@@ -142,6 +154,12 @@ func (tc *testConfig) setup(t *testing.T) {
 	tc.addCleanup(func(t *testing.T) {
 		if err := tc.helm.uninstall(); err != nil {
 			t.Errorf("failed to delete helm release: %v", err)
+		}
+		if suite.coverageEnabled() {
+			// Coverage data is written on exit, so wait for the pods to terminate
+			if err := tc.k8sClient.waitForPodsGone(defaultTimeout); err != nil {
+				t.Errorf("failed to wait for the pods to terminate: %v", err)
+			}
 		}
 	})
 
@@ -210,6 +228,11 @@ func (s *suiteConfig) k8sClient(namespace string) (k8sClient, error) {
 		s.k8s = &kc
 	}
 	return s.k8s.withNamespace(namespace), nil
+}
+
+// coverageEnabled tells whether coverage data is collected.
+func (s *suiteConfig) coverageEnabled() bool {
+	return s.coverageDir != ""
 }
 
 // testdataFile returns the path to a testdata file for the current test,

@@ -64,7 +64,7 @@ func runMain(m *testing.M) (exitCode int) {
 
 	// Run in an existing cluster
 	if *useExistingCluster {
-		return m.Run()
+		return runTests(m)
 	}
 
 	// Setup and teardown a temporary kind cluster for the test suite
@@ -108,7 +108,28 @@ func runMain(m *testing.M) (exitCode int) {
 		}
 	}
 
-	return m.Run()
+	return runTests(m)
+}
+
+// runTests runs the tests and collects coverage data (if enabled), before the cluster teardown.
+func runTests(m *testing.M) int {
+	if !suite.coverageEnabled() {
+		return m.Run()
+	}
+
+	cc, err := newCoverageCollector()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to prepare coverage data collection: %v\n", err)
+		return 1
+	}
+	defer cc.stop()
+
+	exitCode := m.Run()
+	if err := cc.collect(); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to collect coverage data: %v\n", err)
+		return 1
+	}
+	return exitCode
 }
 
 // TestMetrics verifies the Prometheus metrics exposed by xpumd.

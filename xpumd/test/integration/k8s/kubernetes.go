@@ -137,6 +137,25 @@ func (kc k8sClient) waitForRollout(t *testing.T, name string, timeout time.Durat
 	})
 }
 
+// waitForPodsGone waits until no pods are left in the namespace.
+func (kc k8sClient) waitForPodsGone(timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		pods, err := kc.CoreV1().Pods(kc.namespace).List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			return err
+		}
+		if len(pods.Items) == 0 {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("timed out after %v waiting for %d pod(s) in namespace %q to terminate",
+				timeout, len(pods.Items), kc.namespace)
+		}
+		time.Sleep(time.Second)
+	}
+}
+
 func (kc k8sClient) createConfigMap(name string, data map[string]string) error {
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -223,14 +242,19 @@ func (kc k8sClient) execShell(t *testing.T, pod, container, script string) strin
 	return string(stdout)
 }
 
-// readFile reads a file from a container by execing "cat <path>". It mirrors
-// copyFile but in the opposite direction. Unlike copyFile it returns an error
-// instead of failing the test, so callers can poll for a file that may not
-// exist (or be readable) yet.
+// readFile reads a file from a container by execing "cat <path>" and
+// capturing stdout. It mirrors copyFile but in the opposite direction.
+// Unlike copyFile it returns an error instead of failing the test, so callers
+// can poll for a file that may not exist (or be readable) yet.
 func (kc k8sClient) readFile(ctx context.Context, pod, container, remotePath string) ([]byte, error) {
-	stdout, stderr, err := kc.execIO(ctx, pod, container, []string{"cat", remotePath}, nil)
+	return kc.execCommand(ctx, pod, container, "cat", remotePath)
+}
+
+// execCommand runs a command in a container and returns its stdout.
+func (kc k8sClient) execCommand(ctx context.Context, pod, container string, command ...string) ([]byte, error) {
+	stdout, stderr, err := kc.execIO(ctx, pod, container, command, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read %s/%s:%s: %w (stderr: %q)", pod, container, remotePath, err, stderr)
+		return nil, fmt.Errorf("failed to run %q in %s/%s: %w (stderr: %q)", command, pod, container, err, stderr)
 	}
 	return stdout, nil
 }
@@ -339,6 +363,10 @@ func (kc k8sClient) runXpuinfoCLI(ctx context.Context, t *testing.T, name, nodeN
 				},
 			}},
 		},
+	}
+
+	if suite.coverageEnabled() {
+		injectCoverageIntoPodSpec(&pod.Spec)
 	}
 
 	if _, err := kc.CoreV1().Pods(kc.namespace).Create(ctx, pod, metav1.CreateOptions{}); err != nil {
