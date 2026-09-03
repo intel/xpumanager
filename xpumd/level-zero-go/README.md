@@ -40,13 +40,13 @@ for details.
 
 Re-generate the bindings with
 
-```base
+```bash
 make generate
 ```
 
 or
 
-```base
+```bash
 make generate-dockerized
 ```
 
@@ -65,7 +65,7 @@ make generate-dockerized
 
 **Is Windows supported?**
 
-No yet.
+Not yet.
 
 **What Level-Zero features are supported?**
 
