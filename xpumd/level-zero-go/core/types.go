@@ -3,7 +3,7 @@
 
 package core
 
-import "github.com/google/uuid"
+import "uuid"
 
 // DeviceUuid declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-uuid-t

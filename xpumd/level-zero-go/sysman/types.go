@@ -5,8 +5,8 @@ package sysman
 
 import (
 	"unsafe"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
 )
 

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 	"unsafe"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/intel/level-zero-go/core"
 	th "github.com/intel/level-zero-go/internal/testhelper"
 	"github.com/stretchr/testify/assert"
