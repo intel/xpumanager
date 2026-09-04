@@ -29,6 +29,8 @@
 #include <string>
 #include <sysman.h>
 
+static constexpr int DEVICE_INFO_COL_WIDTH = 84;
+
 /**
  * @brief This structure serves two purposes:
  * 1. It defines the command parsing for discovery commands.
@@ -242,7 +244,8 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 	// Table-based output for discovery command 'xpu-smi discovery'
 	if (jsonObj->contains("device_list")) {
 		TableBuilder table;
-		table.addColumn("Device ID", 9, Align::Left).addColumn("Device Information", 84, Align::Left);
+		table.addColumn("Device ID", 9, Align::Left)
+			.addColumn("Device Information", DEVICE_INFO_COL_WIDTH, Align::Left);
 
 		bool firstDevice = true;
 		for (auto &device : (*jsonObj)["device_list"]) {
@@ -275,7 +278,10 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		PRINT("{}", table.toString().c_str());
 	} else {
 		TableBuilder table;
-		table.addColumn("Device ID", 9, Align::Left).addColumn("Device Information", 84, Align::Left);
+		table.addColumn("Device ID", 9, Align::Left)
+			.addColumn("Device Information", DEVICE_INFO_COL_WIDTH, Align::Left);
+		// Wrap long values (e.g. GFX Data firmware version) instead of truncating them.
+		table.disableAutoSizing().setColumnWrap(1, true);
 
 		std::string deviceId = jsonObj->contains("device_id") ? valueToString((*jsonObj)["device_id"]) : "";
 
@@ -308,6 +314,8 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("gfx_firmware_name", "GFX Firmware Name");
 		addField("gfx_firmware_version", "GFX Firmware Version");
 		addField("gfx_firmware_status", "GFX Firmware Status");
+		addField("gfx_data_firmware_name", "GFX Data Firmware Name");
+		addField("gfx_data_firmware_version", "GFX Data Firmware Version");
 		table.addRow("", "");
 
 		// Group 3: PCIe Information

@@ -88,6 +88,8 @@ $ xpu-smi discovery -d 0
 |           | GFX Firmware Name: GFX                                                               |
 |           | GFX Firmware Version:                                                                |
 |           | GFX Firmware Status: normal                                                          |
+|           | GFX Data Firmware Name: GFX_DATA                                                     |
+|           | GFX Data Firmware Version: Major : , OEM Manufacturing Data : , Major VCN :          |
 |           |                                                                                      |
 |           | PCI BDF Address: 0000:03:00.0                                                        |
 |           | PCI Slot: PCIEx16(G5)                                                                |

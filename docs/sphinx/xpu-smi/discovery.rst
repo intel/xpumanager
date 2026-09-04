@@ -182,7 +182,8 @@ grouped and ordered as follows:
        Stepping, SKU Type
    * - Driver and Firmware
      - Driver Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
-       GFX Firmware Version, GFX Firmware Status
+       GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
+       GFX Data Firmware Version
    * - PCIe Information
      - PCI BDF Address, PCI Slot, PCIe Generation, PCIe Max Link Width,
        PCIe Max Bandwidth
