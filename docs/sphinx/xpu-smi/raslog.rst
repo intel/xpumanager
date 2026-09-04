@@ -1,10 +1,10 @@
 RAS Log
 =======
 
-Collect GPU RAS (Reliability, Availability, Serviceability) hardware error records
-and write the raw binary payload to a file.
-Reading the hardware log drains the error buffer, so a destination file is
-always required to ensure records are not lost.
+Collect GPU RAS (Reliability, Availability, Serviceability) hardware error records.
+By default the read is non-destructive (peek): records remain in the hardware error
+buffer and can be read again by subsequent calls.  Use ``--drain`` to consume records
+from the buffer; a ``--file`` destination is required in that mode to avoid data loss.
 
 .. note::
 
@@ -15,11 +15,12 @@ Synopsis
 
 .. code-block:: text
 
-   xpu-smi raslog -t cper -f [fileName]
-   xpu-smi raslog -t cper -f [fileName] -j
-   xpu-smi raslog -t cper -f [fileName] --peek
-   xpu-smi raslog -t cper -f [fileName] --instance [name]
-   xpu-smi raslog -t cper -f [fileName] --buffer-size-kb [kb]
+   xpu-smi raslog [-t cper]
+   xpu-smi raslog [-t cper] -j
+   xpu-smi raslog [-t cper] -f [fileName]
+   xpu-smi raslog [-t cper] -f [fileName] --drain
+   xpu-smi raslog [-t cper] [-f fileName] --instance [name]
+   xpu-smi raslog [-t cper] [-f fileName] --buffer-size-kb [kb]
 
 Options
 -------
@@ -41,18 +42,15 @@ Options
 
 .. option:: -f <fileName>, --file <fileName>
 
-   The file to write the raw hardware log data into. This option is required.
-   Reading the hardware log is destructive: records are consumed from the
-   hardware error buffer and cannot be recovered if the file write fails, so
-   the file path is validated before any data is read. Use ``--peek`` to read
-   without consuming.
+   The file to write the raw hardware log data into. Optional in the default
+   peek mode; required with ``--drain`` since consumed records cannot be
+   recovered. When provided, the path is validated before any data is read.
 
-.. option:: --peek
+.. option:: --drain
 
-   Read records without consuming them. Records remain in the hardware error
-   buffer after the read and will be returned again by subsequent calls.
-   Requires driver support (``isPeekSupported`` in the info log properties);
-   returns an error on systems where it is unavailable.
+   Read and consume records from the hardware error buffer (destructive mode).
+   Records will not be returned by subsequent reads. ``--file`` is required
+   in this mode to ensure no records are lost.
 
 .. option:: --instance <name>
 
@@ -71,10 +69,18 @@ Options
 Output
 ------
 
-Without ``--json``, a single status line is printed:
+Without ``--json``, a single status line is printed. The exact wording depends on
+whether ``--file`` and ``--drain`` were supplied:
 
 .. code-block:: text
 
+   # peek (default), no --file
+   CPER buffer (4096 bytes, 3 records) collected (records not consumed).
+
+   # peek with --file
+   CPER buffer (4096 bytes, 3 records) copied (records not consumed) to file: cper.bin
+
+   # --drain with --file
    CPER buffer (4096 bytes, 3 records) written to file: cper.bin
 
 With ``--json``, a JSON object is printed to stdout:
@@ -84,6 +90,7 @@ With ``--json``, a JSON object is printed to stdout:
    {
        "status": "OK",
        "bytes": 4096,
+       "buffer_bytes": 4096,
        "records": 3,
        "file": "cper.bin",
        "cper_records": [
@@ -108,11 +115,14 @@ With ``--json``, a JSON object is printed to stdout:
      - ``"OK"`` on a complete read; ``"PARTIAL"`` if some records were too
        large to fit in the buffer and were dropped.
    * - ``bytes``
-     - Total bytes written to the output file.
+     - Bytes written to the output file. Zero when ``--file`` is not provided.
+   * - ``buffer_bytes``
+     - Bytes collected from the hardware error buffer, regardless of whether a
+       file was written. Equal to ``bytes`` when a file was written.
    * - ``records``
      - Number of error records collected.
    * - ``file``
-     - Path of the output file.
+     - Path of the output file. Present only when ``--file`` was provided.
    * - ``warning``
      - Present only when ``status`` is ``"PARTIAL"``. Describes the reason
        records were dropped.
@@ -126,7 +136,8 @@ With ``--json``, a JSON object is printed to stdout:
    * - Field
      - Description
    * - ``offset``
-     - Byte offset of this record within the output file.
+     - Byte offset of this record within the collected CPER blob. When ``--file``
+       is provided this matches the byte offset within the output file.
    * - ``length``
      - Length of this record in bytes.
    * - ``bdf``
@@ -173,26 +184,44 @@ On failure, a JSON error object is printed to stdout when ``--json`` is active:
 Examples
 --------
 
-Collect hardware error records to a file:
+Peek at hardware error records (non-destructive, no file required):
 
 .. code-block:: shell
 
-   xpu-smi raslog -t cper -f cper.bin
+   xpu-smi raslog
 
-Collect and print a JSON summary:
+Peek and print a JSON summary:
 
 .. code-block:: shell
 
-   xpu-smi raslog -t cper -f cper.bin -j
+   xpu-smi raslog -j
+
+Peek and save the raw binary to a file:
+
+.. code-block:: shell
+
+   xpu-smi raslog -f cper.bin
+
+Drain (consume) records into a file:
+
+.. code-block:: shell
+
+   xpu-smi raslog --drain -f cper.bin
+
+Drain and print a JSON summary:
+
+.. code-block:: shell
+
+   xpu-smi raslog --drain -f cper.bin -j
 
 Collect from a named trace instance:
 
 .. code-block:: shell
 
-   xpu-smi raslog -t cper -f cper.bin --instance xpu-collection
+   xpu-smi raslog -f cper.bin --instance xpu-collection
 
 Collect with a specific buffer size:
 
 .. code-block:: shell
 
-   xpu-smi raslog -t cper -f cper.bin --buffer-size-kb 8192
+   xpu-smi raslog -f cper.bin --buffer-size-kb 8192

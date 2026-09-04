@@ -42,10 +42,12 @@ struct FakeArgs
 
 TEST_SUITE("cmdRasLog::run — argument validation")
 {
-	TEST_CASE("no arguments missing --file → ZE_RESULT_ERROR_INVALID_ARGUMENT")
+	TEST_CASE("no arguments → peek is default, passes argument parsing")
 	{
+		// Peek is the default; --file is not required. Fails past CLI at the driver layer
+		// (no real GPU in tests), but the exit code must not be INVALID_ARGUMENT.
 		FakeArgs fa{"xpu-smi", "raslog"};
-		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+		CHECK(cmdRasLog{}.run(&fa.args) != static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 
 	TEST_CASE("--help flag shows help → ZE_RESULT_SUCCESS")
@@ -60,10 +62,11 @@ TEST_SUITE("cmdRasLog::run — argument validation")
 		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_SUCCESS));
 	}
 
-	TEST_CASE("missing --file is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
+	TEST_CASE("-t cper without --file passes argument parsing")
 	{
+		// Peek is default; -t cper without --file is valid. Fails at driver layer, not CLI layer.
 		FakeArgs fa{"xpu-smi", "raslog", "-t", "cper"};
-		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+		CHECK(cmdRasLog{}.run(&fa.args) != static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 
 	TEST_CASE("unknown --type is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
@@ -98,30 +101,50 @@ TEST_SUITE("cmdRasLog::run — argument validation")
 		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 
-	TEST_CASE("--peek without --file is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
+	TEST_CASE("--peek is rejected (unrecognized flag) → ZE_RESULT_ERROR_INVALID_ARGUMENT")
 	{
-		// --peek is a valid flag but --file is still required.
+		// --peek was removed; peek is now the default and the flag no longer exists.
 		FakeArgs fa{"xpu-smi", "raslog", "--peek"};
 		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 
-	TEST_CASE("--peek with --file passes argument parsing")
+	TEST_CASE("--peek --drain -f /dev/null is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
+	{
+		// --peek is unrecognized; the combination is always rejected.
+		FakeArgs fa{"xpu-smi", "raslog", "--peek", "--drain", "-f", "/dev/null"};
+		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+	}
+
+	TEST_CASE("--drain without --file is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
+	{
+		// Drain consumes records; --file is required so they are not lost.
+		FakeArgs fa{"xpu-smi", "raslog", "--drain"};
+		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+	}
+
+	TEST_CASE("--drain with --file passes argument parsing")
+	{
+		FakeArgs fa{"xpu-smi", "raslog", "--drain", "-f", "/dev/null"};
+		CHECK(cmdRasLog{}.run(&fa.args) != static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+	}
+
+	TEST_CASE("-f /dev/null passes argument parsing")
 	{
 		// Argument parsing must succeed; the run will fail past the CLI layer because
 		// there is no real driver, but the exit code must not be INVALID_ARGUMENT.
-		FakeArgs fa{"xpu-smi", "raslog", "--peek", "-f", "/dev/null"};
+		FakeArgs fa{"xpu-smi", "raslog", "-f", "/dev/null"};
 		CHECK(cmdRasLog{}.run(&fa.args) != static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 
-	TEST_CASE("--peek combined with --type cper passes argument parsing")
+	TEST_CASE("--type cper with -f /dev/null passes argument parsing")
 	{
-		FakeArgs fa{"xpu-smi", "raslog", "-t", "cper", "--peek", "-f", "/dev/null"};
+		FakeArgs fa{"xpu-smi", "raslog", "-t", "cper", "-f", "/dev/null"};
 		CHECK(cmdRasLog{}.run(&fa.args) != static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 
-	TEST_CASE("--peek combined with unknown --type is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
+	TEST_CASE("unknown --type with -f is rejected → ZE_RESULT_ERROR_INVALID_ARGUMENT")
 	{
-		FakeArgs fa{"xpu-smi", "raslog", "-t", "unknown_type", "--peek", "-f", "/dev/null"};
+		FakeArgs fa{"xpu-smi", "raslog", "-t", "unknown_type", "-f", "/dev/null"};
 		CHECK(cmdRasLog{}.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
 }

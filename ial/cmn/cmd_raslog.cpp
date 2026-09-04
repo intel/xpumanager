@@ -78,59 +78,167 @@ std::string_view recordTypeToString(zes_intel_info_log_record_type_exp_t t)
 }
 
 /**
+ * @brief Prints a plain-text status line for a successful (or partial) CPER collection.
+ *
+ * @param[in] partial     True if some records were dropped due to buffer overflow.
+ * @param[in] peek        True if the read was non-destructive (records not consumed).
+ * @param[in] byteCount   Bytes collected from the hardware error buffer.
+ * @param[in] recordCount Number of records collected.
+ * @param[in] fileName    Output file path; empty string when no file was written.
+ */
+void reportCperSuccessText(bool partial, bool peek, size_t byteCount, size_t recordCount, const std::string &fileName)
+{
+	if (byteCount == 0) {
+		if (fileName.empty()) {
+			PRINT("CPER buffer is empty (0 bytes, 0 records).\n");
+		} else {
+			PRINT("CPER buffer is empty (0 bytes, 0 records). Wrote empty file: {}\n", fileName);
+		}
+	} else if (partial) {
+		if (fileName.empty()) {
+			PRINT(
+				"CPER buffer partially collected ({} bytes, {} records, some records dropped, records not consumed).\n",
+				byteCount, recordCount);
+		} else {
+			PRINT("CPER buffer partially {} ({} bytes, {} records, some records dropped). {} to: {}\n",
+				  peek ? "collected" : "read", byteCount, recordCount, peek ? "Copied" : "Written", fileName);
+		}
+	} else {
+		if (fileName.empty()) {
+			PRINT("CPER buffer ({} bytes, {} records) collected (records not consumed).\n", byteCount, recordCount);
+		} else {
+			PRINT("CPER buffer ({} bytes, {} records) {} to file: {}\n", byteCount, recordCount,
+				  peek ? "copied (records not consumed)" : "written", fileName);
+		}
+	}
+}
+
+/**
  * @brief Formats and prints the result of a successful (or partial) CPER collection.
  */
 void reportCperSuccess(bool jsonOutput, bool partial, bool peek, size_t byteCount, size_t recordCount,
 					   const std::vector<zes_intel_info_log_metadata_exp> &metadata, const std::string &fileName)
 {
-	if (jsonOutput) {
-		nlohmann::ordered_json obj;
-		obj["status"] = partial ? "PARTIAL" : "OK";
-		obj["bytes"] = byteCount;
-		obj["records"] = recordCount;
-		obj["file"] = fileName;
-		if (partial) {
-			obj["warning"] = "Some records were too large for the buffer and were dropped";
-		}
-		nlohmann::ordered_json recs = nlohmann::ordered_json::array();
-		for (const auto &m : metadata) {
-			nlohmann::ordered_json rec;
-			rec["offset"] = m.offset;
-			rec["length"] = m.lengthOfData;
-			rec["bdf"] = formatBdf(m.address);
-			rec["uuid"] = formatUuid(m.uuid);
-			rec["timestamp_ns"] = m.timestamp;
-			rec["record_type"] = recordTypeToString(m.recordType);
-			recs.push_back(std::move(rec));
-		}
-		obj["cper_records"] = std::move(recs);
-		PRINT("{}\n", obj.dump(4));
-	} else if (byteCount == 0) {
-		PRINT("CPER buffer is empty (0 bytes, 0 records). Wrote empty file: {}\n", fileName);
-	} else if (partial) {
-		PRINT("CPER buffer partially {} ({} bytes, {} records, some records dropped). {} to: {}\n",
-			  peek ? "peeked" : "read", byteCount, recordCount, peek ? "Copied" : "Written", fileName);
-	} else {
-		PRINT("CPER buffer ({} bytes, {} records) {} to file: {}\n", byteCount, recordCount,
-			  peek ? "peeked (records not consumed)" : "written", fileName);
+	if (!jsonOutput) {
+		reportCperSuccessText(partial, peek, byteCount, recordCount, fileName);
+		return;
 	}
+	const size_t bytesWritten = fileName.empty() ? 0 : byteCount;
+	nlohmann::ordered_json obj;
+	obj["status"] = partial ? "PARTIAL" : "OK";
+	obj["bytes"] = bytesWritten;
+	obj["buffer_bytes"] = byteCount;
+	obj["records"] = recordCount;
+	if (!fileName.empty()) {
+		obj["file"] = fileName;
+	}
+	if (partial) {
+		obj["warning"] = "Some records were too large for the buffer and were dropped";
+	}
+	nlohmann::ordered_json recs = nlohmann::ordered_json::array();
+	for (const auto &m : metadata) {
+		nlohmann::ordered_json rec;
+		rec["offset"] = m.offset;
+		rec["length"] = m.lengthOfData;
+		rec["bdf"] = formatBdf(m.address);
+		rec["uuid"] = formatUuid(m.uuid);
+		rec["timestamp_ns"] = m.timestamp;
+		rec["record_type"] = recordTypeToString(m.recordType);
+		recs.push_back(std::move(rec));
+	}
+	obj["cper_records"] = std::move(recs);
+	PRINT("{}\n", obj.dump(4));
 }
 
 /**
- * @brief Reads (or peeks) the CPER hardware log and writes the raw blob to a file.
+ * @brief Reports a file I/O error via JSON or plain text.
  *
- * The output file is validated before any records are read so that a bad path or
- * missing permissions is caught first. Without --peek, reading is destructive:
- * records are consumed from the kernel ring buffer. With --peek, records remain
- * in the buffer for subsequent reads.
+ * @param[in] jsonOutput True to emit a JSON error object; false for a plain-text ERR line.
+ * @param[in] message    Human-readable description of the failure.
+ * @param[in] fileName   Path of the file that could not be opened or written.
+ * @retval ZE_RESULT_ERROR_UNKNOWN Always.
+ */
+ze_result_t reportFileError(bool jsonOutput, std::string_view message, const std::string &fileName)
+{
+	if (jsonOutput) {
+		nlohmann::ordered_json obj;
+		obj["ze_result"] = static_cast<int>(ZE_RESULT_ERROR_UNKNOWN);
+		obj["error"] = message;
+		obj["file"] = fileName;
+		PRINT("{}\n", obj.dump(4));
+	} else {
+		ERR("{}: {}\n", message, fileName);
+	}
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
+ * @brief Validates that @p fileName is writable before the driver read.
  *
- * @param args Command arguments (provides the sysman driver instance).
- * @param fileName File to export the raw CPER blob to.
+ * Opens the file in append mode to check writability without truncating it.
+ * @p preExisted lets the caller remove an empty artifact on subsequent failure.
+ *
+ * @param[in]  fileName   Path to validate.
+ * @param[in]  jsonOutput True to report errors as JSON; false for plain text.
+ * @param[out] preExisted Set to true if the file existed before this call.
+ * @retval ZE_RESULT_SUCCESS       File is writable.
+ * @retval ZE_RESULT_ERROR_UNKNOWN File could not be opened.
+ */
+ze_result_t probeOutputFile(const std::string &fileName, bool jsonOutput, bool &preExisted)
+{
+	std::error_code fsEc;
+	const bool exists = std::filesystem::exists(fileName, fsEc);
+	// If existence cannot be determined (fsEc set), assume the file pre-existed so we
+	// never delete a file we did not create.
+	preExisted = exists || static_cast<bool>(fsEc);
+	std::ofstream check(fileName, std::ios::binary | std::ios::app);
+	if (!check.is_open()) {
+		return reportFileError(jsonOutput, "Cannot open output file for writing", fileName);
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Truncates @p fileName and writes @p cperBlob into it.
+ *
+ * @param[in] fileName   Destination path.
+ * @param[in] cperBlob   Raw CPER data to write; an empty blob produces an empty file.
+ * @param[in] jsonOutput True to report errors as JSON; false for plain text.
+ * @retval ZE_RESULT_SUCCESS       Data written successfully.
+ * @retval ZE_RESULT_ERROR_UNKNOWN File could not be opened or the write failed.
+ */
+ze_result_t flushCperBlob(const std::string &fileName, const std::vector<uint8_t> &cperBlob, bool jsonOutput)
+{
+	std::ofstream out(fileName, std::ios::binary | std::ios::trunc);
+	if (!out.is_open()) {
+		return reportFileError(jsonOutput, "Cannot open output file for writing", fileName);
+	}
+	if (!cperBlob.empty()) {
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		out.write(reinterpret_cast<const char *>(cperBlob.data()), static_cast<std::streamsize>(cperBlob.size()));
+	}
+	out.close();
+	if (!out.good()) {
+		return reportFileError(jsonOutput, "Failed to write CPER buffer to file", fileName);
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads (or peeks) the CPER hardware log, optionally writing the raw blob to a file.
+ *
+ * Peek mode (default) is non-destructive: records remain in the hardware buffer after the read.
+ * Drain mode consumes records; a file path must be provided so no data is lost.
+ * When a file path is given, it is validated before any records are read so that a missing
+ * directory or bad permissions is caught first.
+ *
+ * @param args       Command arguments (provides the sysman driver instance).
+ * @param fileName   Destination file for the raw CPER blob; empty string skips the file write.
  * @param jsonOutput Whether to print status in JSON format.
- * @param peek If true, read without consuming records (requires driver isPeekSupported).
+ * @param peek       If true (default), read without consuming records.
  * @retval ZE_RESULT_SUCCESS
  * @retval ZE_RESULT_WARNING_DROPPED_DATA some records were too large for the buffer
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE CPER not supported, or peek not supported on this system
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE CPER not supported, or peek not supported
  * @retval ZE_RESULT_ERROR_UNKNOWN  output file could not be opened or written
  */
 ze_result_t runCper(arg_struct *args, const std::string &fileName, bool jsonOutput, const std::string &instance,
@@ -138,26 +246,10 @@ ze_result_t runCper(arg_struct *args, const std::string &fileName, bool jsonOutp
 {
 	TRACING();
 
-	// Validate the output path is writable before draining — non-truncating open so
-	// existing file content survives if the CPER read fails.  The real write (with
-	// truncation) happens after we hold the records in memory.
-	// ios::app may create an empty file; track that so we can remove the artifact if
-	// the drain fails (avoids leaving an empty file that looks like a successful run).
-	std::error_code fsEc;
-	const bool filePreExisted = std::filesystem::exists(fileName, fsEc);
-	{
-		std::ofstream check(fileName, std::ios::binary | std::ios::app);
-		if (!check.is_open()) {
-			if (jsonOutput) {
-				nlohmann::ordered_json obj;
-				obj["ze_result"] = static_cast<int>(ZE_RESULT_ERROR_UNKNOWN);
-				obj["error"] = "Cannot open output file";
-				obj["file"] = fileName;
-				PRINT("{}\n", obj.dump(4));
-			} else {
-				ERR("Cannot open output file for writing: {}\n", fileName);
-			}
-			return ZE_RESULT_ERROR_UNKNOWN;
+	bool filePreExisted = false;
+	if (!fileName.empty()) {
+		if (const ze_result_t r = probeOutputFile(fileName, jsonOutput, filePreExisted); r != ZE_RESULT_SUCCESS) {
+			return r;
 		}
 	}
 
@@ -169,7 +261,8 @@ ze_result_t runCper(arg_struct *args, const std::string &fileName, bool jsonOutp
 
 	const bool partial = (result == ZE_RESULT_WARNING_DROPPED_DATA);
 	if (result != ZE_RESULT_SUCCESS && !partial) {
-		if (!filePreExisted) {
+		if (!fileName.empty() && !filePreExisted) {
+			std::error_code fsEc;
 			std::filesystem::remove(fileName, fsEc); // best-effort: remove empty artifact
 		}
 		const std::string_view errorMsg = [&]() -> std::string_view {
@@ -190,23 +283,10 @@ ze_result_t runCper(arg_struct *args, const std::string &fileName, bool jsonOutp
 		return result;
 	}
 
-	// Open for writing only now that we have records in memory.
-	std::ofstream out(fileName, std::ios::binary | std::ios::trunc);
-	if (!cperBlob.empty()) {
-		out.write(reinterpret_cast<const char *>(cperBlob.data()), static_cast<std::streamsize>(cperBlob.size()));
-	}
-	out.close();
-	if (!out.good()) {
-		if (jsonOutput) {
-			nlohmann::ordered_json obj;
-			obj["ze_result"] = static_cast<int>(ZE_RESULT_ERROR_UNKNOWN);
-			obj["error"] = "Failed to write file";
-			obj["file"] = fileName;
-			PRINT("{}\n", obj.dump(4));
-		} else {
-			ERR("Failed to write CPER buffer to file: {}\n", fileName);
+	if (!fileName.empty()) {
+		if (const ze_result_t r = flushCperBlob(fileName, cperBlob, jsonOutput); r != ZE_RESULT_SUCCESS) {
+			return r;
 		}
-		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
 	reportCperSuccess(jsonOutput, partial, peek, cperBlob.size(), metadata.size(), metadata, fileName);
@@ -228,7 +308,8 @@ void cmdRasLog::help(HELP helpType)
 	helpList.emplace_back(TITLE, "Collect GPU hardware RAS error records (CPER)");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Usage: %s raslog [Options]", progName.c_str());
-	helpList.emplace_back(HEADING, "%s raslog -t cper -f [fileName]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s raslog [-t cper] [-f fileName]", progName.c_str());
+	helpList.emplace_back(HEADING, "%s raslog [-t cper] --drain -f fileName", progName.c_str());
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Options:");
 
@@ -255,10 +336,9 @@ void cmdRasLog::help(HELP helpType)
 		.addRow("-j, --json", "Print result in JSON format")
 		.addRow("-t, --type",
 				"The hardware log type to collect: cper (Common Platform Error Record). Defaults to cper.")
-		.addRow("-f, --file", "The file to write the raw hardware log blob into. Reading a hardware log drains the "
-							  "buffer, so a file is required to persist the records.")
-		.addRow("--peek", "Read records without consuming them. Records remain in the buffer for subsequent reads. "
-						  "Requires driver support (isPeekSupported). Returns an error if unsupported.")
+		.addRow("-f, --file", "The file to write the raw hardware log blob into. Optional in the default peek mode; "
+							  "required for --drain since consumed records cannot be recovered.")
+		.addRow("--drain", "Consume records from the hardware buffer (destructive). Requires --file.")
 		.addRow("--instance",
 				"Named tracefs instance to collect from instead of the global trace buffer. Requires driver support.")
 		.addRow("--buffer-size-kb", "Total tracefs ring-buffer size in kilobytes across all per-CPU buffers. "
@@ -272,7 +352,7 @@ void cmdRasLog::help(HELP helpType)
  *
  * @retval ZE_RESULT_SUCCESS
  * @retval ZE_RESULT_WARNING_DROPPED_DATA some records were too large for the buffer
- * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT unknown --type or missing --file
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT unknown --type, or --drain without --file
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE CPER not available on this system
  * @retval ZE_RESULT_ERROR_UNKNOWN file open or write failure
  */
@@ -284,14 +364,14 @@ int cmdRasLog::run(arg_struct *args)
 	std::string instance;
 	uint32_t bufferSizeKbVal = 0;
 	bool jsonOutput = false;
-	bool peek = false;
+	bool drain = false;
 
 	CLI::App sub{"Collect GPU hardware RAS error records", "raslog"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", jsonOutput, "Print result in JSON format");
 	sub.add_option("-t,--type", type, "The hardware log type to collect (cper)");
 	sub.add_option("-f,--file", fileName, "The file to write the raw hardware log blob into");
-	sub.add_flag("--peek", peek, "Read records without consuming them (requires driver isPeekSupported)");
+	sub.add_flag("--drain", drain, "Consume records from the buffer (destructive). Requires --file.");
 	sub.add_option("--instance", instance, "Named tracefs instance (default: global buffer)");
 	sub.add_option("--buffer-size-kb", bufferSizeKbVal, "Total tracefs ring-buffer size in kilobytes")
 		->check(CLI::PositiveNumber);
@@ -307,10 +387,11 @@ int cmdRasLog::run(arg_struct *args)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	// Reading a hardware log is destructive, so require -f to avoid draining
-	// the records without persisting them.
-	if (fileName.empty()) {
-		ERR("raslog requires -f/--file: reading drains the hardware log buffer\n");
+	const bool peek = !drain;
+
+	// Drain mode consumes records; require --file so they are not lost.
+	if (!peek && fileName.empty()) {
+		ERR("raslog --drain requires -f/--file: consumed records cannot be recovered\n");
 		help();
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
