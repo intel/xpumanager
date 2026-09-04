@@ -6,6 +6,7 @@
  */
 
 #include "table_builder.h"
+#include <exception>
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -343,29 +344,37 @@ void exampleIncrementalRows()
 
 int main()
 {
-	std::cout << "===========================================================================\n";
-	std::cout << "GPU Monitoring Example using TableBuilder\n";
-	std::cout << "===========================================================================\n\n";
+	try {
+		std::cout << "===========================================================================\n";
+		std::cout << "GPU Monitoring Example using TableBuilder\n";
+		std::cout << "===========================================================================\n\n";
 
-	exampleBasicGpuInfo();
-	exampleProcessInfo();
-	exampleComprehensiveStatus();
-	exampleJsonOutput();
-	exampleFilteredData();
-	exampleEmptyTable();
-	exampleTableStatistics();
-	exampleGpuMonitoringStyle();
+		exampleBasicGpuInfo();
+		exampleProcessInfo();
+		exampleComprehensiveStatus();
+		exampleJsonOutput();
+		exampleFilteredData();
+		exampleEmptyTable();
+		exampleTableStatistics();
+		exampleGpuMonitoringStyle();
 
-	std::cout << "===========================================================================\n";
-	std::cout << "Static examples completed! Starting streaming examples...\n";
-	std::cout << "===========================================================================\n\n";
+		std::cout << "===========================================================================\n";
+		std::cout << "Static examples completed! Starting streaming examples...\n";
+		std::cout << "===========================================================================\n\n";
 
-	exampleLiveMonitoring();
-	exampleIncrementalRows();
+		exampleLiveMonitoring();
+		exampleIncrementalRows();
 
-	std::cout << "===========================================================================\n";
-	std::cout << "All examples completed successfully!\n";
-	std::cout << "===========================================================================\n";
+		std::cout << "===========================================================================\n";
+		std::cout << "All examples completed successfully!\n";
+		std::cout << "===========================================================================\n";
+	} catch (const std::exception &e) {
+		std::cerr << "Example failed: " << e.what() << "\n";
+		return 1;
+	} catch (...) {
+		std::cerr << "Example failed: unknown exception\n";
+		return 1;
+	}
 
 	return 0;
 }

@@ -1075,22 +1075,36 @@ TableBuilder::TableStats TableBuilder::getStats() const
 										   : 0.0;
 	return stats;
 }
-void TableBuilder::print() const noexcept
+namespace
 {
-	if (columns.empty()) {
-		std::cout << "[Empty Table - No Columns]\n";
-		return;
+	// Reporting must not throw either: std::cerr may have exceptions enabled.
+	void reportPrintFailure(const char *reason) noexcept
+	{
+		try {
+			std::cerr << "Failed to print table: " << reason << "\n";
+		} catch (...) { // NOLINT(bugprone-empty-catch)
+			// Nothing left to do if even the diagnostic fails.
+		}
 	}
-	std::cout << toString();
-}
+} // namespace
+
+void TableBuilder::print() const noexcept { printTo(std::cout); }
 
 void TableBuilder::printTo(std::ostream &os) const noexcept
 {
-	if (columns.empty()) {
-		os << "[Empty Table - No Columns]\n";
-		return;
+	// Rendering allocates and the stream may have exceptions enabled, so keep
+	// every throw inside this noexcept boundary rather than terminating.
+	try {
+		if (columns.empty()) {
+			os << "[Empty Table - No Columns]\n";
+			return;
+		}
+		os << toString();
+	} catch (const std::exception &e) {
+		reportPrintFailure(e.what());
+	} catch (...) {
+		reportPrintFailure("unknown exception");
 	}
-	os << toString();
 }
 
 std::string TableBuilder::toString() const

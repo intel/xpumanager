@@ -23,8 +23,8 @@
  * and creates an instance of the firmware class.
  */
 device::device()
-	: zeDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0), deviceProperties{}, igpu(false),
-	  survMode(false), amc(0), drmDevPath(""), firmwareInstance(new firmware())
+	: zeDriver(nullptr), zesDriver(nullptr), context(nullptr), zeDevice(0), zesDevice(0), deviceCount(0),
+	  deviceProperties{}, igpu(false), survMode(false), amc(0), drmDevPath{}, firmwareInstance(new firmware())
 {}
 
 /**

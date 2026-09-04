@@ -32,11 +32,13 @@ class LIBXPUM_API pci : public sysman
 private:
 	pci_addr_mei_device deviceProperties;
 	PciDowngradeState downgradeState;
-	uint32_t domain;
-	uint32_t bus;
-	uint32_t dev;
-	uint32_t func;
-	char bdfStr[BDF_STR_LEN];
+	// init() leaves these untouched when zesDevicePciGetProperties() fails, and callers
+	// ignore that failure, so they must start out valid rather than indeterminate.
+	uint32_t domain = 0;
+	uint32_t bus = 0;
+	uint32_t dev = 0;
+	uint32_t func = 0;
+	char bdfStr[BDF_STR_LEN] = {};
 	zes_driver_handle_t zesDriver = nullptr;
 	typedef ze_result_t (*pfnZesIntelDevicePciLinkSpeedUpdateExp_t)(zes_device_handle_t hDevice, ze_bool_t bDowngrade,
 																	zes_device_action_t *pPendingAction);

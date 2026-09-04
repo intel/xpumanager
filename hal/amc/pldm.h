@@ -153,7 +153,7 @@ private:
 	i2cdataPldmInfo *mI2cPldmRead, *mI2cPldmWrite;
 	std::mutex *progMutex;
 
-	uint8_t mFwuCmdLen;
+	uint8_t mFwuCmdLen = 0;
 	uint8_t instanceID;
 	bool mI2cMultiResp;
 	int mCardNum;
@@ -162,7 +162,7 @@ private:
 	struct fwuRequestUpdate mReqUpdate;
 	struct fwuPassCompTable mPassCompTable;
 	struct fwUpdComp mUpdComp;
-	uint8_t mFwuCurrentState;
+	uint8_t mFwuCurrentState = 0;
 	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
 	uint8_t mLastFwuCompletionCode;
 
@@ -171,7 +171,7 @@ private:
 	struct fruTableResponse mFruTableResponse;
 	struct fruTableMetadata mFruMetadata;
 	struct fruTable mFruTable;
-	uint16_t mFruCurrentDataLength;
+	uint16_t mFruCurrentDataLength = 0;
 	bool mFruTableInitialized;
 
 	// PLDM Platform datastructures
@@ -219,10 +219,10 @@ private:
 
 	//============== pldm Firmware Update ===========
 	// pldm FwPackage Parse
-	FILE *mCompFp;
+	FILE *mCompFp = nullptr;
 	std::optional<fwPkg> pkg;
-	struct compParseData *mCompParseData;
-	uint8_t mCurComp;
+	struct compParseData *mCompParseData = nullptr;
+	uint8_t mCurComp = 0;
 
 	uint8_t fwpkgParseInfo(const char *pkgFilePath);
 	uint8_t dumpPldmFwpkgInfo();
@@ -333,7 +333,9 @@ public:
 	std::vector<pldmSensorInfo> &getSensorInfoList() { return mSensorInfoList; }
 	uint8_t oemVrsyncCmd(uint8_t cmd);
 	int fwupdProgress() { return mProgPercent; }
-	int mProgPercent;
+	// pldminit() sets this, but the constructor ignores pldminit()'s failure return,
+	// so a caller polling fwupdProgress() after a failed init must not read garbage.
+	int mProgPercent = 0;
 	uint8_t amcGpuReset();
 };
 
