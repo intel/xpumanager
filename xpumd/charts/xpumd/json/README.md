@@ -1,3 +1,12 @@
+# Notes
+
+Newer Grafana versions can load old dashboards, but not vice versa.
+
+=> Dashboard updates need to state what Grafana version they need, and
+   are better done with the oldest supported Grafana version, see:
+   https://endoflife.date/grafana
+
+
 # Converting old-XPUM dashboards to new-XPUM metrics
 
 First convert metric + attribute names that have direct enough mapping

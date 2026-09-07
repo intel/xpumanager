@@ -116,14 +116,16 @@ for file in "$@"; do
 
 	echo "{{- end }}" >> "$dst"
 
-	# convert JSON content conflicting with Helm to Helm compatible format
-	# and add suitable Dashboard chart Helm variables to the configMap
+	# convert JSON content conflicting with Helm to Helm compatible format,
+	# add suitable Dashboard chart Helm variables to the configMap, converted
+	# to format accepted by Grafana v12+ as 'uid':
+	# https://grafana.com/docs/grafana/latest/upgrade-guide/upgrade-v12.0/#correct-uid-format
 	sed -i \
 	  -e 's/\({{[a-z_]\+}}\)/{{ printf "\1" }}/g' \
 	  -e 's/name:.*$/name: {{ include "'$prefix_macro'" . }}'"-${k8name}/" \
 	  -e 's/space:.*$/space: {{ .Values.'$grafana_namespace' }}/' \
-	  -e "s/${title}/Intel XPU Manager Daemon {{ .Chart.Version }}/" \
-	  -e "s/${uid}/"'xpumd-{{ .Chart.Version }}'"/" \
+	  -e "s/${title}/Intel XPU Manager Daemon {{ .Chart.Version }} GPU Metrics/" \
+	  -e "s/${uid}/"'xpumd-{{ regexReplaceAll "[^a-zA-Z0-9-]" .Chart.Version "-" }}/' \
 	  "$dst"
 done
 

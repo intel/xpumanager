@@ -2335,8 +2335,8 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Intel XPU Manager Daemon {{ .Chart.Version }}",
-      "uid": "xpumd-{{ .Chart.Version }}",
+      "title": "Intel XPU Manager Daemon {{ .Chart.Version }} GPU Metrics",
+      "uid": "xpumd-{{ regexReplaceAll "[^a-zA-Z0-9-]" .Chart.Version "-" }}",
       "version": 1
     }
 kind: ConfigMap
