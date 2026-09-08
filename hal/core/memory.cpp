@@ -615,6 +615,69 @@ ze_result_t memory::getMemoryUsagePerTile(std::map<uint32_t, MemoryUsageData> &t
 	return result;
 }
 
+/**
+ * @brief Gets memory used and utilization percentage for system memory
+ *
+ * This function retrieves the amount of memory used (in bytes) and the memory
+ * utilization percentage for a device's system memory. Only system memory
+ * (ZES_MEM_LOC_SYSTEM) is included. Since only iGPUs report system memory, and
+ * iGPUs are always single-tile, results are reported as a single tile-0 entry
+ * rather than per tile.
+ *
+ * @param [out] tileUsage Output map with a single tile-0 entry (usedBytes, utilizationPercent)
+ * @return ze_result_t ZE_RESULT_SUCCESS on successful retrieval, error code otherwise
+ */
+ze_result_t memory::getSystemMemoryUsage(std::map<uint32_t, MemoryUsageData> &tileUsage)
+{
+	TRACING();
+	ze_result_t result = ZE_RESULT_SUCCESS;
+
+	tileUsage.clear();
+
+	uint64_t totalUsed = 0;
+	uint64_t totalCapacity = 0;
+	bool foundSystemMemory = false;
+
+	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+		zes_mem_properties_t properties = {};
+		result = getProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		if (properties.location != ZES_MEM_LOC_SYSTEM) {
+			continue;
+		}
+
+		zes_mem_state_t state = {};
+		result = getState(memoryModules[i], &state);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			continue;
+		}
+
+		foundSystemMemory = true;
+
+		// Guard against underflow if a driver ever reports free > size (matches getMemoryUsed()).
+		totalUsed += (state.size >= state.free) ? (state.size - state.free) : 0;
+
+		// Prefer physicalSize (hardware capacity) over state.size (allocatable memory) for accurate utilization.
+		// physicalSize may be 0 on older drivers or unsupported hardware, in which case fall back to state.size.
+		totalCapacity += (properties.physicalSize > 0) ? properties.physicalSize : state.size;
+	}
+
+	if (foundSystemMemory) {
+		double utilization = 0.0;
+		if (totalCapacity > 0) {
+			utilization = (static_cast<double>(totalUsed) / static_cast<double>(totalCapacity)) * 100.0;
+		}
+		tileUsage[0] = {.usedBytes = totalUsed, .utilizationPercent = utilization};
+	}
+
+	return result;
+}
+
 namespace {
 /**
  * @brief One memory type name and the value each Level Zero source uses for it

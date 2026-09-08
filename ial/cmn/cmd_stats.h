@@ -339,7 +339,7 @@ private:
 	static ze_result_t collectFanMetrics(fan *fanHandler,
 										 std::map<uint32_t, std::vector<double>> &fanSpeedPercentSamplesPerFan);
 	static ze_result_t
-	collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
+	collectMemoryMetricsPerTile(memory *memoryHandler, bool isIGPU, TileMemoryBandwidthSnapshot &baseline,
 								std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,
 								std::map<uint32_t, std::vector<double>> &memoryWriteKBpsPerTile,
 								std::map<uint32_t, std::vector<double>> &memoryBandwidthPercentPerTile,

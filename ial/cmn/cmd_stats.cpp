@@ -609,6 +609,7 @@ static std::string makeTileKey(uint32_t tileId) { return xpum::compat::format("t
  * Memory used (MiB) and utilization % are directly sampled.
  *
  * @param [in] memoryHandler The HAL memory instance
+ * @param [in] isIGPU True if the device is an integrated GPU
  * @param [in,out] baseline Previous sample snapshot; updated with current values on each call
  * @param [out] memoryReadKBpsPerTile Map of tile_id -> vector of read throughput samples in kB/s
  * @param [out] memoryWriteKBpsPerTile Map of tile_id -> vector of write throughput samples in kB/s
@@ -618,7 +619,7 @@ static std::string makeTileKey(uint32_t tileId) { return xpum::compat::format("t
  * @return ze_result_t ZE_RESULT_SUCCESS if collection successful
  */
 ze_result_t
-cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidthSnapshot &baseline,
+cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, bool isIGPU, TileMemoryBandwidthSnapshot &baseline,
 									  std::map<uint32_t, std::vector<double>> &memoryReadKBpsPerTile,
 									  std::map<uint32_t, std::vector<double>> &memoryWriteKBpsPerTile,
 									  std::map<uint32_t, std::vector<double>> &memoryBandwidthPercentPerTile,
@@ -682,6 +683,21 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, TileMemoryBandwidth
 			memoryUsedMiBPerTile[tileId].push_back(usedMiB);
 			memoryUtilPercentPerTile[tileId].push_back(usage.utilizationPercent);
 			DBG("Tile {} memory used: {:.2f} MiB, utilization: {:.2f}%\n", tileId, usedMiB, usage.utilizationPercent);
+		}
+	} else if (isIGPU && result == ZE_RESULT_SUCCESS) {
+		// getMemoryUsagePerTile only reports ZES_MEM_LOC_DEVICE modules, so it comes back
+		// empty (not an error) on iGPUs whose memory is reported as ZES_MEM_LOC_SYSTEM.
+		// Fall back to the system-memory equivalent, which reports the same per-tile data
+		// but aggregates ZES_MEM_LOC_SYSTEM modules instead.
+		std::map<uint32_t, MemoryUsageData> tileUsageSystem;
+		if (memoryHandler->getSystemMemoryUsage(tileUsageSystem) == ZE_RESULT_SUCCESS) {
+			for (const auto &[tileId, usage] : tileUsageSystem) {
+				double usedMiB = static_cast<double>(usage.usedBytes) / BYTES_PER_MIB;
+				memoryUsedMiBPerTile[tileId].push_back(usedMiB);
+				memoryUtilPercentPerTile[tileId].push_back(usage.utilizationPercent);
+				DBG("Tile {} memory used (fallback): {:.2f} MiB, utilization: {:.2f}%\n", tileId, usedMiB,
+					usage.utilizationPercent);
+			}
 		}
 	}
 
@@ -1180,7 +1196,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		collectTemperatureMetricsPerTile(tempHandler, metrics.gpuCoreTempPerTile, metrics.memoryTempPerTile,
 										 metrics.vrTempPerTile, metrics.compositeTempPerTile);
 		collectFanMetrics(fanHandler, metrics.fanSpeedPercentSamplesPerFan);
-		collectMemoryMetricsPerTile(memoryHandler, memoryBaseline, metrics.memoryReadKBpsPerTile,
+		collectMemoryMetricsPerTile(memoryHandler, dev->isIGPU(), memoryBaseline, metrics.memoryReadKBpsPerTile,
 									metrics.memoryWriteKBpsPerTile, metrics.memoryBandwidthPercentPerTile,
 									metrics.memoryUsedMiBPerTile, metrics.memoryUtilPercentPerTile);
 		collectPcieMetrics(pciHandler, device->zesDeviceHdl, pcieBaseline, metrics.pcieReadKBpsSamples,
@@ -1225,9 +1241,11 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 				metrics.memoryBandwidthPercentPerTile[tileId].push_back(0.0);
 			}
 		}
-	} else if (memoryHandler != nullptr) {
+	} else if (memoryHandler != nullptr && !dev->isIGPU()) {
 		// Bandwidth counter query unsupported but usage query succeeded: show 0 for tiles
 		// that have a memory module rather than N/A, which implies the handler is absent.
+		// iGPUs don't implement memory bandwidth counters at all (confirmed unsupported),
+		// so N/A is more accurate there than a fabricated 0.
 		for (const auto &[tileId, _] : metrics.memoryUsedMiBPerTile) {
 			if (metrics.memoryReadKBpsPerTile[tileId].empty()) {
 				metrics.memoryReadKBpsPerTile[tileId].push_back(0.0);

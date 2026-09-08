@@ -138,6 +138,7 @@ public:
 	ze_result_t getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBandwidth, uint64_t *timeStamp);
 	ze_result_t getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidthData> &tileBandwidth);
 	ze_result_t getMemoryUsagePerTile(std::map<uint32_t, MemoryUsageData> &tileUsage);
+	ze_result_t getSystemMemoryUsage(std::map<uint32_t, MemoryUsageData> &tileUsage);
 	ze_result_t getMemorySpec(ze_device_handle_t coreDevice, MemorySpecData &spec);
 
 	static std::string_view sysmanMemoryTypeToString(zes_mem_type_t type);
