@@ -26,7 +26,7 @@ stats:
 
 # --- Build targets ---
 
-OTEL_VERSION ?= 0.159.0
+OTEL_VERSION ?= 0.160.0
 IMAGE_REPOSITORY ?= registry.local/xpumd
 IMAGE_TAG ?= latest
 IMAGE_PULL_POLICY ?= IfNotPresent
