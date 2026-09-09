@@ -78,7 +78,8 @@ test-stub:
 
 .PHONY: test-go
 test-go:
-	PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub go test -tags test -count=1 -coverprofile=coverage.out ./...
+	PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub go test -tags test -count=1 \
+	  -coverpkg=./... -coverprofile=coverage.out ./...
 	go tool cover -func=coverage.out | tail -1
 
 .PHONY: coverage
