@@ -265,6 +265,9 @@ ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache
 		{ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP, "Power"},
 		{ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP, "PowerBurst"},
 		{ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT, "Current"},
+		// Power supply assertion. On CRI this carries the power break event, which the
+		// driver derives from the RATL perf limit reason.
+		{ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT, "PsuAlert"},
 		{ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE, "SW"},
 		{ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE, "HW"},
 		{ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE, "Voltage"},
