@@ -105,7 +105,9 @@ kubectl get secret -n $(kubectl get svc -A | awk '/grafana/{print $1,$2}') \
 (With older Grafana versions, password is `prom-operator`, instead
 of being generated on Grafana install and stored into a K8s Secret.)
 
-![GPU metrics dashboard](xpumd-dashboard.png)
+![GPU metrics dashboard (top)](xpumd-dashboard-1.png)
+...
+![GPU metrics dashboard (middle)](xpumd-dashboard-2.png)
 
 
 ## GPU metric alerts

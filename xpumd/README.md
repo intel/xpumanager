@@ -134,7 +134,9 @@ For an example of a more complete telemetry stack, see either:
 Helm chart installs Grafana dashboard, but one can also load manually
 [dashboard JSON version](charts/xpumd/json/) to Grafana.
 
-![GPU metrics dashboard](docs/xpumd-dashboard.png)
+![GPU metrics dashboard (top)](docs/xpumd-dashboard-1.png)
+...
+![GPU metrics dashboard (middle)](docs/xpumd-dashboard-2.png)
 
 
 ## Features
