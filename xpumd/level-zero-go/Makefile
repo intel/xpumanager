@@ -111,7 +111,7 @@ coverage: test-go
 		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
 		go -C $$module tool cover -html=$(CURDIR)/$$outdir/coverage.out \
 		  -o $(CURDIR)/$$outdir/coverage.html || exit 1; \
-		echo "Coverage report of '$$module': $$outdir/coverage.html"; \
+		hack/coverage-report.sh $$module $$outdir/coverage.out || exit 1; \
 	done
 
 .PHONY: clean-coverage
