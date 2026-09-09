@@ -12,6 +12,10 @@ PACKAGES := core sysman sysman/exp sysman/exp/intel
 C_SOURCES := $(shell git ls-files '*.c' '*.h' | \
 	     grep -v -e '^level-zero/' -e '^include/' -e '^level-zero-stub/' -e '/cgo_helpers\.')
 
+GO_MODULES := $(shell (git ls-files 'go.mod' '*/go.mod' 2> /dev/null || find . -name go.mod -printf '%P\n') | xargs dirname)
+
+COVERAGE_DIR := coverage
+
 # --- Helper targets ---
 
 .PHONY: help
@@ -78,18 +82,41 @@ test-stub:
 
 .PHONY: test-go
 test-go:
-	PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub go test -tags test -count=1 \
-	  -coverpkg=./... -coverprofile=coverage.out ./...
-	go tool cover -func=coverage.out | tail -1
+	@error=""; \
+	for module in $(GO_MODULES); do \
+		echo "Running tests in module '$$module'..."; \
+		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
+		mkdir -p $$outdir; \
+		# Use counter=1 to avoid caching test results, needed because of the stub driver as \
+		# the Go test cache misses (at least) the following things: \
+		# - PKG_CONFIG_PATH trick (a change in the stub driver is not tracked) \
+		# - the testdata/ files are read by the stub driver (not the Go code) \
+		PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub go -C $$module test -tags test \
+		  -count=1 -coverpkg=./... \
+		  -coverprofile=$(CURDIR)/$$outdir/coverage.out ./... || error=1; \
+		if summary=$$(go -C $$module tool cover -func=$(CURDIR)/$$outdir/coverage.out); then \
+			echo "$$summary" | tail -1; \
+		else \
+			error=1; \
+		fi; \
+	done; \
+	if [ -n "$$error" ]; then \
+		exit 1; \
+	fi
 
 .PHONY: coverage
 coverage: test-go
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report: coverage.html"
+	@echo
+	@for module in $(GO_MODULES); do \
+		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
+		go -C $$module tool cover -html=$(CURDIR)/$$outdir/coverage.out \
+		  -o $(CURDIR)/$$outdir/coverage.html || exit 1; \
+		echo "Coverage report of '$$module': $$outdir/coverage.html"; \
+	done
 
 .PHONY: clean-coverage
 clean-coverage:
-	rm -f coverage.out coverage.html
+	rm -rf $(COVERAGE_DIR)
 
 # --- Lint targets ---
 

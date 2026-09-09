@@ -5,3 +5,4 @@
 /level-zero-stub/*.so
 /level-zero-stub/*.so.1
 /level-zero-stub/test_sysman
+/coverage/
