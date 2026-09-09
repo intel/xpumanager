@@ -83,6 +83,19 @@ if get_option('with_tests')
 
   test('vram_debugfs_test', vram_debugfs_test)
 
+  # parsePchResponse pure-logic tests (header validation, byte extraction, state
+  # mapping). Header-only function — no METEE linkage required.
+  pch_prod_state_test = executable(
+    'pch_prod_state_test',
+    'pch_prod_state_test.cpp',
+    include_directories: [global_inc, include_directories('..')],
+    dependencies: [doctest_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('pch_prod_state_test', pch_prod_state_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')

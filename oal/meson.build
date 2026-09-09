@@ -38,6 +38,7 @@ elif is_linux
     'lin/proc_fdinfo.cpp',
     'lin/process_platform.cpp',
     'lin/topology.cpp',
+    'lin/pch_prod_state.cpp',
     'lin/vram_debugfs.cpp',
   )
   oal_inc_dirs += [include_directories('lin')]
@@ -51,6 +52,8 @@ elif is_linux
   # Add pciaccess dependency for PCI/SRIOV functionality
   pciaccess_dep = dependency('pciaccess', required: true)
   oal_deps += [pciaccess_dep]
+  metee_dep = dependency('metee', required: true)
+  oal_deps += [metee_dep]
 
   subdir('lin/test')
 endif

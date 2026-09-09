@@ -2090,25 +2090,22 @@ ze_result_t cmdDiscovery::deviceType(devInfo *d, std::string *outputLine)
 }
 
 /**
- * @brief Prints the SKU type for a device.
+ * @brief Returns the SKU production state for a device via MEI/MKHI.
  *
- * @param[in] d Pointer to the device info structure
- * @param[out] outputLine Pointer to the output line string (SKU information)
+ * Queries the PCH production state through the device's MEI path and maps
+ * the 2-bit PchProdState field to a human-readable string ("Production ES",
+ * "Production QS", or "Production PRQ"). Returns an empty string when the
+ * MEI query fails or the device has no MEI path.
  *
- * @retval ZE_RESULT_SUCCESS Successfully retrieved SKU type
+ * @param[in]  d          Pointer to the device info structure
+ * @param[out] outputLine SKU type string, or empty on failure
+ *
+ * @retval ZE_RESULT_SUCCESS Always; failure is surfaced as an empty string.
  */
 ze_result_t cmdDiscovery::skuType(devInfo *d, std::string *outputLine)
 {
 	TRACING();
-	zes_device_properties_t zesDevProp = {};
-	ze_result_t result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-	// SKU type is typically derived from model name or board number
-	// For now, return a generic identifier based on flags
-	*outputLine = "Production ES";
+	*outputLine = GETPCHPRODSTATE(d->dev->getPCI()->getMeiDevicePath());
 	return ZE_RESULT_SUCCESS;
 }
 

@@ -26,6 +26,7 @@
 #include "topology.h"
 #include "crashlog_lin.h"
 #include "kernel_driver.h"
+#include "pch_prod_state.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 256
@@ -38,6 +39,7 @@
 #define THREAD_RET void *
 #define GETOPT_LONG getopt_long
 #define GETGFXFWSTATUS(meiPath) getGfxFwStatus(meiPath)
+#define GETPCHPRODSTATE(meiPath) getPchProdState(meiPath)
 #define PRIVILEGECHECK() privilegeCheck()
 #define ZERO_MEM(mem, size) memset(mem, 0, size)
 #define SETENV(name, value) setenv(name, value, 1)
