@@ -616,9 +616,8 @@ ze_result_t firmware::updateComposite(firmwareInfo *fwInfo)
 	}
 
 	if (current == 0) {
-		ERR("Package '{}' carries no component that applies to device {}.\n", fwInfo->filePath.c_str(),
+		DBG("Package '{}' carries no component that applies to device {}.\n", fwInfo->filePath.c_str(),
 			fwInfo->deviceIndex);
-		return ZE_RESULT_ERROR_INVALID_NATIVE_BINARY;
 	}
 
 	return ZE_RESULT_SUCCESS;
