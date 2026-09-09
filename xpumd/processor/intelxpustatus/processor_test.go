@@ -130,7 +130,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			},
 		},
 		{
-			name: "unconditional state (last)",
+			name: "unconditional state last - overrides earlier matching state",
 			states: []StateRule{
 				{
 					StateName: "ok",
@@ -147,6 +147,27 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			expectedStates: map[string]uint64{
 				"ok":      0,
 				"default": 1,
+			},
+		},
+		{
+			// Mirrors the previous test, but with the unconditional state first
+			name: "unconditional state first - overridden by later matching state",
+			states: []StateRule{
+				{
+					StateName: "default",
+				},
+				{
+					StateName: "ok",
+					Conditions: []ConditionRule{
+						{Value: 50.0},
+					},
+				},
+			},
+			value:    75.0,
+			parentID: "parent1",
+			expectedStates: map[string]uint64{
+				"default": 0,
+				"ok":      1,
 			},
 		},
 		{
@@ -222,6 +243,38 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			expectedStates: map[string]uint64{
 				"not-ok": 1,
 				"ok":     0,
+			},
+		},
+		{
+			// Mirrors the previous test, but with the parent attributes matching
+			name: "state with parent filter and fallback state - filter matches",
+			states: []StateRule{
+				{
+					StateName: "not-ok",
+				},
+				{
+					StateName: "ok",
+					Conditions: []ConditionRule{
+						{
+							Value: 50.0,
+							ParentFilters: common.AttributeFilterList{
+								{
+									Key:    "hw.type",
+									Values: []string{"gpu"},
+								},
+							},
+						},
+					},
+				},
+			},
+			value:    75.0,
+			parentID: "parent1",
+			parentAttrs: map[string]any{
+				"hw.type": "gpu",
+			},
+			expectedStates: map[string]uint64{
+				"not-ok": 0,
+				"ok":     1,
 			},
 		},
 		{
