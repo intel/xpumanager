@@ -115,9 +115,9 @@ ARG LEVEL_ZERO_VERSION=1.32.0
 # The Graphics Compiler is NOT taken from the manifest to avoid compiling it from sources, too.
 ARG IGC_CORE_VERSION=2.40.13+22418
 
-# SHA256 checksums for the Graphics Compiler and the Level-Zero loader packages
+# SHA256 checksums for the Graphics Compiler and the Level-Zero loader packages.
 ARG CHECKSUMS_IGC=checksums-igc.txt
-ARG CHECKSUMS_LOADER=checksums-loader.txt
+ARG CHECKSUMS_LOADER=checksums-loader-src.txt
 
 WORKDIR /debs/
 COPY level-zero/$CHECKSUMS_IGC level-zero/$CHECKSUMS_LOADER .

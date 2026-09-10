@@ -122,4 +122,4 @@ sed -i -E "/^FROM .* AS backend-src\$/,/^FROM /{
 
 echo ""
 echo "Updated the backend-src stage of ${DOCKERFILE#"$ROOT_DIR"/} from $MANIFEST, check the diff."
-echo "NOTE: refresh the checksums in level-zero/ if the package versions changed."
+echo "NOTE: refresh level-zero/checksums-loader-src.txt if the loader version changed."
