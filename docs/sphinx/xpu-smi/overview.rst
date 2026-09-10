@@ -206,7 +206,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - GPU core and memory temperatures. Shortcut ``p`` also enables POWER.
    * - ``POWER``
      - ``p``
-     - Power draw, per-tile power, energy consumed, power limits. Shortcut ``p`` also enables TEMPERATURE.
+     - Card- and GPU-domain power draw, energy counters, power limits. Shortcut ``p`` also enables TEMPERATURE.
    * - ``CLOCK``
      - ``c``
      - Current and max graphics/media clock frequencies, throttle reason
@@ -279,10 +279,12 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Memory temperature
    * - ``power.draw``
      - W
-     - Total GPU power draw
+     - Card-domain power draw, averaged over the sampling interval
    * - ``power.draw.gpu``
      - W
-     - Per-tile GPU power draw
+     - GPU-domain power draw, averaged over the sampling interval: compute engines only,
+       excluding memory and other card subsystems. ``N/A`` on devices that expose no GPU
+       power domain
    * - ``power.limit``
      - W
      - Current power limit
@@ -291,7 +293,11 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Maximum power limit
    * - ``energy.consumed``
      - J
-     - Total energy consumed
+     - Cumulative card-domain energy counter; the energy counterpart of ``power.draw``
+   * - ``energy.consumed.gpu``
+     - J
+     - Cumulative GPU-domain energy counter; the energy counterpart of ``power.draw.gpu``.
+       ``N/A`` on devices that expose no GPU power domain
    * - ``utilization.gpu``
      - %
      - Overall GPU utilization: the busiest engine on the device

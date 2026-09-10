@@ -10,6 +10,34 @@
 #include <memory>
 
 /**
+ * @brief Maps a Level Zero power domain to its spelled-out name.
+ *
+ * Used for log output and, via getEnergyPerTile()'s @c domainUsed out-parameter, to title the
+ * energy row in @c xpu-smi @c stats after the domain the reading actually came from.
+ *
+ * @param domain Domain reported in zes_power_ext_properties_t::domain.
+ * @return Static string, never null; "Unknown" for domains this build does not name.
+ */
+const char *power::domainName(zes_power_domain_t domain)
+{
+	switch (domain) {
+	case ZES_POWER_DOMAIN_CARD:
+		return "Card";
+	case ZES_POWER_DOMAIN_PACKAGE:
+		return "Package";
+	case ZES_POWER_DOMAIN_STACK:
+		return "Stack";
+	case ZES_POWER_DOMAIN_MEMORY:
+		return "Memory";
+	case ZES_POWER_DOMAIN_GPU:
+		return "GPU";
+	case ZES_POWER_DOMAIN_UNKNOWN:
+	default:
+		return "Unknown";
+	}
+}
+
+/**
  * @brief Helper function to parse device ID from hexadecimal string
  *
  * @param hexKey Hexadecimal string representation of device ID
@@ -47,7 +75,8 @@ void power::loadThresholdSection(const nlohmann::json &thresholdsJson, const std
  */
 power::power()
 	: powerCount(0), powerHandles(nullptr), zeDeviceHandle(nullptr), deviceHandle(nullptr),
-	  thresholds(new PowerThresholds()), defaultThrottlePower(DEFAULT_THROTTLE_POWER)
+	  thresholds(new PowerThresholds()), defaultThrottlePower(DEFAULT_THROTTLE_POWER),
+	  energyDomainMissingLogged({false, false}), perTileEnergyDomainMissingLogged(false)
 {
 	loadPowerThresholds();
 }
@@ -160,6 +189,11 @@ ze_result_t power::enumPowerDomains(zes_device_handle_t device)
 		return result;
 	}
 
+	// A fresh enumeration can expose a different set of domains, so the one-time
+	// missing-domain notices are re-armed for it.
+	energyDomainMissingLogged = {false, false};
+	perTileEnergyDomainMissingLogged = false;
+
 	DBG("Found {} power domains.\n", powerCount);
 	return result;
 }
@@ -200,29 +234,7 @@ ze_result_t power::getProperties(zes_pwr_handle_t powerHandle, zes_power_propert
 	DBG("  subdeviceId: {}\n", properties->subdeviceId);
 	DBG("  extProperties:\n");
 	DBG("    Domain: {}\n", extProps->domain);
-	switch (extProps->domain) {
-	case ZES_POWER_DOMAIN_UNKNOWN:
-		DBG("    Domain Type: Unknown\n");
-		break;
-	case ZES_POWER_DOMAIN_CARD:
-		DBG("    Domain Type: Card\n");
-		break;
-	case ZES_POWER_DOMAIN_PACKAGE:
-		DBG("    Domain Type: Package\n");
-		break;
-	case ZES_POWER_DOMAIN_STACK:
-		DBG("    Domain Type: Stack\n");
-		break;
-	case ZES_POWER_DOMAIN_MEMORY:
-		DBG("    Domain Type: Memory\n");
-		break;
-	case ZES_POWER_DOMAIN_GPU:
-		DBG("    Domain Type: GPU\n");
-		break;
-	default:
-		DBG("    Domain Type: Unknown\n");
-		break;
-	}
+	DBG("    Domain Type: {}\n", power::domainName(extProps->domain));
 
 	return result;
 }
@@ -365,10 +377,27 @@ ze_result_t power::setPowerLimit(double powerLimit)
  * card-level power domains, providing accumulated energy usage and timestamp
  * data for power analysis and monitoring purposes.
  *
- * @param pwr Pointer to store the energy consumption value (in joules)
- * @param timeStamp Pointer to store the timestamp of the energy reading
+ * A device need not expose every domain: the xe driver on some cards exposes only card and
+ * package energy channels and no compute-domain channel, so there is nothing for sysman to map to
+ * ZES_POWER_DOMAIN_GPU. That case returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE (leaving @p pwr and
+ * @p timeStamp untouched) and logs the domains the device did enumerate, once per domain per
+ * object, so the resulting N/A in the CLI can be traced to the missing channel rather than to a
+ * failed read.
+ *
+ * The exception is a device that enumerates exactly one power handle: if that handle is
+ * ZES_POWER_DOMAIN_PACKAGE it satisfies both the card and the GPU request, because package energy
+ * is the only thing the device reports. This long-standing fallback keeps such cards reporting
+ * power instead of N/A, and being restricted to powerCount == 1 it cannot mask a genuinely absent
+ * compute domain on a card that enumerates several handles.
+ *
+ * @param pwr Pointer to store the energy consumption value (in microjoules)
+ * @param timeStamp Pointer to store the timestamp of the energy reading (in microseconds)
  * @param forGPU Flag indicating whether to get GPU domain (true) or card domain (false) energy
- * @return ze_result_t ZE_RESULT_SUCCESS on successful energy retrieval, error code otherwise
+ * @retval ZE_RESULT_SUCCESS                    Energy was read for the requested domain.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  The device enumerates no matching power domain and
+ *                                              the single-handle package fallback does not apply.
+ * @retval other                                Propagated from zesPowerGetProperties /
+ *                                              zesPowerGetEnergyCounter.
  */
 ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 {
@@ -383,6 +412,8 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
 
+	bool found = false;
+	std::string enumeratedDomains; // Only used by the not-found notice below.
 	for (uint32_t i = 0; i < powerCount; ++i) {
 		// First we are supposed to get the properties of the power domain. This is so that we can check if the domain
 		// matches the one we are looking for (GPU or CARD).
@@ -391,8 +422,13 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 			return result;
 		}
 
-		// Skip if not the desired domain or if powerCount is only 1 (as is the case in some GPUs), then look for
-		// package domain
+		if (!enumeratedDomains.empty()) {
+			enumeratedDomains += ", ";
+		}
+		enumeratedDomains += power::domainName(extProps.domain);
+
+		// Skip anything but the requested domain, except that a lone package handle (as is the case in some GPUs)
+		// answers both the card and the GPU request: it is the only energy the device reports.
 		if (extProps.domain != domain && (powerCount != 1 || extProps.domain != ZES_POWER_DOMAIN_PACKAGE)) {
 			continue;
 		}
@@ -405,9 +441,31 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 			return result;
 		}
 
+		// Some platforms answer the counter read with success and an all-zero struct even though the
+		// driver's own hwmon energy channel is accumulating. Nothing here can recover the value, but
+		// say so, so the resulting N/A is traceable to the counter rather than to a failed read.
+		if (energyCounter.energy == 0 && energyCounter.timestamp == 0) {
+			DBG("{} power domain {} read succeeded but reports 0 µJ at timestamp 0\n",
+				power::domainName(extProps.domain), i);
+		}
+
 		*pwr = energyCounter.energy;
 		*timeStamp = energyCounter.timestamp;
+		found = true;
 		break;
+	}
+
+	if (!found) {
+		// Emitted once per domain per object: a dump loop calls this twice per tick, and the
+		// answer cannot change for the lifetime of the enumeration.
+		bool &logged = energyDomainMissingLogged.at(forGPU ? 1 : 0);
+		if (!logged) {
+			logged = true;
+			INFO("Device exposes no {} power domain (enumerated: {}); {}-domain power and energy report N/A.\n",
+				 power::domainName(domain), enumeratedDomains.empty() ? "none" : enumeratedDomains,
+				 power::domainName(domain));
+		}
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	return result;
@@ -424,17 +482,27 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
  * For single-tile GPUs or GPUs that only expose CARD-level power, returns
  * the card-level data as tile 0.
  *
+ * Which domain the readings came from therefore depends on what the device enumerates, so it is
+ * reported back through @c domainUsed for callers that label the figure.
+ *
  * @param [out] tileEnergy Map of tile_id -> (energy_microjoules, timestamp_microseconds)
+ * @param [out] domainUsed Optional. The domain every returned reading came from, or
+ *                         ZES_POWER_DOMAIN_UNKNOWN if nothing was read or the tiles disagree.
  * @return ze_result_t ZE_RESULT_SUCCESS on successful energy retrieval, error code otherwise
  */
-ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileEnergy)
+ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileEnergy,
+									zes_power_domain_t *domainUsed)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	tileEnergy.clear();
+	if (domainUsed != nullptr) {
+		*domainUsed = ZES_POWER_DOMAIN_UNKNOWN;
+	}
 
 	// First pass: look for subdevice-level power domains (multi-tile GPUs)
 	bool foundSubdevicePower = false;
+	zes_power_domain_t sharedDomain = ZES_POWER_DOMAIN_UNKNOWN;
 	for (uint32_t i = 0; i < powerCount; ++i) {
 		zes_power_properties_t properties = {};
 		zes_power_ext_properties_t extProps = {};
@@ -455,13 +523,22 @@ ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint6
 
 			uint32_t tileId = properties.subdeviceId;
 			tileEnergy[tileId] = std::make_pair(energyCounter.energy, energyCounter.timestamp);
-			DBG("Tile {} (subdevice) energy: {} µJ, timestamp: {} µs\n", tileId, energyCounter.energy,
-				energyCounter.timestamp);
+			DBG("Tile {} (subdevice, domain={}) energy: {} µJ, timestamp: {} µs\n", tileId, domainName(extProps.domain),
+				energyCounter.energy, energyCounter.timestamp);
+			// A sum across tiles only belongs to one domain if every tile reported the same one.
+			if (!foundSubdevicePower) {
+				sharedDomain = extProps.domain;
+			} else if (sharedDomain != extProps.domain) {
+				sharedDomain = ZES_POWER_DOMAIN_UNKNOWN;
+			}
 			foundSubdevicePower = true;
 		}
 	}
 
 	if (foundSubdevicePower) {
+		if (domainUsed != nullptr) {
+			*domainUsed = sharedDomain;
+		}
 		return ZE_RESULT_SUCCESS;
 	}
 
@@ -485,10 +562,28 @@ ze_result_t power::getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint6
 			}
 
 			tileEnergy[0] = std::make_pair(energyCounter.energy, energyCounter.timestamp);
-			DBG("Tile 0 (device-level, domain={}) energy: {} µJ, timestamp: {} µs\n", extProps.domain,
+			if (domainUsed != nullptr) {
+				*domainUsed = extProps.domain;
+			}
+			DBG("Tile 0 (device-level, domain={}) energy: {} µJ, timestamp: {} µs\n", domainName(extProps.domain),
 				energyCounter.energy, energyCounter.timestamp);
+			// See getEnergy(): a successful read of an all-zero counter is a platform quirk, not an
+			// error, and it surfaces as N/A. Log it so the N/A points at the counter.
+			if (energyCounter.energy == 0 && energyCounter.timestamp == 0) {
+				DBG("{} power domain {} read succeeded but reports 0 µJ at timestamp 0\n", domainName(extProps.domain),
+					i);
+			}
 			break; // Only need one device-level reading
 		}
+	}
+
+	// An empty map is reported to callers as success with no data, which surfaces as N/A rather
+	// than as an error. Say so once, so that N/A is traceable to the absent domain.
+	if (tileEnergy.empty() && !perTileEnergyDomainMissingLogged) {
+		perTileEnergyDomainMissingLogged = true;
+		INFO("Device exposes no readable subdevice, card, package or GPU power domain out of {} enumerated; "
+			 "energy consumed reports N/A.\n",
+			 powerCount);
 	}
 
 	return ZE_RESULT_SUCCESS;

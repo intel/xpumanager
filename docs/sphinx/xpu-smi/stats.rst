@@ -110,8 +110,13 @@ The following metrics are reported per device and per tile where applicable:
      - Device level; shown when fabric ports present
    * - RAS Error Counters
      - Per category (Reset, Programming, Driver, Cache, Mem); shown with ``-r``
-   * - Energy Consumed (J)
-     - Device level (total over measurement window)
+   * - [domain] Energy Consumed (J)
+     - Device level; energy consumed over the measurement window, summed from the per-tile
+       counters (a delta, not the cumulative counter that ``xpu-smi dump`` reports as
+       ``energy.consumed``). The label is prefixed with the power domain the reading came from,
+       e.g. ``Card Energy Consumed (J)``; it is left unprefixed when the contributing tiles do
+       not share one domain. ``N/A`` when the device exposes no readable subdevice-, card-,
+       package- or GPU-level power domain
    * - Offline Memory Pages
      - Count; shown with ``--list-offline-pages``
 

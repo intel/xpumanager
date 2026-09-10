@@ -8,6 +8,7 @@
 #define _POWER_H
 
 #include "sysman.h"
+#include <array>
 #include <vector>
 #include <cstdint>
 #include <map>
@@ -60,6 +61,11 @@ private:
 	device *deviceHandle;
 	PowerThresholds *thresholds;
 	uint64_t defaultThrottlePower;
+	/** One flag per getEnergy() domain — index 0 card, index 1 GPU — set once its
+	 *  "domain not exposed" notice has been logged, so a dump loop reports it once. */
+	std::array<bool, 2> energyDomainMissingLogged;
+	/** Same, for the getEnergyPerTile() notice, which a stats run repeats per sample. */
+	bool perTileEnergyDomainMissingLogged;
 
 public:
 	power();
@@ -71,7 +77,20 @@ public:
 	ze_result_t getEnergyThreshold(zes_pwr_handle_t powerHandle);
 	ze_result_t getPowerLimits(zes_pwr_handle_t powerHandle);
 	ze_result_t getEnergy(uint64_t *power, uint64_t *timeStamp, bool forGPU);
-	ze_result_t getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileEnergy);
+
+	/// Spelled-out name of a Level Zero power domain, e.g. "Card". Never null; "Unknown" for
+	/// domains this build does not name.
+	static const char *domainName(zes_power_domain_t domain);
+
+	/**
+	 * @param [out] tileEnergy  Map of tile_id -> (energy_microjoules, timestamp_microseconds).
+	 * @param [out] domainUsed  Optional. Set to the domain the readings came from, or to
+	 *                          ZES_POWER_DOMAIN_UNKNOWN when no reading was taken or when the
+	 *                          per-tile readings do not all share one domain. Callers that label
+	 *                          the figure must not assume a domain without consulting this.
+	 */
+	ze_result_t getEnergyPerTile(std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileEnergy,
+								 zes_power_domain_t *domainUsed = nullptr);
 	ze_result_t setSustainedLimit(uint32_t limit_mw, int32_t tile_id = -1);
 	ze_result_t setBurstLimit(uint32_t limit_mw);
 	ze_result_t setPeakLimit(uint32_t limit_ac_mw, uint32_t limit_dc_mw);

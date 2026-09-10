@@ -316,6 +316,7 @@ TEST_CASE("findMetric resolves Power metric names")
 	CHECK(findMetric("power.draw").has_value());
 	CHECK(findMetric("power.draw.gpu").has_value());
 	CHECK(findMetric("energy.consumed").has_value());
+	CHECK(findMetric("energy.consumed.gpu").has_value());
 	CHECK(findMetric("power.limit").has_value());
 	CHECK(findMetric("power.max_limit").has_value());
 }
@@ -323,18 +324,20 @@ TEST_CASE("findMetric resolves Power metric names")
 TEST_CASE("Power group contains all expected metric names")
 {
 	const auto byPow = getMetricsByGroup(MetricGroup::POWER);
-	const std::vector<std::string_view> expected = {"power.draw", "power.draw.gpu", "energy.consumed", "power.limit",
-													"power.max_limit"};
+	const std::vector<std::string_view> expected = {"power.draw",		   "power.draw.gpu", "energy.consumed",
+													"energy.consumed.gpu", "power.limit",	 "power.max_limit"};
 	for (const auto name : expected) {
 		CHECK_MESSAGE(std::ranges::any_of(byPow, [name](const auto *m) { return m->name == name; }), name,
 					  " not found in POWER group");
 	}
-	// Relative order: power.draw before power.draw.gpu before energy.consumed
+	// Relative order: the two draw fields, then the two energy counters, card domain first in
+	// each pair so '-d POWER' columns pair each .gpu field with the card field it qualifies.
 	const auto pos = [&](std::string_view n) {
 		return std::ranges::find_if(byPow, [n](const auto *m) { return m->name == n; }) - byPow.begin();
 	};
 	CHECK(pos("power.draw") < pos("power.draw.gpu"));
 	CHECK(pos("power.draw.gpu") < pos("energy.consumed"));
+	CHECK(pos("energy.consumed") < pos("energy.consumed.gpu"));
 }
 
 TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliases")
@@ -595,8 +598,8 @@ TEST_CASE("power QueryMetric fields: unit, source, and group membership")
 		CHECK(found->source == MetricSource::Live);
 		CHECK(hasGroup(found->groups, MetricGroup::POWER));
 	}
-	{
-		auto found = findMetric("energy.consumed");
+	for (const auto name : std::to_array<std::string_view>({"energy.consumed", "energy.consumed.gpu"})) {
+		auto found = findMetric(name);
 		REQUIRE(found.has_value());
 		CHECK(found->unit == "J");
 		CHECK(found->source == MetricSource::Live);
@@ -834,7 +837,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 	CHECK(out == "2.00");
 }
 
-TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: UNSUPPORTED when gpuPowerAfter.ts is zero")
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: UNSUPPORTED when cardPowerAfter.ts is zero")
 {
 	MetricValue out;
 	MetricCache c;
@@ -845,7 +848,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: converts µJ to J 
 {
 	MetricValue out;
 	MetricCache c;
-	c.gpuPowerAfter = {.energy = 5'000'000'000ULL, .ts = 1};
+	c.cardPowerAfter = {.energy = 5'000'000'000ULL, .ts = 1};
 	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "5000.00");
 }
@@ -854,9 +857,40 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed getter: zero energy format
 {
 	MetricValue out;
 	MetricCache c;
-	c.gpuPowerAfter = {.energy = 0, .ts = 1}; // ts != 0, so it is available
+	c.cardPowerAfter = {.energy = 0, .ts = 1}; // ts != 0, so it is available
 	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "0.00");
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed.gpu getter: UNSUPPORTED when gpuPowerAfter.ts is zero")
+{
+	MetricValue out;
+	MetricCache c;
+	CHECK(findMetric("energy.consumed.gpu").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "energy.consumed.gpu getter: converts µJ to J (2 500 000 µJ == 2.50 J)")
+{
+	MetricValue out;
+	MetricCache c;
+	c.gpuPowerAfter = {.energy = 2'500'000ULL, .ts = 1};
+	CHECK(findMetric("energy.consumed.gpu").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "2.50");
+}
+
+// The reason both fields exist: a device that enumerates a card power domain but no GPU domain
+// (xe exposing energy1_label:card and energy2_label:pkg with no compute channel) reports the card
+// counter and N/A for the GPU counter, rather than one name meaning either domain (XPUM-1516).
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "energy.consumed reads while energy.consumed.gpu is UNSUPPORTED without a GPU domain")
+{
+	MetricValue out;
+	MetricCache c;
+	c.cardPowerAfter = {.energy = 128'706'060'607ULL, .ts = 1};
+	// gpuPowerAfter left zeroed: power::getEnergy() found no ZES_POWER_DOMAIN_GPU handle.
+	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "128706.06");
+	CHECK(findMetric("energy.consumed.gpu").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 }
 
 TEST_CASE("MetricCache default values are zero and all flags false")

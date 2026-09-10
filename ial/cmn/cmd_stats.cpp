@@ -1501,9 +1501,15 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		}
 	}
 
-	if (initialPowerBaseline.valid && !metrics.gpuPowerPerTile.empty()) {
+	// Only the baseline energy counters are needed here. Power draw is deliberately not a
+	// precondition: it divides by the counter's own timestamp delta, and a device that reports a
+	// readable energy counter with a stalled (or zero) timestamp yields no power samples at all,
+	// which must not suppress an energy figure that is perfectly computable from the counters.
+	if (initialPowerBaseline.valid) {
 		std::map<uint32_t, std::pair<uint64_t, uint64_t>> finalTileEnergy;
-		if (powerHandler != nullptr && powerHandler->getEnergyPerTile(finalTileEnergy) == ZE_RESULT_SUCCESS) {
+		zes_power_domain_t energyDomain = ZES_POWER_DOMAIN_UNKNOWN;
+		if (powerHandler != nullptr &&
+			powerHandler->getEnergyPerTile(finalTileEnergy, &energyDomain) == ZE_RESULT_SUCCESS) {
 			double totalEnergyJ = 0.0;
 			for (const auto &[tileId, energyData] : finalTileEnergy) {
 				if (initialPowerBaseline.energy.count(tileId) > 0) {
@@ -1515,6 +1521,11 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 				metrics.energyConsumedJ = totalEnergyJ;
 				metrics.energyValid = true;
 				deviceJson["power"]["energy_consumed_j"] = metrics.energyConsumedJ;
+				// Which domain this came from is enumeration-dependent, so record it and let the
+				// printer name it rather than hard-coding a domain in the label.
+				if (energyDomain != ZES_POWER_DOMAIN_UNKNOWN) {
+					deviceJson["power"]["energy_domain"] = ::power::domainName(energyDomain);
+				}
 			}
 		}
 	}
@@ -1633,9 +1644,18 @@ void StatsTextPrinter::printDeviceTable(const nlohmann::ordered_json &deviceJson
 	table.addRow("Elapsed Time (seconds)", xpum::compat::format("{:.2f}", elapsedSeconds));
 	table.addRow("Health Status", deviceJson.value("health_status", "N/A"));
 
+	// The label names the domain the reading actually came from, because getEnergyPerTile() takes
+	// whatever subdevice-scoped handles a multi-tile device exposes and otherwise the first of card,
+	// package or GPU it enumerates — it is not guaranteed to be the card-domain counter behind
+	// dump's energy.consumed. Where no single domain applies the label stays unqualified rather than
+	// naming one it cannot promise.
 	if (deviceJson.contains("power") && deviceJson["power"].contains("energy_consumed_j")) {
+		std::string label = "Energy Consumed (J)";
+		if (deviceJson["power"].contains("energy_domain")) {
+			label = deviceJson["power"]["energy_domain"].get<std::string>() + " " + label;
+		}
 		double energyJ = deviceJson["power"]["energy_consumed_j"].get<double>();
-		table.addRow("Energy Consumed (J)", xpum::compat::format("{:.2f}", energyJ));
+		table.addRow(label, xpum::compat::format("{:.2f}", energyJ));
 	} else {
 		table.addRow("Energy Consumed (J)", "N/A");
 	}

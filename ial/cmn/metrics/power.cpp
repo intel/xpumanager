@@ -3,8 +3,21 @@
  * SPDX-License-Identifier: MIT
  *
  * Power metrics: instantaneous draw (card and GPU domain), accumulated energy, and power limits.
- * CARD_DRAW, CARD_DRAW_GPU, and ENERGY_CONSUMED are Live metrics read from MetricCache.
- * power.limit and power.max_limit are Static metrics that query the power HAL directly at getter time.
+ * CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, and ENERGY_CONSUMED_GPU are Live metrics read from
+ * MetricCache. power.limit and power.max_limit are Static metrics that query the power HAL directly
+ * at getter time.
+ *
+ * Each domain is reported under its own name, so the two are never conflated: power.draw and
+ * energy.consumed are card-domain, power.draw.gpu and energy.consumed.gpu are GPU-domain. A device
+ * that enumerates several power domains but no ZES_POWER_DOMAIN_GPU handle reports N/A for both
+ * .gpu fields while the card-domain fields still read; see power::getEnergy(), which logs the
+ * missing domain.
+ *
+ * One case does conflate them, and both .gpu descriptions say so: on a device whose only power
+ * domain is ZES_POWER_DOMAIN_PACKAGE, power::getEnergy() serves that single handle to the card and
+ * the GPU request alike, so all four fields report package figures rather than the .gpu pair
+ * reading N/A. Package energy is the only thing such a device measures, so there is no
+ * compute-only number to report and nothing gained by blanking the .gpu fields.
  */
 
 #include "power.h"
@@ -48,6 +61,31 @@ namespace {
 [[nodiscard]] constexpr double powerDrawWatts(const EnergySnapshot &before, const EnergySnapshot &after) noexcept
 {
 	return static_cast<double>(after.energy - before.energy) / static_cast<double>(after.ts - before.ts);
+}
+
+/**
+ * @brief Renders one cumulative energy counter as joules.
+ *
+ * Shared by @c energy.consumed and @c energy.consumed.gpu, which differ only in which
+ * @ref EnergySnapshot they read.
+ *
+ * @param[in]  snap Snapshot closing the sampling window for the domain being reported.
+ * @param[out] out  On success, the counter formatted as @c "%.2f" joules. Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                    The snapshot holds a reading.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  @c snap.ts is zero — the device never produced a
+ *                                              reading for this domain, either because the HAL
+ *                                              call failed or because the domain is not enumerated.
+ *
+ * @throws None.
+ */
+ze_result_t energyJoules(const EnergySnapshot &snap, MetricValue &out)
+{
+	if (snap.ts == 0) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = xpum::compat::format("{:.2f}", static_cast<double>(snap.energy) / 1'000'000.0);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -186,7 +224,8 @@ constexpr auto CARD_DRAW_GPU =
 				.name = "power.draw.gpu",
 				.unit = "W",
 				.description = "GPU-domain power draw averaged over the sampling interval; covers compute engines "
-							   "only, excluding memory and other card subsystems",
+							   "only, excluding memory and other card subsystems. On a device whose only power "
+							   "domain is package, this reports package power instead",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
@@ -209,17 +248,26 @@ constexpr auto ENERGY_CONSUMED =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "energy.consumed",
 				.unit = "J",
-				.description = "Cumulative GPU-domain energy consumed since the last counter reset; monotonically "
-							   "increasing until counter wrap",
+				.description = "Cumulative card-domain energy consumed since the last counter reset; monotonically "
+							   "increasing until counter wrap. Counterpart of power.draw",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (cache.gpuPowerAfter.ts == 0) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					out = xpum::compat::format("{:.2f}", static_cast<double>(cache.gpuPowerAfter.energy) / 1'000'000.0);
-					return ZE_RESULT_SUCCESS;
+					return energyJoules(cache.cardPowerAfter, out);
 				}};
+
+constexpr auto ENERGY_CONSUMED_GPU = QueryMetric{
+	// NOLINT(readability-identifier-naming)
+	.name = "energy.consumed.gpu",
+	.unit = "J",
+	.description = "Cumulative GPU-domain energy consumed since the last counter reset; covers compute "
+				   "engines only, excluding memory and other card subsystems. On a device whose only power domain "
+				   "is package, this reports package energy instead. Counterpart of power.draw.gpu",
+	.source = MetricSource::Live,
+	.groups = MetricGroup::POWER,
+	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
+		return energyJoules(cache.gpuPowerAfter, out);
+	}};
 
 // ── Power limit metrics ──────────────────────────────────────────────────────
 // power.limit     = current enforced power limit (sustained, with fallback to best available)
@@ -249,7 +297,8 @@ constexpr auto MAX_LIMIT = QueryMetric{
 	.groups = MetricGroup::POWER,
 	.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t { return getMaxLimitW(d, out); }};
 
-constexpr auto ALL = std::to_array<QueryMetric>({CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, LIMIT, MAX_LIMIT});
+constexpr auto ALL =
+	std::to_array<QueryMetric>({CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, ENERGY_CONSUMED_GPU, LIMIT, MAX_LIMIT});
 
 } // namespace
 
@@ -257,11 +306,12 @@ constexpr auto ALL = std::to_array<QueryMetric>({CARD_DRAW, CARD_DRAW_GPU, ENERG
  * @brief Returns the compile-time array of all power @c QueryMetric descriptors.
  *
  * Exposes the following metrics, all belonging to @c MetricGroup::POWER:
- * - @c power.draw         (Live)   — card-domain instantaneous draw in watts
- * - @c power.draw.gpu     (Live)   — GPU-domain instantaneous draw in watts
- * - @c energy.consumed    (Live)   — cumulative GPU-domain energy in joules
- * - @c power.limit        (Static) — current enforced power limit in watts
- * - @c power.max_limit    (Static) — maximum configurable power limit in watts
+ * - @c power.draw           (Live)   — card-domain instantaneous draw in watts
+ * - @c power.draw.gpu       (Live)   — GPU-domain instantaneous draw in watts
+ * - @c energy.consumed      (Live)   — cumulative card-domain energy in joules
+ * - @c energy.consumed.gpu  (Live)   — cumulative GPU-domain energy in joules
+ * - @c power.limit          (Static) — current enforced power limit in watts
+ * - @c power.max_limit      (Static) — maximum configurable power limit in watts
  *
  * @return A non-owning @c std::span over the internal @c ALL array. The span is valid
  *         for the lifetime of the program (the backing array has static storage duration).
