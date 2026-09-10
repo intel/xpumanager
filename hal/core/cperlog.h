@@ -7,10 +7,8 @@
 #ifndef CPERLOG_H
 #define CPERLOG_H
 
-#include "extensions/zes_intel_gpu_sysman.h"
-#include "zes_api.h"
+#include "cper_metadata.h"
 #include <concepts>
-#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <vector>
