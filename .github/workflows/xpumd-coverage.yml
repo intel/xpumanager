@@ -1,0 +1,144 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
+name: Linux - xpumd coverage
+
+on:
+  pull_request:
+    paths:
+      - "xpumd/**"
+      - ".github/workflows/xpumd-coverage.yml"
+      - ".github/scripts/compare_coverage.py"
+      - ".github/scripts/compare_go_coverage.sh"
+      - ".github/scripts/go_cover_summary.py"
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: daemon
+            title: xpumd daemon
+            make-args: coverage
+            coverage-dir: xpumd/coverage
+            module-prefix: github.com/intel/xpumanager/xpumd/
+          - name: bindings
+            title: Level-Zero Go bindings
+            make-args: -C level-zero-go coverage
+            coverage-dir: xpumd/level-zero-go/coverage
+            module-prefix: github.com/intel/level-zero-go/
+    name: Measure ${{ matrix.name }} coverage
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    permissions:
+      contents: read
+    timeout-minutes: 45
+    env:
+      BASE_REF: ${{ github.base_ref }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Check out the PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0    # the base branch is needed, too
+
+      - name: Measure the coverage of the PR head
+        run: |
+          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }}
+          mv ${{ matrix.coverage-dir }} coverage-head
+
+      # The base branch may have different coverage tooling (or no tooling at all)
+      - name: Check out the base branch with the coverage tooling of the head
+        run: |
+          git checkout --detach "$BASE_SHA"
+          git checkout "$HEAD_SHA" -- xpumd/Makefile xpumd/scripts/make-dockerized.sh \
+            xpumd/level-zero-go/Makefile xpumd/level-zero-go/hack/go-test-coverage.sh \
+            xpumd/level-zero-go/hack/coverage-report.sh
+
+      - name: Measure the coverage of the base branch
+        run: |
+          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }}
+          mv ${{ matrix.coverage-dir }} coverage-base
+
+      - name: Restore the PR head
+        run: git checkout --force "$HEAD_SHA"
+
+      - name: Compare the coverage
+        run: |
+          .github/scripts/compare_go_coverage.sh \
+            '${{ matrix.title }}' '${{ matrix.module-prefix }}' "$BASE_REF" > report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report and the HTML reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-${{ matrix.name }}
+          path: |
+            report.md
+            coverage-head/**/*.html
+            coverage-base/**/*.html
+            coverage-head/**/*.txt
+            coverage-base/**/*.txt
+          retention-days: 7
+
+  # Post coverage delta as a PR comment
+  comment:
+    needs: coverage
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep in sync with the matrix of the "coverage" job
+        name: [daemon, bindings]
+    name: Comment the ${{ matrix.name }} coverage
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      actions: read       # look up the artifacts of this run
+    timeout-minutes: 10
+    steps:
+      - name: Download the coverage report
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        with:
+          name: coverage-${{ matrix.name }}
+          path: .
+
+      - name: Post or update the PR comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          ARTIFACT: coverage-${{ matrix.name }}
+          MARKER: "<!-- xpum-go-coverage-${{ matrix.name }} -->"
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = process.env.MARKER;
+            const prNumber = parseInt(process.env.PR_NUMBER ?? '', 10);
+            if (isNaN(prNumber) || prNumber <= 0) { core.setFailed('No valid PR number available to post a comment on.'); return; }
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: context.runId,
+            });
+            const artifact = artifacts.find(a => a.name === process.env.ARTIFACT);
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const link = artifact ? `\n\n[HTML reports](${runUrl}/artifacts/${artifact.id})` : '';
+            const body = `${marker}\n${fs.readFileSync('report.md', 'utf8')}${link}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body,
+              });
+              core.info(`Updated the coverage comment (id ${existing.id}) on PR #${prNumber}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body,
+              });
+              core.info(`Created a coverage comment on PR #${prNumber}`);
+            }
