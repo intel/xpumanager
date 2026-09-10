@@ -102,6 +102,8 @@ install-protoc:
 
 # --- Test / lint targets
 
+COVERAGE_DIR := coverage
+
 .PHONY: test
 test: test-daemon test-config test-bindings
 
@@ -110,13 +112,34 @@ test-daemon:
 	@error=""; \
 	for module in $(XPUMD_GO_MODULES); do \
 		echo "Running tests in module '$$module'..."; \
-		go -C $$module test ./... || error=1; \
+		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
+		mkdir -p $$outdir; \
+		go -C $$module test -count=1 -coverpkg=./... \
+		  -coverprofile=$(CURDIR)/$$outdir/coverage.out ./... || error=1; \
+		if summary=$$(go -C $$module tool cover -func=$(CURDIR)/$$outdir/coverage.out); then \
+			echo "$$summary" | tail -1; \
+		else \
+			error=1; \
+		fi; \
 	done; \
 	if [ -n "$$error" ]; then \
 		exit 1; \
 	fi; \
 	echo "✓ All tests passed"
 
+.PHONY: coverage
+coverage: test-daemon
+	@echo
+	@for module in $(XPUMD_GO_MODULES); do \
+		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
+		go -C $$module tool cover -html=$(CURDIR)/$$outdir/coverage.out \
+		  -o $(CURDIR)/$$outdir/coverage.html || exit 1; \
+		level-zero-go/hack/coverage-report.sh $$module $$outdir/coverage.out || exit 1; \
+	done
+
+.PHONY: clean-coverage
+clean-coverage:
+	rm -rf $(COVERAGE_DIR)
 
 .PHONY: test-bindings
 test-bindings:
@@ -210,7 +233,7 @@ go-fix:
 	done
 
 .PHONY: clean
-clean:
+clean: clean-coverage
 	$(MAKE) -C level-zero-go clean
 	rm -f builder-config.yaml \
 	  tools/include/google/protobuf/compiler/plugin.proto \
