@@ -49,6 +49,10 @@ install-doxygen:
 generate-stub:
 	$(MAKE) -C level-zero-stub generate
 
+.PHONY: build-stub
+build-stub:
+	$(MAKE) -C level-zero-stub all
+
 .PHONY: generate-dockerized
 generate-dockerized: clean-generated
 	$(Q)docker build --target artifacts \
@@ -77,11 +81,11 @@ clean: clean-coverage
 test: test-stub test-go
 
 .PHONY: test-stub
-test-stub:
+test-stub: build-stub
 	$(MAKE) -C level-zero-stub test
 
 .PHONY: test-go
-test-go:
+test-go: build-stub
 	@error=""; \
 	for module in $(GO_MODULES); do \
 		echo "Running tests in module '$$module'..."; \
