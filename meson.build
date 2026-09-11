@@ -252,7 +252,43 @@ thread_dep = dependency('threads')
 
 # Dependencies managed by Conan
 levelzero_dep = dependency('level-zero', required : true)
-igsc_dep = dependency('igsc', required : true)
+igsc_dep = dependency('igsc', required: false)
+if not igsc_dep.found()
+  # pkg-config files not found; reconstruct the full dependency graph so that
+  # transitive symbols (METEE, udev) are not silently dropped.
+  # Graph: igsc (static) → metee (static) + pthread + udev (Linux only).
+  metee_dep = dependency('metee', required: false)
+  if not metee_dep.found()
+    metee_dep = declare_dependency(
+      dependencies: [
+        cpp.find_library('metee', required: true),
+        thread_dep,
+      ],
+    )
+  endif
+  igsc_transitive = [metee_dep, thread_dep]
+  if is_linux
+    udev_dep = dependency('libudev', required: false)
+    if not udev_dep.found()
+      udev_dep = declare_dependency(
+        dependencies: cpp.find_library('udev', required: true),
+      )
+    endif
+    igsc_transitive += [udev_dep]
+  elif is_windows
+    # IGSC (static) → METEE → Win32 APIs required by both
+    # igsc:  kernel32, user32, advapi32, setupapi, cfgmgr32
+    # metee: kernel32, user32, advapi32, cfgmgr32
+    foreach lib : ['kernel32', 'user32', 'advapi32', 'setupapi', 'cfgmgr32']
+      igsc_transitive += [cpp.find_library(lib, required: true)]
+    endforeach
+  endif
+  igsc_dep = declare_dependency(
+    dependencies: [
+      cpp.find_library('igsc', required: true, has_headers: ['igsc_lib.h']),
+    ] + igsc_transitive,
+  )
+endif
 nlohmann_json_dep = dependency('nlohmann_json', required : true)
 cli11_dep = dependency('CLI11', required : true, include_type : 'system')
 

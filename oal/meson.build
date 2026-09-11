@@ -52,7 +52,13 @@ elif is_linux
   # Add pciaccess dependency for PCI/SRIOV functionality
   pciaccess_dep = dependency('pciaccess', required: true)
   oal_deps += [pciaccess_dep]
-  metee_dep = dependency('metee', required: true)
+  metee_dep = dependency('metee', required: false)
+  if not metee_dep.found()
+    # Fallback if pkg-config files not found.
+    metee_dep = declare_dependency(
+      dependencies: cpp.find_library('metee', required: true, has_headers: ['metee.h']),
+    )
+  endif
   oal_deps += [metee_dep]
 
   subdir('lin/test')
