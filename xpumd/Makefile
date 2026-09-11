@@ -130,12 +130,7 @@ test-daemon:
 .PHONY: coverage
 coverage: test-daemon
 	@echo
-	@for module in $(XPUMD_GO_MODULES); do \
-		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
-		go -C $$module tool cover -html=$(CURDIR)/$$outdir/coverage.out \
-		  -o $(CURDIR)/$$outdir/coverage.html || exit 1; \
-		level-zero-go/hack/coverage-report.sh $$module $$outdir/coverage.out || exit 1; \
-	done
+	@level-zero-go/hack/coverage-report.sh $(COVERAGE_DIR) $(XPUMD_GO_MODULES)
 
 .PHONY: clean-coverage
 clean-coverage:

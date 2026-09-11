@@ -111,12 +111,7 @@ test-go: build-stub
 .PHONY: coverage
 coverage: test-go
 	@echo
-	@for module in $(GO_MODULES); do \
-		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
-		go -C $$module tool cover -html=$(CURDIR)/$$outdir/coverage.out \
-		  -o $(CURDIR)/$$outdir/coverage.html || exit 1; \
-		hack/coverage-report.sh $$module $$outdir/coverage.out || exit 1; \
-	done
+	$(Q)hack/coverage-report.sh $(COVERAGE_DIR) $(GO_MODULES)
 
 .PHONY: clean-coverage
 clean-coverage:
