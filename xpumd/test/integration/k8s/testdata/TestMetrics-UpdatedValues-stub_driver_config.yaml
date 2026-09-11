@@ -8,6 +8,8 @@ Drivers:
         Version: 65537
       - Name: "ZES_extension_device_state"
         Version: 65536
+      - Name: "ZES_extension_device_health"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -27,6 +29,9 @@ Drivers:
           Repaired: 1  # ZES_REPAIR_STATUS_NOT_PERFORMED
           ExtendedState:
             Flags: 6  # ZES_DEVICE_STATE_EXT_FLAG_WEDGED | ZES_DEVICE_STATE_EXT_FLAG_SURVIVABILITY
+
+        # Health status degraded from "ok" in the initial config
+        Health: 2  # ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL
 
         PCI:
           Properties:

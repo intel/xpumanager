@@ -436,6 +436,13 @@ UpdatedValues:
         <<: *gpu_status_common_labels
         hw_state: survivability
 
+    # hw.status - device health degraded from ok to critical
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *gpu_status_common_labels
+        hw_state: health_critical
+
     # hw.status — PCI link quality issues
     - name: hw_status
       value: 1

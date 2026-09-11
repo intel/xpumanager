@@ -66,12 +66,19 @@ type eccState struct {
 	configurable bool
 }
 
+// healthState is the state of the (optional) device health extension.
+type healthState struct {
+	disabled   bool
+	statusSeen map[l0sysman.DeviceHealthStatusExt]bool
+}
+
 // deviceState has values that can change after enumeration.
 type deviceState struct {
 	initialized      bool
 	devStateDisabled bool
 	pci              pciState
 	ecc              *eccState
+	health           healthState
 	stateExtSeen     l0sysman.DeviceStateExtFlags
 }
 
@@ -216,6 +223,9 @@ func (d *device) init() error {
 		ecc: &eccState{
 			states: map[string]bool{},
 		},
+		health: healthState{
+			statusSeen: map[l0sysman.DeviceHealthStatusExt]bool{},
+		},
 	}
 	d.scrapers = nil
 
@@ -263,6 +273,11 @@ func (d *device) init() error {
 	if _, err := d.PciGetState(); err != nil {
 		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "attributes", d.attributes)
 		d.state.pci.stateDisabled = true
+	}
+	// Check availability of the (optional) device health extension
+	if _, err := d.GetHealthStatusExt(); err != nil {
+		d.logger.Infow("Device GetHealthStatusExt() failed: complete device health status not available", zap.Error(err), "attributes", d.attributes)
+		d.state.health.disabled = true
 	}
 
 	// TODO: report types & sizes of device PCI BARs?
@@ -375,6 +390,8 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	status := &stateAggregator{}
 	d.scrapeDevState(mb, ts, status)
+	d.scrapeHealthStatus(mb, ts, status)
+
 	d.recordHwStatusGpuOk(mb, ts, status)
 
 	d.scrapePciState(mb, ts)
@@ -494,6 +511,58 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 				metadata.AttributeHwTypeGpu,
 			)
 		}
+	}
+}
+
+// scrapeHealthStatus reports device health status from the (optional) device health extension.
+func (d *device) scrapeHealthStatus(mb *metadata.MetricsBuilder, ts pcommon.Timestamp, status *stateAggregator) {
+	if d.state.health.disabled {
+		return
+	}
+
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-health-status-ext-t
+	health, err := d.GetHealthStatusExt()
+	if err != nil {
+		d.logger.Errorw("Device GetHealthStatusExt() failed: device health status metric disabled", zap.Error(err), "attributes", d.attributes)
+		d.state.health.disabled = true
+		return
+	}
+
+	switch health {
+	// recognized values
+	case l0sysman.DEVICE_HEALTH_STATUS_EXT_OK:
+	case l0sysman.DEVICE_HEALTH_STATUS_EXT_WARNING:
+	case l0sysman.DEVICE_HEALTH_STATUS_EXT_CRITICAL:
+	case l0sysman.DEVICE_HEALTH_STATUS_EXT_FAILED:
+	default:
+		// report each unrecognized value from Sysman backend only once
+		if !d.state.health.statusSeen[health] {
+			d.logger.Errorw("Unrecognized GetHealthStatusExt() value", "health", health, "attributes", d.attributes)
+		}
+	}
+	d.state.health.statusSeen[health] = true
+
+	status.addSource(health != l0sysman.DEVICE_HEALTH_STATUS_EXT_OK)
+
+	// report currently active & previously seen health statuses, with a prefix
+	// separating them from the other hw.status{hw.type=gpu} states
+	for status := range d.state.health.statusSeen {
+		if status == l0sysman.DEVICE_HEALTH_STATUS_EXT_OK {
+			// "ok" is reported through the aggregated "ok" state, instead
+			continue
+		}
+		value := int64(0)
+		if status == health {
+			value = 1
+		}
+		mb.RecordHwStatusDataPoint(ts, value,
+			d.attributes.HwID,
+			d.attributes.HwName,
+			d.attributes.PciBDF,
+			"", // not subdevice
+			"health_"+strings.ToLower(status.String()),
+			metadata.AttributeHwTypeGpu,
+		)
 	}
 }
 
