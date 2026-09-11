@@ -116,10 +116,13 @@ func (s *infoLogSource) stopCollection() {
 	s.instance = nil
 }
 
-// read returns the records pending in the info log collection instance, nil when the collection is not running.
-func (s *infoLogSource) read() []l0intel.InfoLogRecord {
+// read returns the records pending in the info log collection instance, nil when
+// the collection is not running, plus the number of records that the driver
+// reported as dropped since the previous read. Records that the driver could not
+// count at the time are counted by a later read.
+func (s *infoLogSource) read() ([]l0intel.InfoLogRecord, uint32) {
 	if !s.collecting() {
-		return nil
+		return nil, 0
 	}
 
 	records, status, err := s.instance.ReadWithMetadata(infoLogReadTimeout)
@@ -131,15 +134,19 @@ func (s *infoLogSource) read() []l0intel.InfoLogRecord {
 		// to persist and we get the event as long as pending log records exist.
 		// TODO: consider a recovery mechanism by re-creating the instance after a back-off
 		s.stopCollection()
-	// The dropped record count is only meaningful when the read succeeded
-	case status.IsDroppedRecordCountValid.IsTrue() && status.DroppedRecordCount != 0:
+		// The driver reports the dropped records also when the read fails
+		return nil, status.DroppedRecordCount
+	// NOTE: an incomplete count is still counted, what it misses is reported by
+	// a later read.
+	case status.DroppedRecordCount != 0:
 		// The collection buffer of the driver overflowed and it lost records. What
 		// was read is valid, so only warn about the loss.
 		s.logger.Warnw("Info log records dropped by the driver: collection buffer overflowed",
-			"infoLog", s.name, "droppedRecords", status.DroppedRecordCount, "records", len(records))
+			"infoLog", s.name, "droppedRecords", status.DroppedRecordCount, "records", len(records),
+			"droppedRecordsComplete", status.IsDroppedRecordCountValid.IsTrue())
 	}
 
-	return records
+	return records, status.DroppedRecordCount
 }
 
 // infoLogSeverity maps the type of an info log record to an OTel log severity level.

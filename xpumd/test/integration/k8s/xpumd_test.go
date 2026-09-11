@@ -519,4 +519,22 @@ func TestInfoLogs(t *testing.T) {
 		}
 		assert.Equal(t, want, rec.Attributes, "info log record attributes mismatch")
 	})
+
+	t.Run("DroppedRecords", func(t *testing.T) {
+		// Number of dropped records that the stub driver reports on every call. A
+		// read makes two calls (a query and the read itself), both reporting it.
+		const droppedPerCall = 3
+
+		tunnel := tc.forwardPort(t, telemetryPort)
+		t.Cleanup(tunnel.stop)
+
+		// NOTE: the internal telemetry endpoint is configured to omit the type and unit suffixes (thus no "_total" suffix)
+		assertion := metricAssertion{Name: "otelcol_receiver_dropped_info_log_records"}
+		families := assertion.waitFor(t, tunnel.endpoint(), 30*time.Second)
+
+		metric, err := assertion.findMetric(families)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, metricValue(metric), float64(2*droppedPerCall),
+			"dropped info log record count mismatch")
+	})
 }

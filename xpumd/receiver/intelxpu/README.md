@@ -168,6 +168,13 @@ Collection is event driven. The records are read on the
 Collecting requires elevated privileges: the CPER records need read/write access
 to the kernel tracing filesystem (`/sys/kernel/tracing`).
 
+Records reported by the driver as dropped (lost due to its collection
+buffer overflow), are counted in the
+`otelcol_receiver_dropped_info_log_records` internal metric, see the
+[internal telemetry](sysman/documentation.md#internal-telemetry) of the receiver.
+Dropped records that the driver cannot count at the time of a read are counted
+on a later read.
+
 ### Log Record Format
 
 | Field | Value |

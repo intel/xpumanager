@@ -19,8 +19,12 @@ func TestSetupTelemetry(t *testing.T) {
 	tb, err := metadata.NewTelemetryBuilder(testTel.NewTelemetrySettings())
 	require.NoError(t, err)
 	defer tb.Shutdown()
+	tb.ReceiverDroppedInfoLogRecords.Add(context.Background(), 1)
 	tb.SysmanSamplerIntervalUsage.Record(context.Background(), 1)
 	tb.SysmanSamplerMissedDeadlines.Add(context.Background(), 1)
+	AssertEqualReceiverDroppedInfoLogRecords(t, testTel,
+		[]metricdata.DataPoint[int64]{{Value: 1}},
+		metricdatatest.IgnoreTimestamp())
 	AssertEqualSysmanSamplerIntervalUsage(t, testTel,
 		[]metricdata.HistogramDataPoint[float64]{{}}, metricdatatest.IgnoreValue(),
 		metricdatatest.IgnoreTimestamp())
