@@ -97,7 +97,7 @@ receivers:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `enabled` | bool | `false` | Whether the info logs are collected |
-| `instance_name` | string | `xpumd` | Name of the collection instance the records are collected into (a tracefs instance in the case of the CPER records). Required, and must not contain `/` |
+| `instance_name` | string | `xpumd` | Name of the collection instance the records are collected into (a tracefs instance in the case of the CPER records). Required, and must not contain `/`. The name is exclusive and startup fails if the instance is already in use by another process. |
 
 #### subsystems
 
@@ -209,7 +209,8 @@ on a later read.
    the driver scoped event extensions.
 4. Collection is started once at startup. If starting it fails or a read fails
    later on, the records of that info log are not collected for the lifetime of
-   daemon.
+   daemon. The only fatal failure is the collection instance name being already
+   in use (see `instance_name` above).
 
 ## Internal Telemetry
 

@@ -7,6 +7,8 @@ package sysman
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
 
+	"github.com/intel/level-zero-go/core"
 	l0sysman "github.com/intel/level-zero-go/sysman"
 	l0intel "github.com/intel/level-zero-go/sysman/exp/intel"
 	"github.com/intel/xpumanager/xpumd/common"
@@ -63,6 +66,14 @@ func newSysmanEventsReceiver(devices *deviceRegistry, cfg *Config, logger *zap.S
 
 // Start implements collector component.Component.Start.
 func (r *sysmanEventsReceiver) Start(_ context.Context, _ component.Host) error {
+	// NOTE: info log collection is started here so that a fatal failure fails the startup of the daemon.
+	for _, l := range r.listeners {
+		if err := l.startInfoLogCollection(); err != nil {
+			r.stopInfoLogCollection()
+			return err
+		}
+	}
+
 	// NOTE: the context passed to Start() is only meant for the startup itself
 	ctx, stop := context.WithCancel(context.Background())
 	r.stop = stop
@@ -72,6 +83,13 @@ func (r *sysmanEventsReceiver) Start(_ context.Context, _ component.Host) error 
 		})
 	}
 	return nil
+}
+
+// stopInfoLogCollection stops the info log collection of every driver.
+func (r *sysmanEventsReceiver) stopInfoLogCollection() {
+	for _, l := range r.listeners {
+		l.stopInfoLogCollection()
+	}
 }
 
 // Shutdown implements collector component.Component.Shutdown.
@@ -171,16 +189,12 @@ func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.Sug
 
 // run registers for the events of the driver and listens for them until the
 // context is cancelled.
-// NOTE: info logs are handled (collection started, listened, read) in the same
-// goroutine to guarantee serialized access.
+// NOTE: info logs are listened for, read and deleted in this one goroutine, which
+// also is the one that the collection was started from (in Start), to guarantee
+// serialized access.
 func (l *driverEventListener) run(ctx context.Context) {
 	l.registerDeviceEvents()
-
-	if l.infoLogsEnabled {
-		// Can't be collected if the event triggering the reads is not available
-		l.infoLogsEnabled = l.startInfoLogCollection()
-		defer l.stopInfoLogCollection()
-	}
+	defer l.stopInfoLogCollection()
 
 	var prevIdleTime time.Time
 	for {
@@ -341,25 +355,48 @@ func appendDeviceEventLogs(sl plog.ScopeLogs, dev *device, flags l0sysman.EventT
 // infoLogEventName is the event name of the emitted info log records
 const infoLogEventName = common.EventNamePrefix + "info_log.cper"
 
-// startInfoLogCollection registers the CPER data available event of the driver,
-// i.e. the notification that triggers the reads, and starts the collection of the
-// records of its info logs. Returns false when nothing can be collected, i.e.
-// when the event is not available or when no info log could be collected.
-func (l *driverEventListener) startInfoLogCollection() bool {
+// startInfoLogCollection registers the CPER data available event of the
+// driver, i.e. the notification that triggers the reads, and starts the
+// collection of the records of its info logs.
+//
+// A failure to start is tolerated (logged, not returned) as the records that
+// cannot be collected are the only casualty. Returns an error only for a
+// collection instance name that is already taken.
+func (l *driverEventListener) startInfoLogCollection() error {
+	if !l.infoLogsEnabled {
+		return nil
+	}
+
 	if err := l.drv.EventRegister(cperDataAvailableEvent); err != nil {
+		// Records can't be collected if the event triggering the reads is not available
 		l.logger.Errorw("Driver EventRegister() failed: info log records not collected", zap.Error(err))
-		return false
+		l.infoLogsEnabled = false
+		return nil
 	}
 
 	for _, src := range l.drv.infoLogs {
-		src.startCollection()
+		err := src.startCollection()
+		switch {
+		// The collection instance is exclusive (across all the processes of the
+		// system), released when the instance is deleted or the owning process exits.
+		// NOTE: only named collection instances are exclusive. Sharing the default
+		// buffer of the driver (an empty instance name) goes unnoticed instead.
+		// TODO: do we want to add a config knob for error behavior?
+		case errors.Is(err, core.RESULT_ERROR_HANDLE_OBJECT_IN_USE):
+			return fmt.Errorf("info log collection instance %q is already in use, "+
+				"another process is collecting the records: %w", src.instanceName, err)
+		case err != nil:
+			l.logger.Errorw("Starting the info log collection failed: info log records not available "+
+				"(collecting them requires elevated privileges)",
+				zap.Error(err), "infoLog", src.name, "driverIndex", l.drvIdx)
+		}
 	}
 	if l.collectedInfoLogs() == 0 {
 		l.logger.Errorw("No info log collection could be started: info log records not collected",
 			"infoLogs", len(l.drv.infoLogs), "driverIndex", l.drvIdx)
-		return false
+		l.infoLogsEnabled = false
 	}
-	return true
+	return nil
 }
 
 // collectedInfoLogs returns the number of info logs of the driver whose records are collected.
