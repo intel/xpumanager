@@ -486,15 +486,18 @@ func TestInfoLogs(t *testing.T) {
 		require.True(t, found, "no info log record of the Sysman device found, got: %v", recordByBDF)
 
 		assert.Equal(t, []byte("CPER-RECORD-DEVICE"), rec.Body, "info log record body mismatch")
-		assert.Equal(t, "Error", rec.SeverityText, "info log record severity mismatch")
+		// The severity comes from the type of the record.
+		assert.Equal(t, "Warn", rec.SeverityText, "info log record severity mismatch")
 		// The record is attributed to the device that reported it.
 		want := map[string]string{
-			"cper.timestamp_us": "1234567",
-			"cper.platform_id":  "12345678-000a-00b0-0c00-00000000d000",
+			"cper.timestamp_ns": "1234567",
+			"cper.fru_id":       "12345678-000a-00b0-0c00-00000000d000",
+			"cper.record_type":  "ERROR_CORRECTED",
 			"pci.bdf":           "0000:05:00.0",
 			"hw.id":             "12345678-0000-0000-0000-000000000000",
 			"hw.name":           "gpu-1",
 			"hw.model":          "Super 3000",
+			"hw.serial_number":  "SN-0001",
 			"pci.device_id":     "0bd5",
 			"pci.vendor_id":     "1234",
 		}
@@ -506,10 +509,12 @@ func TestInfoLogs(t *testing.T) {
 		require.True(t, found, "no info log record of the unknown device found, got: %v", recordByBDF)
 
 		assert.Equal(t, []byte("CPER-RECORD-UNKNOWN"), rec.Body, "info log record body mismatch")
+		assert.Equal(t, "Fatal", rec.SeverityText, "info log record severity mismatch")
 		// Only the metadata of the record itself, there is no device to attribute it to.
 		want := map[string]string{
-			"cper.timestamp_us": "7654321",
-			"cper.platform_id":  "12345678-000a-00b0-0c00-00000000d001",
+			"cper.timestamp_ns": "7654321",
+			"cper.fru_id":       "12345678-000a-00b0-0c00-00000000d001",
+			"cper.record_type":  "ERROR_FATAL",
 			"pci.bdf":           "0000:06:00.0",
 		}
 		assert.Equal(t, want, rec.Attributes, "info log record attributes mismatch")
