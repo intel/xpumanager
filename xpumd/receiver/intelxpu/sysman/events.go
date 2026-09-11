@@ -165,15 +165,15 @@ func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.Sug
 
 // run registers for the events of the driver and listens for them until the
 // context is cancelled.
-// NOTE: info logs are handled (enabled, listened, read) in the same goroutine to
-// guarantee serialized access.
+// NOTE: info logs are handled (collection started, listened, read) in the same
+// goroutine to guarantee serialized access.
 func (l *driverEventListener) run(ctx context.Context) {
 	l.registerDeviceEvents()
 
 	if l.infoLogsEnabled {
 		// Can't be collected if the event triggering the reads is not available
-		l.infoLogsEnabled = l.enableInfoLogs()
-		defer l.disableInfoLogs()
+		l.infoLogsEnabled = l.startInfoLogCollection()
+		defer l.stopInfoLogCollection()
 	}
 
 	var prevIdleTime time.Time
@@ -207,7 +207,7 @@ func (l *driverEventListener) run(ctx context.Context) {
 
 		infoLogRecords := 0
 		// Check for infoLogsEnabled too, just in case a sporadic driver event is received
-		if driverEvents&l0sysman.EventTypeFlags(l0intel.CPER_DATA_AVAILABLE) != 0 && l.infoLogsEnabled {
+		if driverEvents&cperDataAvailableEvent != 0 && l.infoLogsEnabled {
 			infoLogRecords = l.readInfoLogs(ctx)
 		}
 
@@ -335,44 +335,42 @@ func appendDeviceEventLogs(sl plog.ScopeLogs, dev *device, flags l0sysman.EventT
 // infoLogEventName is the event name of the emitted info log records
 const infoLogEventName = common.EventNamePrefix + "info_log.cper"
 
-// enableInfoLogs registers the CPER data available event of the driver, i.e. the
-// notification that triggers the reads, and enables the collection of the records
-// of its info logs. Returns false when nothing can be collected, i.e. when the
-// event is not available or when no info log could be enabled.
-func (l *driverEventListener) enableInfoLogs() bool {
-	if err := l.drv.EventRegister(l0sysman.EventTypeFlags(l0intel.CPER_DATA_AVAILABLE)); err != nil {
+// startInfoLogCollection registers the CPER data available event of the driver,
+// i.e. the notification that triggers the reads, and starts the collection of the
+// records of its info logs. Returns false when nothing can be collected, i.e.
+// when the event is not available or when no info log could be collected.
+func (l *driverEventListener) startInfoLogCollection() bool {
+	if err := l.drv.EventRegister(cperDataAvailableEvent); err != nil {
 		l.logger.Errorw("Driver EventRegister() failed: info log records not collected", zap.Error(err))
 		return false
 	}
 
 	for _, src := range l.drv.infoLogs {
-		src.enable()
+		src.startCollection()
 	}
-	if l.enabledInfoLogs() == 0 {
-		l.logger.Errorw("No info log collection could be enabled: info log records not collected",
+	if l.collectedInfoLogs() == 0 {
+		l.logger.Errorw("No info log collection could be started: info log records not collected",
 			"infoLogs", len(l.drv.infoLogs), "driverIndex", l.drvIdx)
 		return false
 	}
 	return true
 }
 
-// enabledInfoLogs returns the number of info logs of the driver whose record
-// collection is enabled.
-func (l *driverEventListener) enabledInfoLogs() int {
-	enabled := 0
+// collectedInfoLogs returns the number of info logs of the driver whose records are collected.
+func (l *driverEventListener) collectedInfoLogs() int {
+	collected := 0
 	for _, src := range l.drv.infoLogs {
-		if src.enabled {
-			enabled++
+		if src.collecting() {
+			collected++
 		}
 	}
-	return enabled
+	return collected
 }
 
-// disableInfoLogs disables the collection of the records of every info log of the
-// driver.
-func (l *driverEventListener) disableInfoLogs() {
+// stopInfoLogCollection stops the collection of the records of every info log of the driver.
+func (l *driverEventListener) stopInfoLogCollection() {
 	for _, src := range l.drv.infoLogs {
-		src.disable()
+		src.stopCollection()
 	}
 }
 
@@ -392,7 +390,7 @@ func (l *driverEventListener) readInfoLogs(ctx context.Context) int {
 		}
 	}
 
-	if l.enabledInfoLogs() == 0 {
+	if l.collectedInfoLogs() == 0 {
 		l.logger.Errorw("No info log of the driver is collected anymore: info log records no longer read",
 			"infoLogs", len(l.drv.infoLogs), "driverIndex", l.drvIdx)
 		l.infoLogsEnabled = false
@@ -439,28 +437,29 @@ func appendInfoLogRecord(sl plog.ScopeLogs, rec l0intel.InfoLogRecord, bdf strin
 	lr := sl.LogRecords().AppendEmpty()
 
 	lr.SetObservedTimestamp(observed)
-	// NOTE: the timestamp of the record is microseconds since boot, so we
-	// cannot reliably convert it to wall clock time. This timestamp is added as
-	// an attribute and the observation time is used as the timestamp of the
-	// record.
+	// NOTE: the timestamp of the record is nanoseconds from a reference point that
+	// is specific to the driver, so we cannot convert it to wall clock time. This
+	// timestamp is added as an attribute and the observation time is used as the
+	// timestamp of the record.
 	lr.SetTimestamp(observed)
-	// NOTE: static severity. The records report hardware errors, but their
-	// severity is part of the record itself, not of the metadata we get.
-	lr.SetSeverityNumber(plog.SeverityNumberError)
-	lr.SetSeverityText(plog.SeverityNumberError.String())
+	sev := infoLogSeverity(rec.Metadata.RecordType)
+	lr.SetSeverityNumber(sev)
+	lr.SetSeverityText(sev.String())
 	lr.SetEventName(infoLogEventName)
 	// The record is passed on as-is
 	lr.Body().SetEmptyBytes().FromRaw(rec.Data)
 
 	attrs := lr.Attributes()
-	attrs.PutInt("cper.timestamp_us", int64(rec.Metadata.Timestamp))
-	attrs.PutStr("cper.platform_id", rec.Metadata.Uuid.Id.String())
+	attrs.PutInt("cper.timestamp_ns", int64(rec.Metadata.Timestamp))
+	attrs.PutStr("cper.fru_id", rec.Metadata.Uuid.Id.String())
+	attrs.PutStr("cper.record_type", rec.Metadata.RecordType.String())
 	attrs.PutStr("pci.bdf", bdf)
 
 	if dev != nil {
 		attrs.PutStr("hw.id", dev.HwID)
 		attrs.PutStr("hw.name", dev.HwName)
 		attrs.PutStr("hw.model", dev.HwModel)
+		attrs.PutStr("hw.serial_number", dev.HwSerialNumber)
 		attrs.PutStr("pci.device_id", dev.PciDeviceID)
 		attrs.PutStr("pci.vendor_id", dev.PciVendorID)
 	}
