@@ -2740,10 +2740,12 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
     device->getProperty(XPUM_DEVICE_PROPERTY_INTERNAL_NUMBER_OF_TILES, prop);
     uint32_t tileCount = prop.getValueInt();
 
-    if (*count > 0 && *count < tileCount && dataArray != nullptr) {
+    uint32_t expectedCount = (tileId == -1) ? tileCount : 1u;
+    if (dataArray != nullptr && *count < expectedCount) {
+        *count = expectedCount;
         return XPUM_BUFFER_TOO_SMALL;
     } else {
-        *count = tileCount;
+        *count = expectedCount;
     }
 
     if (dataArray == nullptr) {
@@ -2792,7 +2794,9 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
     }
 
     /*  calculate the component occupancy ratio of each tile in current device */
-    for (size_t i = 0; i < p_perf_datas->size(); i++) {
+    uint32_t outIdx = 0;
+    for (size_t i = 0; i < p_perf_datas->size() && outIdx < *count; i++) {
+        if (tileId != -1 && static_cast<xpum_device_tile_id_t>(i) != tileId) continue;
         std::float_t active = 0;
         std::float_t stall = 0;
         std::float_t inUse = 0;
@@ -2957,13 +2961,14 @@ xpum_result_t xpumGetDeviceComponentOccupancyRatio(xpum_device_id_t deviceId,
         components_ratios.push_back(std::pair<std::string, std::double_t>("stallOther", stallOther));
         components_ratios.push_back(std::pair<std::string, std::double_t>("stallInstFetch", stallInstFetch));
 
-        dataArray[i].componentNum = components_ratios.size();
+        dataArray[outIdx].componentNum = components_ratios.size();
         int idx = 0;
         for (auto it = components_ratios.begin(); it != components_ratios.end(); it++) {
-            std::strcpy(dataArray[i].ratios[idx].occupancyName, (*it).first.c_str());
-            dataArray[i].ratios[idx].value = (*it).second;
+            std::strcpy(dataArray[outIdx].ratios[idx].occupancyName, (*it).first.c_str());
+            dataArray[outIdx].ratios[idx].value = (*it).second;
             idx++;
         }
+        outIdx++;
     }
 
     return XPUM_OK;

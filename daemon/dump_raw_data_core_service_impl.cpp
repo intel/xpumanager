@@ -52,6 +52,16 @@ static void removeFileOnStartTaskFail(std::string filePath) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response) {
+    int count = request->metricstypelist_size();
+    if (count <= 0) {
+        response->set_errormsg("Number of metrics types fewer than minimum supported types");
+        response->set_errorno(XPUM_GENERIC_ERROR);
+        return grpc::Status::OK;
+    } else if (count > XPUM_DUMP_MAX) {
+        response->set_errormsg("Number of metrics types exceeds the supported limit");
+        response->set_errorno(XPUM_GENERIC_ERROR);
+        return grpc::Status::OK;
+    }
     std::vector<xpum_dump_type_t> dumpTypeList;
     for (auto enumValue : request->metricstypelist()) {
         xpum_dump_type_t dumpType = static_cast<xpum_dump_type_t>(enumValue.value());

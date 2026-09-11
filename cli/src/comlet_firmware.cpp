@@ -12,6 +12,8 @@
 #include <thread>
 #include <igsc_lib.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <dirent.h>
 
 #include "core_stub.h"
@@ -502,10 +504,36 @@ static std::string findSubDir(const char* dirPath, const char* sudDirName){
 }
 
 static bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccState, std::string &codeImagePath, std::string &dataImagePath){
-    std::string unpack_cmd = "unzip -q -o " + std::string(filePath) + " -d " + std::string(dirName);
-    int status = std::system(unpack_cmd.c_str());
-    if (status != 0)
+    // Use fork/execv instead of system() for better security and control
+    pid_t pid = fork();
+    if (pid < 0) {
         return false;
+    }
+
+    if (pid == 0) {
+        char* const args[] = {
+            (char*)"unzip",
+            (char*)"-q",
+            (char*)"-o",
+            (char*)filePath,
+            (char*)"-d",
+            (char*)dirName,
+            nullptr
+        };
+
+        execvp("unzip", args);
+        // If execvp returns, it failed
+        _exit(127);
+    } else {
+        int status = 0;
+        if (waitpid(pid, &status, 0) == -1) {
+            return false;
+        }
+
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+            return false;
+        }
+    }
     //check if follow the standard format
     std::string eccStateStr = (eccState == 1) ? "ECC_ON" : "ECC_OFF";
     std::string dirPath = findSubDir(dirName, eccStateStr.c_str());

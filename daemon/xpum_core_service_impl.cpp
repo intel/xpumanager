@@ -538,6 +538,15 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
                                                    ::DiagnosticsTaskInfo* response) {
     
     int count = request->types_size();
+    if(count <= 0) {
+        response->set_errormsg("Number of diagnostic types fewer than minimum supported types");
+        response->set_errorno(XPUM_RESULT_DIAGNOSTIC_INVALID_TASK_TYPE);
+        return grpc::Status::OK;
+    } else if (count >= xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX) {
+        response->set_errormsg("Number of diagnostic types exceeds the supported limit");
+        response->set_errorno(XPUM_RESULT_DIAGNOSTIC_INVALID_TASK_TYPE);
+        return grpc::Status::OK;
+    }
     xpum_diag_task_type_t types[count];
     for (int i = 0; i < count; i++)
         types[i] = static_cast<xpum_diag_task_type_t>(request->types(i));
@@ -567,7 +576,19 @@ grpc::Status XpumCoreServiceImpl::getTopology(grpc::ServerContext* context, cons
 ::grpc::Status XpumCoreServiceImpl::runMultipleSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsByGroupRequest* request,
                                                           ::DiagnosticsGroupTaskInfo* response) {
     int count = request->types_size();
-    xpum_diag_task_type_t types[xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX];
+    if (count <= 0) {
+        response->set_errormsg("Number of diagnostic types is below the minimum supported");
+        response->set_errorno(XPUM_RESULT_DIAGNOSTIC_INVALID_TASK_TYPE);
+        return grpc::Status::OK;
+    }
+
+    if (count >= xpum_diag_task_type_t::XPUM_DIAG_TASK_TYPE_MAX) {
+        response->set_errormsg("Number of diagnostic types exceeds the supported limit");
+        response->set_errorno(XPUM_RESULT_DIAGNOSTIC_INVALID_TASK_TYPE);
+        return grpc::Status::OK;
+    }
+
+    xpum_diag_task_type_t types[count];
     for (int i = 0; i < count; i++)
         types[i] = static_cast<xpum_diag_task_type_t>(request->types(i));
     xpum_result_t res = xpumRunMultipleSpecificDiagnosticsByGroup(request->groupid(), types, count);
@@ -1266,7 +1287,8 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
 
     // notifyCallBack
     policy.notifyCallBack = xpum_notify_callback_func;
-    strcpy(policy.notifyCallBackUrl, policyInput.notifycallbackurl().c_str());
+    strncpy(policy.notifyCallBackUrl, policyInput.notifycallbackurl().c_str(), XPUM_MAX_STR_LENGTH - 1);
+    policy.notifyCallBackUrl[XPUM_MAX_STR_LENGTH - 1] = '\0';
 
     //xpumSetPolicy
     xpum_device_id_t id;
@@ -1754,7 +1776,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     std::vector<uint32_t> tileList;
     xpum_sampling_interval_t samplingInterval = request->samplinginterval();
     bool isTileData = request->istiledata();
-    int tileCount = -1;
+    uint32_t tileCount = 0;
 
     if (isTileData) {
         res = validateDeviceIdAndTileId(deviceId, tileId);
@@ -1775,7 +1797,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
     }
 
     uint32_t tileTotalCount = 0;
-    res = xpumGetDeviceComponentOccupancyRatio(deviceId, tileId, samplingInterval, nullptr, &tileTotalCount);
+    res = xpumGetDeviceComponentOccupancyRatio(deviceId, -1, samplingInterval, nullptr, &tileTotalCount);
 
     if (res != XPUM_OK) {
         switch (res) {
@@ -1818,7 +1840,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             oss << std::setw(8) << std::setiosflags(std::ios::fixed) << std::setiosflags(std::ios::right) << std::setprecision(fixed) << val;
             return oss.str();
         };
-        res = xpumGetDeviceComponentOccupancyRatio(deviceId, tileId, samplingInterval, dataArray, &tileTotalCount);
+        res = xpumGetDeviceComponentOccupancyRatio(deviceId, isTileData ? tileId : (xpum_device_tile_id_t)-1, samplingInterval, dataArray, &tileCount);
         if (res != XPUM_OK) {
             switch (res) {
                 case XPUM_LEVEL_ZERO_INITIALIZATION_ERROR:
@@ -1837,7 +1859,7 @@ void xpum_notify_callback_func(xpum_policy_notify_callback_para_t* p_para) {
             response->set_errorno(res);
             return grpc::Status::OK;
         } else {
-            for (uint32_t i = 0; i < tileTotalCount; i++) {
+            for (uint32_t i = 0; i < tileCount; i++) {
 
                 /* tileId specified */
                 if (isTileData && tileId != tileList.at(i)) continue;

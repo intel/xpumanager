@@ -378,17 +378,23 @@ inline bool metricsTypeAllowList(xpum_stats_type_t metricsType) {
 }
 
 ::grpc::Status XpumCoreServiceImpl::getFabricStatisticsEx(::grpc::ServerContext* context, const ::GetFabricStatsExRequest* request, ::GetFabricStatsResponse* response) {
+    if (request->deviceidlist_size() > XPUM_MAX_NUM_DEVICES) {
+        response->set_errorno(XPUM_GENERIC_ERROR);
+        response->set_errormsg("Device ID list exceeds maximum allowed size");
+        return grpc::Status::OK;
+    }
     std::vector<xpum_device_id_t> deviceIdList;
     for (auto deviceId : request->deviceidlist()) {
         deviceIdList.push_back(deviceId);
     }
     uint64_t sessionId = request->sessionid();
-    uint32_t count = deviceIdList.size() * 32;
+    static constexpr uint32_t FABRIC_STATS_PER_DEVICE = 32;
+    uint32_t count = static_cast<uint32_t>(deviceIdList.size()) * FABRIC_STATS_PER_DEVICE;
     std::vector<xpum_device_fabric_throughput_stats_t> dataList(count);
     uint64_t begin, end;
     auto res = xpumGetFabricThroughputStatsEx(deviceIdList.data(), deviceIdList.size(), dataList.data(), &count, &begin, &end, sessionId);
     if (res == XPUM_BUFFER_TOO_SMALL) {
-        dataList.reserve(count);
+        dataList.resize(count);
         res = xpumGetFabricThroughputStatsEx(deviceIdList.data(), deviceIdList.size(), dataList.data(), &count, &begin, &end, sessionId);
     }
     response->set_errorno(res);

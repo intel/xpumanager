@@ -12,6 +12,9 @@
 #include <regex>
 #include <igsc_lib.h>
 #include <string>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "infrastructure/logger.h"
 #include "system_cmd.h"
@@ -67,10 +70,39 @@ static std::string findSubDir(const char* dirPath, const char* sudDirName){
 }
 
 bool unpackAndGetImagePath(const char* filePath, const char* dirName, int eccState, std::string &codeImagePath, std::string &dataImagePath){
-    std::string unpack_cmd = "unzip -q -o " + std::string(filePath) + " -d " + std::string(dirName);
-    int status = std::system(unpack_cmd.c_str());
-    if (status != 0)
-        return false;
+    // Use fork/execv instead of system() for better security and control
+    pid_t pid = fork();
+    if (pid < 0) {
+        return false; // fork failed
+    }
+
+    if (pid == 0) {
+        // Child process - execute unzip
+        char* const args[] = {
+            (char*)"unzip",
+            (char*)"-q",
+            (char*)"-o",
+            (char*)filePath,
+            (char*)"-d",
+            (char*)dirName,
+            nullptr
+        };
+
+        // Execute unzip
+        execvp("unzip", args);
+        // If execvp returns, it failed
+        _exit(127);
+    } else {
+        // Parent process - wait for child to complete
+        int status = 0;
+        if (waitpid(pid, &status, 0) == -1) {
+            return false;
+        }
+
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+            return false;
+        }
+    }
     //check if follow the standard format
     std::string eccStateStr = (eccState == 1) ? "ECC_ON" : "ECC_OFF";
     std::string dirPath = findSubDir(dirName, eccStateStr.c_str());

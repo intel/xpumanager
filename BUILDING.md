@@ -10,7 +10,7 @@ export https_proxy=...
 rm -fr /tmp/xpum_src
 xpum_git_clone_options="--depth 1 -c http.sslVerify=false"
 xpum_git_repo=https://github.com/intel/xpumanager.git
-xpum_git_branch=master
+xpum_git_branch=flex_max
 
 git clone $xpum_git_clone_options \
     -b $xpum_git_branch $xpum_git_repo /tmp/xpum_src

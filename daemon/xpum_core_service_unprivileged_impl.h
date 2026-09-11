@@ -35,6 +35,12 @@ public:
     virtual ::grpc::Status runDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunDiagnosticsByGroupRequest* request, ::DiagnosticsGroupTaskInfo* response) override {
         return PD;
     }
+    virtual ::grpc::Status runMultipleSpecificDiagnostics(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsRequest* request, ::DiagnosticsTaskInfo* response) override {
+        return PD;
+    }
+    virtual ::grpc::Status runMultipleSpecificDiagnosticsByGroup(::grpc::ServerContext* context, const ::RunMultipleSpecificDiagnosticsByGroupRequest* request, ::DiagnosticsGroupTaskInfo* response) override {
+        return PD;
+    }
     virtual ::grpc::Status getDiagnosticsResult(::grpc::ServerContext* context, const ::DeviceId* request, ::DiagnosticsTaskInfo* response) override {
         return PD;
     }
@@ -71,6 +77,7 @@ public:
     virtual ::grpc::Status setDevicePowerLimit(::grpc::ServerContext* context, const ::ConfigDevicePowerLimitRequest* request, ::ConfigDeviceResultData* response) override {
         return PD;
     }
+    // setDevicePowerLimitExt is not available in current core.proto
     virtual ::grpc::Status setDeviceFrequencyRange(::grpc::ServerContext* context, const ::ConfigDeviceFrequencyRangeRequest* request, ::ConfigDeviceResultData* response) override {
         return PD;
     }
@@ -102,17 +109,40 @@ public:
         return PD;
     }
 
-    virtual ::grpc::Status createVf(::grpc::ServerContext* context, const ::VgpuCreateVfRequest* request, ::VgpuCreateVfResponse *response) override {
+    virtual ::grpc::Status startDumpRawDataTask(::grpc::ServerContext* context, const ::StartDumpRawDataTaskRequest* request, ::StartDumpRawDataTaskResponse* response) override {
+        return PD;
+    }
+    virtual ::grpc::Status stopDumpRawDataTask(::grpc::ServerContext* context, const ::StopDumpRawDataTaskRequest* request, ::StopDumpRawDataTaskReponse* response) override {
+        return PD;
+    }
+    virtual ::grpc::Status listDumpRawDataTasks(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::ListDumpRawDataTaskResponse* response) override {
         return PD;
     }
 
+    virtual ::grpc::Status createVf(::grpc::ServerContext* context, const ::VgpuCreateVfRequest* request, ::VgpuCreateVfResponse *response) override {
+        return PD;
+    }
+    virtual ::grpc::Status removeAllVf(::grpc::ServerContext* context, const ::VgpuRemoveAllVfRequest* request, ::VgpuRemoveAllVfResponse *response) override {
+        return PD;
+    }
+    virtual ::grpc::Status getVfMetrics(::grpc::ServerContext* context, const ::GetVfMetricsRequest* request, ::GetVfMetricsResponse *response) override {
+        return PD;
+    }
     virtual ::grpc::Status precheck(::grpc::ServerContext* context, const ::PrecheckOptionsRequest* request, ::PrecheckComponentInfoListResponse* response) override {
         return PD;
     }
 
+    virtual ::grpc::Status getFabricStatisticsEx(::grpc::ServerContext* context, const ::GetFabricStatsExRequest* request, ::GetFabricStatsResponse* response) override {
+        return PD;
+    }
+    
     virtual ::grpc::Status getPrecheckErrorList(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::PrecheckErrorListResponse* response) override {
         return PD;
     } 
+    
+    virtual ::grpc::Status getDeviceComponentOccupancyRatio(::grpc::ServerContext* context, const ::DeviceComponentOccupancyRatioRequest* request, ::DeviceComponentOccupancyRatioResponse* response) override {
+        return PD;
+    }
 private:
     static const grpc::Status PD;
 };
