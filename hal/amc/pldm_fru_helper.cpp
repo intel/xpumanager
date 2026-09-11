@@ -226,38 +226,34 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 	}
 
 	// Limit field length to prevent buffer overflow
-	size_t safeLength =
+	size_t payloadLength =
 		(decodedText.length() < FRU_DATA_MAX_LENGTH - 1) ? decodedText.length() : FRU_DATA_MAX_LENGTH - 1;
+	size_t bufferSize = payloadLength + 1;
 
 	if (recordType == FRU_RECORD_TYPE_GENERAL) {
 		switch (fieldType) {
 		case FRU_GENERAL_FIELD_TYPE_CHASSIS_TYPE:
-			STRNCPY_S(mFruTable.genChassisType, decodedText.c_str(), safeLength);
-			mFruTable.genChassisType[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genChassisType, decodedText.c_str(), bufferSize);
 			DBG("    Chassis Type: {}\n", mFruTable.genChassisType);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_MODEL:
-			STRNCPY_S(mFruTable.genModel, decodedText.c_str(), safeLength);
-			mFruTable.genModel[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genModel, decodedText.c_str(), bufferSize);
 			DBG("    Model: {}\n", mFruTable.genModel);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_PART_NUMBER:
-			STRNCPY_S(mFruTable.genPartNum, decodedText.c_str(), safeLength);
-			mFruTable.genPartNum[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genPartNum, decodedText.c_str(), bufferSize);
 			DBG("    Part Number: {}\n", mFruTable.genPartNum);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_SERIAL_NUMBER:
-			STRNCPY_S(mFruTable.genSerialNum, decodedText.c_str(), safeLength);
-			mFruTable.genSerialNum[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genSerialNum, decodedText.c_str(), bufferSize);
 			DBG("    Serial Number: {}\n", mFruTable.genSerialNum);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_MANUFACTURER:
-			STRNCPY_S(mFruTable.genManufacturer, decodedText.c_str(), safeLength);
-			mFruTable.genManufacturer[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genManufacturer, decodedText.c_str(), bufferSize);
 			DBG("    Manufacturer: {}\n", mFruTable.genManufacturer);
 			break;
 
@@ -281,52 +277,44 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_VENDOR:
-			STRNCPY_S(mFruTable.genVendor, decodedText.c_str(), safeLength);
-			mFruTable.genVendor[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genVendor, decodedText.c_str(), bufferSize);
 			DBG("    Vendor: {}\n", mFruTable.genVendor);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_NAME:
-			STRNCPY_S(mFruTable.genName, decodedText.c_str(), safeLength);
-			mFruTable.genName[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genName, decodedText.c_str(), bufferSize);
 			DBG("    Name: {}\n", mFruTable.genName);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_SKU:
-			STRNCPY_S(mFruTable.genSku, decodedText.c_str(), safeLength);
-			mFruTable.genSku[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genSku, decodedText.c_str(), bufferSize);
 			DBG("    SKU: {}\n", mFruTable.genSku);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_VERSION:
-			STRNCPY_S(mFruTable.genVersion, decodedText.c_str(), safeLength);
-			mFruTable.genVersion[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genVersion, decodedText.c_str(), bufferSize);
 			DBG("    Version: {}\n", mFruTable.genVersion);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_ASSET_TAG:
-			STRNCPY_S(mFruTable.genAssetTag, decodedText.c_str(), safeLength);
-			mFruTable.genAssetTag[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genAssetTag, decodedText.c_str(), bufferSize);
 			DBG("    Asset Tag: {}\n", mFruTable.genAssetTag);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_DESCRIPTION:
-			STRNCPY_S(mFruTable.genDesc, decodedText.c_str(), safeLength);
-			mFruTable.genDesc[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genDesc, decodedText.c_str(), bufferSize);
 			DBG("    Description: {}\n", mFruTable.genDesc);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_ENGINEERING_CHANGE_LEVEL:
-			STRNCPY_S(mFruTable.genEngChangeLevel, decodedText.c_str(), safeLength);
-			mFruTable.genEngChangeLevel[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genEngChangeLevel, decodedText.c_str(), bufferSize);
 			DBG("    Engineering Change Level: {}\n", mFruTable.genEngChangeLevel);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_OTHER_INFORMATION:
 			if (mFruTable.genOtherInfoCount < FRU_MAX_OTHER_INFO_RECORDS) {
 				uint8_t idx = mFruTable.genOtherInfoCount;
-				STRNCPY_S(mFruTable.genOtherInfo[idx], decodedText.c_str(), safeLength);
-				mFruTable.genOtherInfo[idx][safeLength] = '\0';
+				STRNCPY_S(mFruTable.genOtherInfo[idx], decodedText.c_str(), bufferSize);
 				mFruTable.genOtherInfoCount++;
 				DBG("    Other Information[{}]: {}\n", idx, mFruTable.genOtherInfo[idx]);
 			} else {
@@ -335,15 +323,14 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_VENDOR_IANA:
-			safeLength =
+			payloadLength =
 				(fieldLength < sizeof(mFruTable.genVendorIana)) ? fieldLength : sizeof(mFruTable.genVendorIana);
-			memcpy(&mFruTable.genVendorIana, fieldData, safeLength);
+			memcpy(&mFruTable.genVendorIana, fieldData, payloadLength);
 			DBG("    Vendor IANA: 0x{:X}\n", mFruTable.genVendorIana);
 			break;
 
 		case FRU_GENERAL_FIELD_TYPE_SPARE_PART_NUMBER:
-			STRNCPY_S(mFruTable.genSparePartNum, decodedText.c_str(), safeLength);
-			mFruTable.genSparePartNum[safeLength] = '\0';
+			STRNCPY_S(mFruTable.genSparePartNum, decodedText.c_str(), bufferSize);
 			DBG("    Spare Part Number: {}\n", mFruTable.genSparePartNum);
 			break;
 
@@ -354,29 +341,29 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 	} else if (recordType == FRU_RECORD_TYPE_OEM) {
 		switch (fieldType) {
 		case FRU_OEM_FIELD_TYPE_VENDOR_IANA:
-			safeLength =
+			payloadLength =
 				(fieldLength < sizeof(mFruTable.oemVendorIana)) ? fieldLength : sizeof(mFruTable.oemVendorIana);
-			memcpy(&mFruTable.oemVendorIana, fieldData, safeLength);
+			memcpy(&mFruTable.oemVendorIana, fieldData, payloadLength);
 			DBG("    OEM Vendor IANA: 0x{:X}\n", mFruTable.oemVendorIana);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_SLAVE_ADDRESS:
-			safeLength = (fieldLength < sizeof(mFruTable.oemSlaveAddr)) ? fieldLength : sizeof(mFruTable.oemSlaveAddr);
-			memcpy(&mFruTable.oemSlaveAddr, fieldData, safeLength);
+			payloadLength = (fieldLength < sizeof(mFruTable.oemSlaveAddr)) ? fieldLength : sizeof(mFruTable.oemSlaveAddr);
+			memcpy(&mFruTable.oemSlaveAddr, fieldData, payloadLength);
 			DBG("    OEM Slave Address: 0x{:X}\n", mFruTable.oemSlaveAddr);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_SMBUS_FREQUENCY:
-			safeLength = (fieldLength < sizeof(mFruTable.oemSmbusFreq)) ? fieldLength : sizeof(mFruTable.oemSmbusFreq);
-			memcpy(&mFruTable.oemSmbusFreq, fieldData, safeLength);
+			payloadLength = (fieldLength < sizeof(mFruTable.oemSmbusFreq)) ? fieldLength : sizeof(mFruTable.oemSmbusFreq);
+			memcpy(&mFruTable.oemSmbusFreq, fieldData, payloadLength);
 			DBG("    OEM SMBus Frequency: 0x{:X}\n", mFruTable.oemSmbusFreq);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_HARDWARE_ARBITRATION_OPT_IN:
-			safeLength = (fieldLength < sizeof(mFruTable.oemHWArbitrationOptIn))
+			payloadLength = (fieldLength < sizeof(mFruTable.oemHWArbitrationOptIn))
 							 ? fieldLength
 							 : sizeof(mFruTable.oemHWArbitrationOptIn);
-			memcpy(&mFruTable.oemHWArbitrationOptIn, fieldData, safeLength);
+			memcpy(&mFruTable.oemHWArbitrationOptIn, fieldData, payloadLength);
 			DBG("    OEM Hardware Arbitration Opt-in: 0x{:X}\n", mFruTable.oemHWArbitrationOptIn);
 			break;
 
