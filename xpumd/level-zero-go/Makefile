@@ -86,27 +86,9 @@ test-stub: build-stub
 
 .PHONY: test-go
 test-go: build-stub
-	@error=""; \
-	for module in $(GO_MODULES); do \
-		echo "Running tests in module '$$module'..."; \
-		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
-		mkdir -p $$outdir; \
-		# Use counter=1 to avoid caching test results, needed because of the stub driver as \
-		# the Go test cache misses (at least) the following things: \
-		# - PKG_CONFIG_PATH trick (a change in the stub driver is not tracked) \
-		# - the testdata/ files are read by the stub driver (not the Go code) \
-		PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub go -C $$module test -tags test \
-		  -count=1 -coverpkg=./... \
-		  -coverprofile=$(CURDIR)/$$outdir/coverage.out ./... || error=1; \
-		if summary=$$(go -C $$module tool cover -func=$(CURDIR)/$$outdir/coverage.out); then \
-			echo "$$summary" | tail -1; \
-		else \
-			error=1; \
-		fi; \
-	done; \
-	if [ -n "$$error" ]; then \
-		exit 1; \
-	fi
+	$(Q)GO_TEST_FLAGS="-tags test" \
+	  PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub \
+	  hack/go-test-coverage.sh $(COVERAGE_DIR) $(GO_MODULES)
 
 .PHONY: coverage
 coverage: test-go

@@ -109,23 +109,8 @@ test: test-daemon test-config test-bindings
 
 .PHONY: test-daemon
 test-daemon:
-	@error=""; \
-	for module in $(XPUMD_GO_MODULES); do \
-		echo "Running tests in module '$$module'..."; \
-		outdir=$$(realpath -m --relative-to=. $(COVERAGE_DIR)/$$module); \
-		mkdir -p $$outdir; \
-		go -C $$module test -count=1 -coverpkg=./... \
-		  -coverprofile=$(CURDIR)/$$outdir/coverage.out ./... || error=1; \
-		if summary=$$(go -C $$module tool cover -func=$(CURDIR)/$$outdir/coverage.out); then \
-			echo "$$summary" | tail -1; \
-		else \
-			error=1; \
-		fi; \
-	done; \
-	if [ -n "$$error" ]; then \
-		exit 1; \
-	fi; \
-	echo "✓ All tests passed"
+	@level-zero-go/hack/go-test-coverage.sh $(COVERAGE_DIR) $(XPUMD_GO_MODULES)
+	@echo "✓ All tests passed"
 
 .PHONY: coverage
 coverage: test-daemon
