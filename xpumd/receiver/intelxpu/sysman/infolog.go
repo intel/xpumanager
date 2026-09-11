@@ -83,21 +83,20 @@ func enumInfoLogs(drv *driver, driverIndex int, cfg InfoLogsConfig, logger *zap.
 }
 
 // startCollection starts the collections of the records of the info log.
-func (s *infoLogSource) startCollection() {
+func (s *infoLogSource) startCollection() error {
 	if s.collecting() {
-		return
+		return nil
 	}
 	// A zero buffer size leaves the size of the collection buffer as it is
 	instance, err := s.CreateInstance(s.instanceName, 0)
 	if err != nil {
-		s.logger.Errorw("InfoLog CreateInstance() failed: info log records not available "+
-			"(collecting them requires elevated privileges)",
-			zap.Error(err), "infoLog", s.name)
-		return
+		return err
 	}
+
 	s.instance = instance
 	s.logger.Infow("Info log collection started", "infoLog", s.name, "instanceName", s.instanceName,
 		"bufferSizeKb", instance.BufferSizeInKb)
+	return nil
 }
 
 // collecting tells whether the records of the info log are collected.
