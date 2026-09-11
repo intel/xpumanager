@@ -95,5 +95,9 @@ func (f *Handle) CreateLogsReceiver(settings component.TelemetrySettings, cfg *C
 			return plog.NewLogs(), nil
 		})
 	}
-	return newSysmanEventsReceiver(devices, cfg, logger, nextConsumer)
+	telemetry, err := metadata.NewTelemetryBuilder(settings)
+	if err != nil {
+		return nil, err
+	}
+	return newSysmanEventsReceiver(devices, cfg, logger, telemetry, nextConsumer)
 }

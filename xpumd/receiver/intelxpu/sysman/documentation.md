@@ -561,6 +561,14 @@ Temperature of the hardware component in degrees Celsius.
 
 The following telemetry is emitted by this component.
 
+### otelcol_receiver_dropped_info_log_records
+
+Number of lost GPU info log records (due to driver collection buffer overflow).
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {record} | Sum | Int | true | Development |
+
 ### otelcol_sysman_sampler_interval_usage
 
 Portion of the sampling interval used on one sampler tick, measured from the tick to the completion of polling the aggregated metrics of all devices. Values above 1 mean that the next sampling deadline was delayed or missed.

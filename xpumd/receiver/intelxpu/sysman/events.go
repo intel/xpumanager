@@ -45,15 +45,17 @@ const allEventTypeFlags = l0sysman.EventTypeFlags(
 // sysmanEventsReceiver runs one event listener per Sysman driver.
 type sysmanEventsReceiver struct {
 	listeners []*driverEventListener
+	telemetry *metadata.TelemetryBuilder
 	wg        sync.WaitGroup
 	stop      context.CancelFunc
 }
 
-func newSysmanEventsReceiver(devices *deviceRegistry, cfg *Config, logger *zap.SugaredLogger, nextConsumer consumer.Logs) (*sysmanEventsReceiver, error) {
-	r := &sysmanEventsReceiver{}
+func newSysmanEventsReceiver(devices *deviceRegistry, cfg *Config, logger *zap.SugaredLogger,
+	telemetry *metadata.TelemetryBuilder, nextConsumer consumer.Logs) (*sysmanEventsReceiver, error) {
+	r := &sysmanEventsReceiver{telemetry: telemetry}
 
 	for i, drv := range devices.drivers {
-		r.listeners = append(r.listeners, newDriverEventListener(i, drv, cfg, logger, nextConsumer))
+		r.listeners = append(r.listeners, newDriverEventListener(i, drv, cfg, logger, telemetry, nextConsumer))
 	}
 
 	return r, nil
@@ -78,6 +80,7 @@ func (r *sysmanEventsReceiver) Shutdown(_ context.Context) error {
 		r.stop()
 	}
 	r.wg.Wait()
+	r.telemetry.Shutdown()
 	return nil
 }
 
@@ -143,10 +146,12 @@ type driverEventListener struct {
 	// pendingRescans contains rescan requests for devices, indexed like drv.devices
 	pendingRescans []deviceRescanRequest
 	consumer       consumer.Logs
+	telemetry      *metadata.TelemetryBuilder
 	logger         *zap.SugaredLogger
 }
 
-func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.SugaredLogger, nextConsumer consumer.Logs) *driverEventListener {
+func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.SugaredLogger,
+	telemetry *metadata.TelemetryBuilder, nextConsumer consumer.Logs) *driverEventListener {
 	l0Devices := make([]*l0sysman.Device, len(drv.devices))
 	for i, dev := range drv.devices {
 		l0Devices[i] = dev.Device
@@ -159,6 +164,7 @@ func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.Sug
 		infoLogsEnabled: cfg.InfoLogs.Enabled && len(drv.infoLogs) > 0,
 		pendingRescans:  make([]deviceRescanRequest, len(drv.devices)),
 		consumer:        nextConsumer,
+		telemetry:       telemetry,
 		logger:          logger,
 	}
 }
@@ -383,7 +389,10 @@ func (l *driverEventListener) stopInfoLogCollection() {
 func (l *driverEventListener) readInfoLogs(ctx context.Context) int {
 	read := 0
 	for _, src := range l.drv.infoLogs {
-		records := src.read()
+		records, dropped := src.read()
+		if dropped > 0 {
+			l.telemetry.ReceiverDroppedInfoLogRecords.Add(ctx, int64(dropped))
+		}
 		if len(records) > 0 {
 			l.emitInfoLogs(ctx, records)
 			read += len(records)

@@ -407,6 +407,14 @@ metrics:
 
 telemetry:
   metrics:
+    receiver_dropped_info_log_records:
+      enabled: true
+      stability: development
+      description: Number of lost GPU info log records (due to driver collection buffer overflow).
+      unit: "{record}"
+      sum:
+        value_type: int
+        monotonic: true
     sysman_sampler_interval_usage:
       enabled: true
       stability: development

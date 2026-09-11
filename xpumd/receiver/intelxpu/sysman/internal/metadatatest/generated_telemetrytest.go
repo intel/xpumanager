@@ -21,6 +21,22 @@ func NewSettings(tt *componenttest.Telemetry) scraper.Settings {
 	return set
 }
 
+func AssertEqualReceiverDroppedInfoLogRecords(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.DataPoint[int64], opts ...metricdatatest.Option) {
+	want := metricdata.Metrics{
+		Name:        "otelcol_receiver_dropped_info_log_records",
+		Description: "Number of lost GPU info log records (due to driver collection buffer overflow). [Development]",
+		Unit:        "{record}",
+		Data: metricdata.Sum[int64]{
+			Temporality: metricdata.CumulativeTemporality,
+			IsMonotonic: true,
+			DataPoints:  dps,
+		},
+	}
+	got, err := tt.GetMetric("otelcol_receiver_dropped_info_log_records")
+	require.NoError(t, err)
+	metricdatatest.AssertEqual(t, want, got, opts...)
+}
+
 func AssertEqualSysmanSamplerIntervalUsage(t *testing.T, tt *componenttest.Telemetry, dps []metricdata.HistogramDataPoint[float64], opts ...metricdatatest.Option) {
 	want := metricdata.Metrics{
 		Name:        "otelcol_sysman_sampler_interval_usage",

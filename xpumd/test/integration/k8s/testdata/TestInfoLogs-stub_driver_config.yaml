@@ -40,7 +40,9 @@ Drivers:
         BufferSizeInKb: 4096  # reported as the effective size for the collection instance
         Collection:
           Status:
-            DroppedRecordCount: 0
+            # Reported by every call, i.e. by the query call of a read as well:
+            # the counter of the receiver keeps growing by twice this
+            DroppedRecordCount: 3
             IsDroppedRecordCountValid: true
             HasDataToRead: false
           Records:
