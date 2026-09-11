@@ -3,12 +3,12 @@
 Drivers:
   - ExtensionProperties:
       - Name: "ZES_intel_experimental_driver_info_logs"
-        Version: 65536
+        Version: 131072  # ZES_INTEL_DRIVER_INFO_LOGS_EXP_VERSION_2_0
       - Name: "ZES_intel_experimental_driver_event"
         Version: 65536
 
     # CPER data is pending from the start, i.e. the records are read as soon as
-    # the collection has been enabled.
+    # the collection instance has been created.
     Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
 
     Devices:
@@ -31,30 +31,38 @@ Drivers:
               Device: 0
               Function: 0
 
-    InfoLogs:
+    IntelInfoLogs:
       - Properties:
           InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
           InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
-          MaxSize: 4096  # in kilobytes
-          IsInstancedCollectionSupported: true
-        Records:
-          # A record of the device above, i.e. attributed to it
-          - Data: "CPER-RECORD-DEVICE"
-            Address:
-              Domain: 0
-              Bus: 5
-              Device: 0
-              Function: 0
-            Uuid:
-              Id: "12345678-000a-00b0-0c00-00000000d000"
-            Timestamp: 1234567  # microseconds since boot
-          # A record of a device that Sysman does not report
-          - Data: "CPER-RECORD-UNKNOWN"
-            Address:
-              Domain: 0
-              Bus: 6
-              Device: 0
-              Function: 0
-            Uuid:
-              Id: "12345678-000a-00b0-0c00-00000000d001"
-            Timestamp: 7654321
+          IsNamedInstancedCollectionSupported: true
+          IsPeekSupported: false
+        BufferSizeInKb: 4096  # reported as the effective size for the collection instance
+        Collection:
+          Status:
+            DroppedRecordCount: 0
+            IsDroppedRecordCountValid: true
+            HasDataToRead: false
+          Records:
+            # A record of the device above, i.e. attributed to it
+            - Data: "CPER-RECORD-DEVICE"
+              Address:
+                Domain: 0
+                Bus: 5
+                Device: 0
+                Function: 0
+              Uuid:
+                Id: "12345678-000a-00b0-0c00-00000000d000"
+              Timestamp: 1234567  # nanoseconds, driver specific reference point
+              RecordType: 2  # ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED
+            # A record of a device that Sysman does not report
+            - Data: "CPER-RECORD-UNKNOWN"
+              Address:
+                Domain: 0
+                Bus: 6
+                Device: 0
+                Function: 0
+              Uuid:
+                Id: "12345678-000a-00b0-0c00-00000000d001"
+              Timestamp: 7654321
+              RecordType: 4  # ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_FATAL
