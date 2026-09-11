@@ -6,25 +6,35 @@
 package sysman
 
 import (
-	"errors"
 	"fmt"
+	"time"
 
+	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
 
-	"github.com/intel/level-zero-go/core"
+	l0sysman "github.com/intel/level-zero-go/sysman"
 	l0intel "github.com/intel/level-zero-go/sysman/exp/intel"
 )
 
-// infoLogSource represents one InfoLog instance of a Sysman driver.
+// The timeout bounds the search of the records (it's not a block/wait
+// timeout). Set to negative to let it search all records.
+const infoLogReadTimeout = -1 * time.Millisecond
+
+// cperDataAvailableEvent is the driver scoped event that tells the info logs of
+// the driver have records to read.
+const cperDataAvailableEvent = l0sysman.EventTypeFlags(l0intel.CPER_DATA_AVAILABLE)
+
+// infoLogSource represents one InfoLog of a Sysman driver plus a collection
+// instance that its records are read from.
 type infoLogSource struct {
 	*l0intel.InfoLog
 	logger *zap.SugaredLogger
 	// name identifies the info log in the logged messages.
 	name string
-	// instance is the name of the collection instance to use.
-	instance string
-	// enabled tells whether record collection has been successfully enabled.
-	enabled bool
+	// instanceName is the name of the collection instance to use.
+	instanceName string
+	// collection instance, nil when the collection hasn't been started or has been stopped.
+	instance *l0intel.InfoLogInstance
 }
 
 func enumInfoLogs(drv *driver, driverIndex int, cfg InfoLogsConfig, logger *zap.SugaredLogger) []*infoLogSource {
@@ -41,98 +51,108 @@ func enumInfoLogs(drv *driver, driverIndex int, cfg InfoLogsConfig, logger *zap.
 
 		props, err := infoLog.GetProperties()
 		if err != nil {
-			logger.Errorw("InfoLog GetProperties() failed: info log skipped",
-				zap.Error(err), "infoLog", name)
+			logger.Errorw("InfoLog GetProperties() failed: info log skipped", zap.Error(err), "infoLog", name)
 			continue
 		}
 		// Only device-scoped CPER records are supported, skip anything else.
 		// Logging just in case, we should never see anything else for now.
-		if props.InfoLogFormat != l0intel.INFO_LOG_FORMAT_CPER {
-			logger.Warnw("Unsupported info log format: info log skipped",
-				"format", props.InfoLogFormat, "infoLog", name)
+		if props.InfoLogFormat != l0intel.INFO_LOG_FORMAT_CPER ||
+			props.InfoLogType != l0intel.INFO_LOG_TYPE_EXP_DEVICE {
+			logger.Warnw("Unsupported info log format or type: info log skipped", "properties", props,
+				"infoLog", name)
 			continue
 		}
-		if props.InfoLogType != l0intel.INFO_LOG_TYPE_EXP_DEVICE {
-			logger.Warnw("Unsupported info log type: info log skipped",
-				"type", props.InfoLogType, "infoLog", name)
-			continue
-		}
-		logger.Infow("Sysman info log found", "infoLog", name, "type", props.InfoLogType,
-			"format", props.InfoLogFormat, "maxSizeKiB", props.MaxSize,
-			"instancedCollection", props.IsInstancedCollectionSupported.IsTrue())
+		logger.Infow("Sysman info log found", "infoLog", name, "properties", props)
 
 		// Without support for a named collection instance only the default buffer can be used
-		instance := cfg.InstanceName
-		if !props.IsInstancedCollectionSupported.IsTrue() {
+		instanceName := cfg.InstanceName
+		if !props.IsNamedInstancedCollectionSupported.IsTrue() {
 			logger.Warnw("Named collection instances not supported, using the default buffer of the driver",
-				"infoLog", name, "instanceName", instance)
-			instance = ""
+				"infoLog", name, "instanceName", instanceName)
+			instanceName = ""
 		}
 
 		sources = append(sources, &infoLogSource{
-			InfoLog:  infoLog,
-			logger:   logger,
-			name:     name,
-			instance: instance,
+			InfoLog:      infoLog,
+			logger:       logger,
+			name:         name,
+			instanceName: instanceName,
 		})
 	}
-
 	return sources
 }
 
-// enable enables the collection of the records of the info log.
-func (s *infoLogSource) enable() {
-	if s.enabled {
+// startCollection starts the collections of the records of the info log.
+func (s *infoLogSource) startCollection() {
+	if s.collecting() {
 		return
 	}
-	if err := s.Enable(s.instance, 0, 0); err != nil {
-		s.logger.Errorw("InfoLog Enable() failed: info log records not available "+
-			"(enabling the collection requires elevated privileges)",
+	// A zero buffer size leaves the size of the collection buffer as it is
+	instance, err := s.CreateInstance(s.instanceName, 0)
+	if err != nil {
+		s.logger.Errorw("InfoLog CreateInstance() failed: info log records not available "+
+			"(collecting them requires elevated privileges)",
 			zap.Error(err), "infoLog", s.name)
 		return
 	}
-	s.enabled = true
-	s.logger.Infow("Info log collection enabled", "infoLog", s.name, "instanceName", s.instance)
+	s.instance = instance
+	s.logger.Infow("Info log collection started", "infoLog", s.name, "instanceName", s.instanceName,
+		"bufferSizeKb", instance.BufferSizeInKb)
 }
 
-// disable disables the collection of the records of the info log.
-func (s *infoLogSource) disable() {
-	if !s.enabled {
+// collecting tells whether the records of the info log are collected.
+func (s *infoLogSource) collecting() bool {
+	return s.instance != nil
+}
+
+// stopCollection stops the collection of the records of the info log.
+func (s *infoLogSource) stopCollection() {
+	if !s.collecting() {
 		return
 	}
-	if err := s.Disable(); err != nil {
-		s.logger.Warnw("InfoLog Disable() failed", zap.Error(err), "infoLog", s.name)
+	if err := s.instance.Delete(); err != nil {
+		s.logger.Warnw("InfoLogInstance Delete() failed", zap.Error(err), "infoLog", s.name)
 	}
-	s.enabled = false
+	s.instance = nil
 }
 
-// read returns the records pending in the info log, nil when its collection is disabled.
+// read returns the records pending in the info log collection instance, nil when the collection is not running.
 func (s *infoLogSource) read() []l0intel.InfoLogRecord {
-	if !s.enabled {
+	if !s.collecting() {
 		return nil
 	}
 
-	records, err := s.ReadWithMetadata()
+	records, status, err := s.instance.ReadWithMetadata(infoLogReadTimeout)
 	switch {
-	case errors.Is(err, core.RESULT_WARNING_DROPPED_DATA):
-		// The driver dropped a record that did not fit into the read buffer.
-		// What was read is valid, so only warn about the loss.
-		s.logger.Warnw("Info log record dropped", "infoLog", s.name, "records", len(records))
-	case errors.Is(err, core.RESULT_ERROR_NOT_AVAILABLE):
-		// The driver does not have the collection enabled anymore. Handled like any
-		// other read failure: the info log is dropped, and the reads of the driver
-		// end once the last one is gone (see driverEventListener.readInfoLogs).
-		s.logger.Errorw("InfoLog ReadWithMetadata() failed: collection no longer enabled, records not collected",
-			zap.Error(err), "infoLog", s.name)
-		s.disable()
 	case err != nil:
-		s.logger.Errorw("InfoLog ReadWithMetadata() failed: records no longer collected",
+		s.logger.Errorw("InfoLogInstance ReadWithMetadata() failed: records no longer collected",
 			zap.Error(err), "infoLog", s.name)
-		// Disable to prevent flooding the logs. The failure reason tends to
-		// persist and we get the event as long as pending log records exist.
-		// TODO: consider a recovery mechanism by trying re-enable after a back-off
-		s.disable()
+		// Stop the collection to prevent flooding the logs. The failure reason tends
+		// to persist and we get the event as long as pending log records exist.
+		// TODO: consider a recovery mechanism by re-creating the instance after a back-off
+		s.stopCollection()
+	// The dropped record count is only meaningful when the read succeeded
+	case status.IsDroppedRecordCountValid.IsTrue() && status.DroppedRecordCount != 0:
+		// The collection buffer of the driver overflowed and it lost records. What
+		// was read is valid, so only warn about the loss.
+		s.logger.Warnw("Info log records dropped by the driver: collection buffer overflowed",
+			"infoLog", s.name, "droppedRecords", status.DroppedRecordCount, "records", len(records))
 	}
 
 	return records
+}
+
+// infoLogSeverity maps the type of an info log record to an OTel log severity level.
+func infoLogSeverity(recordType l0intel.InfoLogRecordTypeExp) plog.SeverityNumber {
+	switch recordType {
+	case l0intel.INFO_LOG_RECORD_TYPE_EXP_INFORMATIONAL:
+		return plog.SeverityNumberInfo
+	case l0intel.INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED:
+		return plog.SeverityNumberWarn
+	case l0intel.INFO_LOG_RECORD_TYPE_EXP_ERROR_FATAL:
+		return plog.SeverityNumberFatal
+	// INFO_LOG_RECORD_TYPE_EXP_ERROR_RECOVERABLE and INFO_LOG_RECORD_TYPE_EXP_UNKNOWN
+	default:
+		return plog.SeverityNumberError
+	}
 }

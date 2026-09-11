@@ -165,7 +165,7 @@ decoding the CPER sections is separate from XPUMD.
 Collection is event driven. The records are read on the
 `ZES_INTEL_CPER_DATA_AVAILABLE` Sysman event.
 
-Enabling requires elevated privileges: the CPER records need read/write access
+Collecting requires elevated privileges: the CPER records need read/write access
 to the kernel tracing filesystem (`/sys/kernel/tracing`).
 
 ### Log Record Format
@@ -175,33 +175,34 @@ to the kernel tracing filesystem (`/sys/kernel/tracing`).
 | `EventName` | `com.intel.gpu.info_log.cper` |
 | `Body` | Raw CPER record (bytes) |
 | `Timestamp`, `ObservedTimestamp` | Time the record was read, see the limitations below |
-| `SeverityNumber`, `SeverityText` | `Error` |
+| `SeverityNumber` | Severity of the type of the record: `9` (Info) for an informational record, `13` (Warn) for a corrected error, `21` (Fatal) for a fatal one and `17` (Error) for the rest |
+| `SeverityText` | Name of the severity number, e.g. `Warn` |
 
 #### Attributes
 
 | Attribute | Type | Description |
 |-----------|------|-------------|
 | `pci.bdf` | string | PCI Bus:Device.Function address from the record metadata |
-| `cper.platform_id` | string | Platform UUID from the record metadata |
-| `cper.timestamp_us` | int | Record timestamp from the record metadata, microseconds since boot |
-| `hw.id`, `hw.name`, `hw.model`, `pci.device_id`, `pci.vendor_id` | string | Attributes of the device matching `pci.bdf`, omitted if no device matches |
+| `cper.fru_id` | string | UUID of the FRU (Field Replaceable Unit) reporting the record, from the record metadata |
+| `cper.record_type` | string | Type of the record, from the record metadata, e.g. `ERROR_CORRECTED` |
+| `cper.timestamp_ns` | int | Record timestamp from the record metadata, nanoseconds from a reference point specific to the driver |
+| `hw.id`, `hw.name`, `hw.model`, `hw.serial_number`, `pci.device_id`, `pci.vendor_id` | string | Attributes of the device matching `pci.bdf`, omitted if no device matches |
 
 ### Known Limitations
 
-1. Severity is not part of the record metadata, so every record is emitted with
-   `Error` severity.
-2. The metadata timestamp is microseconds since boot, so it cannot reliably be
-   converted to wall clock time. It is provided as an attribute only and the
-   record is stamped with the observation time.
-3. The event is the only trigger, i.e. there is no periodic polling.
+1. The metadata timestamp is nanoseconds from a reference point that is specific
+   to the driver, so it cannot be converted to wall clock time. It is provided as
+   an attribute only and the record is stamped with the observation time.
+2. The event is the only trigger, i.e. there is no periodic polling.
    Records that are already pending when the daemon starts are emitted only when
-   the next record arrives, and the records pending at shutdown are left in the
-   buffer of the driver.
-4. The triggering event of 3. is part of a separate Sysman extension, so the
+   the next record arrives. The records still pending at shutdown are lost when
+   the collection instance (e.g. CPER event tracefs buffer) is deleted.
+3. The triggering event of 2. is part of a separate Sysman extension, so the
    records are collected only if the driver implements both the info log and
    the driver scoped event extensions.
-5. Collection is enabled once at startup. If enabling fails or a read fails later on,
-   the records of that info log are not collected for the lifetime of daemon.
+4. Collection is started once at startup. If starting it fails or a read fails
+   later on, the records of that info log are not collected for the lifetime of
+   daemon.
 
 ## Internal Telemetry
 
