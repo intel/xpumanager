@@ -39,7 +39,6 @@ uint8_t pldm::amcGpuReset()
 	payload.composite_effecter_count = 1;
 	payload.state_field.set_request = SET_REQUEST_SET;
 	payload.state_field.effecter_state = EFFECTER_STATE_REQUEST_RESTART;
-	constexpr uint8_t amcResetProcessingWaitMultiplier = 2;
 
 	memcpy(mI2cPldmWrite->respPayload, &payload, sizeof(payload));
 
@@ -61,43 +60,47 @@ uint8_t pldm::amcGpuReset()
 		return PLDM_ERROR;
 	}
 
-	// GPU reset processing on AMC can take longer than a regular command.
-	MSLEEP(amcResetProcessingWaitMultiplier * I2C_EVENT_WAIT_PERIOD_MS);
+	constexpr uint8_t amcResetResponseRetries = 3;
+	constexpr uint8_t amcResetProcessingWaitMs = 30;
+	for (uint8_t retry = 0; retry <= amcResetResponseRetries; retry++) {
+		// GPU reset processing on AMC can take longer than a regular command.
+		MSLEEP(amcResetProcessingWaitMs);
 
-	// Read response
-	if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
-		ERR("AMC Reset: I2C Read failure\n");
-		return PLDM_ERROR;
+		if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) == true) {
+			unsigned int totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
+
+			DBG("AMC Reset RX :: ");
+			hexdump((uint8_t *)mI2cPldmRead, totalSize);
+
+			if (mI2cPldmRead->mctpSmbusHdr.cmdCode != MCTP_CMD_CODE ||
+				mI2cPldmRead->mctpSmbusHdr.msgType != PLDM_OVER_MCTP ||
+				mI2cPldmRead->pldmHdr.cmdType != PLDM_PLATFORM_MONITORING ||
+				mI2cPldmRead->pldmHdr.cmdCode != PLDM_SET_STATE_EFFECTER_STATES) {
+				ERR("AMC Reset: Unexpected response - MCTP command: 0x{:02x}, message type: 0x{:02x}, "
+					"PLDM type: 0x{:02x}, command: 0x{:02x}\n",
+					mI2cPldmRead->mctpSmbusHdr.cmdCode, mI2cPldmRead->mctpSmbusHdr.msgType,
+					mI2cPldmRead->pldmHdr.cmdType, mI2cPldmRead->pldmHdr.cmdCode);
+			} else if (mI2cPldmRead->pldmHdr.request != PLDM_RESPONSE) {
+				ERR("AMC Reset: Invalid response - request bit is 1 (expected 0 for response)\n");
+			} else if (mI2cPldmRead->pldmHdr.instanceID != instanceID) {
+				ERR("AMC Reset: Instance ID mismatch - sent: {}, received: {}\n", instanceID,
+					mI2cPldmRead->pldmHdr.instanceID);
+			} else if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
+				ERR("AMC Reset: Command failed with completion code: 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
+			} else {
+				instanceID++;
+				DBG("AMC Reset: Reset completed successfully\n");
+				return PLDM_SUCCESS;
+			}
+		} else {
+			ERR("AMC Reset: I2C Read failure\n");
+		}
+
+		if (retry < amcResetResponseRetries) {
+			DBG("AMC Reset: Retry response ({}/{})\n", retry + 1, amcResetResponseRetries);
+		}
 	}
 
-	// Calculate response size
-	unsigned int totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
-
-	DBG("AMC Reset RX :: ");
-	hexdump((uint8_t *)mI2cPldmRead, totalSize);
-
-	// Validate PLDM response
-	// Check that rq bit is cleared (0=response, 1=request)
-	if (mI2cPldmRead->pldmHdr.request != 0) {
-		ERR("AMC Reset: Invalid response - request bit is 1 (expected 0 for response)\n");
-		return PLDM_ERROR;
-	}
-
-	// Verify instance ID matches
-	if (mI2cPldmRead->pldmHdr.instanceID != instanceID) {
-		ERR("AMC Reset: Instance ID mismatch - sent: {}, received: {}\n", instanceID, mI2cPldmRead->pldmHdr.instanceID);
-		return PLDM_ERROR;
-	}
-
-	// Check completion code (first byte of response payload per PLDM spec)
-	if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
-		ERR("AMC Reset: Command failed with completion code: 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);
-		return PLDM_ERROR;
-	}
-
-	instanceID++;
-
-	DBG("AMC Reset: Reset completed successfully\n");
-
-	return PLDM_SUCCESS;
+	ERR("AMC Reset: Invalid response after {} retries\n", amcResetResponseRetries);
+	return PLDM_ERROR;
 }
