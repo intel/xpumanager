@@ -29,6 +29,7 @@
 #include "vf.h"
 #include "offline_page.h"
 #include "powerexp.h"
+#include "device_health_ext.h"
 
 struct devProps
 {

@@ -10,6 +10,7 @@ oal_deps = [thread_dep, levelzero_dep, bdf_dep, igsc_dep, compat_dep]
 if is_windows
   oal_sources = files(
     'win/dllmain.cpp',
+    'win/dynload.cpp',
     'win/fs_lock.cpp',
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
@@ -24,6 +25,7 @@ if is_windows
 elif is_linux
   oal_sources = files(
     'lin/crashlog_lin.cpp',
+    'lin/dynload.cpp',
     'lin/crashlog_lin_exec.cpp',
     'lin/dbg_log.cpp',
     'lin/dmi_reader.cpp',
@@ -42,6 +44,7 @@ elif is_linux
     'lin/vram_debugfs.cpp',
   )
   oal_inc_dirs += [include_directories('lin')]
+  oal_deps += [cpp.find_library('dl', required: false)]
   # Add hwloc dependency for Linux topology functionality
   # Treat as system dependency to avoid warnings in hwloc headers
   hwloc_dep = dependency('hwloc', required: true, include_type: 'system')

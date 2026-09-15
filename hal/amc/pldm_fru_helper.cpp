@@ -348,21 +348,23 @@ uint8_t pldm::parseFruField(const uint8_t *fieldData, uint8_t fieldType, uint8_t
 			break;
 
 		case FRU_OEM_FIELD_TYPE_SLAVE_ADDRESS:
-			payloadLength = (fieldLength < sizeof(mFruTable.oemSlaveAddr)) ? fieldLength : sizeof(mFruTable.oemSlaveAddr);
+			payloadLength =
+				(fieldLength < sizeof(mFruTable.oemSlaveAddr)) ? fieldLength : sizeof(mFruTable.oemSlaveAddr);
 			memcpy(&mFruTable.oemSlaveAddr, fieldData, payloadLength);
 			DBG("    OEM Slave Address: 0x{:X}\n", mFruTable.oemSlaveAddr);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_SMBUS_FREQUENCY:
-			payloadLength = (fieldLength < sizeof(mFruTable.oemSmbusFreq)) ? fieldLength : sizeof(mFruTable.oemSmbusFreq);
+			payloadLength =
+				(fieldLength < sizeof(mFruTable.oemSmbusFreq)) ? fieldLength : sizeof(mFruTable.oemSmbusFreq);
 			memcpy(&mFruTable.oemSmbusFreq, fieldData, payloadLength);
 			DBG("    OEM SMBus Frequency: 0x{:X}\n", mFruTable.oemSmbusFreq);
 			break;
 
 		case FRU_OEM_FIELD_TYPE_HARDWARE_ARBITRATION_OPT_IN:
 			payloadLength = (fieldLength < sizeof(mFruTable.oemHWArbitrationOptIn))
-							 ? fieldLength
-							 : sizeof(mFruTable.oemHWArbitrationOptIn);
+								? fieldLength
+								: sizeof(mFruTable.oemHWArbitrationOptIn);
 			memcpy(&mFruTable.oemHWArbitrationOptIn, fieldData, payloadLength);
 			DBG("    OEM Hardware Arbitration Opt-in: 0x{:X}\n", mFruTable.oemHWArbitrationOptIn);
 			break;
