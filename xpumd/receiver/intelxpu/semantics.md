@@ -361,7 +361,7 @@ Used attributes:
     * Attribs for all metrics: `.subdevice_id`
     * Metric specific attribs: `.power.limit.*`, `.speed.throttle_reason`, `.subdevice_count`
   * In OTel `hw.*` namespace:
-    * Metric specific attribs: `hw.frequency.domain`, `hw.gpu.type`, `hw.memory.*`, `hw.limit_type`
+    * Metric specific attribs: `hw.frequency.domain`, `hw.gpu.ecc.support`, `hw.gpu.type`, `hw.memory.*`, `hw.limit_type`
   * In OTel `error.*` namespace:
     * `error.category` attribute (for `hw.errors`)
   * In `pci.*` namespace:

@@ -18,7 +18,7 @@ _templates:
     pci_lanes: "16"
     pci_link_gen: "4"
     hw_memory_demand_paging: "false"
-    hw_memory_ecc: unknown
+    hw_gpu_ecc_support: unknown
   # All hw_gpu_info label values for device 2 (gpu-2, always healthy).
   dev2_gpu_info_labels: &dev2_gpu_info_labels
     hw_name: gpu-2
@@ -34,7 +34,7 @@ _templates:
     pci_lanes: "16"
     pci_link_gen: "4"
     hw_memory_demand_paging: "false"
-    hw_memory_ecc: unknown
+    hw_gpu_ecc_support: unknown
   # Minimal id labels for temperature sensor assertions.
   dev1_id_labels: &dev1_id_labels
     hw_id: "aabbccdd-0000-0000-0000-000000000000"

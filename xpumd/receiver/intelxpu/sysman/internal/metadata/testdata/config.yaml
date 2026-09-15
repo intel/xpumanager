@@ -33,7 +33,7 @@ all_set:
       attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.state"]
     hw.gpu.info:
       enabled: true
-      attributes: ["hw.id","hw.name","pci.bdf","pci.vendor_id","pci.device_id","hw.model","hw.serial_number","hw.vendor","hw.firmware_version","hw.gpu.type","com.intel.subdevice_count","pci.lanes","pci.link_gen","hw.memory.demand_paging","hw.memory.ecc"]
+      attributes: ["hw.id","hw.name","pci.bdf","pci.vendor_id","pci.device_id","hw.model","hw.serial_number","hw.vendor","hw.firmware_version","hw.gpu.type","com.intel.subdevice_count","pci.lanes","pci.link_gen","hw.memory.demand_paging","hw.gpu.ecc.support"]
     hw.gpu.io:
       enabled: true
       attributes: ["hw.id","hw.name","pci.bdf","network.io.direction"]
@@ -193,7 +193,7 @@ none_set:
       attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.state"]
     hw.gpu.info:
       enabled: false
-      attributes: ["hw.id","hw.name","pci.bdf","pci.vendor_id","pci.device_id","hw.model","hw.serial_number","hw.vendor","hw.firmware_version","hw.gpu.type","com.intel.subdevice_count","pci.lanes","pci.link_gen","hw.memory.demand_paging","hw.memory.ecc"]
+      attributes: ["hw.id","hw.name","pci.bdf","pci.vendor_id","pci.device_id","hw.model","hw.serial_number","hw.vendor","hw.firmware_version","hw.gpu.type","com.intel.subdevice_count","pci.lanes","pci.link_gen","hw.memory.demand_paging","hw.gpu.ecc.support"]
     hw.gpu.io:
       enabled: false
       attributes: ["hw.id","hw.name","pci.bdf","network.io.direction"]

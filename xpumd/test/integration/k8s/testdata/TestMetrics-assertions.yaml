@@ -56,9 +56,9 @@ common:
         <<: *pci_common_labels
         com_intel_subdevice_count: "2"
         hw_firmware_version: "0:gfx::1.2.3.4"
+        hw_gpu_ecc_support: configurable
         hw_gpu_type: integrated
         hw_memory_demand_paging: "false"
-        hw_memory_ecc: configurable
         hw_model: "Super 3000"
         hw_name: gpu-1
         hw_serial_number: SN-0001

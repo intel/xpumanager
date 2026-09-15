@@ -548,7 +548,7 @@ const (
 	HwGpuInfoMetricAttributeKeyPciLanes               HwGpuInfoMetricAttributeKey = "pci.lanes"
 	HwGpuInfoMetricAttributeKeyPciLinkGen             HwGpuInfoMetricAttributeKey = "pci.link_gen"
 	HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging   HwGpuInfoMetricAttributeKey = "hw.memory.demand_paging"
-	HwGpuInfoMetricAttributeKeyHwMemoryEcc            HwGpuInfoMetricAttributeKey = "hw.memory.ecc"
+	HwGpuInfoMetricAttributeKeyHwGpuEccSupport        HwGpuInfoMetricAttributeKey = "hw.gpu.ecc.support"
 )
 
 // HwGpuInfoMetricConfig provides config for the hw.gpu.info metric.
@@ -577,9 +577,9 @@ func (ms *HwGpuInfoMetricConfig) Unmarshal(parser *confmap.Conf) error {
 func (ms *HwGpuInfoMetricConfig) Validate() error {
 	for _, val := range ms.EnabledAttributes {
 		switch val {
-		case HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc:
+		case HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwGpuEccSupport:
 		default:
-			return fmt.Errorf("metric hw.gpu.info doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc]", val)
+			return fmt.Errorf("metric hw.gpu.info doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.gpu.ecc.support]", val)
 		}
 	}
 
@@ -1467,7 +1467,7 @@ func DefaultMetricsConfig() MetricsConfig {
 		HwGpuInfo: HwGpuInfoMetricConfig{
 			Enabled:             true,
 			AggregationStrategy: AggregationStrategySum,
-			EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc},
+			EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwGpuEccSupport},
 		},
 		HwGpuIo: HwGpuIoMetricConfig{
 			Enabled:             true,

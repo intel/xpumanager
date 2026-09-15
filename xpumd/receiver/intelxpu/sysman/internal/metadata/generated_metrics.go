@@ -75,6 +75,40 @@ var MapAttributeErrorType = map[string]AttributeErrorType{
 	"uncorrectable": AttributeErrorTypeUncorrectable,
 }
 
+// AttributeHwGpuEccSupport specifies the value hw.gpu.ecc.support attribute.
+type AttributeHwGpuEccSupport int
+
+const (
+	_ AttributeHwGpuEccSupport = iota
+	AttributeHwGpuEccSupportAvailable
+	AttributeHwGpuEccSupportConfigurable
+	AttributeHwGpuEccSupportUnavailable
+	AttributeHwGpuEccSupportUnknown
+)
+
+// String returns the string representation of the AttributeHwGpuEccSupport.
+func (av AttributeHwGpuEccSupport) String() string {
+	switch av {
+	case AttributeHwGpuEccSupportAvailable:
+		return "available"
+	case AttributeHwGpuEccSupportConfigurable:
+		return "configurable"
+	case AttributeHwGpuEccSupportUnavailable:
+		return "unavailable"
+	case AttributeHwGpuEccSupportUnknown:
+		return "unknown"
+	}
+	return ""
+}
+
+// MapAttributeHwGpuEccSupport is a helper map of string to AttributeHwGpuEccSupport attribute value.
+var MapAttributeHwGpuEccSupport = map[string]AttributeHwGpuEccSupport{
+	"available":    AttributeHwGpuEccSupportAvailable,
+	"configurable": AttributeHwGpuEccSupportConfigurable,
+	"unavailable":  AttributeHwGpuEccSupportUnavailable,
+	"unknown":      AttributeHwGpuEccSupportUnknown,
+}
+
 // AttributeHwGpuType specifies the value hw.gpu.type attribute.
 type AttributeHwGpuType int
 
@@ -103,40 +137,6 @@ var MapAttributeHwGpuType = map[string]AttributeHwGpuType{
 	"discrete":   AttributeHwGpuTypeDiscrete,
 	"integrated": AttributeHwGpuTypeIntegrated,
 	"subdevice":  AttributeHwGpuTypeSubdevice,
-}
-
-// AttributeHwMemoryEcc specifies the value hw.memory.ecc attribute.
-type AttributeHwMemoryEcc int
-
-const (
-	_ AttributeHwMemoryEcc = iota
-	AttributeHwMemoryEccAvailable
-	AttributeHwMemoryEccConfigurable
-	AttributeHwMemoryEccUnavailable
-	AttributeHwMemoryEccUnknown
-)
-
-// String returns the string representation of the AttributeHwMemoryEcc.
-func (av AttributeHwMemoryEcc) String() string {
-	switch av {
-	case AttributeHwMemoryEccAvailable:
-		return "available"
-	case AttributeHwMemoryEccConfigurable:
-		return "configurable"
-	case AttributeHwMemoryEccUnavailable:
-		return "unavailable"
-	case AttributeHwMemoryEccUnknown:
-		return "unknown"
-	}
-	return ""
-}
-
-// MapAttributeHwMemoryEcc is a helper map of string to AttributeHwMemoryEcc attribute value.
-var MapAttributeHwMemoryEcc = map[string]AttributeHwMemoryEcc{
-	"available":    AttributeHwMemoryEccAvailable,
-	"configurable": AttributeHwMemoryEccConfigurable,
-	"unavailable":  AttributeHwMemoryEccUnavailable,
-	"unknown":      AttributeHwMemoryEccUnknown,
 }
 
 // AttributeHwType specifies the value hw.type attribute.
@@ -294,7 +294,7 @@ var MetricsInfo = metricsInfo{
 	},
 	HwGpuInfo: metricInfo{
 		Name:       "hw.gpu.info",
-		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "pci.vendor_id", "pci.device_id", "hw.model", "hw.serial_number", "hw.vendor", "hw.firmware_version", "hw.gpu.type", "com.intel.subdevice_count", "pci.lanes", "pci.link_gen", "hw.memory.demand_paging", "hw.memory.ecc"},
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "pci.vendor_id", "pci.device_id", "hw.model", "hw.serial_number", "hw.vendor", "hw.firmware_version", "hw.gpu.type", "com.intel.subdevice_count", "pci.lanes", "pci.link_gen", "hw.memory.demand_paging", "hw.gpu.ecc.support"},
 	},
 	HwGpuIo: metricInfo{
 		Name:       "hw.gpu.io",
@@ -1437,7 +1437,7 @@ func (m *metricHwGpuInfo) init() {
 	m.aggDataPoints = m.aggDataPoints[:0]
 }
 
-func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, pciVendorIDAttributeValue string, pciDeviceIDAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, hwGpuTypeAttributeValue string, comIntelSubdeviceCountAttributeValue int64, pciLanesAttributeValue string, pciLinkGenAttributeValue string, hwMemoryDemandPagingAttributeValue bool, hwMemoryEccAttributeValue string) {
+func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, pciVendorIDAttributeValue string, pciDeviceIDAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, hwGpuTypeAttributeValue string, comIntelSubdeviceCountAttributeValue int64, pciLanesAttributeValue string, pciLinkGenAttributeValue string, hwMemoryDemandPagingAttributeValue bool, hwGpuEccSupportAttributeValue string) {
 	if !m.config.Enabled {
 		return
 	}
@@ -1487,8 +1487,8 @@ func (m *metricHwGpuInfo) recordDataPoint(start pcommon.Timestamp, ts pcommon.Ti
 	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging) {
 		dp.Attributes().PutBool("hw.memory.demand_paging", hwMemoryDemandPagingAttributeValue)
 	}
-	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwMemoryEcc) {
-		dp.Attributes().PutStr("hw.memory.ecc", hwMemoryEccAttributeValue)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuInfoMetricAttributeKeyHwGpuEccSupport) {
+		dp.Attributes().PutStr("hw.gpu.ecc.support", hwGpuEccSupportAttributeValue)
 	}
 
 	var s string
@@ -3359,8 +3359,8 @@ func (mb *MetricsBuilder) RecordHwGpuEccStateDataPoint(ts pcommon.Timestamp, val
 }
 
 // RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.
-func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, pciVendorIDAttributeValue string, pciDeviceIDAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, hwGpuTypeAttributeValue AttributeHwGpuType, comIntelSubdeviceCountAttributeValue int64, pciLanesAttributeValue string, pciLinkGenAttributeValue string, hwMemoryDemandPagingAttributeValue bool, hwMemoryEccAttributeValue AttributeHwMemoryEcc) {
-	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, pciVendorIDAttributeValue, pciDeviceIDAttributeValue, hwModelAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, hwGpuTypeAttributeValue.String(), comIntelSubdeviceCountAttributeValue, pciLanesAttributeValue, pciLinkGenAttributeValue, hwMemoryDemandPagingAttributeValue, hwMemoryEccAttributeValue.String())
+func (mb *MetricsBuilder) RecordHwGpuInfoDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, pciVendorIDAttributeValue string, pciDeviceIDAttributeValue string, hwModelAttributeValue string, hwSerialNumberAttributeValue string, hwVendorAttributeValue string, hwFirmwareVersionAttributeValue string, hwGpuTypeAttributeValue AttributeHwGpuType, comIntelSubdeviceCountAttributeValue int64, pciLanesAttributeValue string, pciLinkGenAttributeValue string, hwMemoryDemandPagingAttributeValue bool, hwGpuEccSupportAttributeValue AttributeHwGpuEccSupport) {
+	mb.metricHwGpuInfo.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, pciVendorIDAttributeValue, pciDeviceIDAttributeValue, hwModelAttributeValue, hwSerialNumberAttributeValue, hwVendorAttributeValue, hwFirmwareVersionAttributeValue, hwGpuTypeAttributeValue.String(), comIntelSubdeviceCountAttributeValue, pciLanesAttributeValue, pciLinkGenAttributeValue, hwMemoryDemandPagingAttributeValue, hwGpuEccSupportAttributeValue.String())
 }
 
 // RecordHwGpuIoDataPoint adds a data point to hw.gpu.io metric.

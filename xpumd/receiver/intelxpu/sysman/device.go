@@ -90,7 +90,7 @@ type deviceAttributes struct {
 	pciLanes          string
 	pciLinkGen        string
 	demandPaging      bool
-	eccSupport        metadata.AttributeHwMemoryEcc
+	eccSupport        metadata.AttributeHwGpuEccSupport
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
@@ -215,9 +215,9 @@ func (d *device) init() error {
 
 	_ = d.updateEccState()
 	if d.state.ecc.configurable {
-		d.attributes.eccSupport = metadata.AttributeHwMemoryEccConfigurable
+		d.attributes.eccSupport = metadata.AttributeHwGpuEccSupportConfigurable
 	} else {
-		d.attributes.eccSupport = metadata.MapAttributeHwMemoryEcc[d.state.ecc.current]
+		d.attributes.eccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
 	}
 
 	d.logger.Debugw("Device init() props + ECC done", "name", d.attributes.hwName)

@@ -79,7 +79,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwGpuInfo: HwGpuInfoMetricConfig{
 						Enabled:             true,
 						AggregationStrategy: AggregationStrategySum,
-						EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc},
+						EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwGpuEccSupport},
 					},
 					HwGpuIo: HwGpuIoMetricConfig{
 						Enabled:             true,
@@ -216,7 +216,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 					HwGpuInfo: HwGpuInfoMetricConfig{
 						Enabled:             false,
 						AggregationStrategy: AggregationStrategySum,
-						EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwMemoryEcc},
+						EnabledAttributes:   []HwGpuInfoMetricAttributeKey{HwGpuInfoMetricAttributeKeyHwID, HwGpuInfoMetricAttributeKeyHwName, HwGpuInfoMetricAttributeKeyPciBdf, HwGpuInfoMetricAttributeKeyPciVendorID, HwGpuInfoMetricAttributeKeyPciDeviceID, HwGpuInfoMetricAttributeKeyHwModel, HwGpuInfoMetricAttributeKeyHwSerialNumber, HwGpuInfoMetricAttributeKeyHwVendor, HwGpuInfoMetricAttributeKeyHwFirmwareVersion, HwGpuInfoMetricAttributeKeyHwGpuType, HwGpuInfoMetricAttributeKeyComIntelSubdeviceCount, HwGpuInfoMetricAttributeKeyPciLanes, HwGpuInfoMetricAttributeKeyPciLinkGen, HwGpuInfoMetricAttributeKeyHwMemoryDemandPaging, HwGpuInfoMetricAttributeKeyHwGpuEccSupport},
 					},
 					HwGpuIo: HwGpuIoMetricConfig{
 						Enabled:             false,
@@ -430,7 +430,7 @@ func TestHwGpuInfoMetricsConfig_Validate(t *testing.T) {
 	require.NoError(t, cfg.Validate())
 
 	cfg.EnabledAttributes = []HwGpuInfoMetricAttributeKey{"invalid"}
-	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.info doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.memory.ecc]")
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.info doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, pci.vendor_id, pci.device_id, hw.model, hw.serial_number, hw.vendor, hw.firmware_version, hw.gpu.type, com.intel.subdevice_count, pci.lanes, pci.link_gen, hw.memory.demand_paging, hw.gpu.ecc.support]")
 
 	cfg = DefaultMetricsConfig().HwGpuInfo
 	cfg.AggregationStrategy = "invalid"

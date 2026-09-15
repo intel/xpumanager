@@ -2,11 +2,11 @@
 
 ## XPUM 2.x.x
 
-* XPUMD metrics: New `hw.gpu.ecc.state` metric for the device memory ECC state
-  * Breaking change: replaces the `ecc_*` states of the `hw.status` metric
-  * The state name in the `hw.state` attribute has no `ecc_` prefix (e.g. `enabled`)
-  * Queries, dashboards and alerts need to be updated from
-    `hw_status{hw_type="gpu",hw_state="ecc_<state>"}` to `hw_gpu_ecc_state{hw_state="<state>"}`
+* Breaking changes (for the XPUMD metrics):
+  * New `hw.gpu.ecc.state` metric replaces the `ecc_*` ECC configuration states for the `hw.status` metric (to reserve the `hw.status` metric for `ok` and issue states)
+    * **Action required:** `hw_status{hw_type="gpu",hw_state="ecc_<state>"}` queries need to be updated to `hw_gpu_ecc_state{hw_state="<state>"}`
+  * `hw.memory.ecc` attribute of the `hw.gpu.info` metric renamed to `hw.gpu.ecc.support` (to match the new ECC state metric)
+    * **Action required:** `hw_gpu_info{hw_memory_ecc=...}` queries need to be updated to `hw_gpu_info{hw_gpu_ecc_support=...}`
 
 
 ## XPUM 2.2.0
