@@ -176,6 +176,24 @@ GPU device (read+write) PCI bandwidth utilization ratio.
 | hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
 | pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
 
+### hw.gpu.ecc.state
+
+Known device memory ECC states. Reported only if the ECC state is configurable, or if it has changed.
+
+| Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
+| ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
+| 1 | Sum | Int | Cumulative | false | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.state | Current state of the hardware component. | Any Str | Recommended | - |
+
 ### hw.gpu.info
 
 Information about the GPU device.
@@ -202,7 +220,7 @@ Information about the GPU device.
 | pci.lanes | The number of PCI lanes. | Any Str | Recommended | - |
 | pci.link_gen | PCI link generation. | Any Str | Recommended | - |
 | hw.memory.demand_paging | Whether device supports on-demand memory page-faulting. | Any Bool | Recommended | - |
-| hw.memory.ecc | Device memory ECC support status. If ECC is configurable, `hw.status` metric tells whether it is enabled. | Str: ``available``, ``configurable``, ``unavailable``, ``unknown`` | Recommended | - |
+| hw.memory.ecc | Device memory ECC support status. If ECC is configurable, `hw.gpu.ecc.state` metric tells whether it is enabled. | Str: ``available``, ``configurable``, ``unavailable``, ``unknown`` | Recommended | - |
 
 ### hw.gpu.io
 

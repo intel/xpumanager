@@ -70,7 +70,7 @@ attributes:
     description: Whether device supports on-demand memory page-faulting.
     type: bool
   hw.memory.ecc:
-    description: Device memory ECC support status. If ECC is configurable, `hw.status` metric tells whether it is enabled.
+    description: Device memory ECC support status. If ECC is configurable, `hw.gpu.ecc.state` metric tells whether it is enabled.
     type: string
     enum:
       - available
@@ -224,6 +224,16 @@ metrics:
     gauge:
       value_type: double
     attributes: [hw.id, hw.name, pci.bdf]
+  hw.gpu.ecc.state:
+    enabled: true
+    description: Known device memory ECC states. Reported only if the ECC state is configurable, or if it has changed.
+    stability: development
+    unit: "1"
+    sum:
+      value_type: int
+      monotonic: false
+      aggregation_temporality: cumulative
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.state]
   hw.gpu.info:
     enabled: true
     description: Information about the GPU device.

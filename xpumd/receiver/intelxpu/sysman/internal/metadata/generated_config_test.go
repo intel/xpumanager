@@ -71,6 +71,11 @@ func TestMetricsBuilderConfig(t *testing.T) {
 						AggregationStrategy: AggregationStrategyAvg,
 						EnabledAttributes:   []HwGpuBandwidthUtilizationMetricAttributeKey{HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf},
 					},
+					HwGpuEccState: HwGpuEccStateMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuEccStateMetricAttributeKey{HwGpuEccStateMetricAttributeKeyHwID, HwGpuEccStateMetricAttributeKeyHwName, HwGpuEccStateMetricAttributeKeyPciBdf, HwGpuEccStateMetricAttributeKeyComIntelSubdeviceID, HwGpuEccStateMetricAttributeKeyHwState},
+					},
 					HwGpuInfo: HwGpuInfoMetricConfig{
 						Enabled:             true,
 						AggregationStrategy: AggregationStrategySum,
@@ -203,6 +208,11 @@ func TestMetricsBuilderConfig(t *testing.T) {
 						AggregationStrategy: AggregationStrategyAvg,
 						EnabledAttributes:   []HwGpuBandwidthUtilizationMetricAttributeKey{HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf},
 					},
+					HwGpuEccState: HwGpuEccStateMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []HwGpuEccStateMetricAttributeKey{HwGpuEccStateMetricAttributeKeyHwID, HwGpuEccStateMetricAttributeKeyHwName, HwGpuEccStateMetricAttributeKeyPciBdf, HwGpuEccStateMetricAttributeKeyComIntelSubdeviceID, HwGpuEccStateMetricAttributeKeyHwState},
+					},
 					HwGpuInfo: HwGpuInfoMetricConfig{
 						Enabled:             false,
 						AggregationStrategy: AggregationStrategySum,
@@ -290,7 +300,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(HwEnergyMetricConfig{}, HwErrorsMetricConfig{}, HwFrequencyMetricConfig{}, HwFrequencyLimitMetricConfig{}, HwFrequencyRequestMetricConfig{}, HwFrequencySamplesMetricConfig{}, HwFrequencyThrottleStatusMetricConfig{}, HwGpuBandwidthLimitMetricConfig{}, HwGpuBandwidthUtilizationMetricConfig{}, HwGpuInfoMetricConfig{}, HwGpuIoMetricConfig{}, HwGpuIoRateMetricConfig{}, HwGpuUtilizationMetricConfig{}, HwMemoryBandwidthLimitMetricConfig{}, HwMemoryBandwidthUtilizationMetricConfig{}, HwMemoryFreeMetricConfig{}, HwMemoryIoMetricConfig{}, HwMemoryIoRateMetricConfig{}, HwMemorySizeMetricConfig{}, HwMemoryUsageMetricConfig{}, HwMemoryUtilizationMetricConfig{}, HwPowerMetricConfig{}, HwPowerLimitMetricConfig{}, HwStatusMetricConfig{}, HwTemperatureMetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(HwEnergyMetricConfig{}, HwErrorsMetricConfig{}, HwFrequencyMetricConfig{}, HwFrequencyLimitMetricConfig{}, HwFrequencyRequestMetricConfig{}, HwFrequencySamplesMetricConfig{}, HwFrequencyThrottleStatusMetricConfig{}, HwGpuBandwidthLimitMetricConfig{}, HwGpuBandwidthUtilizationMetricConfig{}, HwGpuEccStateMetricConfig{}, HwGpuInfoMetricConfig{}, HwGpuIoMetricConfig{}, HwGpuIoRateMetricConfig{}, HwGpuUtilizationMetricConfig{}, HwMemoryBandwidthLimitMetricConfig{}, HwMemoryBandwidthUtilizationMetricConfig{}, HwMemoryFreeMetricConfig{}, HwMemoryIoMetricConfig{}, HwMemoryIoRateMetricConfig{}, HwMemorySizeMetricConfig{}, HwMemoryUsageMetricConfig{}, HwMemoryUtilizationMetricConfig{}, HwPowerMetricConfig{}, HwPowerLimitMetricConfig{}, HwStatusMetricConfig{}, HwTemperatureMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
@@ -399,6 +409,18 @@ func TestHwGpuBandwidthUtilizationMetricsConfig_Validate(t *testing.T) {
 	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.bandwidth.utilization doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf]")
 
 	cfg = DefaultMetricsConfig().HwGpuBandwidthUtilization
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwGpuEccStateMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwGpuEccState
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwGpuEccStateMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.gpu.ecc.state doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.state]")
+
+	cfg = DefaultMetricsConfig().HwGpuEccState
 	cfg.AggregationStrategy = "invalid"
 	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
 }

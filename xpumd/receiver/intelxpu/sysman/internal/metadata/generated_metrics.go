@@ -288,6 +288,10 @@ var MetricsInfo = metricsInfo{
 		Name:       "hw.gpu.bandwidth.utilization",
 		Attributes: []string{"hw.id", "hw.name", "pci.bdf"},
 	},
+	HwGpuEccState: metricInfo{
+		Name:       "hw.gpu.ecc.state",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.state"},
+	},
 	HwGpuInfo: metricInfo{
 		Name:       "hw.gpu.info",
 		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "pci.vendor_id", "pci.device_id", "hw.model", "hw.serial_number", "hw.vendor", "hw.firmware_version", "hw.gpu.type", "com.intel.subdevice_count", "pci.lanes", "pci.link_gen", "hw.memory.demand_paging", "hw.memory.ecc"},
@@ -364,6 +368,7 @@ type metricsInfo struct {
 	HwFrequencyThrottleStatus    metricInfo
 	HwGpuBandwidthLimit          metricInfo
 	HwGpuBandwidthUtilization    metricInfo
+	HwGpuEccState                metricInfo
 	HwGpuInfo                    metricInfo
 	HwGpuIo                      metricInfo
 	HwGpuIoRate                  metricInfo
@@ -1302,6 +1307,109 @@ func (m *metricHwGpuBandwidthUtilization) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwGpuBandwidthUtilization(cfg HwGpuBandwidthUtilizationMetricConfig) metricHwGpuBandwidthUtilization {
 	m := metricHwGpuBandwidthUtilization{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwGpuEccState struct {
+	data          pmetric.Metric            // data buffer for generated metric.
+	config        HwGpuEccStateMetricConfig // metric config provided by user.
+	capacity      int                       // max observed number of data points added to the metric.
+	aggDataPoints []int64                   // slice containing number of aggregated datapoints at each index
+}
+
+// init fills hw.gpu.ecc.state metric with initial data.
+func (m *metricHwGpuEccState) init() {
+	m.data.SetName("hw.gpu.ecc.state")
+	m.data.SetDescription("Known device memory ECC states. Reported only if the ECC state is configurable, or if it has changed.")
+	m.data.SetUnit("1")
+	m.data.SetEmptySum()
+	m.data.Sum().SetIsMonotonic(false)
+	m.data.Sum().SetAggregationTemporality(pmetric.AggregationTemporalityCumulative)
+	m.data.Sum().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
+}
+
+func (m *metricHwGpuEccState) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwStateAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+
+	dp := pmetric.NewNumberDataPoint()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwGpuEccStateMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuEccStateMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuEccStateMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuEccStateMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwGpuEccStateMetricAttributeKeyHwState) {
+		dp.Attributes().PutStr("hw.state", hwStateAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
+	dp.SetIntValue(val)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwGpuEccState) updateCapacity() {
+	if m.data.Sum().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Sum().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwGpuEccState) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Sum().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Sum().DataPoints().At(i).SetIntValue(m.data.Sum().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwGpuEccState(cfg HwGpuEccStateMetricConfig) metricHwGpuEccState {
+	m := metricHwGpuEccState{config: cfg}
 
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
@@ -3019,6 +3127,7 @@ type MetricsBuilder struct {
 	metricHwFrequencyThrottleStatus    metricHwFrequencyThrottleStatus
 	metricHwGpuBandwidthLimit          metricHwGpuBandwidthLimit
 	metricHwGpuBandwidthUtilization    metricHwGpuBandwidthUtilization
+	metricHwGpuEccState                metricHwGpuEccState
 	metricHwGpuInfo                    metricHwGpuInfo
 	metricHwGpuIo                      metricHwGpuIo
 	metricHwGpuIoRate                  metricHwGpuIoRate
@@ -3069,6 +3178,7 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		metricHwFrequencyThrottleStatus:    newMetricHwFrequencyThrottleStatus(mbc.Metrics.HwFrequencyThrottleStatus),
 		metricHwGpuBandwidthLimit:          newMetricHwGpuBandwidthLimit(mbc.Metrics.HwGpuBandwidthLimit),
 		metricHwGpuBandwidthUtilization:    newMetricHwGpuBandwidthUtilization(mbc.Metrics.HwGpuBandwidthUtilization),
+		metricHwGpuEccState:                newMetricHwGpuEccState(mbc.Metrics.HwGpuEccState),
 		metricHwGpuInfo:                    newMetricHwGpuInfo(mbc.Metrics.HwGpuInfo),
 		metricHwGpuIo:                      newMetricHwGpuIo(mbc.Metrics.HwGpuIo),
 		metricHwGpuIoRate:                  newMetricHwGpuIoRate(mbc.Metrics.HwGpuIoRate),
@@ -3160,6 +3270,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	mb.metricHwFrequencyThrottleStatus.emit(ils.Metrics())
 	mb.metricHwGpuBandwidthLimit.emit(ils.Metrics())
 	mb.metricHwGpuBandwidthUtilization.emit(ils.Metrics())
+	mb.metricHwGpuEccState.emit(ils.Metrics())
 	mb.metricHwGpuInfo.emit(ils.Metrics())
 	mb.metricHwGpuIo.emit(ils.Metrics())
 	mb.metricHwGpuIoRate.emit(ils.Metrics())
@@ -3240,6 +3351,11 @@ func (mb *MetricsBuilder) RecordHwGpuBandwidthLimitDataPoint(ts pcommon.Timestam
 // RecordHwGpuBandwidthUtilizationDataPoint adds a data point to hw.gpu.bandwidth.utilization metric.
 func (mb *MetricsBuilder) RecordHwGpuBandwidthUtilizationDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string) {
 	mb.metricHwGpuBandwidthUtilization.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue)
+}
+
+// RecordHwGpuEccStateDataPoint adds a data point to hw.gpu.ecc.state metric.
+func (mb *MetricsBuilder) RecordHwGpuEccStateDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwStateAttributeValue string) {
+	mb.metricHwGpuEccState.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwStateAttributeValue)
 }
 
 // RecordHwGpuInfoDataPoint adds a data point to hw.gpu.info metric.

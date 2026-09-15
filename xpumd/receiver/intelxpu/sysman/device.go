@@ -336,30 +336,7 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if !d.state.initialized {
 		return
 	}
-	if d.state.ecc.configurable {
-		err := d.updateEccState()
-		if !d.state.ecc.configurable {
-			d.logger.Errorw("ECC become non-configurable, disabling state querying", "states", d.state.ecc, zap.Error(err), "attributes", d.attributes)
-		}
-	}
-
-	// Report ECC state(s) if state is configurable or changed
-	if d.state.ecc.configurable || len(d.state.ecc.states) > 1 {
-		for state := range d.state.ecc.states {
-			value := int64(0)
-			if state == d.state.ecc.current {
-				value = 1
-			}
-			mb.RecordHwStatusDataPoint(ts, value,
-				d.attributes.hwID,
-				d.attributes.hwName,
-				d.attributes.pciBDF,
-				"", // not subdevice
-				"ecc_"+state,
-				metadata.AttributeHwTypeGpu,
-			)
-		}
-	}
+	d.scrapeEccState(mb, ts)
 
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.hwID,
@@ -385,6 +362,35 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	for _, s := range d.scrapers {
 		s.scrape(mb, ts)
+	}
+}
+
+// scrapeEccState reports the device memory ECC state(s). States are reported
+// only if the ECC state is configurable, or if it has changed.
+func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	if d.state.ecc.configurable {
+		err := d.updateEccState()
+		if !d.state.ecc.configurable {
+			d.logger.Errorw("ECC become non-configurable, disabling state querying", "states", d.state.ecc, zap.Error(err), "attributes", d.attributes)
+		}
+	}
+
+	if !d.state.ecc.configurable && len(d.state.ecc.states) < 2 {
+		return
+	}
+
+	for state := range d.state.ecc.states {
+		value := int64(0)
+		if state == d.state.ecc.current {
+			value = 1
+		}
+		mb.RecordHwGpuEccStateDataPoint(ts, value,
+			d.attributes.hwID,
+			d.attributes.hwName,
+			d.attributes.pciBDF,
+			"", // not subdevice
+			state,
+		)
 	}
 }
 
@@ -425,9 +431,9 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		// report status of currently active & previously seen extended states
 		for _, bit := range d.state.stateExtSeen.Bits() {
 			if bit == l0sysman.DEVICE_STATE_EXT_FLAG_NORMAL {
-				// "normal" is the absence of an issue, don't report "ok" as
-				// there hw.status{hw.type=gpu} is overloaded with ecc_* states.
-				// TODO: revisit (add "ok" state) when the decision on how to handle ecc_* states is made.
+				// "normal" is the absence of an issue; hw.status{hw.type=gpu}
+				// carries multiple independent states, so don't report "ok" here.
+				// TODO: revisit (add "ok" state) when the gpu state handling is decided.
 				continue
 			}
 			value := int64(0)

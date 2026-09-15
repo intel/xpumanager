@@ -349,7 +349,7 @@ Used metrics names:
 * `hw.<component>` OTel spec metrics
 * New GPU metrics for OTel `hw.*` namespace:
   *  `hw.frequency`, `hw.frequency.*` (all of them)
-  * `hw.gpu.bandwidth.*`, `hw.gpu.info`, `hw.gpu.io.rate`
+  * `hw.gpu.bandwidth.*`, `hw.gpu.ecc.state`, `hw.gpu.info`, `hw.gpu.io.rate`
   * `hw.memory.bandwidth.*`, `hw.memory.io`, `hw.memory.io.rate`, `hw.memory.usage`
   * `hw.power.limit`
 
@@ -375,8 +375,10 @@ New values for the OTel spec HW attribute enumerations:
 * `hw.*{hw.type=...}`:
   * `frequency`, `pci_link`
 * `hw.status{hw.state=...}`:
-  * GPU `reset_needed`, ECC states (5), PCI link states (up to 5), memory health states (up to 5),
+  * GPU `reset_needed`, PCI link states (up to 5), memory health states (up to 5),
     frequency `throttled` (with separate metric for up to 12 throttling reasons)
+* `hw.gpu.ecc.state{hw.state=...}`:
+  * ECC states (5)
 
 => some of them conflict with the OTel spec guidance as they are not namespaced,
 or use OTel `hw.*` namespace for metrics that are not in the spec yet.

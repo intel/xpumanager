@@ -478,6 +478,58 @@ func (ms *HwGpuBandwidthUtilizationMetricConfig) Validate() error {
 	return nil
 }
 
+// HwGpuEccStateMetricAttributeKey specifies the key of an attribute for the hw.gpu.ecc.state metric.
+type HwGpuEccStateMetricAttributeKey string
+
+const (
+	HwGpuEccStateMetricAttributeKeyHwID                HwGpuEccStateMetricAttributeKey = "hw.id"
+	HwGpuEccStateMetricAttributeKeyHwName              HwGpuEccStateMetricAttributeKey = "hw.name"
+	HwGpuEccStateMetricAttributeKeyPciBdf              HwGpuEccStateMetricAttributeKey = "pci.bdf"
+	HwGpuEccStateMetricAttributeKeyComIntelSubdeviceID HwGpuEccStateMetricAttributeKey = "com.intel.subdevice_id"
+	HwGpuEccStateMetricAttributeKeyHwState             HwGpuEccStateMetricAttributeKey = "hw.state"
+)
+
+// HwGpuEccStateMetricConfig provides config for the hw.gpu.ecc.state metric.
+type HwGpuEccStateMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                            `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwGpuEccStateMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwGpuEccStateMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwGpuEccStateMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwGpuEccStateMetricAttributeKeyHwID, HwGpuEccStateMetricAttributeKeyHwName, HwGpuEccStateMetricAttributeKeyPciBdf, HwGpuEccStateMetricAttributeKeyComIntelSubdeviceID, HwGpuEccStateMetricAttributeKeyHwState:
+		default:
+			return fmt.Errorf("metric hw.gpu.ecc.state doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.state]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
 // HwGpuInfoMetricAttributeKey specifies the key of an attribute for the hw.gpu.info metric.
 type HwGpuInfoMetricAttributeKey string
 
@@ -1341,6 +1393,7 @@ type MetricsConfig struct {
 	HwFrequencyThrottleStatus    HwFrequencyThrottleStatusMetricConfig    `mapstructure:"hw.frequency.throttle_status"`
 	HwGpuBandwidthLimit          HwGpuBandwidthLimitMetricConfig          `mapstructure:"hw.gpu.bandwidth.limit"`
 	HwGpuBandwidthUtilization    HwGpuBandwidthUtilizationMetricConfig    `mapstructure:"hw.gpu.bandwidth.utilization"`
+	HwGpuEccState                HwGpuEccStateMetricConfig                `mapstructure:"hw.gpu.ecc.state"`
 	HwGpuInfo                    HwGpuInfoMetricConfig                    `mapstructure:"hw.gpu.info"`
 	HwGpuIo                      HwGpuIoMetricConfig                      `mapstructure:"hw.gpu.io"`
 	HwGpuIoRate                  HwGpuIoRateMetricConfig                  `mapstructure:"hw.gpu.io.rate"`
@@ -1405,6 +1458,11 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled:             true,
 			AggregationStrategy: AggregationStrategyAvg,
 			EnabledAttributes:   []HwGpuBandwidthUtilizationMetricAttributeKey{HwGpuBandwidthUtilizationMetricAttributeKeyHwID, HwGpuBandwidthUtilizationMetricAttributeKeyHwName, HwGpuBandwidthUtilizationMetricAttributeKeyPciBdf},
+		},
+		HwGpuEccState: HwGpuEccStateMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategySum,
+			EnabledAttributes:   []HwGpuEccStateMetricAttributeKey{HwGpuEccStateMetricAttributeKeyHwID, HwGpuEccStateMetricAttributeKeyHwName, HwGpuEccStateMetricAttributeKeyPciBdf, HwGpuEccStateMetricAttributeKeyComIntelSubdeviceID, HwGpuEccStateMetricAttributeKeyHwState},
 		},
 		HwGpuInfo: HwGpuInfoMetricConfig{
 			Enabled:             true,
