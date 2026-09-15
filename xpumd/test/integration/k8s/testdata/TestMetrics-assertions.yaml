@@ -149,15 +149,6 @@ InitialValues:
         hw_state: ok
         hw_type: memory
 
-    # hw.status — ECC disabled in initial config
-    - name: hw_status
-      value: 1
-      labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
-        hw_state: ecc_disabled
-        hw_type: gpu
-
     # hw.status — no reset needed and no device state extension
     # (ZES_extension_device_state) issues yet in the initial config (state is
     # ZES_DEVICE_STATE_EXT_FLAG_NORMAL, which is not reported as an issue)
@@ -175,6 +166,14 @@ InitialValues:
       labels:
         <<: *pci_link_status_common_labels
         hw_state: ok
+
+    # hw.gpu.ecc.state - ECC configurable but disabled in the initial config
+    - name: hw_gpu_ecc_state
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: disabled
 
     # hw.gpu.io
     - name: hw_gpu_io_bytes_total
@@ -370,7 +369,7 @@ UpdatedValues:
         <<: *freq_common_labels
         com_intel_speed_throttle_reason: ave_pwr_cap
 
-    # hw.status — frequency throttled by power cap; memory degraded; ECC enabled
+    # hw.status - frequency throttled by power cap; memory degraded
     - name: hw_status
       value: 1
       labels:
@@ -407,20 +406,6 @@ UpdatedValues:
         hw_name: mem-2
         hw_state: ok
         hw_type: memory
-    - name: hw_status
-      value: 1
-      labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
-        hw_state: ecc_enabled
-        hw_type: gpu
-    - name: hw_status
-      value: 0
-      labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
-        hw_state: ecc_disabled
-        hw_type: gpu
 
     # hw.status — device reset needed, plus device state extension
     # (ZES_extension_device_state) reports the device as wedged and in
@@ -463,6 +448,21 @@ UpdatedValues:
       labels:
         <<: *pci_link_status_common_labels
         hw_state: ok
+
+    # hw.gpu.ecc.state - ECC now enabled, "disabled" still reported as it was
+    # seen earlier
+    - name: hw_gpu_ecc_state
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: enabled
+    - name: hw_gpu_ecc_state
+      value: 0
+      labels:
+        <<: *dev_common_labels
+        hw_name: gpu-1
+        hw_state: disabled
 
     # hw.gpu.io
     - name: hw_gpu_io_bytes_total
