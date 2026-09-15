@@ -39,7 +39,8 @@ public:
 	void emit(const LogRecord &record) override
 	{
 		if (mShowTimestamp) {
-			os << xpum::compat::format("[{:%H:%M:%S}] ", std::chrono::floor<std::chrono::milliseconds>(record.timestamp));
+			os << xpum::compat::format("[{:%H:%M:%S}] ",
+									   std::chrono::floor<std::chrono::milliseconds>(record.timestamp));
 		}
 		if (mShowThreadId) {
 			os << '[' << record.threadId << "] ";
@@ -60,7 +61,9 @@ public:
 		}
 	}
 
-	void sync() noexcept override { os.flush(); }
+	// Not noexcept: os.flush() throws std::ios_base::failure when the caller-supplied stream has
+	// badbit/failbit in its exception mask. Sink::log() already catches and reports that.
+	void sync() override { os.flush(); }
 };
 
 #endif /* LOGGER_OSTREAM_SINK_H */

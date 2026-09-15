@@ -576,6 +576,8 @@ const char *resultToString(Result result) noexcept
  * @param len Length of the package buffer in bytes
  * @param formatName Optional out parameter receiving a static string naming the revision on a match
  * @return bool true when the buffer is a known Type 5 package, false otherwise
+ *
+ * @note noexcept: an internal allocation failure is reported as false rather than propagated.
  */
 bool isPldmType5(const uint8_t *data, size_t len, const char **formatName) noexcept
 {
@@ -586,18 +588,24 @@ bool isPldmType5(const uint8_t *data, size_t len, const char **formatName) noexc
 		return false;
 	}
 
-	for (const auto &uuid : knownPackageUuids()) {
-		if (std::memcmp(data, uuid.bytes, 16) == 0) {
-			// PackageHeaderSize (little-endian at offset 17) must fit the buffer.
-			uint16_t headerSize = static_cast<uint16_t>(data[17]) | (static_cast<uint16_t>(data[18]) << 8);
-			if (headerSize == 0 || headerSize > len) {
-				return false;
+	// knownPackageUuids() builds a function-local static vector on first call, so it can throw
+	// bad_alloc. This is a noexcept probe: report "not a Type 5 package" rather than terminate.
+	try {
+		for (const auto &uuid : knownPackageUuids()) {
+			if (std::memcmp(data, uuid.bytes, 16) == 0) {
+				// PackageHeaderSize (little-endian at offset 17) must fit the buffer.
+				uint16_t headerSize = static_cast<uint16_t>(data[17]) | (static_cast<uint16_t>(data[18]) << 8);
+				if (headerSize == 0 || headerSize > len) {
+					return false;
+				}
+				if (formatName) {
+					*formatName = uuid.name;
+				}
+				return true;
 			}
-			if (formatName) {
-				*formatName = uuid.name;
-			}
-			return true;
 		}
+	} catch (const std::exception &) {
+		return false;
 	}
 	return false;
 }
@@ -622,6 +630,8 @@ bool isPldmType5(const uint8_t *data, size_t len, const char **formatName) noexc
  * @note *countOut is the number of entries written on Success, and the count needed on
  *       Result::BufferTooSmall, so a failed call can size the retry.
  * @note Pass @p out == nullptr with @p maxOut == 0 to query the count alone.
+ * @note noexcept: an internal allocation failure is reported as Result::MalformedPackage rather
+ *       than propagated.
  */
 Result getComponentList(const uint8_t *data, size_t len, ComponentInfo *out, size_t maxOut, size_t *countOut,
 						const ExtractOptions &opts) noexcept
@@ -653,11 +663,18 @@ Result getComponentList(const uint8_t *data, size_t len, ComponentInfo *out, siz
 		return Result::BufferTooSmall;
 	}
 
-	for (size_t i = 0; i < pkg.components.size(); ++i) {
-		const Result rc = describeComponent(pkg, i, componentOccurrence(pkg, i), opts, &out[i]);
-		if (rc != Result::Success) {
-			return rc;
+	// describeComponent() reaches payloadMagics(), a function-local static vector that can throw
+	// bad_alloc on first use. This entry point is noexcept, so report it as a package we could not
+	// read rather than terminating.
+	try {
+		for (size_t i = 0; i < pkg.components.size(); ++i) {
+			const Result rc = describeComponent(pkg, i, componentOccurrence(pkg, i), opts, &out[i]);
+			if (rc != Result::Success) {
+				return rc;
+			}
 		}
+	} catch (const std::exception &) {
+		return Result::MalformedPackage;
 	}
 	return Result::Success;
 }
@@ -718,6 +735,8 @@ Result getComponentList(const uint8_t *data, size_t len, std::vector<ComponentIn
  *       ComponentInfo::occurrence); 0 is the first such component.
  * @note On Result::BufferTooSmall nothing is written, so a failed call can size the retry. On
  *       every other failure *bytesWritten is 0.
+ * @note noexcept: an internal allocation failure is reported as Result::MalformedPackage rather
+ *       than propagated.
  */
 Result extractComponent(const uint8_t *data, size_t len, uint16_t componentId, uint8_t *buffer, size_t bufferSize,
 						size_t *bytesWritten, unsigned occurrence, const ExtractOptions &opts) noexcept
@@ -735,37 +754,44 @@ Result extractComponent(const uint8_t *data, size_t len, uint16_t componentId, u
 		return open;
 	}
 
-	// Walk the table counting matches so `occurrence` picks among components that share an
-	// identifier.
-	unsigned seen = 0;
-	for (size_t i = 0; i < pkg.components.size(); ++i) {
-		const ComponentImageInfo &component = pkg.components[i];
-		if (component.identifier != componentId) {
-			continue;
-		}
-		if (seen++ != occurrence) {
-			continue;
-		}
+	// resolveImage() reaches payloadMagics(), a function-local static vector that can throw
+	// bad_alloc on first use. This entry point is noexcept, so report it as a package we could not
+	// read rather than terminating.
+	try {
+		// Walk the table counting matches so `occurrence` picks among components that share an
+		// identifier.
+		unsigned seen = 0;
+		for (size_t i = 0; i < pkg.components.size(); ++i) {
+			const ComponentImageInfo &component = pkg.components[i];
+			if (component.identifier != componentId) {
+				continue;
+			}
+			if (seen++ != occurrence) {
+				continue;
+			}
 
-		ImageSpan span;
-		const Result rc = resolveImage(pkg, component, opts, &span);
-		if (rc != Result::Success) {
-			return rc;
-		}
+			ImageSpan span;
+			const Result rc = resolveImage(pkg, component, opts, &span);
+			if (rc != Result::Success) {
+				return rc;
+			}
 
-		// Report the needed size on a short buffer so the caller can retry.
-		if (bufferSize < span.size) {
+			// Report the needed size on a short buffer so the caller can retry.
+			if (bufferSize < span.size) {
+				if (bytesWritten) {
+					*bytesWritten = span.size;
+				}
+				return Result::BufferTooSmall;
+			}
+
+			std::memcpy(buffer, span.begin, span.size);
 			if (bytesWritten) {
 				*bytesWritten = span.size;
 			}
-			return Result::BufferTooSmall;
+			return Result::Success;
 		}
-
-		std::memcpy(buffer, span.begin, span.size);
-		if (bytesWritten) {
-			*bytesWritten = span.size;
-		}
-		return Result::Success;
+	} catch (const std::exception &) {
+		return Result::MalformedPackage;
 	}
 	return Result::ComponentNotFound;
 }

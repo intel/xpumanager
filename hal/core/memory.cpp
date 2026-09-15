@@ -96,9 +96,10 @@ ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties
 
 	// Level Zero expects the caller to tag the struct it passes in. Zero
 	// initializing leaves stype 0, which is not a zes_structure_type_t value, so
-	// tag it here instead of relying on every caller to remember.
+	// tag it here instead of relying on every caller to remember. pNext is
+	// [in,out][optional] and may carry a caller-supplied extension struct, so it is
+	// left alone; callers own it and are expected to zero-initialize the struct.
 	properties->stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
-	properties->pNext = nullptr;
 
 	const ze_result_t result = zesMemoryGetProperties(memhandle, properties);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -142,7 +143,17 @@ ze_result_t memory::getProperties(zes_mem_handle_t memhandle, zes_mem_properties
  */
 ze_result_t memory::getState(zes_mem_handle_t memhandle, zes_mem_state_t *state)
 {
-	ze_result_t result = zesMemoryGetState(memhandle, state);
+	if (state == nullptr) {
+		ERR("Memory state output is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	// Same contract as getProperties(): stype is an [in] field and zero is not a
+	// zes_structure_type_t value, so tag it here. pNext on zes_mem_state_t is
+	// [in][optional] and caller-owned, so it is left alone.
+	state->stype = ZES_STRUCTURE_TYPE_MEM_STATE;
+
+	const ze_result_t result = zesMemoryGetState(memhandle, state);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get Memory state. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
@@ -214,7 +225,7 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t
 ze_result_t memory::getMemorySize(uint64_t *size)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_mem_state_t state;
+	zes_mem_state_t state = {};
 
 	if (size == nullptr) {
 		ERR("Size pointer is null.\n");
@@ -246,7 +257,7 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_mem_state_t state;
+	zes_mem_state_t state = {};
 
 	if (health == nullptr) {
 		ERR("Health pointer is null.\n");
@@ -302,7 +313,7 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 ze_result_t memory::getMemoryChannels(int32_t *channels)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_mem_properties_t properties;
+	zes_mem_properties_t properties = {};
 
 	if (channels == nullptr) {
 		ERR("Channels pointer is null.\n");
@@ -336,7 +347,7 @@ ze_result_t memory::getMemoryChannels(int32_t *channels)
 ze_result_t memory::getMemoryBusWidth(int32_t *busWidth)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_mem_properties_t properties;
+	zes_mem_properties_t properties = {};
 
 	if (busWidth == nullptr) {
 		ERR("Bus width pointer is null.\n");
@@ -946,8 +957,12 @@ ze_result_t memory::init(zes_device_handle_t device)
  * state, and bandwidth information for all memory modules. It serves as a
  * diagnostic routine for memory subsystem health and performance assessment.
  *
+ * This is a best-effort sweep: each per-module query logs its own failure and the scan
+ * continues, so one unreadable module does not hide the remaining ones. Bandwidth in
+ * particular is unsupported on many parts.
+ *
  * @param device Handle to the Level Zero Sysman device (unused in current implementation)
- * @return ze_result_t ZE_RESULT_SUCCESS on successful diagnostic completion
+ * @return ze_result_t Always ZE_RESULT_SUCCESS; individual query failures are logged, not returned
  */
 ze_result_t memory::zesRun(UNUSED zes_device_handle_t device)
 {
@@ -956,9 +971,15 @@ ze_result_t memory::zesRun(UNUSED zes_device_handle_t device)
 	zes_mem_bandwidth_t bandwidth = {};
 
 	for (uint32_t i = 0; i < memoryModulesCount; i++) {
-		getProperties(memoryModules[i], &properties);
-		getState(memoryModules[i], &state);
-		getBandwidth(memoryModules[i], &bandwidth);
+		// Results deliberately discarded: each callee logs its own failure and this sweep is
+		// diagnostic only. The output structs are reset per iteration so a failed query cannot
+		// leave the previous module's data behind.
+		properties = {};
+		state = {};
+		bandwidth = {};
+		(void)getProperties(memoryModules[i], &properties);
+		(void)getState(memoryModules[i], &state);
+		(void)getBandwidth(memoryModules[i], &bandwidth);
 	}
 
 	return ZE_RESULT_SUCCESS;

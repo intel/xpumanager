@@ -7,6 +7,7 @@
 #include <http_client.h>
 #include <debug.h>
 #include <curl/curl.h>
+#include <curl/easy.h>
 #include <string>
 #include <string.h>
 #include <vector>
@@ -166,48 +167,84 @@ int HttpClient::performRequest(const std::string &url, const std::string &userna
 		return HTTP_FAILURE;
 	}
 
-	// Set URL
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	// Best-effort scrub of the local auth string; libcurl-owned internal copies are not reachable
+	const auto scrubAuth = [&authString]() {
+		if (!authString.empty()) {
+			explicit_bzero(authString.data(), authString.size());
+			authString.clear();
+		}
+	};
 
-	// Set timeout
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeoutSeconds);
+	// curl_easy_setopt() failures are not benign: a rejected CURLOPT_USERPWD would send an
+	// unauthenticated request, and a rejected CURLOPT_WRITEFUNCTION would drop the response body.
+	// Record the first failure and abandon the request rather than proceeding with a silently
+	// different configuration.
+	CURLcode optRes = CURLE_OK;
+	const auto setOpt = [&](CURLoption option, auto value) {
+		if (optRes != CURLE_OK) {
+			return;
+		}
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — libcurl's public API is variadic
+		optRes = curl_easy_setopt(curl, option, value);
+		if (optRes != CURLE_OK) {
+			ERR("Failed to set CURL option {}: {} (code: {})\n", static_cast<int>(option), curl_easy_strerror(optRes),
+				static_cast<int>(optRes));
+		}
+	};
+
+	// Set URL
+	setOpt(CURLOPT_URL, url.c_str());
+
+	// Set timeout. CURLOPT_TIMEOUT reads a long out of the varargs list, so widen explicitly.
+	setOpt(CURLOPT_TIMEOUT, static_cast<long>(timeoutSeconds));
 
 	// Disable SSL verification if requested (equivalent to curl -k)
 	if (!sslVerify) {
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+		setOpt(CURLOPT_SSL_VERIFYPEER, 0L);
+		setOpt(CURLOPT_SSL_VERIFYHOST, 0L);
 	}
 
 	// Set authentication if provided
 	if (!username.empty() && !password.empty()) {
 		authString = username + ":" + password;
-		curl_easy_setopt(curl, CURLOPT_USERPWD, authString.c_str());
-		curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		setOpt(CURLOPT_USERPWD, authString.c_str());
+		// NOLINTNEXTLINE(hicpp-signed-bitwise) — CURLAUTH_BASIC is a libcurl bit-flag macro
+		setOpt(CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 	}
 
 	// Set callback function to capture response
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+	setOpt(CURLOPT_WRITEFUNCTION, writeCallback);
+	setOpt(CURLOPT_WRITEDATA, &buffer);
 
 	// Follow redirects
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+	setOpt(CURLOPT_FOLLOWLOCATION, 1L);
 
 	// Set user agent
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, "AMC Redfish Client/1.0");
+	setOpt(CURLOPT_USERAGENT, "AMC Redfish Client/1.0");
+
+	if (optRes != CURLE_OK) {
+		scrubAuth();
+		curl_easy_cleanup(curl);
+		return HTTP_FAILURE;
+	}
 
 	// Perform the request
 	res = curl_easy_perform(curl);
 
-	// Best-effort: scrub local auth string; libcurl-owned internal copies are not reachable
-	if (!authString.empty()) {
-		explicit_bzero(authString.data(), authString.size());
-		authString.clear();
-	}
+	scrubAuth();
 
 	if (res == CURLE_OK) {
-		// Get response code
-		long responseCode;
-		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+		// Get response code. curl_easy_getinfo() only writes the output on success (it fails
+		// when no status line was seen, e.g. a non-HTTP scheme), so keep the pre-set 0 rather
+		// than publishing whatever was on the stack.
+		long responseCode = 0;
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — libcurl's public API is variadic
+		const CURLcode infoRes = curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+		if (infoRes != CURLE_OK) {
+			// NOLINTNEXTLINE(misc-include-cleaner) — DBG comes from the debug.h logger facade
+			DBG("Failed to read HTTP response code: {}\n", curl_easy_strerror(infoRes));
+			responseCode = 0;
+		}
 		response.statusCode = (int)responseCode;
 
 		// Copy response data

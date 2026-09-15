@@ -741,13 +741,11 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "--fanspeed                  Set fan speed percentage: 0-100; default (auto)"));
 	helpList.push_back(helpCmd(
 		SUB_HEADING, "Examples: --fanspeed 50   --fanspeed 50%%   --fanspeed default   --fanid 1 --fanspeed 50"));
-	helpList.push_back(
-		helpCmd(HEADING, "--fancurve                  Set fan curve in percent: temp:speed,temp:speed,..."));
-	helpList.push_back(
-		helpCmd(SUB_HEADING, "Examples: --fancurve 40:25,60:50,80:90   --fancurve 40:25%,60:50%,80:90%"));
-	helpList.push_back(helpCmd(HEADING, "--fancurve-rpm              Set fan curve in RPM: temp:rpm,temp:rpm,..."));
-	helpList.push_back(
-		helpCmd(SUB_HEADING, "Examples: --fancurve-rpm 40:1200,70:2800   --fancurve-rpm 40:1200rpm,70:2800rpm"));
+	helpList.emplace_back(HEADING, "--fancurve                  Set fan curve in percent: temp:speed,temp:speed,...");
+	helpList.emplace_back(SUB_HEADING, "Examples: --fancurve 40:25,60:50,80:90   --fancurve 40:25%%,60:50%%,80:90%%");
+	helpList.emplace_back(HEADING, "--fancurve-rpm              Set fan curve in RPM: temp:rpm,temp:rpm,...");
+	helpList.emplace_back(SUB_HEADING,
+						  "Examples: --fancurve-rpm 40:1200,70:2800   --fancurve-rpm 40:1200rpm,70:2800rpm");
 
 	printHelp(helpList, helpType);
 	helpList.clear();

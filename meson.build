@@ -289,7 +289,7 @@ if not igsc_dep.found()
     ] + igsc_transitive,
   )
 endif
-nlohmann_json_dep = dependency('nlohmann_json', required : true)
+nlohmann_json_dep = dependency('nlohmann_json', required : true, include_type : 'system')
 cli11_dep = dependency('CLI11', required : true, include_type : 'system')
 
 # {fmt} — used by utility/compat/format.h on compilers that lack std::format

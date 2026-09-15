@@ -71,6 +71,17 @@ ze_result_t enginegroup::getProperties(zes_engine_handle_t engineGroup, zes_engi
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
 
+	if (engineProperties == nullptr) {
+		ERR("Engine properties output is null\n");
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+
+	// stype is an [in] field and zero is not a zes_structure_type_t value, so tag it here rather
+	// than relying on every caller to remember. pNext is [in,out][optional] and may carry a
+	// caller-supplied extension struct (e.g. zes_engine_ext_properties_t), so it is left alone;
+	// callers own it and are expected to zero-initialize the structure they pass in.
+	engineProperties->stype = ZES_STRUCTURE_TYPE_ENGINE_PROPERTIES;
+
 	result = zesEngineGetProperties(engineGroup, engineProperties);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
@@ -197,7 +208,7 @@ ze_result_t enginegroup::getActivityExt(zes_engine_handle_t engineGroup)
  */
 ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_t type)
 {
-	zes_engine_properties_t engineProperties;
+	zes_engine_properties_t engineProperties = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
 
@@ -236,9 +247,9 @@ ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_
  */
 std::tuple<ze_result_t, uint64_t, uint64_t> enginegroup::getUtilization(std::span<const zes_engine_group_t> typeTable)
 {
-	zes_engine_properties_t engineProperties;
+	zes_engine_properties_t engineProperties = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_engine_stats_t engineStats;
+	zes_engine_stats_t engineStats = {};
 	TRACING();
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
@@ -283,8 +294,8 @@ std::tuple<ze_result_t, uint64_t, uint64_t> enginegroup::getUtilization(std::spa
 ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32_t engineIndex, uint64_t *activeTime,
 												 uint64_t *timestamp)
 {
-	zes_engine_properties_t engineProperties;
-	zes_engine_stats_t engineStats;
+	zes_engine_properties_t engineProperties = {};
+	zes_engine_stats_t engineStats = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	uint32_t matchIndex = 0;
 	TRACING();
@@ -347,8 +358,8 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 												  std::map<uint32_t, std::pair<uint64_t, uint64_t>> &tileActivity)
 {
-	zes_engine_properties_t engineProperties;
-	zes_engine_stats_t engineStats;
+	zes_engine_properties_t engineProperties = {};
+	zes_engine_stats_t engineStats = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
 
@@ -749,22 +760,30 @@ ze_result_t enginegroup::init(zes_device_handle_t device)
  * properties, activity statistics, and extended metrics for all engine groups,
  * providing comprehensive GPU execution unit utilization monitoring.
  *
+ * This is a best-effort debug sweep: each per-group query logs its own failure and the sweep
+ * continues, so a group that cannot be read does not hide the remaining ones.
+ *
  * @param device Handle to the Level Zero Sysman device (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS if all engine operations completed successfully, error code otherwise
+ * @return ze_result_t Always ZE_RESULT_SUCCESS; individual query failures are logged, not returned
  */
 ze_result_t enginegroup::zesRun(UNUSED zes_device_handle_t device)
 {
-	zes_engine_properties_t engineProperties;
-	zes_engine_stats_t engineStats;
+	zes_engine_properties_t engineProperties = {};
+	zes_engine_stats_t engineStats = {};
 	TRACING();
 
 	for (uint32_t i = 0; i < engineGroupCount; ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		DBG("  - Engine Group handle: {}\n", (void *)engineGroup);
 
-		getProperties(engineGroup, &engineProperties);
-		getActivity(engineGroup, &engineStats);
-		getActivityExt(engineGroup);
+		// Results deliberately discarded: each callee logs its own failure, and this sweep is
+		// diagnostic only. The output structs are reset per iteration so a failed query cannot
+		// leave the previous group's data behind.
+		engineProperties = {};
+		engineStats = {};
+		(void)getProperties(engineGroup, &engineProperties);
+		(void)getActivity(engineGroup, &engineStats);
+		(void)getActivityExt(engineGroup);
 	}
 	return ZE_RESULT_SUCCESS;
 }

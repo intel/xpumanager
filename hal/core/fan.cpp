@@ -219,18 +219,25 @@ ze_result_t fan::enumFans(zes_device_handle_t device)
 /**
  * @brief Prints supported fan speed control modes for debug logs.
  *
+ * zes_fan_properties_t.supportedModes is a bitfield of (1 << zes_fan_speed_mode_t),
+ * and the zes_fan_speed_mode_t enumerators are ordinals (DEFAULT=0, FIXED=1, TABLE=2),
+ * not bit values -- so each mode has to be shifted into a mask before testing.
+ *
  * @param[in] mode Bitmask of supported fan modes.
  */
 void fan::printSupportedModes(const uint32_t mode)
 {
 	DBG("    - Supported Modes: {}\n", mode);
 	DBG("      - ");
-	if ((mode & ZES_FAN_SPEED_MODE_DEFAULT) != 0)
+	if ((mode & (1U << ZES_FAN_SPEED_MODE_DEFAULT)) != 0) {
 		DBG("Default ");
-	if ((mode & ZES_FAN_SPEED_MODE_FIXED) != 0)
+	}
+	if ((mode & (1U << ZES_FAN_SPEED_MODE_FIXED)) != 0) {
 		DBG("Fixed ");
-	if (mode & ZES_FAN_SPEED_MODE_TABLE)
+	}
+	if ((mode & (1U << ZES_FAN_SPEED_MODE_TABLE)) != 0) {
 		DBG("Table ");
+	}
 	DBG("\n");
 }
 

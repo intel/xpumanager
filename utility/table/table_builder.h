@@ -109,9 +109,13 @@ public:
 
 		Row() = default;
 		Row(const Row &other) = default;
-		Row(Row &&other) noexcept = default;
+		// No explicit noexcept on the moves: jsonMetadata is a std::unordered_map, whose move is
+		// not noexcept in MSVC's STL. Forcing noexcept there turns a bad_alloc into
+		// std::terminate; letting the compiler compute the specification keeps it noexcept on
+		// libstdc++ and honest on MSVC.
+		Row(Row &&other) = default;
 		Row &operator=(const Row &other) = default;
-		Row &operator=(Row &&other) noexcept = default;
+		Row &operator=(Row &&other) = default;
 		~Row() = default;
 
 		template <typename... Args>
@@ -205,8 +209,8 @@ private:
 		std::vector<std::string> extraHeaders; // Additional header lines (second and further header rows)
 		mutable int width;
 		Align alignment;
-		bool wrap = true;      // Participate in word-wrap when TableBuilder::wordWrap is enabled
-		char wrapDelim = ' ';  // Delimiter to split and rejoin on (',' for CPU lists, etc.)
+		bool wrap = true;	  // Participate in word-wrap when TableBuilder::wordWrap is enabled
+		char wrapDelim = ' '; // Delimiter to split and rejoin on (',' for CPU lists, etc.)
 
 		Column(std::string h, int w, Align a) : header(std::move(h)), width(w), alignment(a) {}
 	};
@@ -215,10 +219,10 @@ private:
 	std::vector<Row> rows;
 	std::vector<Row> preHeaderRows; // Rendered inside the table border, before column headers
 	bool autoSize = true;
-	bool suppressHeaderSep = true;    // Suppress the border line drawn after column headers
+	bool suppressHeaderSep = true;	  // Suppress the border line drawn after column headers
 	bool suppressHeaderColSep = true; // Suppress inner | between column headers
-	bool suppressDataColSep = true;   // Suppress inner | between data cells
-	bool wordWrap = false;            // Wrap cell text at word boundaries instead of truncating
+	bool suppressDataColSep = true;	  // Suppress inner | between data cells
+	bool wordWrap = false;			  // Wrap cell text at word boundaries instead of truncating
 	mutable bool widthsCalculated = false;
 	OutputFormat outputFormat = OutputFormat::Table;
 	TableConfig config;
