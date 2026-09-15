@@ -239,10 +239,12 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
     ldconfig
 
 # Install other compute-runtime build dependencies
-# (without the libtracefs headers the info log extension is built as a stub)
+# - libtracefs-dev: needed by Sysman for the info log extension functionality
+# - libudev-dev: needed by Sysman for the (udev) events (e.g. device attach/detach)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     libtracefs-dev \
+    libudev-dev \
     ninja-build
 
 # GmmLib provides the graphics memory management library to build against.
