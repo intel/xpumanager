@@ -1,12 +1,21 @@
 # XPUM daemon user visible changes
 
-## XPUM 2.x.x
+## XPUM 2.2.0
 
+* XPUMD metrics: New GPU `hw.status` states from the L0 device state extension:
+  `wedged`, `survivability` and `flash_override`
+* Metric output fixes:
+  * `hw.power.limit` was reported million times too large (mW -> W conversion error)
+* XPUMD fixes: Crash on zero `sampling_interval`, and on missing parent metric
+  in the `intel_xpu_status` processor
 * XPUMD dashboard: new metrics and usability improvements. Requires Grafana 13.x (or newer)
 * XPUMD privileges: Helm chart uses now PERFMON capability instead of SYS_ADMIN one
   * This improves security, but there may still be some (typically very old) setups
     that require much wider SYS_ADMIN capability for GPU utilization metrics access
-* XPUMD image: L0 driver stack update to 26.27.39122.11
+* XPUMD image:
+  * L0 driver stack update to 26.31.39395.13
+  * Libraries needed by the RAS metrics (libnl) and the info logs (libtracefs) added
+* Go dependencies: OTel collector update to v0.159.0 / v1.65 + other version updates
 
 
 ## XPUM 2.1.0
