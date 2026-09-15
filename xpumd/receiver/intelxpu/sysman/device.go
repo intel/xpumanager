@@ -329,6 +329,17 @@ func (d *device) updateEccState() error {
 	return retval
 }
 
+// stateAggregator aggregates state from multiple sources.
+type stateAggregator struct {
+	isValid   bool
+	hasIssues bool
+}
+
+func (s *stateAggregator) addSource(issue bool) {
+	s.isValid = true
+	s.hasIssues = s.hasIssues || issue
+}
+
 func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	d.RLock()
 	defer d.RUnlock()
@@ -356,7 +367,10 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		d.attributes.eccSupport,
 	)
 
-	d.scrapeDevState(mb, ts)
+	status := &stateAggregator{}
+	d.scrapeDevState(mb, ts, status)
+	d.recordHwStatusGpuOk(mb, ts, status)
+
 	d.scrapePciState(mb, ts)
 	d.scrapePciStats(mb, ts)
 
@@ -394,8 +408,29 @@ func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	}
 }
 
+// recordHwStatusGpuOk reports the aggregated hw.status{hw.type="gpu"} "ok" state.
+func (d *device) recordHwStatusGpuOk(mb *metadata.MetricsBuilder, ts pcommon.Timestamp, status *stateAggregator) {
+	if !status.isValid {
+		return
+	}
+
+	value := int64(0)
+	if !status.hasIssues {
+		value = 1
+	}
+
+	mb.RecordHwStatusDataPoint(ts, value,
+		d.attributes.hwID,
+		d.attributes.hwName,
+		d.attributes.pciBDF,
+		"", // not subdevice
+		"ok",
+		metadata.AttributeHwTypeGpu,
+	)
+}
+
 // scrapeDevState reports device (reset) state
-func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp, status *stateAggregator) {
 	if d.state.devStateDisabled {
 		return
 	}
@@ -408,9 +443,12 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		return
 	}
 
-	reset := int64(0)
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
-	if state.Reset != 0 {
+	resetNeeded := state.Reset != 0
+	status.addSource(resetNeeded)
+
+	reset := int64(0)
+	if resetNeeded {
 		reset = 1
 	}
 
@@ -427,13 +465,14 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-state-t
 	if state.ExtendedState != nil {
 		d.state.stateExtSeen |= state.ExtendedState.Flags
+		// "normal" is the absence of an issue, all the other flags mark a problem
+		issues := state.ExtendedState.Flags & ^l0sysman.DeviceStateExtFlags(l0sysman.DEVICE_STATE_EXT_FLAG_NORMAL)
+		status.addSource(issues != 0)
 
 		// report status of currently active & previously seen extended states
 		for _, bit := range d.state.stateExtSeen.Bits() {
 			if bit == l0sysman.DEVICE_STATE_EXT_FLAG_NORMAL {
-				// "normal" is the absence of an issue; hw.status{hw.type=gpu}
-				// carries multiple independent states, so don't report "ok" here.
-				// TODO: revisit (add "ok" state) when the gpu state handling is decided.
+				// "normal" is reported indirectly by the aggregated "ok" state, instead
 				continue
 			}
 			value := int64(0)

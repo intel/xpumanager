@@ -46,6 +46,10 @@ _templates:
   ras_common_labels: &ras_common_labels
     <<: *dev_common_labels
     hw_type: gpu
+  gpu_status_common_labels: &gpu_status_common_labels
+    <<: *dev_common_labels
+    hw_name: gpu-1
+    hw_type: gpu
 
 # common covers metrics whose values are identical across all configurations/test cases.
 common:
@@ -149,16 +153,17 @@ InitialValues:
         hw_state: ok
         hw_type: memory
 
-    # hw.status — no reset needed and no device state extension
-    # (ZES_extension_device_state) issues yet in the initial config (state is
-    # ZES_DEVICE_STATE_EXT_FLAG_NORMAL, which is not reported as an issue)
+    # hw.status - the aggregated GPU state is "ok" in the initial config
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *gpu_status_common_labels
+        hw_state: ok
     - name: hw_status
       value: 0
       labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
+        <<: *gpu_status_common_labels
         hw_state: reset_needed
-        hw_type: gpu
 
     # hw.status — PCI link good in the initial config
     - name: hw_status
@@ -411,26 +416,25 @@ UpdatedValues:
     # (ZES_extension_device_state) reports the device as wedged and in
     # survivability mode
     - name: hw_status
+      value: 0
+      labels:
+        <<: *gpu_status_common_labels
+        hw_state: ok
+    - name: hw_status
       value: 1
       labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
+        <<: *gpu_status_common_labels
         hw_state: reset_needed
-        hw_type: gpu
     - name: hw_status
       value: 1
       labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
+        <<: *gpu_status_common_labels
         hw_state: wedged
-        hw_type: gpu
     - name: hw_status
       value: 1
       labels:
-        <<: *dev_common_labels
-        hw_name: gpu-1
+        <<: *gpu_status_common_labels
         hw_state: survivability
-        hw_type: gpu
 
     # hw.status — PCI link quality issues
     - name: hw_status

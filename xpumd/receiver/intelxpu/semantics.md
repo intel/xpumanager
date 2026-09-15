@@ -338,6 +338,8 @@ types / namespaces and their attributes.
   - Issues should be rare, and underlying HW + driver stack may support only
     small subset of the states specified in the Level-Zero Sysman API[^1]
 * `unknown` states are reported only if corresponding component states were known earlier.
+* GPU `ok` state is an aggregate. The `hw.status{hw.type="gpu"}` metric can carry multiple
+  independent device states, `ok` is active only when none of them indicates an issue.
 
 
 ### Details
@@ -375,7 +377,7 @@ New values for the OTel spec HW attribute enumerations:
 * `hw.*{hw.type=...}`:
   * `frequency`, `pci_link`
 * `hw.status{hw.state=...}`:
-  * GPU `reset_needed`, PCI link states (up to 5), memory health states (up to 5),
+  * GPU `ok` and `reset_needed`, PCI link states (up to 5), memory health states (up to 5),
     frequency `throttled` (with separate metric for up to 12 throttling reasons)
 * `hw.gpu.ecc.state{hw.state=...}`:
   * ECC states (5)
