@@ -37,7 +37,7 @@ inline ze_result_t zesDeviceGetHealthStatusExt(zes_device_handle_t hDevice, zes_
 {
 	using Pfn = ze_result_t (*)(zes_device_handle_t, zes_device_health_status_ext_t *);
 	static_assert(sizeof(void *) == sizeof(Pfn), "function-pointer size must match data-pointer size");
-	static const Pfn fn = [] noexcept -> Pfn {
+	static const Pfn fn = []() noexcept -> Pfn {
 		void *raw = resolveL0Sym("zesDeviceGetHealthStatusExt");
 		return raw ? std::bit_cast<Pfn>(raw) : nullptr;
 	}();
@@ -50,7 +50,7 @@ inline ze_result_t zesDeviceSetHealthStatusExt(zes_device_handle_t hDevice, zes_
 {
 	using Pfn = ze_result_t (*)(zes_device_handle_t, zes_device_health_status_ext_t);
 	static_assert(sizeof(void *) == sizeof(Pfn), "function-pointer size must match data-pointer size");
-	static const Pfn fn = [] noexcept -> Pfn {
+	static const Pfn fn = []() noexcept -> Pfn {
 		void *raw = resolveL0Sym("zesDeviceSetHealthStatusExt");
 		return raw ? std::bit_cast<Pfn>(raw) : nullptr;
 	}();
