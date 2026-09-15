@@ -74,23 +74,23 @@ type deviceState struct {
 // strings instead of ints. That way it's clearer when info is missing
 // (value = "" instead of "0").
 type deviceAttributes struct {
-	hwID              string
-	hwName            string
-	hwNamePci         string
-	pciBDF            string
-	pciVendorID       string
-	pciDeviceID       string
-	hwModel           string
-	hwSerialNumber    string
-	hwVendor          string
-	hwFirmwareVersion string
-	hwGpuType         metadata.AttributeHwGpuType
-	subDevCount       int64
-	maxBandwidth      int64 // zero = not available, skip PCI BW max/ratio metrics
-	pciLanes          string
-	pciLinkGen        string
-	demandPaging      bool
-	eccSupport        metadata.AttributeHwGpuEccSupport
+	hwID                 string
+	hwName               string
+	hwNamePci            string
+	pciBDF               string
+	pciVendorID          string
+	pciDeviceID          string
+	hwModel              string
+	hwSerialNumber       string
+	hwVendor             string
+	hwFirmwareVersion    string
+	hwGpuType            metadata.AttributeHwGpuType
+	subdeviceCount       int64
+	maxBandwidth         int64 // zero = not available, skip PCI BW max/ratio metrics
+	pciLanes             string
+	pciLinkGen           string
+	hwMemoryDemandPaging bool
+	hwGpuEccSupport      metadata.AttributeHwGpuEccSupport
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
@@ -196,15 +196,15 @@ func (d *device) init() error {
 		hwName:    d.attributes.hwName,
 		hwNamePci: d.attributes.hwNamePci,
 		// TODO: use (Sysman ext) props.Uuid.Id.String()?
-		hwID:           props.Core.Uuid.Id.String(),
-		pciDeviceID:    fmt.Sprintf("%04x", props.Core.DeviceId),
-		pciVendorID:    fmt.Sprintf("%04x", props.Core.VendorId),
-		hwModel:        props.ModelName.String(),
-		hwSerialNumber: props.SerialNumber.String(),
-		hwVendor:       props.VendorName.String(),
-		subDevCount:    int64(props.NumSubdevices),
-		hwGpuType:      gpuType(props.Flags),
-		demandPaging:   props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
+		hwID:                 props.Core.Uuid.Id.String(),
+		pciDeviceID:          fmt.Sprintf("%04x", props.Core.DeviceId),
+		pciVendorID:          fmt.Sprintf("%04x", props.Core.VendorId),
+		hwModel:              props.ModelName.String(),
+		hwSerialNumber:       props.SerialNumber.String(),
+		hwVendor:             props.VendorName.String(),
+		subdeviceCount:       int64(props.NumSubdevices),
+		hwGpuType:            gpuType(props.Flags),
+		hwMemoryDemandPaging: props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
 	}
 	d.state = deviceState{
 		ecc: &eccState{
@@ -215,9 +215,9 @@ func (d *device) init() error {
 
 	_ = d.updateEccState()
 	if d.state.ecc.configurable {
-		d.attributes.eccSupport = metadata.AttributeHwGpuEccSupportConfigurable
+		d.attributes.hwGpuEccSupport = metadata.AttributeHwGpuEccSupportConfigurable
 	} else {
-		d.attributes.eccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
+		d.attributes.hwGpuEccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
 	}
 
 	d.logger.Debugw("Device init() props + ECC done", "name", d.attributes.hwName)
@@ -360,11 +360,11 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		d.attributes.hwVendor,
 		d.attributes.hwFirmwareVersion,
 		d.attributes.hwGpuType,
-		d.attributes.subDevCount,
+		d.attributes.subdeviceCount,
 		d.attributes.pciLanes,
 		d.attributes.pciLinkGen,
-		d.attributes.demandPaging,
-		d.attributes.eccSupport,
+		d.attributes.hwMemoryDemandPaging,
+		d.attributes.hwGpuEccSupport,
 	)
 
 	status := &stateAggregator{}

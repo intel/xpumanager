@@ -38,11 +38,11 @@ type powerState struct {
 	counter   *l0sysman.PowerEnergyCounter
 }
 type powerAttributes struct {
-	hwID           string
-	hwName         string
-	pciBDF         string
-	sensorLocation string
-	subdeviceId    string
+	hwID             string
+	hwName           string
+	pciBDF           string
+	hwSensorLocation string
+	subdeviceId      string
 }
 
 func enumPower(d *device) []instanceScraper {
@@ -89,11 +89,11 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		Power:  pwr,
 		logger: device.logger,
 		attributes: powerAttributes{
-			hwID:           device.attributes.hwID,
-			hwName:         name,
-			pciBDF:         device.attributes.pciBDF,
-			sensorLocation: strings.ToLower(location),
-			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			hwID:             device.attributes.hwID,
+			hwName:           name,
+			pciBDF:           device.attributes.pciBDF,
+			hwSensorLocation: strings.ToLower(location),
+			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: powerState{
 			hasLimits: true,
@@ -136,7 +136,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		power.attributes.hwName,
 		power.attributes.pciBDF,
 		power.attributes.subdeviceId,
-		power.attributes.sensorLocation,
+		power.attributes.hwSensorLocation,
 	)
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
@@ -160,7 +160,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			power.attributes.hwName,
 			power.attributes.pciBDF,
 			power.attributes.subdeviceId,
-			power.attributes.sensorLocation,
+			power.attributes.hwSensorLocation,
 		)
 	} else {
 		// unexpected wrapping & resets should be rare, report all
@@ -194,7 +194,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			power.attributes.hwName,
 			power.attributes.pciBDF,
 			power.attributes.subdeviceId,
-			power.attributes.sensorLocation,
+			power.attributes.hwSensorLocation,
 			strings.ToLower(limit.Level.String()),
 			strings.ToLower(limit.Source.String()),
 		)

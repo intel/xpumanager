@@ -33,12 +33,12 @@ type temperatureState struct {
 }
 
 type temperatureAttributes struct {
-	hwID           string
-	hwName         string
-	pciBDF         string
-	sensorLocation string
-	statistic      metadata.AttributeStatistic
-	subdeviceId    string
+	hwID             string
+	hwName           string
+	pciBDF           string
+	hwSensorLocation string
+	statistic        metadata.AttributeStatistic
+	subdeviceId      string
 }
 
 func enumTemperature(d *device) []instanceScraper {
@@ -84,12 +84,12 @@ func newTemperature(name string, temp *l0sysman.Temperature, device *device) (*t
 		Temperature: temp,
 		logger:      device.logger,
 		attributes: temperatureAttributes{
-			hwID:           device.attributes.hwID,
-			hwName:         name,
-			pciBDF:         device.attributes.pciBDF,
-			sensorLocation: location,
-			statistic:      statistic,
-			subdeviceId:    subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			hwID:             device.attributes.hwID,
+			hwName:           name,
+			pciBDF:           device.attributes.pciBDF,
+			hwSensorLocation: location,
+			statistic:        statistic,
+			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 	}, nil
 }
@@ -108,7 +108,7 @@ func (t *temperature) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) 
 			t.attributes.hwName,
 			t.attributes.pciBDF,
 			t.attributes.subdeviceId,
-			t.attributes.sensorLocation,
+			t.attributes.hwSensorLocation,
 			t.attributes.statistic,
 		)
 	}

@@ -30,12 +30,12 @@ type frequency struct {
 }
 
 type frequencyAttributes struct {
-	hwID            string
-	hwType          metadata.AttributeHwType
-	hwName          string
-	pciBDF          string
-	hwFrequencyType string
-	subdeviceId     string
+	hwID              string
+	hwType            metadata.AttributeHwType
+	hwName            string
+	pciBDF            string
+	hwFrequencyDomain string
+	subdeviceId       string
 }
 
 // frequencyState holds the dynamic runtime state.
@@ -83,12 +83,12 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 		Frequency: freq,
 		logger:    device.logger,
 		attributes: frequencyAttributes{
-			hwID:            device.attributes.hwID,
-			hwType:          metadata.AttributeHwTypeFrequency,
-			hwName:          name,
-			pciBDF:          device.attributes.pciBDF,
-			hwFrequencyType: strings.ToLower(props.Type.String()),
-			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			hwID:              device.attributes.hwID,
+			hwType:            metadata.AttributeHwTypeFrequency,
+			hwName:            name,
+			pciBDF:            device.attributes.pciBDF,
+			hwFrequencyDomain: strings.ToLower(props.Type.String()),
+			subdeviceId:       subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: frequencyState{
 			hasRange: true,
@@ -122,7 +122,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 					f.attributes.hwName,
 					f.attributes.pciBDF,
 					f.attributes.subdeviceId,
-					f.attributes.hwFrequencyType,
+					f.attributes.hwFrequencyDomain,
 					"min")
 			}
 			if rang.Max >= 0 {
@@ -131,7 +131,7 @@ func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 					f.attributes.hwName,
 					f.attributes.pciBDF,
 					f.attributes.subdeviceId,
-					f.attributes.hwFrequencyType,
+					f.attributes.hwFrequencyDomain,
 					"max")
 			}
 		}
@@ -156,7 +156,7 @@ func (f *frequency) scrapeState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 				f.attributes.hwName,
 				f.attributes.pciBDF,
 				f.attributes.subdeviceId,
-				f.attributes.hwFrequencyType)
+				f.attributes.hwFrequencyDomain)
 		}
 
 		// Flags may be unset because driver stack lacks support for specific
@@ -197,7 +197,7 @@ func (f *frequency) scrapeState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 				f.attributes.hwName,
 				f.attributes.pciBDF,
 				f.attributes.subdeviceId,
-				f.attributes.hwFrequencyType,
+				f.attributes.hwFrequencyDomain,
 				strings.ToLower(reason.String()))
 		}
 	}
@@ -220,7 +220,7 @@ func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timest
 			f.attributes.hwName,
 			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
-			f.attributes.hwFrequencyType,
+			f.attributes.hwFrequencyDomain,
 			metadata.AttributeAggregationMin)
 
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.maxValue*1e6),
@@ -228,7 +228,7 @@ func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timest
 			f.attributes.hwName,
 			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
-			f.attributes.hwFrequencyType,
+			f.attributes.hwFrequencyDomain,
 			metadata.AttributeAggregationMax)
 
 		mb.RecordHwFrequencyDataPoint(ts, int64(actualStats.avgValue*1e6),
@@ -236,7 +236,7 @@ func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timest
 			f.attributes.hwName,
 			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
-			f.attributes.hwFrequencyType,
+			f.attributes.hwFrequencyDomain,
 			metadata.AttributeAggregationAvg)
 
 		// Sample debug metrics
@@ -245,7 +245,7 @@ func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timest
 			f.attributes.hwName,
 			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
-			f.attributes.hwFrequencyType,
+			f.attributes.hwFrequencyDomain,
 			metadata.AttributeSampleStatusCollected)
 
 		mb.RecordHwFrequencySamplesDataPoint(ts, int64(actualStats.lostSamples),
@@ -253,7 +253,7 @@ func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timest
 			f.attributes.hwName,
 			f.attributes.pciBDF,
 			f.attributes.subdeviceId,
-			f.attributes.hwFrequencyType,
+			f.attributes.hwFrequencyDomain,
 			metadata.AttributeSampleStatusDropped)
 	}
 
