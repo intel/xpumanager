@@ -11,6 +11,7 @@ updates:
       - "/xpumd/common"
       - "/xpumd/exporter/intelxpuinfo"
       - "/xpumd/exporter/intelxpuinfo/api"
+      - "/xpumd/extension/inteldevicewatch"
       - "/xpumd/processor/intelxpustatus"
       - "/xpumd/receiver/intelcrashlog"
       - "/xpumd/receiver/intelxpu"
