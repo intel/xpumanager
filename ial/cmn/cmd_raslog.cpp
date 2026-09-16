@@ -11,7 +11,7 @@
 #include <CLI/CLI.hpp>
 #include <nlohmann/json.hpp>
 #include <filesystem>
-#include <format>
+#include "utility/compat/format.h"
 #include <fstream>
 
 namespace {
@@ -47,7 +47,7 @@ std::string trimBorderLines(std::string s)
  */
 std::string formatBdf(const zes_pci_address_t &a)
 {
-	return std::format("{:04x}:{:02x}:{:02x}.{:x}", a.domain, a.bus, a.device, a.function);
+	return xpum::compat::format("{:04x}:{:02x}:{:02x}.{:x}", a.domain, a.bus, a.device, a.function);
 }
 
 /**
@@ -55,7 +55,7 @@ std::string formatBdf(const zes_pci_address_t &a)
  */
 std::string formatUuid(const zes_uuid_t &u)
 {
-	return std::format(
+	return xpum::compat::format(
 		"{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}", u.id[0],
 		u.id[1], u.id[2], u.id[3], u.id[4], u.id[5], u.id[6], u.id[7], u.id[8], u.id[9], u.id[10], u.id[11], u.id[12],
 		u.id[13], u.id[14], u.id[15]);
