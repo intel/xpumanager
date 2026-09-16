@@ -79,9 +79,53 @@ func (r *sysmanEventsReceiver) Shutdown(_ context.Context) error {
 	return nil
 }
 
-// listenTimeout is the maximum time to block in EventListenEx, effectively a
-// poll interval when there are no events.
-const listenTimeout = 1 * time.Second
+const (
+	// listenTimeout is the maximum time to wait for event(s) in EventListenEx.
+	listenTimeout = 1 * time.Second
+
+	// rescanSettlePeriod is the time required for no further DEVICE_ATTACH
+	// events before a device rescan is triggered.
+	rescanSettlePeriod = 2 * time.Second
+	// deviceAttachEventFloodDelay is the period after which a non-settled streak of
+	// DEVICE_ATTACH events for a single device is reported as a driver issue.
+	deviceAttachEventFloodDelay = 10 * time.Second
+)
+
+type deviceRescanRequest struct {
+	// events is the number of the accumulated DEVICE_ATTACH events
+	events int
+	// firstEventAt is the time of the first DEVICE_ATTACH event arrived
+	firstEventAt time.Time
+	// settledAt is the time the events are considered settled at, extended by every new DEVICE_ATTACH event
+	settledAt time.Time
+	// floodAt is the time a burst of events is reported as a flood
+	floodAt time.Time
+}
+
+// addEvent adds one DEVICE_ATTACH event to the request, restarting the settle period.
+func (p *deviceRescanRequest) addEvent(now time.Time) {
+	if p.events == 0 {
+		p.firstEventAt = now
+		p.floodAt = now.Add(deviceAttachEventFloodDelay)
+	}
+	p.events++
+	p.settledAt = now.Add(rescanSettlePeriod)
+}
+
+// isSettled tells whether a rescan is pending and its settle period has passed.
+func (p *deviceRescanRequest) isSettled(now time.Time) bool {
+	return p.events > 0 && !now.Before(p.settledAt)
+}
+
+// isFlood tells whether a stream of events is considered a flood.
+func (p *deviceRescanRequest) isFlood(now time.Time) bool {
+	return p.events != 0 && !now.Before(p.floodAt)
+}
+
+// resetFloodDelay re-arms the flood delay (so that flood is not reported before the delay period has passed again).
+func (p *deviceRescanRequest) resetFloodDelay(now time.Time) {
+	p.floodAt = now.Add(deviceAttachEventFloodDelay)
+}
 
 // driverEventListener listens for the events of one Sysman driver and emits them,
 // together with the info log records (if available).
@@ -94,8 +138,10 @@ type driverEventListener struct {
 	// infoLogsEnabled tells whether the info log records of the driver are
 	// collected, read and listened for.
 	infoLogsEnabled bool
-	consumer        consumer.Logs
-	logger          *zap.SugaredLogger
+	// pendingRescans contains rescan requests for devices, indexed like drv.devices
+	pendingRescans []deviceRescanRequest
+	consumer       consumer.Logs
+	logger         *zap.SugaredLogger
 }
 
 func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.SugaredLogger, nextConsumer consumer.Logs) *driverEventListener {
@@ -109,6 +155,7 @@ func newDriverEventListener(index int, drv *driver, cfg *Config, logger *zap.Sug
 		drv:             drv,
 		l0Devices:       l0Devices,
 		infoLogsEnabled: cfg.InfoLogs.Enabled && len(drv.infoLogs) > 0,
+		pendingRescans:  make([]deviceRescanRequest, len(drv.devices)),
 		consumer:        nextConsumer,
 		logger:          logger,
 	}
@@ -150,10 +197,11 @@ func (l *driverEventListener) run(ctx context.Context) {
 		}
 		if hasDeviceEvents {
 			l.emitDeviceEvents(ctx, deviceEvents)
-			// Rescan on DEVICE_ATTACH, after ConsumeLogs so that events are
-			// delivered before re-init (case of hangs or crashes).
-			l.rescanAttachedDevices(deviceEvents)
+			l.requestRescans(deviceEvents)
 		}
+
+		// Rescan the devices whose events have settled.
+		l.rescanPendingDevices()
 
 		infoLogRecords := 0
 		// Check for infoLogsEnabled too, just in case a sporadic driver event is received
@@ -216,23 +264,45 @@ func (l *driverEventListener) emitDeviceEvents(ctx context.Context, deviceEvents
 	}
 }
 
-// rescanAttachedDevices re-initializes the devices that reported DEVICE_ATTACH.
-func (l *driverEventListener) rescanAttachedDevices(deviceEvents []l0sysman.EventTypeFlags) {
-	// NOTE: rescan is inline here for simplicity; it stalls event processing for this
-	// driver briefly. If that proves disruptive, move to a dedicated per-device worker
-	// goroutine with a coalescing channel.
+// requestRescans requests a rescan of the devices that reported DEVICE_ATTACH.
+func (l *driverEventListener) requestRescans(deviceEvents []l0sysman.EventTypeFlags) {
+	now := time.Now()
 	for i, flags := range deviceEvents {
 		if flags&l0sysman.EventTypeFlags(l0sysman.EVENT_TYPE_FLAG_DEVICE_ATTACH) != 0 {
-			dev := l.drv.devices[i]
-			dev.Lock()
-			l.logger.Infow("Rescanning device on DEVICE_ATTACH", "attributes", dev.attributes)
-			if err := dev.init(); err != nil {
-				l.logger.Errorw("Device rescan failed", zap.Error(err))
-			} else {
-				l.logger.Debugw("Device rescanned successfully", "attributes", dev.attributes)
-			}
-			dev.Unlock()
+			l.pendingRescans[i].addEvent(now)
 		}
+	}
+}
+
+// rescanPendingDevices re-initializes the devices with a pending rescan request whose events have settled.
+func (l *driverEventListener) rescanPendingDevices() {
+	// NOTE: rescan is inline here for simplicity; it stalls event processing for this
+	// driver briefly. If that proves disruptive, move to a dedicated per-device worker
+	// goroutine fed by the requests.
+	now := time.Now()
+	for i := range l.pendingRescans {
+		p := &l.pendingRescans[i]
+		if !p.isSettled(now) {
+			if p.isFlood(now) {
+				p.resetFloodDelay(now)
+				l.logger.Warnw("Continuous DEVICE_ATTACH events: device rescan postponed until they settle",
+					"attachEvents", p.events, "duration", now.Sub(p.firstEventAt), "deviceID", i+1)
+			}
+			continue
+		}
+		events := p.events
+		*p = deviceRescanRequest{}
+
+		dev := l.drv.devices[i]
+		dev.Lock()
+		l.logger.Infow("Rescanning device on DEVICE_ATTACH", "attachEvents", events,
+			"deviceID", i+1, "attributes", dev.attributes)
+		if err := dev.init(); err != nil {
+			l.logger.Errorw("Device rescan failed", zap.Error(err))
+		} else {
+			l.logger.Debugw("Device rescanned successfully", "attributes", dev.attributes)
+		}
+		dev.Unlock()
 	}
 }
 

@@ -9,6 +9,7 @@
     * **Action required:** `hw_gpu_info{hw_memory_ecc=...}` queries need to be updated to `hw_gpu_info{hw_gpu_ecc_support=...}`
 * XPUMD metrics: New `ok` state for the GPU device in the `hw.status` metric
   * `hw_status{hw_type="gpu",hw_state="ok"}` aggregates the device level GPU states.
+* XPUMD fixes: Device re-initialization on attach is done once per device bind
 
 
 ## XPUM 2.2.0
