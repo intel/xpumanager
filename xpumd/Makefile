@@ -50,10 +50,14 @@ build:
 	go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
 	go -C dist build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
+.PHONY: level-zero-stub
+# Build the Level-Zero stub driver
+level-zero-stub:
+	$(MAKE) -C level-zero-go build-stub
+
 .PHONY: build-stub
 # Build xpumd + xpuinfo-cli against the level-zero-stub driver
-build-stub:
-	$(MAKE) -C level-zero-go/level-zero-stub all
+build-stub: level-zero-stub
 	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' -e 's#output_path: ./dist#output_path: ./dist-stub#' builder-config.yaml.in > builder-config.yaml
 	$(BUILD_STUB_ENV) go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
 	$(BUILD_STUB_ENV) go -C dist-stub build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
@@ -112,8 +116,8 @@ test: test-daemon test-config test-bindings
 .PHONY: test-daemon
 # Run xpumd unit tests.
 # Select tests with WHAT=<regexp>
-test-daemon:
-	@GO_TEST_FLAGS="$(if $(WHAT),-run $(WHAT))" \
+test-daemon: level-zero-stub
+	@$(BUILD_STUB_ENV) GO_TEST_FLAGS="$(if $(WHAT),-run $(WHAT))" \
 	  level-zero-go/hack/go-test-coverage.sh $(COVERAGE_DIR) $(XPUMD_GO_MODULES)
 	@echo "✓ All tests passed"
 
