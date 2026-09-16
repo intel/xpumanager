@@ -478,7 +478,7 @@ int gscupd::getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *v
 	struct igsc_oprom_version opromVer = {};
 	ret = igsc_device_oprom_version(&handle, type, &opromVer);
 	if (ret != IGSC_SUCCESS) {
-		ERR("Failed to get OPROM version for {} type {}: {}\n", bdfStr, type, ret);
+		DBG("Failed to get OPROM version for {} type {}: {}\n", bdfStr, type, ret);
 		igsc_device_close(&handle);
 		return -1;
 	}
