@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#global-options">Global Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#default-output">Default Output</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#command-categories">Command Categories</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#output-formats">Output Formats</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#device-identification">Device Identification</a></li>
@@ -125,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="raslog.html">RAS Log</a></li>
 </ul>
 
         </div>
@@ -233,7 +235,25 @@ xpu-smi --query-gpu=&lt;fields&gt; [--id &lt;n&gt;] [--loop[=&lt;sec&gt;]|--loop
 xpu-smi &lt;command&gt; [command-options]
 </pre></div>
 </div>
-<p>Running <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> with no arguments displays a GPU status summary of all detected devices.</p>
+</section>
+<section id="default-output">
+<h2>Default Output<a class="headerlink" href="#default-output" title="Link to this heading"></a></h2>
+<p>Running <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> with no arguments displays a GPU status summary of all detected devices,
+followed by the processes using them.</p>
+<p><code class="docutils literal notranslate"><span class="pre">GPU-Util</span></code> is the utilization of the busiest engine on the device: the fraction of the
+sample window during which that engine was executing work. It is not the average across
+all engines — a workload that saturates the compute engine while leaving the media and
+copy engines idle reports close to 100%, because the compute engine is the bottleneck.
+Use <a class="reference internal" href="stats.html"><span class="doc">Stats</span></a> for the per-engine-class breakdown behind that figure.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Engine utilization is read from the GPU’s busyness counters, which the kernel exposes
+only to callers holding <code class="docutils literal notranslate"><span class="pre">CAP_PERFMON</span></code> (or <code class="docutils literal notranslate"><span class="pre">CAP_SYS_ADMIN</span></code> on older kernels).
+<code class="docutils literal notranslate"><span class="pre">GPU-Util</span></code> shows <code class="docutils literal notranslate"><span class="pre">N/A</span></code> when they are inaccessible — typically an unprivileged user,
+or a container started without the capability. Add it with
+<code class="docutils literal notranslate"><span class="pre">docker</span> <span class="pre">run</span> <span class="pre">--cap-add=PERFMON</span> <span class="pre">...</span></code>, or run the container privileged. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> means
+“not measurable here”, as opposed to <code class="docutils literal notranslate"><span class="pre">0%</span></code>, which means the engines were idle.</p>
+</div>
 </section>
 <section id="command-categories">
 <h2>Command Categories<a class="headerlink" href="#command-categories" title="Link to this heading"></a></h2>
@@ -285,7 +305,7 @@ xpu-smi &lt;command&gt; [command-options]
 <tr class="row-even"><td><p><a class="reference internal" href="updatefw.html"><span class="doc">UpdateFW</span></a></p></td>
 <td><p>Yes</p></td>
 <td><p>Yes</p></td>
-<td><p>Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC)</p></td>
+<td><p>Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC, COMPOSITE)</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="amc.html"><span class="doc">AMC</span></a></p></td>
 <td><p>Yes</p></td>
@@ -380,7 +400,7 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POWER</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
-<td><p>Power draw, per-tile power, energy consumed, power limits. Shortcut <code class="docutils literal notranslate"><span class="pre">p</span></code> also enables TEMPERATURE.</p></td>
+<td><p>Card- and GPU-domain power draw, energy counters, power limits. Shortcut <code class="docutils literal notranslate"><span class="pre">p</span></code> also enables TEMPERATURE.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CLOCK</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">c</span></code></p></td>
@@ -445,55 +465,67 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">driver_version</span></code></p></td>
 <td><p>—</p></td>
-<td><p>Driver version string</p></td>
+<td><p>Level Zero user-mode driver version string</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vbios_version</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kernel_driver_version</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Kernel-mode driver source checksum (<code class="docutils literal notranslate"><span class="pre">modinfo</span></code> <code class="docutils literal notranslate"><span class="pre">srcversion</span></code>); kernel
+release when the driver is built into the kernel</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vbios_version</span></code></p></td>
 <td><p>—</p></td>
 <td><p>VBIOS version string</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.bus_id</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.bus_id</span></code></p></td>
 <td><p>—</p></td>
 <td><p>PCI BDF address</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.device_id</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.device_id</span></code></p></td>
 <td><p>—</p></td>
 <td><p>PCI device ID</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.sub_device_id</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.sub_device_id</span></code></p></td>
 <td><p>—</p></td>
 <td><p>PCI sub-device ID</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.gpu</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.gpu</span></code></p></td>
 <td><p>C</p></td>
 <td><p>GPU core temperature</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.memory</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.memory</span></code></p></td>
 <td><p>C</p></td>
 <td><p>Memory temperature</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
 <td><p>W</p></td>
-<td><p>Total GPU power draw</p></td>
+<td><p>Card-domain power draw, averaged over the sampling interval</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code></p></td>
 <td><p>W</p></td>
-<td><p>Per-tile GPU power draw</p></td>
+<td><p>GPU-domain power draw, averaged over the sampling interval: compute engines only,
+excluding memory and other card subsystems. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on devices that expose no GPU
+power domain</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit</span></code></p></td>
 <td><p>W</p></td>
 <td><p>Current power limit</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.max_limit</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.max_limit</span></code></p></td>
 <td><p>W</p></td>
 <td><p>Maximum power limit</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code></p></td>
 <td><p>J</p></td>
-<td><p>Total energy consumed</p></td>
+<td><p>Cumulative card-domain energy counter; the energy counterpart of <code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed.gpu</span></code></p></td>
+<td><p>J</p></td>
+<td><p>Cumulative GPU-domain energy counter; the energy counterpart of <code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code>.
+<code class="docutils literal notranslate"><span class="pre">N/A</span></code> on devices that expose no GPU power domain</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.gpu</span></code></p></td>
 <td><p>%</p></td>
-<td><p>Overall GPU utilization</p></td>
+<td><p>Overall GPU utilization: the busiest engine on the device</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.compute</span></code></p></td>
 <td><p>%</p></td>

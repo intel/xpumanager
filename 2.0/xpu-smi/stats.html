@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="raslog.html">RAS Log</a></li>
 </ul>
 
         </div>
@@ -245,10 +246,10 @@ Default: <code class="docutils literal notranslate"><span class="pre">2</span></
 </thead>
 <tbody>
 <tr class="row-even"><td><p>GPU Utilization (%)</p></td>
-<td><p>Per tile; device average for multi-tile</p></td>
+<td><p>Busiest engine on the tile; device average for multi-tile</p></td>
 </tr>
 <tr class="row-odd"><td><p>Compute / Render / Media / Copy Engine Utilization (%)</p></td>
-<td><p>Per tile</p></td>
+<td><p>Per tile; averaged over the engines of that class</p></td>
 </tr>
 <tr class="row-even"><td><p>EU Array Active / Stall / Idle (%)</p></td>
 <td><p>Per tile; shown with <code class="docutils literal notranslate"><span class="pre">-e</span></code></p></td>
@@ -292,8 +293,13 @@ Default: <code class="docutils literal notranslate"><span class="pre">2</span></
 <tr class="row-odd"><td><p>RAS Error Counters</p></td>
 <td><p>Per category (Reset, Programming, Driver, Cache, Mem); shown with <code class="docutils literal notranslate"><span class="pre">-r</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p>Energy Consumed (J)</p></td>
-<td><p>Device level (total over measurement window)</p></td>
+<tr class="row-even"><td><p>[domain] Energy Consumed (J)</p></td>
+<td><p>Device level; energy consumed over the measurement window, summed from the per-tile
+counters (a delta, not the cumulative counter that <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">dump</span></code> reports as
+<code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code>). The label is prefixed with the power domain the reading came from,
+e.g. <code class="docutils literal notranslate"><span class="pre">Card</span> <span class="pre">Energy</span> <span class="pre">Consumed</span> <span class="pre">(J)</span></code>; it is left unprefixed when the contributing tiles do
+not share one domain. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> when the device exposes no readable subdevice-, card-,
+package- or GPU-level power domain</p></td>
 </tr>
 <tr class="row-odd"><td><p>Offline Memory Pages</p></td>
 <td><p>Count; shown with <code class="docutils literal notranslate"><span class="pre">--list-offline-pages</span></code></p></td>

@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l2"><a class="reference internal" href="#synopsis">Synopsis</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#options">Options</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#metrics-reference">Metrics Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#unavailable-values">Unavailable Values</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
@@ -123,6 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="raslog.html">RAS Log</a></li>
 </ul>
 
         </div>
@@ -270,7 +272,7 @@ as the power measurement window may be too short for accurate readings.</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>0</p></td>
-<td><p>GPU Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.</p></td>
+<td><p>GPU Utilization (%) of the busiest engine, per tile or device. Device-level is the average value of tiles for multi-tile devices.</p></td>
 </tr>
 <tr class="row-odd"><td><p>1</p></td>
 <td><p>GPU Power (W), per tile or device</p></td>
@@ -294,7 +296,7 @@ as the power measurement window may be too short for accurate readings.</p>
 <td><p>GPU Memory Write (kB/s), per tile or device</p></td>
 </tr>
 <tr class="row-even"><td><p>8</p></td>
-<td><p>GPU Energy Consumed (J), per tile or device</p></td>
+<td><p>GPU Energy Consumed (J), per tile or device (<code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code>)</p></td>
 </tr>
 <tr class="row-odd"><td><p>9</p></td>
 <td><p>GPU EU Array Active (%), per tile or device. At least one thread is active. Device-level is the average value of tiles for multi-tile devices.</p></td>
@@ -382,6 +384,36 @@ as the power measurement window may be too short for accurate readings.</p>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="unavailable-values">
+<h2>Unavailable Values<a class="headerlink" href="#unavailable-values" title="Link to this heading"></a></h2>
+<p>A cell reads <code class="docutils literal notranslate"><span class="pre">N/A</span></code> when the device did not report that metric for the sample. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> is
+never a zero and never an error: the remaining columns on the same row are still valid
+readings. The usual causes are:</p>
+<ul class="simple">
+<li><p><strong>The hardware does not expose the underlying channel.</strong> Power and energy are read per
+Level Zero power domain, and a device only reports the domains its driver exposes. A card
+whose <code class="docutils literal notranslate"><span class="pre">xe</span></code> hwmon interface exposes only <code class="docutils literal notranslate"><span class="pre">card</span></code> and <code class="docutils literal notranslate"><span class="pre">pkg</span></code> energy channels has no
+compute-domain channel for sysman to map to <code class="docutils literal notranslate"><span class="pre">ZES_POWER_DOMAIN_GPU</span></code>, so <code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code>
+and <code class="docutils literal notranslate"><span class="pre">energy.consumed.gpu</span></code> read <code class="docutils literal notranslate"><span class="pre">N/A</span></code> while <code class="docutils literal notranslate"><span class="pre">power.draw</span></code> and <code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code>
+(card domain) read normally. A missing power domain is reported once per run on stderr,
+naming the domains the device did enumerate, e.g. <code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">exposes</span> <span class="pre">no</span> <span class="pre">GPU</span> <span class="pre">power</span> <span class="pre">domain</span>
+<span class="pre">(enumerated:</span> <span class="pre">Card,</span> <span class="pre">Package)</span></code>.</p></li>
+<li><p><strong>The counter needs privileges the process does not have.</strong> Engine busyness needs
+<code class="docutils literal notranslate"><span class="pre">CAP_PERFMON</span></code>; without it utilization reads <code class="docutils literal notranslate"><span class="pre">N/A</span></code> rather than <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<li><p><strong>The sampling window produced no usable delta.</strong> Rate metrics (utilization, power draw,
+throughput) are computed from two readings, so a <code class="docutils literal notranslate"><span class="pre">--loop-ms</span></code> interval shorter than the
+counter’s own update period yields <code class="docutils literal notranslate"><span class="pre">N/A</span></code> for the rows where the counter did not advance.
+The cumulative energy counters are unaffected — they are read directly, not differenced.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code> is a cumulative card-domain counter, whereas the
+<code class="docutils literal notranslate"><span class="pre">Energy</span> <span class="pre">Consumed</span> <span class="pre">(J)</span></code> row of <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">stats</span></code> is a delta over the stats sampling window,
+summed from the per-tile counters. The two figures are not expected to match, and the stats row
+need not come from the card domain — it names the domain it did read in its label, e.g.
+<code class="docutils literal notranslate"><span class="pre">Card</span> <span class="pre">Energy</span> <span class="pre">Consumed</span> <span class="pre">(J)</span></code>.</p>
+</div>
 </section>
 <section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>

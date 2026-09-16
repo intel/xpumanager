@@ -157,6 +157,8 @@ Options
         - Memory Date Code
       * - 53
         - Memory IC/Die Info
+      * - 54
+        - Kernel Driver Version
 
 .. option:: --listamcversions
 
@@ -179,8 +181,9 @@ grouped and ordered as follows:
        Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
        Stepping, SKU Type
    * - Driver and Firmware
-     - Driver Version, Kernel Version, GFX Firmware Name, GFX Firmware Version,
-       GFX Firmware Status
+     - Driver Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
+       GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
+       GFX Data Firmware Version
    * - PCIe Information
      - PCI BDF Address, PCI Slot, PCIe Generation, PCIe Max Link Width,
        PCIe Max Bandwidth
@@ -201,6 +204,19 @@ Properties that the platform does not report are shown as ``N/A``, ``unknown``, 
 are omitted.
 
 .. note::
+
+   **Driver Version** and **Kernel Driver Version** name different components.
+   Driver Version is the Level Zero user-mode driver version reported by the
+   driver itself. Kernel Driver Version identifies the kernel-mode driver (``xe``
+   or ``i915``, whichever is bound to that GPU) by its source checksum, the
+   ``srcversion`` field of ``modinfo xe``. The checksum changes with every driver
+   source revision, so it is the value that ties a running driver back to the
+   package it was built from, including a DKMS rebuild against an unchanged
+   kernel — which a kernel release cannot distinguish. A driver compiled into the
+   kernel rather than loaded as a module has no checksum; the kernel release is
+   reported instead, since that then identifies the driver build. When no
+   kernel-mode driver can be identified for the GPU at all, ``N/A`` is reported
+   rather than a kernel release, which would say nothing about the driver.
 
    **Memory Type** is resolved from two Level Zero sources, because neither is
    complete on its own: the sysman memory type is per memory module and is the

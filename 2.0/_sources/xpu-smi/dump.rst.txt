@@ -95,7 +95,7 @@ Metrics Reference
    * - ID
      - Metric
    * - 0
-     - GPU Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.
+     - GPU Utilization (%) of the busiest engine, per tile or device. Device-level is the average value of tiles for multi-tile devices.
    * - 1
      - GPU Power (W), per tile or device
    * - 2
@@ -111,7 +111,7 @@ Metrics Reference
    * - 7
      - GPU Memory Write (kB/s), per tile or device
    * - 8
-     - GPU Energy Consumed (J), per tile or device
+     - GPU Energy Consumed (J), per tile or device (``energy.consumed``)
    * - 9
      - GPU EU Array Active (%), per tile or device. At least one thread is active. Device-level is the average value of tiles for multi-tile devices.
    * - 10
@@ -168,6 +168,36 @@ Metrics Reference
      - Throttle reason, per tile
    * - 36
      - Media Engine Frequency (MHz), per tile or device
+
+Unavailable Values
+------------------
+
+A cell reads ``N/A`` when the device did not report that metric for the sample. ``N/A`` is
+never a zero and never an error: the remaining columns on the same row are still valid
+readings. The usual causes are:
+
+- **The hardware does not expose the underlying channel.** Power and energy are read per
+  Level Zero power domain, and a device only reports the domains its driver exposes. A card
+  whose ``xe`` hwmon interface exposes only ``card`` and ``pkg`` energy channels has no
+  compute-domain channel for sysman to map to ``ZES_POWER_DOMAIN_GPU``, so ``power.draw.gpu``
+  and ``energy.consumed.gpu`` read ``N/A`` while ``power.draw`` and ``energy.consumed``
+  (card domain) read normally. A missing power domain is reported once per run on stderr,
+  naming the domains the device did enumerate, e.g. ``Device exposes no GPU power domain
+  (enumerated: Card, Package)``.
+- **The counter needs privileges the process does not have.** Engine busyness needs
+  ``CAP_PERFMON``; without it utilization reads ``N/A`` rather than ``0``.
+- **The sampling window produced no usable delta.** Rate metrics (utilization, power draw,
+  throughput) are computed from two readings, so a ``--loop-ms`` interval shorter than the
+  counter's own update period yields ``N/A`` for the rows where the counter did not advance.
+  The cumulative energy counters are unaffected — they are read directly, not differenced.
+
+.. note::
+
+   ``energy.consumed`` is a cumulative card-domain counter, whereas the
+   ``Energy Consumed (J)`` row of ``xpu-smi stats`` is a delta over the stats sampling window,
+   summed from the per-tile counters. The two figures are not expected to match, and the stats row
+   need not come from the card domain — it names the domain it did read in its label, e.g.
+   ``Card Energy Consumed (J)``.
 
 Examples
 --------

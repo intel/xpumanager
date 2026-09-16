@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="raslog.html">RAS Log</a></li>
 </ul>
 
         </div>
@@ -153,13 +154,20 @@ document.addEventListener('DOMContentLoaded', function() {
 <h1>UpdateFW<a class="headerlink" href="#updatefw" title="Link to this heading"></a></h1>
 <p>Update GPU firmware. Supports direct GPU firmware types (GFX, GFX_DATA, FDO,
 OP_CODE, OP_DATA) as well as AMC (Add-in card Management Controller) firmware
-on supported server platforms.</p>
+on supported server platforms. COMPOSITE takes a single PLDM firmware update
+package and applies every component in it that the target accepts.</p>
+<p>A component the device has no firmware endpoint for is skipped without failing
+the update, as one package covers a family of boards. A component that does
+have an endpoint and fails to flash stops the remaining components on that
+device; other devices continue.</p>
 <section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi updatefw -d [deviceId] -t GFX -f [imageFilePath]
 xpu-smi updatefw --device [deviceId] -t GFX -f [imageFilePath]
 xpu-smi updatefw --device [pciBdfAddress] -t GFX -f [imageFilePath]
 xpu-smi updatefw --device [deviceId] -t FDO -f [imageFilePath]
+xpu-smi updatefw --device [deviceId] -t COMPOSITE -f [packageFilePath]
+xpu-smi updatefw --device [deviceId] -t COMPOSITE -f [packageFilePath] --fdo
 xpu-smi updatefw -t AMC -f [imageFilePath]
 </pre></div>
 </div>
@@ -219,6 +227,9 @@ firmware image is applied to all compatible devices.</p>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OP_DATA</span></code></p></td>
 <td><p>Option ROM data</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">COMPOSITE</span></code></p></td>
+<td><p>PLDM (DSP0267 Type 5) firmware update package holding several components</p></td>
+</tr>
 </tbody>
 </table>
 </dd></dl>
@@ -226,7 +237,9 @@ firmware image is applied to all compatible devices.</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-f">
 <span id="cmdoption-file"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;path&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--file</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;path&gt;</span></span><a class="headerlink" href="#cmdoption-f" title="Link to this definition"></a></dt>
-<dd><p>Path to the firmware image file on the local filesystem.</p>
+<dd><p>Path to the firmware image file on the local filesystem. With
+<code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">COMPOSITE</span></code> this is a PLDM firmware update package rather than a single
+image.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -240,6 +253,14 @@ firmware image is applied to all compatible devices.</p>
 <span class="sig-name descname"><span class="pre">--force</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-force" title="Link to this definition"></a></dt>
 <dd><p>Force the GFX firmware update even if the existing firmware is up to date.
 This option applies to GFX firmware only.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-fdo">
+<span class="sig-name descname"><span class="pre">--fdo</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fdo" title="Link to this definition"></a></dt>
+<dd><p>Only valid with <code class="docutils literal notranslate"><span class="pre">-t</span> <span class="pre">COMPOSITE</span></code>. Flash the <code class="docutils literal notranslate"><span class="pre">IFWI</span></code> component of the package
+to the flash override device and nothing else. Without this option <code class="docutils literal notranslate"><span class="pre">IFWI</span></code>
+is left out, because it is a device recovery image.</p>
 </dd></dl>
 
 </section>
@@ -263,6 +284,14 @@ This option applies to GFX firmware only.</p>
 </div>
 <p>Force GFX firmware update even if up to date:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>updatefw<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-t<span class="w"> </span>GFX<span class="w"> </span>-f<span class="w"> </span>/path/to/gfx_firmware.bin<span class="w"> </span>--force
+</pre></div>
+</div>
+<p>Apply every applicable component of a composite package to device 0:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>updatefw<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-t<span class="w"> </span>COMPOSITE<span class="w"> </span>-f<span class="w"> </span>/path/to/package.bin
+</pre></div>
+</div>
+<p>Recover device 0 by flashing only the IFWI component of a composite package:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>updatefw<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-t<span class="w"> </span>COMPOSITE<span class="w"> </span>-f<span class="w"> </span>/path/to/package.bin<span class="w"> </span>--fdo
 </pre></div>
 </div>
 </section>

@@ -66,7 +66,26 @@ Synopsis
    xpu-smi --query-gpu=<fields> [--id <n>] [--loop[=<sec>]|--loop-ms=<ms>] [--count=<n>] [--format=csv[,...]]
    xpu-smi <command> [command-options]
 
-Running ``xpu-smi`` with no arguments displays a GPU status summary of all detected devices.
+Default Output
+--------------
+
+Running ``xpu-smi`` with no arguments displays a GPU status summary of all detected devices,
+followed by the processes using them.
+
+``GPU-Util`` is the utilization of the busiest engine on the device: the fraction of the
+sample window during which that engine was executing work. It is not the average across
+all engines — a workload that saturates the compute engine while leaving the media and
+copy engines idle reports close to 100%, because the compute engine is the bottleneck.
+Use :doc:`stats` for the per-engine-class breakdown behind that figure.
+
+.. note::
+
+   Engine utilization is read from the GPU's busyness counters, which the kernel exposes
+   only to callers holding ``CAP_PERFMON`` (or ``CAP_SYS_ADMIN`` on older kernels).
+   ``GPU-Util`` shows ``N/A`` when they are inaccessible — typically an unprivileged user,
+   or a container started without the capability. Add it with
+   ``docker run --cap-add=PERFMON ...``, or run the container privileged. ``N/A`` means
+   "not measurable here", as opposed to ``0%``, which means the engines were idle.
 
 Command Categories
 ------------------
@@ -106,7 +125,7 @@ Command Categories
    * - :doc:`updatefw`
      - Yes
      - Yes
-     - Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC)
+     - Update GPU firmware (GFX, FDO, GFX_DATA, OP_CODE, OP_DATA, AMC, COMPOSITE)
    * - :doc:`amc`
      - Yes
      - No
@@ -187,7 +206,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - GPU core and memory temperatures. Shortcut ``p`` also enables POWER.
    * - ``POWER``
      - ``p``
-     - Power draw, per-tile power, energy consumed, power limits. Shortcut ``p`` also enables TEMPERATURE.
+     - Card- and GPU-domain power draw, energy counters, power limits. Shortcut ``p`` also enables TEMPERATURE.
    * - ``CLOCK``
      - ``c``
      - Current and max graphics/media clock frequencies, throttle reason
@@ -235,7 +254,11 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Serial number
    * - ``driver_version``
      - —
-     - Driver version string
+     - Level Zero user-mode driver version string
+   * - ``kernel_driver_version``
+     - —
+     - Kernel-mode driver source checksum (``modinfo`` ``srcversion``); kernel
+       release when the driver is built into the kernel
    * - ``vbios_version``
      - —
      - VBIOS version string
@@ -256,10 +279,12 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Memory temperature
    * - ``power.draw``
      - W
-     - Total GPU power draw
+     - Card-domain power draw, averaged over the sampling interval
    * - ``power.draw.gpu``
      - W
-     - Per-tile GPU power draw
+     - GPU-domain power draw, averaged over the sampling interval: compute engines only,
+       excluding memory and other card subsystems. ``N/A`` on devices that expose no GPU
+       power domain
    * - ``power.limit``
      - W
      - Current power limit
@@ -268,10 +293,14 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Maximum power limit
    * - ``energy.consumed``
      - J
-     - Total energy consumed
+     - Cumulative card-domain energy counter; the energy counterpart of ``power.draw``
+   * - ``energy.consumed.gpu``
+     - J
+     - Cumulative GPU-domain energy counter; the energy counterpart of ``power.draw.gpu``.
+       ``N/A`` on devices that expose no GPU power domain
    * - ``utilization.gpu``
      - %
-     - Overall GPU utilization
+     - Overall GPU utilization: the busiest engine on the device
    * - ``utilization.compute``
      - %
      - Compute engine utilization

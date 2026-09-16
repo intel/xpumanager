@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="ps.html">PS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="crashlog.html">Crashlog</a></li>
 <li class="toctree-l1"><a class="reference internal" href="log.html">Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="raslog.html">RAS Log</a></li>
 </ul>
 
         </div>
@@ -373,6 +374,9 @@ of property IDs. Use <code class="docutils literal notranslate"><span class="pre
 <tr class="row-even"><td><p>53</p></td>
 <td><p>Memory IC/Die Info</p></td>
 </tr>
+<tr class="row-odd"><td><p>54</p></td>
+<td><p>Kernel Driver Version</p></td>
+</tr>
 </tbody>
 </table>
 </dd></dl>
@@ -405,8 +409,9 @@ Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
 Stepping, SKU Type</p></td>
 </tr>
 <tr class="row-odd"><td><p>Driver and Firmware</p></td>
-<td><p>Driver Version, Kernel Version, GFX Firmware Name, GFX Firmware Version,
-GFX Firmware Status</p></td>
+<td><p>Driver Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
+GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
+GFX Data Firmware Version</p></td>
 </tr>
 <tr class="row-even"><td><p>PCIe Information</p></td>
 <td><p>PCI BDF Address, PCI Slot, PCIe Generation, PCIe Max Link Width,
@@ -433,6 +438,18 @@ Number of Media Enhancement Engines</p></td>
 are omitted.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
+<p><strong>Driver Version</strong> and <strong>Kernel Driver Version</strong> name different components.
+Driver Version is the Level Zero user-mode driver version reported by the
+driver itself. Kernel Driver Version identifies the kernel-mode driver (<code class="docutils literal notranslate"><span class="pre">xe</span></code>
+or <code class="docutils literal notranslate"><span class="pre">i915</span></code>, whichever is bound to that GPU) by its source checksum, the
+<code class="docutils literal notranslate"><span class="pre">srcversion</span></code> field of <code class="docutils literal notranslate"><span class="pre">modinfo</span> <span class="pre">xe</span></code>. The checksum changes with every driver
+source revision, so it is the value that ties a running driver back to the
+package it was built from, including a DKMS rebuild against an unchanged
+kernel — which a kernel release cannot distinguish. A driver compiled into the
+kernel rather than loaded as a module has no checksum; the kernel release is
+reported instead, since that then identifies the driver build. When no
+kernel-mode driver can be identified for the GPU at all, <code class="docutils literal notranslate"><span class="pre">N/A</span></code> is reported
+rather than a kernel release, which would say nothing about the driver.</p>
 <p><strong>Memory Type</strong> is resolved from two Level Zero sources, because neither is
 complete on its own: the sysman memory type is per memory module and is the
 only source that names a product-specific type such as <code class="docutils literal notranslate"><span class="pre">LPDDR5X</span></code>, while the
