@@ -56,8 +56,7 @@ typedef enum _zes_device_health_status_ext_t
  *         if the runtime does not support this extension, or another
  *         ze_result_t error code from the underlying implementation.
  */
-inline ze_result_t xpusmiGetHealthStatusExtImpl(zes_device_handle_t hDevice,
-												zes_device_health_status_ext_t *pHealth)
+inline ze_result_t xpusmiGetHealthStatusExtImpl(zes_device_handle_t hDevice, zes_device_health_status_ext_t *pHealth)
 {
 	using Pfn = ze_result_t (*)(zes_device_handle_t, zes_device_health_status_ext_t *);
 	static_assert(sizeof(void *) == sizeof(Pfn), "function-pointer size must match data-pointer size");
@@ -84,8 +83,7 @@ inline ze_result_t xpusmiGetHealthStatusExtImpl(zes_device_handle_t hDevice,
  *         if the runtime does not support this extension, or another
  *         ze_result_t error code from the underlying implementation.
  */
-inline ze_result_t xpusmiSetHealthStatusExtImpl(zes_device_handle_t hDevice,
-												zes_device_health_status_ext_t health)
+inline ze_result_t xpusmiSetHealthStatusExtImpl(zes_device_handle_t hDevice, zes_device_health_status_ext_t health)
 {
 	using Pfn = ze_result_t (*)(zes_device_handle_t, zes_device_health_status_ext_t);
 	static_assert(sizeof(void *) == sizeof(Pfn), "function-pointer size must match data-pointer size");

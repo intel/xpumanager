@@ -22,17 +22,55 @@ namespace fs = std::filesystem;
 using namespace std::string_view_literals;
 
 constexpr std::string_view CLIENT_ID_PREFIX = "drm-client-id:"sv;
-// Sum every drm-total-<region> field: covers drm-total-vram0 (dGPU),
-// drm-total-local0 (iGPU device-local / stolen memory), drm-total-system
-// (GTT/shared), and any future region names the driver may add.
 constexpr std::string_view MEM_TOTAL_PREFIX = "drm-total-"sv;
 constexpr uint64_t KIB_TO_BYTES = 1024;
+
+// drm-total-local* and drm-total-vram* name device-local VRAM (physical GPU
+// memory).  Everything else (drm-total-system*, drm-total-gtt*, …) is
+// GTT: system RAM mapped into the GPU's virtual address space.  On dGPUs we
+// report only local VRAM so that GTT-backed allocations such as OA ring
+// buffers do not inflate the process memory figure.  On iGPUs there is no
+// local region, so we fall back to the total to preserve existing behaviour.
+bool isLocalRegion(std::string_view fieldName)
+{
+	return fieldName.starts_with("local"sv) || fieldName.starts_with("vram"sv);
+}
 
 struct FdinfoEntry
 {
 	uint64_t clientId{0};
-	uint64_t memKiB{0};
+	uint64_t localKiB{0}; // drm-total-local* / drm-total-vram* (physical VRAM)
+	uint64_t totalKiB{0}; // all drm-total-* regions combined
 };
+
+// Parses one drm-total-* line and accumulates its KiB value into entry.
+// Returns false if the line should be skipped (cycles counter or parse error).
+bool accumulateTotalMemLine(std::string_view line, FdinfoEntry &entry)
+{
+	const std::string_view suffix = line.substr(MEM_TOTAL_PREFIX.size());
+	if (suffix.starts_with("cycles"sv)) {
+		return false; // GPU utilisation counter, not memory
+	}
+	const size_t colon = line.find(':');
+	if (colon == std::string::npos) {
+		return false;
+	}
+	const size_t pos = line.find_first_not_of(" \t", colon + 1);
+	if (pos == std::string::npos) {
+		return false;
+	}
+	try {
+		const uint64_t kib = std::stoull(std::string{line.substr(pos)});
+		const std::string_view fieldName = line.substr(MEM_TOTAL_PREFIX.size(), colon - MEM_TOTAL_PREFIX.size());
+		entry.totalKiB += kib;
+		if (isLocalRegion(fieldName)) {
+			entry.localKiB += kib;
+		}
+		return true;
+	} catch (...) {
+		return false;
+	}
+}
 
 /** Parses a single /proc/<pid>/fdinfo/<fd> file for drm-client-id and all drm-total-* fields.
  *  Returns nullopt if the file could not be opened or contained no drm-client-id line. */
@@ -53,23 +91,7 @@ std::optional<FdinfoEntry> parseFdinfo(const fs::path &path)
 			} catch (...) {
 			}
 		} else if (line.starts_with(MEM_TOTAL_PREFIX)) {
-			// drm-total-cycles-<engine> are GPU utilisation counters (raw cycles,
-			// no unit), not memory.  Skip them; every other drm-total-* field is
-			// a memory region reported in KiB.
-			if (std::string_view{line}.substr(MEM_TOTAL_PREFIX.size()).starts_with("cycles"sv)) {
-				continue;
-			}
-			// "drm-total-gtt:\t1101108 KiB", "drm-total-vram0:\t1234 KiB", etc.
-			const size_t colon = line.find(':');
-			if (colon != std::string::npos) {
-				const size_t pos = line.find_first_not_of(" \t", colon + 1);
-				if (pos != std::string::npos) {
-					try {
-						entry.memKiB += std::stoull(line.substr(pos));
-					} catch (...) {
-					}
-				}
-			}
+			accumulateTotalMemLine(line, entry);
 		}
 	}
 	return hasClientId ? std::optional{entry} : std::nullopt;
@@ -115,7 +137,7 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 		return {};
 	}
 
-	std::unordered_map<uint64_t, uint64_t> clientVramKiB;
+	std::unordered_map<uint64_t, FdinfoEntry> clientMem;
 	bool foundAnyClientId = false;
 	std::error_code ec;
 
@@ -147,21 +169,28 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 			continue;
 		}
 
-		auto [it, inserted] = clientVramKiB.emplace(entry->clientId, entry->memKiB);
-		if (!inserted && entry->memKiB > it->second) {
-			it->second = entry->memKiB;
+		auto [it, inserted] = clientMem.emplace(entry->clientId, *entry);
+		if (!inserted && entry->totalKiB > it->second.totalKiB) {
+			it->second = *entry;
 		}
 	}
 
+	uint64_t localKiB = 0;
 	uint64_t totalKiB = 0;
-	for (const auto &[id, kib] : clientVramKiB) {
-		totalKiB += kib;
+	for (const auto &[id, mem] : clientMem) {
+		localKiB += mem.localKiB;
+		totalKiB += mem.totalKiB;
 		if (globalSeenIds != nullptr) {
 			globalSeenIds->insert(id);
 		}
 	}
-	const bool allInherited = foundAnyClientId && clientVramKiB.empty();
-	return {totalKiB * KIB_TO_BYTES, allInherited};
+	const bool allInherited = foundAnyClientId && clientMem.empty();
+	// On dGPUs, local VRAM (drm-total-local*, drm-total-vram*) is non-zero and
+	// gives the true device memory footprint without GTT-backed allocations such
+	// as OA ring buffers.  On iGPUs there is no local region, so fall back to
+	// the combined total which includes the shared system memory the GPU uses.
+	const uint64_t reportKiB = localKiB > 0 ? localKiB : totalKiB;
+	return {reportKiB * KIB_TO_BYTES, allInherited};
 }
 
 void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> *processList)
