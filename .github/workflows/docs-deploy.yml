@@ -70,11 +70,16 @@ jobs:
             exit $LS_RC
           fi
           git worktree add _site gh-pages
-          # Clean worktree so stale files from prior deploys don't linger
+          # gh-pages also carries a validation/ subtree that this workflow neither builds nor
+          # owns: it is published there by a separate process.
+          # Clean worktree so stale files from prior deploys don't linger -- except that
+          # subtree. Without the exclude, every deploy deleted the published dashboard; it
+          # happened repeatedly, and the run stayed green each time because removing those
+          # files is indistinguishable to git from cleaning up after the previous docs build.
           if [ -n "$(git -C _site ls-files)" ]; then
-            git -C _site rm --quiet -rf .
+            git -C _site rm --quiet -rf . ':(exclude)validation'
           fi
-          git -C _site clean -fd --quiet
+          git -C _site clean -fd --quiet -e validation
 
       - name: Strip 1.x from version switcher (no v1.3.x branch)
         if: steps.checkout_1x.outcome != 'success'
@@ -122,6 +127,14 @@ jobs:
         run: |
           cd _site
           git add -A
+          # Inspect the exact staged tree that would be committed, rather than the pre-stage
+          # index. This catches both `git rm` and an ordinary filesystem deletion or edit.
+          if ! git diff --cached --quiet HEAD -- validation; then
+            echo "::error::This docs deploy changed the validation/ subtree of gh-pages," \
+                 "which it does not own. Refusing to push, so the dashboard stays intact."
+            git diff --cached --name-status -- validation
+            exit 1
+          fi
           if [ -z "$(git status --short)" ]; then
             echo "No changes to deploy"
             exit 0
