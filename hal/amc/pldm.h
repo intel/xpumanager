@@ -206,6 +206,7 @@ private:
 	// pldm Base APIs
 	int pldminit();
 	void cleanup();
+	uint8_t receivePldmMessage();
 	uint8_t pldmHdrConstruction(struct pldmHdr *pldmHdr, uint8_t instanceID, uint8_t cmdType, uint8_t cmd,
 								uint8_t async, uint8_t reqresp);
 

@@ -27,6 +27,7 @@ struct amcSensorInfo
 {
 	uint16_t sensorId;
 	double sensorReading;
+	sensorUnits sensorUnit;
 };
 
 class LIBXPUM_API amclib

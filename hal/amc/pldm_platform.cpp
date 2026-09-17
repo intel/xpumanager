@@ -85,7 +85,6 @@ uint8_t pldm::pfMonCtrlCmd(uint8_t cmd, uint8_t size)
 	TRACING();
 
 	uint8_t ret = PLDM_SUCCESS;
-	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
 	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
 
 	// Exclude first 3 bytes of MCTP header while calculating byte count
@@ -121,12 +120,10 @@ uint8_t pldm::pfMonCtrlCmd(uint8_t cmd, uint8_t size)
 		DBG("PFMonCtrl TX  :: ");
 		hexdump(wptr, size);
 		MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
-		if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
-			ERR("PFMonCtrl : I2C Read failure\n");
+		if (receivePldmMessage() != PLDM_SUCCESS) {
+			ERR("PFMonCtrl : I2C read/assemble failure\n");
 			return PLDM_ERROR;
 		}
-		DBG("PFMonCtrl RX  :: ");
-		hexdump(rptr, PLDM_MAX_RESPONSE_SIZE);
 		if (processPlatformResponse(cmd, instanceID) != PLDM_SUCCESS) {
 			return PLDM_ERROR;
 		}
@@ -165,8 +162,8 @@ uint8_t pldm::pfPdrRepoRespPayload()
 		return PLDM_ERROR;
 	}
 	memcpy(&pfPdrRepoInfo, &mI2cPldmRead->respPayload, sizeof(pdrRepositoryInfoResp));
-	DBG("PDR Repository Info - Repository Size: {}, Record Count: {}\n", pfPdrRepoInfo.repositorySize,
-		pfPdrRepoInfo.recordCount);
+	DBG("PDR Repository Info - Repository Size: {}, Record Count: {}, Largest Record Size: {}\n",
+		pfPdrRepoInfo.repositorySize, pfPdrRepoInfo.recordCount, pfPdrRepoInfo.largestRecordSize);
 	if (pfPdrRepoInfo.repositorySize == 0 || pfPdrRepoInfo.recordCount == 0) {
 		ERR("PLDM Platform: Invalid PDR Repository Info received\n");
 		return PLDM_ERROR;
@@ -189,12 +186,19 @@ uint8_t pldm::pfPdrRepoRespPayload()
 uint8_t pldm::pfPdrRespPayload()
 {
 	DBG("Handling PDR response\n");
-	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
-		ERR("PLDM Platform: Get PDR command failed with code 0x{:02x}\n", mI2cPldmRead->respPayload[0]);
+	const uint8_t *payload = mRxAssembledPayload.empty() ? mI2cPldmRead->respPayload : mRxAssembledPayload.data();
+	const size_t payloadLen =
+		mRxAssembledPayload.empty() ? sizeof(mI2cPldmRead->respPayload) : mRxAssembledPayload.size();
+	if (payloadLen < offsetof(pdrRespPayload, recordData)) {
+		ERR("PLDM Platform: Get PDR response too short: {} bytes\n", payloadLen);
+		return PLDM_ERROR;
+	}
+	if (payload[0] != PLDM_SUCCESS) {
+		ERR("PLDM Platform: Get PDR command failed with code 0x{:02x}\n", payload[0]);
 		return PLDM_ERROR;
 	}
 
-	pdrRespPayload *resp = (pdrRespPayload *)mI2cPldmRead->respPayload;
+	const pdrRespPayload *resp = reinterpret_cast<const pdrRespPayload *>(payload);
 
 	pfPdrResp.completionCode = resp->completionCode;
 	pfPdrResp.nextRecordHandle = resp->nextRecordHandle;
@@ -204,8 +208,8 @@ uint8_t pldm::pfPdrRespPayload()
 
 	uint16_t respCount = resp->responseCount;
 
-	// responseCount is AMC-controlled; bound it to the buffer so it can't drive an out-of-bounds read.
-	const size_t maxRecordData = sizeof(mI2cPldmRead->respPayload) - offsetof(pdrRespPayload, recordData);
+	// responseCount is AMC-controlled; bound it to the assembled payload.
+	const size_t maxRecordData = payloadLen - offsetof(pdrRespPayload, recordData);
 	if (respCount > maxRecordData) {
 		ERR("PLDM Platform: PDR responseCount {} exceeds payload capacity {}\n", respCount, maxRecordData);
 		return PLDM_ERROR;
@@ -380,8 +384,8 @@ uint8_t pldm::pfGetSensorValue(const pldmNumericSensorValuePdr *sensor)
 		return PLDM_ERROR;
 	}
 	double value = optValue.value();
-	mSensorInfoList.push_back(
-		{sensor->sensorId, sensor->entityType, sensor->entityInstanceNum, sensor->containerId, value});
+	mSensorInfoList.push_back({sensor->sensorId, sensor->entityType, sensor->entityInstanceNum, sensor->containerId,
+							   value, static_cast<sensorUnits>(sensor->baseUnit)});
 	return PLDM_SUCCESS;
 }
 

@@ -34,6 +34,26 @@ static std::unordered_map<amcSubCmdType, amcSubCmdStruct> amcCmds = {
 	{AMC_JSON, {}},
 };
 
+static const char *sensorUnitToString(sensorUnits unit)
+{
+	switch (unit) {
+	case PLDM_UNIT_DEGREES_C:
+		return "degrees C";
+	case PLDM_UNIT_VOLTS:
+		return "V";
+	case PLDM_UNIT_CURRENT_AMPS:
+		return "A";
+	case PLDM_UNIT_WATTS:
+		return "W";
+	case PLDM_UNIT_JOULES:
+		return "J";
+	case PLDM_UNIT_COULOMBS:
+		return "C";
+	default:
+		return "unspecified";
+	}
+}
+
 AmcTextPrinter::AmcTextPrinter() : TextPrinter() {}
 
 /**
@@ -124,13 +144,13 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Sensor IDs (used with -s/--sensorId):"));
-	helpList.push_back(helpCmd(SUB_HEADING, "1. Temperature Sensor 0 from Add-In-Card"));
-	helpList.push_back(helpCmd(SUB_HEADING, "2. Temperature Sensor 1 from Add-In-Card"));
-	helpList.push_back(helpCmd(SUB_HEADING, "3. VR Voltage from Add-In-Card"));
-	helpList.push_back(helpCmd(SUB_HEADING, "4. VR Current from Add-In-Card"));
-	helpList.push_back(helpCmd(SUB_HEADING, "5. VR Power from Add-In-Card"));
-	helpList.push_back(helpCmd(SUB_HEADING, "6. VR Temperature Sensor"));
-	helpList.push_back(helpCmd(SUB_HEADING, "7. Total Board Power"));
+	helpList.push_back(helpCmd(SUB_HEADING, "1. Temperature sensor_0 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "2. Temperature sensor_1 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "3. VR VCCGT temperature_0 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "4. VR VCCGT input power_0 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "5. VR VCCGT input voltage_0 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "6. VR VCCGT input current_0 from Add-In-Card"));
+	helpList.push_back(helpCmd(SUB_HEADING, "85. Card average power"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "File Types (used with --fileType):"));
 	helpList.push_back(helpCmd(SUB_HEADING, "1. AMC crash logs"));
@@ -431,7 +451,6 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 			ERR("Sensor ID '{}' is out of range (0-65535).\n", amcCmds[AMC_SENSORID].val.c_str());
 			return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 		}
-
 		std::vector<amcSensorInfo> sensorInfo;
 		int ret = amc->amcGetSensorInfoBySensorId(deviceIndex, static_cast<uint16_t>(sensorId), sensorInfo);
 		if (ret != AMC_SUCCESS) {
@@ -443,6 +462,7 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 		outputJson["device"] = amcCmds[AMC_DEVICE].val;
 		outputJson["sensor_id"] = sensorInfo[0].sensorId;
 		outputJson["sensor_value"] = sensorInfo[0].sensorReading;
+		outputJson["sensor_unit"] = sensorUnitToString(sensorInfo[0].sensorUnit);
 	}
 
 	std::unique_ptr<Printer> printer;

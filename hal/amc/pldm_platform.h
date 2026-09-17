@@ -129,7 +129,7 @@ enum pldmPdrType
 	PLDM_OEM_PDR = 127,
 };
 
-enum sensorUnits
+enum sensorUnits : uint8_t
 {
 	PLDM_UNIT_UNSPECIFIED = 0x01,
 	PLDM_UNIT_DEGREES_C = 0x02,
@@ -147,6 +147,7 @@ struct pldmSensorInfo
 	uint16_t entityInstanceNum;
 	uint16_t containerId;
 	double reading;
+	sensorUnits unit;
 };
 
 // ============================================================================

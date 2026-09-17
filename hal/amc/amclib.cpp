@@ -328,6 +328,7 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 			amcSensorInfo info;
 			info.sensorId = sensor.sensorId;
 			info.sensorReading = sensor.reading;
+			info.sensorUnit = sensor.unit;
 			sensorInfo.push_back(info);
 		}
 	}

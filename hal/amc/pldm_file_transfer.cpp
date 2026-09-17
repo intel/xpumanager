@@ -16,14 +16,9 @@
  *
  * This function reads multi-part data from the I2C interface and assembles it into a single frame and payload.
  *
- * @param[in] i2cobj Pointer to the I2C interface object.
- * @param[out] mI2cPldmRead Pointer to the PLDM I2C read data structure.
- * @param[out] assembledFrame Vector to store the assembled frame data.
- * @param[out] assembledPayload Vector to store the assembled payload data.
  * @return PLDM_ERROR on failure, otherwise PLDM_SUCCESS.
  */
-static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRead,
-							   std::vector<uint8_t> &assembledFrame, std::vector<uint8_t> &assembledPayload)
+uint8_t pldm::receivePldmMessage()
 {
 	if (i2cobj == nullptr || mI2cPldmRead == nullptr) {
 		return PLDM_ERROR;
@@ -35,8 +30,8 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 	constexpr size_t mctpContinuationTailAdjust = 5;
 	constexpr size_t maxAssembledFrameBytes = 8192;
 
-	assembledFrame.clear();
-	assembledPayload.clear();
+	mRxAssembledFrame.clear();
+	mRxAssembledPayload.clear();
 
 	uint8_t expectedSeq = 0;
 	bool gotSomPacket = false;
@@ -46,20 +41,20 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 		int retry{};
 		for (retry = 0; retry < MAX_NUM_RETRIES; retry++) {
 			if (i2cobj->readAmc(reinterpret_cast<uint8_t *>(&frame) + 1, PLDM_MAX_RESPONSE_SIZE) == true) {
-				DBG("PLDM File Transfer RX  :: ");
+				DBG("PLDM RX  :: ");
 				hexdump(reinterpret_cast<uint8_t *>(&frame), PLDM_MAX_RESPONSE_SIZE);
 				break;
 			}
-			ERR("PLDM File Transfer: Retry read I2C MCTP response ({}/{})\n", retry + 1, MAX_NUM_RETRIES);
+			ERR("PLDM: Retry read I2C MCTP response ({}/{})\n", retry + 1, MAX_NUM_RETRIES);
 		}
 
 		if (retry == MAX_NUM_RETRIES) {
-			ERR("PLDM File Transfer: Failed to read I2C MCTP response\n");
+			ERR("PLDM: Failed to read I2C MCTP response\n");
 			return PLDM_ERROR;
 		}
 
 		if (frame.mctpSmbusHdr.cmdCode != MCTP_CMD_CODE) {
-			ERR("PLDM File Transfer: Invalid I2C MCTP command code 0x{:02x}\n", frame.mctpSmbusHdr.cmdCode);
+			ERR("PLDM: Invalid I2C MCTP command code 0x{:02x}\n", frame.mctpSmbusHdr.cmdCode);
 			return PLDM_ERROR;
 		}
 
@@ -68,15 +63,15 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 		const uint8_t seq = static_cast<uint8_t>(frame.mctpSmbusHdr.packSeq & seqMask);
 
 		if (som && eom) {
-			DBG("PLDM File Transfer: Received single-packet MCTP message\n");
+			DBG("PLDM: Received single-packet MCTP message\n");
 			const size_t frameBytes = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
 			if (frameBytes > sizeof(frame)) {
 				ERR("PLDM File Transfer: Single frame too large ({} bytes, frame buf {})\n", frameBytes, sizeof(frame));
 				return PLDM_ERROR;
 			}
 
-			assembledFrame.assign(reinterpret_cast<uint8_t *>(&frame),
-								  reinterpret_cast<uint8_t *>(&frame) + frameBytes);
+			mRxAssembledFrame.assign(reinterpret_cast<uint8_t *>(&frame),
+									 reinterpret_cast<uint8_t *>(&frame) + frameBytes);
 			memcpy(mI2cPldmRead, &frame, sizeof(i2cdataPldmInfo));
 			break;
 		}
@@ -88,8 +83,8 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 				return PLDM_ERROR;
 			}
 
-			assembledFrame.assign(reinterpret_cast<uint8_t *>(&frame),
-								  reinterpret_cast<uint8_t *>(&frame) + fragmentLen);
+			mRxAssembledFrame.assign(reinterpret_cast<uint8_t *>(&frame),
+									 reinterpret_cast<uint8_t *>(&frame) + fragmentLen);
 			gotSomPacket = true;
 			expectedSeq = static_cast<uint8_t>((seq + 1) & seqMask);
 		} else if (!som && !eom) {
@@ -108,16 +103,16 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
 			if (mctpContinuationHeaderBytes + fragmentLen > sizeof(frame) ||
-				assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
+				mRxAssembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
 				ERR("PLDM File Transfer: Fragment too large (assembled {} + {} bytes, frame buf {}, max assembled "
 					"{})\n",
-					assembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
+					mRxAssembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
 				return PLDM_ERROR;
 			}
 
 			expectedSeq = static_cast<uint8_t>((expectedSeq + 1) & seqMask);
 			const uint8_t *fragmentPtr = reinterpret_cast<uint8_t *>(&frame) + mctpContinuationHeaderBytes;
-			assembledFrame.insert(assembledFrame.end(), fragmentPtr, fragmentPtr + fragmentLen);
+			mRxAssembledFrame.insert(mRxAssembledFrame.end(), fragmentPtr, fragmentPtr + fragmentLen);
 		} else if (eom) {
 			if (!gotSomPacket) {
 				ERR("PLDM File Transfer: Missing SOM packet before EOM packet\n");
@@ -135,15 +130,15 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 
 			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
 			if (mctpContinuationHeaderBytes + fragmentLen > sizeof(frame) ||
-				assembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
+				mRxAssembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
 				ERR("PLDM File Transfer: Fragment too large (assembled {} + {} bytes, frame buf {}, max assembled "
 					"{})\n",
-					assembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
+					mRxAssembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
 				return PLDM_ERROR;
 			}
 
 			const uint8_t *fragmentPtr = reinterpret_cast<uint8_t *>(&frame) + mctpContinuationHeaderBytes;
-			assembledFrame.insert(assembledFrame.end(), fragmentPtr, fragmentPtr + fragmentLen);
+			mRxAssembledFrame.insert(mRxAssembledFrame.end(), fragmentPtr, fragmentPtr + fragmentLen);
 			break;
 		}
 
@@ -153,22 +148,22 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 		MSLEEP(I2C_EVENT_WAIT_PERIOD_MS * 2);
 	}
 
-	if (assembledFrame.empty()) {
+	if (mRxAssembledFrame.empty()) {
 		ERR("PLDM File Transfer: Empty assembled response\n");
 		return PLDM_ERROR;
 	}
 
 	const size_t payloadStart = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr);
-	if (assembledFrame.size() < payloadStart + 1) {
-		ERR("PLDM File Transfer: Assembled response too short ({})\n", assembledFrame.size());
+	if (mRxAssembledFrame.size() < payloadStart + 1) {
+		ERR("PLDM: Assembled response too short ({})\n", mRxAssembledFrame.size());
 		return PLDM_ERROR;
 	}
 
-	assembledPayload.assign(assembledFrame.begin() + payloadStart, assembledFrame.end());
+	mRxAssembledPayload.assign(mRxAssembledFrame.begin() + payloadStart, mRxAssembledFrame.end());
 
 	memset(mI2cPldmRead, 0, sizeof(i2cdataPldmInfo));
-	const size_t copyBytes = std::min(assembledFrame.size(), sizeof(i2cdataPldmInfo));
-	memcpy(mI2cPldmRead, assembledFrame.data(), copyBytes);
+	const size_t copyBytes = std::min(mRxAssembledFrame.size(), sizeof(i2cdataPldmInfo));
+	memcpy(mI2cPldmRead, mRxAssembledFrame.data(), copyBytes);
 
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddr = MCTP_SRC_SLAVE_ADDR;
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddrB0 = MCTP_SRC_SLAVE_ADDR_B0;
@@ -176,13 +171,13 @@ static uint8_t rxMultiPartData(I2CInterface *i2cobj, i2cdataPldmInfo *mI2cPldmRe
 	mI2cPldmRead->mctpSmbusHdr.eom = PLDM_EOM_BIT_ON;
 	mI2cPldmRead->mctpSmbusHdr.packSeq = 0;
 
-	const size_t byteCount =
-		(assembledFrame.size() > mctpFirstPacketExtraBytes) ? (assembledFrame.size() - mctpFirstPacketExtraBytes) : 0;
+	const size_t byteCount = (mRxAssembledFrame.size() > mctpFirstPacketExtraBytes)
+								 ? (mRxAssembledFrame.size() - mctpFirstPacketExtraBytes)
+								 : 0;
 	mI2cPldmRead->mctpSmbusHdr.byteCount =
-		static_cast<uint8_t>(std::min(byteCount, sizeof(mI2cPldmRead) - mctpFirstPacketExtraBytes));
+		static_cast<uint8_t>(std::min(byteCount, sizeof(i2cdataPldmInfo) - mctpFirstPacketExtraBytes));
 
-	DBG("PLDM File Transfer: Assembled frame={} bytes, payload={} bytes\n", assembledFrame.size(),
-		assembledPayload.size());
+	DBG("PLDM: Assembled frame={} bytes, payload={} bytes\n", mRxAssembledFrame.size(), mRxAssembledPayload.size());
 
 	return PLDM_SUCCESS;
 }
@@ -345,7 +340,7 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 
 	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS * 2);
 
-	ret = rxMultiPartData(i2cobj, mI2cPldmRead, mRxAssembledFrame, mRxAssembledPayload);
+	ret = receivePldmMessage();
 	if (ret != PLDM_SUCCESS) {
 		ERR("PLDM File Transfer: I2C read/assemble failed\n");
 		return ret;
