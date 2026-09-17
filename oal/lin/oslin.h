@@ -142,6 +142,11 @@ bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease = nullptr);
 std::string getPciSlotLabel(const std::string &bdf);
 std::string findResourceFile(const std::string &relativePath);
 int coldResetViaSysfs(const std::string &gpuBdf);
+std::string getParentOfUpstreamPortBdf(const std::string &gpuBdf);
+int maskSLDInPCIeConfig(const std::string &portBdf, bool *wasAlreadyMasked = nullptr);
+int unmaskSLDInPCIeConfig(const std::string &portBdf, bool keepMasked = false);
+int removePCIeDevice(const std::string &bdf);
+int rescanPCIeDevice(const std::string &bdf, const std::string &deviceUid);
 std::vector<uint32_t> getGpuProcessesByBdf(const std::string &gpuBdf);
 std::vector<std::string> getDevicesSharingSlotWith(const std::string &gpuBdf);
 

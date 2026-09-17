@@ -149,6 +149,17 @@ std::string getKernelDriverVersion(const std::string &bdf);
 }
 static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relativePath) { return std::string{}; }
 static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -1; }
+static inline std::string getParentOfUpstreamPortBdf(UNUSED const std::string &gpuBdf) { return std::string{}; }
+static inline int maskSLDInPCIeConfig(UNUSED const std::string &portBdf, UNUSED bool *wasAlreadyMasked = nullptr)
+{
+	return -1;
+}
+static inline int unmaskSLDInPCIeConfig(UNUSED const std::string &portBdf, UNUSED bool keepMasked = false)
+{
+	return -1;
+}
+static inline int removePCIeDevice(UNUSED const std::string &bdf) { return -1; }
+static inline int rescanPCIeDevice(UNUSED const std::string &bdf, UNUSED const std::string &deviceUid) { return -1; }
 static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
 static inline std::vector<std::string> getDevicesSharingSlotWith(UNUSED const std::string &gpuBdf) { return {}; }
 static inline bool euMetricsSafeOnThisKernel(UNUSED std::string *unsafeKernelRelease = nullptr) { return true; }

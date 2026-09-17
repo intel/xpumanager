@@ -351,10 +351,14 @@ bool I2CInterface::readAmc(void *readbuffer, size_t readsize)
 bool I2CInterface::closeAmc()
 {
 	TRACING();
-	if (amchandle != NULL) {
-		return CloseHandle(amchandle);
+	if (amchandle == NULL) {
+		return true;
 	}
-	return true;
+
+	const bool closed = CloseHandle(amchandle) != 0;
+	amchandle = NULL;
+	init = false;
+	return closed;
 }
 
 /**

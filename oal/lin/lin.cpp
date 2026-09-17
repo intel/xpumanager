@@ -1722,6 +1722,475 @@ int coldResetViaSysfs(const std::string &gpuBdf)
 	return 0;
 }
 
+// PCIe extended capability list, the 4 KiB config region the `setpci ECAP_*` names resolve
+// against. It starts at 0x100 and every header packs the 16-bit capability ID into bits 15:0
+// and the offset of the next capability into bits 31:20.
+static constexpr uint16_t PCI_EXT_CAP_START = 0x100;
+static constexpr uint16_t PCI_EXT_CAP_LIMIT = 0x1000;
+static constexpr uint16_t PCI_EXT_CAP_ID_AER = 0x0001; // Advanced Error Reporting (ECAP_AER)
+
+// Register offsets within the AER capability, and the Surprise Down Error bit that the
+// status and mask registers both carry at bit 5.
+static constexpr uint16_t AER_UNCOR_STATUS_OFFSET = 0x04;
+static constexpr uint16_t AER_UNCOR_MASK_OFFSET = 0x08;
+static constexpr uint32_t AER_UNCOR_SURPRISE_DOWN = 0x20;
+
+// Bus rescan retry policy: one rescan up front plus two retries, spaced a second apart.
+static constexpr int PCI_RESCAN_ATTEMPTS = 3;
+static constexpr int PCI_RESCAN_RETRY_DELAY_US = 1000000;
+
+static constexpr const char *PCI_RESCAN_PATH = "/sys/bus/pci/rescan";
+
+/**
+ * @brief Reads a 32-bit word from an open sysfs PCI config space
+ *
+ * pread is used rather than an fstream so each access is a single aligned DWORD
+ * transaction, which is what the kernel's config space accessors expect.
+ *
+ * @param [in]  fd     Descriptor on /sys/bus/pci/devices/<bdf>/config
+ * @param [in]  offset Byte offset within config space (must be DWORD aligned)
+ * @param [out] value  Register contents on success
+ * @return true if the full word was read
+ */
+static bool readPciConfigDword(int fd, off_t offset, uint32_t &value)
+{
+	ssize_t bytes = pread(fd, &value, sizeof(value), offset);
+	if (bytes != static_cast<ssize_t>(sizeof(value))) {
+		ERR("Failed to read config space at offset {:#06x}: {}\n", offset, std::system_category().message(errno));
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Writes a 32-bit word to an open sysfs PCI config space
+ *
+ * @param [in] fd     Descriptor on /sys/bus/pci/devices/<bdf>/config
+ * @param [in] offset Byte offset within config space (must be DWORD aligned)
+ * @param [in] value  Value to write
+ * @return true if the full word was written
+ */
+static bool writePciConfigDword(int fd, off_t offset, uint32_t value)
+{
+	ssize_t bytes = pwrite(fd, &value, sizeof(value), offset);
+	if (bytes != static_cast<ssize_t>(sizeof(value))) {
+		ERR("Failed to write {:#010x} to config space offset {:#06x}: {}\n", value, offset,
+			std::system_category().message(errno));
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Locates the AER extended capability in a PCI function's config space
+ *
+ * Walks the extended capability list looking for capability ID 0x0001, the offset
+ * `setpci` refers to as ECAP_AER.
+ *
+ * @param [in]  fd        Descriptor on the function's config space
+ * @param [in]  bdf       BDF of that function, for logging
+ * @param [out] aerOffset Offset of the AER capability header
+ * @return true if the capability was found
+ */
+static bool findAerCapOffset(int fd, const std::string &bdf, uint16_t &aerOffset)
+{
+	uint16_t capPtr = PCI_EXT_CAP_START;
+
+	// The list can hold at most one header per DWORD of the extended region, so this
+	// bounds a list that chains in a cycle.
+	int maxWalk = (PCI_EXT_CAP_LIMIT - PCI_EXT_CAP_START) / 4;
+
+	while (capPtr >= PCI_EXT_CAP_START && capPtr < PCI_EXT_CAP_LIMIT && maxWalk-- > 0) {
+		uint32_t header = 0;
+		if (!readPciConfigDword(fd, capPtr, header)) {
+			return false;
+		}
+
+		// A function with no extended capabilities reads all-zero; all-ones is an
+		// aborted read, which happens if the device disappears mid-walk.
+		if (header == 0 || header == 0xFFFFFFFF) {
+			break;
+		}
+
+		if ((header & 0xFFFF) == PCI_EXT_CAP_ID_AER) {
+			aerOffset = capPtr;
+			DBG("AER capability of {} is at offset {:#06x}\n", bdf, aerOffset);
+			return true;
+		}
+
+		uint16_t nextPtr = static_cast<uint16_t>((header >> 20) & 0xFFC);
+		if (nextPtr == capPtr) {
+			break; // self-referencing header
+		}
+		capPtr = nextPtr;
+	}
+
+	ERR("AER capability not found in config space of {}\n", bdf);
+	return false;
+}
+
+/**
+ * @brief Opens the config space of a PCI port and locates its AER capability
+ *
+ * @param [in]  portBdf   BDF of the root port or switch downstream port
+ * @param [out] aerOffset Offset of the port's AER capability
+ * @return An open read-write descriptor on the port's config space, or -1 on failure.
+ *         The caller owns the descriptor and must close it.
+ */
+static int openPortAerConfig(const std::string &portBdf, uint16_t &aerOffset)
+{
+	if (!isValidBdf(portBdf)) {
+		ERR("Rejecting invalid BDF address: {}\n", portBdf);
+		return -1;
+	}
+
+	std::string configPath = "/sys/bus/pci/devices/" + portBdf + "/config";
+	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — open() is variadic by POSIX
+	int fd = open(configPath.c_str(), O_RDWR | O_CLOEXEC);
+	if (fd < 0) {
+		ERR("Cannot open {} for read-write access: {}\n", configPath, std::system_category().message(errno));
+		return -1;
+	}
+
+	if (!findAerCapOffset(fd, portBdf, aerOffset)) {
+		close(fd);
+		return -1;
+	}
+	return fd;
+}
+
+/**
+ * @brief Reports whether a PCI device is enumerated and its link is trained
+ *
+ * The sysfs directory reappearing is not on its own proof that the link came back:
+ * the kernel keeps the node in place with current_link_speed reading "Unknown" and
+ * current_link_width reading 0 when training fails, so both are checked. Devices that
+ * do not export the link attributes at all are judged by presence alone.
+ *
+ * @param bdf BDF string of the device (e.g. "0000:4d:00.0")
+ * @return true if the device is present with a usable link
+ */
+static bool isPcieLinkUp(const std::string &bdf)
+{
+	std::string devPath = "/sys/bus/pci/devices/" + bdf;
+
+	std::error_code ec;
+	if (!std::filesystem::exists(devPath, ec)) {
+		DBG("Device {} is not enumerated\n", bdf);
+		return false;
+	}
+
+	std::string speedPath = devPath + "/current_link_speed";
+	if (!std::filesystem::exists(speedPath, ec)) {
+		DBG("Device {} exports no link attributes; treating presence as link up\n", bdf);
+		return true;
+	}
+
+	std::ifstream speedFile(speedPath);
+	std::string speed;
+	if (!speedFile || !std::getline(speedFile, speed) || speed.empty() || speed == "Unknown") {
+		DBG("Device {} link speed reads '{}'\n", bdf, speed);
+		return false;
+	}
+
+	std::ifstream widthFile(devPath + "/current_link_width");
+	std::string width;
+	if (!widthFile || !std::getline(widthFile, width) || width.empty() || width == "0" || width == "Unknown") {
+		DBG("Device {} link width reads '{}'\n", bdf, width);
+		return false;
+	}
+
+	DBG("Device {} link is up at {} x{}\n", bdf, speed, width);
+	return true;
+}
+
+/**
+ * @brief Finds the BDF of the port directly above a GPU's switch upstream port
+ *
+ * For a GPU behind an on-card PCIe switch the hierarchy runs
+ *   <port> -> switch upstream port -> switch downstream port -> GPU,
+ * and this returns that outermost <port>. Depending on the topology it is either a root
+ * port or, when switches are cascaded, the downstream port of the next switch out. The
+ * walk stops one level above the nearest upstream port rather than continuing to the
+ * root complex.
+ *
+ * That port is where the AER registers governing a GPU power-down have to be programmed;
+ * masking Surprise Down on the switch ports below it was tried and did not suppress the
+ * error.
+ *
+ * A GPU with no switch above it hangs straight off a root port, in which case that root
+ * port -- the GPU's own parent -- is returned.
+ *
+ * Classifying ports means reading each ancestor's PCIe capability, which needs
+ * CAP_SYS_ADMIN. Without it the nearest switch cannot be identified, so the walk falls
+ * back to the root port, the same answer whenever only one switch is in the path.
+ *
+ * Resolve this before removing the GPU, since the walk starts at its own sysfs node.
+ *
+ * @param gpuBdf BDF string of the GPU (e.g. "0000:03:00.0")
+ * @return BDF of the port above the nearest switch upstream port, or an empty string if
+ *         it could not be determined
+ */
+std::string getParentOfUpstreamPortBdf(const std::string &gpuBdf)
+{
+	namespace fs = std::filesystem;
+
+	if (!isValidBdf(gpuBdf)) {
+		ERR("Rejecting invalid BDF address: {}\n", gpuBdf);
+		return "";
+	}
+
+	std::error_code ec;
+	fs::path realPath = fs::canonical("/sys/bus/pci/devices/" + gpuBdf, ec);
+	if (ec) {
+		ERR("Failed to resolve sysfs path for {}: {}\n", gpuBdf, ec.message());
+		return "";
+	}
+
+	// Walk up through the GPU's PCI ancestors, stopping once the parent directory is a
+	// PCI domain root ("pciDDDD:BB"), i.e. once the root port has been passed.
+	for (fs::path current = realPath.parent_path();
+		 current.has_parent_path() && !current.filename().string().starts_with("pci");
+		 current = current.parent_path()) {
+		const std::string name = current.filename().string();
+		if (!isValidBdf(name)) {
+			continue;
+		}
+
+		const int portType = readPciePortType(name);
+		if (portType == PCIE_PORT_TYPE_READ_ERROR) {
+			// Without port types the nearest switch cannot be located. The root port is
+			// the right answer for a single switch, so use it instead of failing outright.
+			INFO("Cannot read PCIe port type of {}, an ancestor of {}; falling back to the root port\n", name, gpuBdf);
+			std::string rootPortBdf;
+			return findRootPortBdf(gpuBdf, rootPortBdf) ? rootPortBdf : "";
+		}
+
+		if (portType != PCI_EXP_TYPE_UPSTREAM) {
+			continue;
+		}
+
+		// Nearest switch upstream port found, so its parent is the port being looked for.
+		std::string parentName = current.parent_path().filename().string();
+		if (!isValidBdf(parentName)) {
+			ERR("Switch upstream port {} above GPU {} has no parent port (sysfs parent is {})\n", name, gpuBdf,
+				parentName);
+			return "";
+		}
+
+		DBG("GPU {} sits behind switch upstream port {}, whose parent port is {}\n", gpuBdf, name, parentName);
+		return parentName;
+	}
+
+	// No switch in the path, so the GPU is attached straight to a root port.
+	std::string parentName = realPath.parent_path().filename().string();
+	if (!isValidBdf(parentName)) {
+		ERR("No PCIe port above GPU {} (sysfs parent is {})\n", gpuBdf, parentName);
+		return "";
+	}
+
+	DBG("GPU {} has no switch above it; using its root port {}\n", gpuBdf, parentName);
+	return parentName;
+}
+
+/**
+ * @brief Masks Surprise Link Down reporting on a root port
+ *
+ * Sets bit 5 of the port's AER Uncorrectable Error Mask register, the equivalent of:
+ *   VAL=$(setpci -s <port> ECAP_AER+8.L)
+ *   setpci -s <port> ECAP_AER+8.L=$(printf "%08x" $((16#$VAL | 0x20)))
+ *
+ * Call this before an operation that powers the GPU down. With the bit clear, the
+ * resulting Surprise Down is reported as a fatal uncorrectable error and raises a
+ * runtime exception for what is in fact a deliberate removal.
+ *
+ * @param portBdf BDF of the root port, from getParentOfUpstreamPortBdf()
+ * @param [out] wasAlreadyMasked Set to true when the bit was already masked before this
+ *                               call, meaning the port was configured that way by someone
+ *                               else and unmaskSLDInPCIeConfig() must leave it alone.
+ *                               Pass to unmaskSLDInPCIeConfig() as its keepMasked argument.
+ * @return 0 on success, -1 on failure
+ */
+int maskSLDInPCIeConfig(const std::string &portBdf, bool *wasAlreadyMasked)
+{
+	if (wasAlreadyMasked != nullptr) {
+		*wasAlreadyMasked = false;
+	}
+
+	uint16_t aerOffset = 0;
+	int fd = openPortAerConfig(portBdf, aerOffset);
+	if (fd < 0) {
+		return -1;
+	}
+
+	int ret = -1;
+	uint32_t mask = 0;
+	if (readPciConfigDword(fd, aerOffset + AER_UNCOR_MASK_OFFSET, mask)) {
+		if ((mask & AER_UNCOR_SURPRISE_DOWN) != 0) {
+			// Already masked by platform policy or an earlier caller, so there is nothing to
+			// change here. Reported back so the matching unmask does not undo that policy.
+			if (wasAlreadyMasked != nullptr) {
+				*wasAlreadyMasked = true;
+			}
+			INFO("Surprise Link Down is already masked on {} (uncorrectable error mask {:#010x}); leaving it as is\n",
+				 portBdf, mask);
+			ret = 0;
+		} else {
+			const uint32_t newMask = mask | AER_UNCOR_SURPRISE_DOWN;
+			if (writePciConfigDword(fd, aerOffset + AER_UNCOR_MASK_OFFSET, newMask)) {
+				INFO("Masked Surprise Link Down on {} (uncorrectable error mask {:#010x} -> {:#010x})\n", portBdf, mask,
+					 newMask);
+				ret = 0;
+			}
+		}
+	}
+
+	close(fd);
+	return ret;
+}
+
+/**
+ * @brief Clears the Surprise Link Down status and unmasks its reporting on a port
+ *
+ * Equivalent of:
+ *   setpci -s <port> ECAP_AER+4.L=00000020
+ *   VAL=$(setpci -s <port> ECAP_AER+8.L)
+ *   setpci -s <port> ECAP_AER+8.L=$(printf "%08x" $((16#$VAL & ~0x20 & 0xffffffff)))
+ *
+ * The status register is write-1-to-clear, so writing only the Surprise Down bit leaves
+ * every other logged error untouched. Clearing it before unmasking keeps the error the
+ * operation deliberately caused from being reported the moment reporting resumes. The bit
+ * is cleared even when keepMasked keeps reporting off: the removal was ours, and the write
+ * is a no-op if nothing got logged.
+ *
+ * Only the Surprise Down bit is touched, so error mask bits changed by anyone else
+ * between the mask and the unmask survive.
+ *
+ * @param portBdf BDF of the root port, from getParentOfUpstreamPortBdf()
+ * @param keepMasked Pass the flag maskSLDInPCIeConfig() reported through its
+ *                   wasAlreadyMasked argument. When true the bit was masked before this
+ *                   code path ran, so it stays masked and the port keeps the AER policy
+ *                   it came with.
+ * @return 0 on success, -1 on failure
+ */
+int unmaskSLDInPCIeConfig(const std::string &portBdf, bool keepMasked)
+{
+	uint16_t aerOffset = 0;
+	int fd = openPortAerConfig(portBdf, aerOffset);
+	if (fd < 0) {
+		return -1;
+	}
+
+	int ret = -1;
+	if (writePciConfigDword(fd, aerOffset + AER_UNCOR_STATUS_OFFSET, AER_UNCOR_SURPRISE_DOWN)) {
+		if (keepMasked) {
+			INFO("Cleared Surprise Link Down status on {}; leaving it masked as it was found\n", portBdf);
+			ret = 0;
+		} else {
+			uint32_t mask = 0;
+			if (readPciConfigDword(fd, aerOffset + AER_UNCOR_MASK_OFFSET, mask)) {
+				const uint32_t newMask = mask & ~AER_UNCOR_SURPRISE_DOWN;
+				if (writePciConfigDword(fd, aerOffset + AER_UNCOR_MASK_OFFSET, newMask)) {
+					INFO("Unmasked Surprise Link Down on {} (uncorrectable error mask {:#010x} -> {:#010x})\n", portBdf,
+						 mask, newMask);
+					ret = 0;
+				}
+			}
+		}
+	}
+
+	close(fd);
+	return ret;
+}
+
+/**
+ * @brief Detaches a PCI device from the bus via sysfs
+ *
+ * Equivalent to `echo 1 > /sys/bus/pci/devices/<bdf>/remove`. This unbinds the driver
+ * and tears down the device node, so the kernel stops touching hardware that is about
+ * to go away.
+ *
+ * @param bdf BDF string of the device to remove (e.g. "0000:4d:00.0")
+ * @return 0 on success, -1 on failure
+ */
+int removePCIeDevice(const std::string &bdf)
+{
+	if (!isValidBdf(bdf)) {
+		ERR("Rejecting invalid BDF address: {}\n", bdf);
+		return -1;
+	}
+
+	std::string removePath = "/sys/bus/pci/devices/" + bdf + "/remove";
+
+	std::error_code ec;
+	if (!std::filesystem::exists(removePath, ec)) {
+		ERR("PCI remove sysfs path not found: {}\n", removePath);
+		return -1;
+	}
+
+	std::ofstream removeFile(removePath, std::ios::trunc);
+	if (!removeFile) {
+		ERR("Failed to open {} for writing\n", removePath);
+		return -1;
+	}
+	removeFile << "1";
+	removeFile.flush();
+	if (!removeFile) {
+		ERR("Failed to write '1' to {}\n", removePath);
+		return -1;
+	}
+
+	INFO("Removed PCI device {} from the bus\n", bdf);
+	return 0;
+}
+
+/**
+ * @brief Rescans the PCI bus and waits for a device to come back with a trained link
+ *
+ * Equivalent to `echo 1 > /sys/bus/pci/rescan`, followed by a link check on the device
+ * that was removed. A rescan right after a reset can run before the endpoint answers
+ * config reads, so the sequence is retried a couple of times a second apart.
+ *
+ * @param [in] bdf       BDF string of the device expected to reappear
+ * @param [in] deviceUid Device UID of the same device. Accepted for callers that
+ *                       identify GPUs that way; not used yet.
+ * @return 0 once the device is back, -1 if it did not return
+ */
+int rescanPCIeDevice(const std::string &bdf, UNUSED const std::string &deviceUid)
+{
+	if (!isValidBdf(bdf)) {
+		ERR("Rejecting invalid BDF address: {}\n", bdf);
+		return -1;
+	}
+
+	for (int attempt = 1; attempt <= PCI_RESCAN_ATTEMPTS; attempt++) {
+		std::ofstream rescanFile(PCI_RESCAN_PATH, std::ios::trunc);
+		if (!rescanFile) {
+			ERR("Failed to open {} for writing\n", PCI_RESCAN_PATH);
+			return -1;
+		}
+		rescanFile << "1";
+		rescanFile.flush();
+		if (!rescanFile) {
+			ERR("Failed to write '1' to {}\n", PCI_RESCAN_PATH);
+			return -1;
+		}
+
+		if (isPcieLinkUp(bdf)) {
+			INFO("Device {} is back on the bus after rescan attempt {}\n", bdf, attempt);
+			return 0;
+		}
+
+		if (attempt < PCI_RESCAN_ATTEMPTS) {
+			DBG("Device {} not back after rescan attempt {}; retrying\n", bdf, attempt);
+			usleep(PCI_RESCAN_RETRY_DELAY_US);
+		}
+	}
+
+	ERR("Device {} did not come back after {} bus rescans\n", bdf, PCI_RESCAN_ATTEMPTS);
+	return -1;
+}
+
 /**
  * @brief Enumerates processes using a GPU device by scanning /proc for open DRM FDs
  *

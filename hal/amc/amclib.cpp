@@ -613,16 +613,29 @@ int amclib::amcGetTdp(uint8_t cardNum, char *tdp, size_t *bufferSize)
 	return AMC_SUCCESS;
 }
 
+// Time the card needs to complete an AMC-driven reset before the bus is worth rescanning.
+static constexpr uint32_t GPU_RESET_SETTLE_MS = 6000;
+
 /**
  * @brief Perform AMC reset via PLDM Platform Monitoring & Control
  *
- * Resets the Add-in Card Management Controller (AMC) for the specified card.
+ * Resets the Add-in Card Management Controller (AMC) for the specified card and brings
+ * the GPU back onto the PCI bus around it. The AMC powers the GPU down, so its link goes
+ * away and it stops answering config reads for the duration of the reset. The sequence is:
+ *
+ * 1. Mask Surprise Link Down on the root port above the GPU, so the deliberate
+ *    power-down is not reported as a fatal AER error.
+ * 2. Issue the PLDM reset command.
+ * 3. Remove the GPU from the bus while it is down.
+ * 4. Wait for the reset to complete.
+ * 5. Rescan the bus and confirm the GPU came back with a trained link.
+ * 6. Clear the Surprise Link Down status and unmask its reporting again.
  *
  * @param [in] cardNum Zero-based card number to reset (0 to numCards-1)
  *
  * @return Status of reset operation
- * @retval AMC_SUCCESS Reset command sent successfully
- * @retval AMC_ERROR Invalid card number or reset command failed
+ * @retval AMC_SUCCESS GPU was reset and is back on the bus
+ * @retval AMC_ERROR Invalid card number, or any step of the sequence failed
  *
  */
 int amclib::amcGpuReset(uint32_t cardNum)
@@ -634,15 +647,69 @@ int amclib::amcGpuReset(uint32_t cardNum)
 		return AMC_ERROR;
 	}
 
-	DBG("Initiating AMC reset for card {}\n", cardNum);
+	const std::string gpuBdf = amcDeviceList->at(cardNum).gpuParentPath;
+	if (gpuBdf.empty()) {
+		ERR("No GPU BDF known for card {}; cannot sequence the reset\n", cardNum);
+		return AMC_ERROR;
+	}
+
+	// The root port above the GPU's switch upstream port, which is where Surprise Down has
+	// to be masked for the AMC to cut the GPU's power without raising an AER exception.
+	// Resolved up front because the lookup walks the GPU's own sysfs node, which is gone
+	// once the device has been removed.
+	const std::string portBdf = getParentOfUpstreamPortBdf(gpuBdf);
+	if (portBdf.empty()) {
+		ERR("Could not find the root port above GPU {}\n", gpuBdf);
+		return AMC_ERROR;
+	}
+
+	DBG("Initiating AMC reset for card {} (GPU {}, root port {})\n", cardNum, gpuBdf, portBdf);
+
+	bool sldWasAlreadyMasked = false;
+	if (maskSLDInPCIeConfig(portBdf, &sldWasAlreadyMasked) != 0) {
+		ERR("Failed to mask Surprise Link Down on {} before resetting GPU {}\n", portBdf, gpuBdf);
+		return AMC_ERROR;
+	}
+
+	int ret = AMC_SUCCESS;
 
 	// Execute the AMC reset command
 	if (card->amcGpuReset() != PLDM_SUCCESS) {
 		ERR("Failed to reset AMC for card {}\n", cardNum);
-		return AMC_ERROR;
+		ret = AMC_ERROR;
 	}
 
-	return AMC_SUCCESS;
+	// Hand back the AMC I2C handle before the GPU is detached. The I2C adapter is provided by
+	// the GPU, so it disappears along with it, and the reset command above is the last thing
+	// this card's PLDM object can do until the card is enumerated again.
+	if (ret == AMC_SUCCESS && !pldmobj[cardNum]->closeAmcInterface()) {
+		ERR("Failed to close the AMC I2C handle for card {} before removing GPU {}\n", cardNum, gpuBdf);
+		ret = AMC_ERROR;
+	}
+
+	if (ret == AMC_SUCCESS && removePCIeDevice(gpuBdf) != 0) {
+		ERR("Failed to remove GPU {} from the PCI bus\n", gpuBdf);
+		ret = AMC_ERROR;
+	}
+
+	if (ret == AMC_SUCCESS) {
+		MSLEEP(GPU_RESET_SETTLE_MS);
+
+		if (rescanPCIeDevice(gpuBdf, "") != 0) {
+			ERR("GPU {} did not come back after the AMC reset of card {}\n", gpuBdf, cardNum);
+			ret = AMC_ERROR;
+		}
+	}
+
+	// Restore the port's error reporting even when a step above failed, so a failed reset
+	// does not leave Surprise Link Down masked for good. Ports that already had it masked
+	// keep it that way, since that setting is not ours to drop.
+	if (unmaskSLDInPCIeConfig(portBdf, sldWasAlreadyMasked) != 0) {
+		ERR("Failed to unmask Surprise Link Down on {} after resetting GPU {}\n", portBdf, gpuBdf);
+		ret = AMC_ERROR;
+	}
+
+	return ret;
 }
 
 /**

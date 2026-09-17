@@ -410,6 +410,12 @@ public:
 	// Written by the flash thread while amclib::amcFirmwareProgress() reads it from another one.
 	std::atomic<int> mProgPercent{0};
 	uint8_t amcGpuReset();
+
+	// Closes the card's AMC I2C handle. The I2C adapter belongs to the GPU, so it is torn
+	// down when the GPU leaves the bus; the handle has to be given up before that happens
+	// rather than left pointing at an adapter the kernel has removed. Safe to call twice.
+	// Nothing can talk to the AMC afterwards until the card is enumerated again.
+	bool closeAmcInterface() { return i2cobj == nullptr ? true : i2cobj->closeAmc(); }
 };
 
 #endif // __PLDM_H

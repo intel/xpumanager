@@ -235,14 +235,23 @@ bool I2CInterface::readAmc(void *readBuffer, size_t readSize)
 
 /**
  * @brief Closes the AMC device handle
- * @return bool True if device closed successfully, false otherwise
+ * @return bool True if device closed successfully or was already closed, false otherwise
  *
- * Closes the file descriptor for the I2C device.
+ * Closes the file descriptor for the I2C device and marks the handle invalid, so a later
+ * close from the destructor does not operate on a descriptor number the kernel has since
+ * handed to somebody else.
  */
 bool I2CInterface::closeAmc()
 {
 	TRACING();
-	return close(amchandle) == 0;
+	if (amchandle < 0) {
+		return true;
+	}
+
+	const bool closed = close(amchandle) == 0;
+	amchandle = -1;
+	init = false;
+	return closed;
 }
 
 /**
