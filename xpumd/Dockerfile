@@ -66,11 +66,11 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
         echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
         cat $CHECKSUMS_LOADER $CHECKSUMS_BACKEND; \
         echo "--- Got: ---"; \
-        sha256sum *.deb; \
+        sha256sum ./*.deb; \
         echo "=> ERROR"; \
         exit 1; \
     fi && \
-    dpkg -i *.deb
+    dpkg -i ./*.deb
 
 # Copy runtime libraries and their package info.
 # Placed here so that this layer is cached (avoid downloading of deb source packages, in particular).
@@ -211,7 +211,7 @@ RUN curl -fS --fail-early --output-dir /debs/ \
         echo "--- Expected ($CHECKSUMS_LOADER): ---"; \
         cat $CHECKSUMS_LOADER; \
         echo "--- Got: ---"; \
-        sha256sum *.deb; \
+        sha256sum ./*.deb; \
         echo "=> ERROR"; \
         exit 1; \
     fi && \
@@ -231,7 +231,7 @@ RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
         echo "--- Expected ($CHECKSUMS_IGC): ---"; \
         cat $CHECKSUMS_IGC; \
         echo "--- Got: ---"; \
-        sha256sum *.deb; \
+        sha256sum ./*.deb; \
         echo "=> ERROR"; \
         exit 1; \
     fi && \
