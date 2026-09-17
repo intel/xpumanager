@@ -5,7 +5,7 @@ on:
     branches: [main, dev, v1.3.x]
     paths:
       - 'docs/sphinx/**'
-      - '.github/workflows/docs-deploy.yml'
+      - '.github/workflows/docs-publish.yml'
   workflow_dispatch:
     inputs:
       dry_run:
