@@ -111,10 +111,14 @@ void cmdSmi::collectStaticProps(SmiDeviceStats &stats, devInfo *di)
 
 	// Driver version + device index
 	stats.devIndex = di->index;
+
+	if (dev->getDriverVersionString(stats.driverVersion) != ZE_RESULT_SUCCESS) {
+		stats.driverVersion.clear();
+	}
+
 	zes_device_properties_t zesDevProp = {};
 	zesDevProp.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
 	if (dev->zesGetDevProps(di->zesDeviceHdl, &zesDevProp) == ZE_RESULT_SUCCESS) {
-		stats.driverVersion = zesDevProp.driverVersion;
 		// The core query above is unavailable where only sysman is initialized — a container
 		// without a render node, or the paths that skip zeInit — and leaves the name blank.
 		// zes_device_properties_t embeds the same core properties, so use them as a fallback.
@@ -363,11 +367,10 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 
 	// Banner row: inside the table border, above column headers.
 	const std::string shortVer = xpum::compat::format("v{}.{}", XPUM_VERSION_MAJOR, XPUM_VERSION_MINOR);
-	std::string banner = xpum::compat::format("Intel XPU-SMI {}    Level Zero: {}", shortVer, lzVersion);
-	if (!devStats.empty() && !devStats[0].driverVersion.empty()) {
-		banner = xpum::compat::format("Intel XPU-SMI {}    Driver: {}    Level Zero: {}", shortVer,
-									  devStats[0].driverVersion, lzVersion);
-	}
+	const std::string umdVersion =
+		(!devStats.empty() && !devStats[0].driverVersion.empty()) ? devStats[0].driverVersion : "N/A";
+	const std::string banner =
+		xpum::compat::format("Intel XPU-SMI {}    UMD Version: {}    Level Zero: {}", shortVer, umdVersion, lzVersion);
 	table.addPreHeaderSpanRow(banner);
 
 	for (const auto &s : devStats) {

@@ -126,14 +126,14 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 		{
 			.name = "driver_version",
 			.unit = "",
-			.description = "The version of the installed GPU driver.",
+			.description = "Level Zero user-mode driver release, as Major.Minor.Build (e.g. 1.3.36012).",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-				ze_driver_properties_t props{};
-				auto const r = d.dev->getDriverProperties(&props);
+				std::string version;
+				auto const r = d.dev->getDriverVersionString(version);
 				if (r == ZE_RESULT_SUCCESS) {
-					out = std::to_string(props.driverVersion);
+					out = std::move(version);
 				}
 				return r;
 			},

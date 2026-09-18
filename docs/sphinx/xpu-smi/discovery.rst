@@ -66,7 +66,7 @@ Options
       * - 7
         - Stepping
       * - 8
-        - Driver Version
+        - UMD Version
       * - 9
         - GFX Firmware Version
       * - 10
@@ -181,7 +181,7 @@ grouped and ordered as follows:
        Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
        Stepping, SKU Type
    * - Driver and Firmware
-     - Driver Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
+     - UMD Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
        GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
        GFX Data Firmware Version
    * - PCIe Information
@@ -205,10 +205,12 @@ are omitted.
 
 .. note::
 
-   **Driver Version** and **Kernel Driver Version** name different components.
-   Driver Version is the Level Zero user-mode driver version reported by the
-   driver itself. Kernel Driver Version identifies the kernel-mode driver (``xe``
-   or ``i915``, whichever is bound to that GPU) by its source checksum, the
+   **UMD Version** and **Kernel Driver Version** name different components.
+   UMD Version is the Level Zero user-mode driver release, reported as
+   ``Major.Minor.Build`` (e.g. ``1.3.36012``); it is the same value the
+   ``xpu-smi`` dashboard banner shows. Kernel Driver Version identifies the
+   kernel-mode driver (``xe`` or ``i915``, whichever is bound to that GPU) by
+   its source checksum, the
    ``srcversion`` field of ``modinfo xe``. The checksum changes with every driver
    source revision, so it is the value that ties a running driver back to the
    package it was built from, including a DKMS rebuild against an unchanged

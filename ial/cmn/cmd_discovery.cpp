@@ -62,7 +62,7 @@ static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> DISC_DUMP_CMDS{{
 	{&cmdDiscovery::serialNumber, "Serial Number"},									 // 5
 	{&cmdDiscovery::coreClockRate, "Core Clock Rate"},								 // 6
 	{&cmdDiscovery::stepping, "Stepping"},											 // 7
-	{&cmdDiscovery::driverVersion, "Driver Version"},								 // 8
+	{&cmdDiscovery::driverVersion, "UMD Version"},									 // 8
 	{&cmdDiscovery::gfxFirmwareVersion, "GFX Firmware Version"},					 // 9
 	{&cmdDiscovery::gfxDataFirmwareVersion, "GFX Data Firmware Version"},			 // 10
 	{&cmdDiscovery::pciBDFAddress, "PCI BDF Address"},								 // 11
@@ -134,7 +134,7 @@ std::string getDisplayName(const std::string &key)
 		{"part_number", "Part Number"},
 		{"core_clock_rate", "Core Clock Rate"},
 		{"device_stepping", "Stepping"},
-		{"driver_version", "Driver Version"},
+		{"driver_version", "UMD Version"},
 		{"gfx_firmware_version", "GFX Firmware Version"},
 		{"gfx_data_firmware_version", "GFX Data Firmware Version"},
 		{"pci_slot", "PCI Slot"},
@@ -312,7 +312,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		table.addRow("", "");
 
 		// Group 2: Driver and Firmware
-		addField("driver_version", "Driver Version");
+		addField("driver_version", "UMD Version");
 		addField("kernel_driver_version", "Kernel Driver Version");
 		addField("kernel_version", "Kernel Version");
 		addField("gfx_firmware_name", "GFX Firmware Name");
@@ -1145,25 +1145,20 @@ ze_result_t cmdDiscovery::stepping(devInfo *d, std::string *outputLine)
 /**
  * @brief Prints the driver version for a device when user runs discovery --dump 8.
  *
+ * Reports the Level Zero user-mode driver release, the same string the xpu-smi
+ * dashboard banner shows, so both views name the driver identically.
+ *
  * @param[in] d Pointer to the device info structure
  * @param[out] outputLine Pointer to the output line string
  *
  * @retval ZE_RESULT_SUCCESS Successfully retrieved driver version
- * @retval ZE_RESULT_ERROR_* Failed to get driver properties
+ * @retval ZE_RESULT_ERROR_* Failed to get the driver version
  */
 ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	ze_driver_properties_t zeDriProp = {};
-	const auto result = d->dev->getDriverProperties(&zeDriProp);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get driver properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-
-	*outputLine = std::to_string(zeDriProp.driverVersion);
-	return ZE_RESULT_SUCCESS;
+	return d->dev->getDriverVersionString(*outputLine);
 }
 
 /**
@@ -2004,7 +1999,7 @@ ze_result_t cmdDiscovery::kernelVersion(UNUSED devInfo *d, std::string *outputLi
 /**
  * @brief Prints the kernel-mode driver version for a device when user runs discovery --dump 54.
  *
- * Complements Driver Version (dump 8), which reports the Level Zero user-mode
+ * Complements UMD Version (dump 8), which reports the Level Zero user-mode
  * driver. This is the KMD's source checksum -- the `srcversion` field of
  * `modinfo xe` -- and is what ties a running driver to the package it was built
  * from, including a DKMS rebuild against an unchanged kernel. A driver built

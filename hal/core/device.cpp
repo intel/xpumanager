@@ -6,6 +6,7 @@
 
 #include "device.h"
 #include "firmware.h"
+#include "utility/compat/format.h"
 #include <cinttypes>
 #include <cstring>
 #include <vector>
@@ -630,6 +631,52 @@ ze_result_t device::getDriverProperties(ze_driver_properties_t *driverProps)
 		ERR("Failed to get driver properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 	}
 	return result;
+}
+
+/**
+ * @brief Retrieves the Level Zero GPU user-mode driver release as a string.
+ *
+ * Reports the release as "Major.Minor.Build" (e.g. "1.3.27642"), the version
+ * users can match against a published driver release. Major and minor come from
+ * zeDriverGetApiVersion(), which the Intel driver answers with its own release
+ * version rather than the Level Zero spec level. The build number is the low
+ * half of ze_driver_properties_t.driverVersion, which the driver forms as
+ * 0x01030000 + build.
+ *
+ * Deliberately not Sysman's zes_device_properties_t.driverVersion: on Linux that
+ * field is filled from the kernel module's source checksum, an unordered hash
+ * that names no release.
+ *
+ * @param [out] version Receives the driver version string on success; untouched otherwise.
+ * @retval ZE_RESULT_SUCCESS              Version string retrieved.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED  No core Level Zero driver handle.
+ * @retval ZE_RESULT_ERROR_*              A Level Zero query failed.
+ */
+ze_result_t device::getDriverVersionString(std::string &version)
+{
+	TRACING();
+
+	if (zeDriver == nullptr) {
+		DBG("No core Level Zero driver handle, driver version unavailable\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	ze_api_version_t apiVersion = {};
+	ze_result_t result = zeDriverGetApiVersion(zeDriver, &apiVersion);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get driver API version: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+
+	ze_driver_properties_t driverProps = {};
+	result = getDriverProperties(&driverProps);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	version = xpum::compat::format("{}.{}.{}", ZE_MAJOR_VERSION(apiVersion), ZE_MINOR_VERSION(apiVersion),
+								   driverProps.driverVersion & 0xFFFFU);
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
