@@ -148,8 +148,8 @@ class pldm : public mctp
 {
 private:
 	PdrManager mPdrManager;
-	struct pldmResponseData mPldmRespInfo;
-	struct pldmVersionInfo versionInfo[8];
+	struct pldmResponseData mPldmRespInfo = {};
+	struct pldmVersionInfo versionInfo[8] = {};
 	i2cdataPldmInfo *mI2cPldmRead, *mI2cPldmWrite;
 	std::mutex *progMutex;
 
@@ -159,46 +159,46 @@ private:
 	int mCardNum;
 
 	// pldm Firmware Update datastructures
-	struct fwuRequestUpdate mReqUpdate;
-	struct fwuPassCompTable mPassCompTable;
-	struct fwUpdComp mUpdComp;
+	struct fwuRequestUpdate mReqUpdate = {};
+	struct fwuPassCompTable mPassCompTable = {};
+	struct fwUpdComp mUpdComp = {};
 	uint8_t mFwuCurrentState = 0;
 	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
 	uint8_t mLastFwuCompletionCode;
 	uint16_t mCompIdFilter; // Only transfer the component with this ComponentIdentifier, 0 for all of them
 
 	// PLDM FRU datastructures
-	struct fruGetTableRequest mFruTableRequest;
-	struct fruTableResponse mFruTableResponse;
-	struct fruTableMetadata mFruMetadata;
-	struct fruTable mFruTable;
+	struct fruGetTableRequest mFruTableRequest = {};
+	struct fruTableResponse mFruTableResponse = {};
+	struct fruTableMetadata mFruMetadata = {};
+	struct fruTable mFruTable = {};
 	uint16_t mFruCurrentDataLength = 0;
 	bool mFruTableInitialized;
 
 	// PLDM Platform datastructures
-	struct pdrRepositoryInfoResp pfPdrRepoInfo;
-	struct pdrReqPayload pfPdrReq;
-	struct pdrRespPayload pfPdrResp;
-	struct pldmGetSensorReadingReq pfSensorReadingReq;
-	struct pldmGetSensorReadingResp pfSensorReadingResp;
-	sensorReadingValue mSensorReading;
+	struct pdrRepositoryInfoResp pfPdrRepoInfo = {};
+	struct pdrReqPayload pfPdrReq = {};
+	struct pdrRespPayload pfPdrResp = {};
+	struct pldmGetSensorReadingReq pfSensorReadingReq = {};
+	struct pldmGetSensorReadingResp pfSensorReadingResp = {};
+	sensorReadingValue mSensorReading = {};
 	std::vector<pldmSensorInfo> mSensorInfoList;
 
 	// GetStateEffecterStates request/response (DSP0248 s22.6)
-	struct pldmGetStateEffecterStatesReq mStateEffecterReq;
-	struct pldmGetStateEffecterStatesResp mStateEffecterResp;
+	struct pldmGetStateEffecterStatesReq mStateEffecterReq = {};
+	struct pldmGetStateEffecterStatesResp mStateEffecterResp = {};
 
 	// PLDM File Transfer datastructures
-	struct pldm_file_df_open_req mDfOpenReq;
-	struct pldm_file_df_open_resp mDfOpenResp;
-	struct pldm_file_df_close_req mDfCloseReq;
-	struct pldm_file_df_close_resp mDfCloseResp;
-	struct pldm_file_df_heartbeat_req mDfHeartbeatReq;
-	struct pldm_file_df_heartbeat_resp mDfHeartbeatResp;
-	struct pldm_file_df_read_req mDfReadReq;
-	struct pldm_file_df_read_resp mDfReadResp;
-	struct pldm_base_multipart_receive_req mMultipartReceiveReq;
-	struct pldm_base_multipart_receive_resp mMultipartReceiveResp;
+	struct pldm_file_df_open_req mDfOpenReq = {};
+	struct pldm_file_df_open_resp mDfOpenResp = {};
+	struct pldm_file_df_close_req mDfCloseReq = {};
+	struct pldm_file_df_close_resp mDfCloseResp = {};
+	struct pldm_file_df_heartbeat_req mDfHeartbeatReq = {};
+	struct pldm_file_df_heartbeat_resp mDfHeartbeatResp = {};
+	struct pldm_file_df_read_req mDfReadReq = {};
+	struct pldm_file_df_read_resp mDfReadResp = {};
+	struct pldm_base_multipart_receive_req mMultipartReceiveReq = {};
+	struct pldm_base_multipart_receive_resp mMultipartReceiveResp = {};
 	std::vector<uint8_t> mMultipartReceiveData;
 	std::vector<uint8_t> mRxAssembledFrame;
 	std::vector<uint8_t> mRxAssembledPayload;
