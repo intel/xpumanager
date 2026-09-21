@@ -747,7 +747,7 @@ ze_result_t memory::getSystemMemoryUsage(std::map<uint32_t, MemoryUsageData> &ti
 	uint64_t totalCapacity = 0;
 	bool foundSystemMemory = false;
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		zes_mem_properties_t properties = {};
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
