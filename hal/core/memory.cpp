@@ -7,15 +7,16 @@
 #include "memory.h"
 
 #include "sysman.h"
+#include <algorithm>
 #include <array>
 #include <cstdint>
-#include <span>
+#include <new>
+#include <utility>
 
 // Only on the include path in extensions builds. Included when it is there so
-// that the mirrored MEMORY_INTEL_TYPE_LPDDR5X cannot drift from the value the
-// Intel sysman extension header defines; the type name itself has to be
-// recognized in every build, because the driver reports it through plain
-// zesMemoryGetProperties() regardless of how xpu-smi was configured.
+// that the legacy MEMORY_INTEL_TYPE_LPDDR5X cannot drift from the value the
+// Intel sysman extension header defined before LPDDR5X entered the standard
+// enum. The legacy value must remain recognized for older CRI drivers.
 #if __has_include(<zes_intel_gpu_sysman.h>)
 #include <zes_intel_gpu_sysman.h>
 static_assert(static_cast<int32_t>(MEMORY_INTEL_TYPE_LPDDR5X) == ZES_INTEL_MEM_TYPE_LPDDR5X,
@@ -28,20 +29,38 @@ static_assert(static_cast<int32_t>(MEMORY_INTEL_TYPE_LPDDR5X) == ZES_INTEL_MEM_T
 #include <ze_api.h>
 #include <zes_api.h>
 
-/**
- * @brief Destructor for the memory class
- *
- * This destructor performs cleanup operations for the memory management
- * object, releasing allocated memory for memory module handles and ensuring
- * proper resource deallocation when the memory object is destroyed.
- */
-memory::~memory()
+namespace {
+constexpr int32_t CRI_FULL_SKU_MEMORY_MSUS = 20;
+constexpr int32_t CRI_SKU4_MEMORY_MSUS = 16;
+constexpr int32_t CRI_CHANNELS_PER_MEMORY_MSU = 4;
+constexpr int32_t CRI_FULL_SKU_MEMORY_CHANNELS = CRI_FULL_SKU_MEMORY_MSUS * CRI_CHANNELS_PER_MEMORY_MSU;
+constexpr int32_t CRI_SKU4_MEMORY_CHANNELS = CRI_SKU4_MEMORY_MSUS * CRI_CHANNELS_PER_MEMORY_MSU;
+constexpr uint64_t CRI_SKU4_MEMORY_SIZE = 128ULL * 1024ULL * 1024ULL * 1024ULL;
+// Keep synchronized with compute-runtime's criDeviceIds.
+constexpr std::array<uint32_t, 5> CRI_DEVICE_IDS{0x674C, 0x674D, 0x674E, 0x674F, 0x6750};
+
+// Sysman can expose allocatable rather than installed capacity, so tolerate
+// small firmware/driver reservations. A larger mismatch is not enough evidence
+// to override the driver's channel count.
+constexpr uint64_t CRI_MEMORY_SIZE_TOLERANCE = 1ULL * 1024ULL * 1024ULL * 1024ULL;
+
+constexpr bool isCriLpddr5xMemoryType(zes_mem_type_t type)
 {
-	if (memoryModules) {
-		delete[] memoryModules;
-		memoryModules = nullptr;
-	}
+	return type == ZES_MEM_TYPE_LPDDR5X || type == MEMORY_INTEL_TYPE_LPDDR5X;
 }
+
+constexpr bool isCriDevice(uint32_t pciDeviceId)
+{
+	return std::find(CRI_DEVICE_IDS.begin(), CRI_DEVICE_IDS.end(), pciDeviceId) != CRI_DEVICE_IDS.end();
+}
+
+constexpr bool isCriFullSkuChannelCount(int32_t channels)
+{
+	// Older CRI drivers reported the MSU count through numChannels. Current
+	// drivers report four channels per MSU.
+	return channels == CRI_FULL_SKU_MEMORY_MSUS || channels == CRI_FULL_SKU_MEMORY_CHANNELS;
+}
+} // namespace
 
 /**
  * @brief Enumerates available memory modules for a device
@@ -55,21 +74,52 @@ memory::~memory()
  */
 ze_result_t memory::enumMemoryModules(zes_device_handle_t device)
 {
-	ze_result_t result = zesDeviceEnumMemoryModules(device, &memoryModulesCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || memoryModulesCount == 0) {
+	memoryModules.clear();
+	pciDeviceId = 0;
+
+	uint32_t count = 0;
+	ze_result_t result = zesDeviceEnumMemoryModules(device, &count, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate Memory modules. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
+	if (count == 0) {
+		DBG("No memory modules found.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
 
-	memoryModules = new zes_mem_handle_t[memoryModulesCount];
-	result = zesDeviceEnumMemoryModules(device, &memoryModulesCount, memoryModules);
+	std::vector<zes_mem_handle_t> modules;
+	if (count > modules.max_size()) {
+		ERR("Memory module count {} exceeds the supported container size.\n", count);
+		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+	}
+	try {
+		modules.resize(count);
+	} catch (const std::bad_alloc &) {
+		ERR("Failed to allocate Memory module handles.\n");
+		return ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY;
+	}
+
+	const uint32_t capacity = count;
+	result = zesDeviceEnumMemoryModules(device, &count, modules.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get Memory modules. 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
+	if (count > capacity) {
+		ERR("Memory module count grew from {} to {} during enumeration.\n", capacity, count);
+		return ZE_RESULT_ERROR_UNKNOWN;
+	}
+	if (count == 0) {
+		DBG("Memory modules disappeared during enumeration.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
 
-	DBG("Found {} memory modules\n", memoryModulesCount);
-	return result;
+	modules.resize(count);
+	memoryModules = std::move(modules);
+
+	DBG("Found {} memory modules\n", memoryModules.size());
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -233,7 +283,7 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 	}
 	*size = 0;
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
@@ -265,7 +315,7 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 	}
 	*health = ZES_MEM_HEALTH_UNKNOWN;
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
@@ -300,6 +350,38 @@ ze_result_t memory::getMemoryHealth(zes_mem_health_t *health)
 }
 
 /**
+ * @brief Corrects the CRI soft-SKU memory channel count when capacity proves fewer channels are populated
+ *
+ * Older compute-runtime versions report CRI's 20-MSU full-SKU maximum through
+ * numChannels; current versions report 80 channels (four per MSU). For the
+ * 128 GiB SKU4, the corresponding values are 16 and 64. Capacity independently
+ * identifies the affected SKU. Every other type, count, and capacity is kept.
+ *
+ * @param pciDeviceId PCI device ID reported by Sysman
+ * @param type Memory type reported by Sysman
+ * @param location Memory location reported by Sysman
+ * @param physicalSizeBytes Installed or allocatable memory capacity in bytes
+ * @param reportedChannels Channel count reported by Sysman
+ * @return Corrected CRI channel count, or reportedChannels when no correction is justified
+ */
+int32_t memory::normalizeCriMemoryChannelCount(uint32_t pciDeviceId, zes_mem_type_t type, zes_mem_loc_t location,
+											   uint64_t physicalSizeBytes, int32_t reportedChannels)
+{
+	if (!isCriDevice(pciDeviceId) || !isCriLpddr5xMemoryType(type) || location != ZES_MEM_LOC_DEVICE ||
+		!isCriFullSkuChannelCount(reportedChannels)) {
+		return reportedChannels;
+	}
+
+	const uint64_t sizeDifference =
+		std::max(physicalSizeBytes, CRI_SKU4_MEMORY_SIZE) - std::min(physicalSizeBytes, CRI_SKU4_MEMORY_SIZE);
+	if (sizeDifference > CRI_MEMORY_SIZE_TOLERANCE) {
+		return reportedChannels;
+	}
+
+	return reportedChannels == CRI_FULL_SKU_MEMORY_MSUS ? CRI_SKU4_MEMORY_MSUS : CRI_SKU4_MEMORY_CHANNELS;
+}
+
+/**
  * @brief Retrieves memory channel configuration information
  *
  * This function queries the number of memory channels available across
@@ -320,17 +402,44 @@ ze_result_t memory::getMemoryChannels(int32_t *channels)
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
 	*channels = 0;
+	if (memoryModules.empty()) {
+		DBG("No memory modules available for channel reporting.\n");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	int32_t resolvedChannels = 0;
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
-		DBG("Memory properties for module {}: numChannels={}\n", i, properties.numChannels);
-		*channels = properties.numChannels;
+
+		uint64_t physicalSize = properties.physicalSize;
+		if (isCriDevice(pciDeviceId) && isCriLpddr5xMemoryType(properties.type) &&
+			properties.location == ZES_MEM_LOC_DEVICE && isCriFullSkuChannelCount(properties.numChannels) &&
+			physicalSize == 0) {
+			zes_mem_state_t state = {};
+			const ze_result_t stateResult = getState(memoryModules[i], &state);
+			if (stateResult == ZE_RESULT_SUCCESS) {
+				physicalSize = state.size;
+			} else {
+				DBG("Memory size unavailable for CRI channel correction on module {}. 0x{:X} ({})\n", i, stateResult,
+					l0_error_to_string(stateResult));
+			}
+		}
+
+		const int32_t normalizedChannels = normalizeCriMemoryChannelCount(
+			pciDeviceId, properties.type, properties.location, physicalSize, properties.numChannels);
+		if (normalizedChannels != properties.numChannels) {
+			DBG("Corrected CRI memory channels for module {} from {} to {} using capacity {} bytes\n", i,
+				properties.numChannels, normalizedChannels, physicalSize);
+		}
+		DBG("Memory properties for module {}: numChannels={}\n", i, normalizedChannels);
+		resolvedChannels = normalizedChannels;
 	}
-	return result;
+	*channels = resolvedChannels;
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -355,7 +464,7 @@ ze_result_t memory::getMemoryBusWidth(int32_t *busWidth)
 	}
 	*busWidth = 0;
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
@@ -392,7 +501,7 @@ ze_result_t memory::getMemoryUsed(uint64_t *used, double *utilization)
 		*utilization = 0;
 	}
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		zes_mem_properties_t properties = {};
 		zes_mem_state_t state = {};
 
@@ -459,7 +568,7 @@ ze_result_t memory::getMemoryRW(uint64_t *read, uint64_t *write, uint64_t *maxBa
 		*timeStamp = 0;
 	}
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 
 		result = getBandwidth(memoryModules[i], &bandwidth);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -503,7 +612,7 @@ ze_result_t memory::getMemoryBandwidthPerTile(std::map<uint32_t, MemoryBandwidth
 
 	tileBandwidth.clear();
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		zes_mem_properties_t properties = {};
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -563,7 +672,7 @@ ze_result_t memory::getMemoryUsagePerTile(std::map<uint32_t, MemoryUsageData> &t
 	std::map<uint32_t, uint64_t> tileUsed;
 	std::map<uint32_t, uint64_t> tileTotal;
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		zes_mem_properties_t properties = {};
 		result = getProperties(memoryModules[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -683,8 +792,8 @@ namespace {
  * @brief One memory type name and the value each Level Zero source uses for it
  *
  * Both enums use their FORCE_UINT32 value as "no type", so it doubles as the
- * marker for a name the source cannot express -- the sysman enum has no HBM
- * generations, and the core enum has no LPDDR5X.
+ * marker for a name the source cannot express. The legacy Intel LPDDR5X value
+ * predates the standard LPDDR5X enumerators and therefore has no core partner.
  */
 struct MemoryTypeName
 {
@@ -701,9 +810,8 @@ constexpr ze_device_memory_ext_type_t NO_CORE_TYPE = ZE_DEVICE_MEMORY_EXT_TYPE_F
  *
  * A table rather than a switch per source so that the two enums stay visibly
  * aligned and a new memory generation is one row instead of two case labels.
- * MEMORY_INTEL_TYPE_LPDDR5X sits here as an ordinary row: it is not a
- * zes_mem_type_t enumerator, so a case label for it would not compile under
- * -Werror=switch.
+ * The standard LPDDR5X values are paired normally. The legacy Intel sysman
+ * value remains a separate row for compatibility with older CRI drivers.
  */
 constexpr std::array MEMORY_TYPE_NAMES{
 	MemoryTypeName{ZES_MEM_TYPE_HBM, ZE_DEVICE_MEMORY_EXT_TYPE_HBM, "HBM"},
@@ -721,6 +829,7 @@ constexpr std::array MEMORY_TYPE_NAMES{
 	MemoryTypeName{ZES_MEM_TYPE_LPDDR3, ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR3, "LPDDR3"},
 	MemoryTypeName{ZES_MEM_TYPE_LPDDR4, ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR4, "LPDDR4"},
 	MemoryTypeName{ZES_MEM_TYPE_LPDDR5, ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR5, "LPDDR5"},
+	MemoryTypeName{ZES_MEM_TYPE_LPDDR5X, ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR5X, "LPDDR5X"},
 	MemoryTypeName{MEMORY_INTEL_TYPE_LPDDR5X, NO_CORE_TYPE, "LPDDR5X"},
 	MemoryTypeName{ZES_MEM_TYPE_SRAM, ZE_DEVICE_MEMORY_EXT_TYPE_SRAM, "SRAM"},
 	MemoryTypeName{ZES_MEM_TYPE_L1, ZE_DEVICE_MEMORY_EXT_TYPE_L1, "L1"},
@@ -792,12 +901,12 @@ std::string_view memory::coreMemoryTypeToString(ze_device_memory_ext_type_t type
  * When only one source names a type, that name is used. When both do, the more
  * specific name wins if one is a refinement of the other: zes_mem_type_t has a
  * single HBM value, so sysman answers "HBM" for an HBM3 part while the core
- * extension answers "HBM3", and conversely sysman answers "LPDDR5X" where the
- * core mapping only knows "LPDDR5". If the two name unrelated families the
- * sysman answer is kept, because it is the per-product, per-module value while
- * the core type is a coarser mapping of the same hardware-config data. If
- * neither source names a type, MEMORY_SPEC_UNKNOWN is returned rather than a
- * guess.
+ * extension answers "HBM3". Legacy drivers can likewise expose a more specific
+ * LPDDR5X sysman extension value while their core mapping only knows LPDDR5. If
+ * the two name unrelated families the sysman answer is kept, because it is the
+ * per-product, per-module value while the core type is a coarser mapping of the
+ * same hardware-config data. If neither source names a type,
+ * MEMORY_SPEC_UNKNOWN is returned rather than a guess.
  *
  * @param sysmanType Type from zesMemoryGetProperties()
  * @param coreType Type from ze_device_memory_ext_properties_t
@@ -848,7 +957,7 @@ zes_mem_type_t memory::collectSysmanMemoryType(bool &anySourceAnswered, ze_resul
 	zes_mem_type_t sysmanType = ZES_MEM_TYPE_FORCE_UINT32;
 	int bestRank = rankNone;
 
-	for (zes_mem_handle_t handle : std::span{memoryModules, memoryModulesCount}) {
+	for (zes_mem_handle_t handle : memoryModules) {
 		zes_mem_properties_t properties = {};
 		if (const ze_result_t result = getProperties(handle, &properties); result != ZE_RESULT_SUCCESS) {
 			lastError = result;
@@ -1000,9 +1109,8 @@ ze_result_t memory::getMemorySpec(ze_device_handle_t coreDevice, MemorySpecData 
 /**
  * @brief Initializes the memory management subsystem
  *
- * This function performs initialization of the memory management system by
- * enumerating all available memory modules on the specified device. It serves
- * as the entry point for memory subsystem setup and configuration.
+ * This function enumerates all available memory modules and caches the PCI
+ * device ID used to scope product-specific corrections.
  *
  * @param device Handle to the Level Zero Sysman device
  * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization, error code otherwise
@@ -1010,7 +1118,23 @@ ze_result_t memory::getMemorySpec(ze_device_handle_t coreDevice, MemorySpecData 
 ze_result_t memory::init(zes_device_handle_t device)
 {
 	TRACING();
-	return enumMemoryModules(device);
+
+	const ze_result_t result = enumMemoryModules(device);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+
+	zes_device_properties_t properties = {};
+	properties.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	const ze_result_t propertiesResult = zesDeviceGetProperties(device, &properties);
+	if (propertiesResult == ZE_RESULT_SUCCESS) {
+		pciDeviceId = properties.core.deviceId;
+	} else {
+		DBG("Device ID unavailable; CRI memory channel correction is disabled. 0x{:X} ({})\n", propertiesResult,
+			l0_error_to_string(propertiesResult));
+	}
+
+	return result;
 }
 
 /**
@@ -1033,7 +1157,7 @@ ze_result_t memory::zesRun(UNUSED zes_device_handle_t device)
 	zes_mem_properties_t properties = {};
 	zes_mem_bandwidth_t bandwidth = {};
 
-	for (uint32_t i = 0; i < memoryModulesCount; i++) {
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
 		// Results deliberately discarded: each callee logs its own failure and this sweep is
 		// diagnostic only. The output structs are reset per iteration so a failed query cannot
 		// leave the previous module's data behind.

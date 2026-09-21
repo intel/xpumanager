@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <ze_api.h>
 #include <zes_api.h>
 
@@ -30,14 +31,11 @@ struct MemoryVendorData
 inline constexpr std::string_view MEMORY_SPEC_UNKNOWN{"unknown"};
 
 /**
- * @brief Intel sysman extension memory type reported by Crescent Island
+ * @brief Legacy Intel sysman extension memory type reported by Crescent Island
  *
  * Mirrors ZES_INTEL_MEM_TYPE_LPDDR5X from hal/core/extensions/zes_intel_gpu_sysman.h.
- * That header is only on the include path in extensions builds, but the value is
- * returned by the sysman driver -- cast into zes_mem_type_t, which has no LPDDR5X
- * enumerator -- no matter how xpu-smi itself was built, so the type name has to be
- * recognized in every build. Kept as a zes_mem_type_t so that the memory type
- * table and its callers never have to cast.
+ * Drivers predating the standard ZES_MEM_TYPE_LPDDR5X enumerator return this
+ * value through zesMemoryGetProperties(), so XPUM recognizes both values.
  */
 inline constexpr auto MEMORY_INTEL_TYPE_LPDDR5X = static_cast<zes_mem_type_t>(500);
 
@@ -51,10 +49,9 @@ inline constexpr auto MEMORY_INTEL_TYPE_LPDDR5X = static_cast<zes_mem_type_t>(50
  *
  * The form/type is resolved from two independent Level Zero sources because
  * neither is complete on its own:
- *   - sysman zesMemoryGetProperties(): per memory module, and the only source
- *     that names a product-specific type such as LPDDR5X. Reports
- *     ZES_MEM_TYPE_FORCE_UINT32 on platforms whose product helper has no
- *     mapping (observed on Arrow Lake).
+ *   - sysman zesMemoryGetProperties(): per memory module and therefore able to
+ *     provide product-specific mappings. Reports ZES_MEM_TYPE_FORCE_UINT32 on
+ *     platforms whose product helper has no mapping (observed on Arrow Lake).
  *   - core zeDeviceGetMemoryProperties() with ze_device_memory_ext_properties_t
  *     chained on pNext. Derived from gtSystemInfo.MemoryType and distinguishes
  *     memory generations that the sysman enum cannot express at all: zes_mem_type_t
@@ -105,9 +102,9 @@ struct MemoryUsageData
 class LIBXPUM_API memory : public sysman
 {
 private:
-	uint32_t memoryModulesCount = 0;
-	zes_mem_handle_t *memoryModules = nullptr;
+	std::vector<zes_mem_handle_t> memoryModules;
 	zes_driver_handle_t zesDriver = nullptr;
+	uint32_t pciDeviceId = 0;
 
 	// Cached result of the memory vendor ID extension support check (see isMemoryVendorSupported).
 	// -1 = not yet queried, 0 = unsupported, 1 = supported.
@@ -123,7 +120,7 @@ private:
 
 public:
 	memory() = default;
-	~memory() override;
+	~memory() override = default;
 	void setZesDriver(zes_driver_handle_t zesD) { zesDriver = zesD; }
 	ze_result_t enumMemoryModules(zes_device_handle_t device);
 	ze_result_t getProperties(zes_mem_handle_t memhandle, zes_mem_properties_t *properties);
@@ -144,6 +141,8 @@ public:
 	static std::string_view sysmanMemoryTypeToString(zes_mem_type_t type);
 	static std::string_view coreMemoryTypeToString(ze_device_memory_ext_type_t type);
 	static std::string resolveMemoryTypeName(zes_mem_type_t sysmanType, ze_device_memory_ext_type_t coreType);
+	static int32_t normalizeCriMemoryChannelCount(uint32_t pciDeviceId, zes_mem_type_t type, zes_mem_loc_t location,
+												  uint64_t physicalSizeBytes, int32_t reportedChannels);
 
 	ze_result_t init(zes_device_handle_t device) override;
 	ze_result_t zesRun(zes_device_handle_t device) override;

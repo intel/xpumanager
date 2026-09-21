@@ -35,6 +35,7 @@ TEST_CASE("sysmanMemoryTypeToString: names every sysman memory type")
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_LPDDR3) == "LPDDR3");
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_LPDDR4) == "LPDDR4");
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_LPDDR5) == "LPDDR5");
+	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_LPDDR5X) == "LPDDR5X");
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_SRAM) == "SRAM");
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_L1) == "L1");
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_L3) == "L3");
@@ -48,11 +49,10 @@ TEST_CASE("sysmanMemoryTypeToString: names every sysman memory type")
 	CHECK(memory::sysmanMemoryTypeToString(ZES_MEM_TYPE_GDDR7) == "GDDR7");
 }
 
-TEST_CASE("sysmanMemoryTypeToString: the Intel LPDDR5X extension value is named")
+TEST_CASE("sysmanMemoryTypeToString: the legacy Intel LPDDR5X extension value is named")
 {
-	// Crescent Island's sysman product helper casts ZES_INTEL_MEM_TYPE_LPDDR5X (500)
-	// into zes_mem_type_t, which has no enumerator for it. Failing to name it would
-	// discard the only source that distinguishes LPDDR5X from LPDDR5.
+	// CRI drivers predating standard ZES_MEM_TYPE_LPDDR5X report the Intel
+	// extension value instead.
 	CHECK(memory::sysmanMemoryTypeToString(MEMORY_INTEL_TYPE_LPDDR5X) == "LPDDR5X");
 }
 
@@ -92,6 +92,7 @@ TEST_CASE("coreMemoryTypeToString: names every core memory extension type")
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR3) == "LPDDR3");
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR4) == "LPDDR4");
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR5) == "LPDDR5");
+	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR5X) == "LPDDR5X");
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_SRAM) == "SRAM");
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_L1) == "L1");
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_L3) == "L3");
@@ -107,17 +108,17 @@ TEST_CASE("coreMemoryTypeToString: names every core memory extension type")
 
 TEST_CASE("coreMemoryTypeToString: unmapped types report unknown")
 {
-	// Also pins the table invariant on this side: LPDDR5X is stored with no core
-	// value, so "no type" must not resolve to it.
+	// The legacy Intel LPDDR5X row has no core value, so "no type" must not
+	// resolve to it.
 	CHECK(memory::coreMemoryTypeToString(ZE_DEVICE_MEMORY_EXT_TYPE_FORCE_UINT32) == MEMORY_SPEC_UNKNOWN);
 	CHECK(memory::coreMemoryTypeToString(static_cast<ze_device_memory_ext_type_t>(9999)) == MEMORY_SPEC_UNKNOWN);
 }
 
 // Tests for memory::resolveMemoryTypeName(), which arbitrates between the two
 // sources. Neither is authoritative on its own: zes_mem_type_t has a single HBM
-// value so sysman cannot express an HBM generation, while the core mapping does
-// not know LPDDR5X. The more specific name therefore wins when one name refines
-// the other, and the per-module sysman value wins otherwise.
+// value so sysman cannot express an HBM generation, while legacy core mappings
+// can be less specific than sysman. The more specific name therefore wins when
+// one name refines the other, and the per-module sysman value wins otherwise.
 
 TEST_CASE("resolveMemoryTypeName: agreeing sources report that type")
 {
@@ -150,9 +151,10 @@ TEST_CASE("resolveMemoryTypeName: the core generation refines the sysman family"
 
 TEST_CASE("resolveMemoryTypeName: the sysman type refines the core family")
 {
-	// The Crescent Island case: sysman reports the Intel LPDDR5X extension value
-	// while the core mapping only knows LPDDR5.
+	// Legacy CRI drivers report the Intel LPDDR5X extension value while their
+	// core mapping only knows LPDDR5.
 	CHECK(memory::resolveMemoryTypeName(MEMORY_INTEL_TYPE_LPDDR5X, ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR5) == "LPDDR5X");
+	CHECK(memory::resolveMemoryTypeName(ZES_MEM_TYPE_LPDDR5X, ZE_DEVICE_MEMORY_EXT_TYPE_LPDDR5X) == "LPDDR5X");
 	CHECK(memory::resolveMemoryTypeName(ZES_MEM_TYPE_GDDR6X, ZE_DEVICE_MEMORY_EXT_TYPE_GDDR6) == "GDDR6X");
 }
 
@@ -171,6 +173,68 @@ TEST_CASE("resolveMemoryTypeName: unknown when neither source maps")
 		  MEMORY_SPEC_UNKNOWN);
 	CHECK(memory::resolveMemoryTypeName(static_cast<zes_mem_type_t>(9999),
 										static_cast<ze_device_memory_ext_type_t>(9999)) == MEMORY_SPEC_UNKNOWN);
+}
+
+TEST_CASE("normalizeCriMemoryChannelCount: corrects the 128 GiB CRI soft-SKU")
+{
+	constexpr uint32_t criDeviceId = 0x674C;
+	constexpr uint64_t reportedSize = 131060ULL * 1024ULL * 1024ULL;
+
+	// Legacy drivers reported one numChannels unit per MSU.
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, MEMORY_INTEL_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE,
+												 reportedSize, 20) == 16);
+	// Transitional drivers used the standard type while retaining the legacy unit.
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, reportedSize,
+												 20) == 16);
+	// Current drivers report four channels per MSU.
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, reportedSize,
+												 80) == 64);
+}
+
+TEST_CASE("normalizeCriMemoryChannelCount: preserves valid CRI channel counts")
+{
+	constexpr uint32_t criDeviceId = 0x674C;
+	constexpr uint64_t fullSkuSize = 160ULL * 1024ULL * 1024ULL * 1024ULL;
+	constexpr uint64_t softSkuSize = 128ULL * 1024ULL * 1024ULL * 1024ULL;
+
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, fullSkuSize,
+												 80) == 80);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, softSkuSize,
+												 64) == 64);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, MEMORY_INTEL_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE,
+												 fullSkuSize, 20) == 20);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, MEMORY_INTEL_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE,
+												 softSkuSize, 16) == 16);
+}
+
+TEST_CASE("normalizeCriMemoryChannelCount: never guesses from insufficient evidence")
+{
+	constexpr uint32_t criDeviceId = 0x674C;
+	constexpr uint32_t nonCriDeviceId = 0xE202;
+	constexpr uint64_t softSkuSize = 128ULL * 1024ULL * 1024ULL * 1024ULL;
+	constexpr uint64_t otherSoftSkuSize = 96ULL * 1024ULL * 1024ULL * 1024ULL;
+
+	CHECK(memory::normalizeCriMemoryChannelCount(nonCriDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, softSkuSize,
+												 80) == 80);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5, ZES_MEM_LOC_DEVICE, softSkuSize,
+												 20) == 20);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_SYSTEM, softSkuSize,
+												 80) == 80);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, 0, 80) == 80);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE, softSkuSize,
+												 -1) == -1);
+	CHECK(memory::normalizeCriMemoryChannelCount(criDeviceId, ZES_MEM_TYPE_LPDDR5X, ZES_MEM_LOC_DEVICE,
+												 otherSoftSkuSize, 80) == 80);
+}
+
+TEST_CASE("getMemoryChannels: rejects invalid or unavailable output")
+{
+	memory handler;
+	int32_t channels = 123;
+
+	CHECK(handler.getMemoryChannels(nullptr) == ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	CHECK(handler.getMemoryChannels(&channels) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(channels == 0);
 }
 
 #endif // __has_include(<doctest/doctest.h>)
