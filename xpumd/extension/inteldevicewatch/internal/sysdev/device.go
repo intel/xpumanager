@@ -135,6 +135,10 @@ type SysfsIdentity struct {
 	// DevNum is the device number the node for this device should have.
 	DevNum DevNum
 
+	// Generation distinguishes instances of the same (otherwise identical) device, e.g. over unbind/bind.
+	// TODO: Remove this when Sysman has been fixed to survive unbind/bind.
+	Generation uint64
+
 	// PCIBDF, VendorID and Driver describe the nearest PCI ancestor.
 	// Empty when there is none or when sysfs is unreadable.
 	// NOTE: VendorID is not merely descriptive, it is what the vendor filter
@@ -206,27 +210,29 @@ func (d Device) ID() string { return d.Subsystem + "/" + d.Name }
 // identity uniquely identifies a device across scans, its device node included.
 // What only a probe tells apart is left out: an unopenable node is the same node.
 type identity struct {
-	id     string
-	devNum DevNum
-	pciBDF string
-	driver string
-	node   NodeIdentity
+	id         string
+	devNum     DevNum
+	generation uint64
+	pciBDF     string
+	driver     string
+	node       NodeIdentity
 }
 
 func (d Device) identity() identity {
 	return identity{
-		id:     d.ID(),
-		devNum: d.DevNum(),
-		pciBDF: d.Sysfs.PCIBDF,
-		driver: d.Sysfs.Driver,
-		node:   d.Node,
+		id:         d.ID(),
+		devNum:     d.DevNum(),
+		generation: d.Sysfs.Generation,
+		pciBDF:     d.Sysfs.PCIBDF,
+		driver:     d.Sysfs.Driver,
+		node:       d.Node,
 	}
 }
 
 // writeTo is a helper for inventory hashing.
 func (i identity) writeTo(w io.Writer) {
 	// Ignored deliberately: the writer is a hash and cannot fail
-	_, _ = fmt.Fprintln(w, i.id, i.devNum, i.pciBDF, i.driver, i.node)
+	_, _ = fmt.Fprintln(w, i.id, i.devNum, i.generation, i.pciBDF, i.driver, i.node)
 }
 
 // String implements fmt.Stringer, for log messages.

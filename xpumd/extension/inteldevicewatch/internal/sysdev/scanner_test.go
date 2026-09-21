@@ -132,6 +132,24 @@ func TestScanReadsPCIIdentity(t *testing.T) {
 	assert.Equal(t, "drm/card1 (226:1 0000:4d:00.1 i915)", devs["drm/card1"].String())
 }
 
+func TestScanTracksGeneration(t *testing.T) {
+	f := newMockFS(t)
+	gpu := f.pciDevice("0000:00:02.0", "0x8086", "i915")
+	f.classDevice(gpu, "drm", "card0", 226, 0)
+	f.node("dri", "card0", 226, 0)
+
+	scanner := f.scanner([]Subsystem{SubsystemDRM}, nil)
+	before, err := scanner.Scan()
+	require.NoError(t, err)
+	assert.NotZero(t, before.ByID()["drm/card0"].Sysfs.Generation)
+
+	f.recreate("drm", "card0")
+	after, err := scanner.Scan()
+	require.NoError(t, err)
+	assert.NotEqual(t, before.Fingerprint(), after.Fingerprint())
+	assert.Equal(t, []string{"drm/card0"}, before.Diff(after).Changed)
+}
+
 func TestScanFiltersByVendor(t *testing.T) {
 	f := newMockFS(t)
 	intel := f.pciDevice("0000:00:02.0", "0x8086", "i915")

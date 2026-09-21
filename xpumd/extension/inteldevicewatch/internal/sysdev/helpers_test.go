@@ -74,6 +74,24 @@ func (f *mockFS) classEntryRaw(class, name string, major, minor uint32) {
 	f.writeFile(filepath.Join(dir, "dev"), devNumString(major, minor))
 }
 
+// recreate imitates the kernel removing and recreating the device over a driver unbind/bind.
+func (f *mockFS) recreate(class, name string) {
+	f.t.Helper()
+	recreateDir(f.t, filepath.Join(f.sysfs, "class", class, name))
+}
+
+// recreateDir replaces the directory path resolves to with an identical new one,
+// whose inode is guaranteed to differ from the one it replaces.
+func recreateDir(t *testing.T, path string) {
+	t.Helper()
+	dir, err := filepath.EvalSymlinks(path)
+	require.NoError(t, err)
+	replacement := dir + ".new"
+	require.NoError(t, os.CopyFS(replacement, os.DirFS(dir)))
+	require.NoError(t, os.RemoveAll(dir))
+	require.NoError(t, os.Rename(replacement, dir))
+}
+
 // node registers a fake device node under <dev>/<subdir>/<name>.
 func (f *mockFS) node(subdir, name string, major, minor uint32) {
 	f.t.Helper()

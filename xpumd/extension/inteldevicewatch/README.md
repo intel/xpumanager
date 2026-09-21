@@ -41,6 +41,11 @@ A device that disappears and comes back before the change settles costs nothing:
 the process either never enumerated it, or Sysman rescans its devices on the
 `DEVICE_ATTACH` event that ends the flap.
 
+> **NOTE:** To work around problems in the Level-Zero Sysman driver, the
+> extension currently tracks also the "generation" of the device. I.e. device
+> that is destroyed and recreated identical (e.g. driver unbind/bind) is treated
+> as a change, and in `change_action: exit` mode costs a restart.
+
 ## Limitations
 
 - The baseline is a sysfs scan at `Start` of this extension, not guaranteed to

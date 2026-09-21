@@ -275,11 +275,20 @@ func (s *Scanner) readSysfsIdentity(sub Subsystem, name string) (SysfsIdentity, 
 	if err != nil {
 		return SysfsIdentity{}, err
 	}
-	id, err := s.readSysfsPCIIdentity(filepath.Join(s.classDir(sub), name))
+	classEntry := filepath.Join(s.classDir(sub), name)
+	id, err := s.readSysfsPCIIdentity(classEntry)
 	if err != nil {
 		return SysfsIdentity{}, err
 	}
 	id.DevNum = num
+
+	// Get the inode of the sysfs directory, which is used as a generation number for the device
+	var stat unix.Stat_t
+	if err := unix.Stat(classEntry, &stat); err != nil {
+		return SysfsIdentity{}, &os.PathError{Op: "stat", Path: classEntry, Err: err}
+	}
+	id.Generation = stat.Ino
+
 	return id, nil
 }
 

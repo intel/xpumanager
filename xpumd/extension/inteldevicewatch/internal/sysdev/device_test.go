@@ -98,6 +98,19 @@ func TestInventoryDiff(t *testing.T) {
 		assert.Empty(t, diff.Removed)
 	})
 
+	t.Run("recreated-in-place", func(t *testing.T) {
+		// A device destroyed and re-created identical. Nothing but the generation number changes.
+		recreated := card("card0", 0, 0, "i915")
+		recreated.Sysfs.Generation = 2
+		to := Inventory{recreated, from[1]}
+
+		assert.NotEqual(t, from.Fingerprint(), to.Fingerprint())
+		diff := from.Diff(to)
+		assert.Equal(t, []string{"drm/card0"}, diff.Changed)
+		assert.Empty(t, diff.Added)
+		assert.Empty(t, diff.Removed)
+	})
+
 	t.Run("diff-with-self", func(t *testing.T) {
 		diff := from.Diff(from)
 		assert.Empty(t, diff.Added)
