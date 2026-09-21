@@ -391,7 +391,7 @@ func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	if d.state.ecc.configurable {
 		err := d.updateEccState()
 		if !d.state.ecc.configurable {
-			d.logger.Errorw("ECC become non-configurable, disabling state querying", "states", d.state.ecc, zap.Error(err), "attributes", d.attributes)
+			d.logger.Errorw("ECC become non-configurable, disabling state querying", zap.Error(err), "attributes", d.attributes)
 		}
 	}
 
