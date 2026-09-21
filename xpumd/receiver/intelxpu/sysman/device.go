@@ -268,7 +268,7 @@ func (d *device) init() error {
 	// Enumerate device firmwares into versions attribute
 	fwInfos := []string{}
 	for i, fw := range enumFirmwares(d) {
-		fwInfos = append(fwInfos, fmt.Sprintf("%d:%s:%s:%s", i, fw.attributes.firmwareName, fw.attributes.subdeviceId, url.QueryEscape(fw.attributes.firmwareVersion)))
+		fwInfos = append(fwInfos, fmt.Sprintf("%d:%s:%s:%s", i, fw.info.firmwareName, fw.info.subdeviceId, url.QueryEscape(fw.info.firmwareVersion)))
 	}
 	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
 

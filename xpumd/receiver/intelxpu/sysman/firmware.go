@@ -19,10 +19,10 @@ import (
 
 type firmware struct {
 	*l0sysman.Firmware
-	attributes firmwareAttributes
+	info firmwareInfo
 }
 
-type firmwareAttributes struct {
+type firmwareInfo struct {
 	firmwareName    string
 	firmwareVersion string
 	subdeviceId     string
@@ -56,7 +56,7 @@ func newFirmware(fw *l0sysman.Firmware) (*firmware, error) {
 
 	return &firmware{
 		Firmware: fw,
-		attributes: firmwareAttributes{
+		info: firmwareInfo{
 			firmwareName:    strings.ToLower(props.Name.String()),
 			firmwareVersion: props.Version.String(),
 			subdeviceId:     subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
