@@ -11,21 +11,24 @@
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
 # checksum file for L0 loader DEB packages
-CHECKSUMS=checksums-loader.txt
+if [ "$BACKEND" = "src" ]; then
+	CHECKSUMS=checksums-loader-src.txt
+else
+	CHECKSUMS=checksums-loader.txt
+fi
 
 DOCKERFILE="${SCRIPT_DIR}/../Dockerfile"
 GET_VERSION='s/^ARG LEVEL_ZERO_VERSION=//p'
 
 # The first version in the Dockerfile (of its build stage) is the default
-LEVEL_ZERO_VERSION_DEFAULT=$(sed -n "$GET_VERSION" "$DOCKERFILE" | head -n1)
+LEVEL_ZERO_VERSION=$(sed -n "$GET_VERSION" "$DOCKERFILE" | head -n1)
 
 # The backend stage that BACKEND selects (same arg as the image build) may pin its own
 BACKEND_VERSION=$(sed -n "/^FROM .* backend-${BACKEND:-deb}\$/,/^FROM /{$GET_VERSION}" "$DOCKERFILE" | head -n1)
 if [ -n "$BACKEND_VERSION" ]; then
-    LEVEL_ZERO_VERSION_DEFAULT=$BACKEND_VERSION
+    LEVEL_ZERO_VERSION=$BACKEND_VERSION
 fi
 
-LEVEL_ZERO_VERSION=${LEVEL_ZERO_VERSION:-"${LEVEL_ZERO_VERSION_DEFAULT}"}
 L0_BASE_URL="https://github.com/oneapi-src/level-zero/releases/download"
 
 IMAGE_TAG="xpumd-builder:latest"
