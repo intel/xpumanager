@@ -178,10 +178,10 @@ func (l *driverEventListener) registerDeviceEvents() {
 		eventsMask, err := dev.EventRegister(allEventTypeFlags)
 		if err != nil {
 			l.logger.Errorw("Device EventRegister() failed: device events unavailable",
-				zap.Error(err), "deviceID", i+1, "deviceAttributes", dev.attributes)
+				zap.Error(err), "deviceID", i+1, "attributes", dev.attributes)
 			continue
 		}
-		l.logger.Debugw("Registered Sysman device events", "eventsMask", eventsMask, "deviceAttributes", dev.attributes)
+		l.logger.Debugw("Registered Sysman device events", "eventsMask", eventsMask, "attributes", dev.attributes)
 		registered++
 	}
 	l.logger.Infow("Sysman devices registered for events", "registered", registered,
@@ -225,11 +225,11 @@ func (l *driverEventListener) rescanAttachedDevices(deviceEvents []l0sysman.Even
 		if flags&l0sysman.EventTypeFlags(l0sysman.EVENT_TYPE_FLAG_DEVICE_ATTACH) != 0 {
 			dev := l.drv.devices[i]
 			dev.Lock()
-			l.logger.Infow("Rescanning device on DEVICE_ATTACH", "deviceAttributes", dev.attributes)
+			l.logger.Infow("Rescanning device on DEVICE_ATTACH", "attributes", dev.attributes)
 			if err := dev.init(); err != nil {
 				l.logger.Errorw("Device rescan failed", zap.Error(err))
 			} else {
-				l.logger.Debugw("Device rescanned successfully", "deviceAttributes", dev.attributes)
+				l.logger.Debugw("Device rescanned successfully", "attributes", dev.attributes)
 			}
 			dev.Unlock()
 		}
@@ -251,12 +251,12 @@ func appendDeviceEventLogs(sl plog.ScopeLogs, dev *device, flags l0sysman.EventT
 		lr.Body().SetStr(flag.String())
 
 		lrAttrs := lr.Attributes()
-		lrAttrs.PutStr("hw.id", attrs.hwID)
-		lrAttrs.PutStr("hw.name", attrs.hwName)
-		lrAttrs.PutStr("hw.model", attrs.hwModel)
-		lrAttrs.PutStr("pci.bdf", attrs.pciBDF)
-		lrAttrs.PutStr("pci.device_id", attrs.pciDeviceID)
-		lrAttrs.PutStr("pci.vendor_id", attrs.pciVendorID)
+		lrAttrs.PutStr("hw.id", attrs.HwID)
+		lrAttrs.PutStr("hw.name", attrs.HwName)
+		lrAttrs.PutStr("hw.model", attrs.HwModel)
+		lrAttrs.PutStr("pci.bdf", attrs.PciBDF)
+		lrAttrs.PutStr("pci.device_id", attrs.PciDeviceID)
+		lrAttrs.PutStr("pci.vendor_id", attrs.PciVendorID)
 	}
 }
 
@@ -355,7 +355,7 @@ func deviceAttributesByBDF(drv *driver) map[string]*deviceAttributes {
 		dev.RLock()
 		attrs := dev.attributes
 		dev.RUnlock()
-		devices[attrs.pciBDF] = &attrs
+		devices[attrs.PciBDF] = &attrs
 	}
 
 	return devices
@@ -386,11 +386,11 @@ func appendInfoLogRecord(sl plog.ScopeLogs, rec l0intel.InfoLogRecord, bdf strin
 	attrs.PutStr("pci.bdf", bdf)
 
 	if dev != nil {
-		attrs.PutStr("hw.id", dev.hwID)
-		attrs.PutStr("hw.name", dev.hwName)
-		attrs.PutStr("hw.model", dev.hwModel)
-		attrs.PutStr("pci.device_id", dev.pciDeviceID)
-		attrs.PutStr("pci.vendor_id", dev.pciVendorID)
+		attrs.PutStr("hw.id", dev.HwID)
+		attrs.PutStr("hw.name", dev.HwName)
+		attrs.PutStr("hw.model", dev.HwModel)
+		attrs.PutStr("pci.device_id", dev.PciDeviceID)
+		attrs.PutStr("pci.vendor_id", dev.PciVendorID)
 	}
 }
 

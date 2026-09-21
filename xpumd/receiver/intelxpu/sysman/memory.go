@@ -41,13 +41,13 @@ type memoryConstMetrics struct {
 }
 
 type memoryAttributes struct {
-	hwID             string
-	hwType           metadata.AttributeHwType
-	hwName           string
-	pciBDF           string
-	hwMemoryType     string
-	hwMemoryLocation string
-	subdeviceId      string
+	HwID             string                   `json:"hw.id"`
+	HwType           metadata.AttributeHwType `json:"hw.type"`
+	HwName           string                   `json:"hw.name"`
+	PciBDF           string                   `json:"pci.bdf"`
+	HwMemoryType     string                   `json:"hw.memory.type"`
+	HwMemoryLocation string                   `json:"hw.memory.location"`
+	SubdeviceID      string                   `json:"com.intel.subdevice_id"`
 }
 
 func enumMemory(d *device) []instanceScraper {
@@ -89,13 +89,13 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 		},
 		constMetrics: memoryConstMetrics{physicalSize: int64(props.PhysicalSize)},
 		attributes: memoryAttributes{
-			hwID:             device.attributes.hwID,
-			hwType:           metadata.AttributeHwTypeMemory,
-			hwName:           name,
-			pciBDF:           device.attributes.pciBDF,
-			hwMemoryType:     strings.ToLower(props.Type.String()),
-			hwMemoryLocation: strings.ToLower(props.Location.String()),
-			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			HwID:             device.attributes.HwID,
+			HwType:           metadata.AttributeHwTypeMemory,
+			HwName:           name,
+			PciBDF:           device.attributes.PciBDF,
+			HwMemoryType:     strings.ToLower(props.Type.String()),
+			HwMemoryLocation: strings.ToLower(props.Location.String()),
+			SubdeviceID:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 	}
 
@@ -135,41 +135,41 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 	if size > 0 {
 		mb.RecordHwMemorySizeDataPoint(ts, size,
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
-			m.attributes.hwMemoryLocation,
-			m.attributes.hwMemoryType,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
+			m.attributes.HwMemoryLocation,
+			m.attributes.HwMemoryType,
 		)
 
 		usage := size - int64(state.Free)
 		mb.RecordHwMemoryUsageDataPoint(ts, usage,
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
-			m.attributes.hwMemoryLocation,
-			m.attributes.hwMemoryType,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
+			m.attributes.HwMemoryLocation,
+			m.attributes.HwMemoryType,
 		)
 
 		ratio := float64(usage) / float64(size)
 		mb.RecordHwMemoryUtilizationDataPoint(ts, ratio,
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
-			m.attributes.hwMemoryLocation,
-			m.attributes.hwMemoryType,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
+			m.attributes.HwMemoryLocation,
+			m.attributes.HwMemoryType,
 		)
 	} else {
 		mb.RecordHwMemoryFreeDataPoint(ts, int64(state.Free),
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
-			m.attributes.hwMemoryLocation,
-			m.attributes.hwMemoryType,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
+			m.attributes.HwMemoryLocation,
+			m.attributes.HwMemoryType,
 		)
 	}
 
@@ -185,12 +185,12 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		}
 
 		mb.RecordHwStatusDataPoint(ts, value,
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
 			strings.ToLower(s.String()),
-			m.attributes.hwType,
+			m.attributes.HwType,
 		)
 	}
 
@@ -222,22 +222,22 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// read / write counters
 	mb.RecordHwMemoryIoDataPoint(
 		ts, float64(counter.ReadCounter),
-		m.attributes.hwID,
-		m.attributes.hwName,
-		m.attributes.pciBDF,
-		m.attributes.subdeviceId,
-		m.attributes.hwMemoryLocation,
-		m.attributes.hwMemoryType,
+		m.attributes.HwID,
+		m.attributes.HwName,
+		m.attributes.PciBDF,
+		m.attributes.SubdeviceID,
+		m.attributes.HwMemoryLocation,
+		m.attributes.HwMemoryType,
 		metadata.AttributeNetworkIoDirectionReceive,
 	)
 	mb.RecordHwMemoryIoDataPoint(
 		ts, float64(counter.WriteCounter),
-		m.attributes.hwID,
-		m.attributes.hwName,
-		m.attributes.pciBDF,
-		m.attributes.subdeviceId,
-		m.attributes.hwMemoryLocation,
-		m.attributes.hwMemoryType,
+		m.attributes.HwID,
+		m.attributes.HwName,
+		m.attributes.PciBDF,
+		m.attributes.SubdeviceID,
+		m.attributes.HwMemoryLocation,
+		m.attributes.HwMemoryType,
 		metadata.AttributeNetworkIoDirectionTransmit,
 	)
 
@@ -262,12 +262,12 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// => drop later on, if limit is available on all relevant HW
 	mb.RecordHwMemoryIoRateDataPoint(
 		ts, rate,
-		m.attributes.hwID,
-		m.attributes.hwName,
-		m.attributes.pciBDF,
-		m.attributes.subdeviceId,
-		m.attributes.hwMemoryLocation,
-		m.attributes.hwMemoryType,
+		m.attributes.HwID,
+		m.attributes.HwName,
+		m.attributes.PciBDF,
+		m.attributes.SubdeviceID,
+		m.attributes.HwMemoryLocation,
+		m.attributes.HwMemoryType,
 	)
 
 	if counter.MaxBandwidth > 0 {
@@ -277,23 +277,23 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		max := float64(counter.MaxBandwidth)
 		mb.RecordHwMemoryBandwidthLimitDataPoint(
 			ts, max,
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
-			m.attributes.hwMemoryLocation,
-			m.attributes.hwMemoryType,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
+			m.attributes.HwMemoryLocation,
+			m.attributes.HwMemoryType,
 		)
 
 		// BW utilization ratio
 		mb.RecordHwMemoryBandwidthUtilizationDataPoint(
 			ts, rate/max,
-			m.attributes.hwID,
-			m.attributes.hwName,
-			m.attributes.pciBDF,
-			m.attributes.subdeviceId,
-			m.attributes.hwMemoryLocation,
-			m.attributes.hwMemoryType,
+			m.attributes.HwID,
+			m.attributes.HwName,
+			m.attributes.PciBDF,
+			m.attributes.SubdeviceID,
+			m.attributes.HwMemoryLocation,
+			m.attributes.HwMemoryType,
 		)
 	}
 }

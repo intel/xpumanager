@@ -31,11 +31,11 @@ type engineState struct {
 }
 
 type engineAttributes struct {
-	hwID        string
-	hwName      string
-	pciBDF      string
-	subdeviceId string
-	hwGpuTask   string
+	HwID        string `json:"hw.id"`
+	HwName      string `json:"hw.name"`
+	PciBDF      string `json:"pci.bdf"`
+	SubdeviceID string `json:"com.intel.subdevice_id"`
+	HwGpuTask   string `json:"hw.gpu.task"`
 }
 
 func enumEngine(d *device) []instanceScraper {
@@ -79,11 +79,11 @@ func newEngine(i int, metric *l0sysman.Engine, device *device) (*engine, error) 
 		Engine: metric,
 		logger: device.logger,
 		attributes: engineAttributes{
-			hwID:        device.attributes.hwID,
-			hwName:      fmt.Sprintf("engine-%d-%s", i, hwType),
-			pciBDF:      device.attributes.pciBDF,
-			subdeviceId: subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
-			hwGpuTask:   hwType,
+			HwID:        device.attributes.HwID,
+			HwName:      fmt.Sprintf("engine-%d-%s", i, hwType),
+			PciBDF:      device.attributes.PciBDF,
+			SubdeviceID: subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			HwGpuTask:   hwType,
 		},
 		state: engineState{counter: &counter},
 	}, nil
@@ -119,11 +119,11 @@ func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	ratio := float64(actDiff) / float64(timeDiff)
 	mb.RecordHwGpuUtilizationDataPoint(
 		ts, ratio,
-		e.attributes.hwID,
-		e.attributes.hwName,
-		e.attributes.pciBDF,
-		e.attributes.subdeviceId,
-		e.attributes.hwGpuTask,
+		e.attributes.HwID,
+		e.attributes.HwName,
+		e.attributes.PciBDF,
+		e.attributes.SubdeviceID,
+		e.attributes.HwGpuTask,
 	)
 }
 

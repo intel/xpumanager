@@ -38,11 +38,11 @@ type powerState struct {
 	counter   *l0sysman.PowerEnergyCounter
 }
 type powerAttributes struct {
-	hwID             string
-	hwName           string
-	pciBDF           string
-	hwSensorLocation string
-	subdeviceId      string
+	HwID             string `json:"hw.id"`
+	HwName           string `json:"hw.name"`
+	PciBDF           string `json:"pci.bdf"`
+	HwSensorLocation string `json:"hw.sensor_location"`
+	SubdeviceID      string `json:"com.intel.subdevice_id"`
 }
 
 func enumPower(d *device) []instanceScraper {
@@ -89,11 +89,11 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		Power:  pwr,
 		logger: device.logger,
 		attributes: powerAttributes{
-			hwID:             device.attributes.hwID,
-			hwName:           name,
-			pciBDF:           device.attributes.pciBDF,
-			hwSensorLocation: strings.ToLower(location),
-			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			HwID:             device.attributes.HwID,
+			HwName:           name,
+			PciBDF:           device.attributes.PciBDF,
+			HwSensorLocation: strings.ToLower(location),
+			SubdeviceID:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: powerState{
 			hasLimits: true,
@@ -132,11 +132,11 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwEnergyDataPoint(
 		ts,
 		float64(counter.Energy)/1e6, // uJ -> J
-		power.attributes.hwID,
-		power.attributes.hwName,
-		power.attributes.pciBDF,
-		power.attributes.subdeviceId,
-		power.attributes.hwSensorLocation,
+		power.attributes.HwID,
+		power.attributes.HwName,
+		power.attributes.PciBDF,
+		power.attributes.SubdeviceID,
+		power.attributes.HwSensorLocation,
 	)
 
 	// TODO: Sysman spec states neither timestamp nor counter bits,
@@ -156,11 +156,11 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if watts < bogusPowerThreshold {
 		mb.RecordHwPowerDataPoint(
 			ts, watts,
-			power.attributes.hwID,
-			power.attributes.hwName,
-			power.attributes.pciBDF,
-			power.attributes.subdeviceId,
-			power.attributes.hwSensorLocation,
+			power.attributes.HwID,
+			power.attributes.HwName,
+			power.attributes.PciBDF,
+			power.attributes.SubdeviceID,
+			power.attributes.HwSensorLocation,
 		)
 	} else {
 		// unexpected wrapping & resets should be rare, report all
@@ -190,11 +190,11 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		mb.RecordHwPowerLimitDataPoint(
 			ts,
 			float64(limit.Limit)/1e3, // mW -> W
-			power.attributes.hwID,
-			power.attributes.hwName,
-			power.attributes.pciBDF,
-			power.attributes.subdeviceId,
-			power.attributes.hwSensorLocation,
+			power.attributes.HwID,
+			power.attributes.HwName,
+			power.attributes.PciBDF,
+			power.attributes.SubdeviceID,
+			power.attributes.HwSensorLocation,
 			strings.ToLower(limit.Level.String()),
 			strings.ToLower(limit.Source.String()),
 		)

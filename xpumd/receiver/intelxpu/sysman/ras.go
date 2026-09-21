@@ -35,11 +35,11 @@ type errorSetState struct {
 }
 
 type errorSetAttributes struct {
-	hwID        string
-	hwName      string
-	pciBDF      string
-	subdeviceId string
-	errorType   metadata.AttributeErrorType
+	HwID        string                      `json:"hw.id"`
+	HwName      string                      `json:"hw.name"`
+	PciBDF      string                      `json:"pci.bdf"`
+	SubdeviceID string                      `json:"com.intel.subdevice_id"`
+	ErrorType   metadata.AttributeErrorType `json:"error.type"`
 }
 
 func enumErrorSets(d *device) []instanceScraper {
@@ -91,11 +91,11 @@ func newErrorSet(name string, sysRas *l0sysman.Ras, device *device) (*errorSet, 
 		Ras:    ras,
 		logger: device.logger,
 		attributes: errorSetAttributes{
-			hwID:        device.attributes.hwID,
-			hwName:      name,
-			pciBDF:      device.attributes.pciBDF,
-			subdeviceId: subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
-			errorType:   errType,
+			HwID:        device.attributes.HwID,
+			HwName:      name,
+			PciBDF:      device.attributes.PciBDF,
+			SubdeviceID: subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
+			ErrorType:   errType,
 		},
 	}
 
@@ -117,18 +117,18 @@ func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-category-exp-t
 	for _, state := range states {
 		// Report zero values only for uncorrectable error metrics.
-		if state.ErrorCounter == 0 && es.attributes.errorType != metadata.AttributeErrorTypeUncorrectable {
+		if state.ErrorCounter == 0 && es.attributes.ErrorType != metadata.AttributeErrorTypeUncorrectable {
 			continue
 		}
 		// value is uint64, but OTel builder does not support uint64 metric type
 		value := state.ErrorCounter % (math.MaxInt64 + 1)
 		mb.RecordHwErrorsDataPoint(ts, int64(value),
-			es.attributes.hwID,
-			es.attributes.hwName,
-			es.attributes.pciBDF,
-			es.attributes.subdeviceId,
+			es.attributes.HwID,
+			es.attributes.HwName,
+			es.attributes.PciBDF,
+			es.attributes.SubdeviceID,
 			metadata.AttributeHwTypeGpu,
-			es.attributes.errorType,
+			es.attributes.ErrorType,
 			strings.ToLower(state.Category.String()),
 		)
 	}

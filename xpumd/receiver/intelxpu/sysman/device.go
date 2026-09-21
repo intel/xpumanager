@@ -76,26 +76,26 @@ type deviceState struct {
 }
 
 // deviceAttributes fields for numeric items that are always reported,
-// but which value may be unknown (e.g. pciLinkGen), are stored as
+// but which value may be unknown (e.g. PciLinkGen), are stored as
 // strings instead of ints. That way it's clearer when info is missing
 // (value = "" instead of "0").
 type deviceAttributes struct {
-	hwID                 string
-	hwName               string
-	hwNamePci            string
-	pciBDF               string
-	pciVendorID          string
-	pciDeviceID          string
-	hwModel              string
-	hwSerialNumber       string
-	hwVendor             string
-	hwFirmwareVersion    string
-	hwGpuType            metadata.AttributeHwGpuType
-	subdeviceCount       int64
-	pciLanes             string
-	pciLinkGen           string
-	hwMemoryDemandPaging bool
-	hwGpuEccSupport      metadata.AttributeHwGpuEccSupport
+	HwID                 string                            `json:"hw.id"`
+	HwName               string                            `json:"hw.name"`
+	hwNamePci            string                            // not exported as no corresponding device metric attribute
+	PciBDF               string                            `json:"pci.bdf"`
+	PciVendorID          string                            `json:"pci.vendor_id"`
+	PciDeviceID          string                            `json:"pci.device_id"`
+	HwModel              string                            `json:"hw.model"`
+	HwSerialNumber       string                            `json:"hw.serial_number"`
+	HwVendor             string                            `json:"hw.vendor"`
+	HwFirmwareVersion    string                            `json:"hw.firmware_version"`
+	HwGpuType            metadata.AttributeHwGpuType       `json:"hw.gpu.type"`
+	SubdeviceCount       int64                             `json:"com.intel.subdevice_count"`
+	PciLanes             string                            `json:"pci.lanes"`
+	PciLinkGen           string                            `json:"pci.link_gen"`
+	HwMemoryDemandPaging bool                              `json:"hw.memory.demand_paging"`
+	HwGpuEccSupport      metadata.AttributeHwGpuEccSupport `json:"hw.gpu.ecc.support"`
 }
 
 func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry, error) {
@@ -172,7 +172,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 		Device: dev,
 		logger: logger,
 		attributes: deviceAttributes{
-			hwName:    name,
+			HwName:    name,
 			hwNamePci: name + "-pci",
 		},
 		aggregatedMetricsBufferSize: aggregatedMetricsBufferSize,
@@ -189,7 +189,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, agg
 // Must be called with device lock held.
 func (d *device) init() error {
 	// Intermediate startup timings
-	d.logger.Debugw("Device init() called", "name", d.attributes.hwName)
+	d.logger.Debugw("Device init() called", "name", d.attributes.HwName)
 
 	props, err := d.GetProperties()
 	if err != nil {
@@ -198,18 +198,18 @@ func (d *device) init() error {
 
 	// Preserve name fields assigned at construction, refresh everything else.
 	d.attributes = deviceAttributes{
-		hwName:    d.attributes.hwName,
+		HwName:    d.attributes.HwName,
 		hwNamePci: d.attributes.hwNamePci,
 		// TODO: use (Sysman ext) props.Uuid.Id.String()?
-		hwID:                 props.Core.Uuid.Id.String(),
-		pciDeviceID:          fmt.Sprintf("%04x", props.Core.DeviceId),
-		pciVendorID:          fmt.Sprintf("%04x", props.Core.VendorId),
-		hwModel:              props.ModelName.String(),
-		hwSerialNumber:       props.SerialNumber.String(),
-		hwVendor:             props.VendorName.String(),
-		subdeviceCount:       int64(props.NumSubdevices),
-		hwGpuType:            gpuType(props.Flags),
-		hwMemoryDemandPaging: props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
+		HwID:                 props.Core.Uuid.Id.String(),
+		PciDeviceID:          fmt.Sprintf("%04x", props.Core.DeviceId),
+		PciVendorID:          fmt.Sprintf("%04x", props.Core.VendorId),
+		HwModel:              props.ModelName.String(),
+		HwSerialNumber:       props.SerialNumber.String(),
+		HwVendor:             props.VendorName.String(),
+		SubdeviceCount:       int64(props.NumSubdevices),
+		HwGpuType:            gpuType(props.Flags),
+		HwMemoryDemandPaging: props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
 	}
 	d.constMetrics = pciConstMetrics{}
 	d.state = deviceState{
@@ -221,23 +221,23 @@ func (d *device) init() error {
 
 	_ = d.updateEccState()
 	if d.state.ecc.configurable {
-		d.attributes.hwGpuEccSupport = metadata.AttributeHwGpuEccSupportConfigurable
+		d.attributes.HwGpuEccSupport = metadata.AttributeHwGpuEccSupportConfigurable
 	} else {
-		d.attributes.hwGpuEccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
+		d.attributes.HwGpuEccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
 	}
 
-	d.logger.Debugw("Device init() props + ECC done", "name", d.attributes.hwName)
+	d.logger.Debugw("Device init() props + ECC done", "name", d.attributes.HwName)
 
 	// Get device PCI attributes
 	if pci, err := d.PciGetProperties(); err != nil {
-		d.logger.Errorw("Device PciGetProperties() failed: no PCI attributes", "error", err, "deviceAttributes", d.attributes)
+		d.logger.Errorw("Device PciGetProperties() failed: no PCI attributes", "error", err, "attributes", d.attributes)
 	} else {
-		d.attributes.pciBDF = pciBDF(pci.Address)
+		d.attributes.PciBDF = pciBDF(pci.Address)
 		if pci.MaxSpeed.Gen > 0 {
-			d.attributes.pciLinkGen = fmt.Sprintf("%d", pci.MaxSpeed.Gen)
+			d.attributes.PciLinkGen = fmt.Sprintf("%d", pci.MaxSpeed.Gen)
 		}
 		if pci.MaxSpeed.Width > 0 {
-			d.attributes.pciLanes = fmt.Sprintf("%d", pci.MaxSpeed.Width)
+			d.attributes.PciLanes = fmt.Sprintf("%d", pci.MaxSpeed.Width)
 		}
 		if pci.MaxSpeed.MaxBandwidth > 0 {
 			d.constMetrics = pciConstMetrics{maxBandwidth: pci.MaxSpeed.MaxBandwidth}
@@ -257,11 +257,11 @@ func (d *device) init() error {
 
 	// Check device + PCI state availability
 	if _, err := d.GetState(); err != nil {
-		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "deviceAttributes", d.attributes)
+		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "attributes", d.attributes)
 		d.state.devStateDisabled = true
 	}
 	if _, err := d.PciGetState(); err != nil {
-		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "deviceAttributes", d.attributes)
+		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "attributes", d.attributes)
 		d.state.pci.stateDisabled = true
 	}
 
@@ -269,21 +269,21 @@ func (d *device) init() error {
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetbars
 
 	// After this, enumerations do enough logging for timing info to be available at adequate granularity
-	d.logger.Debugw("Device init() state + PCI props done", "name", d.attributes.hwName, "BDF", d.attributes.pciBDF)
+	d.logger.Debugw("Device init() state + PCI props done", "name", d.attributes.HwName, "BDF", d.attributes.PciBDF)
 
 	// Enumerate device firmwares into versions attribute
 	fwInfos := []string{}
 	for i, fw := range enumFirmwares(d) {
 		fwInfos = append(fwInfos, fmt.Sprintf("%d:%s:%s:%s", i, fw.info.firmwareName, fw.info.subdeviceId, url.QueryEscape(fw.info.firmwareVersion)))
 	}
-	d.attributes.hwFirmwareVersion = strings.Join(fwInfos, ",")
+	d.attributes.HwFirmwareVersion = strings.Join(fwInfos, ",")
 
 	// Enumerate all device metrics
 	for _, s := range subsystems {
 		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
 	}
 
-	d.logger.Debugw("Device init() done", "name", d.attributes.hwName, "BDF", d.attributes.pciBDF)
+	d.logger.Debugw("Device init() done", "name", d.attributes.HwName, "BDF", d.attributes.PciBDF)
 	d.state.initialized = true
 	return nil
 }
@@ -356,21 +356,21 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	d.scrapeEccState(mb, ts)
 
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
-		d.attributes.hwID,
-		d.attributes.hwName,
-		d.attributes.pciBDF,
-		d.attributes.pciVendorID,
-		d.attributes.pciDeviceID,
-		d.attributes.hwModel,
-		d.attributes.hwSerialNumber,
-		d.attributes.hwVendor,
-		d.attributes.hwFirmwareVersion,
-		d.attributes.hwGpuType,
-		d.attributes.subdeviceCount,
-		d.attributes.pciLanes,
-		d.attributes.pciLinkGen,
-		d.attributes.hwMemoryDemandPaging,
-		d.attributes.hwGpuEccSupport,
+		d.attributes.HwID,
+		d.attributes.HwName,
+		d.attributes.PciBDF,
+		d.attributes.PciVendorID,
+		d.attributes.PciDeviceID,
+		d.attributes.HwModel,
+		d.attributes.HwSerialNumber,
+		d.attributes.HwVendor,
+		d.attributes.HwFirmwareVersion,
+		d.attributes.HwGpuType,
+		d.attributes.SubdeviceCount,
+		d.attributes.PciLanes,
+		d.attributes.PciLinkGen,
+		d.attributes.HwMemoryDemandPaging,
+		d.attributes.HwGpuEccSupport,
 	)
 
 	status := &stateAggregator{}
@@ -405,9 +405,9 @@ func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			value = 1
 		}
 		mb.RecordHwGpuEccStateDataPoint(ts, value,
-			d.attributes.hwID,
-			d.attributes.hwName,
-			d.attributes.pciBDF,
+			d.attributes.HwID,
+			d.attributes.HwName,
+			d.attributes.PciBDF,
 			"", // not subdevice
 			state,
 		)
@@ -426,9 +426,9 @@ func (d *device) recordHwStatusGpuOk(mb *metadata.MetricsBuilder, ts pcommon.Tim
 	}
 
 	mb.RecordHwStatusDataPoint(ts, value,
-		d.attributes.hwID,
-		d.attributes.hwName,
-		d.attributes.pciBDF,
+		d.attributes.HwID,
+		d.attributes.HwName,
+		d.attributes.PciBDF,
 		"", // not subdevice
 		"ok",
 		metadata.AttributeHwTypeGpu,
@@ -444,7 +444,7 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
 	state, err := d.GetState()
 	if err != nil {
-		d.logger.Errorw("Device GetState() failed: device reset state metric disabled", zap.Error(err), "deviceAttributes", d.attributes)
+		d.logger.Errorw("Device GetState() failed: device reset state metric disabled", zap.Error(err), "attributes", d.attributes)
 		d.state.devStateDisabled = true
 		return
 	}
@@ -459,9 +459,9 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	}
 
 	mb.RecordHwStatusDataPoint(ts, reset,
-		d.attributes.hwID,
-		d.attributes.hwName,
-		d.attributes.pciBDF,
+		d.attributes.HwID,
+		d.attributes.HwName,
+		d.attributes.PciBDF,
 		"", // not subdevice
 		"reset_needed",
 		metadata.AttributeHwTypeGpu,
@@ -486,9 +486,9 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 				value = 1
 			}
 			mb.RecordHwStatusDataPoint(ts, value,
-				d.attributes.hwID,
-				d.attributes.hwName,
-				d.attributes.pciBDF,
+				d.attributes.HwID,
+				d.attributes.HwName,
+				d.attributes.PciBDF,
 				"", // not subdevice
 				strings.ToLower(bit.String()),
 				metadata.AttributeHwTypeGpu,
@@ -506,7 +506,7 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
 	pci, err := d.PciGetState()
 	if err != nil {
-		d.logger.Errorw("Device PciGetState() failed: PCI link state metrics disabled", zap.Error(err), "deviceAttributes", d.attributes)
+		d.logger.Errorw("Device PciGetState() failed: PCI link state metrics disabled", zap.Error(err), "attributes", d.attributes)
 		d.state.pci.stateDisabled = true
 		return
 	}
@@ -569,9 +569,9 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			state = "ok"
 		}
 		mb.RecordHwStatusDataPoint(ts, value,
-			d.attributes.hwID,
+			d.attributes.HwID,
 			d.attributes.hwNamePci,
-			d.attributes.pciBDF,
+			d.attributes.PciBDF,
 			"", // not subdevice
 			state,
 			metadata.AttributeHwTypePciLink,
@@ -598,16 +598,16 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	// read / write counters
 	mb.RecordHwGpuIoDataPoint(
 		ts, float64(stats.RxCounter),
-		d.attributes.hwID,
+		d.attributes.HwID,
 		d.attributes.hwNamePci,
-		d.attributes.pciBDF,
+		d.attributes.PciBDF,
 		metadata.AttributeNetworkIoDirectionReceive,
 	)
 	mb.RecordHwGpuIoDataPoint(
 		ts, float64(stats.TxCounter),
-		d.attributes.hwID,
+		d.attributes.HwID,
 		d.attributes.hwNamePci,
-		d.attributes.pciBDF,
+		d.attributes.PciBDF,
 		metadata.AttributeNetworkIoDirectionTransmit,
 	)
 
@@ -631,9 +631,9 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	// => drop later on, if limit is available on all relevant HW
 	mb.RecordHwGpuIoRateDataPoint(
 		ts, rate,
-		d.attributes.hwID,
+		d.attributes.HwID,
 		d.attributes.hwNamePci,
-		d.attributes.pciBDF,
+		d.attributes.PciBDF,
 	)
 
 	if d.constMetrics.maxBandwidth > 0 {
@@ -642,17 +642,17 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		// max BW
 		mb.RecordHwGpuBandwidthLimitDataPoint(
 			ts, d.constMetrics.maxBandwidth,
-			d.attributes.hwID,
+			d.attributes.HwID,
 			d.attributes.hwNamePci,
-			d.attributes.pciBDF,
+			d.attributes.PciBDF,
 		)
 
 		// BW utilization ratio
 		mb.RecordHwGpuBandwidthUtilizationDataPoint(
 			ts, rate/float64(d.constMetrics.maxBandwidth),
-			d.attributes.hwID,
+			d.attributes.HwID,
 			d.attributes.hwNamePci,
-			d.attributes.pciBDF,
+			d.attributes.PciBDF,
 		)
 	}
 }
