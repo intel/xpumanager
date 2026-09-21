@@ -22,9 +22,10 @@ func init() {
 
 type memory struct {
 	*l0sysman.Memory
-	logger     *zap.SugaredLogger
-	attributes memoryAttributes
-	state      memoryState
+	logger       *zap.SugaredLogger
+	attributes   memoryAttributes
+	constMetrics memoryConstMetrics
+	state        memoryState
 }
 
 // memoryState holds the dynamic runtime state of the memory instance.
@@ -34,12 +35,16 @@ type memoryState struct {
 	healthStatesSeen map[l0sysman.MemHealth]bool
 }
 
+// memoryConstMetrics holds memory metric values that are determined once and do not change afterwards.
+type memoryConstMetrics struct {
+	physicalSize int64
+}
+
 type memoryAttributes struct {
 	hwID             string
 	hwType           metadata.AttributeHwType
 	hwName           string
 	pciBDF           string
-	physicalSize     int64
 	hwMemoryType     string
 	hwMemoryLocation string
 	subdeviceId      string
@@ -82,12 +87,12 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 		state: memoryState{
 			healthStatesSeen: make(map[l0sysman.MemHealth]bool),
 		},
+		constMetrics: memoryConstMetrics{physicalSize: int64(props.PhysicalSize)},
 		attributes: memoryAttributes{
 			hwID:             device.attributes.hwID,
 			hwType:           metadata.AttributeHwTypeMemory,
 			hwName:           name,
 			pciBDF:           device.attributes.pciBDF,
-			physicalSize:     int64(props.PhysicalSize),
 			hwMemoryType:     strings.ToLower(props.Type.String()),
 			hwMemoryLocation: strings.ToLower(props.Location.String()),
 			subdeviceId:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
@@ -124,7 +129,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 
-	size := m.attributes.physicalSize
+	size := m.constMetrics.physicalSize
 	if size == 0 {
 		size = int64(state.Size)
 	}

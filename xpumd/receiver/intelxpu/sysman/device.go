@@ -38,10 +38,11 @@ type driver struct {
 type device struct {
 	sync.RWMutex
 	*l0sysman.Device
-	logger     *zap.SugaredLogger
-	attributes deviceAttributes
-	state      deviceState
-	scrapers   []instanceScraper
+	logger       *zap.SugaredLogger
+	attributes   deviceAttributes
+	constMetrics pciConstMetrics
+	state        deviceState
+	scrapers     []instanceScraper
 
 	aggregatedMetricsBufferSize int
 }
@@ -52,6 +53,11 @@ type pciState struct {
 	qualitySeen   l0sysman.PciLinkQualIssueFlags
 	stabilitySeen l0sysman.PciLinkStabIssueFlags
 	stats         *l0sysman.PciStats
+}
+
+// pciConstMetrics holds device PCI metric values that are determined once and do not change afterwards.
+type pciConstMetrics struct {
+	maxBandwidth int64 // zero = not available
 }
 
 type eccState struct {
@@ -86,7 +92,6 @@ type deviceAttributes struct {
 	hwFirmwareVersion    string
 	hwGpuType            metadata.AttributeHwGpuType
 	subdeviceCount       int64
-	maxBandwidth         int64 // zero = not available, skip PCI BW max/ratio metrics
 	pciLanes             string
 	pciLinkGen           string
 	hwMemoryDemandPaging bool
@@ -206,6 +211,7 @@ func (d *device) init() error {
 		hwGpuType:            gpuType(props.Flags),
 		hwMemoryDemandPaging: props.Flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_ONDEMANDPAGING) != 0,
 	}
+	d.constMetrics = pciConstMetrics{}
 	d.state = deviceState{
 		ecc: &eccState{
 			states: map[string]bool{},
@@ -234,7 +240,7 @@ func (d *device) init() error {
 			d.attributes.pciLanes = fmt.Sprintf("%d", pci.MaxSpeed.Width)
 		}
 		if pci.MaxSpeed.MaxBandwidth > 0 {
-			d.attributes.maxBandwidth = pci.MaxSpeed.MaxBandwidth
+			d.constMetrics = pciConstMetrics{maxBandwidth: pci.MaxSpeed.MaxBandwidth}
 		} else {
 			d.logger.Infow("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
 		}
@@ -630,12 +636,12 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		d.attributes.pciBDF,
 	)
 
-	if d.attributes.maxBandwidth > 0 {
+	if d.constMetrics.maxBandwidth > 0 {
 		// TODO: verify that max is for read+write, not just one direction
 
 		// max BW
 		mb.RecordHwGpuBandwidthLimitDataPoint(
-			ts, d.attributes.maxBandwidth,
+			ts, d.constMetrics.maxBandwidth,
 			d.attributes.hwID,
 			d.attributes.hwNamePci,
 			d.attributes.pciBDF,
@@ -643,7 +649,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 
 		// BW utilization ratio
 		mb.RecordHwGpuBandwidthUtilizationDataPoint(
-			ts, rate/float64(d.attributes.maxBandwidth),
+			ts, rate/float64(d.constMetrics.maxBandwidth),
 			d.attributes.hwID,
 			d.attributes.hwNamePci,
 			d.attributes.pciBDF,
