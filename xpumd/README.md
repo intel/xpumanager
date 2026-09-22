@@ -37,6 +37,10 @@ graph TB
         SYSTEM_LIBRARIES["System Libraries<br/>[level-zero, glibc...]"]
 
         subgraph XPUMD["XPUM Daemon - xpumd"]
+            subgraph EXT["Extensions"]
+                EXT_WATCH["Device Watch<br/>(intel_device_watch)"]
+            end
+
             subgraph RECV["Receivers"]
                 RECV_XPU["Intel XPU Receiver<br/>(intel_xpu)"]
                 RECV_LOG["Intel Crashlog<br/>(intel_crashlog)"]
@@ -98,6 +102,7 @@ graph TB
     style RECV_LOG fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
     style PROC_XPU fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
     style EXP_INFO fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
+    style EXT_WATCH fill:#4a90e2,stroke:#2e5c8a,stroke-width:2px,color:#fff
 ```
 
 
@@ -184,6 +189,16 @@ It serves a custom gRPC API at local Unix socket (`/run/xpumd/intel_xpu_info.soc
 
 The device info exporter is enabled by the default configuration file
 ([`config-example.yaml`](config-example.yaml)) and the [Helm chart](charts/xpumd/README.md).
+
+### Device watch
+
+GPUs that appear on the node after the container started are not usable by it.
+The device watch extension periodically compares sysfs against the device files
+and reports devices that are missing, inaccessible or stale. It can also shut
+down the collector so that the devices are re-enumerated on restart.
+
+See the [`intel_device_watch` extension documentation](extension/inteldevicewatch/README.md)
+for detailed configuration and usage instructions.
 
 
 ## Development
