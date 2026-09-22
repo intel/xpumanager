@@ -25,6 +25,13 @@ constexpr std::string_view CLIENT_ID_PREFIX = "drm-client-id:"sv;
 constexpr std::string_view MEM_TOTAL_PREFIX = "drm-total-"sv;
 constexpr uint64_t KIB_TO_BYTES = 1024;
 
+enum class ParseState : uint8_t
+{
+	NoDeviceFd,	  // no fd in /proc/<pid>/fd pointed at a device node we own
+	DeviceFdOnly, // found a device fd but parseFdinfo failed for every one
+	GotClientId,  // found a device fd AND successfully parsed a drm-client-id
+};
+
 // drm-total-local* and drm-total-vram* name device-local VRAM (physical GPU
 // memory).  Everything else (drm-total-system*, drm-total-gtt*, …) is
 // GTT: system RAM mapped into the GPU's virtual address space.  On dGPUs we
@@ -138,14 +145,23 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 	}
 
 	std::unordered_map<uint64_t, FdinfoEntry> clientMem;
-	bool foundAnyClientId = false;
+	ParseState parseState = ParseState::NoDeviceFd;
 	std::error_code ec;
 
 	const fs::path fdDir = fs::path(procRoot) / std::to_string(pid) / "fd";
-	for (const auto &fdEntry : fs::directory_iterator(fdDir, fs::directory_options::skip_permission_denied, ec)) {
+	// Accessible = the fd directory exists and we could open it, regardless of
+	// whether it contains any GPU-node symlinks.  An openable-but-empty fd dir
+	// means the process is real and we can trust fdinfo (bytes=0); an
+	// inaccessible dir (hidepid=2, cross-user ENOENT/EACCES) means we must fall
+	// back to Level Zero's reported value.
+	std::error_code openEc;
+	fs::directory_iterator fdIter(fdDir, openEc);
+	const bool fdDirAccessible = !openEc;
+	for (; fdIter != fs::directory_iterator{}; fdIter.increment(ec)) {
 		if (ec) {
 			break;
 		}
+		const auto &fdEntry = *fdIter;
 
 		fs::path target = fs::read_symlink(fdEntry.path(), ec);
 		if (ec) {
@@ -157,6 +173,9 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 		if (!std::ranges::any_of(deviceNodes, [&](const auto &n) { return targetStr == n; })) {
 			continue;
 		}
+		if (parseState == ParseState::NoDeviceFd) {
+			parseState = ParseState::DeviceFdOnly;
+		}
 
 		const std::string fdNum = fdEntry.path().filename().string();
 		const fs::path fdinfoPath = fs::path(procRoot) / std::to_string(pid) / "fdinfo" / fdNum;
@@ -164,7 +183,7 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 		if (!entry) {
 			continue;
 		}
-		foundAnyClientId = true;
+		parseState = ParseState::GotClientId;
 		if (globalSeenIds != nullptr && globalSeenIds->count(entry->clientId) != 0) {
 			continue;
 		}
@@ -184,16 +203,12 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 			globalSeenIds->insert(id);
 		}
 	}
-	const bool allInherited = foundAnyClientId && clientMem.empty();
-	// On dGPUs, local VRAM (drm-total-local*, drm-total-vram*) is non-zero and
-	// gives the true device memory footprint without GTT-backed allocations such
-	// as OA ring buffers.  On iGPUs there is no local region, so fall back to
-	// the combined total which includes the shared system memory the GPU uses.
-	const uint64_t reportKiB = localKiB > 0 ? localKiB : totalKiB;
-	return {reportKiB * KIB_TO_BYTES, allInherited};
+	const bool allInherited = (parseState == ParseState::GotClientId) && clientMem.empty();
+	const bool fdinfoReliable = parseState != ParseState::DeviceFdOnly;
+	return {localKiB * KIB_TO_BYTES, totalKiB * KIB_TO_BYTES, allInherited, fdDirAccessible, fdinfoReliable};
 }
 
-void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> *processList)
+void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> *processList, MemKind memKind)
 {
 	const std::vector<std::string> nodes = deviceNodesForBdf(bdf);
 	if (nodes.empty()) {
@@ -204,17 +219,34 @@ void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> 
 	// Sort ascending by PID so parents (lower PID) are processed before their
 	// forked children; this ensures the shared drm-client-id is attributed to
 	// the parent and children marked allInherited are correctly removed.
-	std::sort(processList->begin(), processList->end(),
-			  [](const zes_process_state_t &a, const zes_process_state_t &b) { return a.processId < b.processId; });
+	std::ranges::sort(*processList, {}, &zes_process_state_t::processId);
 
 	std::unordered_set<uint64_t> globalSeenIds;
+	std::vector<FdinfoResult> results;
+	results.reserve(processList->size());
+	std::ranges::transform(*processList, std::back_inserter(results), [&](const zes_process_state_t &ps) {
+		return vramFromFdinfo(ps.processId, nodes, "/proc", &globalSeenIds);
+	});
+
+	size_t i = 0;
 	for (auto it = processList->begin(); it != processList->end();) {
-		const FdinfoResult res = vramFromFdinfo(it->processId, nodes, "/proc", &globalSeenIds);
+		const FdinfoResult &res = results[i++];
 		if (res.allInherited) {
 			it = processList->erase(it);
 		} else {
-			if (res.bytes > 0) {
-				it->memSize = res.bytes;
+			// On dGPUs use only local VRAM bytes so GTT-only processes (which have
+			// contexts open but no physical allocation here) get memSize=0 and are
+			// removed by the caller's zero-memory filter.  On iGPUs there is no
+			// local region, so fall back to the combined total.
+			const uint64_t bytes = memKind == MemKind::Local ? res.localBytes : res.totalBytes;
+			if (bytes > 0 || (res.fdDirAccessible && res.fdinfoReliable)) {
+				// When fdinfo was readable, trust it over Level Zero even when bytes
+				// is zero: a readable fd directory with no device fds means the
+				// process has no real allocation here and Level Zero's figure is
+				// mis-attributed (e.g. parent PID credited for a child's memory).
+				// When fdinfo was unreadable (hidepid, cross-user), bytes is also 0
+				// but fdDirAccessible is false, so Level Zero's value is preserved.
+				it->memSize = bytes;
 			}
 			++it;
 		}

@@ -60,7 +60,7 @@ libxpum_shared = shared_library(
     include_directories('../../ial/cli'),
   ]
   + extensions_inc_dirs,
-  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep, compat_dep]
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep, compat_dep, units_dep]
   + windows_deps,
   version: xpum_version,
   soversion: xpum_version.split('.')[0],
@@ -82,7 +82,7 @@ libxpum_static = static_library(
     include_directories('../../ial/cli'),
   ]
   + extensions_inc_dirs,
-  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep, compat_dep]
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep, compat_dep, units_dep]
   + windows_deps,
   install: get_option('static_library'),
   install_dir: get_option('libdir'),

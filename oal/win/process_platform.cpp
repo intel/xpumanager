@@ -22,5 +22,5 @@ FdinfoResult vramFromFdinfo([[maybe_unused]] uint32_t pid, [[maybe_unused]] cons
 }
 
 void fixProcessMemSize([[maybe_unused]] const std::string &bdf,
-					   [[maybe_unused]] std::vector<zes_process_state_t> *processList)
+					   [[maybe_unused]] std::vector<zes_process_state_t> *processList, [[maybe_unused]] MemKind memKind)
 {}

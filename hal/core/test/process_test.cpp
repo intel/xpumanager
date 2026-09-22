@@ -120,8 +120,8 @@ TEST_CASE("vramFromFdinfo: deduplicates by drm-client-id (Firefox scenario)")
 
 	auto result = vramFromFdinfo(pid, {rnode}, tmp.path.string());
 
-	CHECK(result.bytes == expectedBytes);
-	CHECK(result.bytes != wrongBytes);
+	CHECK(result.totalBytes == expectedBytes);
+	CHECK(result.totalBytes != wrongBytes);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -137,7 +137,7 @@ TEST_CASE("vramFromFdinfo: sums unique client-ids")
 	addFd(tmp.path, pid, "12", rnode, 3, 300);
 
 	auto result = vramFromFdinfo(pid, {rnode}, tmp.path.string());
-	CHECK(result.bytes == 600ULL * 1024);
+	CHECK(result.totalBytes == 600ULL * 1024);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -153,7 +153,7 @@ TEST_CASE("vramFromFdinfo: ignores fds for other device nodes")
 	addFd(tmp.path, pid, "11", other, 2, 9999); // different GPU — must not count
 
 	auto result = vramFromFdinfo(pid, {rnode}, tmp.path.string());
-	CHECK(result.bytes == 500ULL * 1024);
+	CHECK(result.totalBytes == 500ULL * 1024);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -173,7 +173,7 @@ TEST_CASE("vramFromFdinfo: handles multiple device nodes for same GPU")
 	addFd(tmp.path, pid, "22", render, 11, 500);
 
 	auto result = vramFromFdinfo(pid, {card, render}, tmp.path.string());
-	CHECK(result.bytes == 1500ULL * 1024);
+	CHECK(result.totalBytes == 1500ULL * 1024);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -182,7 +182,7 @@ TEST_CASE("vramFromFdinfo: returns 0 for empty device node list")
 {
 	TempDir tmp;
 	auto result = vramFromFdinfo(9999, {}, tmp.path.string());
-	CHECK(result.bytes == 0);
+	CHECK(result.totalBytes == 0);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -207,9 +207,9 @@ TEST_CASE("vramFromFdinfo: cross-process fork deduplicates shared client-id")
 	auto childRes = vramFromFdinfo(childPid, {rnode}, tmp.path.string(), &globalSeen);
 
 	// client 99 is attributed to the parent; child receives only its own client 100.
-	CHECK(parentRes.bytes == 2000000ULL * 1024);
-	CHECK(childRes.bytes == 50000ULL * 1024);
-	CHECK(parentRes.bytes + childRes.bytes == (2000000ULL + 50000ULL) * 1024);
+	CHECK(parentRes.totalBytes == 2000000ULL * 1024);
+	CHECK(childRes.totalBytes == 50000ULL * 1024);
+	CHECK(parentRes.totalBytes + childRes.totalBytes == (2000000ULL + 50000ULL) * 1024);
 	CHECK_FALSE(parentRes.allInherited);
 	CHECK_FALSE(childRes.allInherited); // child has its own client 100
 }
@@ -225,7 +225,7 @@ TEST_CASE("vramFromFdinfo: returns 0 when process has no fds to device")
 	addFd(tmp.path, pid, "10", other, 1, 8000);
 
 	auto result = vramFromFdinfo(pid, {rnode}, tmp.path.string());
-	CHECK(result.bytes == 0);
+	CHECK(result.totalBytes == 0);
 	CHECK_FALSE(result.allInherited); // no fds to our device at all → not inherited
 }
 
@@ -247,10 +247,10 @@ TEST_CASE("vramFromFdinfo: allInherited true when every client-id was already se
 	auto parentRes = vramFromFdinfo(parentPid, {rnode}, tmp.path.string(), &globalSeen);
 	auto childRes = vramFromFdinfo(childPid, {rnode}, tmp.path.string(), &globalSeen);
 
-	CHECK(parentRes.bytes == 1024000ULL * 1024);
+	CHECK(parentRes.totalBytes == 1024000ULL * 1024);
 	CHECK_FALSE(parentRes.allInherited);
 
-	CHECK(childRes.bytes == 0);
+	CHECK(childRes.totalBytes == 0);
 	CHECK(childRes.allInherited); // every client-id was claimed by the parent
 }
 
@@ -270,11 +270,11 @@ TEST_CASE("vramFromFdinfo: allInherited false when child has own context alongsi
 
 	std::unordered_set<uint64_t> globalSeen;
 	auto parentRes2 = vramFromFdinfo(parentPid, {rnode}, tmp.path.string(), &globalSeen);
-	CHECK(parentRes2.bytes == 500000ULL * 1024);
+	CHECK(parentRes2.totalBytes == 500000ULL * 1024);
 	auto childRes = vramFromFdinfo(childPid, {rnode}, tmp.path.string(), &globalSeen);
 
 	// Only client 11 is new; client 10 is already in globalSeen.
-	CHECK(childRes.bytes == 200000ULL * 1024);
+	CHECK(childRes.totalBytes == 200000ULL * 1024);
 	CHECK_FALSE(childRes.allInherited);
 }
 
@@ -289,7 +289,7 @@ TEST_CASE("vramFromFdinfo: iGPU drm-total-gtt field is counted")
 	addFdWithField(tmp.path, pid, "10", rnode, 1, 1101108, "gtt");
 
 	auto result = vramFromFdinfo(pid, {rnode}, tmp.path.string());
-	CHECK(result.bytes == 1101108ULL * 1024);
+	CHECK(result.totalBytes == 1101108ULL * 1024);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -316,7 +316,7 @@ TEST_CASE("vramFromFdinfo: drm-total-cycles fields are not counted as memory")
 
 	auto result = vramFromFdinfo(pid, {rnode}, tmp.path.string());
 	// Only drm-total-gtt (1 GiB) should be counted; cycles values must not be added.
-	CHECK(result.bytes == 1048576ULL * 1024);
+	CHECK(result.totalBytes == 1048576ULL * 1024);
 	CHECK_FALSE(result.allInherited);
 }
 
@@ -340,10 +340,10 @@ TEST_CASE("vramFromFdinfo: parent-first ordering attributes memory to parent")
 	auto parentRes = vramFromFdinfo(parentPid, {rnode}, tmp.path.string(), &globalSeen);
 	auto childRes = vramFromFdinfo(childPid, {rnode}, tmp.path.string(), &globalSeen);
 
-	CHECK(parentRes.bytes == 800000ULL * 1024);
+	CHECK(parentRes.totalBytes == 800000ULL * 1024);
 	CHECK_FALSE(parentRes.allInherited);
 	// Child only has the inherited context — must be flagged and erased.
-	CHECK(childRes.bytes == 0);
+	CHECK(childRes.totalBytes == 0);
 	CHECK(childRes.allInherited);
 }
 
@@ -409,8 +409,8 @@ TEST_CASE("vramFromFdinfo: multi-GPU process attributed independently per device
 	auto resGpu0 = vramFromFdinfo(pid, {gpu0}, tmp.path.string(), &seenGpu0);
 	auto resGpu1 = vramFromFdinfo(pid, {gpu1}, tmp.path.string(), &seenGpu1);
 
-	CHECK(resGpu0.bytes == 512000ULL * 1024);
-	CHECK(resGpu1.bytes == 307200ULL * 1024);
+	CHECK(resGpu0.totalBytes == 512000ULL * 1024);
+	CHECK(resGpu1.totalBytes == 307200ULL * 1024);
 	CHECK_FALSE(resGpu0.allInherited);
 	CHECK_FALSE(resGpu1.allInherited);
 	// Client ids must not bleed across device boundaries.

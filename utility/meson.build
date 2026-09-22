@@ -7,6 +7,7 @@ subdir('compat')
 subdir('logger')
 subdir('bdf')
 subdir('table')
+subdir('units')
 
 if get_option('with_tests')
     subdir('test')

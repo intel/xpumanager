@@ -29,17 +29,30 @@
 /**
  * @brief Result returned by vramFromFdinfo.
  *
- * bytes        - VRAM in bytes attributed to this process after deduplication.
- * allInherited - true when the process had at least one valid drm-client-id but
- *                every one of them was already present in the globalSeenIds set
- *                (i.e. all GPU contexts were inherited from another process via
- *                fork and should not be attributed here again).  Always false
- *                when globalSeenIds is null or the process has no DRM fds.
+ * localBytes      - Bytes from drm-total-local* / drm-total-vram* regions only
+ *                   (physical VRAM on dGPUs).  Zero on iGPUs and for processes
+ *                   that have only GTT/system allocations on this device.
+ * totalBytes      - Bytes from all drm-total-* regions combined (VRAM + GTT).
+ * allInherited    - true when the process had at least one valid drm-client-id but
+ *                   every one of them was already present in the globalSeenIds set
+ *                   (i.e. all GPU contexts were inherited from another process via
+ *                   fork and should not be attributed here again).  Always false
+ *                   when globalSeenIds is null or the process has no DRM fds.
+ * fdDirAccessible - true when /proc/<pid>/fd was successfully iterated.  When
+ *                   false the fd directory was unreadable (hidepid, cross-user,
+ *                   or the process no longer exists) and Level Zero's memSize
+ *                   should be preserved as a fallback.  When true but both byte
+ *                   fields are zero the process has no allocation on this device
+ *                   and Level Zero's figure is mis-attributed (e.g. a parent PID
+ *                   credited for memory actually owned by a child process).
  */
 struct FdinfoResult
 {
-	uint64_t bytes{0};
+	uint64_t localBytes{0};
+	uint64_t totalBytes{0};
 	bool allInherited{false};
+	bool fdDirAccessible{false};
+	bool fdinfoReliable{false};
 };
 
 /**
@@ -61,8 +74,10 @@ struct FdinfoResult
  *                              returning.  Pass the same set across multiple PIDs
  *                              to avoid double-counting contexts inherited via fork.
  *
- * @retval FdinfoResult::bytes        VRAM in bytes attributed to this process.
- * @retval FdinfoResult::allInherited true when all DRM contexts were inherited.
+ * @retval FdinfoResult::localBytes      Physical VRAM bytes from drm-total-local and drm-total-vram regions.
+ * @retval FdinfoResult::totalBytes      All drm-total regions combined (VRAM + GTT).
+ * @retval FdinfoResult::allInherited    true when all DRM contexts were inherited.
+ * @retval FdinfoResult::fdDirAccessible true when /proc/<pid>/fd was iterable.
  */
 [[nodiscard]] FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &deviceNodes,
 										  const std::string &procRoot = "/proc",
@@ -90,7 +105,21 @@ struct FdinfoResult
  *                             fallback when /proc/<pid>/fd is unreadable (e.g.
  *                             hidepid or cross-user processes).  Fully-inherited
  *                             entries are erased.  On Windows this is a no-op.
+ * @param[in]     memKind      MemKind::Local  — device has dedicated VRAM (dGPU):
+ *                             only drm-total-local/drm-total-vram bytes are
+ *                             reported; GTT-only entries get memSize=0 so the
+ *                             zero-memory filter removes cross-GPU phantoms.
+ *                             MemKind::Shared — integrated GPU: all drm-total
+ *                             regions are summed since there is no dedicated
+ *                             local region.
  */
-void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> *processList);
+enum class MemKind : uint8_t
+{
+	Shared,
+	Local
+};
+
+void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> *processList,
+					   MemKind memKind = MemKind::Shared);
 
 #endif // OAL_PROCESS_PLATFORM_H

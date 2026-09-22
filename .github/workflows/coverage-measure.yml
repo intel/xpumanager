@@ -251,6 +251,10 @@ jobs:
       needs.coverage-base.result == 'success' &&
       (github.event_name == 'pull_request' || inputs.pr_number != '')
     runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    permissions:
+      actions: read   # listWorkflowRunArtifacts + download-artifact
+      contents: read  # actions/checkout
+      issues: write   # post/update PR comment via Issues API
     timeout-minutes: 10
     steps:
       - name: Checkout repository (for compare script)

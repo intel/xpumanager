@@ -96,6 +96,19 @@ if get_option('with_tests')
 
   test('pch_prod_state_test', pch_prod_state_test)
 
+  # Process platform fdinfo tests (vramFromFdinfo, fixProcessMemSize).
+  # Compiles process_platform.cpp directly so the test needs no OAL link.
+  process_platform_test = executable(
+    'process_platform_test',
+    ['process_platform_test.cpp', '../process_platform.cpp'],
+    include_directories: [global_inc, include_directories('..'), include_directories('../..'), include_directories('../../../hal/core')],
+    dependencies: [doctest_dep, levelzero_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('process_platform_test', process_platform_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')

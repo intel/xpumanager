@@ -7,20 +7,18 @@
 #include "sysprocess.h"
 #include "process_platform.h"
 #include "utility/compat/format.h"
+#include "utility/units/units.h"
+#include <algorithm>
+#include <optional>
 #include <vector>
 
 /**
  * @brief Queries all processes currently using @p device.
  *
- * Calls zesDeviceProcessesGetState() to enumerate active processes, removes
- * entries with no engine activity AND no GPU memory (engines == 0 or OTHER-only
- * AND memSize == 0).  Processes that hold GPU memory but submit no active
- * commands are kept so memory-holding tools (e.g. xpu-smi dump) remain visible.
- * When debug logging is enabled the filter decision is printed per PID.
- *
- * Removes
- * replaces memSize with fdinfo-based values that correctly deduplicate by
- * drm-client-id across both multiple fds and forked children.
+ * Calls zesDeviceProcessesGetState() to enumerate active processes, keeping
+ * only entries with memory allocated on this device (memSize > 0 or
+ * sharedSize > 0).  Processes that open a context without allocating memory
+ * are filtered out so each GPU only lists PIDs with an actual footprint there.
  *
  * @param[in]  device       Sysman device handle.
  * @param[out] processList  Cleared and repopulated on success.
@@ -54,27 +52,9 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 		return result;
 	}
 
-	std::erase_if(*processList, [](const zes_process_state_t &ps) {
-		const bool noEngines =
-			(ps.engines == 0 || ps.engines == static_cast<zes_engine_type_flags_t>(ZES_ENGINE_TYPE_FLAG_OTHER));
-		if (!noEngines) {
-			return false;
-		}
-
-		// Keep processes that hold GPU memory — they are meaningful even without
-		// active engine submissions (e.g. drivers holding render contexts open,
-		// tools that query sysman while keeping a DRM context alive).
-		if (ps.memSize > 0 || ps.sharedSize > 0) {
-			DBG("  - PID {} kept: engines=0 but memSize={}B sharedSize={}B\n", ps.processId, ps.memSize, ps.sharedSize);
-			return false;
-		}
-
-		DBG("  - PID {} filtered: no engines, no memory\n", ps.processId);
-		return true;
-	});
-
 	if (!processList->empty()) {
-		// Fix memSize by reading fdinfo and deduplicating by drm-client-id.
+		// Correct memSize via fdinfo before filtering so the filter operates on
+		// accurate per-PID values rather than driver-reported ones.
 		// No-op on platforms without /proc (see win/process_platform.cpp).
 		zes_pci_properties_t pciProps{};
 		pciProps.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
@@ -86,17 +66,60 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 			const std::string bdf =
 				xpum::compat::format("{:04x}:{:02x}:{:02x}.{:x}", pciProps.address.domain, pciProps.address.bus,
 									 pciProps.address.device, pciProps.address.function);
-			fixProcessMemSize(bdf, processList);
+
+			// A device with at least one DEVICE-local memory module is a dGPU.
+			// On dGPUs, fixProcessMemSize uses only drm-total-local/vram bytes so
+			// GTT-only cross-GPU phantom entries are correctly zeroed and filtered.
+			// When enumeration fails (count query or handle fetch) the GPU type is
+			// unknown; skip fdinfo correction to avoid zeroing L0 values on a dGPU.
+			uint32_t memCount = 0;
+			std::optional<MemKind> memKind;
+			if (zesDeviceEnumMemoryModules(device, &memCount, nullptr) == ZE_RESULT_SUCCESS) {
+				if (memCount == 0) {
+					memKind = MemKind::Shared; // iGPU: no device-local memory modules
+				} else {
+					std::vector<zes_mem_handle_t> memHandles(memCount);
+					if (zesDeviceEnumMemoryModules(device, &memCount, memHandles.data()) == ZE_RESULT_SUCCESS) {
+						memKind = std::ranges::any_of(memHandles,
+													  [](zes_mem_handle_t h) {
+														  zes_mem_properties_t p{};
+														  p.stype = ZES_STRUCTURE_TYPE_MEM_PROPERTIES;
+														  return zesMemoryGetProperties(h, &p) == ZE_RESULT_SUCCESS &&
+																 p.location == ZES_MEM_LOC_DEVICE;
+													  })
+									  ? MemKind::Local
+									  : MemKind::Shared;
+					}
+				}
+			}
+
+			if (memKind) {
+				fixProcessMemSize(bdf, processList, *memKind);
+			}
 		}
 	}
+
+	// Remove processes with no memory on this device and no real engine activity.
+	// fixProcessMemSize corrects memSize via fdinfo, zeroing phantom entries that
+	// the driver over-attributed; any remaining positive value is a verified
+	// allocation and is preserved regardless of size.
+	std::erase_if(*processList, [](const zes_process_state_t &ps) {
+		const bool hasRealEngines =
+			ps.engines != 0 && ps.engines != static_cast<zes_engine_type_flags_t>(ZES_ENGINE_TYPE_FLAG_OTHER);
+		if (hasRealEngines || ps.memSize > 0 || ps.sharedSize > 0) {
+			return false;
+		}
+		DBG("  - PID {} filtered: no memory on this device\n", ps.processId);
+		return true;
+	});
 
 	processCount = static_cast<uint32_t>(processList->size());
 	DBG("  - Device has {} processes\n", processCount);
 	for (const auto &ps : *processList) {
 		DBG("    - Process ID: {}\n", ps.processId);
 		DBG("    - Name: {}\n", GETPROCESSNAME(ps.processId).c_str());
-		DBG("    - Shared Size: {} KB\n", (ps.sharedSize / 1024));
-		DBG("    - Memory Size: {} KB\n", (ps.memSize / 1024));
+		DBG("    - Shared Size: {} KB\n", xpum::units::Bytes{ps.sharedSize}.kibibytes());
+		DBG("    - Memory Size: {} KB\n", xpum::units::Bytes{ps.memSize}.kibibytes());
 		DBG("    - Engines:\n");
 		printEngines(ps.engines);
 	}

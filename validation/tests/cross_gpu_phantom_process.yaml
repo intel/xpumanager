@@ -1,0 +1,149 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression test: cross-GPU phantom process attribution
+#
+# Root cause: zeInit() causes the Level Zero loader to open DRM fds to ALL
+# enumerated GPUs.  zesDeviceProcessesGetState() therefore reports every
+# zeInit'd process on every GPU — even GPUs it never allocates on.
+#
+# Fix (oal/lin/process_platform.cpp): reads /proc/<pid>/fdinfo per PID and
+# zeros memSize when the process has no real allocation on a given GPU.
+# Processes whose memSize is zeroed and have no engine activity are then
+# filtered by the threshold in hal/core/process.cpp.
+#
+# This test runs two independent processes (parent + exec'd child), each
+# holding an immediate command list on a different GPU, and verifies that
+# xpu-smi ps reports each PID on exactly one device.
+#
+# Test helper: cross_gpu_alloc (validation/scripts/cross_gpu_alloc.cpp)
+#   Binary resolution order (first found wins):
+#     1. $CROSS_GPU_ALLOC environment variable
+#     2. ./builddir/validation/scripts/cross_gpu_alloc  (meson -Dwith_tests=true)
+#     3. ./validation/scripts/cross_gpu_alloc           (in-tree build)
+#     4. ./cross_gpu_alloc                              (repo root)
+#
+# Validation is delegated to validation/scripts/check_cross_gpu_ps.py.
+#
+# Note: this test requires at least 2 GPUs.  The helper binary emits
+# "SKIP: fewer than 2 GPUs available" and exits 0 when that condition is
+# not met; the find_and_start step propagates the skip gracefully.
+# ============================================================================
+
+test_suite:
+  name: "Regression: cross-GPU phantom process attribution"
+  description: |
+    xpu-smi ps must report each PID on exactly one GPU.  Before the fdinfo fix
+    every zeInit'd process appeared on every enumerated GPU.
+
+  settings:
+    timeout: 90
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # cross_gpu_phantom_process
+    #   Parent: 140 MiB on GPU 0.  Child: 512 MiB on GPU 1.
+    #   After the fix each PID must appear with significant memory on exactly
+    #   one device.  The regression: both PIDs appear on both devices.
+    # -----------------------------------------------------------------------
+    - name: "cross_gpu_phantom_process"
+      description: |
+        Two processes allocate on different GPUs.  xpu-smi ps must show each
+        PID on exactly one device (the one it actually used), not on both.
+      os: "Linux"
+      type: workflow
+      continue_on_step_failure: false
+
+      steps:
+        - name: "find_and_start"
+          script: |
+            if [ -n "${CROSS_GPU_ALLOC:-}" ] && [ -x "$CROSS_GPU_ALLOC" ]; then
+              TOOL="$CROSS_GPU_ALLOC"
+            elif [ -x "./builddir/validation/scripts/cross_gpu_alloc" ]; then
+              TOOL="./builddir/validation/scripts/cross_gpu_alloc"
+            elif [ -x "./validation/scripts/cross_gpu_alloc" ]; then
+              TOOL="./validation/scripts/cross_gpu_alloc"
+            elif [ -x "./cross_gpu_alloc" ]; then
+              TOOL="./cross_gpu_alloc"
+            else
+              echo "SKIP: cross_gpu_alloc binary not found" > /tmp/xpuval_cgpu.status
+              exit 0
+            fi
+
+            "$TOOL" --device0 0 --device1 1 --size0 140 --size1 512 --duration 60 \
+              > /tmp/xpuval_cgpu.out 2>&1 &
+            echo $! > /tmp/xpuval_cgpu.pid
+
+            for i in $(seq 1 300); do
+              grep -q "^READY\|^SKIP" /tmp/xpuval_cgpu.out 2>/dev/null && break
+              sleep 0.1
+            done
+
+            if grep -q "^SKIP" /tmp/xpuval_cgpu.out 2>/dev/null; then
+              grep "^SKIP" /tmp/xpuval_cgpu.out
+              echo "SKIP" > /tmp/xpuval_cgpu.status
+              exit 0
+            fi
+
+            if ! grep -q "^READY" /tmp/xpuval_cgpu.out 2>/dev/null; then
+              echo "FAIL: cross_gpu_alloc did not emit READY within 30 s"
+              cat /tmp/xpuval_cgpu.out
+              kill "$(cat /tmp/xpuval_cgpu.pid)" 2>/dev/null
+              echo "FAIL" > /tmp/xpuval_cgpu.status
+              exit 1
+            fi
+
+            echo "OK" > /tmp/xpuval_cgpu.status
+            grep "^PARENT_PID=\|^CHILD_PID=\|^PARENT_DEVICE=\|^CHILD_DEVICE=\|^PARENT_ALLOC_BYTES=\|^CHILD_ALLOC_BYTES=" \
+              /tmp/xpuval_cgpu.out
+
+        - name: "query_and_validate"
+          command: "ps -j"
+          script: |
+            STATUS=$(cat /tmp/xpuval_cgpu.status 2>/dev/null)
+            if [ "$STATUS" = "SKIP" ]; then echo "SKIP: binary not found or < 2 GPUs"; exit 0; fi
+            if [ "$STATUS" = "FAIL" ]; then echo "FAIL: startup failed"; exit 1; fi
+
+            PARENT_PID=$(grep "^PARENT_PID=" /tmp/xpuval_cgpu.out | cut -d= -f2 | tr -d '[:space:]')
+            CHILD_PID=$(grep "^CHILD_PID=" /tmp/xpuval_cgpu.out | cut -d= -f2 | tr -d '[:space:]')
+            PARENT_DEVICE=$(grep "^PARENT_DEVICE=" /tmp/xpuval_cgpu.out | cut -d= -f2 | tr -d '[:space:]')
+            CHILD_DEVICE=$(grep "^CHILD_DEVICE=" /tmp/xpuval_cgpu.out | cut -d= -f2 | tr -d '[:space:]')
+            PARENT_ALLOC=$(grep "^PARENT_ALLOC_BYTES=" /tmp/xpuval_cgpu.out | cut -d= -f2 | tr -d '[:space:]')
+            CHILD_ALLOC=$(grep "^CHILD_ALLOC_BYTES=" /tmp/xpuval_cgpu.out | cut -d= -f2 | tr -d '[:space:]')
+
+            {command} > /tmp/xpuval_cgpu_ps.json 2>&1
+
+            python3 validation/scripts/check_cross_gpu_ps.py \
+              --parent-pid "$PARENT_PID" \
+              --child-pid "$CHILD_PID" \
+              --parent-device "$PARENT_DEVICE" \
+              --child-device "$CHILD_DEVICE" \
+              --parent-alloc-bytes "$PARENT_ALLOC" \
+              --child-alloc-bytes "$CHILD_ALLOC" \
+              /tmp/xpuval_cgpu_ps.json
+          expect:
+            return_code: 0
+            stdout_contains:
+              - "PASS"
+
+        - name: "cleanup"
+          cleanup_step: true
+          script: |
+            PID=$(cat /tmp/xpuval_cgpu.pid 2>/dev/null)
+            if [ -n "$PID" ]; then
+              kill "$PID" 2>/dev/null
+              wait "$PID" 2>/dev/null
+            fi
+            rm -f /tmp/xpuval_cgpu.pid /tmp/xpuval_cgpu.out \
+                  /tmp/xpuval_cgpu.status /tmp/xpuval_cgpu_ps.json
+
+      tags: ["regression", "process", "cross-gpu", "phantom", "ps"]
