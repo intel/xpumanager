@@ -1,0 +1,23 @@
+# Build outputs and caches (see .gitignore, Makefile "clean" target)
+/dist/
+/dist-stub/
+/builder-config.yaml
+
+/tools/bin
+/tools/include
+
+# Go build caches, coverage data and C build artefacts (also in level-zero-go/)
+**/.gocache-stub/
+**/coverage/
+**/*.o
+**/*.so
+**/*.so.*
+
+# level-zero-go build outputs
+level-zero-go/examples/bin
+level-zero-go/hack/bin
+level-zero-go/level-zero-stub/test_sysman
+
+# Editor/OS cruft
+**/*.swp
+**/*~
