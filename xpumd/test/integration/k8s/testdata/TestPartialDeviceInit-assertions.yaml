@@ -67,8 +67,19 @@ InitialState:
         hw_sensor_location: global
         statistic: max
 
-# AfterAttach: device 1 reports DEVICE_ATTACH, xpumd re-initializes the device, and starts reporting metrics.
+# AfterAttach: device 1 reports DEVICE_ATTACH. Temperature of device 2 updated to 50.
 AfterAttach:
+  metrics_sentinel:
+    name: hw_temperature_celsius
+    value: 50
+    labels:
+      <<: *dev2_id_labels
+      hw_name: temp-1
+      hw_sensor_location: global
+      statistic: max
+
+# AfterAttach-Settled: the DEVICE_ATTACH event has settled, xpumd re-initializes the device, and starts reporting metrics.
+AfterAttach-Settled:
   # Wait until device 1's info metric appears, confirming it has been re-initialized.
   metrics_sentinel:
     name: hw_gpu_info

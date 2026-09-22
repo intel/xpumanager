@@ -194,8 +194,16 @@ func TestPartialDeviceInit(t *testing.T) {
 	t.Run("AfterAttach", func(t *testing.T) {
 		tc.loadStubDriverConfig(t)
 
-		assertions := requireScenarioConfig(t, assertConfig, path.Base(t.Name()))
-		// Allow extra time for the DEVICE_ATTACH event to fire and device 1 to re-initialize.
+		// Use temperature of device 2 as a sentinel to wait for the stub
+		// driver config to be loaded. Device 1 starts firing DEVICE_ATTACH events.
+		loaded := requireScenarioConfig(t, assertConfig, path.Base(t.Name()))
+		loaded.MetricsSentinel.waitFor(t, endpoint, 30*time.Second)
+
+		// Sleep to ensure that the DEVICE_ATTACH event is received at least once, then clear it to settle.
+		time.Sleep(1 * time.Second)
+		tc.loadStubDriverConfigFrom(t, suite.testdataFile(t, "Settled-"+stubDriverConfigBasename))
+
+		assertions := requireScenarioConfig(t, assertConfig, path.Base(t.Name())+"-Settled")
 		families := assertions.MetricsSentinel.waitFor(t, endpoint, 60*time.Second)
 
 		commonAssertions.assert(t, families)

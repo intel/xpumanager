@@ -1,13 +1,11 @@
 # SPDX-License-Identifier: MIT
 #
-# Two-device config: both devices are healthy. Device 1 (gpu-1) reports
-# Events: 2 (ZES_EVENT_TYPE_FLAG_DEVICE_ATTACH = ZE_BIT(1)), which causes
-# xpumd to re-initialize it. After re-initialization, metrics are reported
-# for both devices.
+# Same two-device config as TestPartialDeviceInit-AfterAttach, but with device
+# 1's DEVICE_ATTACH event cleared.
 
 Drivers:
   - Devices:
-      # Device 1 (gpu-1): recovered — reports DEVICE_ATTACH so xpumd re-initializes it.
+      # Device 1 (gpu-1): recovered, and its DEVICE_ATTACH event has settled.
       - Properties:
           Core:
             Type: 1  # ZE_DEVICE_TYPE_GPU
@@ -33,9 +31,8 @@ Drivers:
           - Properties:
               Type: 0  # ZES_TEMP_SENSORS_GLOBAL
             Temperature: 55.0
-        Events: 2  # ZES_EVENT_TYPE_FLAG_DEVICE_ATTACH
 
-      # Device 2 (gpu-2): healthy. Temperature is updated (used as the sentinel metric).
+      # Device 2 (gpu-2): unchanged and healthy.
       - Properties:
           Core:
             Type: 1  # ZE_DEVICE_TYPE_GPU
@@ -60,5 +57,4 @@ Drivers:
         TemperatureSensors:
           - Properties:
               Type: 0  # ZES_TEMP_SENSORS_GLOBAL
-            Temperature: 50.0
-
+            Temperature: 48.0
