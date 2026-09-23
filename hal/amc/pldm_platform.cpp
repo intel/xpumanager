@@ -593,15 +593,16 @@ bool pldm::isFirmwareUpdateEnabled()
 
 	if (mStateEffecterResp.effecterOpState == PLDM_EFFECTER_ENABLED_UPDATEPENDING ||
 		mStateEffecterResp.effecterOpState == PLDM_EFFECTER_ENABLED_NOUPDATEPENDING) {
-		if (mStateEffecterResp.presentValue != 0) {
+		const uint8_t fwDisable = mStateEffecterResp.presentValue;
+		if (fwDisable == PLDM_EFFECTER_OPERATIONAL_VALUE_ENABLED) {
 			ERR("FWU: Firmware update is disabled (effector ID {} presentValue={}) on card {:02}; aborting\n",
-				kFwuEffecterId, mStateEffecterResp.presentValue, mCardNum);
+				kFwuEffecterId, fwDisable, mCardNum);
 			return false;
 		}
 	} else {
-		ERR("FWU: Firmware update effector ID {} is not enabled (effecterOpState={}) on card {:02}; aborting\n",
+		DBG("FWU: Effector state  is not valid. Ignoring effector present value for effector ID {} effecterOpState={} "
+			"on card {:02}\n",
 			kFwuEffecterId, mStateEffecterResp.effecterOpState, mCardNum);
-		return false;
 	}
 	return true;
 }

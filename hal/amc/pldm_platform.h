@@ -85,6 +85,14 @@ enum pldmEffecterOpState
 	PLDM_EFFECTER_IN_TEST = 0x08
 };
 
+// DSP0249 Table-1
+enum pldmEffecterOperationalValue
+{
+	PLDM_EFFECTER_OPERATIONAL_VALUE_INVALID = 0x00,
+	PLDM_EFFECTER_OPERATIONAL_VALUE_ENABLED = 0x01,
+	PLDM_EFFECTER_OPERATIONAL_VALUE_DISABLED = 0x02,
+};
+
 // PDR Repository State
 enum pldmPdrRepositoryState
 {
