@@ -5,6 +5,7 @@
  */
 
 #include "cmd_stats.h"
+#include <temperature_ext.h>
 #include "debug.h"
 #include <CLI/CLI.hpp>
 #include "memory.h"

@@ -10,6 +10,7 @@
 #undef INFO
 
 #include "temperature.h"
+#include "temperature_ext.h"
 
 #include <cmath>
 #include <limits>

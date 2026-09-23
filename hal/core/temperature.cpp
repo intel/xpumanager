@@ -5,6 +5,7 @@
  */
 
 #include "temperature.h"
+#include "temperature_ext.h"
 #include "debug.h"
 #include <cmath>
 #include <map>
