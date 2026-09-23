@@ -30,6 +30,7 @@ on:
       - "!.github/workflows/xpumd-*.yml"
       - "!.github/scripts/compare_go_coverage.sh"
       - "!.github/scripts/go_cover_summary.py"
+      - ".github/workflows/coverage-measure.yml"
   workflow_dispatch:
     inputs:
       head_ref:

@@ -279,7 +279,7 @@ int runSmiWithLoop(arg_struct *args, int loopMs, int count, bool tty = true)
 	constexpr int pollSliceMs = 100;
 	gSmiQuit.store(false, std::memory_order_relaxed);
 	const auto sigHandler = [](int) { gSmiQuit.store(true, std::memory_order_relaxed); };
-	UNUSED auto prevSigint  = std::signal(SIGINT,  sigHandler);
+	UNUSED auto prevSigint = std::signal(SIGINT, sigHandler);
 	UNUSED auto prevSigterm = std::signal(SIGTERM, sigHandler);
 
 	if (tty) {
@@ -317,7 +317,7 @@ int runSmiWithLoop(arg_struct *args, int loopMs, int count, bool tty = true)
 	if (tty) {
 		PRINT("\033[?1049l"); // restore normal screen buffer before any diagnostic output
 	}
-	std::signal(SIGINT,  prevSigint);
+	std::signal(SIGINT, prevSigint);
 	std::signal(SIGTERM, prevSigterm);
 
 	if (loopResult != ZE_RESULT_SUCCESS) {
@@ -478,7 +478,8 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 	// Otherwise fall through to subcommand dispatch (e.g., xpu-smi -f file.txt dump help).
 	if (argvVec.empty()) {
 		if (!formatStr.empty()) {
-			PRINT("error: --format is not supported without a subcommand; did you mean 'xpu-smi dump --format {}'?\n", formatStr);
+			PRINT("error: --format is not supported without a subcommand; did you mean 'xpu-smi dump --format {}'?\n",
+				  formatStr);
 			return 1;
 		}
 		const auto fmt = buildQueryFormat(pre, formatStr);
