@@ -13,6 +13,8 @@
 #include "os.h"
 #include <CLI/CLI.hpp>
 #include <algorithm>
+#include <atomic>
+#include <chrono>
 #include <cmd_smi.h>
 #include <cmd_dump.h>
 #include <metrics_registry.h>
@@ -24,9 +26,12 @@
 #include <optional>
 #include <memory>
 #include <ranges>
+#include <csignal>
+#include "terminal.h"
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <vector>
 
 // ---- Implementation helpers -----------------------------------------------
@@ -87,7 +92,7 @@ bool tryExtractFlag(const FlagSpec &spec, std::string_view a, int &i, int argc, 
 	}
 	// --flag value or -f value (space-separated next token), or bare --flag
 	if (a == spec.longName || (!spec.shortFlag.empty() && a == spec.shortFlag)) {
-		if (i + 1 < argc) {
+		if (i + 1 < argc && (spec.defaultIfBare.empty() || argv[i + 1][0] != '-')) {
 			*spec.value = argv[++i];
 		} else if (!spec.defaultIfBare.empty()) {
 			*spec.value = std::string{spec.defaultIfBare};
@@ -239,6 +244,93 @@ QueryFormat buildQueryFormat(const PreArgs &pre, const std::string &formatStr)
 	return fmt;
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+std::atomic<bool> gSmiQuit{false};
+
+/**
+ * @brief Run cmdSmi once or repeatedly at a fixed interval.
+ *
+ * When @p loopMs is zero, runs cmdSmi exactly once and returns its result
+ * (@p count is ignored in single-shot mode).
+ * When @p loopMs is positive, renders frames repeatedly, sleeping @p loopMs
+ * milliseconds between frames, until SIGINT or SIGTERM is received or
+ * @p count frames have been produced.  With @p tty true, uses an alternate
+ * screen buffer so each frame overwrites the previous cleanly; with @p tty
+ * false, frames are appended without ANSI sequences.  The alternate screen is
+ * always restored before returning, including on error and on SIGTERM.
+ *
+ * @param args   CLI arguments forwarded to cmdSmi.
+ * @param loopMs Interval between frames in milliseconds; 0 = single-shot.
+ * @param count  Maximum frames to produce; 0 = unlimited.  Ignored when
+ *               @p loopMs is zero.
+ * @param tty    True when stdout is an interactive terminal with ANSI support.
+ *
+ * @retval 0                          Success.
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No GPU devices found.
+ * @retval ZE_RESULT_ERROR_*          Propagated from cmdSmi.
+ */
+int runSmiWithLoop(arg_struct *args, int loopMs, int count, bool tty = true)
+{
+	cmdSmi smi;
+	if (loopMs <= 0) {
+		return smi.run(args);
+	}
+
+	constexpr int pollSliceMs = 100;
+	gSmiQuit.store(false, std::memory_order_relaxed);
+	const auto sigHandler = [](int) { gSmiQuit.store(true, std::memory_order_relaxed); };
+	UNUSED auto prevSigint  = std::signal(SIGINT,  sigHandler);
+	UNUSED auto prevSigterm = std::signal(SIGTERM, sigHandler);
+
+	if (tty) {
+		PRINT("\033[?1049h"); // enter alternate screen buffer
+	}
+
+	int iterations = 0;
+	ze_result_t loopResult = ZE_RESULT_SUCCESS;
+	while (!gSmiQuit.load(std::memory_order_relaxed) && (count <= 0 || iterations < count)) {
+		// Start the deadline before collection so the interval accounts for the
+		// 200 ms sampling window inside collectAndRender.
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(loopMs);
+		auto [result, output] = smi.collectAndRender(args);
+		if (result != ZE_RESULT_SUCCESS) {
+			loopResult = result;
+			break;
+		}
+		if (tty) {
+			PRINT("\033[H\033[J"); // cursor home + erase to end — clear stale rows
+		}
+		PRINT("{}", output.c_str());
+		++iterations;
+		if (count > 0 && iterations >= count) {
+			break;
+		}
+
+		// Sleep in pollSliceMs chunks so SIGINT/SIGTERM is noticed promptly.
+		while (!gSmiQuit.load(std::memory_order_relaxed) && std::chrono::steady_clock::now() < deadline) {
+			const auto remaining =
+				std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now());
+			std::this_thread::sleep_for(std::min(remaining, std::chrono::milliseconds(pollSliceMs)));
+		}
+	}
+
+	if (tty) {
+		PRINT("\033[?1049l"); // restore normal screen buffer before any diagnostic output
+	}
+	std::signal(SIGINT,  prevSigint);
+	std::signal(SIGTERM, prevSigterm);
+
+	if (loopResult != ZE_RESULT_SUCCESS) {
+		if (loopResult == ZE_RESULT_ERROR_DEVICE_LOST) {
+			PRINT("No GPU devices found.\n");
+		} else {
+			PRINT("Device error: 0x{:X}\n", static_cast<uint32_t>(loopResult));
+		}
+		return loopResult;
+	}
+	return 0;
+}
+
 } // namespace
 
 // ---- DefaultParser ----------------------------------------------------------
@@ -282,9 +374,7 @@ void DefaultParser::printExtraOptions()
 std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::vector<std::unique_ptr<cmds>> &cmdList)
 {
 	if (args->argc == 1) {
-		cmdSmi smi;
-		smi.run(args);
-		return 0;
+		return runSmiWithLoop(args, 0, 0);
 	}
 
 	if (!STRCASECMP(args->argv[1], "help")) {
@@ -384,7 +474,16 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 		return cmdDump::runQuery(effectiveQuery, pre.deviceSpec, args, buildQueryFormat(pre, formatStr), selector);
 	}
 
-	// No query/version/list-gpus flags, but options like -f may have been extracted —
-	// fall through to subcommand dispatch (e.g., xpu-smi -f file.txt dump help).
+	// If no subcommand tokens remain, run the default smi view (possibly looped).
+	// Otherwise fall through to subcommand dispatch (e.g., xpu-smi -f file.txt dump help).
+	if (argvVec.empty()) {
+		if (!formatStr.empty()) {
+			PRINT("error: --format is not supported without a subcommand; did you mean 'xpu-smi dump --format {}'?\n", formatStr);
+			return 1;
+		}
+		const auto fmt = buildQueryFormat(pre, formatStr);
+		const int loopMs = (fmt.count > 0 && fmt.loopMs <= 0) ? 1000 : fmt.loopMs;
+		return runSmiWithLoop(args, loopMs, fmt.count, stdoutIsTerminal() && pre.logFilePath.empty());
+	}
 	return std::nullopt;
 }

@@ -17,6 +17,7 @@ if is_windows
     'win/path_lookup_win.cpp',
     'win/proc_fdinfo.cpp',
     'win/process_platform.cpp',
+    'win/terminal.cpp',
     'win/thread.cpp',
     'win/win.cpp',
   )
@@ -39,6 +40,7 @@ elif is_linux
     'lin/pci_database.cpp',
     'lin/proc_fdinfo.cpp',
     'lin/process_platform.cpp',
+    'lin/terminal.cpp',
     'lin/topology.cpp',
     'lin/pch_prod_state.cpp',
     'lin/vram_debugfs.cpp',

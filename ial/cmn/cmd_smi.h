@@ -78,6 +78,7 @@ public:
 	~cmdSmi() {}
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
+	std::pair<ze_result_t, std::string> collectAndRender(arg_struct *args);
 
 private:
 	static void collectStaticProps(SmiDeviceStats &stats, devInfo *dev);

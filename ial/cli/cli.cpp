@@ -108,6 +108,8 @@ void setPrintLvl(arg_struct *arg, LogLevel lvl)
 	arg->sm.setPrintLvl(lvl);
 }
 
+using ArgvView = std::span<char *const>;
+
 /**
  * @brief Main entry point for the application
  * @param argc Number of command-line arguments
@@ -117,6 +119,7 @@ void setPrintLvl(arg_struct *arg, LogLevel lvl)
 int main(int argc, char *argv[])
 {
 	TRACING();
+	const ArgvView args{argv, static_cast<std::size_t>(argc)};
 	arg_struct arg;
 	if (auto sv = getEnv("XPU_SMI_LOG_LEVEL")) {
 		std::ranges::transform(*sv, sv->begin(), [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
@@ -151,8 +154,7 @@ int main(int argc, char *argv[])
 	{
 		bool sawConfig = false;
 		bool sawReset = false;
-		for (int i = 1; i < argc; i++) {
-			const std::string av{argv[i]};
+		for (const std::string_view av : args.subspan(1)) {
 			if (av == "config") {
 				sawConfig = true;
 			} else if (av == "--reset") {
@@ -177,7 +179,7 @@ int main(int argc, char *argv[])
 	const OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;
 	/* Detect "compat" subparser prefix: xpu-smi compat <subcommand> [args...]
 	 * Shift argv left to strip "compat" so the parser sees a normal argv. */
-	if (argc >= 2 && std::string_view{argv[1]} == "compat") {
+	if (args.size() >= 2 && std::string_view{args[1]} == "compat") {
 		PRINT("compat is currently unimplemented");
 		return 1;
 	}

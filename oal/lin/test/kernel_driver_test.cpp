@@ -151,7 +151,7 @@ TEST_CASE("getKernelDriverName falls back to a loaded GPU module")
 TEST_CASE("getKernelDriverName reports nothing when no Intel GPU driver is present")
 {
 	const FakeSysfs sysfs("no_driver");
-	sysfs.addModule("nvidia");
+	sysfs.addModule("other_gpu");
 	sysfs.addUnboundDevice(BDF);
 
 	CHECK(getKernelDriverName(BDF, sysfs.paths).empty());

@@ -449,17 +449,11 @@ TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList)
 			continue;
 		}
 		for (const auto &p : procs) {
-			// Strip at embedded null (commandName may come from /proc and contain \0 padding)
-			std::string procName = p.commandName;
-			size_t const nullPos = procName.find('\0');
-			if (nullPos != std::string::npos) {
-				procName.resize(nullPos);
-			}
 			// memSize is in KiB (already divided by 1024 in getProcessList)
 			double memMiB = static_cast<double>(p.memSize) / 1024.0;
 			std::string memStr = xpum::compat::format("{:.0f} MiB", memMiB);
 			std::string procType = processTypeFromEngines(p.engines, p.memSize, p.sharedSize);
-			procTable.addRow(di.index, p.processId, procType, procName, memStr);
+			procTable.addRow(di.index, p.processId, procType, p.commandName, memStr);
 			anyProcess = true;
 		}
 	}
@@ -483,20 +477,30 @@ void cmdSmi::help(HELP helpType)
 	printHelp(helpList, helpType);
 }
 
-int cmdSmi::run(arg_struct *args)
+/**
+ * @brief Collect GPU telemetry and render it to a string.
+ *
+ * Enumerates all available GPU devices, gathers static properties,
+ * temperature, memory, power, and utilization metrics (via a 200 ms
+ * delta window), then formats the result as a printable table string.
+ *
+ * @param args  CLI arguments used for device enumeration and formatting.
+ *
+ * @return A pair of the Level Zero result code and the rendered output
+ *         string.  The string is empty when the result is not
+ *         ZE_RESULT_SUCCESS.
+ */
+std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 {
-	TRACING();
-
 	// ── 1. Enumerate all devices ────────────────────────────────────────
 	std::vector<devInfo> deviceList;
 	ze_result_t result = args->sm.findDevice("", &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate GPU devices (error 0x{:x}).\n", result);
-		return result;
+		return {result, {}};
 	}
 	if (deviceList.empty()) {
-		PRINT("No GPU devices found.\n");
-		return ZE_RESULT_ERROR_DEVICE_LOST;
+		return {ZE_RESULT_ERROR_DEVICE_LOST, {}};
 	}
 
 	// ── 2. Collect static properties + temperature + memory + TDP ───────
@@ -524,14 +528,36 @@ int cmdSmi::run(arg_struct *args)
 	std::string lzVersion;
 	args->sm.getLoaderVersion(&lzVersion);
 
-	// ── 6. Render output ────────────────────────────────────────────────
+	// ── 6. Render to string ─────────────────────────────────────────────
 	TableBuilder gpuTable = buildGpuTable(devStats, lzVersion);
-	PRINT("{}\n", gpuTable.toString().c_str());
-
 	TableBuilder procTable = buildProcessTable(deviceList);
-	int const tableWidth = gpuTable.getTotalWidth();
-	procTable.padToWidth(tableWidth);
-	PRINT("{}\n", procTable.toString().c_str());
+	procTable.padToWidth(gpuTable.getTotalWidth());
+	return {result, gpuTable.toString() + "\n" + procTable.toString() + "\n"};
+}
 
+/**
+ * @brief Run a single-shot SMI summary and print it to stdout.
+ *
+ * Calls collectAndRender() once, prints the result, and returns the
+ * Level Zero result code.  Prints "No GPU devices found." when no
+ * devices are enumerated.
+ *
+ * @param args  CLI arguments used for device enumeration and formatting.
+ *
+ * @retval 0                          Success.
+ * @retval ZE_RESULT_ERROR_DEVICE_LOST No GPU devices found.
+ * @retval ZE_RESULT_ERROR_*          Propagated from collectAndRender.
+ */
+int cmdSmi::run(arg_struct *args)
+{
+	TRACING();
+	auto [result, output] = collectAndRender(args);
+	if (result != ZE_RESULT_SUCCESS) {
+		if (result == ZE_RESULT_ERROR_DEVICE_LOST) {
+			PRINT("No GPU devices found.\n");
+		}
+		return result;
+	}
+	PRINT("{}", output.c_str());
 	return result;
 }

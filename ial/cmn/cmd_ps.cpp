@@ -57,7 +57,8 @@ void cmdPs::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "PID:      Process ID"));
 	helpList.push_back(helpCmd(TITLE, "Command:  Process command name"));
-	helpList.push_back(helpCmd(TITLE, "Type:     Engine type (Compute/Graphic/Media/Copy/Mixed) derived from active engine contexts"));
+	helpList.push_back(
+		helpCmd(TITLE, "Type:     Engine type (Compute/Graphic/Media/Copy/Mixed) derived from active engine contexts"));
 	helpList.push_back(helpCmd(TITLE, "DeviceID: Device ID"));
 	helpList.push_back(helpCmd(TITLE, "SHR:      The size of shared device memory mapped into this process (may not "
 									  "necessarily be resident on the device at the time of reading) (kB)"));
@@ -219,6 +220,9 @@ void cmdPs::buildPsInfoList(std::vector<psInfo> &psInfoList, const std::vector<z
 		if (const auto pos = procName.rfind('/'); pos != std::string::npos) {
 			procName = procName.substr(pos + 1);
 		}
+		if (procName == progName) {
+			continue;
+		}
 		psInfoList.push_back({p.processId, procName, devIndex, p.engines, p.sharedSize / 1024, p.memSize / 1024, {}});
 	}
 }
@@ -320,7 +324,7 @@ static void applyEuProportional(std::span<psInfo> procs, const fdinfo::PidUtilMa
 	// Summed from raw engine entries so multi-instance engines are not capped.
 	// Copy/media engines excluded — they do not drive EU execution.
 	const float totalActivity = std::accumulate(utilMap.begin(), utilMap.end(), 0.0F,
-		[](float s, const auto &kv) { return s + euCapableSum(kv.second); });
+												[](float s, const auto &kv) { return s + euCapableSum(kv.second); });
 	if (totalActivity <= 0.0F) {
 		return;
 	}
@@ -458,7 +462,8 @@ int cmdPs::run(arg_struct *args)
 		// ── Phase 3a: collect processes + fdinfo after (fast; sequential) ─────────
 		// fdAfter is local to each iteration — it is consumed here and not needed
 		// in Phase 3c, so only startIdx/count/utilMap are carried forward.
-		struct DevData {
+		struct DevData
+		{
 			std::size_t startIdx;
 			std::size_t count; ///< Number of psInfo entries added for this device.
 			fdinfo::PidUtilMap utilMap;
