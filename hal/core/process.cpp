@@ -40,15 +40,33 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 		return result;
 	}
 
-	processList->clear();
-	processList->resize(processCount);
-	for (auto &procState : *processList) {
-		procState.stype = ZES_STRUCTURE_TYPE_PROCESS_STATE;
-		procState.pNext = nullptr;
+	// Retry when a new process starts between the count query and the data
+	// fetch: the driver returns INVALID_SIZE and updates processCount to the
+	// new required size, so we can resize and try again immediately.
+	constexpr int maxRetries = 3;
+	for (int attempt = 0; attempt < maxRetries; ++attempt) {
+		processList->assign(processCount, [] {
+			zes_process_state_t ps{};
+			ps.stype = ZES_STRUCTURE_TYPE_PROCESS_STATE;
+			return ps;
+		}());
+		result = zesDeviceProcessesGetState(device, &processCount, processList->data());
+		if (result != ZE_RESULT_ERROR_INVALID_SIZE) {
+			break;
+		}
+		processCount = 0;
+		const ze_result_t recount = zesDeviceProcessesGetState(device, &processCount, nullptr);
+		if (recount != ZE_RESULT_SUCCESS) {
+			result = recount;
+			break;
+		}
 	}
-	result = zesDeviceProcessesGetState(device, &processCount, processList->data());
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get process states: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		if (result == ZE_RESULT_ERROR_INVALID_SIZE) {
+			DBG("Process list changed faster than {} retries could keep up; skipping this cycle\n", maxRetries);
+		} else {
+			ERR("Failed to get process states: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		}
 		return result;
 	}
 
