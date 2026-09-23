@@ -126,6 +126,8 @@ int cmdUpdateFW::run(arg_struct *args)
 	uint32_t totalThreads = 0;
 	std::atomic<uint32_t> curThread{0};
 	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};
+	// Components of a composite package flashed across both update passes and all devices
+	std::atomic<uint32_t> componentsApplied{0};
 	std::vector<std::thread> workers;
 
 	CLI::App sub{"Update GPU firmware", "updatefw"};
@@ -238,6 +240,7 @@ int cmdUpdateFW::run(arg_struct *args)
 					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 					return;
 				}
+				componentsApplied.fetch_add(localInfo.componentsApplied, std::memory_order_relaxed);
 			});
 		}
 	}
@@ -298,18 +301,30 @@ int cmdUpdateFW::run(arg_struct *args)
 				ERR("Error: Failed to update AMC firmware for device {}.\n", amcDevices[i]->index);
 				ze_result_t expected = ZE_RESULT_SUCCESS;
 				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+				continue;
 			}
+			componentsApplied.fetch_add(localInfo.componentsApplied, std::memory_order_relaxed);
 		}
 	}
 
 	if (firstError != ZE_RESULT_SUCCESS) {
 		return firstError.load();
-	} else {
-		if (totalThreads > 0 || amcLines > 0) {
-			PRINT("\n"); // Move the cursor to the next line after the last progress bar
-		}
-		PRINT("Firmware update operation completed successfully.\n");
 	}
+
+	if (totalThreads > 0 || amcLines > 0) {
+		PRINT("\n"); // Move the cursor to the next line after the last progress bar
+	}
+
+	// Each pass skips the components it does not own, so a pass that flashed nothing is not an
+	// error on its own; only a composite update in which no pass flashed anything is.
+	if (isComposite && componentsApplied.load() == 0) {
+		ERR("Error: Package '{}' carries no component that applies to the selected device(s){}. Nothing was "
+			"updated. Run with XPU_SMI_LOG_LEVEL=DBG to see why each component was skipped.\n",
+			fwInfo.filePath.c_str(), fwInfo.fdoOnly ? " with --fdo" : "");
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	PRINT("Firmware update operation completed successfully.\n");
 
 	return 0;
 }

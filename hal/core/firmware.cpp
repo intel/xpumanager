@@ -27,11 +27,11 @@ struct compositeComponentMap
 	const char *skipReason; // why it is not flashed by default, null when it is
 };
 
-// Every identifier a composite package can carry. Recovery images and the SVN table have no
-// endpoint this stack can flash, so they are listed with MAX_FW_TYPE and skipped by name rather
-// than falling into the "unknown identifier" case.
+// Every identifier a composite package can carry. Recovery images and the reserved identifier
+// have no endpoint this stack can flash, so they are listed with MAX_FW_TYPE and skipped by name
+// rather than falling into the "unknown identifier" case.
 static const compositeComponentMap compositeComponents[] = {
-	{PLDM_COMPONENT_ID_SVN_TABLE, "SVN_TABLE", MAX_FW_TYPE, false, "no firmware endpoint accepts an SVN table"},
+	{PLDM_COMPONENT_ID_UNUSED, "UNUSED", MAX_FW_TYPE, false, "the identifier is reserved and carries no image"},
 	{PLDM_COMPONENT_ID_IFWI, "IFWI", FDO, true, "it is a device recovery image, pass --fdo to flash it"},
 	{PLDM_COMPONENT_ID_AMC_RECOVERY, "AMC_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
 	{PLDM_COMPONENT_ID_AMC, "AMC", AMC, false, nullptr},
@@ -516,6 +516,9 @@ const compositeComponentMap *firmware::selectComponent(uint16_t identifier, cons
  * Components that do not apply are skipped without failing the update, but a component that has an
  * endpoint and fails to flash aborts the remaining components on this device.
  *
+ * The number of components flashed is returned in fwInfo->componentsApplied, which is 0 when none
+ * applied; that case still returns success, as it is only an error if no update pass flashed anything.
+ *
  * @param fwInfo Pointer to firmware information structure containing update details
  * @return ze_result_t ZE_RESULT_SUCCESS if every applicable component was flashed, error code otherwise
  */
@@ -615,9 +618,13 @@ ze_result_t firmware::updateComposite(firmwareInfo *fwInfo)
 		}
 	}
 
+	fwInfo->componentsApplied = current;
+
+	// Not an error here: the other update pass may still have a component to flash, so the caller
+	// decides once both passes have run.
 	if (current == 0) {
-		DBG("Package '{}' carries no component that applies to device {}.\n", fwInfo->filePath.c_str(),
-			fwInfo->deviceIndex);
+		DBG("Package '{}' carries no component that applies to device {} in this update pass.\n",
+			fwInfo->filePath.c_str(), fwInfo->deviceIndex);
 	}
 
 	return ZE_RESULT_SUCCESS;

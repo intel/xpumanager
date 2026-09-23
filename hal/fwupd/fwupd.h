@@ -57,7 +57,7 @@ enum fwType
  */
 typedef enum
 {
-	PLDM_COMPONENT_ID_SVN_TABLE = 0x0001,
+	PLDM_COMPONENT_ID_UNUSED = 0x0001,
 	PLDM_COMPONENT_ID_IFWI = 0x0002,
 	PLDM_COMPONENT_ID_AMC_RECOVERY = 0x0003,
 	PLDM_COMPONENT_ID_AMC = 0x0004,
@@ -108,11 +108,12 @@ struct firmwareInfo
 	uint32_t curThread;
 
 	// Composite (PLDM Type 5) package handling. Only meaningful while a COMPOSITE update is running.
-	bool fdoOnly;			  // --fdo was passed: flash the IFWI component and nothing else
-	compositeScope scope;	  // which components this call is responsible for
-	bool imagePreloaded;	  // buffer already holds the image to flash, do not read filePath
-	std::string imageLabel;	  // component being flashed, e.g. "GFX_CODE 1/3", for progress and errors
-	uint16_t pldmComponentId; // component to select from filePath, 0 for the whole package
+	bool fdoOnly;				// --fdo was passed: flash the IFWI component and nothing else
+	compositeScope scope;		// which components this call is responsible for
+	bool imagePreloaded;		// buffer already holds the image to flash, do not read filePath
+	std::string imageLabel;		// component being flashed, e.g. "GFX_CODE 1/3", for progress and errors
+	uint16_t pldmComponentId;	// component to select from filePath, 0 for the whole package
+	uint32_t componentsApplied; // out: components flashed by this call, set by a COMPOSITE update
 
 	igsc_device_handle handle;
 	std::vector<char> buffer;
