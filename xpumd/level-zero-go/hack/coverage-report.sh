@@ -101,4 +101,4 @@ report_module() {
 
 for module in "$@"; do
     report_module "${module}"
-done
+done | tee "${COVERAGE_DIR}/summary.txt"
