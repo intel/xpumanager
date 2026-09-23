@@ -8,9 +8,9 @@ set -o pipefail
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
-OTEL_VERSION=0.161.0
-
 cd "$SCRIPT_DIR/.."
+
+OTEL_VERSION="$(sed -n 's/^OTEL_VERSION ?= *//p' Makefile)"
 sed "s/@OTEL_VERSION@/${OTEL_VERSION}/g" builder-config.yaml.in > builder-config.yaml
 go tool -modfile tools/go.mod builder --config=builder-config.yaml --skip-compilation
 
