@@ -45,10 +45,18 @@ GO_FLAGS := -buildmode=pie -bindnow -s -w
 # would otherwise "pollute" the cache for the real driver build.
 BUILD_STUB_ENV := PKG_CONFIG_PATH=$(CURDIR)/level-zero-go/level-zero-stub GOCACHE=$(CURDIR)/.gocache-stub
 
+# Packages to instrument for coverage.
+XPUMD_PKG := $(shell go list -m)
+LEVEL_ZERO_GO_PKG := $(shell go -C level-zero-go list -m)
+GO_COVER_FLAGS := -cover -coverpkg=$(XPUMD_PKG)/...,$(LEVEL_ZERO_GO_PKG)/...
+
+.PHONY: builder-config.yaml
+builder-config.yaml:
+	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
+
 .PHONY: build
 # Build xpumd + xpuinfo-cli
-build:
-	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
+build: builder-config.yaml
 	go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
 	go -C dist build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
@@ -59,19 +67,25 @@ level-zero-stub:
 
 .PHONY: build-stub
 # Build xpumd + xpuinfo-cli against the level-zero-stub driver
-build-stub: level-zero-stub
-	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' -e 's#output_path: ./dist#output_path: ./dist-stub#' builder-config.yaml.in > builder-config.yaml
+build-stub: level-zero-stub builder-config.yaml
+	sed -i 's#output_path: ./dist#output_path: ./dist-stub#' builder-config.yaml
 	$(BUILD_STUB_ENV) go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=builder-config.yaml
 	$(BUILD_STUB_ENV) go -C dist-stub build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
 	@echo "  SYSMAN_STUB_CONFIG=level-zero-go/level-zero-stub/example-config.yaml ./dist-stub/xpumd" --config config-example.yaml
 	@echo ""
 
+.PHONY: build-cover
+# Build coverage-instrumented xpumd + xpuinfo-cli
+build-cover: builder-config.yaml
+	go tool -modfile tools/go.mod builder --skip-compilation --config=builder-config.yaml
+	go -C dist build $(GO_COVER_FLAGS) --ldflags "$(GO_FLAGS)" -o xpumd .
+	go -C dist build $(GO_COVER_FLAGS) --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
+
 .PHONY: race
 # Build race detector versions (incompatible with PIE mode)
 # Log errors to file with: GORACE=log_path=xpumd-races
-race:
-	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in > builder-config.yaml
+race: builder-config.yaml
 	GOFLAGS=-race go tool -modfile tools/go.mod builder --config=builder-config.yaml
 	go -C dist build -race github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
@@ -79,6 +93,12 @@ race:
 # Build the xpumd container image
 docker-build:
 	docker build --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
+
+.PHONY: docker-build-cover
+# Build image with coverage-instrumented binaries
+docker-build-cover:
+	docker build --build-arg BACKEND=$(BACKEND) --build-arg BUILD_TARGET=build-cover \
+	  -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate
 # Run all code generation

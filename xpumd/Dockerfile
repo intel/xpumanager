@@ -200,11 +200,13 @@ RUN if [ -n "$TOOLS" ]; then \
     fi
 
 # Build xpumd / xpuinfo-cli + stub driver & install them
+# Use '--build-arg BUILD_TARGET=build-cover' to get coverage-instrumented binaries
+ARG BUILD_TARGET=build
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \
     mkdir -p /out && \
-    make build && \
+    make "$BUILD_TARGET" && \
     make -C level-zero-go/level-zero-stub clean test && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
     install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
