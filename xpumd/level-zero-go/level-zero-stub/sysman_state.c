@@ -720,9 +720,9 @@ void sysman_state_reset(void)
 char *sysman_get_config_path(void)
 {
 	pthread_mutex_lock(&g_state_lock);
-	char *pathc = strdup(g_config_path);
+	char *path_c = strdup(g_config_path);
 	pthread_mutex_unlock(&g_state_lock);
-	return pathc;
+	return path_c;
 }
 
 int sysman_watch_start(void)
