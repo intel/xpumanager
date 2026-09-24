@@ -1,0 +1,5 @@
+[codespell]
+# Ignore type names inherited to C & Go code from L0 headers
+ignore-words-list = pEvents,PEvents
+# Skip generated and imported code
+skip = *.mod,*.sum,*/dist/*,*/tools/include/*,*/level-zero-go/level-zero/*.h,*/level-zero-go/include/intel/*.h

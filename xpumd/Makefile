@@ -160,7 +160,13 @@ test-integration-existing-cluster:
 		--image-pull-policy=$(IMAGE_PULL_POLICY)
 
 .PHONY: lint
-lint: golint shellcheck
+lint: codespell golint shellcheck
+
+.PHONY: codespell
+# <apt|dnf> install codespell
+codespell:
+	@echo -e "Spellchecking other than generated & imported code..."
+	codespell --config .codespellrc .
 
 .PHONY: golint
 golint:
