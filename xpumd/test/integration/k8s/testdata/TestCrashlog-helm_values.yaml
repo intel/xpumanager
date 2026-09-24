@@ -67,7 +67,7 @@ initContainers:
   - name: test-helper
     image: busybox:1.37.0
     restartPolicy: Always
-    command: ["sleep", "inf"]
+    command: ["sh", "-c", "trap 'exit 0' TERM; sleep inf & wait"]
     volumeMounts:
       - name: crashlog
         mountPath: /var/log/crashlog

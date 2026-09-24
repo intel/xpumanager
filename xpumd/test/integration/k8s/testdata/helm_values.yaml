@@ -23,12 +23,13 @@ extraEnv:
 # Native sidecar for handling the stub driver configuration:
 #   1. Copies the initial stub config from the ConfigMap into the emptyDir
 #   2. Sleeps indefinitely so the test can stream an updated config into it
+#      (trapping SIGTERM, which PID 1 ignores by default, for a fast pod termination)
 #   3. Startup probe ensures the main container starts only after the config is in place
 initContainers:
   - name: stub-driver-config-writer
     image: busybox:1.37.0
     restartPolicy: Always
-    command: ["sh", "-c", "cp /etc/level-zero-stub-cm/stub.yaml /etc/level-zero-stub/stub.yaml.tmp && mv /etc/level-zero-stub/stub.yaml.tmp /etc/level-zero-stub/stub.yaml && sleep inf"]
+    command: ["sh", "-c", "trap 'exit 0' TERM; cp /etc/level-zero-stub-cm/stub.yaml /etc/level-zero-stub/stub.yaml.tmp && mv /etc/level-zero-stub/stub.yaml.tmp /etc/level-zero-stub/stub.yaml && { sleep inf & wait; }"]
     volumeMounts:
       - name: stub-driver-config-cm
         mountPath: /etc/level-zero-stub-cm

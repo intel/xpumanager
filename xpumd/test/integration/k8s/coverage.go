@@ -203,9 +203,10 @@ func (c *coverageCollector) startPod(ctx context.Context, nodeName, podName stri
 			NodeName:      nodeName,
 			RestartPolicy: corev1.RestartPolicyNever,
 			Containers: []corev1.Container{{
-				Name:    coverageCollectorName,
-				Image:   coverageCollectorImage,
-				Command: []string{"sleep", "inf"},
+				Name:  coverageCollectorName,
+				Image: coverageCollectorImage,
+				// PID 1 ignores SIGTERM by default, trap it for a fast pod termination
+				Command: []string{"sh", "-c", "trap 'exit 0' TERM; sleep inf & wait"},
 				VolumeMounts: []corev1.VolumeMount{{
 					Name:      coverageVolumeName,
 					MountPath: coverageDataDir,
