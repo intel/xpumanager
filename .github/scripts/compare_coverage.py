@@ -35,6 +35,40 @@ def fraction(data: dict, kind: str) -> str:
     return "N/A" if total == 0 else f"{covered}/{total}"
 
 
+def change(base_pct: float | None, pr_pct: float | None) -> str:
+    if base_pct is None:
+        return "added"
+    if pr_pct is None:
+        return "removed"
+    delta = pr_pct - base_pct
+    return f"{'+' if delta >= 0 else ''}{fmt(delta)}"
+
+
+def module_table(base: dict, pr: dict, base_ref: str) -> list[str]:
+    """Lists the coverage of every module, if the summaries have per-module data."""
+    base_modules = {m["module"]: m for m in base.get("modules") or []}
+    pr_modules = {m["module"]: m for m in pr.get("modules") or []}
+    if not base_modules and not pr_modules:
+        return []
+
+    lines = [
+        "",
+        f"| Module | {base_ref} | PR | Change | Direction |",
+        f"|--------|{''.join('-' for _ in base_ref)}--|-----|--------|-----------|",
+    ]
+    for name in sorted(set(base_modules) | set(pr_modules)):
+        b, p = base_modules.get(name), pr_modules.get(name)
+        b_pct = b.get("line_percent", 0.0) if b else None
+        p_pct = p.get("line_percent", 0.0) if p else None
+        b_cell = f"{fmt(b_pct)} ({fraction(b, 'line')})" if b else "N/A"
+        p_cell = f"{fmt(p_pct)} ({fraction(p, 'line')})" if p else "N/A"
+        dir_cell = "" if b is None or p is None else direction(p_pct - b_pct)
+        lines.append(
+            f"| `{name}` | {b_cell} | {p_cell} | {change(b_pct, p_pct)} | {dir_cell} |"
+        )
+    return lines
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("base", type=Path)
@@ -85,6 +119,8 @@ def main() -> None:
             f" {fmt(p_pct)} ({fraction(pr, m.key)}) | {sign}{fmt(delta)} | {direction(delta)} |"
         )
 
+    lines += module_table(base, pr, args.base_ref)
+
     base_files = {f["filename"]: f.get("line_percent", 0.0) for f in base.get("files", [])}
     pr_files = {f["filename"]: f.get("line_percent", 0.0) for f in pr.get("files", [])}
 
@@ -117,11 +153,7 @@ def main() -> None:
             "|------|-----|----|--------|",
         ]
         for fn, b, p in changed:
-            if b is None or p is None:
-                change = "added" if b is None else "removed"
-            else:
-                change = f"{'+' if p >= b else ''}{fmt(p - b)}"
-            lines.append(f"| `{fn}` | {fmt(b)} | {fmt(p)} | {change} |")
+            lines.append(f"| `{fn}` | {fmt(b)} | {fmt(p)} | {change(b, p)} |")
         lines += ["", "</details>"]
     else:
         lines += ["", f"_No individual files changed {metric} by more than 1%._"]

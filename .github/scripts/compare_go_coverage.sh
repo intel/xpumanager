@@ -28,8 +28,10 @@ echo "## Coverage report: ${TITLE}"
 
 for bucket in hand-written generated; do
     for target_rev in base head; do
-        find "coverage-$target_rev" -name "coverage-$bucket.out" -print0 |
-            xargs -0 python3 "$SCRIPT_DIR/go_cover_summary.py" --strip-prefix "$MODULE_PREFIX" \
+        # Run in the coverage directory, the directory of a profile is its module
+        (cd "coverage-$target_rev" &&
+            find . -name "coverage-$bucket.out" -print0 |
+            xargs -0 python3 "$SCRIPT_DIR/go_cover_summary.py" --strip-prefix "$MODULE_PREFIX") \
             > "summary-$target_rev-$bucket.json"
     done
 

@@ -7,13 +7,18 @@ import sys
 from pathlib import Path
 
 
-def parse(profiles: list[Path], strip_prefix: str) -> dict[str, list[int]]:
-    """Sums the statements and the covered statements of every file."""
+def parse(
+    profiles: list[Path], strip_prefix: str
+) -> tuple[dict[str, list[int]], dict[str, list[int]]]:
+    """Sums the statements and the covered statements of every file and module."""
     # The profiles of several modules, or of packages instrumented with
-    # "-coverpkg", may include the same block multiple times: count each of them once.
-    blocks: dict[tuple[str, str], tuple[int, bool]] = {}
+    # "-coverpkg", may include the same block multiple times: count each of them
+    # once, in the module of the profile it was first seen in.
+    blocks: dict[tuple[str, str], tuple[int, bool, str]] = {}
 
     for profile in profiles:
+        # The directory of the profile is the module, e.g. "xpumd/exporter/intelxpuinfo/api"
+        module = str(profile.parent)
         for line in profile.read_text().splitlines():
             # The first line is the counter mode, the rest are coverage blocks:
             # "<import path>/<file>:<from>.<col>,<to>.<col> <statements> <count>"
@@ -28,14 +33,28 @@ def parse(profiles: list[Path], strip_prefix: str) -> dict[str, list[int]]:
             blocks[(name, block)] = (
                 int(statements),
                 covered or (previous is not None and previous[1]),
+                module if previous is None else previous[2],
             )
 
     files: dict[str, list[int]] = {}
-    for (name, _), (statements, covered) in blocks.items():
-        totals = files.setdefault(name, [0, 0])
-        totals[0] += statements if covered else 0
-        totals[1] += statements
-    return files
+    modules: dict[str, list[int]] = {}
+    for (name, _), (statements, covered, module) in blocks.items():
+        for totals in (files.setdefault(name, [0, 0]), modules.setdefault(module, [0, 0])):
+            totals[0] += statements if covered else 0
+            totals[1] += statements
+    return files, modules
+
+
+def entries(key: str, totals: dict[str, list[int]]) -> list[dict]:
+    return [
+        {
+            key: name,
+            "line_covered": c,
+            "line_total": t,
+            "line_percent": percent(c, t),
+        }
+        for name, (c, t) in sorted(totals.items())
+    ]
 
 
 def percent(covered: int, total: int) -> float:
@@ -43,7 +62,11 @@ def percent(covered: int, total: int) -> float:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Summarizes Go coverage profiles in the JSON format of 'gcovr --json-summary'."
+        " To be run in the root of the coverage directory: the directory of each profile,"
+        " e.g. 'xpumd/exporter/intelxpuinfo/api/coverage.out', is the name of its module.",
+    )
     parser.add_argument("profiles", nargs="+", type=Path)
     parser.add_argument(
         "--strip-prefix",
@@ -53,7 +76,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    files = parse(args.profiles, args.strip_prefix)
+    files, modules = parse(args.profiles, args.strip_prefix)
     covered = sum(c for c, _ in files.values())
     total = sum(t for _, t in files.values())
     if not total:
@@ -67,15 +90,8 @@ def main() -> None:
             "branch_covered": 0,
             "branch_total": 0,
             "branch_percent": 0.0,
-            "files": [
-                {
-                    "filename": name,
-                    "line_covered": c,
-                    "line_total": t,
-                    "line_percent": percent(c, t),
-                }
-                for name, (c, t) in sorted(files.items())
-            ],
+            "files": entries("filename", files),
+            "modules": entries("module", modules),
         },
         sys.stdout,
         indent=2,
