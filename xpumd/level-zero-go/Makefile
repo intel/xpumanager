@@ -88,12 +88,12 @@ test-stub: build-stub
 test-go: build-stub
 	$(Q)GO_TEST_FLAGS="-tags test" \
 	  PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub \
-	  hack/go-test-coverage.sh $(COVERAGE_DIR) $(GO_MODULES)
+	  hack/go-test-coverage.sh $(COVERAGE_DIR)/level-zero-go $(GO_MODULES)
 
 .PHONY: coverage
 coverage: test-go
 	@echo
-	$(Q)hack/coverage-report.sh $(COVERAGE_DIR) $(GO_MODULES)
+	$(Q)hack/coverage-report.sh $(COVERAGE_DIR)/level-zero-go $(GO_MODULES)
 
 .PHONY: clean-coverage
 clean-coverage:
