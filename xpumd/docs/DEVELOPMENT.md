@@ -334,6 +334,20 @@ make coverage-integration-test-existing-cluster
 > in the same cluster as coverage collection uses fixed hostPath mount and
 > namespace.
 
+After getting coverage data from integration tests, merge it into the unit test
+coverage reports with `COVERAGE_TO_MERGE`:
+
+```bash
+make coverage COVERAGE_TO_MERGE=coverage/integration-tests.cov
+make -C level-zero-go coverage COVERAGE_TO_MERGE=../coverage/integration-tests.cov
+```
+
+The merged profiles are written into `coverage-merged.out`, next to the unit
+test `coverage.out` of each module.
+
+> [!IMPORTANT]
+> The integration and unit coverage profiles must be produced with the same Go version.
+
 ## Driver stack updates
 
 The build args of the `BACKEND=src` Dockerfile stage are copied from the

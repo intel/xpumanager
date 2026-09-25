@@ -22,6 +22,8 @@ fi
 TITLE=$1
 MODULE_PREFIX=$2
 BASE_REF=$3
+# shellcheck disable=SC2016  # the backticks are literal markdown, not a command substitution
+MEASURED_BY='the Go unit tests (`make coverage`) and integration tests (`make coverage-integration-test-kind`)'
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
@@ -37,11 +39,10 @@ for bucket in hand-written generated; do
     done
 
     echo
-    # shellcheck disable=SC2016  # the backticks are literal markdown, not a command substitution
     python3 "$SCRIPT_DIR/compare_coverage.py" \
         "summary-base-$bucket.json" "summary-head-$bucket.json" \
         --base-ref "$BASE_REF" \
         --title "### ${bucket^} code" \
         --line-label 'Statement coverage' \
-        --measured-by 'the Go unit tests (`make coverage`)'
+        --measured-by "$MEASURED_BY"
 done

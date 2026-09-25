@@ -145,6 +145,9 @@ clean: clean-coverage
 # --- Test targets
 
 COVERAGE_DIR := coverage
+# Extra coverage profiles to merge into the 'coverage' report, e.g. the one from
+# 'coverage-integration-test-kind'.
+COVERAGE_TO_MERGE ?=
 
 .PHONY: test
 # Run all unit tests
@@ -162,7 +165,7 @@ test-daemon: level-zero-stub
 # Generate a Go test coverage report of xpumd unit tests
 coverage: test-daemon
 	@echo
-	@level-zero-go/hack/coverage-report.sh $(COVERAGE_DIR)/modules/xpumd
+	@level-zero-go/hack/coverage-report.sh $(COVERAGE_DIR)/modules/xpumd $(COVERAGE_TO_MERGE)
 
 .PHONY: clean-coverage
 # Remove coverage report files

@@ -15,6 +15,8 @@ C_SOURCES := $(shell git ls-files '*.c' '*.h' | \
 GO_MODULES := $(shell (git ls-files 'go.mod' '*/go.mod' 2> /dev/null || find . -name go.mod -printf '%P\n') | xargs dirname)
 
 COVERAGE_DIR := coverage
+# Extra coverage profiles to merge into the 'coverage' report.
+COVERAGE_TO_MERGE ?=
 
 # --- Helper targets ---
 
@@ -106,7 +108,7 @@ test-go: build-stub
 # Generate a Go test coverage report
 coverage: test-go
 	@echo
-	$(Q)hack/coverage-report.sh $(COVERAGE_DIR)/modules/level-zero-go
+	$(Q)hack/coverage-report.sh $(COVERAGE_DIR)/modules/level-zero-go $(COVERAGE_TO_MERGE)
 
 .PHONY: clean-coverage
 # Remove coverage report files

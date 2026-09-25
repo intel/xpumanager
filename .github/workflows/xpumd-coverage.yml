@@ -16,7 +16,81 @@ permissions:
   contents: read
 
 jobs:
+  # Measure the integration test coverage, to be merged into the unit test coverage
+  integration-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        rev: [base, head]
+    name: Measure ${{ matrix.rev }} integration test coverage
+    runs-on: ${{ fromJson(vars.RUNS_ON_INTEGRATION_TEST || vars.RUNS_ON) }}
+    permissions:
+      contents: read
+    timeout-minutes: 45
+    # The unit test coverage is reported without it if either side is missing
+    # (e.g. the base branch has no integration test coverage support).
+    continue-on-error: true
+    steps:
+      # The base branch is measured with its own tooling: the integration tests
+      # need to match the code under test.
+      - name: Check out the ${{ matrix.rev }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ matrix.rev == 'head' && github.event.pull_request.head.sha || github.event.pull_request.base.sha }}
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: xpumd/go.mod
+
+      - name: Set up Docker Buildx
+        if: vars.NO_SETUP_BUILDX_INTEGRATION_TEST != 'true'
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+        with:
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = ["mirror.gcr.io"]
+          driver-opts: |
+            "env.http_proxy=${{ vars.HTTP_PROXY }}"
+            "env.https_proxy=${{ vars.HTTPS_PROXY }}"
+            "env.no_proxy=${{ vars.NO_PROXY }}"
+
+      - name: Build the coverage-instrumented image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ./xpumd
+          file: ./xpumd/Dockerfile
+          load: true
+          tags: xpumd:coverage
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_TARGET=build-cover
+            http_proxy=${{ vars.HTTP_PROXY }}
+            https_proxy=${{ vars.HTTPS_PROXY }}
+            no_proxy=${{ vars.NO_PROXY }}
+
+      - name: Measure the integration test coverage
+        working-directory: xpumd
+        # HACK: skip if the base lacks the tooling
+        # TODO: the conditional can be removed after the PR has been merged
+        if: hashFiles('xpumd/scripts/run-integration-tests-coverage.sh') != ''
+        run: |
+          TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
+            "$(pwd)/coverage/covdata" coverage/integration-tests.cov \
+            --image-repository=xpumd \
+            --image-tag=coverage \
+            --kind-load-image
+
+      - name: Upload the integration test coverage profile
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: integration-test-coverage-${{ matrix.rev }}
+          path: xpumd/coverage/integration-tests.cov
+          retention-days: 7
+
   coverage:
+    needs: integration-test
     strategy:
       fail-fast: false
       matrix:
@@ -26,11 +100,14 @@ jobs:
             make-args: coverage
             coverage-dir: xpumd/coverage
             module-prefix: github.com/intel/xpumanager/xpumd/
+            # Of the repository, relative to the directory of the make invocation
+            root-dir: ..
           - name: bindings
             title: Level-Zero Go bindings
             make-args: -C level-zero-go coverage
             coverage-dir: xpumd/level-zero-go/coverage
             module-prefix: github.com/intel/level-zero-go/
+            root-dir: ../..
     name: Measure ${{ matrix.name }} coverage
     runs-on: ${{ fromJson(vars.RUNS_ON) }}
     permissions:
@@ -47,9 +124,36 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0    # the base branch is needed, too
 
+      - name: Download the base integration test coverage profile
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        continue-on-error: true
+        with:
+          name: integration-test-coverage-base
+          path: integration-test-coverage/base
+
+      - name: Download the head integration test coverage profile
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
+        continue-on-error: true
+        with:
+          name: integration-test-coverage-head
+          path: integration-test-coverage/head
+
+      - name: Select the profiles to merge
+        run: |
+          for rev in base head; do
+            profile="integration-test-coverage/${rev}/integration-tests.cov"
+            if [ -f "$profile" ]; then
+              echo "MERGE_${rev^^}=${{ matrix.root-dir }}/$profile" >> "$GITHUB_ENV"
+            else
+              echo "::warning::Integration test coverage not available for $rev"
+            fi
+          done
+
       - name: Measure the coverage of the PR head
         run: |
-          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }}
+          # ${MERGE_HEAD:+"COVERAGE_TO_MERGE=..."} expands to nothing if MERGE_HEAD is unset/empty
+          # (see "Select the profiles to merge" above), so no extra make argument is passed then.
+          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} ${MERGE_HEAD:+"COVERAGE_TO_MERGE=$MERGE_HEAD"}
           mv ${{ matrix.coverage-dir }} coverage-head
 
       # The base branch may have different coverage tooling (or no tooling at all)
@@ -62,7 +166,8 @@ jobs:
 
       - name: Measure the coverage of the base branch
         run: |
-          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }}
+          # Same conditional COVERAGE_TO_MERGE as above, for the base branch's profile.
+          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} ${MERGE_BASE:+"COVERAGE_TO_MERGE=$MERGE_BASE"}
           mv ${{ matrix.coverage-dir }} coverage-base
 
       - name: Restore the PR head
