@@ -8,8 +8,9 @@
 # markdown report.
 #
 # Expects "coverage-{base,head}" directories (in CWD), each containing
-# per-Go-module coverage profiles named "coverage-{hand-written,generated}.out"
-# (see level-zero-go/hack/coverage-report.sh).
+# per-Go-module coverage profiles named
+# "modules/<tree>/<module>/coverage-{hand-written,generated}.out", reported as
+# module "<tree>/<module>" (see level-zero-go/hack/coverage-report.sh).
 
 set -e -u -o pipefail
 
@@ -28,8 +29,8 @@ echo "## Coverage report: ${TITLE}"
 
 for bucket in hand-written generated; do
     for target_rev in base head; do
-        # Run in the coverage directory, the directory of a profile is its module
-        (cd "coverage-$target_rev" &&
+        # Run in the modules directory, the directory of a profile is its module
+        (cd "coverage-$target_rev/modules" &&
             find . -name "coverage-$bucket.out" -print0 |
             xargs -0 python3 "$SCRIPT_DIR/go_cover_summary.py" --strip-prefix "$MODULE_PREFIX") \
             > "summary-$target_rev-$bucket.json"

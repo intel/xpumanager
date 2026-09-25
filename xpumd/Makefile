@@ -155,14 +155,14 @@ test: test-daemon test-config test-bindings
 # Select tests with WHAT=<regexp>
 test-daemon: level-zero-stub
 	@$(BUILD_STUB_ENV) GO_TEST_FLAGS="$(if $(WHAT),-run $(WHAT))" \
-	  level-zero-go/hack/go-test-coverage.sh $(COVERAGE_DIR)/xpumd $(XPUMD_GO_MODULES)
+	  level-zero-go/hack/go-test-coverage.sh $(COVERAGE_DIR)/modules/xpumd $(XPUMD_GO_MODULES)
 	@echo "✓ All tests passed"
 
 .PHONY: coverage
 # Generate a Go test coverage report of xpumd unit tests
 coverage: test-daemon
 	@echo
-	@level-zero-go/hack/coverage-report.sh $(COVERAGE_DIR)/xpumd $(XPUMD_GO_MODULES)
+	@level-zero-go/hack/coverage-report.sh $(COVERAGE_DIR)/modules/xpumd
 
 .PHONY: clean-coverage
 # Remove coverage report files

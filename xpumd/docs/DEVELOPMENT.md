@@ -296,13 +296,13 @@ make test-integration-existing-cluster IMAGE_REPOSITORY=ghcr.io/intel/xpumanager
 ## Test coverage
 
 Measure unit test coverage, with per-module HTML reports split by hand-written
-and generated code under `coverage/<module>/`:
+and generated code under `coverage/modules/xpumd/<module>/`:
 
 ```bash
 make coverage
 ```
 
-The Level-Zero Go bindings are reported the same way, under `level-zero-go/coverage/`:
+The Level-Zero Go bindings are reported the same way, under `level-zero-go/coverage/modules/level-zero-go/`:
 
 ```bash
 make -C level-zero-go coverage

@@ -4,9 +4,10 @@
 #
 # SPDX-License-Identifier: MIT
 #
-# Helper for running Go tests with coverage for multiple modules.
+# Helper for running Go tests with coverage for multiple modules. Writes the
+# profiles as '<modules-dir>/<module>/coverage.out'.
 #
-# Usage: go-test-coverage.sh <coverage-dir> <module>...
+# Usage: go-test-coverage.sh <modules-dir> <module>...
 #
 # Environment:
 #   GO_TEST_FLAGS - extra flags for "go test"
@@ -16,20 +17,23 @@ set -e -u -o pipefail
 GO_TEST_FLAGS="${GO_TEST_FLAGS:-}"
 
 if [ $# -lt 2 ]; then
-    echo "Usage: ${0##*/} <coverage-dir> <module>..."
+    echo "Usage: ${0##*/} <modules-dir> <module>..."
     exit 1
 fi
 
 # The tests run in the module directories thus absolute path
-COVERAGE_DIR=$(realpath -m "$1")
+MODULES_DIR=$(realpath -m "$1")
 shift
+
+# Make sure only profiles of modules in this testing round end up in the reports.
+rm -rf "${MODULES_DIR}"
 
 error=0
 
 for module in "$@"; do
     echo "Running tests in module '${module}'..."
 
-    profile="${COVERAGE_DIR}/${module}/coverage.out"
+    profile="${MODULES_DIR}/${module}/coverage.out"
     mkdir -p "$(dirname "${profile}")"
 
     # comma-separated list of packages given to -coverpkg, to cover also module dependencies without tests.

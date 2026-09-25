@@ -64,7 +64,7 @@ def percent(covered: int, total: int) -> float:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Summarizes Go coverage profiles in the JSON format of 'gcovr --json-summary'."
-        " To be run in the root of the coverage directory: the directory of each profile,"
+        " To be run in '<coverage-dir>/modules': the directory of each profile,"
         " e.g. 'xpumd/exporter/intelxpuinfo/api/coverage.out', is the name of its module.",
     )
     parser.add_argument("profiles", nargs="+", type=Path)
