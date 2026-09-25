@@ -237,7 +237,7 @@ of property IDs. Use <code class="docutils literal notranslate"><span class="pre
 <td><p>Stepping</p></td>
 </tr>
 <tr class="row-odd"><td><p>8</p></td>
-<td><p>Driver Version</p></td>
+<td><p>UMD Version</p></td>
 </tr>
 <tr class="row-even"><td><p>9</p></td>
 <td><p>GFX Firmware Version</p></td>
@@ -409,7 +409,7 @@ Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
 Stepping, SKU Type</p></td>
 </tr>
 <tr class="row-odd"><td><p>Driver and Firmware</p></td>
-<td><p>Driver Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
+<td><p>UMD Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
 GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
 GFX Data Firmware Version</p></td>
 </tr>
@@ -438,10 +438,12 @@ Number of Media Enhancement Engines</p></td>
 are omitted.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>Driver Version</strong> and <strong>Kernel Driver Version</strong> name different components.
-Driver Version is the Level Zero user-mode driver version reported by the
-driver itself. Kernel Driver Version identifies the kernel-mode driver (<code class="docutils literal notranslate"><span class="pre">xe</span></code>
-or <code class="docutils literal notranslate"><span class="pre">i915</span></code>, whichever is bound to that GPU) by its source checksum, the
+<p><strong>UMD Version</strong> and <strong>Kernel Driver Version</strong> name different components.
+UMD Version is the Level Zero user-mode driver release, reported as
+<code class="docutils literal notranslate"><span class="pre">Major.Minor.Build</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">1.3.36012</span></code>); it is the same value the
+<code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> dashboard banner shows. Kernel Driver Version identifies the
+kernel-mode driver (<code class="docutils literal notranslate"><span class="pre">xe</span></code> or <code class="docutils literal notranslate"><span class="pre">i915</span></code>, whichever is bound to that GPU) by
+its source checksum, the
 <code class="docutils literal notranslate"><span class="pre">srcversion</span></code> field of <code class="docutils literal notranslate"><span class="pre">modinfo</span> <span class="pre">xe</span></code>. The checksum changes with every driver
 source revision, so it is the value that ties a running driver back to the
 package it was built from, including a DKMS rebuild against an unchanged
