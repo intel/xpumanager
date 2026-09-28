@@ -51,6 +51,35 @@ func (d *DeviceInfo) collectRasInfoExp(ras *sysman.Ras, info *RasInfo) {
 	}
 }
 
+func (d *DeviceInfo) collectVFInfoExp(device *sysman.Device) {
+	vfs, err := exp.NewDevice(device).EnumEnabledVFExp()
+	if err != nil {
+		d.recordError("VirtualFunctions", err)
+		return
+	}
+
+	result := make([]VFInfo, len(vfs))
+	for i, vf := range vfs {
+		if caps, err := vf.GetCapabilitiesExp(); err != nil {
+			d.recordError("VirtualFunction.GetCapabilitiesExp2", err)
+		} else {
+			result[i].Capabilities = &caps
+		}
+		if memUtil, err := vf.GetMemoryUtilizationExp(); err != nil {
+			d.recordError("VirtualFunction.GetMemoryUtilizationExp2", err)
+		} else {
+			result[i].MemoryUtilization = memUtil
+		}
+		if engineUtil, err := vf.GetEngineUtilizationExp(); err != nil {
+			d.recordError("VirtualFunction.GetEngineUtilizationExp2", err)
+		} else {
+			result[i].EngineUtilization = engineUtil
+		}
+	}
+
+	d.VirtualFunctions = result
+}
+
 // collectInfoLogsExp lists the info logs of the driver.
 // NOTE: The log records themselves are only read when asked for with
 // -infolog-format, as reading consumes them.

@@ -50,3 +50,10 @@ type RasInfo struct {
 	BaseRasInfo `yaml:",inline"`
 	StateExp    []exp.RasStateExp `yaml:"StateExp"`
 }
+
+// VFInfo describes an enumerated virtual function (VF).
+type VFInfo struct {
+	Capabilities      *exp.VfExp2Capabilities `yaml:"Capabilities"`
+	MemoryUtilization []exp.VfUtilMemExp2     `yaml:"MemoryUtilization"`
+	EngineUtilization []exp.VfUtilEngineExp2  `yaml:"EngineUtilization"`
+}

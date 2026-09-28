@@ -119,6 +119,7 @@ func (d *DeviceInfo) collect(device *sysman.Device) {
 	d.collectSchedulerInfo(device)
 	d.collectStandbyInfo(device)
 	d.collectTemperatureInfo(device)
+	d.collectVFInfoExp(device)
 }
 
 func (d *DeviceInfo) collectPCIInfo(device *sysman.Device) {

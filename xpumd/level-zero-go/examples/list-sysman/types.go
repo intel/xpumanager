@@ -53,6 +53,7 @@ type DeviceInfo struct {
 	Schedulers         []SchedulerInfo               `yaml:"Schedulers"`
 	StandbyDomains     []StandbyDomainInfo           `yaml:"StandbyDomains"`
 	TemperatureSensors []TemperatureSensorInfo       `yaml:"TemperatureSensors"`
+	VirtualFunctions   []VFInfo                      `yaml:"VirtualFunctions"`
 }
 
 type PCIInfo struct {

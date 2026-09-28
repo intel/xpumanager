@@ -16,3 +16,6 @@ type DriverInfo struct {
 type RasInfo struct {
 	BaseRasInfo `yaml:",inline"`
 }
+
+// VFInfo is a stub (this build variant does not include the experimental VF management features).
+type VFInfo struct{}

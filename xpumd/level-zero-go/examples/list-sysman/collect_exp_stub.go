@@ -5,18 +5,16 @@
 // SPDX-License-Identifier: MIT
 //
 
+// No-op stubs for builds without the "exp" build tag, which omit the
+// experimental (Exp) Sysman APIs. See collect_exp.go for the real
+// implementations.
+
 package main
 
 import "github.com/intel/level-zero-go/sysman"
 
-// collectRasInfoExp is a no-op stub: this build variant does not include
-// the experimental (Exp) Sysman RAS API. See collect_exp.go for the real
-// implementation, built with the "exp" build tag.
-func (d *DeviceInfo) collectRasInfoExp(ras *sysman.Ras, info *RasInfo) {
-}
+func (d *DeviceInfo) collectRasInfoExp(ras *sysman.Ras, info *RasInfo) {}
 
-// collectInfoLogsExp is a no-op stub: this build variant does not include
-// the Intel experimental (Exp) Sysman info log API. See collect_exp.go for
-// the real implementation, built with the "exp" build tag.
-func (d *DriverInfo) collectInfoLogsExp(driver *sysman.Driver) {
-}
+func (d *DriverInfo) collectInfoLogsExp(driver *sysman.Driver) {}
+
+func (d *DeviceInfo) collectVFInfoExp(device *sysman.Device) {}
