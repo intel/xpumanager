@@ -7,9 +7,16 @@ Drivers:
   - ExtensionProperties:
       - Name: "ZES_extension_ras_state"
         Version: 65536 # ZES_RAS_STATE_EXP_VERSION_1_0
+      - Name: "ZES_experimental_virtual_function_management"
+        Version: 65537 # ZES_VF_MANAGEMENT_EXP_VERSION_1_1, one below VF_MANAGEMENT_EXP_VERSION_CURRENT
 
     Devices:
-      - RasErrorSets:
+      # Configured so that a code bypassing the version check in the extension
+      # gate would see these, instead of the expected UNSUPPORTED_FEATURE.
+      - VirtualFunctions:
+          - Capabilities:
+              VfID: 1
+        RasErrorSets:
           - Properties:
               Type: 0 # ZES_RAS_ERROR_TYPE_CORRECTABLE
             State:

@@ -10,9 +10,22 @@ Drivers:
       # to get specified errors for experimental RAS APIs
       - Name: "ZES_extension_ras_state"
         Version: 65537 # ZES_RAS_STATE_EXP_VERSION_CURRENT
+      # to get specified errors for experimental VF management APIs
+      - Name: "ZES_experimental_virtual_function_management"
+        Version: 65538 # ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT
 
     Devices:
       - RasErrorSets:
           - ReturnValues:
               zesRasGetStateExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
               zesRasClearStateExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+        VirtualFunctions:
+          - Capabilities:
+              VfID: 1
+            ReturnValues:
+              zesVFManagementGetVFCapabilitiesExp2: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+              zesVFManagementGetVFMemoryUtilizationExp2: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+              zesVFManagementGetVFEngineUtilizationExp2: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      # A second device, used only for the EnumEnabledVFExp enum-level error case.
+      - ReturnValues:
+          zesDeviceEnumEnabledVFExp: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS

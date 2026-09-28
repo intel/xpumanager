@@ -9,9 +9,46 @@ Drivers:
       # to get the experimental RAS APIs enabled
       - Name: "ZES_extension_ras_state"
         Version: 65537 # ZES_RAS_STATE_EXP_VERSION_CURRENT
+      # to get the experimental VF management APIs enabled
+      - Name: "ZES_experimental_virtual_function_management"
+        Version: 65538 # ZES_VF_MANAGEMENT_EXP_VERSION_CURRENT
 
     Devices:
-      - RasErrorSets:
+      - VirtualFunctions:
+          - Capabilities:
+              Address:
+                Domain: 0
+                Bus: 0
+                Device: 0
+                Function: 1
+              VfDeviceMemSize: 4294967296 # 4 GiB, in bytes
+              VfID: 1
+            MemoryUtilization:
+              - VfMemLocation: 1 # ZES_MEM_LOC_DEVICE
+                VfMemUtilized: 1073741824 # 1 GiB, in bytes
+            EngineUtilization:
+              - VfEngineType: 1 # ZES_ENGINE_GROUP_COMPUTE_ALL
+                ActiveCounterValue: 1000
+                SamplingCounterValue: 10000
+              - VfEngineType: 1 # ZES_ENGINE_GROUP_COMPUTE_ALL, a second instance of the same engine group
+                ActiveCounterValue: 200
+                SamplingCounterValue: 10000
+          - Capabilities:
+              Address:
+                Domain: 0
+                Bus: 0
+                Device: 0
+                Function: 2
+              VfDeviceMemSize: 2147483648 # 2 GiB, in bytes
+              VfID: 2
+            MemoryUtilization:
+              - VfMemLocation: 1 # ZES_MEM_LOC_DEVICE
+                VfMemUtilized: 536870912 # 512 MiB, in bytes
+            EngineUtilization:
+              - VfEngineType: 2 # ZES_ENGINE_GROUP_MEDIA_ALL
+                ActiveCounterValue: 500
+                SamplingCounterValue: 5000
+        RasErrorSets:
           - Properties:
               Type: 0 # ZES_RAS_ERROR_TYPE_CORRECTABLE
               OnSubdevice: true
