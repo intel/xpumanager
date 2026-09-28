@@ -23,9 +23,9 @@ updates:
       otel-collector:
         patterns:
           - "go.opentelemetry.io/collector/*"
-        group-by: "dependency-name"
       non-otel-collector:
-        group-by: "dependency-name"
+        patterns:
+          - "*"
   - package-ecosystem: "gomod"
     directories:
       - "/xpumd/level-zero-go"
@@ -37,4 +37,5 @@ updates:
       - dependency-name: "github.com/xlab/c-for-go"
     groups:
       level-zero-go:
-        group-by: "dependency-name"
+        patterns:
+          - "*"
