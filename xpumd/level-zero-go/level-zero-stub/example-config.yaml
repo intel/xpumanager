@@ -39,6 +39,8 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_memory_vendor_info"
         Version: 65536
+      - Name: "ZES_experimental_virtual_function_management"
+        Version: 65538
 
     # Pending driver scoped events reported by zesIntelDriverEventListenExp
     Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
@@ -301,6 +303,7 @@ Drivers:
           zesDeviceEnumPowerDomains: 0
           zesDeviceEnumPsus: 0
           zesDeviceEnumRasErrorSets: 0
+          zesDeviceEnumEnabledVFExp: 0
           zesDeviceEnumSchedulers: 0
           zesDeviceEnumStandbyDomains: 0
           zesDeviceEnumTemperatureSensors: 0
@@ -407,6 +410,10 @@ Drivers:
         #   - RasErrorSet.GetConfig
         #   - RasErrorSet.SetConfig
         #   - RasErrorSet.GetState
+        #   - VirtualFunctions
+        #   - VirtualFunction.GetCapabilitiesExp2
+        #   - VirtualFunction.GetMemoryUtilizationExp2
+        #   - VirtualFunction.GetEngineUtilizationExp2
         #   - Schedulers
         #   - Scheduler.GetProperties
         #   - Scheduler.GetCurrentMode
@@ -799,6 +806,55 @@ Drivers:
             zesRasGetState: 0
             zesRasGetStateExp: 0
             zesRasClearStateExp: 0
+
+        # -----------------------------------------------------------------
+        # Virtual functions (zesDeviceEnumEnabledVFExp)
+        # -----------------------------------------------------------------
+        VirtualFunctions:
+        - # zesVFManagementGetVFCapabilitiesExp2
+          Capabilities:
+            Address:
+              Domain: 0
+              Bus: 0
+              Device: 0
+              Function: 1
+            VfDeviceMemSize: 2147483648  # 2 GiB, in bytes
+            VfID: 1
+          # zesVFManagementGetVFMemoryUtilizationExp2 (nullable)
+          MemoryUtilization:
+          - VfMemLocation: 1  # ZES_MEM_LOC_DEVICE
+            VfMemUtilized: 1073741824  # 1 GiB, in bytes
+          # zesVFManagementGetVFEngineUtilizationExp2 (nullable)
+          EngineUtilization:
+          - VfEngineType: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL
+            ActiveCounterValue: 1000
+            SamplingCounterValue: 10000
+          ReturnValues:
+            zesVFManagementGetVFCapabilitiesExp2: 0
+            zesVFManagementGetVFMemoryUtilizationExp2: 0
+            zesVFManagementGetVFEngineUtilizationExp2: 0
+        - Capabilities:
+            Address:
+              Domain: 0
+              Bus: 0
+              Device: 0
+              Function: 2
+            VfDeviceMemSize: 2147483648
+            VfID: 2
+          MemoryUtilization:
+          - VfMemLocation: 1  # ZES_MEM_LOC_DEVICE
+            VfMemUtilized: 536870912  # 512 MiB, in bytes
+          EngineUtilization:
+          - VfEngineType: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL
+            ActiveCounterValue: 500
+            SamplingCounterValue: 10000
+          - VfEngineType: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL, a second instance of the same engine group
+            ActiveCounterValue: 200
+            SamplingCounterValue: 10000
+          ReturnValues:
+            zesVFManagementGetVFCapabilitiesExp2: 0
+            zesVFManagementGetVFMemoryUtilizationExp2: 0
+            zesVFManagementGetVFEngineUtilizationExp2: 0
 
         # -----------------------------------------------------------------
         # Schedulers (zesDeviceEnumSchedulers)

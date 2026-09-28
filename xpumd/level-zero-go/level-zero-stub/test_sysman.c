@@ -1173,6 +1173,24 @@ static void test_error_cases(void)
 	ASSERT_ZE_RET("zesRasClearStateExp: NULL handle", zesRasClearStateExp(bad_ras, 0),
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 
+	// Virtual functions
+	{
+		ASSERT_ZE_RET("zesDeviceEnumEnabledVFExp: NULL handle", zesDeviceEnumEnabledVFExp(bad_dev, NULL, NULL),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesDeviceEnumEnabledVFExp: NULL pCount", zesDeviceEnumEnabledVFExp(dev, NULL, NULL),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		zes_vf_handle_t vh[1];
+		ASSERT_ZE_RET("zesDeviceEnumEnabledVFExp: NULL pCount with array", zesDeviceEnumEnabledVFExp(dev, NULL, vh),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	}
+	zes_vf_handle_t bad_vf = NULL;
+	ASSERT_ZE_RET("zesVFManagementGetVFCapabilitiesExp2: NULL handle",
+				  zesVFManagementGetVFCapabilitiesExp2(bad_vf, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesVFManagementGetVFMemoryUtilizationExp2: NULL handle",
+				  zesVFManagementGetVFMemoryUtilizationExp2(bad_vf, NULL, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesVFManagementGetVFEngineUtilizationExp2: NULL handle",
+				  zesVFManagementGetVFEngineUtilizationExp2(bad_vf, NULL, NULL), ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+
 	// Schedulers
 	{
 		ASSERT_ZE_RET("zesDeviceEnumSchedulers: NULL handle", zesDeviceEnumSchedulers(bad_dev, NULL, NULL),

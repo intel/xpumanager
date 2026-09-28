@@ -49,6 +49,7 @@ static const cyaml_schema_field_t sysman_device_rv_fields[] = {
 	RV(sysman_device_rv_t, zesDeviceEnumPowerDomains),
 	RV(sysman_device_rv_t, zesDeviceEnumPsus),
 	RV(sysman_device_rv_t, zesDeviceEnumRasErrorSets),
+	RV(sysman_device_rv_t, zesDeviceEnumEnabledVFExp),
 	RV(sysman_device_rv_t, zesDeviceEnumSchedulers),
 	RV(sysman_device_rv_t, zesDeviceEnumStandbyDomains),
 	RV(sysman_device_rv_t, zesDeviceEnumTemperatureSensors),
@@ -174,6 +175,11 @@ static const cyaml_schema_field_t sysman_temp_rv_fields[] = {
 	RV(sysman_temp_rv_t, zesTemperatureGetProperties), RV(sysman_temp_rv_t, zesTemperatureGetConfig),
 	RV(sysman_temp_rv_t, zesTemperatureSetConfig), RV(sysman_temp_rv_t, zesTemperatureGetState), CYAML_FIELD_END};
 
+static const cyaml_schema_field_t sysman_vf_rv_fields[] = {
+	RV(sysman_vf_rv_t, zesVFManagementGetVFCapabilitiesExp2),
+	RV(sysman_vf_rv_t, zesVFManagementGetVFMemoryUtilizationExp2),
+	RV(sysman_vf_rv_t, zesVFManagementGetVFEngineUtilizationExp2), CYAML_FIELD_END};
+
 #undef RV
 
 #define SYSMAN_NULLABLE_PTR_FLAGS (CYAML_FLAG_OPTIONAL | CYAML_FLAG_POINTER_NULL_STR)
@@ -208,6 +214,7 @@ static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"PowerDomains", UNSUPPORTED_FEATURE_POWER_DOMAINS},
 	{"Psus", UNSUPPORTED_FEATURE_PSUS},
 	{"RasErrorSets", UNSUPPORTED_FEATURE_RAS_ERROR_SETS},
+	{"VirtualFunctions", UNSUPPORTED_FEATURE_VIRTUAL_FUNCTIONS},
 	{"Schedulers", UNSUPPORTED_FEATURE_SCHEDULERS},
 	{"StandbyDomains", UNSUPPORTED_FEATURE_STANDBY_DOMAINS},
 	{"TemperatureSensors", UNSUPPORTED_FEATURE_TEMPERATURE_SENSORS},
@@ -290,6 +297,9 @@ static const cyaml_strval_t sysman_unsupported_feature_strvals[] = {
 	{"RasErrorSet.GetState", UNSUPPORTED_FEATURE_RAS_GET_STATE},
 	{"RasErrorSet.GetStateExp", UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP},
 	{"RasErrorSet.ClearStateExp", UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP},
+	{"VirtualFunction.GetCapabilitiesExp2", UNSUPPORTED_FEATURE_VF_GET_CAPABILITIES_EXP2},
+	{"VirtualFunction.GetMemoryUtilizationExp2", UNSUPPORTED_FEATURE_VF_GET_MEMORY_UTILIZATION_EXP2},
+	{"VirtualFunction.GetEngineUtilizationExp2", UNSUPPORTED_FEATURE_VF_GET_ENGINE_UTILIZATION_EXP2},
 	{"Scheduler.GetProperties", UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES},
 	{"Scheduler.GetCurrentMode", UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE},
 	{"Scheduler.GetTimeoutModeProperties", UNSUPPORTED_FEATURE_SCHED_GET_TIMEOUT_MODE_PROPS},
@@ -937,6 +947,37 @@ static const cyaml_schema_field_t sysman_ras_fields[] = {
 static const cyaml_schema_value_t sysman_ras_schema = {
 	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_ras_t, sysman_ras_fields)};
 
+static const cyaml_schema_field_t zes_vf_exp2_capabilities_fields[] = {
+	CYAML_FIELD_MAPPING("Address", CYAML_FLAG_OPTIONAL, zes_vf_exp2_capabilities_t, address, zes_pci_address_fields),
+	CYAML_FIELD_UINT("VfDeviceMemSize", CYAML_FLAG_OPTIONAL, zes_vf_exp2_capabilities_t, vfDeviceMemSize),
+	CYAML_FIELD_UINT("VfID", CYAML_FLAG_OPTIONAL, zes_vf_exp2_capabilities_t, vfID), CYAML_FIELD_END};
+
+static const cyaml_schema_field_t zes_vf_util_mem_exp2_fields[] = {
+	CYAML_FIELD_UINT("VfMemLocation", CYAML_FLAG_OPTIONAL, zes_vf_util_mem_exp2_t, vfMemLocation),
+	CYAML_FIELD_UINT("VfMemUtilized", CYAML_FLAG_OPTIONAL, zes_vf_util_mem_exp2_t, vfMemUtilized), CYAML_FIELD_END};
+static const cyaml_schema_value_t zes_vf_util_mem_exp2_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_vf_util_mem_exp2_t, zes_vf_util_mem_exp2_fields)};
+
+static const cyaml_schema_field_t zes_vf_util_engine_exp2_fields[] = {
+	CYAML_FIELD_UINT("VfEngineType", CYAML_FLAG_OPTIONAL, zes_vf_util_engine_exp2_t, vfEngineType),
+	CYAML_FIELD_UINT("ActiveCounterValue", CYAML_FLAG_OPTIONAL, zes_vf_util_engine_exp2_t, activeCounterValue),
+	CYAML_FIELD_UINT("SamplingCounterValue", CYAML_FLAG_OPTIONAL, zes_vf_util_engine_exp2_t, samplingCounterValue),
+	CYAML_FIELD_END};
+static const cyaml_schema_value_t zes_vf_util_engine_exp2_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, zes_vf_util_engine_exp2_t, zes_vf_util_engine_exp2_fields)};
+
+static const cyaml_schema_field_t sysman_vf_fields[] = {
+	CYAML_FIELD_MAPPING("ReturnValues", CYAML_FLAG_OPTIONAL, sysman_vf_t, return_values, sysman_vf_rv_fields),
+	CYAML_FIELD_MAPPING_PTR("Capabilities", SYSMAN_NULLABLE_PTR_FLAGS, sysman_vf_t, capabilities,
+							zes_vf_exp2_capabilities_fields),
+	CYAML_FIELD_SEQUENCE_COUNT("MemoryUtilization", SYSMAN_NULLABLE_PTR_FLAGS, sysman_vf_t, memory_utilization,
+							   memory_utilization_count, &zes_vf_util_mem_exp2_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_SEQUENCE_COUNT("EngineUtilization", SYSMAN_NULLABLE_PTR_FLAGS, sysman_vf_t, engine_utilization,
+							   engine_utilization_count, &zes_vf_util_engine_exp2_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_END};
+static const cyaml_schema_value_t sysman_vf_schema = {
+	CYAML_VALUE_MAPPING(CYAML_FLAG_DEFAULT, sysman_vf_t, sysman_vf_fields)};
+
 static const cyaml_schema_field_t zes_sched_properties_fields[] = {
 	CYAML_FIELD_BOOL("OnSubdevice", CYAML_FLAG_OPTIONAL, zes_sched_properties_t, onSubdevice),
 	CYAML_FIELD_UINT("SubdeviceId", CYAML_FLAG_OPTIONAL, zes_sched_properties_t, subdeviceId),
@@ -1074,6 +1115,8 @@ static const cyaml_schema_field_t sysman_device_state_fields[] = {
 							   &sysman_psu_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_SEQUENCE_COUNT("RasErrorSets", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, ras_error_sets,
 							   ras_error_sets_count, &sysman_ras_schema, 0, CYAML_UNLIMITED),
+	CYAML_FIELD_SEQUENCE_COUNT("VirtualFunctions", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, vfs, vfs_count,
+							   &sysman_vf_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_SEQUENCE_COUNT("Schedulers", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, schedulers,
 							   schedulers_count, &sysman_sched_schema, 0, CYAML_UNLIMITED),
 	CYAML_FIELD_SEQUENCE_COUNT("StandbyDomains", SYSMAN_NULLABLE_PTR_FLAGS, sysman_device_state_t, standby_domains,

@@ -130,6 +130,10 @@ static void *resolve_handle(const void *zes_handle, stub_handle_type_t expected_
 		if (handle.bits.comp >= device->temperature_sensors_count)
 			return NULL;
 		return &device->temperature_sensors[handle.bits.comp];
+	case STUB_HANDLE_VF:
+		if (handle.bits.comp >= device->vfs_count)
+			return NULL;
+		return &device->vfs[handle.bits.comp];
 	default:
 		return NULL;
 	}
@@ -2636,6 +2640,108 @@ ze_result_t zesRasClearStateExp(zes_ras_handle_t hRas, zes_ras_error_category_ex
 		}
 	}
 	return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_ARGUMENT);
+}
+
+// ------------------------------------------------------------------
+// VF management
+// ------------------------------------------------------------------
+
+ze_result_t zesDeviceEnumEnabledVFExp(zes_device_handle_t hDevice, uint32_t *pCount, zes_vf_handle_t *phVFhandle)
+{
+	sysman_state_lock();
+	sysman_device_state_t *dev = (sysman_device_state_t *)resolve_handle(hDevice, STUB_HANDLE_DEVICE);
+	if (!dev)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hDevice, UNSUPPORTED_FEATURE_VIRTUAL_FUNCTIONS))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (dev->return_values.zesDeviceEnumEnabledVFExp)
+		return sysman_unlock_and_return(dev->return_values.zesDeviceEnumEnabledVFExp);
+	uint32_t n = dev->vfs_count;
+	if (!pCount)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	if (!phVFhandle) {
+		*pCount = n;
+		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	}
+	n = (*pCount < n) ? *pCount : n;
+	stub_handle_t device_handle = decode_handle(hDevice);
+	for (uint32_t i = 0; i < n; i++)
+		phVFhandle[i] =
+			MAKE_COMPONENT_HANDLE(zes_vf_handle_t, STUB_HANDLE_VF, device_handle.bits.drv, device_handle.bits.dev, i);
+	*pCount = n;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesVFManagementGetVFCapabilitiesExp2(zes_vf_handle_t hVFhandle, zes_vf_exp2_capabilities_t *pCapability)
+{
+	sysman_state_lock();
+	sysman_vf_t *vf = (sysman_vf_t *)resolve_handle(hVFhandle, STUB_HANDLE_VF);
+	if (!vf)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hVFhandle, UNSUPPORTED_FEATURE_VF_GET_CAPABILITIES_EXP2))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (vf->return_values.zesVFManagementGetVFCapabilitiesExp2)
+		return sysman_unlock_and_return(vf->return_values.zesVFManagementGetVFCapabilitiesExp2);
+	if (!(vf->capabilities))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (!pCapability)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	zes_structure_type_t stype = pCapability->stype;
+	void *pNext = pCapability->pNext;
+	*pCapability = *vf->capabilities;
+	pCapability->stype = stype;
+	pCapability->pNext = pNext;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesVFManagementGetVFMemoryUtilizationExp2(zes_vf_handle_t hVFhandle, uint32_t *pCount,
+													  zes_vf_util_mem_exp2_t *pMemUtil)
+{
+	sysman_state_lock();
+	sysman_vf_t *vf = (sysman_vf_t *)resolve_handle(hVFhandle, STUB_HANDLE_VF);
+	if (!vf)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hVFhandle, UNSUPPORTED_FEATURE_VF_GET_MEMORY_UTILIZATION_EXP2))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (vf->return_values.zesVFManagementGetVFMemoryUtilizationExp2)
+		return sysman_unlock_and_return(vf->return_values.zesVFManagementGetVFMemoryUtilizationExp2);
+	if (!pCount)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	uint32_t n = vf->memory_utilization_count;
+	if (!pMemUtil) {
+		*pCount = n;
+		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	}
+	n = (*pCount < n) ? *pCount : n;
+	for (uint32_t i = 0; i < n; i++)
+		pMemUtil[i] = vf->memory_utilization[i];
+	*pCount = n;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+}
+
+ze_result_t zesVFManagementGetVFEngineUtilizationExp2(zes_vf_handle_t hVFhandle, uint32_t *pCount,
+													  zes_vf_util_engine_exp2_t *pEngineUtil)
+{
+	sysman_state_lock();
+	sysman_vf_t *vf = (sysman_vf_t *)resolve_handle(hVFhandle, STUB_HANDLE_VF);
+	if (!vf)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	if (is_unsupported(hVFhandle, UNSUPPORTED_FEATURE_VF_GET_ENGINE_UTILIZATION_EXP2))
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	if (vf->return_values.zesVFManagementGetVFEngineUtilizationExp2)
+		return sysman_unlock_and_return(vf->return_values.zesVFManagementGetVFEngineUtilizationExp2);
+	if (!pCount)
+		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	uint32_t n = vf->engine_utilization_count;
+	if (!pEngineUtil) {
+		*pCount = n;
+		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	}
+	n = (*pCount < n) ? *pCount : n;
+	for (uint32_t i = 0; i < n; i++)
+		pEngineUtil[i] = vf->engine_utilization[i];
+	*pCount = n;
+	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 }
 
 // ------------------------------------------------------------------

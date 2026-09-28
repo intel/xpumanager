@@ -44,7 +44,8 @@ typedef enum
 	STUB_HANDLE_STANDBY = 16,
 	STUB_HANDLE_TEMP = 17,
 	STUB_HANDLE_DIAG = 18,
-	STUB_HANDLE_INFOLOG = 19, // driver level component, unlike the ones above
+	STUB_HANDLE_INFOLOG = 19, // driver level component
+	STUB_HANDLE_VF = 20,
 } stub_handle_type_t;
 
 typedef struct
@@ -194,6 +195,13 @@ typedef struct
 
 typedef struct
 {
+	ze_result_t zesVFManagementGetVFCapabilitiesExp2;
+	ze_result_t zesVFManagementGetVFMemoryUtilizationExp2;
+	ze_result_t zesVFManagementGetVFEngineUtilizationExp2;
+} sysman_vf_rv_t;
+
+typedef struct
+{
 	ze_result_t zesSchedulerGetProperties;
 	ze_result_t zesSchedulerGetCurrentMode;
 	ze_result_t zesSchedulerGetTimeoutModeProperties;
@@ -261,6 +269,7 @@ typedef struct
 	ze_result_t zesDeviceEnumPowerDomains;
 	ze_result_t zesDeviceEnumPsus;
 	ze_result_t zesDeviceEnumRasErrorSets;
+	ze_result_t zesDeviceEnumEnabledVFExp;
 	ze_result_t zesDeviceEnumSchedulers;
 	ze_result_t zesDeviceEnumStandbyDomains;
 	ze_result_t zesDeviceEnumTemperatureSensors;
@@ -324,6 +333,7 @@ typedef enum
 	UNSUPPORTED_FEATURE_POWER_DOMAINS,					  // gen: key=PowerDomains
 	UNSUPPORTED_FEATURE_PSUS,							  // gen: key=Psus
 	UNSUPPORTED_FEATURE_RAS_ERROR_SETS,					  // gen: key=RasErrorSets
+	UNSUPPORTED_FEATURE_VIRTUAL_FUNCTIONS,				  // gen: key=VirtualFunctions
 	UNSUPPORTED_FEATURE_SCHEDULERS,						  // gen: key=Schedulers
 	UNSUPPORTED_FEATURE_STANDBY_DOMAINS,				  // gen: key=StandbyDomains
 	UNSUPPORTED_FEATURE_TEMPERATURE_SENSORS,			  // gen: key=TemperatureSensors
@@ -406,6 +416,9 @@ typedef enum
 	UNSUPPORTED_FEATURE_RAS_GET_STATE,					  // gen: key=RasErrorSet.GetState
 	UNSUPPORTED_FEATURE_RAS_GET_STATE_EXP,				  // gen: key=RasErrorSet.GetStateExp
 	UNSUPPORTED_FEATURE_RAS_CLEAR_STATE_EXP,			  // gen: key=RasErrorSet.ClearStateExp
+	UNSUPPORTED_FEATURE_VF_GET_CAPABILITIES_EXP2,		  // gen: key=VirtualFunction.GetCapabilitiesExp2
+	UNSUPPORTED_FEATURE_VF_GET_MEMORY_UTILIZATION_EXP2,	  // gen: key=VirtualFunction.GetMemoryUtilizationExp2
+	UNSUPPORTED_FEATURE_VF_GET_ENGINE_UTILIZATION_EXP2,	  // gen: key=VirtualFunction.GetEngineUtilizationExp2
 	UNSUPPORTED_FEATURE_SCHED_GET_PROPERTIES,			  // gen: key=Scheduler.GetProperties
 	UNSUPPORTED_FEATURE_SCHED_GET_CURRENT_MODE,			  // gen: key=Scheduler.GetCurrentMode
 	UNSUPPORTED_FEATURE_SCHED_GET_TIMEOUT_MODE_PROPS,	  // gen: key=Scheduler.GetTimeoutModeProperties
@@ -645,6 +658,16 @@ typedef struct
 
 typedef struct
 {
+	sysman_vf_rv_t return_values;
+	zes_vf_exp2_capabilities_t *capabilities;
+	uint32_t memory_utilization_count;
+	zes_vf_util_mem_exp2_t *memory_utilization;
+	uint32_t engine_utilization_count;
+	zes_vf_util_engine_exp2_t *engine_utilization;
+} sysman_vf_t;
+
+typedef struct
+{
 	sysman_sched_rv_t return_values;
 	zes_sched_properties_t *properties;
 	zes_sched_mode_t current_mode;
@@ -747,6 +770,8 @@ typedef struct
 	sysman_psu_t *psus;
 	uint32_t ras_error_sets_count;
 	sysman_ras_t *ras_error_sets;
+	uint32_t vfs_count;
+	sysman_vf_t *vfs; // gen: key=VirtualFunctions
 	uint32_t schedulers_count;
 	sysman_sched_t *schedulers;
 	uint32_t standby_domains_count;

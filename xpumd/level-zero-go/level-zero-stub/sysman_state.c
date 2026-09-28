@@ -421,6 +421,19 @@ static void free_ras_error_sets(sysman_device_state_t *dev)
 	}
 }
 
+static void free_vfs(sysman_device_state_t *dev)
+{
+	if (dev->vfs) {
+		for (uint32_t j = 0; j < dev->vfs_count; j++) {
+			free(dev->vfs[j].capabilities);
+			free(dev->vfs[j].memory_utilization);
+			free(dev->vfs[j].engine_utilization);
+			memset(&dev->vfs[j], 0, sizeof(dev->vfs[j]));
+		}
+		free(dev->vfs);
+	}
+}
+
 static void free_schedulers(sysman_device_state_t *dev)
 {
 	if (dev->schedulers) {
@@ -493,6 +506,7 @@ static void free_device(sysman_device_state_t *dev)
 	free_power_domains(dev);
 	free_psus(dev);
 	free_ras_error_sets(dev);
+	free_vfs(dev);
 	free_schedulers(dev);
 	free_standby_domains(dev);
 	free_temperature_sensors(dev);

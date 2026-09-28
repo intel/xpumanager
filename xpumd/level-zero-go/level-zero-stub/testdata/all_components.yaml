@@ -89,6 +89,10 @@ Drivers:
           - Properties: {}
             Config: {}
             State: {}
+        VirtualFunctions:
+          - Capabilities: {}
+            MemoryUtilization: []
+            EngineUtilization: []
         Schedulers:
           - Properties: {}
             CurrentMode: 1
