@@ -312,6 +312,8 @@ if is_windows
     cpp.find_library('user32'),
     cpp.find_library('psapi'),
     cpp.find_library('setupapi'),
+    # CM_* devnode queries (oal/win/kernel_driver.cpp, oal/win/i2c_interface.cpp).
+    cpp.find_library('cfgmgr32'),
   ]
 endif
 

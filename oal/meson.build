@@ -14,6 +14,7 @@ if is_windows
     'win/fs_lock.cpp',
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
+    'win/kernel_driver.cpp',
     'win/module_info.cpp',
     'win/path_lookup_win.cpp',
     'win/proc_fdinfo.cpp',
