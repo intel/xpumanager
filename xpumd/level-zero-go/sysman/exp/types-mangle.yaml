@@ -26,8 +26,30 @@ structs:
     fields:
       - name: Category
         newType: RasErrorCategoryExp
+  - name: VfExp2Capabilities
+    fields:
+      - name: Address
+        newType: sysman.PciAddress
+  - name: VfUtilMemExp2
+    fields:
+      - name: VfMemLocation
+        newType: sysman.MemLoc
+  - name: VfUtilEngineExp2
+    fields:
+      - name: VfEngineType
+        newType: sysman.EngineGroup
 
 types:
+  # A non-matching rule to provide a default comment to use for other rules.
+  - name: "_"
+    newComment: &linked |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/{{ .DocPage }}#{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+
   - name: "*"
     newComment: |-
       {{ .Name }} is declared in the Level Zero sysman API.
@@ -35,14 +57,15 @@ types:
 
       {{ . }}
       {{- end -}}
-  - name: "Ras*"
-    newComment: |-
-      {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#{{ .DocAnchor }}
-      {{- with doxygen . }}
 
-      {{ . }}
-      {{- end -}}
+  # Type-specific rules to set the correct link to the online documentation.
+  - name: "Ras*"
+    docPage: experimental/ras.html
+    newComment: *linked
+  - name: "Vf*"
+    docPage: experimental/vf_management.html
+    newComment: *linked
+
   - name: "*Handle"
     newComment: |-
       {{ .Name }} is a handle type used by the Level Zero sysman API.

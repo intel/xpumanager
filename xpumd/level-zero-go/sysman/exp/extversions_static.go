@@ -12,7 +12,14 @@ package exp
 // that the driver loaded at runtime advertises.
 //
 // The bitwise XOR is zero if and only if the versions are equal, otherwise non-zero and we get a negative array size.
-const ras_state_exp_version_mismatch = -(int(RAS_STATE_EXP_VERSION_CURRENT) ^
-	int(RAS_STATE_EXP_VERSION_1_1))
+const (
+	ras_state_exp_version_mismatch = -(int(RAS_STATE_EXP_VERSION_CURRENT) ^
+		int(RAS_STATE_EXP_VERSION_1_1))
+	vf_management_exp_version_mismatch = -(int(VF_MANAGEMENT_EXP_VERSION_CURRENT) ^
+		int(VF_MANAGEMENT_EXP_VERSION_1_2))
+)
 
-var _ [ras_state_exp_version_mismatch]struct{}
+var (
+	_ [ras_state_exp_version_mismatch]struct{}
+	_ [vf_management_exp_version_mismatch]struct{}
+)

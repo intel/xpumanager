@@ -22,21 +22,39 @@ TRANSLATOR:
       - {action: accept, from: "^ZES_RAS_STATE_EXP_VERSION_"}
       - {action: accept, from: "^ZES_RAS_ERROR_CATEGORY_EXP_"}
       - {action: accept, from: "^ZES_RAS_GET_STATE_EXP_NAME$"}
+      - {action: accept, from: "^ZES_VF_MANAGEMENT_EXP_VERSION_"}
+      - {action: accept, from: "^ZES_VIRTUAL_FUNCTION_MANAGEMENT_EXP_NAME$"}
+      - {action: accept, from: "^ZES_STRUCTURE_TYPE_VF_UTIL_MEM_EXP2$"}
+      - {action: accept, from: "^ZES_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2$"}
+      - {action: accept, from: "^ZES_STRUCTURE_TYPE_VF_EXP2_CAPABILITIES$"}
+      - {action: replace, from: "^ZES_STRUCTURE_TYPE_", to: "_STRUCTURE_TYPE_"}
       - {action: replace, from: "^ZES_"}
       - {transform: export}
     function:
       - {action: accept, from: "^zesRasGetStateExp$"}
       - {action: accept, from: "^zesRasClearStateExp$"}
+      - {action: accept, from: "^zesDeviceEnumEnabledVFExp$"}
+      - {action: accept, from: "^zesVFManagementGetVFCapabilitiesExp2$"}
+      - {action: accept, from: "^zesVFManagementGetVFMemoryUtilizationExp2$"}
+      - {action: accept, from: "^zesVFManagementGetVFEngineUtilizationExp2$"}
       - {transform: unexport}
     type:
       - {action: accept, from: "^zes_ras_state_exp_version_t$"}
       - {action: accept, from: "^zes_ras_error_category_exp_t$"}
       - {action: accept, from: "^zes_ras_state_exp_t$"}
       - {action: accept, from: "^zes_ras_handle_t$"}
+      - {action: accept, from: "^zes_vf_handle_t$"}
+      - {action: accept, from: "^zes_device_handle_t$"}
+      - {action: accept, from: "^zes_vf_management_exp_version_t$"}
+      - {action: accept, from: "^zes_vf_exp2_capabilities_t$"}
+      - {action: accept, from: "^zes_vf_util_mem_exp2_t$"}
+      - {action: accept, from: "^zes_vf_util_engine_exp2_t$"}
+      - {action: accept, from: "^zes_structure_type_t$"}
       - {action: replace, from: "^zes_"}
       - {action: replace, from: "_t$"}
       - {transform: export}
       - {load: snakecase}
+      - {transform: unexport, from: "^StructureType$"}
       - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
       # Map Ze types to core package (ze_result_t is the return type of the
       # RAS Exp functions below)
@@ -44,6 +62,8 @@ TRANSLATOR:
   PtrTips:
     function:
       - {target: "^zesRasGetStateExp$", tips: [ref, ref, arr]}
+      - {target: "^zesDeviceEnumEnabledVFExp$", tips: [ref, ref, arr]}
+      - {target: "^zesVFManagementGetVF(Memory|Engine)UtilizationExp2$", tips: [ref, ref, arr]}
       # Default tip, everything is ref
       - {target: ., tips: [ref, ref, ref, ref, ref, ref, ref, ref, ref, ref]}
   MemTips:

@@ -3,10 +3,26 @@
 
 package exp
 
+import (
+	"unsafe"
+
+	"github.com/intel/level-zero-go/sysman"
+)
+
+// deviceHandle is a handle type used by the Level Zero sysman API.
+//
+// Handle of device object.
+type deviceHandle *_Ctype_struct__ze_device_handle_t
+
 // rasHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device RAS error set.
 type rasHandle *_Ctype_struct__zes_ras_handle_t
+
+// vfHandle is a handle type used by the Level Zero sysman API.
+//
+// Handle for a Sysman virtual function management domain.
+type vfHandle *_Ctype_struct__zes_vf_handle_t
 
 // RasStateExp declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#zes-ras-state-exp-t
@@ -15,4 +31,44 @@ type rasHandle *_Ctype_struct__zes_ras_handle_t
 type RasStateExp struct {
 	Category     RasErrorCategoryExp `yaml:"Category"`
 	ErrorCounter uint64              `yaml:"ErrorCounter"`
+}
+
+// VfExp2Capabilities declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/vf_management.html#zes-vf-exp2-capabilities-t
+//
+// Virtual function management capabilities.
+type VfExp2Capabilities struct {
+	stype           structureType
+	pnext           unsafe.Pointer
+	Address         sysman.PciAddress `yaml:"Address"`
+	VfDeviceMemSize uint64            `yaml:"VfDeviceMemSize"`
+	VfID            uint32            `yaml:"VfID"`
+	_               [4]byte
+}
+
+// VfUtilMemExp2 declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/vf_management.html#zes-vf-util-mem-exp2-t
+//
+// Provides memory utilization values for a virtual function.
+type VfUtilMemExp2 struct {
+	stype         structureType
+	pnext         unsafe.Pointer
+	VfMemLocation sysman.MemLoc `yaml:"VfMemLocation"`
+	VfMemUtilized uint64        `yaml:"VfMemUtilized"`
+}
+
+// VfUtilEngineExp2 declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/vf_management.html#zes-vf-util-engine-exp2-t
+//
+// Provides engine utilization values for a virtual function.
+//
+//   - Percent utilization is calculated by taking two snapshots (s1, s2) and using
+//     the equation: util = (s2.activeCounterValue - s1.activeCounterValue) /
+//     (s2.samplingCounterValue - s1.samplingCounterValue)
+type VfUtilEngineExp2 struct {
+	stype                structureType
+	pnext                unsafe.Pointer
+	VfEngineType         sysman.EngineGroup `yaml:"VfEngineType"`
+	ActiveCounterValue   uint64             `yaml:"ActiveCounterValue"`
+	SamplingCounterValue uint64             `yaml:"SamplingCounterValue"`
 }

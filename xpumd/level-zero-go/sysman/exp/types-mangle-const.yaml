@@ -7,6 +7,16 @@ options:
   doxygenPath: xml/zes__api_8h.xml
 
 types:
+  # A non-matching rule to provide a default comment to use for other rules.
+  - name: "_"
+    newComment: &linked |-
+      {{ .Name }} declared in:
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/{{ .DocPage }}#{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+
   - name: "*"
     newComment: |-
       {{ .Name }} is declared in the Level Zero sysman API.
@@ -16,22 +26,20 @@ types:
       {{- end -}}
     typeAssert: int32
     newType: uint32
+
+  # Type-specific rules to set the correct link to the online documentation.
   - name: "Ras*"
-    newComment: |-
-      {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#{{ .DocAnchor }}
-      {{- with doxygen . }}
-
-      {{ . }}
-      {{- end -}}
-  - name: "RasStateExpVersion"
-    newComment: |-
-      {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/data_types.html#{{ .DocAnchor }}
-      {{- with doxygen . }}
-
-      {{ . }}
-      {{- end -}}
+    docPage: experimental/ras.html
+    newComment: *linked
+  - name: "Vf*"
+    docPage: experimental/vf_management.html
+    newComment: *linked
+  - name: "*ExpVersion"
+    docPage: experimental/data_types.html
+    newComment: *linked
+  - name: "structureType"
+    docPage: apis/data_types.html
+    newComment: *linked
 
 values:
   - name: "*"

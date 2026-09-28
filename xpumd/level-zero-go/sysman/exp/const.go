@@ -17,10 +17,24 @@ package exp
 */
 import "C"
 
-// RAS Get State Extension Name.
 const (
-	// RAS_GET_STATE_EXP_NAME as defined in level-zero/zes_api.h:7811
+	// RAS Get State Extension Name.
 	RAS_GET_STATE_EXP_NAME = "ZES_extension_ras_state"
+	// Virtual Function Management Extension Name.
+	VIRTUAL_FUNCTION_MANAGEMENT_EXP_NAME = "ZES_experimental_virtual_function_management"
+)
+
+// structureType declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/data_types.html#zes-structure-type-t
+//
+// Defines structure types.
+type structureType uint32
+
+// structureType enumeration from level-zero/zes_api.h:175
+const (
+	_STRUCTURE_TYPE_VF_UTIL_MEM_EXP2     structureType = 131081
+	_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2  structureType = 131088
+	_STRUCTURE_TYPE_VF_EXP2_CAPABILITIES structureType = 131089
 )
 
 // RasStateExpVersion declared in:
@@ -79,4 +93,24 @@ const (
 	RAS_ERROR_CATEGORY_EXP_SOC_INTERNAL_ERRORS RasErrorCategoryExp = 12
 	// Value marking end of ZES_RAS_ERROR_CATEGORY_EXP_* ENUMs.
 	RAS_ERROR_CATEGORY_EXP_FORCE_UINT32 RasErrorCategoryExp = 2147483647
+)
+
+// VfManagementExpVersion declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/data_types.html#zes-vf-management-exp-version-t
+//
+// Virtual Function Management Extension Version(s).
+type VfManagementExpVersion uint32
+
+// VfManagementExpVersion enumeration from level-zero/zes_api.h:8471
+const (
+	// version 1.0 (deprecated)
+	VF_MANAGEMENT_EXP_VERSION_1_0 VfManagementExpVersion = 65536
+	// version 1.1 (deprecated)
+	VF_MANAGEMENT_EXP_VERSION_1_1 VfManagementExpVersion = 65537
+	// version 1.2
+	VF_MANAGEMENT_EXP_VERSION_1_2 VfManagementExpVersion = 65538
+	// latest known version
+	VF_MANAGEMENT_EXP_VERSION_CURRENT VfManagementExpVersion = 65538
+	// Value marking end of ZES_VF_MANAGEMENT_EXP_VERSION_* ENUMs.
+	VF_MANAGEMENT_EXP_VERSION_FORCE_UINT32 VfManagementExpVersion = 2147483647
 )
