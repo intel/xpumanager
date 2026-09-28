@@ -19,7 +19,6 @@
 
 // Forward-declare shared utilities defined in cli.cpp.
 void printSubCommands(const std::vector<std::unique_ptr<cmds>> &cmdList);
-void printVersion(arg_struct *arg);
 std::vector<function_entry> defaultCommandTable();
 [[nodiscard]] std::optional<int> requireDriver(arg_struct *arg, DriverMode mode);
 
@@ -82,7 +81,6 @@ template <CliParser P> void printFullHelp(P &parser, const std::vector<std::uniq
 
 	PRINT("Options:\n");
 	PRINT("  -h,--help                   Print this help message and exit\n");
-	PRINT("  -v,--version                Display version information and exit\n");
 	parser.printExtraOptions();
 	PRINT("\n");
 

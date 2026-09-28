@@ -18,6 +18,7 @@
 #include <cmd_smi.h>
 #include <cmd_dump.h>
 #include <metrics_registry.h>
+#include <version_report.h>
 #include <array>
 #include <charconv>
 #include <exception>
@@ -369,6 +370,7 @@ void DefaultParser::printExtraOptions()
 	PRINT("  --count=<n>                 Number of loop iterations (default: infinite)\n");
 	PRINT("  --format=csv[,noheader][,nounits]  Output format for --query-gpu\n");
 	PRINT("  -f,--file=<path>            Log output to file instead of stdout\n");
+	PRINT("  -v,--version                Build provenance and runtime versions\n");
 }
 
 std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::vector<std::unique_ptr<cmds>> &cmdList)
@@ -452,11 +454,16 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 	}
 
 	if (versionFlag) {
-		// The loader reports no component versions until zesInit has run.
-		if (auto rc = requireDriver(args, DriverMode::SysmanOnly); rc.has_value()) {
-			return rc;
+		// Host half first: it needs no driver, so it still prints if sysman init fails
+		// or crashes, which is exactly when -v is most likely to be run.
+		VersionReport report = collectHostVersionReport();
+		PRINT("{}", formatHostVersionReport(report));
+		// The loader reports no component versions until zesInit has run. A failed
+		// init shortens the report rather than failing it.
+		if (!requireDriver(args, DriverMode::SysmanOnly).has_value()) {
+			addDriverVersionInfo(report, args->sm);
 		}
-		printVersion(args);
+		PRINT("{}", formatDriverVersionReport(report));
 		return 0;
 	}
 	if (listGpusFlag) {

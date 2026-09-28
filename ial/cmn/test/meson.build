@@ -55,6 +55,23 @@ discovery_test = executable(
 
 test('discovery_test', discovery_test)
 
+version_report_test = executable(
+  'version_report_test',
+  'version_report_test.cpp',
+  include_directories: [
+    global_inc,
+    ial_cmn_inc,
+  ],
+  link_with: ial_cmn_lib,
+  dependencies: ial_cmn_test_deps,
+  cpp_args: ial_cmn_cpp_args,
+  link_args: is_linux ? ['-pie'] : [],
+  build_by_default: true,
+  install: false,
+)
+
+test('version_report_test', version_report_test)
+
 if is_linux
   topology_test = executable(
     'topology_test',

@@ -11,7 +11,10 @@
 #include "sysman.h"
 #include <loader/ze_loader.h>
 #include <os.h>
+#include <algorithm>
 #include <charconv>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <ranges>
 #include <set>
@@ -19,6 +22,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <ze_api.h>
+#include "utility/compat/format.h"
 
 /**
  * @brief Sets the print/debug level for the driver and synchronizes across modules
@@ -549,26 +554,74 @@ ze_result_t driver::run()
 }
 
 /**
- * @brief Gets the versions of the Level Zero loader components.
+ * @brief Gets the Level Zero loader's own entry from its component list.
  *
- * This function retrieves and prints the versions of the Level Zero loader components.
+ * The loader registers itself before any layer, so its entry is always first. The
+ * layers that follow are not reported: they share the loader's version and carry
+ * nothing of diagnostic value. The full list is still fetched because the loader
+ * contract allows ZE_RESULT_ERROR_INVALID_SIZE for an undersized array.
+ *
+ * @retval LoaderComponent  The loader's name, library version and API level.
+ * @retval std::nullopt      The loader is not initialized, the query failed, or it
+ *                           reported no components. Never an error: this is
+ *                           diagnostic data, and a build that cannot describe its
+ *                           runtime must still describe itself.
  */
-void driver::getLoaderVersion(std::string *lzVersion)
+// A member rather than static on purpose: the loader only answers once zeInit has
+// run, and an initialized driver instance is what guarantees that.
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+std::optional<LoaderComponent> driver::getLoaderComponent()
 {
-	zel_component_version_t *versions;
-	size_t size = 0;
-	zelLoaderGetVersions(&size, nullptr);
-	DBG("zelLoaderGetVersions number of components found: {}\n", size);
-	versions = new zel_component_version_t[size];
-	zelLoaderGetVersions(&size, versions);
-
-	if (size > 0) {
-		*lzVersion = std::to_string(versions[0].component_lib_version.major) + ".";
-		*lzVersion += std::to_string(versions[0].component_lib_version.minor) + ".";
-		*lzVersion += std::to_string(versions[0].component_lib_version.patch);
+	size_t count = 0;
+	ze_result_t result = zelLoaderGetVersions(&count, nullptr);
+	if (result != ZE_RESULT_SUCCESS || count == 0) {
+		DBG("zelLoaderGetVersions count query returned 0x{:X} ({}), {} components\n", result,
+			l0_error_to_string(result), count);
+		return std::nullopt;
 	}
 
-	delete[] versions;
+	std::vector<zel_component_version_t> raw(count);
+	result = zelLoaderGetVersions(&count, raw.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("zelLoaderGetVersions data query returned 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return std::nullopt;
+	}
+	// The loader may report fewer components than the count query promised.
+	raw.resize(std::min(count, raw.size()));
+	if (raw.empty()) {
+		return std::nullopt;
+	}
+
+	const zel_component_version_t &v = raw.front();
+	// component_name is a fixed-size char array that the loader is not required to
+	// NUL-terminate when the name fills it exactly, so bound the search by its size.
+	const std::string_view name{v.component_name, sizeof(v.component_name)};
+	// The ZE_MAJOR_VERSION / ZE_MINOR_VERSION split, done on unsigned operands: both
+	// ze_api_version_t and the macros' own literals are signed.
+	constexpr uint32_t majorShift = 16U;
+	constexpr uint32_t minorMask = 0xFFFFU;
+	const auto spec = static_cast<uint32_t>(v.spec_version);
+	return LoaderComponent{
+		.name = std::string{name.substr(0, name.find('\0'))},
+		.version = xpum::compat::format("{}.{}.{}", v.component_lib_version.major, v.component_lib_version.minor,
+										v.component_lib_version.patch),
+		.specVersion = xpum::compat::format("{}.{}", spec >> majorShift, spec & minorMask),
+	};
+}
+
+/**
+ * @brief Gets the version of the Level Zero loader itself.
+ *
+ * @retval version       The loader library version, "major.minor.patch".
+ * @retval std::nullopt  The loader reported no components; see getLoaderComponent().
+ */
+std::optional<std::string> driver::getLoaderVersion()
+{
+	const auto loader = getLoaderComponent();
+	if (!loader.has_value()) {
+		return std::nullopt;
+	}
+	return loader->version;
 }
 
 /*

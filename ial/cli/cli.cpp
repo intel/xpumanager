@@ -5,7 +5,6 @@
  */
 
 #include "parser/default_parser.h"
-#include "version.h"
 #include <cmd_amc.h>
 #include <cmd_listpciinfo.h>
 #include <cmd_config.h>
@@ -21,6 +20,7 @@
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
 #include <debug.h>
+#include <version_report.h>
 #include <cctype>
 #include <iostream>
 #include <memory>
@@ -37,60 +37,25 @@
 std::string progName = "xpu-smi";
 
 /**
- * @brief Builds the version report shown by "xpu-smi -v"
+ * @brief Logs the version report when running at DBG level or higher.
  *
- * @param arg          Argument structure owning the driver instance.
- * @param driverReady  Whether Level Zero has been initialized; the loader
- *                     reports no component versions before zesInit has run.
- * @return The report, one entry per output line (without trailing newline).
- */
-static std::vector<std::string> versionLines(arg_struct *arg, bool driverReady)
-{
-	const std::string fullVersion = xpum::compat::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
-	std::string lzVersion = "not initialized";
-	if (driverReady) {
-		arg->sm.getLoaderVersion(&lzVersion);
-	}
-
-	const auto line = [](GAP indent, std::string_view text) {
-		return xpum::compat::format("{0:<{1}}{2}", "", static_cast<int>(indent), text);
-	};
-	return {
-		line(TITLE, "CLI:"),
-		line(HEADING, "Version: " + fullVersion),
-		line(HEADING, "Build ID: 8389eee7"),
-		line(TITLE, ""),
-		line(TITLE, "Service:"),
-		line(HEADING, "Version: " + fullVersion),
-		line(HEADING, "Build ID: 8389eee7"),
-		line(HEADING, "Level Zero Version: " + lzVersion),
-	};
-}
-
-/**
- * @brief Prints the version information for both CLI and service components
- */
-void printVersion(arg_struct *arg)
-{
-	for (const auto &l : versionLines(arg, true)) {
-		PRINT("{}\n", l);
-	}
-}
-
-/**
- * @brief Logs the "xpu-smi -v" report when running at DBG level or higher
- *
- * @param arg          Argument structure owning the driver instance.
- * @param driverReady  Whether Level Zero has been initialized.
+ * @param[in,out] arg          Argument structure owning the driver instance.
+ * @param[in]     driverReady  Whether Level Zero has been initialized. The loader
+ *                             reports no component versions before zesInit has
+ *                             run, so until then only the host half is logged.
  */
 static void logVersion(arg_struct *arg, bool driverReady)
 {
 	if (getDbgLvl() < LogLevel::DBG) {
 		return;
 	}
-	for (const auto &l : versionLines(arg, driverReady)) {
-		DBG("{}\n", l);
+	VersionReport report = collectHostVersionReport();
+	if (!driverReady) {
+		DBG("{}", formatHostVersionReport(report));
+		return;
 	}
+	addDriverVersionInfo(report, arg->sm);
+	DBG("{}", formatVersionReport(report));
 }
 
 /**

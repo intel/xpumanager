@@ -772,8 +772,7 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 	}
 
 	// ── 3. Get Level Zero version, while the devices sample ─────────────
-	std::string lzVersion;
-	args->sm.getLoaderVersion(&lzVersion);
+	const std::string lzVersion = args->sm.getLoaderVersion().value_or("");
 
 	std::vector<SmiDeviceStats> devStats;
 	std::vector<std::vector<psInfo>> procsPerDevice;

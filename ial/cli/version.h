@@ -29,6 +29,9 @@
 #define XPUM_TOSTRING(x) XPUM_STRINGIFY_IMPL(x)
 
 #define XPUM_VERSION_STRING XPUM_TOSTRING(MAJOR) "." XPUM_TOSTRING(MINOR) "." XPUM_TOSTRING(PATCH)
-#define BUILD_NUMBER 20250225
+
+// No BUILD_NUMBER here: a hand-edited date macro cannot identify a build. Build
+// provenance (commit, timestamps, build type, platform) lives in the generated
+// xpum_build_info.h -- see scripts/gen_build_info.py.
 
 #endif

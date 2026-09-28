@@ -318,6 +318,39 @@ endif
 # Global include directories
 global_inc = include_directories('.')
 
+# ---- Build provenance header ------------------------------------------------
+# xpum_build_info.h records the git commit and the build configuration so
+# `xpu-smi -v` can identify a unique build. Regenerated on every build
+# (build_always_stale) because a commit id captured only at configure time goes
+# stale the moment anyone commits; the generator leaves the file alone when
+# nothing but the timestamp would change, so this does not cause a rebuild on
+# every invocation.
+build_info_cmd = [
+  import('python').find_installation(),
+  files('scripts/gen_build_info.py'),
+  '--source-root', meson.project_source_root(),
+  '--version', xpum_version,
+  '--buildtype', buildtype,
+  '--platform', host_machine.system() + '/' + host_machine.cpu_family(),
+]
+
+# Also generate it once at configure time: lint jobs and IDE indexers consume
+# compile_commands.json straight after `meson setup`, before any build step has
+# run, and would otherwise fail to find the header at all.
+run_command(build_info_cmd + ['--output', meson.project_build_root() / 'xpum_build_info.h'], check: true)
+
+build_info_h = custom_target(
+  'xpum_build_info_h',
+  output: 'xpum_build_info.h',
+  command: build_info_cmd + ['--output', '@OUTPUT@'],
+  build_always_stale: true,
+  build_by_default: true,
+)
+
+# Consumers list this dependency to get the generated header built before they
+# compile; global_inc already covers the build root where it lands.
+build_info_dep = declare_dependency(sources: [build_info_h])
+
 # Specify compile flags before any xpum targets are compiled
 foreach arg : compile_args
   if cpp.has_argument(arg)

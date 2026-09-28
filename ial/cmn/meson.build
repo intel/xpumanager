@@ -30,6 +30,7 @@ ial_cmn_sources = files(
   'metrics_registry.cpp',
   'oem_serial.cpp',
   'printer.cpp',
+  'version_report.cpp',
   'metrics/eu_array.cpp',
   'metrics/fan.cpp',
   'metrics/memory.cpp',
@@ -41,6 +42,7 @@ ial_cmn_inc = include_directories('.')
 ial_cmn_deps = [
   libxpum_dep,
   oal_dep,
+  build_info_dep,
   nlohmann_json_dep,
   cli11_dep,
   amc_dep,
