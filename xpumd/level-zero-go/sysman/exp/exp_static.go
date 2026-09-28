@@ -59,3 +59,61 @@ func (z *Ras) ClearStateExp(cat RasErrorCategoryExp) error {
 	}
 	return ret.ToError()
 }
+
+// EnumEnabledVFExp wraps the (experimental) zesDeviceEnumEnabledVFExp function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/device.html#zesdeviceenumenabledvfexp
+func (z *Device) EnumEnabledVFExp() ([]*VirtualFunction, error) {
+	if !z.HasExtension(VIRTUAL_FUNCTION_MANAGEMENT_EXP_NAME, uint32(VF_MANAGEMENT_EXP_VERSION_1_2)) {
+		ret := core.RESULT_ERROR_UNSUPPORTED_FEATURE
+		return nil, ret.ToError()
+	}
+	count := uint32(0)
+	if ret := zesDeviceEnumEnabledVFExp(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]vfHandle, count)
+	ret := zesDeviceEnumEnabledVFExp(z.handle, &count, handles)
+	vfs := make([]*VirtualFunction, len(handles))
+	for i, h := range handles {
+		vfs[i] = &VirtualFunction{handle: h, device: z}
+	}
+	return vfs, ret.ToError()
+}
+
+// GetCapabilitiesExp wraps the (experimental) zesVFManagementGetVFCapabilitiesExp2 function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/vf_management.html#zesvfmanagementgetvfcapabilitiesexp2
+func (z *VirtualFunction) GetCapabilitiesExp() (VfExp2Capabilities, error) {
+	caps := VfExp2Capabilities{stype: _STRUCTURE_TYPE_VF_EXP2_CAPABILITIES}
+	ret := zesVFManagementGetVFCapabilitiesExp2(z.handle, &caps)
+	return caps, ret.ToError()
+}
+
+// GetMemoryUtilizationExp wraps the (experimental) zesVFManagementGetVFMemoryUtilizationExp2 function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/vf_management.html#zesvfmanagementgetvfmemoryutilizationexp2
+func (z *VirtualFunction) GetMemoryUtilizationExp() ([]VfUtilMemExp2, error) {
+	count := uint32(0)
+	if ret := zesVFManagementGetVFMemoryUtilizationExp2(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	util := make([]VfUtilMemExp2, count)
+	for i := range util {
+		util[i].stype = _STRUCTURE_TYPE_VF_UTIL_MEM_EXP2
+	}
+	ret := zesVFManagementGetVFMemoryUtilizationExp2(z.handle, &count, util)
+	return util, ret.ToError()
+}
+
+// GetEngineUtilizationExp wraps the (experimental) zesVFManagementGetVFEngineUtilizationExp2 function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/vf_management.html#zesvfmanagementgetvfengineutilizationexp2
+func (z *VirtualFunction) GetEngineUtilizationExp() ([]VfUtilEngineExp2, error) {
+	count := uint32(0)
+	if ret := zesVFManagementGetVFEngineUtilizationExp2(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	util := make([]VfUtilEngineExp2, count)
+	for i := range util {
+		util[i].stype = _STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2
+	}
+	ret := zesVFManagementGetVFEngineUtilizationExp2(z.handle, &count, util)
+	return util, ret.ToError()
+}
