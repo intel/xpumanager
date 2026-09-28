@@ -6,11 +6,13 @@
 package intelxpuinfo
 
 import (
+	"strings"
 	"testing"
 	"text/template"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 
@@ -86,6 +88,26 @@ func TestConfigValidate(t *testing.T) {
 			},
 			expectErr: `state_mapping["degraded"]: invalid severity "bogus"`,
 		},
+		{
+			name: "reason too long",
+			mapping: HwStatusMapping{
+				HealthDomain: "gpu.health",
+				StateMapping: map[string]HwStateMapping{
+					"degraded": {Severity: "warning", Reason: strings.Repeat("a", 64)},
+				},
+			},
+			expectErr: "must be shorter than 64 characters",
+		},
+		{
+			name: "reason with unsupported characters",
+			mapping: HwStatusMapping{
+				HealthDomain: "gpu.health",
+				StateMapping: map[string]HwStateMapping{
+					"degraded": {Severity: "warning", Reason: "not one word"},
+				},
+			},
+			expectErr: "must match regex",
+		},
 		// Basic test to check that the recursive validation applies to the attribute filters as well
 		{
 			name: "invalid filter",
@@ -111,6 +133,72 @@ func TestConfigValidate(t *testing.T) {
 			} else {
 				assert.ErrorContains(t, err, tt.expectErr)
 			}
+		})
+	}
+}
+
+func TestConfigValidateTransport(t *testing.T) {
+	cfg, ok := defaultConfig().(*Config)
+	require.True(t, ok)
+	cfg.NetAddr.Transport = confignet.TransportTypeTCP
+
+	assert.ErrorContains(t, confmap.Validate(cfg), "unsupported transport type")
+}
+
+func TestHealthStatusFor(t *testing.T) {
+	tests := []struct {
+		name         string
+		stateMapping map[string]HwStateMapping
+		hwState      string
+		expectFound  bool
+		expectReason string
+	}{
+		{
+			name: "exact match",
+			stateMapping: map[string]HwStateMapping{
+				"degraded": {Reason: "exact"},
+			},
+			hwState:      "degraded",
+			expectFound:  true,
+			expectReason: "exact",
+		},
+		{
+			name: "catch-all match",
+			stateMapping: map[string]HwStateMapping{
+				"*": {Reason: "catchall"},
+			},
+			hwState:      "degraded",
+			expectFound:  true,
+			expectReason: "catchall",
+		},
+		{
+			name: "exact match takes precedence over catch-all",
+			stateMapping: map[string]HwStateMapping{
+				"*":        {Reason: "catchall"},
+				"degraded": {Reason: "exact"},
+			},
+			hwState:      "degraded",
+			expectFound:  true,
+			expectReason: "exact",
+		},
+		{
+			name: "no match",
+			stateMapping: map[string]HwStateMapping{
+				"degraded": {Reason: "exact"},
+			},
+			hwState:     "failed",
+			expectFound: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := HwStatusMapping{StateMapping: tt.stateMapping}
+
+			sm, found := m.healthStatusFor(tt.hwState)
+
+			assert.Equal(t, tt.expectFound, found)
+			assert.Equal(t, tt.expectReason, sm.Reason)
 		})
 	}
 }

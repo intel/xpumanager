@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/testing/protocmp"
 
+	"github.com/intel/xpumanager/xpumd/common"
 	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
 )
 
@@ -81,6 +82,87 @@ func TestParseFirmwares(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestTranslate(t *testing.T) {
+	md := pmetric.NewMetrics()
+	metrics := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics()
+
+	info := metrics.AppendEmpty()
+	info.SetName("hw.gpu.info")
+	infoDPs := info.SetEmptyGauge().DataPoints()
+
+	infoDP := infoDPs.AppendEmpty()
+	infoDP.SetIntValue(1)
+	infoDP.Attributes().PutStr("hw.id", "gpu0")
+	infoDP.Attributes().PutStr("hw.model", "ACME 1000")
+	infoDP.Attributes().PutStr("pci.bdf", "0000:3a:00.0")
+	infoDP.Attributes().PutStr("pci.device_id", "0x0bd5")
+	infoDP.Attributes().PutStr("pci.vendor_id", "0x8086")
+	infoDP.Attributes().PutStr("hw.firmware_version", "0:gfx::1.2.3")
+
+	// A data point without hw.id cannot be attributed to a device.
+	orphanDP := infoDPs.AppendEmpty()
+	orphanDP.SetIntValue(1)
+	orphanDP.Attributes().PutStr("hw.model", "no identifier")
+
+	// Two memory modules, appended in reverse order to exercise the sorting.
+	mem := metrics.AppendEmpty()
+	mem.SetName("hw.memory.size")
+	memDPs := mem.SetEmptySum().DataPoints()
+	for i, subdeviceID := range []string{"1", "0"} {
+		dp := memDPs.AppendEmpty()
+		dp.SetIntValue(1000 + int64(i))
+		dp.Attributes().PutStr("hw.parent", "gpu0")
+		dp.Attributes().PutStr("hw.memory.location", "device")
+		dp.Attributes().PutStr("hw.memory.type", "hbm")
+		dp.Attributes().PutStr("subdevice_id", subdeviceID)
+	}
+
+	// Metric types other than gauge and sum are skipped (but don't cause panic/errors)
+	histogram := metrics.AppendEmpty()
+	histogram.SetName("hw.gpu.info")
+	histogram.SetEmptyHistogram().DataPoints().AppendEmpty()
+
+	translator := newMetricsTranslator(zap.NewNop().Sugar(), nil)
+
+	resp := translator.translate(md)
+
+	require.Len(t, resp.Devices, 1)
+	got := resp.Devices[0].Info
+
+	want := &pb.DeviceInformation{
+		Uuid:  "gpu0",
+		Model: "ACME 1000",
+		Pci: &pb.PciInfo{
+			Bdf:      "0000:3a:00.0",
+			DeviceId: "0x0bd5",
+			VendorId: "0x8086",
+		},
+		Firmwares: []*pb.FirmwareInfo{
+			{Name: "gfx", Version: "1.2.3"},
+		},
+		Memory: []*pb.MemoryInfo{
+			{Type: "hbm", SubdeviceId: "0", Size: 1001},
+			{Type: "hbm", SubdeviceId: "1", Size: 1000},
+		},
+	}
+
+	if diff := cmp.Diff(want, got, protocmp.Transform()); diff != "" {
+		t.Errorf("unexpected device info (-want +got):\n%s", diff)
+	}
+}
+
+func TestTranslateWithoutDeviceMetadata(t *testing.T) {
+	translator := newMetricsTranslator(zap.NewNop().Sugar(), nil)
+	translator.health["gpu0"] = healthStatuses{
+		{domain: "gpu.health"}: {Name: "gpu.health"},
+	}
+	translator.memory["gpu0"] = []*pb.MemoryInfo{{Type: "hbm", Size: 8e9}}
+
+	resp := translator.translate(pmetric.NewMetrics())
+
+	assert.Empty(t, resp.Devices)
 }
 
 func TestUpdateHealthStatus(t *testing.T) {
@@ -227,6 +309,67 @@ func TestUpdateHealthStatus(t *testing.T) {
 						Severity: pb.SeverityLevel_SEVERITY_LEVEL_CRITICAL,
 						Reason:   "failed"},
 				},
+			},
+		},
+		{
+			name: "non-integer data point value",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				dp := dps.AppendEmpty()
+				dp.SetDoubleValue(1)
+				dp.Attributes().PutStr("hw.parent", "gpu0")
+				dp.Attributes().PutStr("hw.state", "degraded")
+			},
+			wantStatuses: nil,
+		},
+		{
+			name: "missing hw.parent and hw.id",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "", "degraded", true)
+			},
+			wantStatuses: nil,
+		},
+		{
+			name: "no mapping matches the attributes",
+			statusMappings: []HwStatusMapping{
+				{
+					Filters:          common.AttributeFilterList{{Key: "hw.type", Values: []string{"cpu"}}},
+					HealthDomain:     "cpu.health",
+					healthDomainTmpl: mustParseTemplate("cpu.health"),
+					StateMapping: map[string]HwStateMapping{
+						"degraded": makeStateMapping("degraded", "warning"),
+					},
+				},
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "degraded", true)
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {},
+			},
+		},
+		{
+			// The template refers to a non-existent attribute, so it renders empty and the status is skipped
+			name: "health domain cannot be determined",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("{{.hw_type}}", false, map[string]HwStateMapping{
+					"degraded": makeStateMapping("degraded", "warning"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "degraded", true)
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {},
 			},
 		},
 	}
@@ -395,6 +538,22 @@ func TestUpdateMemoryInfo(t *testing.T) {
 				"gpu0": {
 					{Type: "hbm", SubdeviceId: "0", Size: 10},
 					{Type: "sram", SubdeviceId: "1", Size: 20},
+				},
+			},
+		},
+		{
+			name: "data point without a value should be skipped",
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addDataPoint(dps, "gpu0", "hbm", "device", "0", 10)
+				// No value set at all, i.e. an "empty" value type.
+				dp := dps.AppendEmpty()
+				dp.Attributes().PutStr("hw.parent", "gpu0")
+				dp.Attributes().PutStr("hw.memory.type", "hbm")
+				dp.Attributes().PutStr("hw.memory.location", "device")
+			},
+			expected: map[string][]*pb.MemoryInfo{
+				"gpu0": {
+					{Type: "hbm", SubdeviceId: "0", Size: 10},
 				},
 			},
 		},
