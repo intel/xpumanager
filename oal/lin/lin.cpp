@@ -1046,36 +1046,23 @@ std::string getKernelVersion()
 }
 
 /**
- * @brief Get a version string identifying the kernel-mode driver build behind a GPU
+ * @brief Get the release version of the kernel-mode driver behind a GPU
  *
- * Reports the driver's `srcversion` (the source checksum `modinfo xe` prints),
- * which is the only value that changes on every driver source revision and so
- * traces the running driver back to the package it was built from, including a
- * DKMS rebuild on an unchanged kernel.
+ * Reports the driver's release version, the `version` field of `modinfo xe`. The
+ * backported out-of-tree driver installed via DKMS carries one and it names the
+ * driver package outright (e.g. "xeb_v7.1.4.31_260728.26"), which is what a reader
+ * can act on.
  *
- * When the driver is built into the kernel it has no srcversion, and the kernel
- * release then identifies the driver build, so that is reported instead. That
- * substitution only holds once a driver has been identified: when no driver can be
- * named at all (sysfs unreadable, nothing bound to the device and no Intel GPU
- * module loaded) the kernel release says nothing about the driver, so nothing is
- * reported and callers surface the value as unavailable.
+ * The in-tree driver declares no MODULE_VERSION and so has no release version.
+ * Nothing is reported in that case and callers omit the value rather than
+ * substituting something that names no release: neither the module's source
+ * checksum nor the kernel release identifies a driver release.
  *
  * @param bdf PCI BDF address of the device, or "" to use whichever Intel GPU module is loaded
- * @return std::string srcversion (e.g. "85B7CA089405934276CBAD3"), else the kernel
- *         release (e.g. "5.15.0-56-generic") when the driver is known but exposes no
- *         srcversion, else an empty string
+ * @return std::string release version (e.g. "xeb_v7.1.4.31_260728.26"), or an empty
+ *         string when the driver declares none
  */
-std::string getKernelDriverVersion(const std::string &bdf)
-{
-	if (getKernelDriverName(bdf).empty()) {
-		return "";
-	}
-	std::string srcVersion = getKernelDriverSrcVersion(bdf);
-	if (!srcVersion.empty()) {
-		return srcVersion;
-	}
-	return getKernelVersion();
-}
+std::string getKernelDriverVersion(const std::string &bdf) { return getKernelDriverModuleVersion(bdf); }
 
 /**
  * @brief Checks whether the current kernel matches the known-broken xe debug pattern.

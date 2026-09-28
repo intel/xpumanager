@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "fan.h"
 #include "memory.h"
+#include "os.h"
 #include "power.h"
 #include "temperature.h"
 #include <enginegroup.h>
@@ -130,6 +131,8 @@ void cmdSmi::collectStaticProps(SmiDeviceStats &stats, devInfo *di)
 
 	// PCI BDF address
 	stats.pciBdf = dev->getBDFStr();
+
+	stats.kmdVersion = GETKERNELDRIVERVERSION(stats.pciBdf);
 }
 
 /**
@@ -365,13 +368,32 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	table.setColumnExtraHeaders(1, {"Memory-Usage"});
 	table.setColumnExtraHeaders(2, {"GPU-Util  Compute M."});
 
-	// Banner row: inside the table border, above column headers.
+	// Banner rows: inside the table border, above column headers. The four versions are
+	// split over two lines because one line of them is wider than the columns need,
+	// which would stretch the whole table to fit the banner.
 	const std::string shortVer = xpum::compat::format("v{}.{}", XPUM_VERSION_MAJOR, XPUM_VERSION_MINOR);
-	const std::string umdVersion =
-		(!devStats.empty() && !devStats[0].driverVersion.empty()) ? devStats[0].driverVersion : "N/A";
-	const std::string banner =
-		xpum::compat::format("Intel XPU-SMI {}    UMD Version: {}    Level Zero: {}", shortVer, umdVersion, lzVersion);
-	table.addPreHeaderSpanRow(banner);
+
+	// Take the first device that reports a version rather than device 0, whose value
+	// may be absent: a mixed host can pair an iGPU on the in-tree module, which names
+	// no release, with a dGPU on the DKMS one that does. The banner summarises, so it
+	// names one version; discovery reports each device's own.
+	const auto firstReported = [&devStats](std::string SmiDeviceStats::*field) -> std::string {
+		for (const auto &s : devStats) {
+			if (!(s.*field).empty()) {
+				return s.*field;
+			}
+		}
+		return {};
+	};
+
+	const std::string umd = firstReported(&SmiDeviceStats::driverVersion);
+	const std::string umdVersion = umd.empty() ? "N/A" : umd;
+
+	const std::string kmd = firstReported(&SmiDeviceStats::kmdVersion);
+	const std::string kmdSegment = kmd.empty() ? "" : xpum::compat::format("    KMD Version: {}", kmd);
+
+	table.addPreHeaderSpanRow(xpum::compat::format("Intel XPU-SMI {}{}", shortVer, kmdSegment), BorderStyle::None);
+	table.addPreHeaderSpanRow(xpum::compat::format("UMD Version: {}    Level Zero: {}", umdVersion, lzVersion));
 
 	for (const auto &s : devStats) {
 		// Build col-0 lines: name wraps in 22-char chunks rather than truncating.

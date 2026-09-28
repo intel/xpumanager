@@ -33,6 +33,27 @@
 static constexpr int DEVICE_INFO_COL_WIDTH = 84;
 
 /**
+ * @brief Reads the kernel-mode driver release version behind a device
+ *
+ * Shared by the dump and the property-set paths so both resolve the driver the same
+ * way, while each decides for itself how to present an absent version.
+ *
+ * @param[in] d Pointer to the device info structure
+ * @return Release version, or an empty string when the driver declares none
+ */
+static std::string kmdVersionOf(devInfo *d)
+{
+	// The BDF selects the driver bound to this specific GPU: xe and i915 can both
+	// be loaded, each driving different devices. Falls back to a driver-name probe
+	// when the device has no PCI info.
+	std::string bdf;
+	if (auto *const p = d->dev->getPCI(); p != nullptr) {
+		bdf = p->getBDFStr();
+	}
+	return GETKERNELDRIVERVERSION(bdf);
+}
+
+/**
  * @brief This structure serves two purposes:
  * 1. It defines the command parsing for discovery commands.
  * 2. It allows for easy addition of new commands by simply adding a new entry to the map.
@@ -108,7 +129,7 @@ static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> DISC_DUMP_CMDS{{
 	{&cmdDiscovery::memoryVendor, "Memory Vendor"},									 // 51
 	{&cmdDiscovery::memoryDateCode, "Memory Date Code"},							 // 52
 	{&cmdDiscovery::memoryIcDieInfo, "Memory IC/Die Info"},							 // 53
-	{&cmdDiscovery::kernelDriverVersion, "Kernel Driver Version"},					 // 54
+	{&cmdDiscovery::kernelDriverVersion, "KMD Version"},							 // 54
 	{&cmdDiscovery::tdp, "Thermal Design Power"},									 // 55
 }};
 /**
@@ -167,7 +188,7 @@ std::string getDisplayName(const std::string &key)
 		{"memory_free_size_byte", "Memory Free Size"},
 		{"memory_ecc_state", "Memory ECC State"},
 		{"kernel_version", "Kernel Version"},
-		{"kernel_driver_version", "Kernel Driver Version"},
+		{"kernel_driver_version", "KMD Version"},
 		{"drm_device", "DRM Device"},
 		{"device_type", "Device Type"},
 		{"sku_type", "SKU Type"},
@@ -313,7 +334,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 
 		// Group 2: Driver and Firmware
 		addField("driver_version", "UMD Version");
-		addField("kernel_driver_version", "Kernel Driver Version");
+		addField("kernel_driver_version", "KMD Version");
 		addField("kernel_version", "Kernel Version");
 		addField("gfx_firmware_name", "GFX Firmware Name");
 		addField("gfx_firmware_version", "GFX Firmware Version");
@@ -743,8 +764,10 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	driverVersion(d, &outputLine);
 	props["driver_version"] = outputLine;
 
-	kernelDriverVersion(d, &outputLine);
-	props["kernel_driver_version"] = outputLine;
+	outputLine = kmdVersionOf(d);
+	if (!outputLine.empty()) {
+		props["kernel_driver_version"] = outputLine;
+	}
 
 	gfxFirmwareVersion(d, &outputLine);
 	props["gfx_firmware_version"] = outputLine;
@@ -2000,31 +2023,27 @@ ze_result_t cmdDiscovery::kernelVersion(UNUSED devInfo *d, std::string *outputLi
  * @brief Prints the kernel-mode driver version for a device when user runs discovery --dump 54.
  *
  * Complements UMD Version (dump 8), which reports the Level Zero user-mode
- * driver. This is the KMD's source checksum -- the `srcversion` field of
- * `modinfo xe` -- and is what ties a running driver to the package it was built
- * from, including a DKMS rebuild against an unchanged kernel. A driver built
- * into the kernel exposes no srcversion, so the kernel release is reported
- * instead; that is the driver build identity in that case.
+ * driver. This is the KMD's release version -- the `version` field of
+ * `modinfo xe` -- which the backported out-of-tree driver installed via DKMS
+ * carries and which names the driver package outright
+ * (e.g. "xeb_v7.1.4.31_260728.26").
+ *
+ * The in-tree driver declares no MODULE_VERSION and so has no release version,
+ * and Windows exposes none at all. The column is requested explicitly here, so it
+ * is spelled "N/A" rather than dropped; the text and JSON views omit the field
+ * instead.
  *
  * @param[in] d Pointer to the device info structure
- * @param[out] outputLine Pointer to the output line string (srcversion, kernel release, or "N/A")
+ * @param[out] outputLine Pointer to the output line string (release version or "N/A")
  *
- * @retval ZE_RESULT_SUCCESS Always; an unidentifiable driver is reported as "N/A"
- *         rather than failing the whole dump
+ * @retval ZE_RESULT_SUCCESS Always; a driver that declares no version is reported
+ *         as "N/A" rather than failing the whole dump
  */
 ze_result_t cmdDiscovery::kernelDriverVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	// The BDF selects the driver bound to this specific GPU: xe and i915 can both
-	// be loaded, each driving different devices. Falls back to a driver-name probe
-	// when the device has no PCI info.
-	std::string bdf;
-	if (auto *const p = d->dev->getPCI(); p != nullptr) {
-		bdf = p->getBDFStr();
-	}
-
-	*outputLine = GETKERNELDRIVERVERSION(bdf);
+	*outputLine = kmdVersionOf(d);
 	if (outputLine->empty()) {
 		*outputLine = "N/A";
 	}

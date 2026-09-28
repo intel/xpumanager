@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  *
  * Unit tests for the kernel-mode driver identification helpers
- * (getBoundPciDriverName, getKernelDriverName, getKernelDriverSrcVersion).
+ * (getBoundPciDriverName, getKernelDriverName, getKernelDriverModuleVersion).
  * Each test builds a fake sysfs tree under a scratch directory and points
  * KernelDriverPaths at it, so no GPU or loaded module is required.
  */
@@ -53,17 +53,19 @@ public:
 	FakeSysfs(const FakeSysfs &) = delete;
 	FakeSysfs &operator=(const FakeSysfs &) = delete;
 
-	/// Create /module/<name>, optionally with a srcversion attribute holding @p contents.
-	void addModule(const std::string &name, const std::string *contents = nullptr) const
-	{
-		const fs::path dir = paths.moduleRoot / name;
-		fs::create_directories(dir);
-		if (contents != nullptr) {
-			std::ofstream(dir / "srcversion") << *contents;
-		}
-	}
+	/**
+	 * @brief Creates /module/<name>, the way a loaded module appears in sysfs
+	 *
+	 * @param[in] name Module name
+	 */
+	void addModule(const std::string &name) const { fs::create_directories(paths.moduleRoot / name); }
 
-	/// Bind @p bdf to driver @p name the way sysfs does: a symlink to the driver directory.
+	/**
+	 * @brief Binds a device to a driver the way sysfs does, with a symlink to the driver directory
+	 *
+	 * @param[in] bdf  PCI BDF address of the device
+	 * @param[in] name Driver name to bind it to
+	 */
 	void bindDevice(const std::string &bdf, const std::string &name) const
 	{
 		const fs::path driverDir = paths.moduleRoot.parent_path() / "bus/pci/drivers" / name;
@@ -74,7 +76,25 @@ public:
 		fs::create_directory_symlink(driverDir, devDir / "driver", ec);
 	}
 
-	/// Create the device directory without binding a driver to it.
+	/**
+	 * @brief Writes /module/<name>/version, the attribute the kernel exposes for a module
+	 *        built with a MODULE_VERSION string
+	 *
+	 * @param[in] name     Module name
+	 * @param[in] contents Attribute contents, trailing newline included as sysfs writes it
+	 */
+	void setModuleVersion(const std::string &name, const std::string &contents) const
+	{
+		const fs::path dir = paths.moduleRoot / name;
+		fs::create_directories(dir);
+		std::ofstream(dir / "version") << contents;
+	}
+
+	/**
+	 * @brief Creates the device directory without binding a driver to it
+	 *
+	 * @param[in] bdf PCI BDF address of the device
+	 */
 	void addUnboundDevice(const std::string &bdf) const { fs::create_directories(paths.pciDevRoot / bdf); }
 };
 
@@ -157,77 +177,84 @@ TEST_CASE("getKernelDriverName reports nothing when no Intel GPU driver is prese
 	CHECK(getKernelDriverName(BDF, sysfs.paths).empty());
 }
 
-TEST_CASE("getKernelDriverSrcVersion reads the bound driver's srcversion")
+TEST_CASE("getKernelDriverModuleVersion extracts the backports release from MODULE_VERSION")
 {
-	const FakeSysfs sysfs("srcversion");
-	const std::string srcVersion = "85B7CA089405934276CBAD3";
-	// sysfs terminates every attribute with a newline, which must not survive.
-	const std::string onDisk = srcVersion + "\n";
-	// xe is loaded as well and the module scan would reach it first, so reading the
-	// bound driver's value here is what proves the binding decided the answer.
-	const std::string otherOnDisk = "0000000000000000000000\n";
-	sysfs.addModule("xe", &otherOnDisk);
-	sysfs.addModule("i915", &onDisk);
-	sysfs.bindDevice(BDF, "i915");
+	const FakeSysfs sysfs("module_version");
+	sysfs.addModule("xe");
+	sysfs.bindDevice(BDF, "xe");
+	// The backported out-of-tree driver spells MODULE_VERSION as a sentence; only the
+	// backports release names the driver package. sysfs also terminates every
+	// attribute with a newline, which must not survive.
+	sysfs.setModuleVersion(
+		"xe", "backported from (365b81808) using backports xeb_v7.1.4.31_260728.26 for 7.0.0-14-generic Kernel\n");
 
-	CHECK(getKernelDriverSrcVersion(BDF, sysfs.paths) == srcVersion);
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths) == "xeb_v7.1.4.31_260728.26");
 }
 
-TEST_CASE("getKernelDriverSrcVersion falls back to a loaded module when the device gives no driver")
+TEST_CASE("getKernelDriverModuleVersion passes through a plain MODULE_VERSION")
 {
-	const FakeSysfs sysfs("srcversion_fallback");
-	const std::string srcVersion = "85B7CA089405934276CBAD3";
-	const std::string onDisk = srcVersion + "\n";
-	sysfs.addModule("xe", &onDisk);
+	const FakeSysfs sysfs("module_version_plain");
+	sysfs.addModule("i915");
+	sysfs.bindDevice(BDF, "i915");
+	// Other packagings set a bare version, which is already the answer.
+	sysfs.setModuleVersion("i915", "1.23.10.90\n");
+
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths) == "1.23.10.90");
+}
+
+TEST_CASE("getKernelDriverModuleVersion falls back to a loaded module when the device gives no driver")
+{
+	const FakeSysfs sysfs("module_version_fallback");
+	sysfs.addModule("xe");
+	sysfs.setModuleVersion("xe", "xeb_v7.1.4.31_260728.26\n");
 
 	// No BDF to look up.
-	CHECK(getKernelDriverSrcVersion("", sysfs.paths) == srcVersion);
+	CHECK(getKernelDriverModuleVersion("", sysfs.paths) == "xeb_v7.1.4.31_260728.26");
 	// Device present but unbound, so the lookup lands on the same module scan.
 	sysfs.addUnboundDevice(BDF);
-	CHECK(getKernelDriverSrcVersion(BDF, sysfs.paths) == srcVersion);
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths) == "xeb_v7.1.4.31_260728.26");
 }
 
-TEST_CASE("getKernelDriverSrcVersion needs a BDF to tell mixed xe/i915 systems apart")
+TEST_CASE("getKernelDriverModuleVersion needs a BDF to tell mixed xe/i915 systems apart")
 {
-	const FakeSysfs sysfs("mixed");
-	const std::string xeSrcVersion = "AAAA1111AAAA1111AAAA111";
-	const std::string i915SrcVersion = "BBBB2222BBBB2222BBBB222";
-	const std::string xeOnDisk = xeSrcVersion + "\n";
-	const std::string i915OnDisk = i915SrcVersion + "\n";
-	sysfs.addModule("xe", &xeOnDisk);
-	sysfs.addModule("i915", &i915OnDisk);
+	const FakeSysfs sysfs("module_version_mixed");
+	// xe would win the module scan, so reading the i915 value proves the binding decided.
+	sysfs.addModule("xe");
+	sysfs.addModule("i915");
+	sysfs.setModuleVersion("xe", "xeb_v7.1.4.31_260728.26\n");
+	sysfs.setModuleVersion("i915", "1.23.10.90\n");
 	sysfs.bindDevice(BDF, "xe");		// dGPU
 	sysfs.bindDevice(IGPU_BDF, "i915"); // iGPU on the older driver
 
 	// Given a BDF, each device reports the driver actually behind it.
-	CHECK(getKernelDriverSrcVersion(BDF, sysfs.paths) == xeSrcVersion);
-	CHECK(getKernelDriverSrcVersion(IGPU_BDF, sysfs.paths) == i915SrcVersion);
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths) == "xeb_v7.1.4.31_260728.26");
+	CHECK(getKernelDriverModuleVersion(IGPU_BDF, sysfs.paths) == "1.23.10.90");
 
 	// Without one, the module scan order decides and xe always wins, so the i915
 	// device's version is simply unreachable: callers must pass a BDF on a mixed system.
-	CHECK(getKernelDriverSrcVersion("", sysfs.paths) == xeSrcVersion);
+	CHECK(getKernelDriverModuleVersion("", sysfs.paths) == "xeb_v7.1.4.31_260728.26");
 	// A BDF that resolves to nothing degrades to that same scan, so it can report a
 	// driver that is not the one behind the requested device.
-	CHECK(getKernelDriverSrcVersion("0000:99:00.0", sysfs.paths) == xeSrcVersion);
+	CHECK(getKernelDriverModuleVersion("0000:99:00.0", sysfs.paths) == "xeb_v7.1.4.31_260728.26");
 }
 
-TEST_CASE("getKernelDriverSrcVersion reports nothing when the attribute is missing or blank")
+TEST_CASE("getKernelDriverModuleVersion reports nothing when the module carries no version")
 {
-	const FakeSysfs sysfs("no_srcversion");
-	// A driver built into the kernel has a module directory but no srcversion.
+	const FakeSysfs sysfs("no_module_version");
+	// The in-tree driver declares no MODULE_VERSION, so sysfs exposes no version file.
 	sysfs.addModule("xe");
 	sysfs.bindDevice(BDF, "xe");
-	CHECK(getKernelDriverSrcVersion(BDF, sysfs.paths).empty());
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths).empty());
 
-	const std::string blank = "\n";
-	sysfs.addModule("xe", &blank);
-	CHECK(getKernelDriverSrcVersion(BDF, sysfs.paths).empty());
+	// A blank attribute says no more than a missing one.
+	sysfs.setModuleVersion("xe", "\n");
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths).empty());
 }
 
-TEST_CASE("getKernelDriverSrcVersion reports nothing when the driver cannot be identified")
+TEST_CASE("getKernelDriverModuleVersion reports nothing when the driver cannot be identified")
 {
-	const FakeSysfs sysfs("unknown_driver");
+	const FakeSysfs sysfs("module_version_unknown_driver");
 	sysfs.addUnboundDevice(BDF);
 
-	CHECK(getKernelDriverSrcVersion(BDF, sysfs.paths).empty());
+	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths).empty());
 }

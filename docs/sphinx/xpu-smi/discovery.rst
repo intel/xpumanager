@@ -158,7 +158,7 @@ Options
       * - 53
         - Memory IC/Die Info
       * - 54
-        - Kernel Driver Version
+        - KMD Version
 
 .. option:: --listamcversions
 
@@ -181,7 +181,7 @@ grouped and ordered as follows:
        Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
        Stepping, SKU Type
    * - Driver and Firmware
-     - UMD Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
+     - UMD Version, KMD Version, Kernel Version, GFX Firmware Name,
        GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
        GFX Data Firmware Version
    * - PCIe Information
@@ -205,20 +205,24 @@ are omitted.
 
 .. note::
 
-   **UMD Version** and **Kernel Driver Version** name different components.
-   UMD Version is the Level Zero user-mode driver release, reported as
-   ``Major.Minor.Build`` (e.g. ``1.3.36012``); it is the same value the
-   ``xpu-smi`` dashboard banner shows. Kernel Driver Version identifies the
-   kernel-mode driver (``xe`` or ``i915``, whichever is bound to that GPU) by
-   its source checksum, the
-   ``srcversion`` field of ``modinfo xe``. The checksum changes with every driver
-   source revision, so it is the value that ties a running driver back to the
-   package it was built from, including a DKMS rebuild against an unchanged
-   kernel — which a kernel release cannot distinguish. A driver compiled into the
-   kernel rather than loaded as a module has no checksum; the kernel release is
-   reported instead, since that then identifies the driver build. When no
-   kernel-mode driver can be identified for the GPU at all, ``N/A`` is reported
-   rather than a kernel release, which would say nothing about the driver.
+   **UMD Version** and **KMD Version** name different components. UMD Version is
+   the Level Zero user-mode driver release, reported as ``Major.Minor.Build``
+   (e.g. ``1.3.36012``). KMD Version identifies the kernel-mode driver (``xe`` or
+   ``i915``, whichever is bound to that GPU) by its release version, the
+   ``version`` field of ``modinfo xe``. Both are also shown in the ``xpu-smi``
+   dashboard banner.
+
+   Only the out-of-tree driver installed via DKMS declares a release version, and
+   it names the driver package outright — for example
+   ``xeb_v7.1.4.31_260728.26``, extracted from the full
+   ``backported from (365b81808) using backports xeb_v7.1.4.31_260728.26 for
+   7.0.0-14-generic Kernel`` string that ``/sys/module/xe/version`` holds.
+
+   The in-tree driver declares none, as is the case on Windows. KMD Version is
+   then omitted from the text output, the JSON key ``kernel_driver_version`` is
+   left out, and the dashboard banner drops the field, rather than showing a
+   value that names no release. ``--dump 54`` asks for the column explicitly, so
+   it is spelled ``N/A`` there instead of disappearing.
 
    **Memory Type** is resolved from two Level Zero sources, because neither is
    complete on its own: the sysman memory type is per memory module and is the

@@ -50,7 +50,8 @@ Some fields in the `xpu-smi` output example below may vary depending on platform
 ```
 $ xpu-smi
 +----------------------------------------------+----------------------------+------------------------+
-|                 Intel XPU-SMI v2.0    UMD Version: 1.3.36012    Level Zero: 1.27.0                 |
+|                     Intel XPU-SMI v2.0    KMD Version: xeb_v7.1.4.31_260728.26                     |
+|                            UMD Version: 1.3.36012    Level Zero: 1.27.0                            |
 +----------------------------------------------+----------------------------+------------------------+
 | GPU  Name                    Persistence-M   | Bus-Id            Disp.A   |   Volatile Uncorr. ECC |
 | Fan  Temp  Pwr:Usage/Cap                     | Memory-Usage               |   GPU-Util  Compute M. |
@@ -85,6 +86,7 @@ $ xpu-smi discovery -d 0
 |           | SKU Type: Production ES                                                              |
 |           |                                                                                      |
 |           | UMD Version: 1.3.36012                                                               |
+|           | KMD Version: xeb_v7.1.4.31_260728.26                                                 |
 |           | Kernel Version: 6.19.0-rc6                                                           |
 |           | GFX Firmware Name: GFX                                                               |
 |           | GFX Firmware Version:                                                                |

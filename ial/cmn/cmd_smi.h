@@ -36,6 +36,7 @@ struct SmiDeviceStats
 	std::string name;
 	std::string pciBdf;
 	std::string driverVersion;
+	std::string kmdVersion;
 
 	// Static properties
 	bool eccEnabled = false;

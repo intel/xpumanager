@@ -8,13 +8,12 @@
  * abstraction layer.
  *
  * Read from sysfs rather than from Sysman's zes_device_properties_t.driverVersion,
- * which the Linux user-mode driver happens to populate from the same srcversion
- * file today (it is what the smi banner prints). The requirement names the file,
- * not an API: zes_api.h defines that field as an "Installed driver version" that
- * "will be set to the string 'unknown' if this cannot be determined", so neither
- * its format nor its user-mode/kernel-mode meaning is guaranteed. Reading sysfs
- * keeps the value stable across user-mode driver changes, keeps it available when
- * Sysman cannot initialise, and lets the fallback paths be unit tested.
+ * which on Linux reports the user-mode driver and says nothing about the kernel
+ * module: zes_api.h defines that field as an "Installed driver version" that "will
+ * be set to the string 'unknown' if this cannot be determined", so neither its
+ * format nor its user-mode/kernel-mode meaning is guaranteed. Reading sysfs keeps
+ * the value stable across user-mode driver changes, keeps it available when Sysman
+ * cannot initialise, and lets the lookup be unit tested.
  */
 
 #include "kernel_driver.h"
@@ -33,7 +32,12 @@ namespace {
 // driver symlink cannot be read (no BDF given, or nothing bound to the device).
 constexpr std::array<std::string_view, 2> GPU_MODULES{"xe", "i915"};
 
-/// Strip surrounding whitespace, including the newline sysfs appends to every attribute.
+/**
+ * @brief Strips surrounding whitespace, including the newline sysfs appends to every attribute
+ *
+ * @param[in] s Raw attribute text
+ * @return Trimmed copy, empty when @p s holds nothing but whitespace
+ */
 std::string trim(std::string_view s)
 {
 	constexpr std::string_view whitespace = " \t\n\r";
@@ -45,8 +49,13 @@ std::string trim(std::string_view s)
 	return std::string{s.substr(first, last - first + 1)};
 }
 
-/// Read the first line of a sysfs attribute. Returns "" on any failure, since a
-/// missing or unreadable attribute and an empty one mean the same thing here.
+/**
+ * @brief Reads the first line of a sysfs attribute
+ *
+ * @param[in] path Full path to the attribute file
+ * @return Attribute contents, or an empty string on any failure, since a missing or
+ *         unreadable attribute and an empty one mean the same thing here
+ */
 std::string readAttribute(const fs::path &path)
 {
 	std::ifstream file(path);
@@ -56,6 +65,32 @@ std::string readAttribute(const fs::path &path)
 	std::string line;
 	std::getline(file, line);
 	return trim(line);
+}
+
+/**
+ * @brief Pulls the backports release out of an out-of-tree driver's MODULE_VERSION string
+ *
+ * The backported Xe driver sets MODULE_VERSION to a sentence rather than a bare
+ * version, e.g. "backported from (365b81808) using backports xeb_v7.1.4.31_260728.26
+ * for 7.0.0-14-generic Kernel". Only the token after "using backports" names the
+ * driver package, so that is what identifies the build.
+ *
+ * @param[in] version Raw MODULE_VERSION string
+ * @return Backports release, or @p version unchanged when it carries no backports
+ *         marker, since any other form is already a version string
+ */
+std::string extractBackportsRelease(const std::string &version)
+{
+	constexpr std::string_view marker = "using backports ";
+	const auto markerPos = version.find(marker);
+	if (markerPos == std::string::npos) {
+		return version;
+	}
+	const auto tokenStart = markerPos + marker.size();
+	const auto tokenEnd = version.find(' ', tokenStart);
+	std::string release = version.substr(tokenStart, tokenEnd - tokenStart);
+	// A marker with nothing after it says less than the sentence does.
+	return release.empty() ? version : release;
 }
 
 } // namespace
@@ -94,14 +129,18 @@ std::string getKernelDriverName(const std::string &bdf, const KernelDriverPaths 
 	return {};
 }
 
-std::string getKernelDriverSrcVersion(const std::string &bdf, const KernelDriverPaths &paths)
+std::string getKernelDriverModuleVersion(const std::string &bdf, const KernelDriverPaths &paths)
 {
 	const std::string driver = getKernelDriverName(bdf, paths);
 	if (driver.empty()) {
 		return {};
 	}
-	// Absent when the driver is compiled into the kernel rather than loaded as a
-	// module, and when the module was built with CONFIG_MODULE_SRCVERSION_ALL off
-	// and carries no MODULE_VERSION.
-	return readAttribute(paths.moduleRoot / driver / "srcversion");
+	// The kernel creates this attribute only for modules built with a MODULE_VERSION
+	// string. The out-of-tree/DKMS packaging sets one; the in-tree driver does not, so
+	// the file is simply missing on a stock kernel.
+	const std::string version = readAttribute(paths.moduleRoot / driver / "version");
+	if (version.empty()) {
+		return {};
+	}
+	return extractBackportsRelease(version);
 }

@@ -16,8 +16,8 @@ struct KernelDriverPaths
 {
 	std::filesystem::path pciDevRoot{"/sys/bus/pci/devices"}; ///< PCI device directory; <BDF>/driver is a symlink
 															  ///< to the bound driver
-	std::filesystem::path moduleRoot{"/sys/module"};		  ///< Loaded kernel modules; <module>/srcversion holds
-															  ///< the source checksum reported by modinfo
+	std::filesystem::path moduleRoot{"/sys/module"};		  ///< Loaded kernel modules; <module>/version holds the
+															  ///< release version reported by modinfo
 };
 
 /**
@@ -48,16 +48,22 @@ std::string getBoundPciDriverName(const std::string &bdf, const KernelDriverPath
 std::string getKernelDriverName(const std::string &bdf, const KernelDriverPaths &paths = {});
 
 /**
- * @brief Reads the source checksum of the kernel-mode driver bound to a GPU
+ * @brief Reads the release version of the kernel-mode driver bound to a GPU
  *
- * This is the `srcversion` field of `modinfo <driver>`, the only identifier that
- * changes with every driver source revision and therefore the one that traces a
- * running driver back to the package (in-tree, DKMS or out-of-tree) it was built
- * from. Kernel versions do not distinguish DKMS rebuilds of the same kernel.
+ * This is the `version` field of `modinfo <driver>`, present only for modules built
+ * with a MODULE_VERSION string. The backported out-of-tree Xe driver (the DKMS
+ * package) sets one; the in-tree driver does not, so the attribute is missing on a
+ * stock kernel and the version is simply unavailable.
+ *
+ * The backported driver spells its MODULE_VERSION as a sentence,
+ * "backported from (365b81808) using backports xeb_v7.1.4.31_260728.26 for
+ * 7.0.0-14-generic Kernel"; the backports release is extracted from it, since that
+ * is the part that names the driver package. Other MODULE_VERSION forms are already
+ * version strings and are returned as-is.
  *
  * @param bdf   PCI BDF address of the device, or "" to use whichever Intel GPU module is loaded
  * @param paths sysfs root paths (defaults to live sysfs; override in tests)
- * @return Source checksum, or an empty string when the driver is built into the
- *         kernel or sysfs does not expose the attribute
+ * @return Release version (e.g. "xeb_v7.1.4.31_260728.26"), or an empty string when
+ *         the module carries no MODULE_VERSION
  */
-std::string getKernelDriverSrcVersion(const std::string &bdf, const KernelDriverPaths &paths = {});
+std::string getKernelDriverModuleVersion(const std::string &bdf, const KernelDriverPaths &paths = {});

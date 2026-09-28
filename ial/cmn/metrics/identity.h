@@ -141,9 +141,9 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 		{
 			.name = "kernel_driver_version",
 			.unit = "",
-			.description = "Source checksum (modinfo srcversion) of the kernel-mode GPU driver, which identifies the "
-						   "driver build including a DKMS rebuild. Reads the kernel release when the driver is built "
-						   "into the kernel and so has no checksum.",
+			.description = "Release version (modinfo version) of the kernel-mode GPU driver, which only the "
+						   "out-of-tree driver installed via DKMS declares (e.g. xeb_v7.1.4.31_260728.26). "
+						   "Unavailable on a stock kernel, whose in-tree driver names no release.",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
