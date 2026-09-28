@@ -7,6 +7,7 @@ package intelcrashlog
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,13 +16,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
+	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
 )
 
-func startReceiver(t *testing.T, cfg *Config, sink *consumertest.LogsSink) {
+func createReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) *crashlogReceiver {
 	t.Helper()
-	rcvr := newReceiver(receivertest.NewNopSettings(typ), cfg, sink)
+	return newReceiver(receivertest.NewNopSettings(typ), cfg, nextConsumer)
+}
+
+func startReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) {
+	t.Helper()
+	rcvr := createReceiver(t, cfg, nextConsumer)
 	require.NoError(t, rcvr.Start(context.Background(), componenttest.NewNopHost()))
 	t.Cleanup(func() { require.NoError(t, rcvr.Shutdown(context.Background())) })
 }
@@ -150,4 +157,80 @@ func TestReceiverDuplicatesFiles(t *testing.T) {
 	}
 
 	require.Never(t, func() bool { return sink.LogRecordCount() > 1 }, time.Second, 10*time.Millisecond)
+}
+
+func TestReceiverStartUnwatchableDirectory(t *testing.T) {
+	rcvr := createReceiver(t, &Config{
+		Directory: filepath.Join(t.TempDir(), "does-not-exist"),
+		Glob:      "*.bin",
+	}, &consumertest.LogsSink{})
+
+	err := rcvr.Start(context.Background(), componenttest.NewNopHost())
+	require.ErrorContains(t, err, "failed to watch directory")
+
+	// Shutdown must stay safe even though startup never completed successfully
+	require.NoError(t, rcvr.Shutdown(context.Background()))
+}
+
+func TestReceiverSkippedPaths(t *testing.T) {
+	dir := t.TempDir()
+
+	regular := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(regular, []byte{0xde, 0xad}, 0o600))
+
+	subdir := filepath.Join(dir, "subdir.bin")
+	require.NoError(t, os.Mkdir(subdir, 0o700))
+
+	tests := []struct {
+		name string
+		glob string
+		path string
+	}{
+		{name: "name does not match glob", glob: "*.bin", path: filepath.Join(dir, "crash.txt")},
+		// The glob is rejected by Config.Validate, so this can only happen through a receiver constructed without validation
+		{name: "malformed glob", glob: "[a-", path: regular},
+		{name: "stat failure", glob: "*.bin", path: filepath.Join(dir, "vanished.bin")},
+		{name: "non-regular file", glob: "*.bin", path: subdir},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sink := &consumertest.LogsSink{}
+			rcvr := createReceiver(t, &Config{Directory: dir, Glob: tt.glob}, sink)
+
+			rcvr.handlePath(context.Background(), tt.path)
+
+			assert.Zero(t, sink.LogRecordCount())
+		})
+	}
+}
+
+func TestReceiverAlreadyProcessedFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
+
+	sink := &consumertest.LogsSink{}
+	rcvr := createReceiver(t, &Config{Directory: dir, Glob: "*.bin"}, sink)
+
+	rcvr.handlePath(context.Background(), path)
+	require.Equal(t, 1, sink.LogRecordCount())
+
+	// A second notification for the same path must not re-emit it
+	rcvr.handlePath(context.Background(), path)
+	assert.Equal(t, 1, sink.LogRecordCount())
+}
+
+func TestReceiverConsumerError(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
+
+	rcvr := createReceiver(t, &Config{Directory: dir, Glob: "*.bin"},
+		consumertest.NewErr(errors.New("downstream unavailable")))
+
+	// The error is logged rather than propagated, the file is marked as processed
+	rcvr.handlePath(context.Background(), path)
+
+	assert.Contains(t, rcvr.processedFiles, path)
 }
