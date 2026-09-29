@@ -28,7 +28,7 @@ type zesHandle interface {
 	driverHandle | deviceHandle | schedHandle | perfHandle | pwrHandle |
 		freqHandle | engineHandle | standbyHandle | firmwareHandle | memHandle |
 		fabricPortHandle | tempHandle | psuHandle | fanHandle | ledHandle |
-		rasHandle | diagHandle | overclockHandle
+		rasHandle | diagHandle | overclockHandle | infoLogHandle | infoLogInstanceHandle
 }
 
 // handleWrapper is embedded in the wrapper types to hold the Level Zero handle of the wrapped component.
@@ -107,6 +107,36 @@ type Driver struct {
 // HasExtension reports whether the given version of an extension is supported by the driver.
 func (w *Driver) HasExtension(name string, version uint32) bool {
 	return w.extensions.has(name, version)
+}
+
+// InfoLog provides access to Sysman API info log functionality. Instances are
+// obtained from Driver.EnumInfoLogs.
+type InfoLog struct {
+	handleWrapper[infoLogHandle]
+}
+
+// InfoLogInstance provides access to one collection instance of an info log.
+// Instances are created with InfoLog.CreateInstance.
+//
+// NOTE: ReadWithMetadata and PeekWithMetadata are not thread-safe, they must
+// not be called from simultaneous threads, not even on different instances.
+// Delete must not overlap with any other call on the same instance.
+type InfoLogInstance struct {
+	handleWrapper[infoLogInstanceHandle]
+
+	// BufferSizeInKb is the total size of the collection buffer that the driver
+	// applied for this instance, in kilobytes. Zero if the driver could not
+	// determine it.
+	BufferSizeInKb uint32
+}
+
+// InfoLogRecord is one info log record together with its metadata, as returned
+// by InfoLogInstance.ReadWithMetadata and InfoLogInstance.PeekWithMetadata.
+type InfoLogRecord struct {
+	// Metadata describes the record, e.g. the device that it originates from.
+	Metadata InfoLogMetadataExt
+	// Data is the raw record data, in the format described by InfoLogExtProperties.InfoLogFormat.
+	Data []byte
 }
 
 // Device provides access to Sysman API device functions:

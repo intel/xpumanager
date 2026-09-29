@@ -21,6 +21,8 @@ const (
 		int(DEVICE_HEALTH_EXT_VERSION_1_0))
 	engine_activity_ext_version_mismatch = -(int(ENGINE_ACTIVITY_EXT_VERSION_CURRENT) ^
 		int(ENGINE_ACTIVITY_EXT_VERSION_1_0))
+	info_logs_ext_version_mismatch = -(int(INFO_LOGS_EXT_VERSION_CURRENT) ^
+		int(INFO_LOGS_EXT_VERSION_1_0))
 	memory_vendor_info_ext_version_mismatch = -(int(MEMORY_VENDOR_INFO_EXT_VERSION_CURRENT) ^
 		int(MEMORY_VENDOR_INFO_EXT_VERSION_1_0))
 	oem_serial_id_ext_version_mismatch = -(int(OEM_SERIAL_ID_EXT_VERSION_CURRENT) ^
@@ -36,6 +38,7 @@ var (
 	_ [device_ext_state_version_mismatch]struct{}
 	_ [device_health_ext_version_mismatch]struct{}
 	_ [engine_activity_ext_version_mismatch]struct{}
+	_ [info_logs_ext_version_mismatch]struct{}
 	_ [memory_vendor_info_ext_version_mismatch]struct{}
 	_ [oem_serial_id_ext_version_mismatch]struct{}
 	_ [pci_link_speed_downgrade_ext_version_mismatch]struct{}
