@@ -57,6 +57,10 @@ type fieldRewriteConfig struct {
 type typeRewriteConfig struct {
 	commentRewriter `yaml:",inline"`
 	Name            string `yaml:"name"`
+	// Names is a list of additional type name patterns, matched like Name.
+	Names []string `yaml:"names"`
+	// DocPage is made available to the comment template as {{ .DocPage }}.
+	DocPage string `yaml:"docPage"`
 	// OrigName is the (optional) original C type name (e.g. "zes_device_state_t").
 	// Used for resolving the Doxygen documentation and HTML docs anchor for
 	// this type. If empty, guessing based on the Name (Go type name) will be used.
@@ -195,8 +199,8 @@ func (t *typeRewriter) handleType(genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) 
 	typeName := typeSpec.Name.Name
 
 	for _, typeRewrite := range t.config.Types {
-		if matched, err := filepath.Match(typeRewrite.Name, typeName); err != nil {
-			return fmt.Errorf("invalid type name pattern %q: %w", typeRewrite.Name, err)
+		if matched, err := typeRewrite.matches(typeName); err != nil {
+			return err
 		} else if matched {
 			if err := t.rewriteType(&typeRewrite, genDecl, typeSpec); err != nil {
 				return fmt.Errorf("failed to rewrite type: %w", err)
@@ -238,6 +242,21 @@ func (t *typeRewriter) handleValue(genDecl *ast.GenDecl, valueSpec *ast.ValueSpe
 		}
 	}
 	return nil
+}
+
+func (tr *typeRewriteConfig) matches(typeName string) (bool, error) {
+	patterns := tr.Names
+	if tr.Name != "" {
+		patterns = append(patterns, tr.Name)
+	}
+	for _, p := range patterns {
+		if matched, err := filepath.Match(p, typeName); err != nil {
+			return false, fmt.Errorf("invalid type name pattern %q: %w", p, err)
+		} else if matched {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *structRewriteConfig) apply(structType *ast.StructType) error {
@@ -296,6 +315,7 @@ func (t *typeRewriter) rewriteType(tr *typeRewriteConfig, genDecl *ast.GenDecl, 
 		vars := map[string]any{
 			"Name":      name,
 			"DocAnchor": cNameToL0DocsAnchor(cName),
+			"DocPage":   tr.DocPage,
 		}
 		if t.dox != nil {
 			if m := t.dox.getMemberByName(cName); m != nil {
