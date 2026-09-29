@@ -211,6 +211,66 @@ func TestPartialDeviceInit(t *testing.T) {
 	})
 }
 
+// TestSysmanErrors verifies that the intel_xpu receiver tolerates a Sysman
+// backend that fails, and keeps reporting whatever is still available.
+func TestSysmanErrors(t *testing.T) {
+	assertConfig, err := loadAssertions(t)
+	if err != nil {
+		t.Fatalf("failed to load assertions: %v", err)
+	}
+
+	tc := newTestConfig(t)
+	t.Cleanup(func() { tc.cleanup(t) })
+	tc.setup(t)
+
+	tunnel := tc.forwardPort(t, servicePort)
+	t.Cleanup(tunnel.stop)
+	endpoint := tunnel.endpoint()
+
+	t.Run("InitialState", func(t *testing.T) {
+		requireScenarioConfig(t, assertConfig, path.Base(t.Name())).waitFor(t, endpoint, 30*time.Second)
+
+		tc.k8sClient.waitForContainerLogs(t, tc.podName, xpumdContainer, []string{
+			// gpu-1: nothing but the device properties is available
+			"Failed to enumerate Sysman engine groups",
+			"Failed to enumerate firmwares",
+			"Failed to enumerate frequency domains",
+			"Failed to enumerate memory modules",
+			"Failed to enumerate power domains",
+			"Failed to enumerate RAS error sets",
+			"Failed to enumerate temperature sensors",
+			"Device GetState() failed: device state not available",
+			"Device PciGetState() failed: PCI state not available",
+			"Device GetHealthStatusExt() failed: complete device health status not available",
+			"Device EventRegister() failed: device events unavailable",
+			// gpu-2: engine metrics are never reported by the stub driver, as the activity counters do not advance
+			"Failed to create Sysman engine group",
+			// gpu-2: power limits are reported only when the energy counter advances
+			"Power GetLimitsExt() failed: power limits not available",
+			// The driver level event listening never succeeds
+			"Event listening failed",
+		}, 30*time.Second)
+	})
+
+	t.Run("UpdatedValues", func(t *testing.T) {
+		tc.loadStubDriverConfig(t)
+
+		requireScenarioConfig(t, assertConfig, path.Base(t.Name())).waitFor(t, endpoint, 30*time.Second)
+
+		tc.k8sClient.waitForContainerLogs(t, tc.podName, xpumdContainer, []string{
+			// gpu-2: the previously healthy engine group fails
+			"Engine GetActivity() failed: engine metrics disabled",
+			// gpu-2: the aggregated frequency metrics depend on the sampling timing
+			"Frequency GetState() failed: aggregated metrics polling stopped",
+			// gpu-2: The energy counter of one power domain jumps to ~3 MW, thus filtered out as bogus.
+			// The only limit of another one is disabled and the limits of a third one fail
+			"Invalid power value skipped",
+			"Power GetLimitsExt(): no suitable power limits",
+			"Power GetLimitsExt() failed: power limit metrics disabled",
+		}, 30*time.Second)
+	})
+}
+
 // TestXpuinfo verifies the gRPC streams of the intel_xpu_info exporter.
 func TestXpuinfo(t *testing.T) {
 	tc := newTestConfig(t)

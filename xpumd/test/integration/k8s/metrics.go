@@ -96,6 +96,20 @@ func (a metricAssertion) findMetric(families map[string]*dto.MetricFamily) (*dto
 	return nil, fmt.Errorf("%s", sb.String())
 }
 
+// findNoMetric checks that no metric matches the name and labels. Value is ignored.
+func (a metricAssertion) findNoMetric(families map[string]*dto.MetricFamily) error {
+	family := families[a.Name]
+	if family == nil {
+		return nil
+	}
+	for _, metric := range family.Metric {
+		if labelsMatch(metric.GetLabel(), a.Labels) {
+			return fmt.Errorf("unexpected metric %s{%s}", a.Name, labelPairsToLabels(metric.GetLabel()))
+		}
+	}
+	return nil
+}
+
 // waitFor polls the metrics endpoint until the assertion passes.
 // Returns all fetched metrics for further assertions.
 func (a metricAssertion) waitFor(t *testing.T, endpoint string, timeout time.Duration) map[string]*dto.MetricFamily {

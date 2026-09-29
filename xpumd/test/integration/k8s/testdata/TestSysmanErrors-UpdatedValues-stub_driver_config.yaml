@@ -1,0 +1,415 @@
+# SPDX-License-Identifier: MIT
+
+# The device and subsystem instance layout is identical to the base config.
+# However, the queries that succeeded while the instances were created now
+# fail, aimed at exercising the error handling paths in the scrapers.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_extension_power_limits"
+        Version: 65536
+      - Name: "ZES_extension_ras_state"
+        Version: 65537
+      - Name: "ZES_extension_device_state"
+        Version: 65536
+      - Name: "ZES_extension_device_health"
+        Version: 65536
+
+    ReturnValues:
+      zesDriverEventListenEx: 0x70010001
+
+    Devices:
+      #
+      # gpu-1: unchanged, nothing was initialized for it.
+      #
+      - Properties:
+          Core:
+            Type: 1       # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "11111111-0000-0000-0000-000000000000"
+          NumSubdevices: 0
+          ModelName: "Broken 1000"
+          VendorName: "ACME Inc."
+          SerialNumber: "SN-0001"
+          Flags: 2  # ZES_DEVICE_PROPERTY_FLAG_SUBDEVICE
+
+        ReturnValues:
+          zesDeviceEventRegister: 0x70010001
+          zesDeviceEnumEngineGroups: 0x70010001
+          zesDeviceEnumFirmwares: 0x70010001
+          zesDeviceEnumFrequencyDomains: 0x70010001
+          zesDeviceEnumMemoryModules: 0x70010001
+          zesDeviceEnumPowerDomains: 0x70010001
+          zesDeviceEnumRasErrorSets: 0x70010001
+          zesDeviceEnumTemperatureSensors: 0x70010001
+
+      #
+      # gpu-2: all of the device level state queries and the previously healthy
+      # instance of each subsystem now fail.
+      #
+      - Properties:
+          Core:
+            Type: 1       # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "22222222-0000-0000-0000-000000000000"
+          NumSubdevices: 0
+          ModelName: "Flaky 2000"
+          VendorName: "ACME Inc."
+          SerialNumber: "SN-0002"
+          Flags: 0  # discrete
+        State:
+          Reset: 0
+          Repaired: 0
+          ExtendedState:
+            Flags: 1  # ZES_DEVICE_STATE_EXT_NORMAL
+
+        Health: 99  # not a ZES_DEVICE_HEALTH_STATUS_EXT_* value
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 6
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 32000000000
+            HaveBandwidthCounters: true
+          State:
+            Status: 3  # ZES_PCI_LINK_STATUS_STABILITY_ISSUES
+            QualityIssues: 0
+            StabilityIssues: 1  # ZES_PCI_LINK_STAB_ISSUE_FLAG_RETRAINING
+          Stats:
+            RxCounter: 1000
+            TxCounter: 2000
+            Timestamp: 1000000
+
+        ECC:
+          Available: true
+          Configurable: true
+          State:
+            CurrentState: 1  # ZES_DEVICE_ECC_STATE_ENABLED
+            PendingState: 1
+            PendingAction: 0
+
+        ReturnValues:
+          zesDeviceGetState: 0x70010001
+          zesDeviceGetHealthStatusExt: 0x70010001
+          zesDevicePciGetState: 0x70010001
+          zesDevicePciGetStats: 0x70010001
+          zesDeviceGetEccState: 0x70010001
+
+        Firmwares:
+          - ReturnValues:
+              zesFirmwareGetProperties: 0x70010001
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Name: "GFX"
+              Version: "1.2.3.4"
+
+        EngineGroups:
+          - Properties:
+              Type: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL
+            ReturnValues:
+              zesEngineGetProperties: 0x70010001
+          - Properties:
+              Type: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL
+            ReturnValues:
+              zesEngineGetActivity: 0x70010001
+          # engine-3 activity counter is gone
+          - Properties:
+              Type: 1  # ZES_ENGINE_GROUP_COMPUTE_ALL
+              OnSubdevice: false
+              SubdeviceId: 0
+            Activity:
+              ActiveTime: 500000
+              Timestamp: 1000000
+            ReturnValues:
+              zesEngineGetActivity: 0x70010001
+
+        FrequencyDomains:
+          - Properties:
+              Type: 0  # ZES_FREQ_DOMAIN_GPU
+            ReturnValues:
+              zesFrequencyGetProperties: 0x70010001
+          - Properties:
+              Type: 0  # ZES_FREQ_DOMAIN_GPU
+              CanControl: true
+              Min: 300
+              Max: 1600
+          - Properties:
+              Type: 0  # ZES_FREQ_DOMAIN_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Min: 300
+              Max: 1600
+            State:
+              Request: 1400
+              Tdp: 1600
+              Efficient: 300
+              Actual: -1
+              ThrottleReasons: 0
+          # freq-4 loses both its range and its state
+          - Properties:
+              Type: 0  # ZES_FREQ_DOMAIN_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Min: 300
+              Max: 1600
+            Range:
+              Min: 300
+              Max: 1600
+            State:
+              Request: 1400
+              Tdp: 1600
+              Efficient: 300
+              Actual: 1200
+              ThrottleReasons: 0
+            ReturnValues:
+              zesFrequencyGetRange: 0x70010001
+              zesFrequencyGetState: 0x70010001
+
+        MemoryModules:
+          - Properties:
+              Type: 0  # ZES_MEM_TYPE_HBM
+            ReturnValues:
+              zesMemoryGetProperties: 0x70010001
+          - Properties:
+              Type: 0  # ZES_MEM_TYPE_HBM
+              Location: 1  # ZES_MEM_LOC_DEVICE
+              PhysicalSize: 17179869184
+          # mem-3 loses its bandwidth counters
+          - Properties:
+              Type: 0  # ZES_MEM_TYPE_HBM
+              OnSubdevice: false
+              SubdeviceId: 0
+              Location: 1  # ZES_MEM_LOC_DEVICE
+              PhysicalSize: 0
+            State:
+              Health: 1  # ZES_MEM_HEALTH_OK
+              Free: 4294967296
+              Size: 8589934592
+            Bandwidth:
+              ReadCounter: 1073741824
+              WriteCounter: 536870912
+              MaxBandwidth: 512000000000
+              Timestamp: 1000000
+            ReturnValues:
+              zesMemoryGetBandwidth: 0x70010001
+          # mem-4 loses its state
+          - Properties:
+              Type: 1  # ZES_MEM_TYPE_DDR
+              OnSubdevice: false
+              SubdeviceId: 0
+              Location: 0  # ZES_MEM_LOC_SYSTEM
+              PhysicalSize: 8589934592
+            State:
+              Health: 1  # ZES_MEM_HEALTH_OK
+              Free: 4294967296
+              Size: 8589934592
+            ReturnValues:
+              zesMemoryGetState: 0x70010001
+
+        PowerDomains:
+          - Properties:
+              CanControl: true
+            ReturnValues:
+              zesPowerGetProperties: 0x70010001
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+          # power-3 has no limits to report, its energy counter advances
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              ExtendedProperties:
+                Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 150000
+            EnergyCounter:
+              Energy: 5010000
+              Timestamp: 1100000
+            ReturnValues:
+              zesPowerGetLimitsExt: 0x70010001
+          # power-4 energy counter jumps by 3 kJ over 1 ms, i.e. 3 MW should be filtered out as bogus
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              ExtendedProperties:
+                Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 150000
+            EnergyCounter:
+              Energy: 3000001000
+              Timestamp: 2000
+            LimitsExt:
+              - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                Enabled: false
+                Interval: 1000
+                Limit: 200000
+          # power-5 loses its power limits, its energy counter advances
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              ExtendedProperties:
+                Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 150000
+            EnergyCounter:
+              Energy: 5010000
+              Timestamp: 1100000
+            LimitsExt:
+              - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                Enabled: true
+                Interval: 1000
+                Limit: 200000
+            ReturnValues:
+              zesPowerGetLimitsExt: 0x70010001
+          # power-6 loses its energy counter
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              ExtendedProperties:
+                Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 150000
+            EnergyCounter:
+              Energy: 5000000
+              Timestamp: 1000000
+            LimitsExt:
+              - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                Enabled: true
+                Interval: 1000
+                Limit: 200000
+            ReturnValues:
+              zesPowerGetEnergyCounter: 0x70010001
+
+        RasErrorSets:
+          - Properties:
+              Type: 0  # ZES_RAS_ERROR_TYPE_CORRECTABLE
+            ReturnValues:
+              zesRasGetProperties: 0x70010001
+          - Properties:
+              Type: 0  # ZES_RAS_ERROR_TYPE_CORRECTABLE
+            StateExp:
+              - Category: 7  # ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS
+                ErrorCounter: 5
+            ReturnValues:
+              zesRasGetStateExp: 0x70010001
+          - Properties:
+              Type: 2147483647  # RAS_ERROR_TYPE_FORCE_UINT32
+            StateExp:
+              - Category: 7  # ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS
+                ErrorCounter: 5
+          - Properties:
+              Type: 0  # ZES_RAS_ERROR_TYPE_CORRECTABLE
+              OnSubdevice: false
+              SubdeviceId: 0
+            StateExp:
+              - Category: 7  # ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS
+                ErrorCounter: 0
+          # errorset-5 loses its error counters
+          - Properties:
+              Type: 1  # ZES_RAS_ERROR_TYPE_UNCORRECTABLE
+              OnSubdevice: false
+              SubdeviceId: 0
+            StateExp:
+              - Category: 0  # ZES_RAS_ERROR_CATEGORY_EXP_RESET
+                ErrorCounter: 1
+            ReturnValues:
+              zesRasGetStateExp: 0x70010001
+
+        TemperatureSensors:
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+            ReturnValues:
+              zesTemperatureGetProperties: 0x70010001
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+            ReturnValues:
+              zesTemperatureGetState: 0x70010001
+          - Properties:
+              Type: 3  # ZES_TEMP_SENSORS_GLOBAL_MIN
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 110.0
+            Temperature: 30.0
+          # temp-4 loses its temperature
+          - Properties:
+              Type: 1  # ZES_TEMP_SENSORS_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 110.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+            ReturnValues:
+              zesTemperatureGetState: 0x70010001
+
+      #
+      # gpu-3
+      #
+      - Properties:
+          Core:
+            Type: 1       # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "33333333-0000-0000-0000-000000000000"
+          NumSubdevices: 0
+          ModelName: "Quirky 3000"
+          VendorName: "ACME Inc."
+          SerialNumber: "SN-0003"
+          Flags: 0  # discrete
+        State:
+          Reset: 0
+          Repaired: 0
+
+        Health: 0  # ZES_DEVICE_HEALTH_STATUS_EXT_OK
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 7
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 32000000000
+            HaveBandwidthCounters: false
+          State:
+            # PCI link status is now a value that the receiver does not recognize.
+            Status: 7  # not a ZES_PCI_LINK_STATUS_* value
+            QualityIssues: 0
+            StabilityIssues: 0
+
+        ECC:
+          Available: true
+          Configurable: false

@@ -6,9 +6,11 @@
 package k8s
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"go.yaml.in/yaml/v4"
 )
@@ -17,6 +19,31 @@ import (
 type scenarioConfig struct {
 	MetricsSentinel   metricAssertion     `yaml:"metrics_sentinel"`
 	MetricsAssertions metricAssertionList `yaml:"metrics_assertions"`
+	MetricsAbsent     metricAssertionList `yaml:"metrics_absent"`
+}
+
+// waitFor polls the metrics until all assertions (negative and positive) pass.
+func (c scenarioConfig) waitFor(t *testing.T, endpoint string, timeout time.Duration) {
+	t.Helper()
+
+	pollUntil(t, "metrics assertions", timeout, metricPollInterval, func() error {
+		families, err := fetchMetrics(endpoint)
+		if err != nil {
+			return err
+		}
+		var errs []error
+		for _, a := range c.MetricsAssertions {
+			if _, err := a.findMetric(families); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		for _, a := range c.MetricsAbsent {
+			if err := a.findNoMetric(families); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		return errors.Join(errs...)
+	})
 }
 
 // loadAssertionsFrom reads and parses an assertions config file.

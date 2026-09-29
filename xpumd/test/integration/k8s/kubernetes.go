@@ -438,13 +438,31 @@ func containerStatus(p *corev1.Pod, name string) *corev1.ContainerStatus {
 func (kc k8sClient) waitForContainerLog(t *testing.T, pod, container, want string, timeout time.Duration) {
 	t.Helper()
 
-	pollUntil(t, fmt.Sprintf("%q in the log of container %q", want, container), timeout, time.Second, func() error {
+	kc.waitForContainerLogs(t, pod, container, []string{want}, timeout)
+}
+
+// waitForContainerLogs polls the log of a container until it contains all of want.
+func (kc k8sClient) waitForContainerLogs(t *testing.T, pod, container string, want []string, timeout time.Duration) {
+	t.Helper()
+
+	desc := fmt.Sprintf("%d message(s) in the log of container %q", len(want), container)
+	if len(want) == 1 {
+		desc = fmt.Sprintf("%q in the log of container %q", want[0], container)
+	}
+
+	pollUntil(t, desc, timeout, time.Second, func() error {
 		out, err := kc.podLogs(context.Background(), pod, container)
 		if err != nil {
 			return err
 		}
-		if !bytes.Contains(out, []byte(want)) {
-			return fmt.Errorf("%d bytes of log without it", len(out))
+		var missing []string
+		for _, w := range want {
+			if !bytes.Contains(out, []byte(w)) {
+				missing = append(missing, w)
+			}
+		}
+		if len(missing) > 0 {
+			return fmt.Errorf("%d bytes of log without %q", len(out), missing)
 		}
 		return nil
 	})

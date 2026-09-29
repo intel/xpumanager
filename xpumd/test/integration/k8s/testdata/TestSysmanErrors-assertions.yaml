@@ -1,0 +1,280 @@
+# SPDX-License-Identifier: MIT
+
+# Metrics absence is asserted together with the presence of a metric of a
+# sibling instance on the same device, so that it cannot pass just because the
+# device is not (yet) scraped at all.
+
+_templates:
+  gpu1_labels: &gpu1_labels
+    hw_id: "11111111-0000-0000-0000-000000000000"
+  gpu2_labels: &gpu2_labels
+    hw_id: "22222222-0000-0000-0000-000000000000"
+  gpu3_labels: &gpu3_labels
+    hw_id: "33333333-0000-0000-0000-000000000000"
+
+InitialState:
+  metrics_assertions:
+    # gpu-1 is reported with its device properties only
+    - name: hw_gpu_info
+      value: 1
+      labels:
+        <<: *gpu1_labels
+        hw_name: gpu-1
+        hw_gpu_type: subdevice
+        hw_gpu_ecc_support: unknown
+        hw_firmware_version: ""
+        pci_bdf: ""
+        pci_lanes: ""
+        pci_link_gen: ""
+
+    # gpu-2: only the second firmware could be created.
+    - name: hw_gpu_info
+      value: 1
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2
+        hw_firmware_version: "0:gfx::1.2.3.4"
+    # Unknown health status value is reported as such.
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2
+        hw_type: gpu
+        # Unrecognized value, outside the known ZES_DEVICE_HEALTH_STATUS_EXT_*
+        hw_state: health_devicehealthstatusext(99)
+    - name: hw_gpu_ecc_state
+      value: 1
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2
+        hw_state: enabled
+    - name: hw_gpu_io_bytes_total
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2-pci
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2-pci
+        hw_type: pci_link
+        hw_state: retraining_issue
+
+    # gpu-2 frequency: freq-3 has no range, freq-4 is healthy
+    - name: hw_frequency_request_hertz
+      value: 1400000000
+      labels:
+        <<: *gpu2_labels
+        hw_name: freq-3
+    - name: hw_frequency_limit_hertz
+      value: 1600000000
+      labels:
+        <<: *gpu2_labels
+        hw_name: freq-4
+        hw_limit_type: max
+    - name: hw_frequency_request_hertz
+      value: 1400000000
+      labels:
+        <<: *gpu2_labels
+        hw_name: freq-4
+
+    # gpu-2 memory: mem-3 has no physical size, thus the allocatable size is
+    # reported instead. mem-4 is healthy.
+    - name: hw_memory_size_bytes
+      value: 8589934592
+      labels:
+        <<: *gpu2_labels
+        hw_name: mem-3
+    - name: hw_memory_io_bytes_total
+      labels:
+        <<: *gpu2_labels
+        hw_name: mem-3
+    - name: hw_memory_usage_bytes
+      value: 4294967296
+      labels:
+        <<: *gpu2_labels
+        hw_name: mem-4
+
+    # gpu-2 power
+    - name: hw_energy_joules_total
+      value: 5
+      labels:
+        <<: *gpu2_labels
+        hw_name: power-3
+    - name: hw_energy_joules_total
+      value: 5
+      labels:
+        <<: *gpu2_labels
+        hw_name: power-6
+
+    # gpu-2 RAS
+    - name: hw_errors_total
+      value: 1
+      labels:
+        <<: *gpu2_labels
+        hw_name: errorset-5
+        error_type: uncorrectable
+        error_category: reset
+
+    # gpu-2 temperature
+    - name: hw_temperature_celsius
+      value: 30
+      labels:
+        <<: *gpu2_labels
+        hw_name: temp-3
+        hw_sensor_location: global
+        statistic: min
+    - name: hw_temperature_celsius
+      value: 48
+      labels:
+        <<: *gpu2_labels
+        hw_name: temp-4
+        statistic: max
+
+    # gpu-3
+    - name: hw_gpu_info
+      value: 1
+      labels:
+        <<: *gpu3_labels
+        hw_name: gpu-3
+        hw_gpu_ecc_support: available
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *gpu3_labels
+        hw_name: gpu-3
+        hw_type: gpu
+        hw_state: ok
+
+  metrics_absent:
+    # gpu-1: no device state, health nor PCI link status
+    - name: hw_status
+      labels: *gpu1_labels
+
+    # gpu-2: instances that could not be created
+    - name: hw_frequency_request_hertz
+      labels: {<<: *gpu2_labels, hw_name: freq-1}
+    - name: hw_frequency_request_hertz
+      labels: {<<: *gpu2_labels, hw_name: freq-2}
+    - name: hw_memory_size_bytes
+      labels: {<<: *gpu2_labels, hw_name: mem-1}
+    - name: hw_memory_size_bytes
+      labels: {<<: *gpu2_labels, hw_name: mem-2}
+    - name: hw_energy_joules_total
+      labels: {<<: *gpu2_labels, hw_name: power-1}
+    - name: hw_temperature_celsius
+      labels: {<<: *gpu2_labels, hw_name: temp-1}
+    - name: hw_temperature_celsius
+      labels: {<<: *gpu2_labels, hw_name: temp-2}
+    - name: hw_errors_total
+      labels: {<<: *gpu2_labels, hw_name: errorset-1}
+    - name: hw_errors_total
+      labels: {<<: *gpu2_labels, hw_name: errorset-2}
+
+    # gpu-2: instances that were created with reduced functionality
+    # No energy counter, thus power domain skipped
+    - name: hw_energy_joules_total
+      labels: {<<: *gpu2_labels, hw_name: power-2}
+    # No range, thus no limit metrics
+    - name: hw_frequency_limit_hertz
+      labels: {<<: *gpu2_labels, hw_name: freq-3}
+    # Unsupported error type
+    - name: hw_errors_total
+      labels: {<<: *gpu2_labels, hw_name: errorset-3}
+    # Zero correctable error counter is not reported
+    - name: hw_errors_total
+      labels: {<<: *gpu2_labels, hw_name: errorset-4}
+
+    # gpu-3
+    - name: hw_gpu_io_bytes_total
+      labels: *gpu3_labels
+    - name: hw_status
+      labels: {<<: *gpu3_labels, hw_type: pci_link}
+    - name: hw_gpu_ecc_state
+      labels: *gpu3_labels
+
+UpdatedValues:
+  metrics_assertions:
+    # gpu-2: ECC state query failed, the state becomes unknown
+    - name: hw_gpu_ecc_state
+      value: 1
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2
+        hw_state: unknown
+    - name: hw_gpu_ecc_state
+      value: 0
+      labels:
+        <<: *gpu2_labels
+        hw_name: gpu-2
+        hw_state: enabled
+
+    # gpu-2: siblings of the failed instances, unaffected by the update
+    - name: hw_frequency_request_hertz
+      value: 1400000000
+      labels:
+        <<: *gpu2_labels
+        hw_name: freq-3
+    - name: hw_memory_usage_bytes
+      value: 4294967296
+      labels:
+        <<: *gpu2_labels
+        hw_name: mem-3
+    - name: hw_temperature_celsius
+      value: 30
+      labels:
+        <<: *gpu2_labels
+        hw_name: temp-3
+    # The energy counters of power-3 and power-4 advance.
+    - name: hw_energy_joules_total
+      value: 5.01
+      labels:
+        <<: *gpu2_labels
+        hw_name: power-3
+    - name: hw_energy_joules_total
+      value: 3000.001
+      labels:
+        <<: *gpu2_labels
+        hw_name: power-4
+
+    # gpu-3: unrecognized PCI link status value is reported as such
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *gpu3_labels
+        hw_name: gpu-3-pci
+        hw_type: pci_link
+        # Unrecognized value, outside the known ZES_PCI_LINK_STATUS_*
+        hw_state: pcilinkstatus(7)
+
+  metrics_absent:
+    # gpu-2: the device level state, health and PCI queries fail
+    - name: hw_status
+      labels: {<<: *gpu2_labels, hw_name: gpu-2}
+    - name: hw_status
+      labels: {<<: *gpu2_labels, hw_name: gpu-2-pci}
+    - name: hw_gpu_io_bytes_total
+      labels: *gpu2_labels
+
+    # gpu-2: the previously healthy instances fail
+    - name: hw_frequency_limit_hertz
+      labels: {<<: *gpu2_labels, hw_name: freq-4}
+    - name: hw_frequency_request_hertz
+      labels: {<<: *gpu2_labels, hw_name: freq-4}
+    - name: hw_status
+      labels: {<<: *gpu2_labels, hw_name: freq-4}
+    - name: hw_memory_io_bytes_total
+      labels: {<<: *gpu2_labels, hw_name: mem-3}
+    - name: hw_memory_usage_bytes
+      labels: {<<: *gpu2_labels, hw_name: mem-4}
+    - name: hw_status
+      labels: {<<: *gpu2_labels, hw_name: mem-4}
+    - name: hw_energy_joules_total
+      labels: {<<: *gpu2_labels, hw_name: power-6}
+    - name: hw_errors_total
+      labels: {<<: *gpu2_labels, hw_name: errorset-5}
+    - name: hw_temperature_celsius
+      labels: {<<: *gpu2_labels, hw_name: temp-4}
+    - name: hw_status
+      labels: {<<: *gpu2_labels, hw_name: temp-4}

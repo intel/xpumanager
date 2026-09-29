@@ -1,0 +1,10 @@
+# Short collection interval and metric expiration so that metrics that are no
+# longer collected disappear from the Prometheus endpoint fast.
+config:
+  receivers:
+    intel_xpu:
+      collection_interval: 1s
+      sampling_interval: 500ms
+  exporters:
+    prometheus:
+      metric_expiration: 3s
