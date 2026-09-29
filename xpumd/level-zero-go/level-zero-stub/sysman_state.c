@@ -530,12 +530,30 @@ static void free_intel_info_logs(sysman_drivers_state_t *drv)
 	}
 }
 
+static void free_info_logs(sysman_drivers_state_t *drv)
+{
+	if (drv->info_logs) {
+		for (uint32_t i = 0; i < drv->info_logs_count; i++) {
+			free(drv->info_logs[i].properties);
+			if (drv->info_logs[i].collection) {
+				free(drv->info_logs[i].collection->status);
+				free(drv->info_logs[i].collection->records);
+				free(drv->info_logs[i].collection);
+			}
+			memset(&drv->info_logs[i], 0, sizeof(drv->info_logs[i]));
+		}
+		free(drv->info_logs);
+	}
+}
+
 static void free_driver(sysman_drivers_state_t *drv)
 {
 	for (uint32_t i = 0; i < drv->devices_count; i++)
 		free_device(&drv->devices[i]);
 	free(drv->devices);
 	free_intel_info_logs(drv);
+	free_info_logs(drv);
+	free(drv->properties);
 	free(drv->extension_properties);
 	free(drv->unsupported_features);
 	memset(drv, 0, sizeof(*drv));
@@ -585,6 +603,10 @@ static bool resolve_parsed_state(sysman_state_t *state)
 {
 	for (uint32_t d = 0; d < state->system.drivers_count; d++) {
 		sysman_drivers_state_t *drv = &state->system.drivers[d];
+		if (drv->properties && !parse_uuid(drv->properties->uuid.id, &drv->properties->base.uuid.id)) {
+			LOG_ERROR("invalid Uuid '%s' of driver %u", drv->properties->uuid.id, d);
+			return false;
+		}
 		for (uint32_t i = 0; i < drv->devices_count; i++) {
 			sysman_device_state_t *dev = &drv->devices[i];
 
@@ -621,7 +643,7 @@ static bool resolve_parsed_state(sysman_state_t *state)
 	return true;
 }
 
-// Special post-parse handler for the info log records: resolves the UUID strings
+// Special post-parse handler for the Intel experimental info log records: resolves the UUID strings
 // of the record metadata into the binary field of the zes struct.
 // Must be called on the freshly parsed tree before it is donated to g_sysman_state.
 static bool resolve_intel_info_log_records(sysman_state_t *state)
@@ -634,6 +656,29 @@ static bool resolve_intel_info_log_records(sysman_state_t *state)
 				continue;
 			for (uint32_t r = 0; r < log->collection->records_count; r++) {
 				sysman_intel_info_log_record_t *record = &log->collection->records[r];
+				if (!parse_uuid(record->uuid.id, &record->metadata.uuid.id)) {
+					LOG_ERROR("invalid Uuid '%s' in record %u of info log %u of driver %u", record->uuid.id, r, l, d);
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
+// Special post-parse handler for the info log records: resolves the UUID strings
+// of the record metadata into the binary field of the zes struct.
+// Must be called on the freshly parsed tree before it is donated to g_sysman_state.
+static bool resolve_info_log_records(sysman_state_t *state)
+{
+	for (uint32_t d = 0; d < state->system.drivers_count; d++) {
+		sysman_drivers_state_t *drv = &state->system.drivers[d];
+		for (uint32_t l = 0; l < drv->info_logs_count; l++) {
+			sysman_info_log_t *log = &drv->info_logs[l];
+			if (!log->collection)
+				continue;
+			for (uint32_t r = 0; r < log->collection->records_count; r++) {
+				sysman_info_log_record_t *record = &log->collection->records[r];
 				if (!parse_uuid(record->uuid.id, &record->metadata.uuid.id)) {
 					LOG_ERROR("invalid Uuid '%s' in record %u of info log %u of driver %u", record->uuid.id, r, l, d);
 					return false;
@@ -691,7 +736,7 @@ static int sysman_state_load_locked(const char *path)
 		return 0;
 	}
 
-	if (!resolve_parsed_state(parsed) || !resolve_intel_info_log_records(parsed)) {
+	if (!resolve_parsed_state(parsed) || !resolve_intel_info_log_records(parsed) || !resolve_info_log_records(parsed)) {
 		free_system_state(&parsed->system);
 		free(parsed);
 		return -1;

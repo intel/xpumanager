@@ -12,6 +12,12 @@ Drivers:
         Collection:
           Status: {}
           Records: []
+    Properties: {}
+    InfoLogs:
+      - Properties: {}
+        Collection:
+          Status: {}
+          Records: []
     Devices:
       - Properties: {}
         State: {}

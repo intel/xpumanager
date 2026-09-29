@@ -47,6 +47,8 @@ typedef enum
 	STUB_HANDLE_INTEL_INFOLOG = 19, // driver level component, unlike the ones above
 	STUB_HANDLE_VF = 20,
 	STUB_HANDLE_INTEL_INFOLOG_INSTANCE = 21, // collection instance of an info log
+	STUB_HANDLE_INFOLOG = 22,				 // driver level component
+	STUB_HANDLE_INFOLOG_INSTANCE = 23,		 // collection instance of an info log
 } stub_handle_type_t;
 
 typedef struct
@@ -288,6 +290,15 @@ typedef struct
 
 typedef struct
 {
+	ze_result_t zesInfoLogGetPropertiesExt;
+	ze_result_t zesInfoLogCreateInstanceExt;
+	ze_result_t zesInfoLogInstanceReadWithMetadataExt;
+	ze_result_t zesInfoLogInstancePeekWithMetadataExt;
+	ze_result_t zesInfoLogInstanceDeleteExt;
+} sysman_info_log_rv_t;
+
+typedef struct
+{
 	ze_result_t zesDriverGetExtensionProperties;
 	ze_result_t zesDriverGetExtensionFunctionAddress;
 	ze_result_t zesDeviceGet;
@@ -296,6 +307,10 @@ typedef struct
 	ze_result_t zesIntelDriverEnumInfoLogsExp;
 	ze_result_t zesIntelDriverEventRegisterExp;
 	ze_result_t zesIntelDriverEventListenExp;
+	ze_result_t zesDriverGetProperties;
+	ze_result_t zesDriverEventRegisterExt;
+	ze_result_t zesDriverEventListenExt;
+	ze_result_t zesDriverEnumInfoLogsExt;
 } sysman_driver_rv_t;
 
 typedef struct
@@ -441,6 +456,15 @@ typedef enum
 	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_READ,	  // gen: key=IntelInfoLogInstance.ReadWithMetadata
 	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_PEEK,	  // gen: key=IntelInfoLogInstance.PeekWithMetadata
 	UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_DELETE,	  // gen: key=IntelInfoLogInstance.Delete
+	UNSUPPORTED_FEATURE_DRIVER_GET_PROPERTIES,			  // gen: key=Driver.GetProperties
+	UNSUPPORTED_FEATURE_DRIVER_EVENT_REGISTER_EXT,		  // gen: key=Driver.EventRegisterExt
+	UNSUPPORTED_FEATURE_DRIVER_EVENT_LISTEN_EXT,		  // gen: key=Driver.EventListenExt
+	UNSUPPORTED_FEATURE_INFO_LOGS,						  // gen: key=InfoLogs
+	UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES,		  // gen: key=InfoLog.GetProperties
+	UNSUPPORTED_FEATURE_INFO_LOG_CREATE_INSTANCE,		  // gen: key=InfoLog.CreateInstance
+	UNSUPPORTED_FEATURE_INFO_LOG_INSTANCE_READ,			  // gen: key=InfoLogInstance.ReadWithMetadata
+	UNSUPPORTED_FEATURE_INFO_LOG_INSTANCE_PEEK,			  // gen: key=InfoLogInstance.PeekWithMetadata
+	UNSUPPORTED_FEATURE_INFO_LOG_INSTANCE_DELETE,		  // gen: key=InfoLogInstance.Delete
 } sysman_unsupported_feature_t;							  // gen: enum
 
 // ------------------------------------------------------------------
@@ -817,6 +841,43 @@ typedef struct
 	sysman_intel_info_log_collection_t *collection; // a log without it hands out nothing, with a zeroed read status
 } sysman_intel_info_log_t;
 
+// Wrapper for zes_driver_properties_t to allow parsing of the UUID string from YAML.
+typedef struct
+{
+	zes_driver_properties_t base; // gen: flatten
+	sysman_uuid_t uuid;			  // YAML parsing helper for base.uuid
+} sysman_driver_properties_info_t;
+
+// One canned info log record handed out by an info log collection instance.
+// The data is copied out as-is (excluding the terminating NUL), i.e. only text
+// records can be configured, which is enough for testing the bindings.
+//
+// The metadata is handed out as configured, except for the length and the
+// offset of the record, which the stub computes.
+typedef struct
+{
+	char data[SYSMAN_INFO_LOG_RECORD_SIZE];
+	zes_info_log_metadata_ext_t metadata; // gen: flatten
+	sysman_uuid_t uuid;					  // YAML parsing helper for metadata.uuid
+} sysman_info_log_record_t;
+
+// What one collection instance of an info log hands out: the status and the
+// records of a read and of a peek, both handed out as configured.
+typedef struct
+{
+	zes_info_log_read_status_ext_t *status;
+	uint32_t records_count;
+	sysman_info_log_record_t *records;
+} sysman_info_log_collection_t;
+
+typedef struct
+{
+	sysman_info_log_rv_t return_values;
+	zes_info_log_ext_properties_t *properties;
+	uint32_t buffer_size_in_kb;				  // the applied collection buffer size, zero keeps the request
+	sysman_info_log_collection_t *collection; // a log without it hands out nothing, with a zeroed read status
+} sysman_info_log_t;
+
 typedef struct
 {
 	sysman_driver_rv_t return_values;
@@ -828,7 +889,10 @@ typedef struct
 	sysman_device_state_t *devices;
 	uint32_t intel_info_logs_count;
 	sysman_intel_info_log_t *intel_info_logs;
-	// Driver scoped events, reported by zesIntelDriverEventListenExp()
+	sysman_driver_properties_info_t *properties;
+	uint32_t info_logs_count;
+	sysman_info_log_t *info_logs;
+	// Driver scoped events, reported by zesIntelDriverEventListenExp() and zesDriverEventListenExt()
 	zes_event_type_flags_t events;
 } sysman_drivers_state_t;
 
