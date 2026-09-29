@@ -154,7 +154,7 @@ const (
 //     ZE_MINOR_VERSION
 type ApiVersion uint32
 
-// ApiVersion enumeration from level-zero/ze_api.h:1500
+// ApiVersion enumeration from level-zero/ze_api.h:1511
 const (
 	// version 1.0
 	API_VERSION_1_0 ApiVersion = 65536
@@ -194,8 +194,10 @@ const (
 	API_VERSION_1_17 ApiVersion = 65553
 	// version 1.18
 	API_VERSION_1_18 ApiVersion = 65554
+	// version 1.19
+	API_VERSION_1_19 ApiVersion = 65555
 	// API version of the L0 headers which the bindings were generated from.
-	API_VERSION_CURRENT ApiVersion = 65554
+	API_VERSION_CURRENT ApiVersion = 65555
 	// Value marking end of ZE_API_VERSION_* ENUMs.
 	API_VERSION_FORCE_UINT32 ApiVersion = 2147483647
 )
@@ -206,7 +208,7 @@ const (
 // Supported device types.
 type DeviceType uint32
 
-// DeviceType enumeration from level-zero/ze_api.h:1963
+// DeviceType enumeration from level-zero/ze_api.h:1974
 const (
 	// Graphics Processing Unit.
 	DEVICE_TYPE_GPU DeviceType = 1
@@ -226,7 +228,7 @@ const (
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/core/api.html#ze-device-property-flags-t
 type DevicePropertyFlag uint32
 
-// DevicePropertyFlag enumeration from level-zero/ze_api.h:1996
+// DevicePropertyFlag enumeration from level-zero/ze_api.h:2007
 const (
 	// Device is integrated with the Host.
 	DEVICE_PROPERTY_FLAG_INTEGRATED DevicePropertyFlag = 1

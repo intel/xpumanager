@@ -147,6 +147,16 @@ structs:
     fields:
       - name: ThrottleReasons
         newType: FreqThrottleReasonFlags
+  - name: InfoLogExtProperties
+    fields:
+      - name: InfoLogType
+        newType: InfoLogTypeExt
+      - name: InfoLogFormat
+        newType: InfoLogFormatExt
+  - name: InfoLogMetadataExt
+    fields:
+      - name: RecordType
+        newType: InfoLogRecordTypeExt
   - name: MemBaseProperties
     fields:
       - name: Location
@@ -324,6 +334,9 @@ types:
     newComment: *linked
   - names: ["Power*Ext*"]
     docPage: extensions/power.html
+    newComment: *linked
+  - names: ["InfoLog*", "infoLog*"]
+    docPage: extensions/info_log.html
     newComment: *linked
 
   - name: "*Handle"

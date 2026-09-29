@@ -30,7 +30,7 @@ const (
 // Defines structure types.
 type structureType uint32
 
-// structureType enumeration from level-zero/zes_api.h:175
+// structureType enumeration from level-zero/zes_api.h:180
 const (
 	_STRUCTURE_TYPE_VF_UTIL_MEM_EXP2     structureType = 131081
 	_STRUCTURE_TYPE_VF_UTIL_ENGINE_EXP2  structureType = 131088
@@ -43,7 +43,7 @@ const (
 // RAS Get State Extension Version(s).
 type RasStateExpVersion uint32
 
-// RasStateExpVersion enumeration from level-zero/zes_api.h:7823
+// RasStateExpVersion enumeration from level-zero/zes_api.h:8020
 const (
 	// version 1.0
 	RAS_STATE_EXP_VERSION_1_0 RasStateExpVersion = 65536
@@ -61,7 +61,7 @@ const (
 // RAS error categories.
 type RasErrorCategoryExp uint32
 
-// RasErrorCategoryExp enumeration from level-zero/zes_api.h:7849
+// RasErrorCategoryExp enumeration from level-zero/zes_api.h:8046
 const (
 	// The number of accelerator engine resets attempted by the driver.
 	RAS_ERROR_CATEGORY_EXP_RESET RasErrorCategoryExp = iota
@@ -101,7 +101,7 @@ const (
 // Virtual Function Management Extension Version(s).
 type VfManagementExpVersion uint32
 
-// VfManagementExpVersion enumeration from level-zero/zes_api.h:8471
+// VfManagementExpVersion enumeration from level-zero/zes_api.h:8668
 const (
 	// version 1.0 (deprecated)
 	VF_MANAGEMENT_EXP_VERSION_1_0 VfManagementExpVersion = 65536
