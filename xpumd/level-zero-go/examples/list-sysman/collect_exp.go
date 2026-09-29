@@ -9,40 +9,11 @@ package main
 
 import (
 	"encoding/hex"
-	"errors"
-	"flag"
-	"fmt"
-	"time"
 
 	"github.com/intel/level-zero-go/sysman"
 	"github.com/intel/level-zero-go/sysman/exp"
 	"github.com/intel/level-zero-go/sysman/exp/intel"
 )
-
-const defaultInfoLogInstance = "list-sysman"
-
-// infoLogTimeout searches everything that the collection instance holds.
-const infoLogTimeout = -1 * time.Millisecond
-
-var (
-	infoLogDump     bool
-	infoLogInstance = defaultInfoLogInstance
-)
-
-func init() {
-	flag.BoolVar(&infoLogDump, "infolog-dump", false,
-		"dump the info log records with their per-record metadata, they are left unread by default")
-	// NOTE: flag.Func instead of flag.StringVar to reject an empty name
-	flag.Func("infolog-instance", fmt.Sprintf(
-		"`name` of the collection instance for the info log records (default %q)", defaultInfoLogInstance),
-		func(name string) error {
-			if name == "" {
-				return errors.New("must not be empty")
-			}
-			infoLogInstance = name
-			return nil
-		})
-}
 
 func (d *DeviceInfo) collectRasInfoExp(ras *sysman.Ras, info *RasInfo) {
 	if states, err := exp.NewRas(ras).GetStateExp(); err != nil {

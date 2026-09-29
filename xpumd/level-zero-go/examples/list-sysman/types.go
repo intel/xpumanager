@@ -25,8 +25,37 @@ type SystemInfo struct {
 // embed this.
 type BaseDriverInfo struct {
 	BaseInfo            `yaml:",inline"`
+	Properties          *sysman.DriverProperties           `yaml:"Properties"`
 	ExtensionProperties []sysman.DriverExtensionProperties `yaml:"ExtensionProperties"`
+	InfoLogs            []InfoLogExtInfo                   `yaml:"InfoLogs"`
 	Devices             []DeviceInfo                       `yaml:"Devices"`
+}
+
+// InfoLogExtInfo describes an enumerated info log.
+type InfoLogExtInfo struct {
+	Properties *sysman.InfoLogExtProperties `yaml:"Properties"`
+	// BufferSizeInKb is what the driver applied for the collection instance.
+	BufferSizeInKb uint32 `yaml:"BufferSizeInKb"`
+	// Collection holds what was read from the collection instance.
+	Collection *InfoLogExtCollection `yaml:"Collection"`
+}
+
+// InfoLogExtCollection holds what was read from one collection instance of an info log.
+type InfoLogExtCollection struct {
+	// Status is the status that the read of the records reported.
+	Status sysman.InfoLogReadStatusExt `yaml:"Status"`
+	// Records holds the records, in the order that they were read.
+	Records []InfoLogExtRecord `yaml:"Records"`
+}
+
+// InfoLogExtRecord is one record of an info log.
+type InfoLogExtRecord struct {
+	// the per-record metadata, e.g. the device that the record originates from,
+	// inlined to match the layout of the stub driver config
+	sysman.InfoLogMetadataExt `yaml:",inline"`
+	// Dump is a hex dump of the record, in the format that the InfoLogFormat
+	// property of the log reports.
+	Dump string `yaml:"Dump"`
 }
 
 type DeviceInfo struct {
