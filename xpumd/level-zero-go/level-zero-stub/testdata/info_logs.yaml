@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Driver with the standard v1.19 sysman extensions: driver properties, driver
+# scoped events and info logs.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_extension_info_logs"
+        Version: 65536 # ZES_INFO_LOGS_EXT_VERSION_1_0
+    Properties:
+      Uuid:
+        Id: "12345678-0000-0000-0000-000000000000"
+      DriverVersion: 1
+    Events: 65536 # ZES_EVENT_TYPE_FLAG_INFO_LOG_CPER_DATA_AVAILABLE_EXT
+    Devices:
+      # A device with a pending event and one without
+      - Properties: {}
+        Events: 1 # ZES_EVENT_TYPE_FLAG_DEVICE_DETACH
+      - Properties: {}
+    InfoLogs:
+      # A log with named instances and peek both supported
+      - Properties:
+          InfoLogType: 0 # ZES_INFO_LOG_TYPE_EXT_DEVICE
+          InfoLogFormat: 0 # ZES_INFO_LOG_FORMAT_EXT_CPER
+          IsNamedInstanceSupported: true
+          IsPeekDataSupported: true
+        BufferSizeInKb: 8
+        Collection:
+          Status:
+            ConsumedDataSize: 26
+            HasDataToRead: true
+          Records:
+            - Data: "CPER-RECORD-1"
+              Address:
+                Domain: 0
+                Bus: 1
+                Device: 2
+                Function: 3
+              Uuid:
+                Id: "12345678-abcd-ef01-2345-6789abcdef01"
+              Timestamp: 1234567
+              RecordType: 2 # ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_CORRECTED
+            - Data: "CPER-RECORD-2"
+              Address:
+                Domain: 0
+                Bus: 4
+                Device: 5
+                Function: 6
+              Timestamp: 7654321
+      # A log without the optional capabilities, reporting a known dropped record count
+      - Properties:
+          IsNamedInstanceSupported: false
+          IsPeekDataSupported: false
+        Collection:
+          Status:
+            DroppedRecordCount: 5
+          Records:
+            - Data: "CPER-RECORD-3"
+        ReturnValues:
+          zesInfoLogInstanceReadWithMetadataExt: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA
+      # A log without a collection
+      - Properties: {}

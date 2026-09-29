@@ -1,0 +1,6 @@
+Drivers:
+- Properties:
+    Uuid:
+      # One character short
+      Id: "12345678-1234-1234-1234-12345678901"
+  Devices: []

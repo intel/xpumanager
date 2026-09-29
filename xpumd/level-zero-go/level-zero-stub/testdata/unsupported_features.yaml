@@ -11,6 +11,15 @@ Drivers:
   - IntelInfoLogInstance.ReadWithMetadata
   - IntelInfoLogInstance.PeekWithMetadata
   - IntelInfoLogInstance.Delete
+  - Driver.GetProperties
+  - Driver.EventRegisterExt
+  - Driver.EventListenExt
+  - InfoLogs
+  - InfoLog.GetProperties
+  - InfoLog.CreateInstance
+  - InfoLogInstance.ReadWithMetadata
+  - InfoLogInstance.PeekWithMetadata
+  - InfoLogInstance.Delete
   Devices:
   - UnsupportedFeatures:
     - Device.GetState

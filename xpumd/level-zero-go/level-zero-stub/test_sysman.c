@@ -47,10 +47,12 @@ static int g_fail = 0;
 #define YAML_NO_DRIVERS "testdata/no_drivers.yaml"
 #define YAML_ALL_COMPONENTS "testdata/all_components.yaml"
 #define YAML_INVALID_UUID "testdata/invalid_uuid.yaml"
+#define YAML_INVALID_DRIVER_UUID "testdata/invalid_driver_uuid.yaml"
 #define YAML_UNSUPPORTED_FEATURES "testdata/unsupported_features.yaml"
 #define YAML_INTEL_EXTENSIONS "testdata/intel_extensions.yaml"
+#define YAML_INFO_LOGS "testdata/info_logs.yaml"
 
-// Info log records of the intel extensions (from the testdata)
+// Info log records (from the testdata)
 #define INFO_LOG_RECORD_1 "CPER-RECORD-1"
 #define INFO_LOG_RECORD_2 "CPER-RECORD-2"
 #define INFO_LOG_RECORD_3 "CPER-RECORD-3"
@@ -615,10 +617,15 @@ static void test_error_cases(void)
 	zes_intel_info_log_handle_t log = NULL;
 	ASSERT_ZE_OK("zesIntelDriverEnumInfoLogsExp", zesIntelDriverEnumInfoLogsExp(drv, &log_n, &log));
 
+	uint32_t ext_log_n = 1;
+	zes_info_log_handle_t ext_log = NULL;
+	ASSERT_ZE_OK("zesDriverEnumInfoLogsExt", zesDriverEnumInfoLogsExt(drv, &ext_log_n, &ext_log));
+
 	ze_driver_handle_t bad_drv = NULL;
 	zes_device_handle_t bad_dev = NULL;
 	zes_engine_handle_t bad_eng = NULL;
 	zes_intel_info_log_handle_t bad_log = NULL;
+	zes_info_log_handle_t bad_ext_log = NULL;
 
 	// zesDriverGet
 	ASSERT_ZE_RET("zesDriverGet: NULL pCount", zesDriverGet(NULL, NULL), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
@@ -628,6 +635,12 @@ static void test_error_cases(void)
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	ASSERT_ZE_RET("zesDriverGetExtensionProperties: NULL pCount with array",
 				  zesDriverGetExtensionProperties(drv, NULL, (zes_driver_extension_properties_t *)(uintptr_t)1),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+
+	// zesDriverGetProperties
+	ASSERT_ZE_RET("zesDriverGetProperties: NULL handle", zesDriverGetProperties(bad_drv, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesDriverGetProperties: NULL pDriverProperties", zesDriverGetProperties(drv, NULL),
 				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 
 	// zesDriverGetExtensionFunctionAddress
@@ -879,6 +892,30 @@ static void test_error_cases(void)
 					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 	}
 
+	// Driver scoped events
+	ASSERT_ZE_RET("zesDriverEventRegisterExt: NULL handle", zesDriverEventRegisterExt(bad_drv, 0),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesDriverEventRegisterExt: device event",
+				  zesDriverEventRegisterExt(drv, ZES_EVENT_TYPE_FLAG_DEVICE_DETACH),
+				  ZE_RESULT_ERROR_INVALID_ENUMERATION);
+	{
+		uint32_t n = 0;
+		zes_event_type_flags_t ev = 0;
+		zes_event_type_flags_t drv_ev = 0;
+		ASSERT_ZE_RET("zesDriverEventListenExt: NULL handle",
+					  zesDriverEventListenExt(bad_drv, 0, 1, &dev, &n, &ev, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesDriverEventListenExt: NULL pNumDeviceEvents",
+					  zesDriverEventListenExt(drv, 0, 1, &dev, NULL, &ev, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		// Unlike with the Intel Exp variant, phDevices and pEvents are not optional
+		ASSERT_ZE_RET("zesDriverEventListenExt: NULL phDevices",
+					  zesDriverEventListenExt(drv, 0, 1, NULL, &n, &ev, &drv_ev), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET("zesDriverEventListenExt: NULL pEvents",
+					  zesDriverEventListenExt(drv, 0, 1, &dev, &n, NULL, &drv_ev),
+					  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	}
+
 	// Info logs (Intel experimental extension)
 	ASSERT_ZE_RET("zesIntelDriverEnumInfoLogsExp: NULL handle", zesIntelDriverEnumInfoLogsExp(bad_drv, NULL, NULL),
 				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
@@ -933,6 +970,62 @@ static void test_error_cases(void)
 																 descriptors, &read_status),
 					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 		ASSERT_ZE_RET("zesIntelInfoLogInstanceDeleteExp: NULL handle", zesIntelInfoLogInstanceDeleteExp(bad_inst),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	}
+
+	// Info logs
+	ASSERT_ZE_RET("zesDriverEnumInfoLogsExt: NULL handle", zesDriverEnumInfoLogsExt(bad_drv, NULL, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesDriverEnumInfoLogsExt: NULL pCount", zesDriverEnumInfoLogsExt(drv, NULL, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	ASSERT_ZE_RET("zesInfoLogGetPropertiesExt: NULL handle", zesInfoLogGetPropertiesExt(bad_ext_log, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+	ASSERT_ZE_RET("zesInfoLogGetPropertiesExt: NULL pProperties", zesInfoLogGetPropertiesExt(ext_log, NULL),
+				  ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+	{
+		zes_info_log_instance_ext_desc_t desc = {.stype = ZES_STRUCTURE_TYPE_INFO_LOG_INSTANCE_EXT_DESC};
+		zes_info_log_instance_handle_t inst = NULL;
+		zes_info_log_instance_handle_t bad_inst = NULL;
+		ASSERT_ZE_RET("zesInfoLogCreateInstanceExt: NULL handle",
+					  zesInfoLogCreateInstanceExt(bad_ext_log, NULL, &desc, &inst),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesInfoLogCreateInstanceExt: NULL pDesc",
+					  zesInfoLogCreateInstanceExt(ext_log, NULL, NULL, &inst), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET("zesInfoLogCreateInstanceExt: NULL phInfoLogInstance",
+					  zesInfoLogCreateInstanceExt(ext_log, NULL, &desc, NULL), ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_OK("zesInfoLogCreateInstanceExt", zesInfoLogCreateInstanceExt(ext_log, NULL, &desc, &inst));
+
+		// Only the argument checks are exercised, any non-zero buffer size is fine
+		uint8_t log_buf[1];
+		uint32_t log_size = sizeof(log_buf);
+		uint32_t log_count = 1;
+		zes_info_log_metadata_ext_t descriptors[1] = {{.stype = ZES_STRUCTURE_TYPE_INFO_LOG_METADATA_EXT}};
+		zes_info_log_read_status_ext_t read_status = {.stype = ZES_STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXT};
+		ASSERT_ZE_RET("zesInfoLogInstanceReadWithMetadataExt: NULL handle",
+					  zesInfoLogInstanceReadWithMetadataExt(bad_inst, 0, &log_size, log_buf, &log_count, descriptors,
+															&read_status),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET(
+			"zesInfoLogInstanceReadWithMetadataExt: NULL pSize",
+			zesInfoLogInstanceReadWithMetadataExt(inst, 0, NULL, log_buf, &log_count, descriptors, &read_status),
+			ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET(
+			"zesInfoLogInstanceReadWithMetadataExt: NULL pRecordCount",
+			zesInfoLogInstanceReadWithMetadataExt(inst, 0, &log_size, log_buf, NULL, descriptors, &read_status),
+			ZE_RESULT_ERROR_INVALID_NULL_POINTER);
+		ASSERT_ZE_RET(
+			"zesInfoLogInstanceReadWithMetadataExt: NULL pBuffer",
+			zesInfoLogInstanceReadWithMetadataExt(inst, 0, &log_size, NULL, &log_count, descriptors, &read_status),
+			ZE_RESULT_ERROR_INVALID_ARGUMENT);
+		// The read status is optional
+		ASSERT_ZE_OK("zesInfoLogInstanceReadWithMetadataExt: NULL pReadStatus",
+					 zesInfoLogInstanceReadWithMetadataExt(inst, 0, &log_size, log_buf, &log_count, descriptors, NULL));
+
+		ASSERT_ZE_RET("zesInfoLogInstancePeekWithMetadataExt: NULL handle",
+					  zesInfoLogInstancePeekWithMetadataExt(bad_inst, 0, &log_size, log_buf, &log_count, descriptors,
+															&read_status),
+					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
+		ASSERT_ZE_RET("zesInfoLogInstanceDeleteExt: NULL handle", zesInfoLogInstanceDeleteExt(bad_inst),
 					  ZE_RESULT_ERROR_INVALID_NULL_HANDLE);
 	}
 
@@ -1322,6 +1415,14 @@ static void test_uuid(void)
 									   0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01};
 	ASSERT("UUID matches", memcmp(props.core.uuid.id, expected_core, 16) == 0);
 
+	zes_driver_properties_t drv_props = {.stype = ZES_STRUCTURE_TYPE_DRIVER_PROPERTIES};
+	ASSERT_ZE_OK("zesDriverGetProperties", zesDriverGetProperties(drv, &drv_props));
+
+	// Driver UUID: "00112233-4455-6677-8899-aabbccddeeff"
+	const uint8_t expected_driver[16] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+										 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
+	ASSERT("driver UUID matches", memcmp(drv_props.uuid.id, expected_driver, 16) == 0);
+
 	sysman_state_reset();
 }
 
@@ -1331,6 +1432,7 @@ static void test_uuid_invalid_load(void)
 
 	sysman_state_reset();
 	ASSERT("sysman_state_load fails on invalid UUID", sysman_state_load(YAML_INVALID_UUID) != 0);
+	ASSERT("sysman_state_load fails on invalid driver UUID", sysman_state_load(YAML_INVALID_DRIVER_UUID) != 0);
 }
 
 // ------------------------------------------------------------------
@@ -1356,6 +1458,15 @@ static void test_unsupported_features(void)
 		UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_READ,
 		UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_PEEK,
 		UNSUPPORTED_FEATURE_INTEL_INFO_LOG_INSTANCE_DELETE,
+		UNSUPPORTED_FEATURE_DRIVER_GET_PROPERTIES,
+		UNSUPPORTED_FEATURE_DRIVER_EVENT_REGISTER_EXT,
+		UNSUPPORTED_FEATURE_DRIVER_EVENT_LISTEN_EXT,
+		UNSUPPORTED_FEATURE_INFO_LOGS,
+		UNSUPPORTED_FEATURE_INFO_LOG_GET_PROPERTIES,
+		UNSUPPORTED_FEATURE_INFO_LOG_CREATE_INSTANCE,
+		UNSUPPORTED_FEATURE_INFO_LOG_INSTANCE_READ,
+		UNSUPPORTED_FEATURE_INFO_LOG_INSTANCE_PEEK,
+		UNSUPPORTED_FEATURE_INFO_LOG_INSTANCE_DELETE,
 	};
 	static const sysman_unsupported_feature_t device_features[] = {UNSUPPORTED_FEATURE_GET_STATE,
 																   UNSUPPORTED_FEATURE_FANS};
@@ -1639,6 +1750,184 @@ static void test_intel_driver_events(void)
 	sysman_state_reset();
 }
 
+static void test_driver_events_ext(void)
+{
+	printf("test_driver_events_ext\n");
+
+	sysman_state_reset();
+	ASSERT("load info_logs.yaml", sysman_state_load(YAML_INFO_LOGS) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	ASSERT_ZE_OK("zesDriverGet", zesDriverGet(&drv_n, &drv));
+	uint32_t dev_n = 2;
+	zes_device_handle_t devs[2] = {NULL, NULL};
+	ASSERT_ZE_OK("zesDeviceGet", zesDeviceGet(drv, &dev_n, devs));
+
+	// Both the device and the driver scoped pending events are reported, only the devices that have events pending are
+	// counted
+	uint32_t num = UINT32_MAX;
+	zes_event_type_flags_t drv_events = 0;
+	zes_event_type_flags_t events[2] = {UINT32_MAX, UINT32_MAX};
+	ASSERT_ZE_OK("zesDriverEventListenExt", zesDriverEventListenExt(drv, 0, 2, devs, &num, events, &drv_events));
+	ASSERT("zesDriverEventListenExt: num", num == 1);
+	ASSERT("zesDriverEventListenExt: first device events", events[0] == ZES_EVENT_TYPE_FLAG_DEVICE_DETACH);
+	ASSERT("zesDriverEventListenExt: second device events", events[1] == 0);
+	ASSERT("zesDriverEventListenExt: driver events",
+		   drv_events == ZES_EVENT_TYPE_FLAG_INFO_LOG_CPER_DATA_AVAILABLE_EXT);
+
+	// Reporting the driver scoped events is optional
+	num = UINT32_MAX;
+	ASSERT_ZE_OK("zesDriverEventListenExt: NULL pDriverEvents",
+				 zesDriverEventListenExt(drv, 0, 2, devs, &num, events, NULL));
+	ASSERT("zesDriverEventListenExt: NULL pDriverEvents num", num == 1);
+
+	sysman_state_reset();
+}
+
+static void test_info_logs(void)
+{
+	printf("test_info_logs\n");
+
+	sysman_state_reset();
+	ASSERT("load info_logs.yaml", sysman_state_load(YAML_INFO_LOGS) == 0);
+
+	uint32_t drv_n = 1;
+	ze_driver_handle_t drv = NULL;
+	ASSERT_ZE_OK("zesDriverGet", zesDriverGet(&drv_n, &drv));
+
+	// Enumeration
+	uint32_t count = 0;
+	ASSERT_ZE_OK("zesDriverEnumInfoLogsExt: count", zesDriverEnumInfoLogsExt(drv, &count, NULL));
+	ASSERT("zesDriverEnumInfoLogsExt: count value", count == 3);
+	zes_info_log_handle_t logs[3] = {NULL, NULL, NULL};
+	ASSERT_ZE_OK("zesDriverEnumInfoLogsExt: handles", zesDriverEnumInfoLogsExt(drv, &count, logs));
+	ASSERT("zesDriverEnumInfoLogsExt: first handle", logs[0] != NULL);
+	ASSERT("zesDriverEnumInfoLogsExt: second handle", logs[1] != NULL);
+	ASSERT("zesDriverEnumInfoLogsExt: third handle", logs[2] != NULL);
+	zes_info_log_handle_t log = logs[0];
+
+	// A collection instance reports the configured buffer size as applied, the
+	// requested one is accepted as is when no size is configured
+	uint32_t buffer_size = 6;
+	zes_info_log_instance_ext_desc_t desc = {.stype = ZES_STRUCTURE_TYPE_INFO_LOG_INSTANCE_EXT_DESC,
+											 .pBufferSizeInKb = &buffer_size};
+	zes_info_log_instance_handle_t instance = NULL;
+	ASSERT_ZE_OK("zesInfoLogCreateInstanceExt", zesInfoLogCreateInstanceExt(log, "level-zero-go", &desc, &instance));
+	ASSERT("zesInfoLogCreateInstanceExt: applied buffer size", buffer_size == 8);
+	buffer_size = 6;
+	zes_info_log_instance_handle_t dropped = NULL;
+	ASSERT_ZE_OK("zesInfoLogCreateInstanceExt: second log",
+				 zesInfoLogCreateInstanceExt(logs[1], NULL, &desc, &dropped));
+	ASSERT("zesInfoLogCreateInstanceExt: requested buffer size", buffer_size == 6);
+
+	// Without the output buffers, only what the instance holds is reported
+	uint32_t size = 0;
+	uint32_t records = 0;
+	zes_info_log_read_status_ext_t status = {.stype = ZES_STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXT};
+	ASSERT_ZE_OK("zesInfoLogInstanceReadWithMetadataExt: pending",
+				 zesInfoLogInstanceReadWithMetadataExt(instance, UINT64_MAX, &size, NULL, &records, NULL, &status));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: pending count", records == 2);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: pending size", size == strlen(INFO_LOG_RECORDS_ALL));
+
+	// Only whole records are read: the second record doesn't fit in the buffer
+	uint8_t buf[sizeof(INFO_LOG_RECORD_1) * 3 / 2];
+	zes_info_log_metadata_ext_t descriptors[2] = {{.stype = ZES_STRUCTURE_TYPE_INFO_LOG_METADATA_EXT},
+												  {.stype = ZES_STRUCTURE_TYPE_INFO_LOG_METADATA_EXT}};
+	size = sizeof(buf);
+	records = ARRAY_SIZE(descriptors);
+	ASSERT_ZE_OK(
+		"zesInfoLogInstanceReadWithMetadataExt: whole records",
+		zesInfoLogInstanceReadWithMetadataExt(instance, UINT64_MAX, &size, buf, &records, descriptors, &status));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: whole records count", records == 1);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: whole records size", size == strlen(INFO_LOG_RECORD_1));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: whole records data", memcmp(buf, INFO_LOG_RECORD_1, size) == 0);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: whole records stype preserved",
+		   status.stype == ZES_STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXT);
+
+	// A zero timeout returns immediately, without searching for records
+	size = sizeof(buf);
+	records = ARRAY_SIZE(descriptors);
+	ASSERT_ZE_OK("zesInfoLogInstanceReadWithMetadataExt: zero timeout",
+				 zesInfoLogInstanceReadWithMetadataExt(instance, 0, &size, buf, &records, descriptors, &status));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: zero timeout count", records == 0);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: zero timeout size", size == 0);
+
+	// Read all. Note: reading does not consume the records, all of them are read again
+	uint8_t big_buf[sizeof(INFO_LOG_RECORDS_ALL)];
+	size = sizeof(big_buf);
+	records = ARRAY_SIZE(descriptors);
+	ASSERT_ZE_OK(
+		"zesInfoLogInstanceReadWithMetadataExt: all records",
+		zesInfoLogInstanceReadWithMetadataExt(instance, UINT64_MAX, &size, big_buf, &records, descriptors, &status));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: all records count", records == 2);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: all records size", size == strlen(INFO_LOG_RECORDS_ALL));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: all records data", memcmp(big_buf, INFO_LOG_RECORDS_ALL, size) == 0);
+	// The status is handed out as configured, also when every record was read
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: all records hasDataToRead", status.hasDataToRead);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: all records consumedDataSize", status.consumedDataSize == 26);
+	// The metadata comes from the configuration, the offset and the length of the
+	// record are computed by the stub
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: stype preserved",
+		   descriptors[0].stype == ZES_STRUCTURE_TYPE_INFO_LOG_METADATA_EXT);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: record type",
+		   descriptors[0].recordType == ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_CORRECTED);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: second offset", descriptors[1].offset == strlen(INFO_LOG_RECORD_1));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: second length",
+		   descriptors[1].lengthOfData == strlen(INFO_LOG_RECORD_2));
+
+	// The descriptor array bounds the read, too
+	size = sizeof(big_buf);
+	records = 1;
+	ASSERT_ZE_OK(
+		"zesInfoLogInstanceReadWithMetadataExt: one descriptor",
+		zesInfoLogInstanceReadWithMetadataExt(instance, UINT64_MAX, &size, big_buf, &records, descriptors, &status));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: one descriptor count", records == 1);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: one descriptor size", size == strlen(INFO_LOG_RECORD_1));
+
+	// Peeking hands out the same records as reading
+	size = sizeof(big_buf);
+	records = ARRAY_SIZE(descriptors);
+	ASSERT_ZE_OK(
+		"zesInfoLogInstancePeekWithMetadataExt",
+		zesInfoLogInstancePeekWithMetadataExt(instance, UINT64_MAX, &size, big_buf, &records, descriptors, &status));
+	ASSERT("zesInfoLogInstancePeekWithMetadataExt: count", records == 2);
+	ASSERT("zesInfoLogInstancePeekWithMetadataExt: data", memcmp(big_buf, INFO_LOG_RECORDS_ALL, size) == 0);
+
+	// A configured ZE_RESULT_WARNING_DROPPED_DATA is returned with the records and
+	// the configured status
+	size = sizeof(big_buf);
+	records = ARRAY_SIZE(descriptors);
+	ASSERT_ZE_RET(
+		"zesInfoLogInstanceReadWithMetadataExt: dropped records",
+		zesInfoLogInstanceReadWithMetadataExt(dropped, UINT64_MAX, &size, big_buf, &records, descriptors, &status),
+		ZE_RESULT_WARNING_DROPPED_DATA);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: dropped records data",
+		   memcmp(big_buf, INFO_LOG_RECORD_3, size) == 0);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: dropped records count", status.droppedRecordCount == 5);
+	// The status fields left out of the configuration are reported as zero
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: dropped records hasDataToRead", !status.hasDataToRead);
+
+	// A log without a configured collection hands out nothing, with a zeroed status
+	zes_info_log_instance_handle_t empty = NULL;
+	ASSERT_ZE_OK("zesInfoLogCreateInstanceExt: third log", zesInfoLogCreateInstanceExt(logs[2], NULL, &desc, &empty));
+	size = sizeof(big_buf);
+	records = ARRAY_SIZE(descriptors);
+	ASSERT_ZE_OK(
+		"zesInfoLogInstanceReadWithMetadataExt: no collection configured",
+		zesInfoLogInstanceReadWithMetadataExt(empty, UINT64_MAX, &size, big_buf, &records, descriptors, &status));
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: no collection configured count", records == 0);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: no collection configured size", size == 0);
+	ASSERT("zesInfoLogInstanceReadWithMetadataExt: no collection configured status",
+		   !status.hasDataToRead && status.droppedRecordCount == 0 && status.consumedDataSize == 0);
+
+	ASSERT_ZE_OK("zesInfoLogInstanceDeleteExt", zesInfoLogInstanceDeleteExt(instance));
+	ASSERT_ZE_OK("zesInfoLogInstanceDeleteExt: second log", zesInfoLogInstanceDeleteExt(dropped));
+	ASSERT_ZE_OK("zesInfoLogInstanceDeleteExt: third log", zesInfoLogInstanceDeleteExt(empty));
+
+	sysman_state_reset();
+}
+
 // ------------------------------------------------------------------
 // Main
 // ------------------------------------------------------------------
@@ -1665,6 +1954,8 @@ int main(void)
 	test_intel_extension_function_address();
 	test_intel_info_logs();
 	test_intel_driver_events();
+	test_driver_events_ext();
+	test_info_logs();
 
 	printf("\n%d passed, %d failed\n", g_pass, g_fail);
 	return g_fail ? 1 : 0;

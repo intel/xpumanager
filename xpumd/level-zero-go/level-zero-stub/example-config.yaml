@@ -41,9 +41,17 @@ Drivers:
         Version: 65536
       - Name: "ZES_experimental_virtual_function_management"
         Version: 65538
+      - Name: "ZES_extension_info_logs"
+        Version: 65536
 
-    # Pending driver scoped events reported by zesIntelDriverEventListenExp
-    Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
+    # zesDriverGetProperties (nullable)
+    Properties:
+      Uuid:
+        Id: "12345678-0000-0000-0000-000000000000"
+      DriverVersion: 1
+
+    # Pending driver scoped events reported by zesIntelDriverEventListenExp and zesDriverEventListenExt
+    Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE / ZES_EVENT_TYPE_FLAG_INFO_LOG_CPER_DATA_AVAILABLE_EXT
 
     # Function-level return-value overrides for driver-scoped calls.
     # Set a non-zero ze_result_t value to inject an error.
@@ -56,6 +64,10 @@ Drivers:
       zesIntelDriverEnumInfoLogsExp: 0
       zesIntelDriverEventRegisterExp: 0
       zesIntelDriverEventListenExp: 0
+      zesDriverGetProperties: 0
+      zesDriverEventRegisterExt: 0
+      zesDriverEventListenExt: 0
+      zesDriverEnumInfoLogsExt: 0
 
     # List of features that return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
     # Takes precedence over ReturnValues.
@@ -73,6 +85,15 @@ Drivers:
     #   - IntelInfoLogInstance.ReadWithMetadata
     #   - IntelInfoLogInstance.PeekWithMetadata
     #   - IntelInfoLogInstance.Delete
+    #   - Driver.GetProperties
+    #   - Driver.EventRegisterExt
+    #   - Driver.EventListenExt
+    #   - InfoLogs
+    #   - InfoLog.GetProperties
+    #   - InfoLog.CreateInstance
+    #   - InfoLogInstance.ReadWithMetadata
+    #   - InfoLogInstance.PeekWithMetadata
+    #   - InfoLogInstance.Delete
 
     # -------------------------------------------------------------------
     # Devices
@@ -991,6 +1012,52 @@ Drivers:
           zesIntelInfoLogInstanceReadWithMetadataExp: 0
           zesIntelInfoLogInstancePeekWithMetadataExp: 0
           zesIntelInfoLogInstanceDeleteExp: 0
+
+    # -------------------------------------------------------------------
+    # Info logs (zesDriverEnumInfoLogsExt)
+    # -------------------------------------------------------------------
+    InfoLogs:
+      - # zesInfoLogGetPropertiesExt (nullable)
+        Properties:
+          InfoLogType: 0  # ZES_INFO_LOG_TYPE_EXT_DEVICE
+          InfoLogFormat: 0  # ZES_INFO_LOG_FORMAT_EXT_CPER
+          IsNamedInstanceSupported: true
+          IsPeekDataSupported: true
+        # Collection buffer size, in kilobytes, reported as applied by
+        # zesInfoLogCreateInstanceExt (the requested one is applied when unset)
+        BufferSizeInKb: 8
+        # What zesInfoLogInstanceReadWithMetadataExt and
+        # zesInfoLogInstancePeekWithMetadataExt hand out
+        Collection:
+          # Status of the read and of the peek (nullable)
+          Status:
+            DroppedRecordCount: 0  # -1 means "dropped, count unknown"
+            ConsumedDataSize: 0
+            HasDataToRead: false
+          # Log records, copied out verbatim
+          Records:
+            - Data: "CPER-RECORD-1"
+              # Per-record metadata, handed out with the record
+              Address:
+                Domain: 0
+                Bus: 1
+                Device: 0
+                Function: 0
+              Uuid:
+                Id: "12345678-000a-00b0-0c00-00000000d000"
+              Timestamp: 1234567  # nanoseconds
+              RecordType: 2  # ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_CORRECTED
+            - Data: "CPER-RECORD-2"
+        ReturnValues:
+          zesInfoLogGetPropertiesExt: 0
+          zesInfoLogCreateInstanceExt: 0
+          # NOTE: If set to ZE_RESULT_WARNING_DROPPED_DATA (0x70020001), also
+          # the records and the status are returned, mimicking the backend driver.
+          zesInfoLogInstanceReadWithMetadataExt: 0
+          # NOTE: If set to ZE_RESULT_WARNING_DROPPED_DATA (0x70020001), also
+          # the records and the status are returned, mimicking the backend driver.
+          zesInfoLogInstancePeekWithMetadataExt: 0
+          zesInfoLogInstanceDeleteExt: 0
 
 # ---------------------------------------------------------------------------
 # Top-level return-value overrides
