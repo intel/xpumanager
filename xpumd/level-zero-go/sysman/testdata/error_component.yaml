@@ -5,11 +5,31 @@
 # component methods fail, ZE_RESULT_ERROR_NOT_AVAILABLE = 0x70010001).
 # Used by all component-level method tests (Engine, FabricPort,
 # Fan, Firmware, Frequency, Led, Memory, Overclock, Performance, Power, Psu, Ras,
-# Scheduler, Standby, Temperature, Diagnostics) and FabricPortGetMultiPortThroughput.
+# Scheduler, Standby, Temperature, Diagnostics), FabricPortGetMultiPortThroughput
+# and the InfoLog(Instance) method tests.
+#
+# The second driver is for testing info log specific failures not covered by the first driver.
 
 EventNumDeviceEvents: 0
 Drivers:
-  - Devices:
+  - ExtensionProperties:
+      - Name: "ZES_extension_info_logs"
+        Version: 65536
+    InfoLogs:
+      # InfoLog[0]: GetProperties and CreateInstance fail
+      - Properties: {}
+        ReturnValues:
+          zesInfoLogGetPropertiesExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+          zesInfoLogCreateInstanceExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+      # InfoLog[1]: CreateInstance succeeds, so an instance can be created to test
+      # the instance-scoped methods failing
+      - Properties:
+          IsPeekDataSupported: true
+        ReturnValues:
+          zesInfoLogInstanceReadWithMetadataExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+          zesInfoLogInstancePeekWithMetadataExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+          zesInfoLogInstanceDeleteExt: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
+    Devices:
       - ECC:
           Available: true
           Configurable: true
@@ -125,3 +145,10 @@ Drivers:
               zesDiagnosticsGetTests: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
               zesDiagnosticsRunTests: 0x70010001 # ZE_RESULT_ERROR_NOT_AVAILABLE
         Processes: []
+  # Driver 2
+  - ReturnValues:
+      zesDriverEnumInfoLogsExt: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+    ExtensionProperties:
+      - Name: "ZES_extension_info_logs"
+        Version: 65536
+    Devices: []
