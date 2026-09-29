@@ -1,2 +1,2 @@
-63eac32aecaaaa5010dbce01e3c309c8edac9bdd80c2fe54c6cbcd77fded714b  libze-dev_1.33.1+u24.04_amd64.deb
-298d6d3656a13f112497f557be2cb557efb67374bc7d069aa77a9115db909e1d  libze1_1.33.1+u24.04_amd64.deb
+2813bb3b06d0d8c0f3c771051defabdd74da2e454661cd654ebabcfb5ab21c01  libze-dev_1.34.0+u24.04_amd64.deb
+45210e4549cd965ad7b9f160eefe53cbcdba01af341bea7ac7ba0aedeeb613ba  libze1_1.34.0+u24.04_amd64.deb
