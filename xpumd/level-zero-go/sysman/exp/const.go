@@ -24,7 +24,7 @@ const (
 )
 
 // RasStateExpVersion declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-exp-version-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/data_types.html#zes-ras-state-exp-version-t
 //
 // RAS Get State Extension Version(s).
 type RasStateExpVersion uint32
@@ -42,7 +42,7 @@ const (
 )
 
 // RasErrorCategoryExp declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-category-exp-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#zes-ras-error-category-exp-t
 //
 // RAS error categories.
 type RasErrorCategoryExp uint32

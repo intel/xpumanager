@@ -10,116 +10,98 @@ import (
 	"github.com/intel/level-zero-go/core"
 )
 
-// driverHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-handle-t
+// driverHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle to a driver instance.
 type driverHandle *_Ctype_struct__ze_driver_handle_t
 
-// deviceHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-handle-t
+// deviceHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle of device object.
 type deviceHandle *_Ctype_struct__ze_device_handle_t
 
-// schedHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-handle-t
+// schedHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device scheduler queue.
 type schedHandle *_Ctype_struct__zes_sched_handle_t
 
-// perfHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-perf-handle-t
+// perfHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device performance factors.
 type perfHandle *_Ctype_struct__zes_perf_handle_t
 
-// pwrHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pwr-handle-t
+// pwrHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device power domain.
 type pwrHandle *_Ctype_struct__zes_pwr_handle_t
 
-// freqHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-handle-t
+// freqHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device frequency domain.
 type freqHandle *_Ctype_struct__zes_freq_handle_t
 
-// engineHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-handle-t
+// engineHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device engine group.
 type engineHandle *_Ctype_struct__zes_engine_handle_t
 
-// standbyHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-handle-t
+// standbyHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device standby control.
 type standbyHandle *_Ctype_struct__zes_standby_handle_t
 
-// firmwareHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-firmware-handle-t
+// firmwareHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device firmware.
 type firmwareHandle *_Ctype_struct__zes_firmware_handle_t
 
-// memHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-handle-t
+// memHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device memory module.
 type memHandle *_Ctype_struct__zes_mem_handle_t
 
-// fabricPortHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-handle-t
+// fabricPortHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman fabric port.
 type fabricPortHandle *_Ctype_struct__zes_fabric_port_handle_t
 
-// tempHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-handle-t
+// tempHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device temperature sensor.
 type tempHandle *_Ctype_struct__zes_temp_handle_t
 
-// psuHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-handle-t
+// psuHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device power supply.
 type psuHandle *_Ctype_struct__zes_psu_handle_t
 
-// fanHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-handle-t
+// fanHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device fan.
 type fanHandle *_Ctype_struct__zes_fan_handle_t
 
-// ledHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-handle-t
+// ledHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device LED.
 type ledHandle *_Ctype_struct__zes_led_handle_t
 
-// rasHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-handle-t
+// rasHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device RAS error set.
 type rasHandle *_Ctype_struct__zes_ras_handle_t
 
-// diagHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-handle-t
+// diagHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device diagnostics test suite.
 type diagHandle *_Ctype_struct__zes_diag_handle_t
 
-// overclockHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-handle-t
+// overclockHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device overclock domain.
 type overclockHandle *_Ctype_struct__zes_overclock_handle_t
 
 // DriverExtensionProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-driver-extension-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#zes-driver-extension-properties-t
 //
 // Extension properties queried using zesDriverGetExtensionProperties.
 type DriverExtensionProperties struct {
@@ -128,7 +110,10 @@ type DriverExtensionProperties struct {
 }
 
 // DeviceBaseState is the device state type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-device-state-t
+//
+// Device state. To retrieve the current device state, please use zes_device_ext_state_t
+// as pNext.
 type DeviceBaseState struct {
 	stype    structureType
 	pnext    unsafe.Pointer
@@ -137,7 +122,7 @@ type DeviceBaseState struct {
 }
 
 // ResetProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-reset-properties-t
 //
 // Device reset properties.
 type ResetProperties struct {
@@ -148,7 +133,7 @@ type ResetProperties struct {
 }
 
 // Uuid declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-uuid-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-uuid-t
 //
 // Device universal unique id (UUID).
 type Uuid struct {
@@ -156,7 +141,7 @@ type Uuid struct {
 }
 
 // DeviceBaseProperties is the device properties type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-device-properties-t
 //
 // Device properties. To get OEM Serial ID, pNext member of this structure should
 // point to an instance of ${s}_oem_serial_id_ext_properties_t with its stype set
@@ -176,7 +161,7 @@ type DeviceBaseProperties struct {
 }
 
 // DeviceExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-device-ext-properties-t
 //
 // Device properties.
 type DeviceExtProperties struct {
@@ -188,7 +173,7 @@ type DeviceExtProperties struct {
 }
 
 // ProcessState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-process-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-process-state-t
 //
 // Contains information about a process that has an open connection with this device.
 //
@@ -205,7 +190,7 @@ type ProcessState struct {
 }
 
 // PciAddress declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-address-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-address-t
 //
 // PCI address.
 type PciAddress struct {
@@ -216,7 +201,7 @@ type PciAddress struct {
 }
 
 // PciSpeed declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-speed-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-speed-t
 //
 // PCI speed.
 type PciSpeed struct {
@@ -226,7 +211,7 @@ type PciSpeed struct {
 }
 
 // PciBaseProperties is the PCI properties type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-properties-t
 //
 // Static PCI properties.
 type PciBaseProperties struct {
@@ -241,7 +226,7 @@ type PciBaseProperties struct {
 }
 
 // PciBaseState is the PCI state type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-state-t
 //
 // Dynamic PCI state.
 type PciBaseState struct {
@@ -254,7 +239,7 @@ type PciBaseState struct {
 }
 
 // PciBarProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-bar-properties-t
 //
 // Properties of a pci bar.
 type PciBarProperties struct {
@@ -267,7 +252,7 @@ type PciBarProperties struct {
 }
 
 // PciBarProperties12 declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-bar-properties-1-2-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-bar-properties-1-2-t
 //
 // Properties of a pci bar, including the resizable bar.
 type PciBarProperties12 struct {
@@ -283,7 +268,7 @@ type PciBarProperties12 struct {
 }
 
 // PciStats declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-stats-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-stats-t
 //
 // PCI stats counters.
 //
@@ -303,7 +288,7 @@ type PciStats struct {
 }
 
 // OverclockProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-overclock-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/overclock.html#zes-overclock-properties-t
 //
 // Overclock properties.
 //
@@ -319,7 +304,7 @@ type OverclockProperties struct {
 }
 
 // ControlProperty declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-control-property-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/overclock.html#zes-control-property-t
 //
 // Overclock Control properties.
 //
@@ -334,7 +319,7 @@ type ControlProperty struct {
 }
 
 // VfProperty declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-vf-property-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/overclock.html#zes-vf-property-t
 //
 // Overclock VF properties.
 //
@@ -350,7 +335,7 @@ type VfProperty struct {
 }
 
 // DiagTest declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-test-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/diagnostics.html#zes-diag-test-t
 //
 // Diagnostic test.
 type DiagTest struct {
@@ -359,7 +344,7 @@ type DiagTest struct {
 }
 
 // DiagProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-diag-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/diagnostics.html#zes-diag-properties-t
 //
 // Diagnostics test suite properties.
 type DiagProperties struct {
@@ -373,7 +358,7 @@ type DiagProperties struct {
 }
 
 // DeviceEccDesc declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-desc-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-device-ecc-desc-t
 //
 // ECC State Descriptor.
 type DeviceEccDesc struct {
@@ -384,7 +369,7 @@ type DeviceEccDesc struct {
 }
 
 // DeviceEccProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-device-ecc-properties-t
 //
 // ECC State.
 type DeviceEccProperties struct {
@@ -397,7 +382,7 @@ type DeviceEccProperties struct {
 }
 
 // EngineBaseProperties is the engine properties type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/engine.html#zes-engine-properties-t
 //
 // Engine group properties.
 type EngineBaseProperties struct {
@@ -410,7 +395,7 @@ type EngineBaseProperties struct {
 }
 
 // EngineStats declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-stats-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/engine.html#zes-engine-stats-t
 //
 // Engine activity counters.
 //
@@ -431,7 +416,7 @@ type EngineStats struct {
 }
 
 // FabricPortId declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-id-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-id-t
 //
 // Unique identifier for a fabric port.
 //
@@ -449,7 +434,7 @@ type FabricPortId struct {
 }
 
 // FabricPortSpeed declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-speed-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-speed-t
 //
 // Fabric port speed in one direction.
 type FabricPortSpeed struct {
@@ -459,7 +444,7 @@ type FabricPortSpeed struct {
 }
 
 // FabricPortProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-properties-t
 //
 // Fabric port properties.
 type FabricPortProperties struct {
@@ -474,7 +459,7 @@ type FabricPortProperties struct {
 }
 
 // FabricLinkType declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-link-type-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-link-type-t
 //
 // Provides information about the fabric link attached to a port.
 type FabricLinkType struct {
@@ -482,7 +467,7 @@ type FabricLinkType struct {
 }
 
 // FabricPortConfig declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-config-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-config-t
 //
 // Fabric port configuration.
 type FabricPortConfig struct {
@@ -494,7 +479,7 @@ type FabricPortConfig struct {
 }
 
 // FabricPortState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-state-t
 //
 // Fabric port state.
 type FabricPortState struct {
@@ -509,7 +494,7 @@ type FabricPortState struct {
 }
 
 // FabricPortThroughput declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-throughput-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-throughput-t
 //
 // Fabric port throughput.
 type FabricPortThroughput struct {
@@ -519,7 +504,7 @@ type FabricPortThroughput struct {
 }
 
 // FabricPortErrorCounters declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-error-counters-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-error-counters-t
 //
 // Fabric Port Error Counters.
 type FabricPortErrorCounters struct {
@@ -532,7 +517,7 @@ type FabricPortErrorCounters struct {
 }
 
 // FanSpeed declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fan.html#zes-fan-speed-t
 //
 // Fan speed.
 type FanSpeed struct {
@@ -541,7 +526,7 @@ type FanSpeed struct {
 }
 
 // FanTempSpeed declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-temp-speed-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fan.html#zes-fan-temp-speed-t
 //
 // Fan temperature/speed pair.
 type FanTempSpeed struct {
@@ -550,7 +535,7 @@ type FanTempSpeed struct {
 }
 
 // FanSpeedTable declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-speed-table-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fan.html#zes-fan-speed-table-t
 //
 // Fan speed table.
 type FanSpeedTable struct {
@@ -559,7 +544,7 @@ type FanSpeedTable struct {
 }
 
 // FanProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fan.html#zes-fan-properties-t
 //
 // Fan properties.
 type FanProperties struct {
@@ -576,7 +561,7 @@ type FanProperties struct {
 }
 
 // FanConfig declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fan-config-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fan.html#zes-fan-config-t
 //
 // Fan configuration.
 type FanConfig struct {
@@ -588,7 +573,7 @@ type FanConfig struct {
 }
 
 // FirmwareProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-firmware-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/firmware.html#zes-firmware-properties-t
 //
 // Firmware properties.
 type FirmwareProperties struct {
@@ -603,7 +588,7 @@ type FirmwareProperties struct {
 }
 
 // FreqProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/frequency.html#zes-freq-properties-t
 //
 // Frequency properties.
 //
@@ -625,7 +610,7 @@ type FreqProperties struct {
 }
 
 // FreqRange declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-range-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/frequency.html#zes-freq-range-t
 //
 // Frequency range between which the hardware can operate.
 //
@@ -640,7 +625,7 @@ type FreqRange struct {
 }
 
 // FreqState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/frequency.html#zes-freq-state-t
 //
 // Frequency state.
 type FreqState struct {
@@ -656,7 +641,7 @@ type FreqState struct {
 }
 
 // FreqThrottleTime declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-time-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/frequency.html#zes-freq-throttle-time-t
 //
 // Frequency throttle time snapshot.
 //
@@ -669,7 +654,7 @@ type FreqThrottleTime struct {
 }
 
 // LedProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/led.html#zes-led-properties-t
 //
 // LED properties.
 type LedProperties struct {
@@ -683,7 +668,7 @@ type LedProperties struct {
 }
 
 // LedColor declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-color-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/led.html#zes-led-color-t
 //
 // LED color.
 type LedColor struct {
@@ -693,7 +678,7 @@ type LedColor struct {
 }
 
 // LedState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-led-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/led.html#zes-led-state-t
 //
 // LED state.
 type LedState struct {
@@ -704,7 +689,7 @@ type LedState struct {
 }
 
 // MemBaseProperties is the memory properties type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/memory.html#zes-mem-properties-t
 //
 // Memory properties. To get the memory vendor ID and memory vendor name, pNext
 // member of this structure should point to an instance of zes_memory_vendor_info_ext_properties_t
@@ -722,7 +707,7 @@ type MemBaseProperties struct {
 }
 
 // MemState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/memory.html#zes-mem-state-t
 //
 // Memory state - health, allocated.
 //
@@ -736,7 +721,7 @@ type MemState struct {
 }
 
 // MemBandwidth declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/memory.html#zes-mem-bandwidth-t
 //
 // Memory bandwidth.
 //
@@ -757,7 +742,7 @@ type MemBandwidth struct {
 }
 
 // PerfProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-perf-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/performance_factor.html#zes-perf-properties-t
 //
 // Static information about a Performance Factor domain.
 type PerfProperties struct {
@@ -770,7 +755,7 @@ type PerfProperties struct {
 }
 
 // PowerBaseProperties is the power properties type declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/power.html#zes-power-properties-t
 //
 // Properties related to device power settings.
 type PowerBaseProperties struct {
@@ -786,7 +771,7 @@ type PowerBaseProperties struct {
 }
 
 // PowerEnergyCounter declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-energy-counter-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/power.html#zes-power-energy-counter-t
 //
 // Energy counter snapshot.
 //
@@ -798,7 +783,7 @@ type PowerEnergyCounter struct {
 }
 
 // EnergyThreshold declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-energy-threshold-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/power.html#zes-energy-threshold-t
 //
 // Energy threshold.
 //
@@ -811,7 +796,7 @@ type EnergyThreshold struct {
 }
 
 // PsuProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/psu.html#zes-psu-properties-t
 //
 // Static properties of the power supply.
 type PsuProperties struct {
@@ -824,7 +809,7 @@ type PsuProperties struct {
 }
 
 // PsuState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-psu-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/psu.html#zes-psu-state-t
 //
 // Dynamic state of the power supply.
 type PsuState struct {
@@ -837,7 +822,7 @@ type PsuState struct {
 }
 
 // RasProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/ras.html#zes-ras-properties-t
 //
 // RAS properties.
 type RasProperties struct {
@@ -850,7 +835,7 @@ type RasProperties struct {
 }
 
 // RasState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/ras.html#zes-ras-state-t
 //
 // RAS error details.
 type RasState struct {
@@ -860,7 +845,7 @@ type RasState struct {
 }
 
 // RasConfig declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-config-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/ras.html#zes-ras-config-t
 //
 // RAS error configuration - thresholds used for triggering RAS events
 // (ZES_EVENT_TYPE_FLAG_RAS_CORRECTABLE_ERRORS, ZES_EVENT_TYPE_FLAG_RAS_UNCORRECTABLE_ERRORS).
@@ -882,7 +867,7 @@ type RasConfig struct {
 }
 
 // SchedProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/scheduler.html#zes-sched-properties-t
 //
 // Properties related to scheduler component.
 type SchedProperties struct {
@@ -897,7 +882,7 @@ type SchedProperties struct {
 }
 
 // SchedTimeoutProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-timeout-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-sched-timeout-properties-t
 //
 // Configuration for timeout scheduler mode (ZES_SCHED_MODE_TIMEOUT).
 type SchedTimeoutProperties struct {
@@ -907,7 +892,7 @@ type SchedTimeoutProperties struct {
 }
 
 // SchedTimesliceProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-sched-timeslice-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-sched-timeslice-properties-t
 //
 // Configuration for timeslice scheduler mode (ZES_SCHED_MODE_TIMESLICE).
 type SchedTimesliceProperties struct {
@@ -918,7 +903,7 @@ type SchedTimesliceProperties struct {
 }
 
 // StandbyProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-standby-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/standby.html#zes-standby-properties-t
 //
 // Standby hardware component properties.
 type StandbyProperties struct {
@@ -931,7 +916,7 @@ type StandbyProperties struct {
 }
 
 // TempProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/temperature.html#zes-temp-properties-t
 //
 // Temperature sensor properties.
 type TempProperties struct {
@@ -948,7 +933,7 @@ type TempProperties struct {
 }
 
 // TempThreshold declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-threshold-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/temperature.html#zes-temp-threshold-t
 //
 // Temperature sensor threshold.
 type TempThreshold struct {
@@ -958,7 +943,7 @@ type TempThreshold struct {
 }
 
 // TempConfig declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-temp-config-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/temperature.html#zes-temp-config-t
 //
 // Temperature configuration - which events should be triggered and the trigger
 // conditions.
@@ -971,7 +956,7 @@ type TempConfig struct {
 }
 
 // PowerLimitExtDesc declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-limit-ext-desc-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/power.html#zes-power-limit-ext-desc-t
 //
 // Device power/current limit descriptor.
 type PowerLimitExtDesc struct {
@@ -990,7 +975,7 @@ type PowerLimitExtDesc struct {
 }
 
 // PowerExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-ext-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/power.html#zes-power-ext-properties-t
 //
 // Extension properties related to device power settings.
 //
@@ -1008,7 +993,7 @@ type PowerExtProperties struct {
 }
 
 // EngineExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-ext-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/engine.html#zes-engine-ext-properties-t
 //
 // Extension properties related to Engine Groups.
 //
@@ -1023,7 +1008,7 @@ type EngineExtProperties struct {
 }
 
 // DeviceEccDefaultPropertiesExt declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ecc-default-properties-ext-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-device-ecc-default-properties-ext-t
 //
 // This structure may be passed to zesDeviceGetEccState as pNext member of
 // zes_device_ecc_properties_t.
@@ -1035,7 +1020,7 @@ type DeviceEccDefaultPropertiesExt struct {
 }
 
 // PciLinkSpeedDowngradeExtState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-pci-link-speed-downgrade-ext-state-t
 //
 // Query PCIe downgrade status.
 //
@@ -1048,7 +1033,7 @@ type PciLinkSpeedDowngradeExtState struct {
 }
 
 // PciLinkSpeedDowngradeExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-speed-downgrade-ext-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-pci-link-speed-downgrade-ext-properties-t
 //
 // Query PCIe downgrade capability.
 //
@@ -1061,7 +1046,7 @@ type PciLinkSpeedDowngradeExtProperties struct {
 }
 
 // DeviceExtState declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-state-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-device-ext-state-t
 //
 // Extension properties for Device State.
 //
@@ -1078,7 +1063,7 @@ type DeviceExtState struct {
 }
 
 // oemSerialIdExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-oem-serial-id-ext-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-oem-serial-id-ext-properties-t
 //
 // OEM Serial ID Properties structure.
 //
@@ -1094,7 +1079,7 @@ type oemSerialIdExtProperties struct {
 }
 
 // memoryVendorInfoExtProperties declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-memory-vendor-info-ext-properties-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/memory.html#zes-memory-vendor-info-ext-properties-t
 //
 // Memory Vendor Info Extension Properties structure.
 //
@@ -1111,67 +1096,67 @@ type memoryVendorInfoExtProperties struct {
 }
 
 // InitFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-init-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/global.html#zes-init-flags-t
 //
 // Supported sysman initialization flags.
 type InitFlags InitFlag
 
 // EngineTypeFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-type-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-engine-type-flags-t
 //
 // Types of accelerator engines.
 type EngineTypeFlags EngineTypeFlag
 
 // ResetReasonFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-reset-reason-flags-t
 //
 // Device reset reasons.
 type ResetReasonFlags ResetReasonFlag
 
 // DevicePropertyFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-device-property-flags-t
 //
 // Supported device property flags.
 type DevicePropertyFlags DevicePropertyFlag
 
 // PciLinkQualIssueFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-qual-issue-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-link-qual-issue-flags-t
 //
 // PCI link quality degradation reasons.
 type PciLinkQualIssueFlags PciLinkQualIssueFlag
 
 // PciLinkStabIssueFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-link-stab-issue-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-pci-link-stab-issue-flags-t
 //
 // PCI link stability issues.
 type PciLinkStabIssueFlags PciLinkStabIssueFlag
 
 // EventTypeFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#zes-event-type-flags-t
 //
 // Event types.
 type EventTypeFlags EventTypeFlag
 
 // FabricPortQualIssueFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-qual-issue-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-qual-issue-flags-t
 //
 // Fabric port quality degradation reasons.
 type FabricPortQualIssueFlags FabricPortQualIssueFlag
 
 // FabricPortFailureFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-fabric-port-failure-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#zes-fabric-port-failure-flags-t
 //
 // Fabric port failure reasons.
 type FabricPortFailureFlags FabricPortFailureFlag
 
 // FreqThrottleReasonFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-throttle-reason-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/frequency.html#zes-freq-throttle-reason-flags-t
 //
 // Frequency throttle reasons.
 type FreqThrottleReasonFlags FreqThrottleReasonFlag
 
 // DeviceStateExtFlags declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-ext-flags-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/device.html#zes-device-state-ext-flags-t
 //
 // Device state flags.
 type DeviceStateExtFlags DeviceStateExtFlag

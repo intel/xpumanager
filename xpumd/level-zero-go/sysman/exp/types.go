@@ -3,14 +3,13 @@
 
 package exp
 
-// rasHandle declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-handle-t
+// rasHandle is a handle type used by the Level Zero sysman API.
 //
 // Handle for a Sysman device RAS error set.
 type rasHandle *_Ctype_struct__zes_ras_handle_t
 
 // RasStateExp declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-state-exp-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#zes-ras-state-exp-t
 //
 // Extension structure for providing RAS error counters for different error sets.
 type RasStateExp struct {

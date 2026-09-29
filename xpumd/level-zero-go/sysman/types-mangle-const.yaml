@@ -7,16 +7,77 @@ options:
   doxygenPath: xml/zes__api_8h.xml
 
 types:
-  - name: "*"
-    newComment: |-
+  # A non-matching rule to provide a default comment to use for other rules.
+  - name: "_"
+    newComment: &linked |-
       {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/{{ .DocPage }}#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
+  # Default rule to convert int32 to uint32 for all types.
+  - name: "*"
     typeAssert: int32
     newType: uint32
+
+  # Type-specific rules to set the correct link to the online documentation.
+  # Order matters: when several rules match, the last one wins.
+  - names: ["Fabric*"]
+    docPage: apis/fabric_port.html
+    newComment: *linked
+  - names: ["Fan*"]
+    docPage: apis/fan.html
+    newComment: *linked
+  - names: ["Freq*"]
+    docPage: apis/frequency.html
+    newComment: *linked
+  - names: ["Mem*"]
+    docPage: apis/memory.html
+    newComment: *linked
+  - names: ["Psu*"]
+    docPage: apis/psu.html
+    newComment: *linked
+  - names: ["Standby*"]
+    docPage: apis/standby.html
+    newComment: *linked
+  - names: ["Temp*"]
+    docPage: apis/temperature.html
+    newComment: *linked
+  - names: ["Init*"]
+    docPage: apis/global.html
+    newComment: *linked
+  - names: ["Diag*"]
+    docPage: apis/diagnostics.html
+    newComment: *linked
+  - names: ["Event*"]
+    docPage: apis/driver.html
+    newComment: *linked
+  - names: ["Engine*"]
+    docPage: apis/engine.html
+    newComment: *linked
+  - names: ["Power*", "LimitUnit"]
+    docPage: apis/power.html
+    newComment: *linked
+  - names: ["Overclock*", "Control*", "Pending*", "Vf*"]
+    docPage: apis/overclock.html
+    newComment: *linked
+  - names: ["Ras*"]
+    docPage: apis/ras.html
+    newComment: *linked
+  - names: ["structureType"]
+    docPage: apis/data_types.html
+    newComment: *linked
+  - names: ["Sched*", "Device*", "Pci*", "Reset*", "Repair*", "FreqDomain", "OverclockDomain", "EngineTypeFlag"]
+    docPage: apis/device-2.html
+    newComment: *linked
+  - names: ["Device*Ext*"]
+    docPage: extensions/device.html
+    newComment: *linked
+  - names: ["*Ext*Version"]
+    docPage: extensions/data_types.html
+    newComment: *linked
 
 values:
   - name: "*"

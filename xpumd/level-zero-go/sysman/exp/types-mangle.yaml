@@ -25,8 +25,22 @@ structs:
 types:
   - name: "*"
     newComment: |-
+      {{ .Name }} is declared in the Level Zero sysman API.
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: "Ras*"
+    newComment: |-
       {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#{{ .DocAnchor }}
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+  - name: "*Handle"
+    newComment: |-
+      {{ .Name }} is a handle type used by the Level Zero sysman API.
       {{- with doxygen . }}
 
       {{ . }}

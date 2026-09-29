@@ -239,85 +239,171 @@ structs:
         newType: MemLoc
 
 types:
-  - name: "*"
-    newComment: |-
+  # A non-matching rule to provide a default comment to use for other rules.
+  - name: "_"
+    newComment: &linked |-
       {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/{{ .DocPage }}#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
+  # Type-specific rules to set the correct link to the online documentation.
+  # Order matters: when several rules match, the last one wins.
+  - names: ["Fabric*"]
+    docPage: apis/fabric_port.html
+    newComment: *linked
+  - names: ["Fan*"]
+    docPage: apis/fan.html
+    newComment: *linked
+  - names: ["Freq*"]
+    docPage: apis/frequency.html
+    newComment: *linked
+  - names: ["Led*"]
+    docPage: apis/led.html
+    newComment: *linked
+  - names: ["Mem*"]
+    docPage: apis/memory.html
+    newComment: *linked
+  - names: ["Perf*"]
+    docPage: apis/performance_factor.html
+    newComment: *linked
+  - names: ["Psu*"]
+    docPage: apis/psu.html
+    newComment: *linked
+  - names: ["Standby*"]
+    docPage: apis/standby.html
+    newComment: *linked
+  - names: ["Temp*"]
+    docPage: apis/temperature.html
+    newComment: *linked
+  - names: ["Init*"]
+    docPage: apis/global.html
+    newComment: *linked
+  - names: ["Firmware*"]
+    docPage: apis/firmware.html
+    newComment: *linked
+  - names: ["Diag*"]
+    docPage: apis/diagnostics.html
+    newComment: *linked
+  - names: ["Ras*"]
+    docPage: apis/ras.html
+    newComment: *linked
+  - names: ["Driver*", "Event*"]
+    docPage: apis/driver.html
+    newComment: *linked
+  - names: ["Engine*"]
+    docPage: apis/engine.html
+    newComment: *linked
+  - names: ["Power*", "EnergyThreshold"]
+    docPage: apis/power.html
+    newComment: *linked
+  - names: ["Overclock*", "Control*", "Vf*"]
+    docPage: apis/overclock.html
+    newComment: *linked
+  - names: ["Sched*"]
+    docPage: apis/scheduler.html
+    newComment: *linked
+  - names: ["Device*", "Pci*", "Reset*", "Process*", "Uuid", "SchedTime*", "EngineTypeFlags"]
+    docPage: apis/device-2.html
+    newComment: *linked
+  - names: ["Device*Ext*", "PciLinkSpeed*", "oemSerialIdExtProperties"]
+    docPage: extensions/device.html
+    newComment: *linked
+  - names: ["EngineExtProperties"]
+    docPage: extensions/engine.html
+    newComment: *linked
+  - names: ["memoryVendorInfoExtProperties"]
+    docPage: extensions/memory.html
+    newComment: *linked
+  - names: ["Power*Ext*"]
+    docPage: extensions/power.html
+    newComment: *linked
+
+  - name: "*Handle"
+    newComment: |-
+      {{ .Name }} is a handle type used by the Level Zero sysman API.
+      {{- with doxygen . }}
+
+      {{ . }}
+      {{- end -}}
+
   - name: DeviceBaseProperties
     origName: zes_device_properties_t
     newComment: |-
       DeviceBaseProperties is the device properties type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: DeviceBaseState
+    origName: zes_device_state_t
     newComment: |-
       DeviceBaseState is the device state type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: EngineBaseProperties
     origName: zes_engine_properties_t
     newComment: |-
       EngineBaseProperties is the engine properties type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/engine.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: MemBaseProperties
     origName: zes_mem_properties_t
     newComment: |-
       MemBaseProperties is the memory properties type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/memory.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: PciBaseProperties
     origName: zes_pci_properties_t
     newComment: |-
       PciBaseProperties is the PCI properties type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: PciBaseState
     origName: zes_pci_state_t
     newComment: |-
       PciBaseState is the PCI state type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: PowerBaseProperties
     origName: zes_power_properties_t
     newComment: |-
       PowerBaseProperties is the power properties type declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
+      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/power.html#{{ .DocAnchor }}
       {{- with doxygen . }}
 
       {{ . }}
       {{- end -}}
+
   - name: PciBarProperties12
     origName: zes_pci_bar_properties_1_2_t
-    newComment: |-
-      {{ .Name }} declared in:
-      https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#{{ .DocAnchor }}
-      {{- with doxygen . }}
+    docPage: apis/device-2.html
+    newComment: *linked
 
-      {{ . }}
-      {{- end -}}
   - name: InitFlags
     newType: InitFlag
   - name: EngineTypeFlags
