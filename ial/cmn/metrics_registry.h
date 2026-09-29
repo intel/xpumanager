@@ -50,7 +50,32 @@ template <typename Enum> [[nodiscard]] constexpr auto toUnderlying(Enum e) noexc
 	return s.substr(first, last - first + 1);
 }
 
+/** Opt-in trait: specialize to `true` to pick up the bitwise operators below for an enum. */
+template <typename Enum> inline constexpr bool IS_BITMASK_ENUM = false;
+
 } // namespace detail
+
+/**
+ * Enum types that opt into @ref detail::IS_BITMASK_ENUM get `operator|`, `operator&`, and
+ * `hasFlag` for free. Kept as an explicit opt-in (rather than a bare unconstrained template)
+ * so unrelated enum classes such as @ref MetricSource never silently gain bitwise operators.
+ */
+template <typename Enum>
+concept BitmaskEnum = detail::IS_BITMASK_ENUM<Enum>;
+
+template <BitmaskEnum Enum> [[nodiscard]] constexpr Enum operator|(Enum a, Enum b) noexcept
+{
+	// NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange): BitmaskEnum types are bitmasks.
+	return static_cast<Enum>(detail::toUnderlying(a) | detail::toUnderlying(b));
+}
+template <BitmaskEnum Enum> [[nodiscard]] constexpr Enum operator&(Enum a, Enum b) noexcept
+{
+	return static_cast<Enum>(detail::toUnderlying(a) & detail::toUnderlying(b));
+}
+template <BitmaskEnum Enum> [[nodiscard]] constexpr bool hasFlag(Enum field, Enum mask) noexcept
+{
+	return (field & mask) != Enum::NONE;
+}
 
 // ── MetricGroup: display-section bitmask (-d style) ─────────────────────────────
 
@@ -71,19 +96,11 @@ enum class MetricGroup : uint32_t
 	ALL = ~0U,
 };
 
-[[nodiscard]] constexpr MetricGroup operator|(MetricGroup a, MetricGroup b) noexcept
-{
-	// NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange): MetricGroup is a bitmask enum.
-	return static_cast<MetricGroup>(detail::toUnderlying(a) | detail::toUnderlying(b));
-}
-[[nodiscard]] constexpr MetricGroup operator&(MetricGroup a, MetricGroup b) noexcept
-{
-	return static_cast<MetricGroup>(detail::toUnderlying(a) & detail::toUnderlying(b));
-}
-[[nodiscard]] constexpr bool hasGroup(MetricGroup field, MetricGroup mask) noexcept
-{
-	return (field & mask) != MetricGroup::NONE;
-}
+namespace detail {
+template <> inline constexpr bool IS_BITMASK_ENUM<MetricGroup> = true;
+} // namespace detail
+
+[[nodiscard]] constexpr bool hasGroup(MetricGroup field, MetricGroup mask) noexcept { return hasFlag(field, mask); }
 
 // ── MetricSource ───────────────────────────────────────────────────────────────
 
@@ -92,6 +109,36 @@ enum class MetricSource
 	Static, /**< Device identity / firmware — cheap, no sampling delay */
 	Live,	/**< Runtime telemetry — may require a measurement window */
 };
+
+// ── MetricInput: which raw sampling a metric actually consumes ──────────────────
+//
+// populateMetricCacheBegin/End sample one block of raw data per flag. Sampling is
+// gated on the union of the selected fields' inputs so a query pays only for the
+// data it reads: without this, `--query-gpu=name` — a static identity field —
+// still opened an OA metric streamer and slept out its monitor window.
+
+enum class MetricInput : uint32_t
+{
+	NONE = 0,
+	ENGINE = 1U << 0, /**< per-engine busyness counters (utilization.compute/render/media/copy/gpu) */
+	POWER = 1U << 1,  /**< energy counters for both domains (power.draw*, energy.consumed*) */
+	PCIE = 1U << 2,	  /**< PCIe byte/replay counters and properties (pcie.*.throughput, pcie.replay) */
+	MEMBW = 1U << 3,  /**< memory read/write counters (memory.*.bandwidth, memory.bandwidth.utilization) */
+	/**
+	 * EU active/stall/idle via the OA metric streamer. By far the most expensive flag: it
+	 * activates a metric group, opens a streamer, and blocks for a fixed monitor window on
+	 * every device, every tick. Set it only on fields that read @ref MetricCache::euSample.
+	 */
+	EU = 1U << 4,
+	FDINFO = 1U << 5, /**< /proc/<pid>/fdinfo scan backing the unprivileged utilization fallback */
+	ALL = ~0U,
+};
+
+namespace detail {
+template <> inline constexpr bool IS_BITMASK_ENUM<MetricInput> = true;
+} // namespace detail
+
+[[nodiscard]] constexpr bool hasInput(MetricInput field, MetricInput mask) noexcept { return hasFlag(field, mask); }
 
 // ── MetricCache: one set of before/after delta samples per device per tick ────
 //
@@ -155,6 +202,13 @@ struct EngineCache
 
 struct MetricCache
 {
+	/**
+	 * Which raw sampling this cache was built with; see @ref MetricInput. Set once by
+	 * @ref populateMetricCacheBegin (or @ref populateMetricCacheContinuous) and read back by
+	 * @ref populateMetricCacheEnd, so the two halves of a sample can never disagree about what
+	 * to skip.
+	 */
+	MetricInput inputs = MetricInput::NONE;
 	/** Utilization derived from the raw samples below by @ref populateMetricCacheEnd. */
 	EngineCache engines{};
 	/** One busyness counter reading per engine group the device exposes, per tile. */
@@ -211,21 +265,28 @@ struct MetricCache
  * @param window  How long to sleep between before- and after-samples. Defaults to
  *                @ref detail::SAMPLE_WINDOW. Pass a shorter value (e.g. zero) in unit tests
  *                to keep the suite fast.
- * @note         Blocks for approximately @p window. For multi-device use, prefer
- *               @ref populateMetricCacheBegin / @ref populateMetricCacheEnd to amortise
- *               the sleep across all devices.
+ * @param inputs   Which raw sampling to perform; see @ref MetricInput. Defaults to
+ *                @c ALL so callers that want every field need not enumerate them.
+ * @note         Blocks for approximately @p window, unless @p inputs is @c MetricInput::NONE,
+ *               in which case the sleep is skipped entirely since there is nothing to sample.
+ *               For multi-device use, prefer @ref populateMetricCacheBegin /
+ *               @ref populateMetricCacheEnd to amortise the sleep across all devices.
  */
-[[nodiscard]] MetricCache populateMetricCache(devInfo &dev, std::chrono::milliseconds window = detail::SAMPLE_WINDOW);
+[[nodiscard]] MetricCache populateMetricCache(devInfo &dev, std::chrono::milliseconds window = detail::SAMPLE_WINDOW,
+											  MetricInput inputs = MetricInput::ALL);
 
 /**
  * Take the "before" half of a delta sample. Returns immediately without sleeping.
  * Pair with @ref populateMetricCacheEnd after waiting at least @ref detail::SAMPLE_WINDOW.
  *
- * @param dev  Device to sample. Must not be null.
- * @return     A partially-populated MetricCache containing only before-samples.
- *             @c populated is @c false until @ref populateMetricCacheEnd is called.
+ * @param dev    Device to sample. Must not be null.
+ * @param inputs  Which raw sampling to perform; see @ref MetricInput. Stamped onto the returned
+ *               cache's @ref MetricCache::inputs, so the paired @ref populateMetricCacheEnd
+ *               call always samples the same set — it cannot be passed a different one.
+ * @return       A partially-populated MetricCache containing only before-samples.
+ *               @c populated is @c false until @ref populateMetricCacheEnd is called.
  */
-[[nodiscard]] MetricCache populateMetricCacheBegin(devInfo &dev);
+[[nodiscard]] MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs = MetricInput::ALL);
 
 /**
  * Take the "after" half of a delta sample and mark the cache as ready.
@@ -234,10 +295,13 @@ struct MetricCache
  *
  * @param dev    Device to sample. Must be the same device passed to the matching
  *               @ref populateMetricCacheBegin call.
- * @param cache  In/out. The MetricCache returned by @ref populateMetricCacheBegin.
+ * @param cache  In/out. The MetricCache returned by @ref populateMetricCacheBegin. Sampling is
+ *               gated on @c cache.inputs, which @ref populateMetricCacheBegin already set — there
+ *               is no separate @c inputs parameter here to fall out of sync with it.
  *               On return, all after-sample fields are written and
  *               @c cache.populated is set to @c true.
- * @note         All availability flags are recomputed from scratch on each call.
+ * @note         All availability flags are recomputed from scratch on each call. Flags for
+ *               sampling @c cache.inputs excludes stay @c false, so those metrics render @c N/A.
  *               @c powerAvail requires both @c populateMetricCacheBegin and this call
  *               to have produced valid, advancing timestamps.
  */
@@ -251,12 +315,17 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache);
  * @param dev   Device to sample. Must not be null.
  * @param prev  The cache from the previous iteration. After-samples are
  *              promoted to before-samples in the returned cache.
+ * @param inputs Which raw sampling to perform; see @ref MetricInput. Stamped onto the returned
+ *              cache the same way @ref populateMetricCacheBegin does, so should match the value
+ *              used to build @p prev — otherwise the promoted before-slots this tick asks
+ *              @ref populateMetricCacheEnd for were never actually sampled last tick.
  * @return      A fully-populated MetricCache representing the interval
  *              [prev's after-sample timestamp, now].
  * @pre         @p prev must have been produced by a prior call that set
  *              @c prev.populated == true.
  */
-[[nodiscard]] MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev);
+[[nodiscard]] MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev,
+														MetricInput inputs = MetricInput::ALL);
 
 // ── MetricValue ───────────────────────────────────────────────────────────────
 
@@ -275,6 +344,12 @@ struct QueryMetric
 	MetricSource source;
 	MetricGroup groups; /**< Bitmask of display sections this field belongs to */
 	/**
+	 * Raw sampling this field reads out of @ref MetricCache. Leave at @c NONE for fields whose
+	 * getter queries the HAL directly — selecting them then costs no sampling at all. A field
+	 * that reads a cache member without declaring the matching flag renders @c N/A.
+	 */
+	MetricInput inputs = MetricInput::NONE;
+	/**
 	 * Minimum column width for space-aligned output, in characters. Set this for fields whose
 	 * value is wider than the column header (e.g. a PCI BDF address); leaving it at 0 lets the
 	 * header text alone size the column, which truncates such values with an ellipsis.
@@ -282,6 +357,18 @@ struct QueryMetric
 	int minWidth = 0;
 	ze_result_t (*getter)(devInfo &d, MetricValue &out, const MetricCache &cache);
 };
+
+/**
+ * Union of the raw sampling required by @p fields.
+ *
+ * Pass the result to the @c populateMetricCache* functions so a query samples only what its
+ * selected fields read. An empty span yields @c MetricInput::NONE, for which sampling can be
+ * skipped outright.
+ *
+ * @param fields  Resolved metrics, as returned by @ref resolveQuery. Must not contain nulls.
+ * @return        Bitwise OR of every field's @c inputs.
+ */
+[[nodiscard]] MetricInput inputsOf(std::span<const QueryMetric *const> fields) noexcept;
 
 // ── Group name table (detail — not part of the public API) ──────────────────────
 
@@ -556,28 +643,33 @@ void emitMetrics(Output &output, std::span<const QueryMetric *> fields, std::spa
  *
  * All before-samples are taken for every device first, then a single
  * @ref detail::SAMPLE_WINDOW sleep is observed, then all after-samples are taken.
- * This keeps the total blocking time constant regardless of device count.
+ * This keeps the total blocking time constant regardless of device count. Sampling is
+ * skipped entirely when no selected field declares a @ref MetricInput (see @ref inputsOf) —
+ * this covers every @ref MetricSource::Static field, plus any @c Live field whose getter
+ * reads the HAL directly rather than the cache.
  *
- * Metrics tagged @ref MetricSource::Static skip sampling entirely.
  * Metrics whose getter returns a non-success result emit @c "N/A".
  *
  * @tparam Output  Any type satisfying @ref MetricOutput.
  * @param output   Sink that receives the structured results.
  * @param fields   Ordered list of metrics to evaluate. Must not contain null pointers.
  * @param devices  Devices to iterate over. May be empty.
- * @note  Blocks for approximately @ref detail::SAMPLE_WINDOW if any @c Live metric is selected.
+ * @note  Blocks for approximately @ref detail::SAMPLE_WINDOW only if at least one selected
+ *        field declares a @ref MetricInput.
  */
 template <MetricOutput Output>
 void runMetrics(Output &output, std::span<const QueryMetric *> fields, std::span<devInfo> devices)
 {
-	const bool hasLive =
-		std::ranges::any_of(fields, [](const QueryMetric *f) { return f->source == MetricSource::Live; });
+	// Gate on what the selected fields actually read, not merely on whether any of them is
+	// Live: a Live field whose getter queries the HAL directly (e.g. memory.used) needs no
+	// sampling at all, and must not drag in the measurement window or the OA streamer.
+	const MetricInput inputs = inputsOf(fields);
 
 	std::vector<MetricCache> caches(devices.size());
-	if (hasLive) {
+	if (inputs != MetricInput::NONE) {
 		const auto deadline = std::chrono::steady_clock::now() + detail::SAMPLE_WINDOW;
 		for (std::size_t i = 0; i < devices.size(); ++i) {
-			caches[i] = populateMetricCacheBegin(devices[i]);
+			caches[i] = populateMetricCacheBegin(devices[i], inputs);
 		}
 		std::this_thread::sleep_until(deadline);
 		for (std::size_t i = 0; i < devices.size(); ++i) {

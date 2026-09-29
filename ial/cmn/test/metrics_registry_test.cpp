@@ -898,6 +898,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 TEST_CASE("MetricCache default values are zero and all flags false")
 {
 	const MetricCache cache;
+	CHECK(cache.inputs == MetricInput::NONE);
 	// Availability flags
 	CHECK_FALSE(cache.populated);
 	CHECK_FALSE(cache.pcieAvail);
@@ -946,7 +947,191 @@ TEST_CASE("MetricCache default values are zero and all flags false")
 	CHECK(cache.euSample.euIdle == 0);
 }
 
+// ── inputsOf / MetricInput ─────────────────────────────────────────────────────
+
+TEST_CASE("inputsOf: empty field list needs no sampling") { CHECK(inputsOf({}) == MetricInput::NONE); }
+
+TEST_CASE("inputsOf: static identity fields need no sampling")
+{
+	// The whole point of the gating: selecting only these must not drag in the measurement
+	// window or the OA metric streamer.
+	for (const std::string_view name : {"name", "index", "uuid", "pci.bus_id", "driver_version"}) {
+		const auto fields = resolveQuery(name);
+		REQUIRE(fields.size() == 1);
+		CHECK(inputsOf(fields) == MetricInput::NONE);
+	}
+}
+
+TEST_CASE("inputsOf: fields whose getter queries the HAL directly need no sampling")
+{
+	for (const std::string_view name : {"temperature.gpu", "memory.used", "fan.speed", "clocks.current.graphics"}) {
+		const auto fields = resolveQuery(name);
+		REQUIRE(fields.size() == 1);
+		CHECK(inputsOf(fields) == MetricInput::NONE);
+	}
+}
+
+TEST_CASE("inputsOf: only EU fields request the OA metric streamer")
+{
+	for (const std::string_view name : {"eu.active", "eu.stall", "eu.idle"}) {
+		const auto fields = resolveQuery(name);
+		REQUIRE(fields.size() == 1);
+		CHECK(hasInput(inputsOf(fields), MetricInput::EU));
+	}
+	// utilization.gpu prefers EU active% and falls back to engine/fdinfo, so it needs all three.
+	const auto gpuUtil = resolveQuery("utilization.gpu");
+	REQUIRE(gpuUtil.size() == 1);
+	CHECK(hasInput(inputsOf(gpuUtil), MetricInput::EU));
+	CHECK(hasInput(inputsOf(gpuUtil), MetricInput::ENGINE));
+	CHECK(hasInput(inputsOf(gpuUtil), MetricInput::FDINFO));
+
+	// The other engine classes have no EU path and must not pay for the streamer.
+	for (const std::string_view name : {"utilization.compute", "utilization.render", "utilization.copy"}) {
+		const auto fields = resolveQuery(name);
+		REQUIRE(fields.size() == 1);
+		CHECK_FALSE(hasInput(inputsOf(fields), MetricInput::EU));
+		CHECK(hasInput(inputsOf(fields), MetricInput::ENGINE));
+	}
+}
+
+TEST_CASE("inputsOf: each delta-sampled group is requested by its own fields")
+{
+	struct Expect
+	{
+		std::string_view field;
+		MetricInput input;
+	};
+	for (const auto &[field, input] : std::to_array<Expect>({
+			 {"power.draw", MetricInput::POWER},
+			 {"energy.consumed", MetricInput::POWER},
+			 {"pcie.tx.throughput", MetricInput::PCIE},
+			 {"pcie.replay.counter", MetricInput::PCIE},
+			 {"memory.read.bandwidth", MetricInput::MEMBW},
+			 {"memory.bandwidth.utilization", MetricInput::MEMBW},
+		 })) {
+		const auto fields = resolveQuery(field);
+		REQUIRE(fields.size() == 1);
+		CHECK(hasInput(inputsOf(fields), input));
+	}
+}
+
+TEST_CASE("inputsOf: unions the inputs of every selected field")
+{
+	const auto fields = resolveQuery("temperature.gpu,power.draw,eu.active");
+	REQUIRE(fields.size() == 3);
+	const MetricInput inputs = inputsOf(fields);
+	CHECK(hasInput(inputs, MetricInput::POWER));
+	CHECK(hasInput(inputs, MetricInput::EU));
+}
+
+TEST_CASE("inputsOf: a metric declaring an input is always Live")
+{
+	// A Static field is by definition not derived from a sampling window, so declaring an input
+	// on one would make the registry self-contradictory.
+	for (const QueryMetric &m : getQueryMetrics()) {
+		if (m.inputs != MetricInput::NONE) {
+			CHECK(m.source == MetricSource::Live);
+		}
+	}
+}
+
 // ── populateMetricCache* ──────────────────────────────────────────────────────
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheBegin stamps inputs onto the returned cache")
+{
+	// populateMetricCacheEnd takes no inputs parameter of its own: it must read whatever
+	// populateMetricCacheBegin stamped onto the cache, so the two halves cannot disagree.
+	const MetricCache cache = populateMetricCacheBegin(di, MetricInput::EU | MetricInput::POWER);
+	CHECK(cache.inputs == (MetricInput::EU | MetricInput::POWER));
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheBegin: MetricInput::NONE skips all sampling")
+{
+	// Nothing is read, so nothing is sampled: the cache stays at its default state.
+	const MetricCache cache = populateMetricCacheBegin(di, MetricInput::NONE);
+	CHECK_FALSE(cache.populated);
+	CHECK_FALSE(cache.pcieAvail);
+	CHECK(cache.engineSamplesBefore.empty());
+	CHECK(cache.fdinfoSnap.empty());
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheEnd: excluded sampling leaves its availability flag false")
+{
+	MetricCache cache = populateMetricCacheBegin(di, MetricInput::NONE);
+	populateMetricCacheEnd(di, cache);
+
+	CHECK(cache.populated);
+	CHECK_FALSE(cache.engineAvail);
+	CHECK_FALSE(cache.pcieAvail);
+	CHECK_FALSE(cache.memAvail);
+	CHECK_FALSE(cache.euAvail);
+	CHECK_FALSE(cache.powerAvail);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheEnd: stale EU data is cleared even when EU is not requested")
+{
+	// Gating must not become a way to leak a previous tick's EU sample through.
+	MetricCache cache;
+	cache.inputs = MetricInput::NONE;
+	cache.euAvail = true;
+	cache.euSample.euActive = 999;
+
+	populateMetricCacheEnd(di, cache);
+
+	CHECK_FALSE(cache.euAvail);
+	CHECK(cache.euSample.euActive == 0);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "populateMetricCacheEnd: stale power snapshots are cleared even when POWER is not requested")
+{
+	// The power getters (e.g. energy.consumed) read cardPowerAfter/gpuPowerAfter directly
+	// rather than checking powerAvail, so a stale snapshot from a previous tick must be
+	// cleared, not merely left behind an avail flag that those getters never look at.
+	MetricCache cache;
+	cache.inputs = MetricInput::NONE;
+	cache.cardPowerAfter = {.energy = 12345, .ts = 999};
+	cache.gpuPowerAfter = {.energy = 6789, .ts = 999};
+
+	populateMetricCacheEnd(di, cache);
+
+	CHECK(cache.cardPowerAfter.ts == 0);
+	CHECK(cache.gpuPowerAfter.ts == 0);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "populateMetricCacheEnd: stale memAvail/memAfter are cleared even when MEMBW is not requested")
+{
+	MetricCache cache;
+	cache.inputs = MetricInput::NONE;
+	cache.memAvail = true;
+	cache.memAfter = {.read = 111, .write = 222, .ts = 999};
+
+	populateMetricCacheEnd(di, cache);
+
+	CHECK_FALSE(cache.memAvail);
+	CHECK(cache.memAfter.ts == 0);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "populateMetricCacheEnd: stale fdinfo utilization is cleared even when FDINFO is not requested")
+{
+	// utilization.* getters check cache.fdinfoCompute etc. with has_value(), so a stale
+	// optional from a previous tick would render as real data instead of falling through.
+	MetricCache cache;
+	cache.inputs = MetricInput::NONE;
+	cache.fdinfoCompute = 42.0F;
+	cache.fdinfoRender = 42.0F;
+	cache.fdinfoMedia = 42.0F;
+	cache.fdinfoCopy = 42.0F;
+
+	populateMetricCacheEnd(di, cache);
+
+	CHECK_FALSE(cache.fdinfoCompute.has_value());
+	CHECK_FALSE(cache.fdinfoRender.has_value());
+	CHECK_FALSE(cache.fdinfoMedia.has_value());
+	CHECK_FALSE(cache.fdinfoCopy.has_value());
+}
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheBegin returns unpopulated cache")
 {
@@ -983,6 +1168,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 	// Simulate a cache that already holds EU data from a previous tick (e.g. the caller
 	// reuses a MetricCache rather than constructing a fresh one via populateMetricCacheBegin).
 	MetricCache cache;
+	cache.inputs = MetricInput::EU; // Request EU sampling so the HAL call below is actually attempted.
 	cache.euAvail = true;
 	cache.euSample.euActive = 999;
 	cache.euSample.euStall = 111;
@@ -1146,4 +1332,17 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCache one-shot wrapper retur
 	CHECK_FALSE(cache.euAvail);
 	// powerAvail requires advancing timestamps; zero device returns constant timestamps.
 	CHECK_FALSE(cache.powerAvail);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCache skips the sleep when MetricInput::NONE is requested")
+{
+	// A multi-second window would make this test visibly slow if the sleep were not skipped,
+	// since populateMetricCacheBegin is a no-op for MetricInput::NONE and there is nothing to
+	// wait on.
+	const auto start = std::chrono::steady_clock::now();
+	const MetricCache cache = populateMetricCache(di, std::chrono::seconds{5}, MetricInput::NONE);
+	const auto elapsed = std::chrono::steady_clock::now() - start;
+
+	CHECK(cache.populated);
+	CHECK(elapsed < std::chrono::seconds{1});
 }

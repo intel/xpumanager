@@ -196,7 +196,7 @@ TEST_SUITE("cmd_ps eu_available field")
 
 		// Call the production helper with EU data for device 0 only.
 		// An unbounded subspan regression would set procs[1].euAvailable.
-		const EuMetricsData eu{};       // zero EU values; scaleFactor defaults to 1000
+		const EuMetricsData eu{};		// zero EU values; scaleFactor defaults to 1000
 		const fdinfo::PidUtilMap empty; // no process activity — attribution is a no-op
 		applyDeviceEu(std::span<psInfo>{procs.data(), 1}, std::make_optional(eu), empty);
 

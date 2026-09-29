@@ -74,6 +74,7 @@ constexpr auto GPU = QueryMetric{
 				   "device, device-level is the tile average for multi-tile GPUs.",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::UTILIZATION,
+	.inputs = MetricInput::EU | MetricInput::ENGINE | MetricInput::FDINFO,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 		// Primary: EU active% (0-1000 per-mille → divide by 10 for %).
 		// Measures fraction of EU execution slots actively executing instructions,
@@ -107,6 +108,7 @@ constexpr auto COMPUTE =
 							   "device-level is the tile average for multi-tile GPUs",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
+				.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (const auto r = formatUtil(cache.engines.compute, out); r == ZE_RESULT_SUCCESS) {
 						return r;
@@ -127,6 +129,7 @@ constexpr auto RENDER =
 							   "device-level is the tile average for multi-tile GPUs",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
+				.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (const auto r = formatUtil(cache.engines.render, out); r == ZE_RESULT_SUCCESS) {
 						return r;
@@ -147,6 +150,7 @@ constexpr auto MEDIA = QueryMetric{
 				   "engines); per tile or device, device-level is the tile average for multi-tile GPUs",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::UTILIZATION,
+	.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 		if (const auto r = formatUtil(cache.engines.media, out); r == ZE_RESULT_SUCCESS) {
 			return r;
@@ -167,6 +171,7 @@ constexpr auto COPY =
 							   "device-level is the tile average for multi-tile GPUs",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::UTILIZATION,
+				.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (const auto r = formatUtil(cache.engines.copy, out); r == ZE_RESULT_SUCCESS) {
 						return r;

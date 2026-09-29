@@ -759,12 +759,13 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 	}
 
 	const std::size_t numDevices = deviceList.size();
+	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 
 	while (!quitToken.stop_requested()) {
 		std::this_thread::sleep_for(loopInterval);
 
 		for (std::size_t i = 0; i < numDevices; ++i) {
-			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i]);
+			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i], inputs);
 		}
 
 		metrics::runMetricsWithCaches(out, fields, std::span<devInfo>(deviceList),
@@ -845,9 +846,11 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	const std::size_t numDevices = deviceList.size();
 	std::vector<metrics::MetricCache> caches(numDevices);
 
+	const metrics::MetricInput inputs = metrics::inputsOf(fields);
+
 	const auto firstSampleDeadline = startTime + timing.interval;
 	for (std::size_t i = 0; i < numDevices; ++i) {
-		caches[i] = metrics::populateMetricCacheBegin(deviceList[i]);
+		caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs);
 	}
 	std::this_thread::sleep_until(firstSampleDeadline);
 	for (std::size_t i = 0; i < numDevices; ++i) {
@@ -868,7 +871,7 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 		const auto cycleStartTime = std::chrono::steady_clock::now();
 
 		for (std::size_t i = 0; i < numDevices; ++i) {
-			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i]);
+			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i], inputs);
 		}
 		metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>{fields},
 									  std::span<devInfo>(deviceList), std::span<const metrics::MetricCache>{caches});
@@ -1064,13 +1067,18 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 
 	const std::size_t numDevices = deviceList.size();
 	std::vector<metrics::MetricCache> caches(numDevices);
-	const auto sampleDeadline = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
-	for (std::size_t i = 0; i < numDevices; ++i) {
-		caches[i] = metrics::populateMetricCacheBegin(deviceList[i]);
-	}
-	std::this_thread::sleep_until(sampleDeadline);
-	for (std::size_t i = 0; i < numDevices; ++i) {
-		metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
+	// Only sample what the selected fields read: a query of nothing but static identity or
+	// direct-HAL fields then skips the measurement window and the OA streamer entirely.
+	const metrics::MetricInput inputs = metrics::inputsOf(fields);
+	if (inputs != metrics::MetricInput::NONE) {
+		const auto sampleDeadline = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
+		for (std::size_t i = 0; i < numDevices; ++i) {
+			caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs);
+		}
+		std::this_thread::sleep_until(sampleDeadline);
+		for (std::size_t i = 0; i < numDevices; ++i) {
+			metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
+		}
 	}
 	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>(fields), std::span<devInfo>(deviceList),
 								  std::span<const metrics::MetricCache>(caches));

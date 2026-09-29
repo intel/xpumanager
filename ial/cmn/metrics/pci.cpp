@@ -109,6 +109,7 @@ constexpr auto TX_THROUGHPUT =
 				.description = "PCIe transmit throughput",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
+				.inputs = MetricInput::PCIE,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
@@ -126,6 +127,7 @@ constexpr auto RX_THROUGHPUT =
 				.description = "PCIe receive throughput",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
+				.inputs = MetricInput::PCIE,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
@@ -143,6 +145,7 @@ constexpr auto REPLAY_COUNTER =
 				.description = "PCIe replay error count",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
+				.inputs = MetricInput::PCIE,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (!cache.pcieAvail || !cache.pcieReplayAvail) {
 						return ZE_RESULT_NOT_READY;
@@ -158,6 +161,7 @@ constexpr auto RX_THROUGHPUT_KBS =
 				.description = "PCIe receive throughput (kB/s)",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
+				.inputs = MetricInput::PCIE,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;
@@ -175,6 +179,7 @@ constexpr auto TX_THROUGHPUT_KBS =
 				.description = "PCIe transmit throughput (kB/s)",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::PCI,
+				.inputs = MetricInput::PCIE,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
 						return ZE_RESULT_NOT_READY;

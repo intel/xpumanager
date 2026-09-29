@@ -43,11 +43,21 @@ static std::string normaliseEngine(std::string_view raw)
 			name.pop_back(); // strip digit-based instance suffix ("rcs0" -> "rcs")
 		}
 	}
-	if (name == "render")        { return "rcs"; }
-	if (name == "copy")          { return "bcs"; }
-	if (name == "video")         { return "vcs"; }
-	if (name == "video-enhance") { return "vecs"; }
-	if (name == "compute")       { return "ccs"; }
+	if (name == "render") {
+		return "rcs";
+	}
+	if (name == "copy") {
+		return "bcs";
+	}
+	if (name == "video") {
+		return "vcs";
+	}
+	if (name == "video-enhance") {
+		return "vecs";
+	}
+	if (name == "compute") {
+		return "ccs";
+	}
 	return name;
 }
 

@@ -86,48 +86,55 @@ EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
 	return engines;
 }
 
-MetricCache populateMetricCacheBegin(devInfo &dev)
+MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs)
 {
 	MetricCache cache;
+	cache.inputs = inputs;
 	enginegroup *eg = dev.dev->getEngineGroup();
 	auto *pw = dev.dev->getPower();
 	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
-	if (eg != nullptr && eg->getAllEngineActivity(cache.engineSamplesBefore) != ZE_RESULT_SUCCESS) {
+	if (hasInput(inputs, MetricInput::ENGINE) && eg != nullptr &&
+		eg->getAllEngineActivity(cache.engineSamplesBefore) != ZE_RESULT_SUCCESS) {
 		// Nothing for the end-of-window snapshot to pair against, so every utilization
 		// figure will report N/A. Cleared rather than trusted to be empty on failure.
 		cache.engineSamplesBefore.clear();
 	}
-	if (pw != nullptr) {
+	if (hasInput(inputs, MetricInput::POWER) && pw != nullptr) {
 		pw->getEnergy(&cache.cardPowerBefore.energy, &cache.cardPowerBefore.ts, false);
 		pw->getEnergy(&cache.gpuPowerBefore.energy, &cache.gpuPowerBefore.ts, true);
 	}
-	zes_pci_stats_t ps{};
-	const bool pcieBeginOk =
-		(p != nullptr && dev.zesDeviceHdl != nullptr && p->getStats(dev.zesDeviceHdl, &ps) == ZE_RESULT_SUCCESS);
-	cache.pcieAvail = pcieBeginOk;
-	if (pcieBeginOk) {
-		cache.pcieBefore.tx = ps.txCounter;
-		cache.pcieBefore.rx = ps.rxCounter;
-		cache.pcieBefore.timeUs = ps.timestamp;
-	}
-	if (p != nullptr && dev.zesDeviceHdl != nullptr) {
-		zes_pci_properties_t props{};
-		if (p->getProperties(dev.zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
-			cache.pcieBandwidthAvail = props.haveBandwidthCounters;
-			cache.pcieReplayAvail = props.haveReplayCounters;
+	if (hasInput(inputs, MetricInput::PCIE)) {
+		zes_pci_stats_t ps{};
+		const bool pcieBeginOk =
+			(p != nullptr && dev.zesDeviceHdl != nullptr && p->getStats(dev.zesDeviceHdl, &ps) == ZE_RESULT_SUCCESS);
+		cache.pcieAvail = pcieBeginOk;
+		if (pcieBeginOk) {
+			cache.pcieBefore.tx = ps.txCounter;
+			cache.pcieBefore.rx = ps.rxCounter;
+			cache.pcieBefore.timeUs = ps.timestamp;
+		}
+		if (p != nullptr && dev.zesDeviceHdl != nullptr) {
+			zes_pci_properties_t props{};
+			if (p->getProperties(dev.zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
+				cache.pcieBandwidthAvail = props.haveBandwidthCounters;
+				cache.pcieReplayAvail = props.haveReplayCounters;
+			}
 		}
 	}
-	if (mem != nullptr) {
+	if (hasInput(inputs, MetricInput::MEMBW) && mem != nullptr) {
 		mem->getMemoryRW(&cache.memBefore.read, &cache.memBefore.write, &cache.memMaxBandwidth, &cache.memBefore.ts);
 	}
-	cache.fdinfoSnap = fdinfo::capture(devPciAddr(dev));
+	if (hasInput(inputs, MetricInput::FDINFO)) {
+		cache.fdinfoSnap = fdinfo::capture(devPciAddr(dev));
+	}
 	return cache;
 }
 
 void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 {
+	const MetricInput inputs = cache.inputs;
 	enginegroup *eg = dev.dev->getEngineGroup();
 	auto *pw = dev.dev->getPower();
 	auto *mem = dev.dev->getMemory();
@@ -137,29 +144,41 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	// keep a figure derived from the previous window or a group the device no longer reports.
 	cache.engineSamplesAfter.clear();
 	cache.engines = {};
-	if (eg != nullptr && eg->getAllEngineActivity(cache.engineSamplesAfter) == ZE_RESULT_SUCCESS) {
+	if (hasInput(inputs, MetricInput::ENGINE) && eg != nullptr &&
+		eg->getAllEngineActivity(cache.engineSamplesAfter) == ZE_RESULT_SUCCESS) {
 		cache.engines = deriveEngineUtil(cache.engineSamplesBefore, cache.engineSamplesAfter);
 	}
 	bool cardPowerAfterOk = false;
-	if (pw != nullptr) {
+	cache.cardPowerAfter = {};
+	cache.gpuPowerAfter = {};
+	if (hasInput(inputs, MetricInput::POWER) && pw != nullptr) {
 		cardPowerAfterOk =
 			(pw->getEnergy(&cache.cardPowerAfter.energy, &cache.cardPowerAfter.ts, false) == ZE_RESULT_SUCCESS);
 		pw->getEnergy(&cache.gpuPowerAfter.energy, &cache.gpuPowerAfter.ts, true);
 	}
-	zes_pci_stats_t ps{};
-	const bool pcieEndOk =
-		(p != nullptr && dev.zesDeviceHdl != nullptr && p->getStats(dev.zesDeviceHdl, &ps) == ZE_RESULT_SUCCESS);
-	if (pcieEndOk) {
-		cache.pcieAfter.tx = ps.txCounter;
-		cache.pcieAfter.rx = ps.rxCounter;
-		cache.pcieAfter.timeUs = ps.timestamp;
-		cache.pcieReplay = ps.replayCounter;
+	if (hasInput(inputs, MetricInput::PCIE)) {
+		zes_pci_stats_t ps{};
+		const bool pcieEndOk =
+			(p != nullptr && dev.zesDeviceHdl != nullptr && p->getStats(dev.zesDeviceHdl, &ps) == ZE_RESULT_SUCCESS);
+		if (pcieEndOk) {
+			cache.pcieAfter.tx = ps.txCounter;
+			cache.pcieAfter.rx = ps.rxCounter;
+			cache.pcieAfter.timeUs = ps.timestamp;
+			cache.pcieReplay = ps.replayCounter;
+		} else {
+			// Reset replay count so a stale value is never visible alongside pcieAvail=false.
+			cache.pcieReplay = 0;
+		}
+		cache.pcieAvail = cache.pcieAvail && pcieEndOk && (cache.pcieAfter.timeUs > cache.pcieBefore.timeUs);
 	} else {
-		// Reset replay count so a stale value is never visible alongside pcieAvail=false.
+		cache.pcieAvail = false;
 		cache.pcieReplay = 0;
+		cache.pcieBandwidthAvail = false;
+		cache.pcieReplayAvail = false;
 	}
-	cache.pcieAvail = cache.pcieAvail && pcieEndOk && (cache.pcieAfter.timeUs > cache.pcieBefore.timeUs);
-	if (mem != nullptr) {
+	cache.memAvail = false;
+	cache.memAfter = {};
+	if (hasInput(inputs, MetricInput::MEMBW) && mem != nullptr) {
 		const bool ok = (mem->getMemoryRW(&cache.memAfter.read, &cache.memAfter.write, nullptr, &cache.memAfter.ts) ==
 						 ZE_RESULT_SUCCESS);
 		cache.memAvail = ok && (cache.memBefore.ts != 0) && (cache.memAfter.ts > cache.memBefore.ts);
@@ -174,9 +193,12 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	// EU active/stall/idle — sampled once per tick so all three getters share one HAL call.
 	// Unconditionally reset before the attempt so a reused or pre-populated cache never
 	// leaks stale EU data when the HAL call fails.
+	//
+	// Skipped entirely unless a selected field reads it: this opens an OA metric streamer and
+	// blocks for a fixed monitor window per device, which dominates the cost of a tick.
 	cache.euAvail = false;
 	cache.euSample = {};
-	{
+	if (hasInput(inputs, MetricInput::EU)) {
 		metric *m = dev.dev->getMetric();
 		if (m != nullptr && dev.deviceHdl != nullptr) {
 			std::vector<EuMetricsData> euVec;
@@ -188,7 +210,11 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 		}
 	}
 
-	{
+	cache.fdinfoCompute = std::nullopt;
+	cache.fdinfoRender = std::nullopt;
+	cache.fdinfoMedia = std::nullopt;
+	cache.fdinfoCopy = std::nullopt;
+	if (hasInput(inputs, MetricInput::FDINFO)) {
 		auto fdAfter = fdinfo::capture(devPciAddr(dev));
 		const auto devUtil = fdinfo::aggregateDeviceUtil(cache.fdinfoSnap, fdAfter);
 		cache.fdinfoSnap = std::move(fdAfter);
@@ -200,18 +226,27 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	cache.populated = true;
 }
 
-MetricCache populateMetricCache(devInfo &dev, std::chrono::milliseconds window)
+MetricCache populateMetricCache(devInfo &dev, std::chrono::milliseconds window, MetricInput inputs)
 {
 	const auto deadline = std::chrono::steady_clock::now() + window;
-	MetricCache cache = populateMetricCacheBegin(dev);
-	std::this_thread::sleep_until(deadline);
+	MetricCache cache = populateMetricCacheBegin(dev, inputs);
+	if (inputs != MetricInput::NONE) {
+		std::this_thread::sleep_until(deadline);
+	}
 	populateMetricCacheEnd(dev, cache);
 	return cache;
 }
 
-MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev)
+MetricInput inputsOf(std::span<const QueryMetric *const> fields) noexcept
+{
+	return std::accumulate(fields.begin(), fields.end(), MetricInput::NONE,
+						   [](MetricInput acc, const QueryMetric *f) { return acc | f->inputs; });
+}
+
+MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev, MetricInput inputs)
 {
 	MetricCache curr;
+	curr.inputs = inputs;
 
 	// Promote prev's after-snapshots into curr's before-slots (no sleep needed).
 	// The engine figures are derived rather than carried over: what a new window needs is the

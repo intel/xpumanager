@@ -203,6 +203,7 @@ constexpr auto CARD_DRAW =
 							   "counter deltas between cache snapshots",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::POWER,
+				.inputs = MetricInput::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (cache.cardPowerBefore.ts == 0 || cache.cardPowerAfter.ts < cache.cardPowerBefore.ts) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -228,6 +229,7 @@ constexpr auto CARD_DRAW_GPU =
 							   "domain is package, this reports package power instead",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::POWER,
+				.inputs = MetricInput::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					if (cache.gpuPowerBefore.ts == 0 || cache.gpuPowerAfter.ts < cache.gpuPowerBefore.ts) {
 						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -252,6 +254,7 @@ constexpr auto ENERGY_CONSUMED =
 							   "increasing until counter wrap. Counterpart of power.draw",
 				.source = MetricSource::Live,
 				.groups = MetricGroup::POWER,
+				.inputs = MetricInput::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 					return energyJoules(cache.cardPowerAfter, out);
 				}};
@@ -265,6 +268,7 @@ constexpr auto ENERGY_CONSUMED_GPU = QueryMetric{
 				   "is package, this reports package energy instead. Counterpart of power.draw.gpu",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::POWER,
+	.inputs = MetricInput::POWER,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 		return energyJoules(cache.gpuPowerAfter, out);
 	}};

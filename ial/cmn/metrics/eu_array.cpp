@@ -29,6 +29,7 @@ constexpr auto ACTIVE = QueryMetric{
 	.description = "Xe EU Array Active: fraction of time EUs were actively executing (Intel-only; dump -m 9)",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::EU_ARRAY | MetricGroup::UTILIZATION,
+	.inputs = MetricInput::EU,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 		if (!cache.euAvail || cache.euSample.scaleFactor == 0) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -45,6 +46,7 @@ constexpr auto STALL = QueryMetric{
 	.description = "Xe EU Array Stall: fraction of time EUs were stalled with a thread loaded (Intel-only; dump -m 10)",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::EU_ARRAY | MetricGroup::UTILIZATION,
+	.inputs = MetricInput::EU,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 		if (!cache.euAvail || cache.euSample.scaleFactor == 0) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
@@ -61,6 +63,7 @@ constexpr auto IDLE = QueryMetric{
 	.description = "Xe EU Array Idle: fraction of time no threads were scheduled on any EU (Intel-only; dump -m 11)",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::EU_ARRAY | MetricGroup::UTILIZATION,
+	.inputs = MetricInput::EU,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 		if (!cache.euAvail || cache.euSample.scaleFactor == 0) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;

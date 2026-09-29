@@ -68,7 +68,7 @@ struct psInfo
 	uint64_t engines;
 	uint64_t sharedSize;
 	uint64_t memSize;
-	ProcUtil util;       ///< Per-engine % from fdinfo; euActive/euStall filled separately
+	ProcUtil util;		///< Per-engine % from fdinfo; euActive/euStall filled separately
 	bool euAvailable{}; ///< True when collectEuMetrics succeeded for this device
 };
 
