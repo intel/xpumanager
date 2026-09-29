@@ -6,13 +6,31 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
+	"flag"
 	"fmt"
 	"math/bits"
+	"time"
 
 	"github.com/intel/level-zero-go/core"
 	"github.com/intel/level-zero-go/sysman"
 )
+
+// infoLogTimeout searches everything that the collection instance holds.
+const infoLogTimeout = -1 * time.Millisecond
+
+var (
+	infoLogDump     bool
+	infoLogInstance string
+)
+
+func init() {
+	flag.BoolVar(&infoLogDump, "infolog-dump", false,
+		"dump the info log records with their per-record metadata, they are left unread by default")
+	flag.StringVar(&infoLogInstance, "infolog-instance", "list-sysman",
+		"`name` of the collection instance for the info log records, empty for the global instance")
+}
 
 // recordError records an error into the appropriate list
 func (b *BaseInfo) recordError(context string, err error) {
@@ -52,6 +70,12 @@ func collectSystemInfo() (*SystemInfo, error) {
 func collectDriverInfo(driver *sysman.Driver) *DriverInfo {
 	driverInfo := &DriverInfo{}
 
+	if props, err := driver.GetProperties(); err != nil {
+		driverInfo.recordError("Driver.GetProperties", err)
+	} else {
+		driverInfo.Properties = &props
+	}
+
 	extProps, err := driver.GetExtensionProperties()
 	if err != nil {
 		driverInfo.recordError("GetExtensionProperties", err)
@@ -59,6 +83,7 @@ func collectDriverInfo(driver *sysman.Driver) *DriverInfo {
 		driverInfo.ExtensionProperties = extProps
 	}
 
+	driverInfo.collectInfoLogsExt(driver)
 	driverInfo.collectInfoLogsExp(driver)
 
 	devices, err := driver.DeviceGet()
@@ -74,6 +99,75 @@ func collectDriverInfo(driver *sysman.Driver) *DriverInfo {
 	}
 
 	return driverInfo
+}
+
+// collectInfoLogsExt lists the info logs of the driver.
+// NOTE: The log records themselves are only collected when asked for with
+// -infolog-dump, as collecting them may consume them.
+func (d *DriverInfo) collectInfoLogsExt(driver *sysman.Driver) {
+	infoLogs, err := driver.EnumInfoLogs()
+	if err != nil {
+		d.recordError("InfoLogs", err)
+		return
+	}
+
+	result := make([]InfoLogExtInfo, len(infoLogs))
+	for i, infoLog := range infoLogs {
+		if props, err := infoLog.GetProperties(); err != nil {
+			d.recordError("InfoLog.GetProperties", err)
+		} else {
+			result[i].Properties = &props
+		}
+		if infoLogDump {
+			d.readInfoLogExt(infoLog, &result[i])
+		}
+	}
+
+	d.InfoLogs = result
+}
+
+// readInfoLogExt reads all the pending records of one info log.
+//
+// NOTE: the records are peeked at, i.e. left in place for the other consumers of
+// the log, whenever the log supports peeking. Otherwise, the records are read and thus consumed.
+func (d *DriverInfo) readInfoLogExt(infoLog *sysman.InfoLog, info *InfoLogExtInfo) {
+	props := info.Properties
+	name := infoLogInstance
+	if props != nil && !props.IsNamedInstanceSupported.IsTrue() {
+		name = ""
+	}
+	instance, err := infoLog.CreateInstance(name, 0)
+	if err != nil {
+		d.recordError("InfoLog.CreateInstance", err)
+		return
+	}
+	defer func() {
+		if err := instance.Delete(); err != nil {
+			d.recordError("InfoLogInstance.Delete", err)
+		}
+	}()
+
+	collect, context := instance.PeekWithMetadata, "InfoLogInstance.PeekWithMetadata"
+	if props == nil || !props.IsPeekDataSupported.IsTrue() {
+		collect, context = instance.ReadWithMetadata, "InfoLogInstance.ReadWithMetadata"
+	}
+
+	// NOTE: the records that were collected are valid (and consumed, unless
+	// peeked at) even if the driver had to drop some, i.e. they are reported
+	// despite the warning.
+	records, status, err := collect(infoLogTimeout)
+	d.recordError(context, err)
+
+	info.BufferSizeInKb = instance.BufferSizeInKb
+	info.Collection = &InfoLogExtCollection{Status: status}
+	if len(records) == 0 {
+		return
+	}
+
+	info.Collection.Records = make([]InfoLogExtRecord, len(records))
+	for i, record := range records {
+		info.Collection.Records[i] = InfoLogExtRecord{InfoLogMetadataExt: record.Metadata, Dump: hex.Dump(record.Data)}
+	}
 }
 
 func (d *DeviceInfo) collect(device *sysman.Device) {
