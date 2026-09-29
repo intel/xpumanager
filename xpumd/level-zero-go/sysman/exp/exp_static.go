@@ -12,7 +12,7 @@ import (
 )
 
 // GetStateExp wraps the (experimental) zesRasGetStateExp function:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesrasgetstateexp
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#zesrasgetstateexp
 // and if that is not supported, it wraps (legacy) sysman.Ras.GetState instead.
 func (z *Ras) GetStateExp() ([]RasStateExp, error) {
 	// experimental API supported by backend?
@@ -47,7 +47,7 @@ func (z *Ras) GetStateExp() ([]RasStateExp, error) {
 }
 
 // ClearStateExp wraps the (experimental) zesRasClearStateExp function:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesrasclearstateexp
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/experimental/ras.html#zesrasclearstateexp
 //
 // Unlike GetStateExp there is no legacy fallback (the legacy API is only able
 // to reset all error counters at once) so core.RESULT_ERROR_UNSUPPORTED_FEATURE

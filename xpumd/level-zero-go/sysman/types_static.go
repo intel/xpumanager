@@ -98,7 +98,7 @@ func wrappersToHandles[V any, H zesHandle, W interface {
 }
 
 // Driver provides access to Sysman API driver functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#driver-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#driver-functions
 type Driver struct {
 	handleWrapper[driverHandle]
 	extensions extensionTable
@@ -110,7 +110,7 @@ func (w *Driver) HasExtension(name string, version uint32) bool {
 }
 
 // Device provides access to Sysman API device functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#device-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device.html#device-functions
 type Device struct {
 	handleWrapper[deviceHandle]
 	extensions extensionTable
@@ -135,112 +135,112 @@ func (w *Device) HasExtension(name string, version uint32) bool {
 }
 
 // Overclock provides access to Sysman API overclock functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#overclock-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/overclock.html#overclock-functions
 type Overclock struct {
 	handleWrapper[overclockHandle]
 	deviceRef
 }
 
 // Diagnostics provides access to Sysman API diagnostics functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#diagnostics-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/diagnostics.html#diagnostics-functions
 type Diagnostics struct {
 	handleWrapper[diagHandle]
 	deviceRef
 }
 
 // Engine provides access to Sysman API engine functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#engine-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/engine.html#engine-functions
 type Engine struct {
 	handleWrapper[engineHandle]
 	deviceRef
 }
 
 // FabricPort provides access to Sysman API fabric functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#fabric-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fabric_port.html#fabric-port-functions
 type FabricPort struct {
 	handleWrapper[fabricPortHandle]
 	deviceRef
 }
 
 // Fan provides access to Sysman API fan functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#fan-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/fan.html#fan-functions
 type Fan struct {
 	handleWrapper[fanHandle]
 	deviceRef
 }
 
 // Firmware provides access to Sysman API firmware functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#firmware-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/firmware.html#firmware-functions
 type Firmware struct {
 	handleWrapper[firmwareHandle]
 	deviceRef
 }
 
 // Frequency provides access to Sysman API frequency functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#frequency-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/frequency.html#frequency-functions
 type Frequency struct {
 	handleWrapper[freqHandle]
 	deviceRef
 }
 
 // Led provides access to Sysman API LED functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#led-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/led.html#led-functions
 type Led struct {
 	handleWrapper[ledHandle]
 	deviceRef
 }
 
 // Memory provides access to Sysman API memory functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#memory-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/memory.html#memory-functions
 type Memory struct {
 	handleWrapper[memHandle]
 	deviceRef
 }
 
 // Performance provides access to Sysman API performance functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#performance-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/performance_factor.html#performance-factor-functions
 type Performance struct {
 	handleWrapper[perfHandle]
 	deviceRef
 }
 
 // Power provides access to Sysman API power functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#power-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/power.html#power-functions
 type Power struct {
 	handleWrapper[pwrHandle]
 	deviceRef
 }
 
 // Psu provides access to Sysman API psu (power supply) functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#psu-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/psu.html#psu-functions
 type Psu struct {
 	handleWrapper[psuHandle]
 	deviceRef
 }
 
 // Ras provides access to Sysman API RAS functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#ras-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/ras.html#ras-functions
 type Ras struct {
 	handleWrapper[rasHandle]
 	deviceRef
 }
 
 // Scheduler provides access to Sysman API scheduler functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#scheduler-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/scheduler.html#scheduler-functions
 type Scheduler struct {
 	handleWrapper[schedHandle]
 	deviceRef
 }
 
 // Standby provides access to Sysman API standby functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#standby-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/standby.html#standby-functions
 type Standby struct {
 	handleWrapper[standbyHandle]
 	deviceRef
 }
 
 // Temperature provides access to Sysman API temperature functions:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#temperature-functions
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/temperature.html#temperature-functions
 type Temperature struct {
 	handleWrapper[tempHandle]
 	deviceRef
