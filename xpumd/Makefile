@@ -14,10 +14,12 @@ XPUMD_GO_MODULES := $(filter-out $(LEVEL_ZERO_GO_MODULES) $(filter test/%,$(GO_M
 WHAT ?=
 
 .PHONY: help
+# List all targets, grouped by section, with their documentation
 help:
-	@echo -e "\nTargets:\n$$(grep '^[^#:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+	@awk -f level-zero-go/hack/makefile-help.awk Makefile
 
 .PHONY: stats
+# Print per-filetype file / line counts of tracked files
 stats:
 	@echo "Type:       Files:   Lines:"
 	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
@@ -74,10 +76,12 @@ race:
 	go -C dist build -race github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
 .PHONY: docker-build
+# Build the xpumd container image
 docker-build:
 	docker build --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate
+# Run all code generation
 generate: generate-bindings generate-mods generate-proto generate-dockerfile-args
 
 .PHONY: generate-bindings
@@ -103,18 +107,31 @@ generate-dockerfile-args:
 	scripts/sync-dockerfile-args.sh
 
 .PHONY: install-protoc
+# Install protoc (and needed plugins) under tools/
 install-protoc:
 	scripts/install-protoc.sh
 
-# --- Test / lint targets
+.PHONY: clean
+# Remove generated build artifacts
+clean: clean-coverage
+	$(MAKE) -C level-zero-go clean
+	rm -f builder-config.yaml \
+	  tools/include/google/protobuf/compiler/plugin.proto \
+	  tools/include/google/protobuf/*.proto \
+	  tools/bin/* \
+	  dist/*
+	rm -rf dist-stub .gocache-stub
+
+# --- Test targets
 
 COVERAGE_DIR := coverage
 
 .PHONY: test
+# Run all unit tests
 test: test-daemon test-config test-bindings
 
 .PHONY: test-daemon
-# Run xpumd unit tests.
+# Run xpumd unit tests
 # Select tests with WHAT=<regexp>
 test-daemon: level-zero-stub
 	@$(BUILD_STUB_ENV) GO_TEST_FLAGS="$(if $(WHAT),-run $(WHAT))" \
@@ -122,15 +139,18 @@ test-daemon: level-zero-stub
 	@echo "✓ All tests passed"
 
 .PHONY: coverage
+# Generate a Go test coverage report of xpumd unit tests
 coverage: test-daemon
 	@echo
 	@level-zero-go/hack/coverage-report.sh $(COVERAGE_DIR)/xpumd $(XPUMD_GO_MODULES)
 
 .PHONY: clean-coverage
+# Remove coverage report files
 clean-coverage:
 	rm -rf $(COVERAGE_DIR)
 
 .PHONY: test-bindings
+# Run Level-Zero Go bindings unit tests
 test-bindings:
 	@echo "Running Level-Zero Go bindings tests..."
 	make -C level-zero-go test
@@ -141,7 +161,7 @@ test-config: build-stub
 	scripts/run-config-tests.sh
 
 .PHONY: test-integration-kind
-# Run integration tests in an ephemeral kind cluster.
+# Run integration tests in an ephemeral kind cluster
 # Select tests with WHAT=<regexp>
 test-integration-kind: docker-build
 	RUN_REGEX='$(WHAT)' scripts/run-integration-tests.sh \
@@ -150,7 +170,7 @@ test-integration-kind: docker-build
 		--kind-load-image
 
 .PHONY: test-integration-existing-cluster
-# Run integration tests in the currently configured cluster.
+# Run integration tests in the currently configured cluster
 # Select tests with WHAT=<regexp>
 test-integration-existing-cluster:
 	RUN_REGEX='$(WHAT)' scripts/run-integration-tests.sh \
@@ -159,16 +179,20 @@ test-integration-existing-cluster:
 		--use-existing-cluster \
 		--image-pull-policy=$(IMAGE_PULL_POLICY)
 
+# --- Lint targets
+
 .PHONY: lint
+# Run all linters
 lint: codespell golint shellcheck
 
 .PHONY: codespell
-# <apt|dnf> install codespell
+# Run codespell on all sources (requires: <apt|dnf> install codespell)
 codespell:
 	@echo -e "Spellchecking other than generated & imported code..."
 	codespell --config .codespellrc .
 
 .PHONY: golint
+# Run golangci-lint on all modules
 golint:
 	@error=""; for module in $(GO_MODULES); do \
 		echo "Running golangci-lint in module '$$module'..."; \
@@ -180,16 +204,18 @@ golint:
 	echo "✓ No linter issues found"
 
 .PHONY: shellcheck
-# <apt|dnf> install shellcheck
+# Lint shell scripts (requires: <apt|dnf> install shellcheck)
 shellcheck:
 	@echo -e "\nshellcheck: linting shell scripts...\n"
 	git ls-files -z '*.sh' | xargs -0 shellcheck
 
 .PHONY: check-format
+# Check formatting of all sources
 check-format: check-go-format
 	$(MAKE) -C level-zero-go check-format
 
 .PHONY: check-go-format
+# Check gofmt formatting of sources
 check-go-format:
 	@echo "Checking gofmt formatting..."
 	@unformatted=$$(gofmt -l . | grep -v '^dist/'); \
@@ -203,6 +229,7 @@ check-go-format:
 	echo "✓ All Go files are properly formatted"
 
 .PHONY: check-modfiles
+# Check that all go.mod files are tidy
 check-modfiles:
 	@echo "Verifying go.mod files..."
 	@error=""; for module in $(GO_MODULES); do \
@@ -218,6 +245,7 @@ check-modfiles:
 	echo "✓ All go.mod files are in sync"
 
 .PHONY: go-tidy
+# Run 'go mod tidy' on all modules
 go-tidy:
 	for module in $(GO_MODULES); do \
 		echo "Running go mod tidy in '$$module'"; \
@@ -225,18 +253,9 @@ go-tidy:
 	done; \
 
 .PHONY: go-fix
+# Run 'go fix' on all modules
 go-fix:
 	@for module in $(GO_MODULES); do \
 		echo "Running go fix in '$$module'"; \
 		go -C $$module fix ./... || exit 1; \
 	done
-
-.PHONY: clean
-clean: clean-coverage
-	$(MAKE) -C level-zero-go clean
-	rm -f builder-config.yaml \
-	  tools/include/google/protobuf/compiler/plugin.proto \
-	  tools/include/google/protobuf/*.proto \
-	  tools/bin/* \
-	  dist/*
-	rm -rf dist-stub .gocache-stub
