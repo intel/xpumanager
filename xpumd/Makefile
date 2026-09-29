@@ -137,7 +137,7 @@ test-bindings:
 
 .PHONY: test-config
 # Validate example config (and invalid test configs) with the built xpumd binary
-test-config: build
+test-config: build-stub
 	scripts/run-config-tests.sh
 
 .PHONY: test-integration-kind

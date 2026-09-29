@@ -13,12 +13,12 @@ set -u -o pipefail
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 TOPDIR="$(realpath "${SCRIPT_DIR}/..")"
 
-XPUMD=${XPUMD:-${TOPDIR}/dist/xpumd}
+XPUMD=${XPUMD:-${TOPDIR}/dist-stub/xpumd}
 EXAMPLE_CONFIG="${TOPDIR}/config-example.yaml"
 CONFIG_TEST_DIR="${TOPDIR}/test/config"
 
 if [ ! -x "${XPUMD}" ]; then
-    echo "ERROR: xpumd binary '${XPUMD}' not found, Run 'make build', or point XPUMD to the binary."
+    echo "ERROR: xpumd binary '${XPUMD}' not found, Run 'make build-stub', or point XPUMD to the binary."
     exit 1
 fi
 
