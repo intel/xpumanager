@@ -11,6 +11,43 @@ Drivers:
         Version: 65538 # ZE_MAKE_VERSION(1, 2)
       - Name: "ZES_extension_bar"
         Version: 65536 # ZE_MAKE_VERSION(1, 0)
+      - Name: "ZES_extension_info_logs"
+        Version: 65536 # ZE_MAKE_VERSION(1, 0)
+
+    Properties:
+      Uuid:
+        Id: "11111111-2222-3333-4444-555555555555"
+      DriverVersion: 42
+
+    Events: 65536 # ZES_EVENT_TYPE_FLAG_INFO_LOG_CPER_DATA_AVAILABLE_EXT
+
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0 # ZES_INFO_LOG_TYPE_EXT_DEVICE
+          InfoLogFormat: 0 # ZES_INFO_LOG_FORMAT_EXT_CPER
+          IsNamedInstanceSupported: true
+          IsPeekDataSupported: true
+        # buffer size reported as applied, whatever the caller requests
+        BufferSizeInKb: 8
+        # what the reads and the peeks return, reading does not consume anything
+        Collection:
+          # reported by every call, i.e. by the query call of a read as well
+          Status:
+            ConsumedDataSize: 13
+          Records:
+            - Data: "CPER-RECORD-1"
+              Address:
+                Domain: 0
+                Bus: 1
+                Device: 2
+                Function: 3
+              Uuid:
+                Id: "12345678-abcd-ef01-2345-6789abcdef01"
+              Timestamp: 1234567
+              RecordType: 2 # ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_CORRECTED
+            - Data: "CPER-RECORD-2"
+      # A log with nothing pending
+      - Properties: {}
 
     Devices:
       - Properties:

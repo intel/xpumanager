@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Intel Corporation
+#
+# Driver info logs that report dropped records, one with a known count and one
+# with an unknown count (-1). Used by TestInfoLogInstanceReadWithMetadata and
+# TestInfoLogInstancePeekWithMetadata.
+
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_extension_info_logs"
+        Version: 65536
+    InfoLogs:
+      # A log reporting a known dropped record count
+      - Collection:
+          Status:
+            DroppedRecordCount: 5
+          Records:
+            - Data: "CPER-RECORD-3"
+        ReturnValues:
+          zesInfoLogInstanceReadWithMetadataExt: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA
+          zesInfoLogInstancePeekWithMetadataExt: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA
+      # A log reporting an unknown dropped record count
+      - Collection:
+          Status:
+            DroppedRecordCount: -1
+          Records:
+            - Data: "CPER-RECORD-4"
+        ReturnValues:
+          zesInfoLogInstanceReadWithMetadataExt: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA
+          zesInfoLogInstancePeekWithMetadataExt: 0x70020001 # ZE_RESULT_WARNING_DROPPED_DATA

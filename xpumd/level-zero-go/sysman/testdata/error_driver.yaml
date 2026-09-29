@@ -4,7 +4,9 @@
 # Error stub: driver method failures (DriverGet succeeds, driver methods fail)
 # (ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS = 0x70010000).
 # Used by TestDriverGetExtensionProperties/Error, TestDriverDeviceGet/Error,
-# TestDriverEventListen/Error, TestDriverEventListenEx/Error.
+# TestDriverEventListen/Error, TestDriverEventListenEx/Error,
+# TestDriverGetProperties/Error, TestDriverEventListenExt/Error,
+# TestDriverEnumInfoLogs/Error.
 
 EventNumDeviceEvents: 0
 Drivers:
@@ -13,5 +15,11 @@ Drivers:
       zesDeviceGet: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
       zesDriverEventListen: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
       zesDriverEventListenEx: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
-    ExtensionProperties: []
+      zesDriverGetProperties: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      zesDriverEventRegisterExt: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      zesDriverEventListenExt: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+      zesDriverEnumInfoLogsExt: 0x70010000 # ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS
+    ExtensionProperties:
+      - Name: "ZES_extension_info_logs"
+        Version: 65536
     Devices: []
