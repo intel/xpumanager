@@ -100,6 +100,26 @@ type diagHandle *_Ctype_struct__zes_diag_handle_t
 // Handle for a Sysman device overclock domain.
 type overclockHandle *_Ctype_struct__zes_overclock_handle_t
 
+// Uuid declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-uuid-t
+//
+// Forward-declare zes_uuid_t.
+type Uuid struct {
+	Id uuid.UUID `yaml:"Id"`
+}
+
+// DriverProperties declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#zes-driver-properties-t
+//
+// Sysman driver properties queried using zesDriverGetProperties.
+type DriverProperties struct {
+	stype         structureType
+	pnext         unsafe.Pointer
+	Uuid          Uuid   `yaml:"Uuid"`
+	DriverVersion uint32 `yaml:"DriverVersion"`
+	_             [4]byte
+}
+
 // DriverExtensionProperties declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#zes-driver-extension-properties-t
 //
@@ -130,14 +150,6 @@ type ResetProperties struct {
 	pnext     unsafe.Pointer
 	Force     core.Bool `yaml:"Force"`
 	ResetType ResetType `yaml:"ResetType"`
-}
-
-// Uuid declared in:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-uuid-t
-//
-// Device universal unique id (UUID).
-type Uuid struct {
-	Id uuid.UUID `yaml:"Id"`
 }
 
 // DeviceBaseProperties is the device properties type declared in:
@@ -1098,6 +1110,89 @@ type memoryVendorInfoExtProperties struct {
 	_          [2]byte
 }
 
+// InfoLogExtProperties declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log.html#zes-info-log-ext-properties-t
+//
+// Info log properties.
+//
+// - This structure is returned by zesInfoLogGetPropertiesExt
+type InfoLogExtProperties struct {
+	stype                    structureType
+	pnext                    unsafe.Pointer
+	InfoLogType              InfoLogTypeExt   `yaml:"InfoLogType"`
+	InfoLogFormat            InfoLogFormatExt `yaml:"InfoLogFormat"`
+	IsNamedInstanceSupported core.Bool        `yaml:"IsNamedInstanceSupported"`
+	IsPeekDataSupported      core.Bool        `yaml:"IsPeekDataSupported"`
+	_                        [6]byte
+}
+
+// infoLogInstanceExtDesc declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log.html#zes-info-log-instance-ext-desc-t
+//
+// Info log collection instance descriptor.
+//
+//   - This structure is passed to zesInfoLogCreateInstanceExt to configure the
+//     collection instance.
+//   - Each member is optional. If a member is nullptr, then the driver shall use its
+//     default value for that setting.
+//   - On input, each non-null member points to the value requested by the application.
+//     On output, the driver shall update the pointed-to value with the value that was
+//     actually applied, which may be rounded to the closest value the driver supports.
+type infoLogInstanceExtDesc struct {
+	stype           structureType
+	pnext           unsafe.Pointer
+	PBufferSizeInKb *uint32 `yaml:"PBufferSizeInKb"`
+}
+
+// InfoLogMetadataExt declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log.html#zes-info-log-metadata-ext-t
+//
+// Metadata describing a single info log record.
+//
+//   - An array of these structures is returned by zesInfoLogInstanceReadWithMetadataExt
+//     and by zesInfoLogInstancePeekWithMetadataExt, one element per record.
+//   - A record is located within the data buffer returned by those functions using
+//     offset and lengthOfData.
+//   - recordType is derived by the driver from the contents of the record. The record
+//     itself is the authoritative source of this information, and takes precedence
+//     if the two disagree.
+//   - For an info log whose format is ZES_INFO_LOG_FORMAT_EXT_CPER, recordType reflects
+//     the severity reported in the header of the record. An individual section of
+//     that record may report a higher severity than the header does.
+//   - The application must treat a value of recordType that it does not recognize as
+//     ZES_INFO_LOG_RECORD_TYPE_EXT_UNKNOWN. The numeric values of zes_info_log_record_type_ext_t
+//     do not express an order of severity and must not be compared for magnitude.
+type InfoLogMetadataExt struct {
+	stype        structureType
+	pnext        unsafe.Pointer
+	Address      PciAddress           `yaml:"Address"`
+	Uuid         Uuid                 `yaml:"Uuid"`
+	Timestamp    uint64               `yaml:"Timestamp"`
+	LengthOfData uint32               `yaml:"LengthOfData"`
+	Offset       uint32               `yaml:"Offset"`
+	RecordType   InfoLogRecordTypeExt `yaml:"RecordType"`
+	_            [4]byte
+}
+
+// InfoLogReadStatusExt declared in:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log.html#zes-info-log-read-status-ext-t
+//
+// Status of a read from an info log collection instance.
+//
+//   - This structure is optionally returned by zesInfoLogInstanceReadWithMetadataExt
+//     and by zesInfoLogInstancePeekWithMetadataExt.
+//   - consumedDataSize reports the progress made through the data held by the collection
+//     instance, which is not related to the amount of record data returned by the
+//     call.
+type InfoLogReadStatusExt struct {
+	stype              structureType
+	pnext              unsafe.Pointer
+	DroppedRecordCount int64     `yaml:"DroppedRecordCount"`
+	ConsumedDataSize   uint64    `yaml:"ConsumedDataSize"`
+	HasDataToRead      core.Bool `yaml:"HasDataToRead"`
+	_                  [7]byte
+}
+
 // InitFlags declared in:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/global.html#zes-init-flags-t
 //
@@ -1163,3 +1258,13 @@ type FreqThrottleReasonFlags FreqThrottleReasonFlag
 //
 // Device state flags.
 type DeviceStateExtFlags DeviceStateExtFlag
+
+// infoLogHandle is a handle type used by the Level Zero sysman API.
+//
+// Handle for a Sysman info log.
+type infoLogHandle *_Ctype_struct__zes_info_log_handle_t
+
+// infoLogInstanceHandle is a handle type used by the Level Zero sysman API.
+//
+// Handle for a Sysman info log collection instance.
+type infoLogInstanceHandle *_Ctype_struct__zes_info_log_instance_handle_t

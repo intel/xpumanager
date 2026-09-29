@@ -75,6 +75,9 @@ types:
   - names: ["Device*Ext*"]
     docPage: extensions/device.html
     newComment: *linked
+  - names: ["InfoLog*"]
+    docPage: extensions/info_log.html
+    newComment: *linked
   - names: ["*Ext*Version"]
     docPage: extensions/data_types.html
     newComment: *linked

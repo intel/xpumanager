@@ -61,6 +61,7 @@ TRANSLATOR:
       - {transform: unexport, from: "[A-Za-z0-9]*Handle$"}
       - {transform: unexport, from: "^OemSerialIdExtProperties$"}
       - {transform: unexport, from: "^MemoryVendorInfoExtProperties$"}
+      - {transform: unexport, from: "^InfoLogInstanceExtDesc$"}
       # Map Ze types to core package
       - {action: replace, from: "^Ze([A-Z])", to: "core.$1"}
       # Ignore experimental
@@ -86,6 +87,10 @@ TRANSLATOR:
       - {target: "^zesDeviceProcessesGetState$", tips: [ref, ref, arr]}
       - {target: "^zesDevicePciGetBars$", tips: [ref, ref, arr]}
       - {target: "^zesDiagnosticsGetTests$", tips: [ref, ref, arr]}
+      - {target: "^zesDriverEventListenExt$", tips: [ref, ref, ref, arr, ref, arr, ref]}
+      - {target: "^zesDriverEnumInfoLogsExt$", tips: [ref, ref, arr]}
+      - {target: "^zesInfoLogCreateInstanceExt$", tips: [ref, arr, ref, ref]}
+      - {target: "^zesInfoLogInstance(Read|Peek)WithMetadataExt$", tips: [ref, ref, ref, arr, ref, arr, ref]}
       - {target: "^zesDriverEventListen(Ex)?", tips: [ref, ref, ref, arr, ref, arr]}
       - {target: "^zesFabricPortGetMultiPortThroughput$", tips: [ref, ref, arr, ref]}
       - {target: "^zesFrequencyGetAvailableClocks$", tips: [ref, ref, arr]}
