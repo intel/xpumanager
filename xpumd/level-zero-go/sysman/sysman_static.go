@@ -8,6 +8,7 @@
 package sysman
 
 import (
+	"fmt"
 	"runtime"
 	"time"
 	"unsafe"
@@ -122,6 +123,61 @@ func (z *Driver) EventListenEx(timeout time.Duration, devices []*Device) (uint32
 	ms := internal.DurationToMillisecondsUint64(timeout)
 	ret := zesDriverEventListenEx(z.handle, ms, uint32(len(handles)), handles, &numEvents, events)
 	return numEvents, events, ret.ToError()
+}
+
+// GetProperties wraps the zesDriverGetProperties function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#zesdrivergetproperties
+func (z *Driver) GetProperties() (DriverProperties, error) {
+	props := DriverProperties{stype: _STRUCTURE_TYPE_DRIVER_PROPERTIES}
+	ret := zesDriverGetProperties(z.handle, &props)
+	return props, ret.ToError()
+}
+
+// EventRegisterExt wraps the zesDriverEventRegisterExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/driver.html#zesdrivereventregisterext
+//
+// It registers the driver scoped events, e.g.
+// EVENT_TYPE_FLAG_INFO_LOG_CPER_DATA_AVAILABLE_EXT, that EventListenExt
+// reports. The events are driver scoped, i.e. not tied to a device: the
+// underlying event source is shared by all devices of the driver. Only driver
+// scoped events are accepted, the device scoped ones must be registered per
+// device with Device.EventRegister.
+//
+// Only EventListenExt reports the driver scoped events, EventListen and
+// EventListenEx never do, as there is no device to report them against.
+//
+// Calling this function while another thread is blocked in EventListenExt
+// updates that call, so an event registered after a listen has started can
+// still be reported by it.
+func (z *Driver) EventRegisterExt(events EventTypeFlags) error {
+	ret := zesDriverEventRegisterExt(z.handle, events)
+	return ret.ToError()
+}
+
+// EventListenExt wraps the zesDriverEventListenExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/driver.html#zesdrivereventlistenext
+//
+// It extends EventListenEx with the driver scoped events registered with
+// EventRegisterExt, returned as the third return value. Unlike the device
+// scoped events, which are returned per device in the order of the devices
+// argument, the driver scoped events have no device to be reported against, so
+// a driver scoped event which occurs without any device scoped event returns a
+// count of zero: both return values must be checked.
+//
+// The devices argument may be empty to listen for driver scoped events only. A
+// zero timeout returns immediately and a negative one blocks until an event
+// occurs.
+//
+// The function must not be called from simultaneous threads with the same driver.
+func (z *Driver) EventListenExt(timeout time.Duration,
+	devices []*Device) (uint32, []EventTypeFlags, EventTypeFlags, error) {
+	handles := wrappersToHandles[Device](devices)
+	var numEvents uint32
+	var driverEvents EventTypeFlags
+	events := make([]EventTypeFlags, len(handles))
+	ms := internal.DurationToMillisecondsUint64(timeout)
+	ret := zesDriverEventListenExt(z.handle, ms, uint32(len(handles)), handles, &numEvents, events, &driverEvents)
+	return numEvents, events, driverEvents, ret.ToError()
 }
 
 // GetProperties wraps the zesDeviceGetProperties function:
@@ -1352,4 +1408,215 @@ func (z *Temperature) GetState() (float64, error) {
 	var state float64
 	ret := zesTemperatureGetState(z.handle, &state)
 	return state, ret.ToError()
+}
+
+// EnumInfoLogs wraps the zesDriverEnumInfoLogsExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/driver.html#zesdriverenuminfologsext
+//
+// It returns core.RESULT_ERROR_UNSUPPORTED_FEATURE if the driver does not
+// advertise the info logs extension.
+func (z *Driver) EnumInfoLogs() ([]*InfoLog, error) {
+	if !z.extensions.has(INFO_LOGS_EXT_NAME, uint32(INFO_LOGS_EXT_VERSION_CURRENT)) {
+		return nil, core.RESULT_ERROR_UNSUPPORTED_FEATURE
+	}
+
+	count := uint32(0)
+	if ret := zesDriverEnumInfoLogsExt(z.handle, &count, nil); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	handles := make([]infoLogHandle, count)
+	ret := zesDriverEnumInfoLogsExt(z.handle, &count, handles)
+
+	infoLogs := make([]*InfoLog, len(handles))
+	for i, handle := range handles {
+		infoLog := &InfoLog{}
+		infoLog.setHandle(handle)
+		infoLogs[i] = infoLog
+	}
+	return infoLogs, ret.ToError()
+}
+
+// GetProperties wraps the zesInfoLogGetPropertiesExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log.html#zesinfologgetpropertiesext
+func (z *InfoLog) GetProperties() (InfoLogExtProperties, error) {
+	props := InfoLogExtProperties{stype: _STRUCTURE_TYPE_INFO_LOG_EXT_PROPERTIES}
+	ret := zesInfoLogGetPropertiesExt(z.handle, &props)
+	return props, ret.ToError()
+}
+
+// CreateInstance wraps the zesInfoLogCreateInstanceExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log.html#zesinfologcreateinstanceext
+//
+// It creates a collection instance of the info log, which collects records for
+// the caller to read with InfoLogInstance.ReadWithMetadata. An empty
+// instanceName selects the default, global buffer of the info log, which may be
+// shared with other consumers and carry data from other sources. A named
+// instance collects into a buffer of its own, which requires the
+// IsNamedInstanceSupported property, and holds the name until the instance is
+// deleted: creating another instance with the same name, in this or in another
+// process, fails with core.RESULT_ERROR_HANDLE_OBJECT_IN_USE.
+//
+// The bufferSizeInKb argument requests the size of the collection buffer, in
+// kilobytes. A zero value asks the driver to use its default size, and a
+// non-zero one may be rounded to the closest size that the driver supports.
+// The applied size is reported back in the BufferSizeInKb field of the
+// returned instance.
+//
+// The instance must be deleted with InfoLogInstance.Delete when it is not
+// needed anymore.
+//
+// NOTE: not thread-safe, must not be called from simultaneous threads.
+func (z *InfoLog) CreateInstance(instanceName string, bufferSizeInKb uint32) (*InfoLogInstance, error) {
+	desc := infoLogInstanceExtDesc{stype: _STRUCTURE_TYPE_INFO_LOG_INSTANCE_EXT_DESC, PBufferSizeInKb: &bufferSizeInKb}
+	var pinner runtime.Pinner
+	pinner.Pin(&bufferSizeInKb)
+	defer pinner.Unpin()
+
+	var handle infoLogInstanceHandle
+	if ret := zesInfoLogCreateInstanceExt(z.handle, instanceName, &desc, &handle); ret != core.RESULT_SUCCESS {
+		return nil, ret.ToError()
+	}
+	instance := &InfoLogInstance{BufferSizeInKb: bufferSizeInKb}
+	instance.setHandle(handle)
+	return instance, nil
+}
+
+type infoLogCollectFunc func(infoLogInstanceHandle, uint64, *uint32, []byte, *uint32, []InfoLogMetadataExt,
+	*InfoLogReadStatusExt) core.Result
+
+// collect asks the collection instance what it holds and then reads (or peeks) that.
+//
+// NOTE/TODO: we could consider never returning RESULT_WARNING_DROPPED_DATA to
+// the caller (we can make status.DroppedRecordCount reliable). That would
+// simplify the error handling on that side. The only reason this was not done
+// is that it can mask a driver bug that returns RESULT_WARNING_DROPPED_DATA
+// with DroppedRecordCount=0 (that should never happen as unknown drop count is
+// denoted by -1).
+func (z *InfoLogInstance) collect(timeout time.Duration,
+	collect infoLogCollectFunc) ([]InfoLogRecord, InfoLogReadStatusExt, error) {
+	ms := internal.DurationToMillisecondsUint64(timeout)
+
+	droppedRecordCount := func(ret core.Result, status InfoLogReadStatusExt) int64 {
+		if ret == core.RESULT_SUCCESS {
+			return 0
+		}
+		return status.DroppedRecordCount
+	}
+
+	// A query call (zero size or count) reports what the instance holds without
+	// consuming it. It may report core.RESULT_WARNING_DROPPED_DATA, too.
+	var size, count uint32
+	// NOTE: the spec explicitly requires that the application must set stype
+	status := InfoLogReadStatusExt{stype: _STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXT}
+	queryRet := collect(z.handle, ms, &size, nil, &count, nil, &status)
+	status.DroppedRecordCount = droppedRecordCount(queryRet, status)
+	if queryRet != core.RESULT_SUCCESS && queryRet != core.RESULT_WARNING_DROPPED_DATA {
+		return nil, status, queryRet.ToError()
+	}
+	if count == 0 || size == 0 {
+		return nil, status, queryRet.ToError()
+	}
+	queryDropped := status.DroppedRecordCount
+
+	// NOTE: what the query above reports is a non-consuming snapshot, while the
+	// call below consumes what it returns. I.e. records may arrive in between and
+	// the buffers sized here do not account for them. That is harmless, a record
+	// that does not fit is not consumed but left for the next call, which the
+	// HasDataToRead field of the read status reports.
+	buf := make([]byte, size)
+	metadata := make([]InfoLogMetadataExt, count)
+	for i := range metadata {
+		// NOTE: the spec explicitly requires that the application must set stype for each element
+		metadata[i].stype = _STRUCTURE_TYPE_INFO_LOG_METADATA_EXT
+	}
+
+	status = InfoLogReadStatusExt{stype: _STRUCTURE_TYPE_INFO_LOG_READ_STATUS_EXT}
+	ret := collect(z.handle, ms, &size, buf, &count, metadata, &status)
+	readDropped := droppedRecordCount(ret, status)
+
+	// Each call reports the drops since the previous one, so the counts add up.
+	// A drop that the query could not count (-1) is reported by the read.
+	switch {
+	case queryDropped < 0:
+		status.DroppedRecordCount = readDropped
+	case readDropped < 0:
+		status.DroppedRecordCount = -1
+	default:
+		status.DroppedRecordCount = queryDropped + readDropped
+		if ret == core.RESULT_SUCCESS {
+			// Propagate the warning from the query (if any)
+			ret = queryRet
+		}
+	}
+	if ret != core.RESULT_SUCCESS && ret != core.RESULT_WARNING_DROPPED_DATA {
+		return nil, status, ret.ToError()
+	}
+
+	// The Offset and LengthOfData fields of the metadata locate each record in buf
+	records := make([]InfoLogRecord, count)
+	for i, meta := range metadata[:count] {
+		end := int(meta.Offset) + int(meta.LengthOfData)
+		if end > int(size) {
+			return nil, status, fmt.Errorf(
+				"invalid info log metadata from the driver: record %d at offset %d with length %d is outside the %d bytes read: %w",
+				i, meta.Offset, meta.LengthOfData, size, core.RESULT_ERROR_UNKNOWN)
+		}
+		records[i] = InfoLogRecord{Metadata: meta, Data: buf[meta.Offset:end]}
+	}
+	return records, status, ret.ToError()
+}
+
+// ReadWithMetadata wraps the zesInfoLogInstanceReadWithMetadataExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log_instance.html#zesinfologinstancereadwithmetadataext
+//
+// It reads the records that the collection instance holds, with their
+// metadata, and the status of the read. Reading consumes the records, i.e.
+// subsequent calls do not return the same records again.
+//
+// The timeout bounds the search for the records, it is not a wait for records
+// to arrive: the driver returns as soon as it has searched what the instance
+// holds. A zero timeout returns immediately, without searching, and a negative
+// one searches everything that the instance holds. A timeout too short to reach
+// the first record returns no records with HasDataToRead set, and retries with
+// the same timeout may keep doing so: use a longer (or a negative) timeout then.
+//
+// The HasDataToRead field of the status tells whether the instance still holds
+// records, e.g. because one of them did not fit in the read buffer, i.e.
+// whether it is worth reading again. DroppedRecordCount counts the records
+// dropped since the previous call. It is non-zero (or -1 for "unknown") only
+// when data was dropped, also when an error is returned.
+//
+// A core.RESULT_ERROR_UNKNOWN error means that the driver located a record
+// outside the data that it read, i.e. the metadata does not match the data.
+//
+// NOTE: not thread-safe, see the note on the InfoLogInstance type.
+func (z *InfoLogInstance) ReadWithMetadata(timeout time.Duration) ([]InfoLogRecord, InfoLogReadStatusExt, error) {
+	return z.collect(timeout, zesInfoLogInstanceReadWithMetadataExt)
+}
+
+// PeekWithMetadata wraps the zesInfoLogInstancePeekWithMetadataExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log_instance.html#zesinfologinstancepeekwithmetadataext
+//
+// It is ReadWithMetadata without consuming the records: they are handed out
+// again by the calls that follow. Peeking requires the IsPeekDataSupported
+// property, otherwise it fails with core.RESULT_ERROR_UNSUPPORTED_FEATURE.
+//
+// A core.RESULT_ERROR_UNKNOWN error means that the driver located a record
+// outside the data that it read, i.e. the metadata does not match the data.
+//
+// NOTE: not thread-safe, see the note on the InfoLogInstance type.
+func (z *InfoLogInstance) PeekWithMetadata(timeout time.Duration) ([]InfoLogRecord, InfoLogReadStatusExt, error) {
+	return z.collect(timeout, zesInfoLogInstancePeekWithMetadataExt)
+}
+
+// Delete wraps the zesInfoLogInstanceDeleteExt function:
+// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/info_log_instance.html#zesinfologinstancedeleteext
+//
+// It stops the collection into the instance and releases its resources,
+// including the name that it held, if any. The records that the instance has
+// not handed out are lost. No other call may be in progress on the instance,
+// and it must not be used anymore after this, not even to delete it again.
+func (z *InfoLogInstance) Delete() error {
+	ret := zesInfoLogInstanceDeleteExt(z.handle)
+	return ret.ToError()
 }

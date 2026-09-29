@@ -18,9 +18,9 @@ for details.
 
 ## Requirements
 
-- Go 1.24 or later
-- oneAPI [Level-Zero Loader + headers](https://github.com/oneapi-src/level-zero) v1.33.0 or later
-  (i.e. Level-Zero API v1.18 or later)
+- Go 1.27 or later
+- oneAPI [Level-Zero Loader + headers](https://github.com/oneapi-src/level-zero) v1.34.0 or later
+  (i.e. Level-Zero API v1.19 or later)
 - Intel(R) [Graphics Compute Runtime](https://github.com/intel/compute-runtime)
   - Level-Zero backend needed for running the code using the bindings
 - [IGSC](https://github.com/intel/igsc) - Intel Graphics System Controller library
