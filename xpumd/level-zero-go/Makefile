@@ -19,10 +19,12 @@ COVERAGE_DIR := coverage
 # --- Helper targets ---
 
 .PHONY: help
+# List all targets, grouped by section, with their documentation
 help:
-	@echo -e "\nTargets:\n$$(grep '^[^#:. ]*:' Makefile | sed -e 's/^/- /' -e 's/:$$//')\n"
+	@awk -f hack/makefile-help.awk Makefile
 
 .PHONY: stats
+# Print per-filetype file / line counts of tracked files
 stats:
 	@echo "Type:       Files:   Lines:"
 	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
@@ -34,6 +36,7 @@ stats:
 # --- Build targets ---
 
 .PHONY: generate
+# Generate Go bindings from the Level-Zero headers, and the stub driver
 generate: clean-generated generate-stub install-doxygen
 	go mod download
 	$(Q)for pkg in $(PACKAGES); do \
@@ -42,18 +45,22 @@ generate: clean-generated generate-stub install-doxygen
 	go -C hack generate
 
 .PHONY: install-doxygen
+# Install Doxygen (needed for code generation)
 install-doxygen:
 	hack/install-doxygen.sh
 
 .PHONY: generate-stub
+# Generate the level-zero-stub driver sources
 generate-stub:
 	$(MAKE) -C level-zero-stub generate
 
 .PHONY: build-stub
+# Build the level-zero-stub driver
 build-stub:
 	$(MAKE) -C level-zero-stub all
 
 .PHONY: generate-dockerized
+# Run code generation in Docker, for reproducible output
 generate-dockerized: clean-generated
 	$(Q)docker build --target artifacts \
 	    --output type=local,dest=. \
@@ -61,6 +68,7 @@ generate-dockerized: clean-generated
 	    -f hack/Dockerfile.generate .
 
 .PHONY: clean-generated
+# Remove generated source files
 clean-generated:
 	for pkg in $(PACKAGES); do \
 	    rm -f $$pkg/cgo_helpers.go $$pkg/cgo_helpers.h $$pkg/cgo_helpers.c; \
@@ -70,6 +78,7 @@ clean-generated:
 	done
 
 .PHONY: clean
+# Remove generated build artifacts
 clean: clean-coverage
 	$(MAKE) -C examples clean
 	$(MAKE) -C level-zero-stub clean
@@ -78,32 +87,38 @@ clean: clean-coverage
 # --- Test targets ---
 
 .PHONY: test
+# Run all tests (stub driver + Go)
 test: test-stub test-go
 
 .PHONY: test-stub
+# Run the level-zero-stub driver's own test suite
 test-stub: build-stub
 	$(MAKE) -C level-zero-stub test
 
 .PHONY: test-go
+# Run Go unit tests against the stub driver
 test-go: build-stub
 	$(Q)GO_TEST_FLAGS="-tags test" \
 	  PKG_CONFIG_PATH=$(CURDIR)/level-zero-stub \
 	  hack/go-test-coverage.sh $(COVERAGE_DIR)/level-zero-go $(GO_MODULES)
 
 .PHONY: coverage
+# Generate a Go test coverage report
 coverage: test-go
 	@echo
 	$(Q)hack/coverage-report.sh $(COVERAGE_DIR)/level-zero-go $(GO_MODULES)
 
 .PHONY: clean-coverage
+# Remove coverage report files
 clean-coverage:
 	rm -rf $(COVERAGE_DIR)
 
 # --- Lint targets ---
 
+# Same as in "ci-checks.yml" GH workflow.
+# "label=disable" is needed for host volume mounts on hosts using Podman + SELinux.
 .PHONY: golint
-# same as in "ci-checks.yml" GH workflow
-# "label=disable" is needed for host volume mounts on hosts using Podman + SELinux
+# Run golangci-lint on all Go code
 golint:
 	@echo -e "\ngolint: linting Go code...\n"
 	docker run --rm -v $$PWD:/app -w /app --security-opt label=disable \
@@ -111,15 +126,18 @@ golint:
 	  golangci/golangci-lint:v2.13.2 golangci-lint run --color=always
 
 .PHONY: check-format
+# Check formatting of all sources
 check-format: check-go-format check-c-format
 	$(MAKE) -C level-zero-stub check-format
 
 .PHONY: check-c-format
+# Check clang-format formatting of C sources
 check-c-format:
 	@echo "Checking clang-format formatting..."
 	@clang-format --dry-run --Werror $(C_SOURCES)
 
 .PHONY: check-go-format
+# Check gofmt formatting of sources
 check-go-format:
 	@echo "Checking gofmt formatting..."
 	@unformatted=$$(gofmt -l .); \
@@ -133,13 +151,13 @@ check-go-format:
 	echo "✓ All Go files are properly formatted"
 
 .PHONY: shellcheck
-# <apt|dnf> install shellcheck
+# Lint shell scripts (requires: <apt|dnf> install shellcheck)
 shellcheck:
 	@echo -e "\nshellcheck: linting shell scripts...\n"
 	git ls-files -z '*.sh' | xargs -0 shellcheck
 
 .PHONY: yamllint
-# <apt|dnf> install yamllint
+# Lint YAML files (requires: <apt|dnf> install yamllint)
 yamllint:
 	@echo -e "\nyamllint: linting YAML files...\n"
 	git ls-files -z '*.yaml' '*.yml' | xargs -0 yamllint -d relaxed --no-warnings
