@@ -18,6 +18,31 @@ The available telemetry depends on the hardware, firmware, kernel and GPU driver
 of the host, and on the privileges of the daemon. See the
 [XPUM daemon README](../../README.md#metrics) for the details.
 
+### Reducing amount of metrics
+
+One may want fewer metrics from XPUMD e.g. to reduce Prometheus
+service resource usage, while avoiding losing data that might turn
+out important later on.
+
+Metrics documented as being derived from other metrics can be safely
+disabled in the XPUMD configuration because their values can also be
+calculated in (e.g. Grafana) metric dashboards.
+
+> [!NOTE]
+> XPUMD providing derived metrics is mainly a convenience for use-cases
+> that directly consume metric _point_ values (e.g. validation), though
+> XPUMD can also calculate rate values marginally more accurately than
+> later cluster telemetry stages (because it uses measurement timestamps
+> instead of reporting timestamps). That difference should not matter
+> normally though.
+
+Another alternative (to calculating derived metrics at visualization),
+is reducing amount of metrics by disabling static `size` and `limit`
+metrics when those values are known for all cluster HW.  There's also
+large number of frequency metrics related to its value aggregation and
+states, and the whole set of them is typically of less interest than
+the other metrics.
+
 ## Configuration
 
 ### Example Configuration

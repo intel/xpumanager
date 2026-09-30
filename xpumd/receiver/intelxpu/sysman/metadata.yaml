@@ -218,7 +218,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf]
   hw.gpu.bandwidth.utilization:
     enabled: true
-    description: GPU device (read+write) PCI bandwidth utilization ratio.
+    description: GPU device (read+write) PCI bandwidth utilization ratio. Derived from `hw.gpu.bandwidth.limit` + `hw.gpu.io.rate`.
     stability: development
     unit: "1"
     gauge:
@@ -255,9 +255,8 @@ metrics:
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.name, pci.bdf, network.io.direction]
   hw.gpu.io.rate:
-    # TODO: disable/drop this if limits are available on all relevant HW
     enabled: true
-    description: Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.
+    description: Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device. Derived from `hw.gpu.io`.
     stability: development
     unit: "By/s"
     gauge:
@@ -283,7 +282,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.bandwidth.utilization:
     enabled: true
-    description: Memory bandwidth (read+write) utilization ratio.
+    description: Memory bandwidth (read+write) utilization ratio. Derived from `hw.memory.bandwidth.limit` + `hw.memory.io.rate`.
     stability: development
     unit: "1"
     gauge:
@@ -310,9 +309,8 @@ metrics:
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type, network.io.direction]
   hw.memory.io.rate:
-    # TODO: disable/drop this if limits are available on all relevant HW
     enabled: true
-    description: Current memory bandwidth (read+write) usage in bytes/sec.
+    description: Current memory bandwidth (read+write) usage in bytes/sec. Derived from `hw.memory.io`.
     stability: development
     unit: "By/s"
     gauge:
@@ -330,7 +328,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.usage:
     enabled: true
-    description: Memory used.
+    description: Used memory amount. Derived from `hw.memory.size` + `hw.memory.free`.
     stability: development
     unit: "By"
     sum:
@@ -340,7 +338,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.utilization:
     enabled: true
-    description: Memory utilization ratio.
+    description: Memory utilization ratio. Derived from `hw.memory.size` + `hw.memory.usage`.
     stability: development
     unit: "1"
     gauge:
@@ -361,7 +359,6 @@ metrics:
     unit: "W"
     gauge:
       value_type: double
-    # TODO: attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, hw.power.limit.level, hw.power.limit.source]
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, com.intel.power.limit.level, com.intel.power.limit.source]
   hw.status:
     enabled: true
@@ -383,7 +380,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, statistic]
 
 tests:
-  # TODO: explore using a stub l0 driver for enabling lifecycle tests (for
-  # environment without real target hardware)
+  # TODO: explore using a stub l0 driver for enabling lifecycle tests
+  # (for environments without real target hardware)
   skip_lifecycle: true
   skip_shutdown: true

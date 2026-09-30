@@ -1230,7 +1230,7 @@ type metricHwGpuBandwidthUtilization struct {
 // init fills hw.gpu.bandwidth.utilization metric with initial data.
 func (m *metricHwGpuBandwidthUtilization) init() {
 	m.data.SetName("hw.gpu.bandwidth.utilization")
-	m.data.SetDescription("GPU device (read+write) PCI bandwidth utilization ratio.")
+	m.data.SetDescription("GPU device (read+write) PCI bandwidth utilization ratio. Derived from `hw.gpu.bandwidth.limit` + `hw.gpu.io.rate`.")
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
@@ -1661,7 +1661,7 @@ type metricHwGpuIoRate struct {
 // init fills hw.gpu.io.rate metric with initial data.
 func (m *metricHwGpuIoRate) init() {
 	m.data.SetName("hw.gpu.io.rate")
-	m.data.SetDescription("Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.")
+	m.data.SetDescription("Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device. Derived from `hw.gpu.io`.")
 	m.data.SetUnit("By/s")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
@@ -1963,7 +1963,7 @@ type metricHwMemoryBandwidthUtilization struct {
 // init fills hw.memory.bandwidth.utilization metric with initial data.
 func (m *metricHwMemoryBandwidthUtilization) init() {
 	m.data.SetName("hw.memory.bandwidth.utilization")
-	m.data.SetDescription("Memory bandwidth (read+write) utilization ratio.")
+	m.data.SetDescription("Memory bandwidth (read+write) utilization ratio. Derived from `hw.memory.bandwidth.limit` + `hw.memory.io.rate`.")
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
@@ -2067,7 +2067,7 @@ type metricHwMemoryFree struct {
 // init fills hw.memory.free metric with initial data.
 func (m *metricHwMemoryFree) init() {
 	m.data.SetName("hw.memory.free")
-	m.data.SetDescription("Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.")
+	m.data.SetDescription("Free memory.")
 	m.data.SetUnit("By")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
@@ -2282,7 +2282,7 @@ type metricHwMemoryIoRate struct {
 // init fills hw.memory.io.rate metric with initial data.
 func (m *metricHwMemoryIoRate) init() {
 	m.data.SetName("hw.memory.io.rate")
-	m.data.SetDescription("Current memory bandwidth (read+write) usage in bytes/sec.")
+	m.data.SetDescription("Current memory bandwidth (read+write) usage in bytes/sec. Derived from `hw.memory.io`.")
 	m.data.SetUnit("By/s")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
@@ -2492,7 +2492,7 @@ type metricHwMemoryUsage struct {
 // init fills hw.memory.usage metric with initial data.
 func (m *metricHwMemoryUsage) init() {
 	m.data.SetName("hw.memory.usage")
-	m.data.SetDescription("Memory used.")
+	m.data.SetDescription("Used memory amount. Derived from `hw.memory.size` + `hw.memory.free`.")
 	m.data.SetUnit("By")
 	m.data.SetEmptySum()
 	m.data.Sum().SetIsMonotonic(false)
@@ -2598,7 +2598,7 @@ type metricHwMemoryUtilization struct {
 // init fills hw.memory.utilization metric with initial data.
 func (m *metricHwMemoryUtilization) init() {
 	m.data.SetName("hw.memory.utilization")
-	m.data.SetDescription("Memory utilization ratio.")
+	m.data.SetDescription("Memory utilization ratio. Derived from `hw.memory.size` + `hw.memory.usage`.")
 	m.data.SetUnit("1")
 	m.data.SetEmptyGauge()
 	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)

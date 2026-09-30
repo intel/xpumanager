@@ -162,7 +162,7 @@ Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.
 
 ### hw.gpu.bandwidth.utilization
 
-GPU device (read+write) PCI bandwidth utilization ratio.
+GPU device (read+write) PCI bandwidth utilization ratio. Derived from `hw.gpu.bandwidth.limit` + `hw.gpu.io.rate`.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
@@ -241,7 +241,7 @@ Bytes received / transmitted over PCI bus by the GPU device.
 
 ### hw.gpu.io.rate
 
-Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.
+Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device. Derived from `hw.gpu.io`.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
@@ -294,7 +294,7 @@ Maximum total memory (read+write) bandwidth in bytes/sec.
 
 ### hw.memory.bandwidth.utilization
 
-Memory bandwidth (read+write) utilization ratio.
+Memory bandwidth (read+write) utilization ratio. Derived from `hw.memory.bandwidth.limit` + `hw.memory.io.rate`.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
@@ -313,7 +313,7 @@ Memory bandwidth (read+write) utilization ratio.
 
 ### hw.memory.free
 
-Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.
+Free memory.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
@@ -352,7 +352,7 @@ Bytes read from / written to memory.
 
 ### hw.memory.io.rate
 
-Current memory bandwidth (read+write) usage in bytes/sec.
+Current memory bandwidth (read+write) usage in bytes/sec. Derived from `hw.memory.io`.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |
@@ -390,7 +390,7 @@ Memory size. If physical memory size info is unavailable, provides max allocatab
 
 ### hw.memory.usage
 
-Memory used.
+Used memory amount. Derived from `hw.memory.size` + `hw.memory.free`.
 
 | Unit | Metric Type | Value Type | Aggregation Temporality | Monotonic | Stability |
 | ---- | ----------- | ---------- | ----------------------- | --------- | --------- |
@@ -409,7 +409,7 @@ Memory used.
 
 ### hw.memory.utilization
 
-Memory utilization ratio.
+Memory utilization ratio. Derived from `hw.memory.size` + `hw.memory.usage`.
 
 | Unit | Metric Type | Value Type | Stability |
 | ---- | ----------- | ---------- | --------- |

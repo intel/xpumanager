@@ -253,10 +253,10 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// total BW rate, b/us -> b/s
 	rate := float64(rxDiff+txDiff) / float64(timeDiff) * 1e6
 
-	// TODO: OTel spec prefers utilization ratio instead of rate, but that
-	// can be provided only when limit is known, and counters can be more
-	// easily validated against rate in dashboard.
-	// => drop later on, if limit is available on all relevant HW
+	// OTel spec prefers utilization ratio instead of rate, but that
+	// can be provided only when limit is known, and rate values can
+	// be validated more easily (with known workloads, or against
+	// counters from dashboards).
 	mb.RecordHwMemoryIoRateDataPoint(
 		ts, rate,
 		m.attributes.HwID,

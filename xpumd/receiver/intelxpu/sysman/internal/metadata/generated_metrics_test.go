@@ -827,7 +827,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.gpu.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "GPU device (read+write) PCI bandwidth utilization ratio.", mi.Description())
+						assert.Equal(t, "GPU device (read+write) PCI bandwidth utilization ratio. Derived from `hw.gpu.bandwidth.limit` + `hw.gpu.io.rate`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -848,7 +848,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.gpu.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "GPU device (read+write) PCI bandwidth utilization ratio.", mi.Description())
+						assert.Equal(t, "GPU device (read+write) PCI bandwidth utilization ratio. Derived from `hw.gpu.bandwidth.limit` + `hw.gpu.io.rate`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1114,7 +1114,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.gpu.io.rate"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.", mi.Description())
+						assert.Equal(t, "Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device. Derived from `hw.gpu.io`.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1135,7 +1135,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.gpu.io.rate"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device.", mi.Description())
+						assert.Equal(t, "Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device. Derived from `hw.gpu.io`.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1293,7 +1293,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Memory bandwidth (read+write) utilization ratio.", mi.Description())
+						assert.Equal(t, "Memory bandwidth (read+write) utilization ratio. Derived from `hw.memory.bandwidth.limit` + `hw.memory.io.rate`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1323,7 +1323,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Memory bandwidth (read+write) utilization ratio.", mi.Description())
+						assert.Equal(t, "Memory bandwidth (read+write) utilization ratio. Derived from `hw.memory.bandwidth.limit` + `hw.memory.io.rate`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1358,7 +1358,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.free"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.", mi.Description())
+						assert.Equal(t, "Free memory.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1390,7 +1390,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.free"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.", mi.Description())
+						assert.Equal(t, "Free memory.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1501,7 +1501,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.io.rate"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Current memory bandwidth (read+write) usage in bytes/sec.", mi.Description())
+						assert.Equal(t, "Current memory bandwidth (read+write) usage in bytes/sec. Derived from `hw.memory.io`.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1531,7 +1531,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.io.rate"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Current memory bandwidth (read+write) usage in bytes/sec.", mi.Description())
+						assert.Equal(t, "Current memory bandwidth (read+write) usage in bytes/sec. Derived from `hw.memory.io`.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1635,7 +1635,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.usage"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Memory used.", mi.Description())
+						assert.Equal(t, "Used memory amount. Derived from `hw.memory.size` + `hw.memory.free`.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1667,7 +1667,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.usage"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
 						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
-						assert.Equal(t, "Memory used.", mi.Description())
+						assert.Equal(t, "Used memory amount. Derived from `hw.memory.size` + `hw.memory.free`.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
 						assert.Equal(t, pmetric.AggregationTemporalityCumulative, mi.Sum().AggregationTemporality())
@@ -1704,7 +1704,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Memory utilization ratio.", mi.Description())
+						assert.Equal(t, "Memory utilization ratio. Derived from `hw.memory.size` + `hw.memory.usage`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
@@ -1734,7 +1734,7 @@ func TestMetricsBuilder(t *testing.T) {
 						validatedMetrics["hw.memory.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
 						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
-						assert.Equal(t, "Memory utilization ratio.", mi.Description())
+						assert.Equal(t, "Memory utilization ratio. Derived from `hw.memory.size` + `hw.memory.usage`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
 						assert.Equal(t, start, dp.StartTimestamp())
