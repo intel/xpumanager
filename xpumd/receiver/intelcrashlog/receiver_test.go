@@ -13,12 +13,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
 	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 func createReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) *crashlogReceiver {
@@ -233,4 +236,50 @@ func TestReceiverConsumerError(t *testing.T) {
 	rcvr.handlePath(context.Background(), path)
 
 	assert.Contains(t, rcvr.processedFiles, path)
+}
+
+func TestClosingReceiverWatcherChannels(t *testing.T) {
+	tests := []struct {
+		name  string
+		close func(w *fsnotify.Watcher)
+	}{
+		{
+			name:  "events channel closed",
+			close: func(w *fsnotify.Watcher) { close(w.Events) },
+		},
+		{
+			name:  "errors channel closed",
+			close: func(w *fsnotify.Watcher) { close(w.Errors) },
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			core, logs := observer.New(zap.WarnLevel)
+			rcvr := createReceiver(t, &Config{Directory: t.TempDir(), Glob: "*.bin"}, &consumertest.LogsSink{})
+			rcvr.logger = zap.New(core).Sugar()
+			// Override receiver watcher with a hand-crafted one to get control over the channels
+			watcher := &fsnotify.Watcher{Events: make(chan fsnotify.Event), Errors: make(chan error)}
+			rcvr.watcher = watcher
+
+			done := make(chan struct{})
+			go func() {
+				rcvr.run(context.Background())
+				close(done)
+			}()
+
+			// Watcher errors are logged, not fatal
+			watcher.Errors <- errors.New("queue overflow")
+			require.Eventually(t, func() bool {
+				return logs.FilterMessage("watcher error").Len() == 1
+			}, 5*time.Second, 10*time.Millisecond)
+
+			tt.close(watcher)
+			select {
+			case <-done:
+			case <-time.After(5 * time.Second):
+				t.Fatal("run() did not return after watcher channel was closed")
+			}
+		})
+	}
 }
