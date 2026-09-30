@@ -102,8 +102,6 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 	if props.PhysicalSize == 0 {
 		if state.Size > 0 {
 			device.logger.Infow("Memory size unavailable => allocatable size used as fallback", "attributes", m.attributes)
-		} else {
-			device.logger.Infow("Memory size unavailable => free memory metric replaces usage / ratio ones", "attributes", m.attributes)
 		}
 	}
 
@@ -162,16 +160,15 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			m.attributes.HwMemoryLocation,
 			m.attributes.HwMemoryType,
 		)
-	} else {
-		mb.RecordHwMemoryFreeDataPoint(ts, int64(state.Free),
-			m.attributes.HwID,
-			m.attributes.HwName,
-			m.attributes.PciBDF,
-			m.attributes.SubdeviceID,
-			m.attributes.HwMemoryLocation,
-			m.attributes.HwMemoryType,
-		)
 	}
+	mb.RecordHwMemoryFreeDataPoint(ts, int64(state.Free),
+		m.attributes.HwID,
+		m.attributes.HwName,
+		m.attributes.PciBDF,
+		m.attributes.SubdeviceID,
+		m.attributes.HwMemoryLocation,
+		m.attributes.HwMemoryType,
+	)
 
 	// Skip unknown memory state reporting until state has been known.
 	if state.Health != l0sysman.MEM_HEALTH_UNKNOWN || len(m.state.healthStatesSeen) > 0 {

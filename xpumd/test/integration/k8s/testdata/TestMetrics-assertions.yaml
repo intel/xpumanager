@@ -204,6 +204,10 @@ InitialValues:
         <<: *mem_common_labels
         network_io_direction: transmit
 
+    - name: hw_memory_free_bytes
+      value: 8589934592
+      labels: *mem_common_labels
+
     - name: hw_memory_usage_bytes
       value: 8589934592
       labels: *mem_common_labels
@@ -212,8 +216,7 @@ InitialValues:
       value: 0.5
       labels: *mem_common_labels
 
-    # hw.memory.free, reported for the second module instead of the size /
-    # usage / utilization metrics as its size is unknown.
+    # just hw.memory.free as its size is unknown.
     - name: hw_memory_free_bytes
       value: 2147483648
       labels: *mem2_common_labels
@@ -521,6 +524,10 @@ UpdatedValues:
         <<: *mem_common_labels
         network_io_direction: transmit
 
+    - name: hw_memory_free_bytes
+      value: 4294967296
+      labels: *mem_common_labels
+
     - name: hw_memory_usage_bytes
       value: 12884901888
       labels: *mem_common_labels
@@ -543,7 +550,7 @@ UpdatedValues:
       value: 0.003145728
       labels: *mem_common_labels
 
-    # hw.memory.free, only for mem2 (instead of the size/usage/utilization) as its size is unknown
+    # hw.memory.free, only for mem2 as its size is unknown
     - name: hw_memory_free_bytes
       value: 1073741824
       labels: *mem2_common_labels

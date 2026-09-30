@@ -291,7 +291,7 @@ metrics:
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.memory.location, hw.memory.type]
   hw.memory.free:
     enabled: true
-    description: Free memory. Reported only when `hw.memory.size` (and derived memory usage+ratio metrics) are unavailable.
+    description: Free memory.
     stability: development
     unit: "By"
     sum:
