@@ -19,13 +19,13 @@ help:
 	@awk -f level-zero-go/hack/makefile-help.awk Makefile
 
 .PHONY: stats
-# Print per-filetype file / line counts of tracked files
+# Print per-filetype file / line counts of tracked files for XPUMD + L0 Go binding
 stats:
-	@echo "Type:       Files:   Lines:"
+	@echo "Type:           Files:   Lines:"
 	@for ext in $$(git ls-files | sed -e 's%.*/%%' -e 's/.*\././' | grep -F . | sort -u); do \
 		files=$$(git ls-files "*$$ext" | wc -l); \
 		lines=$$(git ls-files -z "*$$ext" | xargs -0 xargs cat | wc -l); \
-		printf " %-10s %5d %8d\n" $$ext $$files $$lines; \
+		printf " %-14s %5d %8d\n" $$ext $$files $$lines; \
 	done
 
 # --- Build targets ---
