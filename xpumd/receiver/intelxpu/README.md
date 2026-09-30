@@ -1,5 +1,18 @@
 # Intel XPU Receiver
 
+* [Overview](#overview)
+  * [Reducing amount of metrics](#reducing-amount-of-metrics)
+* [Configuration](#configuration)
+  * [Example Configuration](#example-configuration)
+  * [Configuration Parameters](#configuration-parameters)
+    * [info_logs](#infologs)
+* [GPU Events](#gpu-events)
+  * [Attributes](#attributes)
+* [GPU Info Logs](#gpu-info-logs)
+  * [Log Record Format](#log-record-format)
+    * [Attributes](#attributes-1)
+  * [Known Limitations](#known-limitations)
+
 ## Overview
 
 The Intel XPU Receiver collects Intel GPU telemetry through the

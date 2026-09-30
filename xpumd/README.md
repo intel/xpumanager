@@ -9,6 +9,7 @@
 - [Features](#features)
   - [Metrics](#metrics)
   - [Device info exporter](#device-info-exporter)
+  - [Device watch](#device-watch)
 - [Development](#development)
 
 
