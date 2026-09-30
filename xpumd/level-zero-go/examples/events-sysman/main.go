@@ -5,10 +5,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/intel/level-zero-go/sysman"
@@ -35,8 +39,9 @@ const allEventFlags = sysman.EventTypeFlags(
 )
 
 const (
-	pollTimeout    time.Duration = -1 // negative value indicates infinite timeout
-	pollRetryDelay               = 1 * time.Second
+	// pollTimeout is finite for the pollers to notice the cancellation
+	pollTimeout    = 1 * time.Second
+	pollRetryDelay = 1 * time.Second
 )
 
 func main() {
@@ -54,20 +59,45 @@ func main() {
 		log.Fatal("No drivers found")
 	}
 
+	// SIGHUP and SIGPIPE (e.g. piped to head) would otherwise skip the cleanup
+	ctx, stop := signal.NotifyContext(context.Background(),
+		os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGPIPE)
+	defer stop()
+
+	listeners := make([]*eventListener, len(drivers))
 	var wg sync.WaitGroup
 	for i, driver := range drivers {
+		listeners[i] = newEventListener(i, driver)
 		wg.Go(func() {
-			pollDriver(i, driver)
+			pollDriver(ctx, listeners[i])
 		})
 	}
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
 
 	fmt.Println("Listening for events. Press Ctrl+C to exit.")
 
+	select {
+	case <-done:
+	case <-ctx.Done():
+		log.Print("Exiting")
+	}
+	// Wait for the pollers to stop listening before deleting the instances
+	stop()
 	wg.Wait()
+	for _, listener := range listeners {
+		listener.close()
+	}
 }
 
-func pollDriver(idx int, driver *sysman.Driver) {
-	sysDevices, err := driver.DeviceGet()
+// pollDriver listens for the events of the driver of the listener until ctx is
+// cancelled.
+func pollDriver(ctx context.Context, listener *eventListener) {
+	idx := listener.idx
+	sysDevices, err := listener.driver.DeviceGet()
 	if err != nil {
 		log.Printf("Error: driver %d: failed to get devices: %v", idx, err)
 		return
@@ -110,13 +140,14 @@ func pollDriver(idx int, driver *sysman.Driver) {
 		return
 	}
 
-	listener := newEventListener(idx, driver)
-
-	for {
+	for ctx.Err() == nil {
 		hasDeviceEvents, events, err := listener.listen(pollTimeout, devices)
 		if err != nil {
 			log.Printf("Error: driver %d: event listen: %v", idx, err)
-			time.Sleep(pollRetryDelay)
+			select {
+			case <-ctx.Done():
+			case <-time.After(pollRetryDelay):
+			}
 			continue
 		}
 		if !hasDeviceEvents {
