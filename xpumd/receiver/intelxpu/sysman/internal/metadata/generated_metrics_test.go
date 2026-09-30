@@ -60,6 +60,9 @@ func TestMetricsBuilder(t *testing.T) {
 			aggMap := make(map[string]string) // contains the aggregation strategies for each metric name
 			aggMap["hw.energy"] = mb.metricHwEnergy.config.AggregationStrategy
 			aggMap["hw.errors"] = mb.metricHwErrors.config.AggregationStrategy
+			aggMap["hw.fan.speed"] = mb.metricHwFanSpeed.config.AggregationStrategy
+			aggMap["hw.fan.speed.limit"] = mb.metricHwFanSpeedLimit.config.AggregationStrategy
+			aggMap["hw.fan.speed_ratio"] = mb.metricHwFanSpeedRatio.config.AggregationStrategy
 			aggMap["hw.frequency"] = mb.metricHwFrequency.config.AggregationStrategy
 			aggMap["hw.frequency.limit"] = mb.metricHwFrequencyLimit.config.AggregationStrategy
 			aggMap["hw.frequency.request"] = mb.metricHwFrequencyRequest.config.AggregationStrategy
@@ -103,6 +106,24 @@ func TestMetricsBuilder(t *testing.T) {
 			mb.RecordHwErrorsDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", AttributeHwTypeFrequency, AttributeErrorTypeCorrectable, "error.category-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwErrorsDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", AttributeHwTypeGpu, AttributeErrorTypeUncorrectable, "error.category-val-2")
+			}
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwFanSpeedDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordHwFanSpeedDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+			}
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwFanSpeedLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "hw.limit_type-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordHwFanSpeedLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", "hw.limit_type-val-2")
+			}
+			defaultMetricsCount++
+			allMetricsCount++
+			mb.RecordHwFanSpeedRatioDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
+			if tt.name == "reaggregate_set" {
+				mb.RecordHwFanSpeedRatioDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
 			}
 			defaultMetricsCount++
 			allMetricsCount++
@@ -254,6 +275,9 @@ func TestMetricsBuilder(t *testing.T) {
 			if tt.name == "reaggregate_set" {
 				assert.Empty(t, mb.metricHwEnergy.aggDataPoints)
 				assert.Empty(t, mb.metricHwErrors.aggDataPoints)
+				assert.Empty(t, mb.metricHwFanSpeed.aggDataPoints)
+				assert.Empty(t, mb.metricHwFanSpeedLimit.aggDataPoints)
+				assert.Empty(t, mb.metricHwFanSpeedRatio.aggDataPoints)
 				assert.Empty(t, mb.metricHwFrequency.aggDataPoints)
 				assert.Empty(t, mb.metricHwFrequencyLimit.aggDataPoints)
 				assert.Empty(t, mb.metricHwFrequencyRequest.aggDataPoints)
@@ -441,6 +465,191 @@ func TestMetricsBuilder(t *testing.T) {
 						_, ok = dp.Attributes().Get("error.type")
 						assert.False(t, ok)
 						_, ok = dp.Attributes().Get("error.category")
+						assert.False(t, ok)
+					}
+				case "hw.fan.speed":
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["hw.fan.speed"], "Found a duplicate in the metrics slice: hw.fan.speed")
+						validatedMetrics["hw.fan.speed"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "GPU fan speed.", mi.Description())
+						assert.Equal(t, "{rev}/min", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())
+						hwNameAttrVal, ok := dp.Attributes().Get("hw.name")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.name-val", hwNameAttrVal.Str())
+						pciBdfAttrVal, ok := dp.Attributes().Get("pci.bdf")
+						assert.True(t, ok)
+						assert.Equal(t, "pci.bdf-val", pciBdfAttrVal.Str())
+						comIntelSubdeviceIDAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_id")
+						assert.True(t, ok)
+						assert.Equal(t, "com.intel.subdevice_id-val", comIntelSubdeviceIDAttrVal.Str())
+						hwSensorLocationAttrVal, ok := dp.Attributes().Get("hw.sensor_location")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.sensor_location-val", hwSensorLocationAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["hw.fan.speed"], "Found a duplicate in the metrics slice: hw.fan.speed")
+						validatedMetrics["hw.fan.speed"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "GPU fan speed.", mi.Description())
+						assert.Equal(t, "{rev}/min", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["hw.fan.speed"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("hw.id")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("pci.bdf")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("com.intel.subdevice_id")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.sensor_location")
+						assert.False(t, ok)
+					}
+				case "hw.fan.speed.limit":
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["hw.fan.speed.limit"], "Found a duplicate in the metrics slice: hw.fan.speed.limit")
+						validatedMetrics["hw.fan.speed.limit"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "GPU fan speed limit.", mi.Description())
+						assert.Equal(t, "{rev}/min", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						assert.Equal(t, int64(1), dp.IntValue())
+						hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())
+						hwNameAttrVal, ok := dp.Attributes().Get("hw.name")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.name-val", hwNameAttrVal.Str())
+						pciBdfAttrVal, ok := dp.Attributes().Get("pci.bdf")
+						assert.True(t, ok)
+						assert.Equal(t, "pci.bdf-val", pciBdfAttrVal.Str())
+						comIntelSubdeviceIDAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_id")
+						assert.True(t, ok)
+						assert.Equal(t, "com.intel.subdevice_id-val", comIntelSubdeviceIDAttrVal.Str())
+						hwSensorLocationAttrVal, ok := dp.Attributes().Get("hw.sensor_location")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.sensor_location-val", hwSensorLocationAttrVal.Str())
+						hwLimitTypeAttrVal, ok := dp.Attributes().Get("hw.limit_type")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.limit_type-val", hwLimitTypeAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["hw.fan.speed.limit"], "Found a duplicate in the metrics slice: hw.fan.speed.limit")
+						validatedMetrics["hw.fan.speed.limit"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "GPU fan speed limit.", mi.Description())
+						assert.Equal(t, "{rev}/min", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+						switch aggMap["hw.fan.speed.limit"] {
+						case "sum":
+							assert.Equal(t, int64(4), dp.IntValue())
+						case "avg":
+							assert.Equal(t, int64(2), dp.IntValue())
+						case "min":
+							assert.Equal(t, int64(1), dp.IntValue())
+						case "max":
+							assert.Equal(t, int64(3), dp.IntValue())
+						}
+						_, ok := dp.Attributes().Get("hw.id")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("pci.bdf")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("com.intel.subdevice_id")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.sensor_location")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.limit_type")
+						assert.False(t, ok)
+					}
+				case "hw.fan.speed_ratio":
+					if tt.name != "reaggregate_set" {
+						assert.False(t, validatedMetrics["hw.fan.speed_ratio"], "Found a duplicate in the metrics slice: hw.fan.speed_ratio")
+						validatedMetrics["hw.fan.speed_ratio"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "GPU fan speed ratio. Derived from `hw.fan.speed` + `hw.fan.speed.limit`.", mi.Description())
+						assert.Equal(t, "1", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+						assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+						hwIDAttrVal, ok := dp.Attributes().Get("hw.id")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.id-val", hwIDAttrVal.Str())
+						hwNameAttrVal, ok := dp.Attributes().Get("hw.name")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.name-val", hwNameAttrVal.Str())
+						pciBdfAttrVal, ok := dp.Attributes().Get("pci.bdf")
+						assert.True(t, ok)
+						assert.Equal(t, "pci.bdf-val", pciBdfAttrVal.Str())
+						comIntelSubdeviceIDAttrVal, ok := dp.Attributes().Get("com.intel.subdevice_id")
+						assert.True(t, ok)
+						assert.Equal(t, "com.intel.subdevice_id-val", comIntelSubdeviceIDAttrVal.Str())
+						hwSensorLocationAttrVal, ok := dp.Attributes().Get("hw.sensor_location")
+						assert.True(t, ok)
+						assert.Equal(t, "hw.sensor_location-val", hwSensorLocationAttrVal.Str())
+					} else {
+						assert.False(t, validatedMetrics["hw.fan.speed_ratio"], "Found a duplicate in the metrics slice: hw.fan.speed_ratio")
+						validatedMetrics["hw.fan.speed_ratio"] = true
+						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
+						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, "GPU fan speed ratio. Derived from `hw.fan.speed` + `hw.fan.speed.limit`.", mi.Description())
+						assert.Equal(t, "1", mi.Unit())
+						dp := mi.Gauge().DataPoints().At(0)
+						assert.Equal(t, start, dp.StartTimestamp())
+						assert.Equal(t, ts, dp.Timestamp())
+						assert.Equal(t, pmetric.NumberDataPointValueTypeDouble, dp.ValueType())
+						switch aggMap["hw.fan.speed_ratio"] {
+						case "sum":
+							assert.InDelta(t, float64(4), dp.DoubleValue(), 0.01)
+						case "avg":
+							assert.InDelta(t, float64(2), dp.DoubleValue(), 0.01)
+						case "min":
+							assert.InDelta(t, float64(1), dp.DoubleValue(), 0.01)
+						case "max":
+							assert.InDelta(t, float64(3), dp.DoubleValue(), 0.01)
+						}
+						_, ok := dp.Attributes().Get("hw.id")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.name")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("pci.bdf")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("com.intel.subdevice_id")
+						assert.False(t, ok)
+						_, ok = dp.Attributes().Get("hw.sensor_location")
 						assert.False(t, ok)
 					}
 				case "hw.frequency":

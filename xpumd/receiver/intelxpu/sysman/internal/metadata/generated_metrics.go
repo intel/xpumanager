@@ -260,6 +260,18 @@ var MetricsInfo = metricsInfo{
 		Name:       "hw.errors",
 		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.type", "error.type", "error.category"},
 	},
+	HwFanSpeed: metricInfo{
+		Name:       "hw.fan.speed",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location"},
+	},
+	HwFanSpeedLimit: metricInfo{
+		Name:       "hw.fan.speed.limit",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location", "hw.limit_type"},
+	},
+	HwFanSpeedRatio: metricInfo{
+		Name:       "hw.fan.speed_ratio",
+		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.sensor_location"},
+	},
 	HwFrequency: metricInfo{
 		Name:       "hw.frequency",
 		Attributes: []string{"hw.id", "hw.name", "pci.bdf", "com.intel.subdevice_id", "hw.frequency.domain", "aggregation"},
@@ -361,6 +373,9 @@ var MetricsInfo = metricsInfo{
 type metricsInfo struct {
 	HwEnergy                     metricInfo
 	HwErrors                     metricInfo
+	HwFanSpeed                   metricInfo
+	HwFanSpeedLimit              metricInfo
+	HwFanSpeedRatio              metricInfo
 	HwFrequency                  metricInfo
 	HwFrequencyLimit             metricInfo
 	HwFrequencyRequest           metricInfo
@@ -596,6 +611,312 @@ func (m *metricHwErrors) emit(metrics pmetric.MetricSlice) {
 
 func newMetricHwErrors(cfg HwErrorsMetricConfig) metricHwErrors {
 	m := metricHwErrors{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwFanSpeed struct {
+	data          pmetric.Metric         // data buffer for generated metric.
+	config        HwFanSpeedMetricConfig // metric config provided by user.
+	capacity      int                    // max observed number of data points added to the metric.
+	aggDataPoints []int64                // slice containing number of aggregated datapoints at each index
+}
+
+// init fills hw.fan.speed metric with initial data.
+func (m *metricHwFanSpeed) init() {
+	m.data.SetName("hw.fan.speed")
+	m.data.SetDescription("GPU fan speed.")
+	m.data.SetUnit("{rev}/min")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
+}
+
+func (m *metricHwFanSpeed) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+
+	dp := pmetric.NewNumberDataPoint()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
+	dp.SetIntValue(val)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwFanSpeed) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwFanSpeed) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwFanSpeed(cfg HwFanSpeedMetricConfig) metricHwFanSpeed {
+	m := metricHwFanSpeed{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwFanSpeedLimit struct {
+	data          pmetric.Metric              // data buffer for generated metric.
+	config        HwFanSpeedLimitMetricConfig // metric config provided by user.
+	capacity      int                         // max observed number of data points added to the metric.
+	aggDataPoints []int64                     // slice containing number of aggregated datapoints at each index
+}
+
+// init fills hw.fan.speed.limit metric with initial data.
+func (m *metricHwFanSpeedLimit) init() {
+	m.data.SetName("hw.fan.speed.limit")
+	m.data.SetDescription("GPU fan speed limit.")
+	m.data.SetUnit("{rev}/min")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
+}
+
+func (m *metricHwFanSpeedLimit) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, hwLimitTypeAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+
+	dp := pmetric.NewNumberDataPoint()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedLimitMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedLimitMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedLimitMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedLimitMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedLimitMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedLimitMetricAttributeKeyHwLimitType) {
+		dp.Attributes().PutStr("hw.limit_type", hwLimitTypeAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetIntValue(dpi.IntValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.IntValue() > val {
+					dpi.SetIntValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.IntValue() < val {
+					dpi.SetIntValue(val)
+				}
+				return
+			}
+		}
+	}
+
+	dp.SetIntValue(val)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwFanSpeedLimit) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwFanSpeedLimit) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetIntValue(m.data.Gauge().DataPoints().At(i).IntValue() / aggCount)
+			}
+		}
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwFanSpeedLimit(cfg HwFanSpeedLimitMetricConfig) metricHwFanSpeedLimit {
+	m := metricHwFanSpeedLimit{config: cfg}
+
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
+}
+
+type metricHwFanSpeedRatio struct {
+	data          pmetric.Metric              // data buffer for generated metric.
+	config        HwFanSpeedRatioMetricConfig // metric config provided by user.
+	capacity      int                         // max observed number of data points added to the metric.
+	aggDataPoints []float64                   // slice containing number of aggregated datapoints at each index
+}
+
+// init fills hw.fan.speed_ratio metric with initial data.
+func (m *metricHwFanSpeedRatio) init() {
+	m.data.SetName("hw.fan.speed_ratio")
+	m.data.SetDescription("GPU fan speed ratio. Derived from `hw.fan.speed` + `hw.fan.speed.limit`.")
+	m.data.SetUnit("1")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+	m.aggDataPoints = m.aggDataPoints[:0]
+}
+
+func (m *metricHwFanSpeedRatio) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+
+	dp := pmetric.NewNumberDataPoint()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedRatioMetricAttributeKeyHwID) {
+		dp.Attributes().PutStr("hw.id", hwIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedRatioMetricAttributeKeyHwName) {
+		dp.Attributes().PutStr("hw.name", hwNameAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedRatioMetricAttributeKeyPciBdf) {
+		dp.Attributes().PutStr("pci.bdf", pciBdfAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedRatioMetricAttributeKeyComIntelSubdeviceID) {
+		dp.Attributes().PutStr("com.intel.subdevice_id", comIntelSubdeviceIDAttributeValue)
+	}
+	if slices.Contains(m.config.EnabledAttributes, HwFanSpeedRatioMetricAttributeKeyHwSensorLocation) {
+		dp.Attributes().PutStr("hw.sensor_location", hwSensorLocationAttributeValue)
+	}
+
+	var s string
+	dps := m.data.Gauge().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dpi := dps.At(i)
+		if dp.Attributes().Equal(dpi.Attributes()) && dp.StartTimestamp() == dpi.StartTimestamp() && dp.Timestamp() == dpi.Timestamp() {
+			switch s = m.config.AggregationStrategy; s {
+			case AggregationStrategySum, AggregationStrategyAvg:
+				dpi.SetDoubleValue(dpi.DoubleValue() + val)
+				m.aggDataPoints[i] += 1
+				return
+			case AggregationStrategyMin:
+				if dpi.DoubleValue() > val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			case AggregationStrategyMax:
+				if dpi.DoubleValue() < val {
+					dpi.SetDoubleValue(val)
+				}
+				return
+			}
+		}
+	}
+
+	dp.SetDoubleValue(val)
+	m.aggDataPoints = append(m.aggDataPoints, 1)
+	dp.MoveTo(dps.AppendEmpty())
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricHwFanSpeedRatio) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricHwFanSpeedRatio) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		if m.config.AggregationStrategy == AggregationStrategyAvg {
+			for i, aggCount := range m.aggDataPoints {
+				m.data.Gauge().DataPoints().At(i).SetDoubleValue(m.data.Gauge().DataPoints().At(i).DoubleValue() / aggCount)
+			}
+		}
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricHwFanSpeedRatio(cfg HwFanSpeedRatioMetricConfig) metricHwFanSpeedRatio {
+	m := metricHwFanSpeedRatio{config: cfg}
 
 	if cfg.Enabled {
 		m.data = pmetric.NewMetric()
@@ -3120,6 +3441,9 @@ type MetricsBuilder struct {
 	buildInfo                          component.BuildInfo  // contains version information.
 	metricHwEnergy                     metricHwEnergy
 	metricHwErrors                     metricHwErrors
+	metricHwFanSpeed                   metricHwFanSpeed
+	metricHwFanSpeedLimit              metricHwFanSpeedLimit
+	metricHwFanSpeedRatio              metricHwFanSpeedRatio
 	metricHwFrequency                  metricHwFrequency
 	metricHwFrequencyLimit             metricHwFrequencyLimit
 	metricHwFrequencyRequest           metricHwFrequencyRequest
@@ -3171,6 +3495,9 @@ func NewMetricsBuilder(mbc MetricsBuilderConfig, settings scraper.Settings, opti
 		buildInfo:                          settings.BuildInfo,
 		metricHwEnergy:                     newMetricHwEnergy(mbc.Metrics.HwEnergy),
 		metricHwErrors:                     newMetricHwErrors(mbc.Metrics.HwErrors),
+		metricHwFanSpeed:                   newMetricHwFanSpeed(mbc.Metrics.HwFanSpeed),
+		metricHwFanSpeedLimit:              newMetricHwFanSpeedLimit(mbc.Metrics.HwFanSpeedLimit),
+		metricHwFanSpeedRatio:              newMetricHwFanSpeedRatio(mbc.Metrics.HwFanSpeedRatio),
 		metricHwFrequency:                  newMetricHwFrequency(mbc.Metrics.HwFrequency),
 		metricHwFrequencyLimit:             newMetricHwFrequencyLimit(mbc.Metrics.HwFrequencyLimit),
 		metricHwFrequencyRequest:           newMetricHwFrequencyRequest(mbc.Metrics.HwFrequencyRequest),
@@ -3263,6 +3590,9 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
 	mb.metricHwEnergy.emit(ils.Metrics())
 	mb.metricHwErrors.emit(ils.Metrics())
+	mb.metricHwFanSpeed.emit(ils.Metrics())
+	mb.metricHwFanSpeedLimit.emit(ils.Metrics())
+	mb.metricHwFanSpeedRatio.emit(ils.Metrics())
 	mb.metricHwFrequency.emit(ils.Metrics())
 	mb.metricHwFrequencyLimit.emit(ils.Metrics())
 	mb.metricHwFrequencyRequest.emit(ils.Metrics())
@@ -3316,6 +3646,21 @@ func (mb *MetricsBuilder) RecordHwEnergyDataPoint(ts pcommon.Timestamp, val floa
 // RecordHwErrorsDataPoint adds a data point to hw.errors metric.
 func (mb *MetricsBuilder) RecordHwErrorsDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwTypeAttributeValue AttributeHwType, errorTypeAttributeValue AttributeErrorType, errorCategoryAttributeValue string) {
 	mb.metricHwErrors.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwTypeAttributeValue.String(), errorTypeAttributeValue.String(), errorCategoryAttributeValue)
+}
+
+// RecordHwFanSpeedDataPoint adds a data point to hw.fan.speed metric.
+func (mb *MetricsBuilder) RecordHwFanSpeedDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
+	mb.metricHwFanSpeed.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue)
+}
+
+// RecordHwFanSpeedLimitDataPoint adds a data point to hw.fan.speed.limit metric.
+func (mb *MetricsBuilder) RecordHwFanSpeedLimitDataPoint(ts pcommon.Timestamp, val int64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string, hwLimitTypeAttributeValue string) {
+	mb.metricHwFanSpeedLimit.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue, hwLimitTypeAttributeValue)
+}
+
+// RecordHwFanSpeedRatioDataPoint adds a data point to hw.fan.speed_ratio metric.
+func (mb *MetricsBuilder) RecordHwFanSpeedRatioDataPoint(ts pcommon.Timestamp, val float64, hwIDAttributeValue string, hwNameAttributeValue string, pciBdfAttributeValue string, comIntelSubdeviceIDAttributeValue string, hwSensorLocationAttributeValue string) {
+	mb.metricHwFanSpeedRatio.recordDataPoint(mb.startTime, ts, val, hwIDAttributeValue, hwNameAttributeValue, pciBdfAttributeValue, comIntelSubdeviceIDAttributeValue, hwSensorLocationAttributeValue)
 }
 
 // RecordHwFrequencyDataPoint adds a data point to hw.frequency metric.

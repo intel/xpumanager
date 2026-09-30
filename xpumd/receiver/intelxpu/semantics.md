@@ -147,6 +147,12 @@ _Seem just wrong_
   whereas `speed` is often understood as operations per time, e.g. FLOPS.
 
 
+_Are wrong_
+
+OTel spec specifies `rpm` as fan speed unit. However, that's not UCUM
+and therefore OTel builder will fail to build code using it.
+
+
 _Do not differentiate between base and derived metrics_
 
 Underlying HW and drivers provide base metrics like joules, usage and limits / sizes.
@@ -344,7 +350,7 @@ types / namespaces and their attributes.
 
 ### Details
 
-Used metrics names:
+Used metric names:
 
 * common OTel spec metrics
 * "semi-common" OTel spec metrics
@@ -354,6 +360,10 @@ Used metrics names:
   * `hw.gpu.bandwidth.*`, `hw.gpu.ecc.state`, `hw.gpu.info`, `hw.gpu.io.rate`
   * `hw.memory.bandwidth.*`, `hw.memory.io`, `hw.memory.io.rate`, `hw.memory.usage`
   * `hw.power.limit`
+
+Used metric units:
+
+* Fan speed unit is `{rev}/min` instead of `rpm` unit given in spec
 
 Used attributes:
 

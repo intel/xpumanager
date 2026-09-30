@@ -114,6 +114,163 @@ func (ms *HwErrorsMetricConfig) Validate() error {
 	return nil
 }
 
+// HwFanSpeedMetricAttributeKey specifies the key of an attribute for the hw.fan.speed metric.
+type HwFanSpeedMetricAttributeKey string
+
+const (
+	HwFanSpeedMetricAttributeKeyHwID                HwFanSpeedMetricAttributeKey = "hw.id"
+	HwFanSpeedMetricAttributeKeyHwName              HwFanSpeedMetricAttributeKey = "hw.name"
+	HwFanSpeedMetricAttributeKeyPciBdf              HwFanSpeedMetricAttributeKey = "pci.bdf"
+	HwFanSpeedMetricAttributeKeyComIntelSubdeviceID HwFanSpeedMetricAttributeKey = "com.intel.subdevice_id"
+	HwFanSpeedMetricAttributeKeyHwSensorLocation    HwFanSpeedMetricAttributeKey = "hw.sensor_location"
+)
+
+// HwFanSpeedMetricConfig provides config for the hw.fan.speed metric.
+type HwFanSpeedMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                         `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFanSpeedMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFanSpeedMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFanSpeedMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFanSpeedMetricAttributeKeyHwID, HwFanSpeedMetricAttributeKeyHwName, HwFanSpeedMetricAttributeKeyPciBdf, HwFanSpeedMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedMetricAttributeKeyHwSensorLocation:
+		default:
+			return fmt.Errorf("metric hw.fan.speed doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFanSpeedLimitMetricAttributeKey specifies the key of an attribute for the hw.fan.speed.limit metric.
+type HwFanSpeedLimitMetricAttributeKey string
+
+const (
+	HwFanSpeedLimitMetricAttributeKeyHwID                HwFanSpeedLimitMetricAttributeKey = "hw.id"
+	HwFanSpeedLimitMetricAttributeKeyHwName              HwFanSpeedLimitMetricAttributeKey = "hw.name"
+	HwFanSpeedLimitMetricAttributeKeyPciBdf              HwFanSpeedLimitMetricAttributeKey = "pci.bdf"
+	HwFanSpeedLimitMetricAttributeKeyComIntelSubdeviceID HwFanSpeedLimitMetricAttributeKey = "com.intel.subdevice_id"
+	HwFanSpeedLimitMetricAttributeKeyHwSensorLocation    HwFanSpeedLimitMetricAttributeKey = "hw.sensor_location"
+	HwFanSpeedLimitMetricAttributeKeyHwLimitType         HwFanSpeedLimitMetricAttributeKey = "hw.limit_type"
+)
+
+// HwFanSpeedLimitMetricConfig provides config for the hw.fan.speed.limit metric.
+type HwFanSpeedLimitMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                              `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFanSpeedLimitMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFanSpeedLimitMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFanSpeedLimitMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFanSpeedLimitMetricAttributeKeyHwID, HwFanSpeedLimitMetricAttributeKeyHwName, HwFanSpeedLimitMetricAttributeKeyPciBdf, HwFanSpeedLimitMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedLimitMetricAttributeKeyHwSensorLocation, HwFanSpeedLimitMetricAttributeKeyHwLimitType:
+		default:
+			return fmt.Errorf("metric hw.fan.speed.limit doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, hw.limit_type]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
+// HwFanSpeedRatioMetricAttributeKey specifies the key of an attribute for the hw.fan.speed_ratio metric.
+type HwFanSpeedRatioMetricAttributeKey string
+
+const (
+	HwFanSpeedRatioMetricAttributeKeyHwID                HwFanSpeedRatioMetricAttributeKey = "hw.id"
+	HwFanSpeedRatioMetricAttributeKeyHwName              HwFanSpeedRatioMetricAttributeKey = "hw.name"
+	HwFanSpeedRatioMetricAttributeKeyPciBdf              HwFanSpeedRatioMetricAttributeKey = "pci.bdf"
+	HwFanSpeedRatioMetricAttributeKeyComIntelSubdeviceID HwFanSpeedRatioMetricAttributeKey = "com.intel.subdevice_id"
+	HwFanSpeedRatioMetricAttributeKeyHwSensorLocation    HwFanSpeedRatioMetricAttributeKey = "hw.sensor_location"
+)
+
+// HwFanSpeedRatioMetricConfig provides config for the hw.fan.speed_ratio metric.
+type HwFanSpeedRatioMetricConfig struct {
+	Enabled          bool `mapstructure:"enabled"`
+	enabledSetByUser bool
+
+	AggregationStrategy string                              `mapstructure:"aggregation_strategy"`
+	EnabledAttributes   []HwFanSpeedRatioMetricAttributeKey `mapstructure:"attributes"`
+}
+
+func (ms *HwFanSpeedRatioMetricConfig) Unmarshal(parser *confmap.Conf) error {
+	if parser == nil {
+		return nil
+	}
+
+	err := parser.Unmarshal(ms)
+	if err != nil {
+		return err
+	}
+
+	ms.enabledSetByUser = parser.IsSet("enabled")
+	return nil
+}
+
+func (ms *HwFanSpeedRatioMetricConfig) Validate() error {
+	for _, val := range ms.EnabledAttributes {
+		switch val {
+		case HwFanSpeedRatioMetricAttributeKeyHwID, HwFanSpeedRatioMetricAttributeKeyHwName, HwFanSpeedRatioMetricAttributeKeyPciBdf, HwFanSpeedRatioMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedRatioMetricAttributeKeyHwSensorLocation:
+		default:
+			return fmt.Errorf("metric hw.fan.speed_ratio doesn't have an attribute %v, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]", val)
+		}
+	}
+
+	switch ms.AggregationStrategy {
+	case AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax:
+	default:
+		return fmt.Errorf("invalid aggregation strategy %q, valid strategies: [%s, %s, %s, %s]", ms.AggregationStrategy, AggregationStrategySum, AggregationStrategyAvg, AggregationStrategyMin, AggregationStrategyMax)
+	}
+
+	return nil
+}
+
 // HwFrequencyMetricAttributeKey specifies the key of an attribute for the hw.frequency metric.
 type HwFrequencyMetricAttributeKey string
 
@@ -1386,6 +1543,9 @@ func (ms *HwTemperatureMetricConfig) Validate() error {
 type MetricsConfig struct {
 	HwEnergy                     HwEnergyMetricConfig                     `mapstructure:"hw.energy"`
 	HwErrors                     HwErrorsMetricConfig                     `mapstructure:"hw.errors"`
+	HwFanSpeed                   HwFanSpeedMetricConfig                   `mapstructure:"hw.fan.speed"`
+	HwFanSpeedLimit              HwFanSpeedLimitMetricConfig              `mapstructure:"hw.fan.speed.limit"`
+	HwFanSpeedRatio              HwFanSpeedRatioMetricConfig              `mapstructure:"hw.fan.speed_ratio"`
 	HwFrequency                  HwFrequencyMetricConfig                  `mapstructure:"hw.frequency"`
 	HwFrequencyLimit             HwFrequencyLimitMetricConfig             `mapstructure:"hw.frequency.limit"`
 	HwFrequencyRequest           HwFrequencyRequestMetricConfig           `mapstructure:"hw.frequency.request"`
@@ -1423,6 +1583,21 @@ func DefaultMetricsConfig() MetricsConfig {
 			Enabled:             true,
 			AggregationStrategy: AggregationStrategySum,
 			EnabledAttributes:   []HwErrorsMetricAttributeKey{HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory},
+		},
+		HwFanSpeed: HwFanSpeedMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFanSpeedMetricAttributeKey{HwFanSpeedMetricAttributeKeyHwID, HwFanSpeedMetricAttributeKeyHwName, HwFanSpeedMetricAttributeKeyPciBdf, HwFanSpeedMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedMetricAttributeKeyHwSensorLocation},
+		},
+		HwFanSpeedLimit: HwFanSpeedLimitMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFanSpeedLimitMetricAttributeKey{HwFanSpeedLimitMetricAttributeKeyHwID, HwFanSpeedLimitMetricAttributeKeyHwName, HwFanSpeedLimitMetricAttributeKeyPciBdf, HwFanSpeedLimitMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedLimitMetricAttributeKeyHwSensorLocation, HwFanSpeedLimitMetricAttributeKeyHwLimitType},
+		},
+		HwFanSpeedRatio: HwFanSpeedRatioMetricConfig{
+			Enabled:             true,
+			AggregationStrategy: AggregationStrategyAvg,
+			EnabledAttributes:   []HwFanSpeedRatioMetricAttributeKey{HwFanSpeedRatioMetricAttributeKeyHwID, HwFanSpeedRatioMetricAttributeKeyHwName, HwFanSpeedRatioMetricAttributeKeyPciBdf, HwFanSpeedRatioMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedRatioMetricAttributeKeyHwSensorLocation},
 		},
 		HwFrequency: HwFrequencyMetricConfig{
 			Enabled:             true,

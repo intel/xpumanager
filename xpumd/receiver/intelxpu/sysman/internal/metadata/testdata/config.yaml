@@ -7,6 +7,15 @@ all_set:
     hw.errors:
       enabled: true
       attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.type","error.type","error.category"]
+    hw.fan.speed:
+      enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
+    hw.fan.speed.limit:
+      enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location","hw.limit_type"]
+    hw.fan.speed_ratio:
+      enabled: true
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
     hw.frequency:
       enabled: true
       attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","aggregation"]
@@ -85,6 +94,15 @@ reaggregate_set:
       enabled: true
       attributes: []
     hw.errors:
+      enabled: true
+      attributes: []
+    hw.fan.speed:
+      enabled: true
+      attributes: []
+    hw.fan.speed.limit:
+      enabled: true
+      attributes: []
+    hw.fan.speed_ratio:
       enabled: true
       attributes: []
     hw.frequency:
@@ -167,6 +185,15 @@ none_set:
     hw.errors:
       enabled: false
       attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.type","error.type","error.category"]
+    hw.fan.speed:
+      enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
+    hw.fan.speed.limit:
+      enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location","hw.limit_type"]
+    hw.fan.speed_ratio:
+      enabled: false
+      attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.sensor_location"]
     hw.frequency:
       enabled: false
       attributes: ["hw.id","hw.name","pci.bdf","com.intel.subdevice_id","hw.frequency.domain","aggregation"]

@@ -36,6 +36,21 @@ func TestMetricsBuilderConfig(t *testing.T) {
 						AggregationStrategy: AggregationStrategySum,
 						EnabledAttributes:   []HwErrorsMetricAttributeKey{HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory},
 					},
+					HwFanSpeed: HwFanSpeedMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFanSpeedMetricAttributeKey{HwFanSpeedMetricAttributeKeyHwID, HwFanSpeedMetricAttributeKeyHwName, HwFanSpeedMetricAttributeKeyPciBdf, HwFanSpeedMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedMetricAttributeKeyHwSensorLocation},
+					},
+					HwFanSpeedLimit: HwFanSpeedLimitMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFanSpeedLimitMetricAttributeKey{HwFanSpeedLimitMetricAttributeKeyHwID, HwFanSpeedLimitMetricAttributeKeyHwName, HwFanSpeedLimitMetricAttributeKeyPciBdf, HwFanSpeedLimitMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedLimitMetricAttributeKeyHwSensorLocation, HwFanSpeedLimitMetricAttributeKeyHwLimitType},
+					},
+					HwFanSpeedRatio: HwFanSpeedRatioMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFanSpeedRatioMetricAttributeKey{HwFanSpeedRatioMetricAttributeKeyHwID, HwFanSpeedRatioMetricAttributeKeyHwName, HwFanSpeedRatioMetricAttributeKeyPciBdf, HwFanSpeedRatioMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedRatioMetricAttributeKeyHwSensorLocation},
+					},
 					HwFrequency: HwFrequencyMetricConfig{
 						Enabled:             true,
 						AggregationStrategy: AggregationStrategyAvg,
@@ -173,6 +188,21 @@ func TestMetricsBuilderConfig(t *testing.T) {
 						AggregationStrategy: AggregationStrategySum,
 						EnabledAttributes:   []HwErrorsMetricAttributeKey{HwErrorsMetricAttributeKeyHwID, HwErrorsMetricAttributeKeyHwName, HwErrorsMetricAttributeKeyPciBdf, HwErrorsMetricAttributeKeyComIntelSubdeviceID, HwErrorsMetricAttributeKeyHwType, HwErrorsMetricAttributeKeyErrorType, HwErrorsMetricAttributeKeyErrorCategory},
 					},
+					HwFanSpeed: HwFanSpeedMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFanSpeedMetricAttributeKey{HwFanSpeedMetricAttributeKeyHwID, HwFanSpeedMetricAttributeKeyHwName, HwFanSpeedMetricAttributeKeyPciBdf, HwFanSpeedMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedMetricAttributeKeyHwSensorLocation},
+					},
+					HwFanSpeedLimit: HwFanSpeedLimitMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFanSpeedLimitMetricAttributeKey{HwFanSpeedLimitMetricAttributeKeyHwID, HwFanSpeedLimitMetricAttributeKeyHwName, HwFanSpeedLimitMetricAttributeKeyPciBdf, HwFanSpeedLimitMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedLimitMetricAttributeKeyHwSensorLocation, HwFanSpeedLimitMetricAttributeKeyHwLimitType},
+					},
+					HwFanSpeedRatio: HwFanSpeedRatioMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []HwFanSpeedRatioMetricAttributeKey{HwFanSpeedRatioMetricAttributeKeyHwID, HwFanSpeedRatioMetricAttributeKeyHwName, HwFanSpeedRatioMetricAttributeKeyPciBdf, HwFanSpeedRatioMetricAttributeKeyComIntelSubdeviceID, HwFanSpeedRatioMetricAttributeKeyHwSensorLocation},
+					},
 					HwFrequency: HwFrequencyMetricConfig{
 						Enabled:             false,
 						AggregationStrategy: AggregationStrategyAvg,
@@ -300,7 +330,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(HwEnergyMetricConfig{}, HwErrorsMetricConfig{}, HwFrequencyMetricConfig{}, HwFrequencyLimitMetricConfig{}, HwFrequencyRequestMetricConfig{}, HwFrequencySamplesMetricConfig{}, HwFrequencyThrottleStatusMetricConfig{}, HwGpuBandwidthLimitMetricConfig{}, HwGpuBandwidthUtilizationMetricConfig{}, HwGpuEccStateMetricConfig{}, HwGpuInfoMetricConfig{}, HwGpuIoMetricConfig{}, HwGpuIoRateMetricConfig{}, HwGpuUtilizationMetricConfig{}, HwMemoryBandwidthLimitMetricConfig{}, HwMemoryBandwidthUtilizationMetricConfig{}, HwMemoryFreeMetricConfig{}, HwMemoryIoMetricConfig{}, HwMemoryIoRateMetricConfig{}, HwMemorySizeMetricConfig{}, HwMemoryUsageMetricConfig{}, HwMemoryUtilizationMetricConfig{}, HwPowerMetricConfig{}, HwPowerLimitMetricConfig{}, HwStatusMetricConfig{}, HwTemperatureMetricConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(HwEnergyMetricConfig{}, HwErrorsMetricConfig{}, HwFanSpeedMetricConfig{}, HwFanSpeedLimitMetricConfig{}, HwFanSpeedRatioMetricConfig{}, HwFrequencyMetricConfig{}, HwFrequencyLimitMetricConfig{}, HwFrequencyRequestMetricConfig{}, HwFrequencySamplesMetricConfig{}, HwFrequencyThrottleStatusMetricConfig{}, HwGpuBandwidthLimitMetricConfig{}, HwGpuBandwidthUtilizationMetricConfig{}, HwGpuEccStateMetricConfig{}, HwGpuInfoMetricConfig{}, HwGpuIoMetricConfig{}, HwGpuIoRateMetricConfig{}, HwGpuUtilizationMetricConfig{}, HwMemoryBandwidthLimitMetricConfig{}, HwMemoryBandwidthUtilizationMetricConfig{}, HwMemoryFreeMetricConfig{}, HwMemoryIoMetricConfig{}, HwMemoryIoRateMetricConfig{}, HwMemorySizeMetricConfig{}, HwMemoryUsageMetricConfig{}, HwMemoryUtilizationMetricConfig{}, HwPowerMetricConfig{}, HwPowerLimitMetricConfig{}, HwStatusMetricConfig{}, HwTemperatureMetricConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
@@ -325,6 +355,42 @@ func TestHwErrorsMetricsConfig_Validate(t *testing.T) {
 	require.ErrorContains(t, cfg.Validate(), "metric hw.errors doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.type, error.type, error.category]")
 
 	cfg = DefaultMetricsConfig().HwErrors
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFanSpeedMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFanSpeed
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFanSpeedMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.fan.speed doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]")
+
+	cfg = DefaultMetricsConfig().HwFanSpeed
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFanSpeedLimitMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFanSpeedLimit
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFanSpeedLimitMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.fan.speed.limit doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, hw.limit_type]")
+
+	cfg = DefaultMetricsConfig().HwFanSpeedLimit
+	cfg.AggregationStrategy = "invalid"
+	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
+}
+
+func TestHwFanSpeedRatioMetricsConfig_Validate(t *testing.T) {
+	cfg := DefaultMetricsConfig().HwFanSpeedRatio
+	require.NoError(t, cfg.Validate())
+
+	cfg.EnabledAttributes = []HwFanSpeedRatioMetricAttributeKey{"invalid"}
+	require.ErrorContains(t, cfg.Validate(), "metric hw.fan.speed_ratio doesn't have an attribute invalid, valid attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]")
+
+	cfg = DefaultMetricsConfig().HwFanSpeedRatio
 	cfg.AggregationStrategy = "invalid"
 	require.ErrorContains(t, cfg.Validate(), "invalid aggregation strategy")
 }

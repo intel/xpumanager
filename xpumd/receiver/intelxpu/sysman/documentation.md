@@ -50,6 +50,61 @@ Number of GPU errors. Correctable `error.type` error metrics are reported only w
 | error.type | Error type. | Str: ``correctable``, ``uncorrectable`` | Recommended | - |
 | error.category | Error category. | Any Str | Recommended | - |
 
+### hw.fan.speed
+
+GPU fan speed.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| {rev}/min | Gauge | Int | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended | - |
+
+### hw.fan.speed.limit
+
+GPU fan speed limit.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| {rev}/min | Gauge | Int | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended | - |
+| hw.limit_type | Type of limit. | Any Str | Recommended | - |
+
+### hw.fan.speed_ratio
+
+GPU fan speed ratio. Derived from `hw.fan.speed` + `hw.fan.speed.limit`.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Gauge | Double | Development |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level | Semantic Convention |
+| ---- | ----------- | ------ | ----------------- | ------------------- |
+| hw.id | Unique identifier for the hardware component. | Any Str | Recommended | - |
+| hw.name | An easily-recognizable name for the hardware component. | Any Str | Recommended | - |
+| pci.bdf | PCI BDF (`<domain>:<bus>:<device>.<function>`) for the device. | Any Str | Recommended | - |
+| com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
+| hw.sensor_location | Location of the sensor. | Any Str | Recommended | - |
+
 ### hw.frequency
 
 Operating frequency of the hardware component.

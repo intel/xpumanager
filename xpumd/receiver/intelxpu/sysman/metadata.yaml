@@ -164,6 +164,32 @@ metrics:
       monotonic: true
       aggregation_temporality: cumulative
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.type, error.type, error.category]
+  hw.fan.speed:
+    # NOTE: spec specifies invalid UCUM "rpm" unit for fan speeds:
+    # - https://opentelemetry.io/docs/specs/semconv/hardware/fan/
+    enabled: true
+    description: GPU fan speed.
+    stability: development
+    unit: "{rev}/min"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]
+  hw.fan.speed.limit:
+    enabled: true
+    description: GPU fan speed limit.
+    stability: development
+    unit: "{rev}/min"
+    gauge:
+      value_type: int
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, hw.limit_type]
+  hw.fan.speed_ratio:
+    enabled: true
+    description: GPU fan speed ratio. Derived from `hw.fan.speed` + `hw.fan.speed.limit`.
+    stability: development
+    unit: "1"
+    gauge:
+      value_type: double
+    attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location]
   hw.frequency:
     enabled: true
     description: Operating frequency of the hardware component.
