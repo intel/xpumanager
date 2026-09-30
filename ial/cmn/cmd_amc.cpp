@@ -118,28 +118,28 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "AMC Operations"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s amc [Options]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset -y", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset -d [deviceId]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --gpuReset -d [deviceId] -y", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -y", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId]", progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s amc --gpureset -d [deviceId] -y", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s amc --sensor -d [deviceId] -s [sensorId] -j", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s amc --file -d [deviceId] --fileType [fileType] --fileName [outputFile]",
+	helpList.push_back(helpCmd(HEADING, "%s amc --file -d [deviceId] --filetype [filetype] --filename [outputFile]",
 							   progName.c_str()));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "--device,--id               Specify the device ID or PCI BDF address"));
-	helpList.push_back(helpCmd(HEADING, "--gpuReset                  Reset GPU(s) via AMC"));
+	helpList.push_back(helpCmd(HEADING, "--gpureset                  Reset GPU(s) via AMC"));
 	helpList.push_back(helpCmd(HEADING, "--sensor                    Read AMC real-time sensor readings"));
 	helpList.push_back(
 		helpCmd(HEADING, "-s,--sensorId               Specify the sensor ID (Sensor IDs are listed below)"));
 	helpList.push_back(helpCmd(HEADING, "--file                      Read a file from GPU via AMC"));
 	helpList.push_back(helpCmd(
-		HEADING, "--fileType                  Specify the type of file to read (Filetype ids are listed below)"));
+		HEADING, "--filetype                  Specify the type of file to read (Filetype ids are listed below)"));
 	helpList.push_back(helpCmd(
 		HEADING,
-		"--fileName                  Specify the output file name. Default is <filepdrname_YrMthDt_HrMinSec>.bin"));
+		"--filename                  Specify the output file name. Default is <filepdrname_YrMthDt_HrMinSec>.bin"));
 	helpList.push_back(helpCmd(HEADING, "-y,--yes                    Skip confirmation prompt"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
@@ -152,7 +152,7 @@ void cmdAmc::help(HELP helpType)
 	helpList.push_back(helpCmd(SUB_HEADING, "6. VR VCCGT input current_0 from Add-In-Card"));
 	helpList.push_back(helpCmd(SUB_HEADING, "85. Card average power"));
 	helpList.push_back(helpCmd(BLANK));
-	helpList.push_back(helpCmd(TITLE, "File Types (used with --fileType):"));
+	helpList.push_back(helpCmd(TITLE, "File Types (used with --filetype):"));
 	helpList.push_back(helpCmd(SUB_HEADING, "1. AMC crash logs"));
 	helpList.push_back(helpCmd(SUB_HEADING, "2. System trace logs"));
 	helpList.push_back(helpCmd(SUB_HEADING, "3. GPU crash logs"));
