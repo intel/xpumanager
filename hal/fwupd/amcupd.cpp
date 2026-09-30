@@ -304,7 +304,8 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	std::string filePath = fwInfo->filePath;
 	uint32_t amcIndex = fwInfo->amcIndex;
 	// A composite package also carries images for other interfaces, so the AMC is told to take only
-	// its own component out of it. Zero means the whole package, which is what -t AMC passes.
+	// the one component being flashed (AMC or VR_CONFIG) out of it. Zero means the whole package,
+	// which is what -t AMC passes.
 	uint16_t compIdFilter = fwInfo->pldmComponentId;
 
 	if (amcIndex >= (uint32_t)getNumOfCards()) {

@@ -73,14 +73,15 @@ typedef enum
  * @brief Which components of a composite package a single updateFW() call is responsible for
  *
  * A composite update runs in two passes: the components reachable through sysman are flashed in
- * parallel across devices, then the AMC component is flashed once per AMC card. The scope keeps
- * one orchestrator serving both passes without flashing the same AMC once per attached GPU.
+ * parallel across devices, then the components owned by the AMC (AMC and VR_CONFIG) are flashed
+ * once per AMC card. The scope keeps one orchestrator serving both passes without flashing the
+ * same AMC once per attached GPU.
  */
 enum compositeScope
 {
 	COMPOSITE_SCOPE_NONE, // not a composite update
 	COMPOSITE_SCOPE_GPU,  // components flashed through sysman on this device
-	COMPOSITE_SCOPE_AMC,  // the AMC component only
+	COMPOSITE_SCOPE_AMC,  // components flashed through the AMC over PLDM (AMC, VR_CONFIG)
 };
 
 enum fwupdPreference

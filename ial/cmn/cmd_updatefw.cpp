@@ -251,10 +251,10 @@ int cmdUpdateFW::run(arg_struct *args)
 		}
 	}
 
-	// A composite package also carries the AMC image. One AMC can serve several GPUs, and it is
-	// reached over a shared bus, so the cards are updated one at a time after the per-device pass
-	// instead of once per attached GPU. --fdo asks for the recovery image alone, which is not an AMC
-	// image, so that pass is skipped entirely.
+	// A composite package also carries the images the AMC flashes over PLDM (AMC and VR_CONFIG). One
+	// AMC can serve several GPUs, and it is reached over a shared bus, so the cards are updated one at
+	// a time after the per-device pass instead of once per attached GPU. --fdo asks for the recovery
+	// image alone, which is not flashed through the AMC, so that pass is skipped entirely.
 	size_t amcLines = 0;
 	if (isComposite && !fwInfo.fdoOnly) {
 		std::vector<devInfo *> amcDevices;

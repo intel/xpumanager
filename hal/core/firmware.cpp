@@ -29,14 +29,15 @@ struct compositeComponentMap
 
 // Every identifier a composite package can carry. Recovery images and the reserved identifier
 // have no endpoint this stack can flash, so they are listed with MAX_FW_TYPE and skipped by name
-// rather than falling into the "unknown identifier" case.
+// rather than falling into the "unknown identifier" case. The VR configuration is owned by the AMC,
+// so in a composite package it is flashed as an AMC component over PLDM rather than through sysman.
 static const compositeComponentMap compositeComponents[] = {
 	{PLDM_COMPONENT_ID_UNUSED, "UNUSED", MAX_FW_TYPE, false, "the identifier is reserved and carries no image"},
 	{PLDM_COMPONENT_ID_IFWI, "IFWI", FDO, true, "it is a device recovery image, pass --fdo to flash it"},
 	{PLDM_COMPONENT_ID_AMC_RECOVERY, "AMC_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
 	{PLDM_COMPONENT_ID_AMC, "AMC", AMC, false, nullptr},
 	{PLDM_COMPONENT_ID_VR_CONFIG_RECOVERY, "VR_CONFIG_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
-	{PLDM_COMPONENT_ID_VR_CONFIG, "VR_CONFIG", VR_CONFIG, false, nullptr},
+	{PLDM_COMPONENT_ID_VR_CONFIG, "VR_CONFIG", AMC, false, nullptr},
 	{PLDM_COMPONENT_ID_GFX_CODE_RECOVERY, "GFX_CODE_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
 	{PLDM_COMPONENT_ID_GFX_CODE, "GFX_CODE", GFX, false, nullptr},
 	{PLDM_COMPONENT_ID_GFX_DATA_RECOVERY, "GFX_DATA_RECOVERY", MAX_FW_TYPE, false, "recovery images are not flashed"},
@@ -484,8 +485,8 @@ const compositeComponentMap *firmware::selectComponent(uint16_t identifier, cons
 		return nullptr;
 	}
 
-	// The AMC is shared by every GPU on the card, so it is flashed by its own pass rather than
-	// once per attached device.
+	// The AMC is shared by every GPU on the card, so the components it flashes are handled by their
+	// own pass rather than once per attached device.
 	bool amcPass = (fwInfo->scope == COMPOSITE_SCOPE_AMC);
 	if ((map->fw == AMC) != amcPass) {
 		if (logSkips) {
@@ -510,8 +511,9 @@ const compositeComponentMap *firmware::selectComponent(uint16_t identifier, cons
  *
  * The package is validated, its Component Image Information Area is read, and each component the
  * device can take is flashed in package table order. Components reachable through sysman are
- * extracted here and handed to zesFirmwareFlash as an in-memory image; the AMC component is left
- * in the package and pulled out by the AMC itself over PLDM, so only its identifier is passed on.
+ * extracted here and handed to zesFirmwareFlash as an in-memory image; components flashed through
+ * the AMC (AMC and VR_CONFIG) are left in the package and pulled out by the AMC itself over PLDM,
+ * so only their identifier is passed on.
  *
  * Components that do not apply are skipped without failing the update, but a component that has an
  * endpoint and fails to flash aborts the remaining components on this device.
@@ -590,7 +592,8 @@ ze_result_t firmware::updateComposite(firmwareInfo *fwInfo)
 		componentInfo.imageLabel = std::string(map->name) + " " + std::to_string(current) + "/" + std::to_string(total);
 
 		if (map->fw == AMC) {
-			// The AMC takes the package file itself and is told which component to pick out of it.
+			// The AMC takes the package file itself and is told which component to pick out of it, so
+			// each AMC-routed component is flashed in its own PLDM update session.
 			componentInfo.pldmComponentId = component.identifier;
 		} else {
 			componentInfo.buffer.resize(component.requiredSize);
