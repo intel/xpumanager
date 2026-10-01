@@ -7,7 +7,7 @@ Build XPUMD image using locally downloaded driver DEB packages:
   + L0 GPU backend and its dependencies:
     - libigc1*.deb
     - libigdfcl1*.deb
-    - intel-igc*.deb  -- alternative for above 2 compiler libraries
+    - intel-igc-core-2*.deb  -- compiler v2 alternative for above v1 libraries
     - libigdgmm*.deb
     - libigsc*.deb
     - libmetee*.deb
