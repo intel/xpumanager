@@ -41,8 +41,65 @@ type description struct {
 type paraList []para
 
 type para struct {
-	Text         string        `xml:",chardata"`
-	ItemizedList *itemizedList `xml:"itemizedlist"`
+	Text         string
+	ItemizedList *itemizedList
+}
+
+// UnmarshalXML is a custom unmarshaller. Collects the text content, including
+// the text of inline elements (e.g. <computeroutput>). Also decodes <itemizedlist>.
+func (p *para) UnmarshalXML(d *xml.Decoder, _ xml.StartElement) error {
+	var text strings.Builder
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch t := tok.(type) {
+		case xml.CharData:
+			text.Write(t)
+		case xml.StartElement:
+			switch t.Name.Local {
+			case "itemizedlist":
+				if p.ItemizedList == nil {
+					p.ItemizedList = &itemizedList{}
+				}
+				if err := d.DecodeElement(p.ItemizedList, &t); err != nil {
+					return err
+				}
+			case "simplesect", "parameterlist", "xrefsect":
+				if err := d.Skip(); err != nil {
+					return err
+				}
+			default:
+				if err := inlineText(d, &text); err != nil {
+					return err
+				}
+			}
+		case xml.EndElement:
+			p.Text = text.String()
+			return nil
+		}
+	}
+}
+
+// inlineText appends the character data of the current element (recursively,
+// including nested elements) to text.
+func inlineText(d *xml.Decoder, text *strings.Builder) error {
+	for depth := 1; depth > 0; {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch t := tok.(type) {
+		case xml.CharData:
+			text.Write(t)
+		case xml.StartElement:
+			depth++
+		case xml.EndElement:
+			depth--
+		}
+	}
+	return nil
 }
 
 type itemizedList struct {
