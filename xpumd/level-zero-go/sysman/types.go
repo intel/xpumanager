@@ -401,15 +401,17 @@ type EngineBaseProperties struct {
 //
 //   - Percent utilization is calculated by taking two snapshots (s1, s2) and using
 //     the equation: util = (s2.activeTime - s1.activeTime) / (s2.timestamp - s1.timestamp)
-//   - The time units are implementation-specific since the value is only intended to
-//     be used for calculating utilization percentage.
-//   - The should only be used to calculate delta between snapshots of this structure.
-//   - The application should never take the delta of with the timestamp from a different
-//     structure since they are not guaranteed to have the same base.
-//   - When taking the delta, the difference between samples could be , if the frequency
-//     of sampling the snapshots is higher than the frequency of the timestamp update.
-//   - The absolute value of is only valid during within the application and may be
-//     different on the next execution.
+//   - The activeTime time units are implementation-specific since the value is only
+//     intended to be used for calculating utilization percentage.
+//   - The timestamp should only be used to calculate delta between snapshots of this
+//     structure.
+//   - The application should never take the delta of timestamp with the timestamp
+//     from a different structure since they are not guaranteed to have the same base.
+//   - When taking the delta, the difference between timestamp samples could be 0, if
+//     the frequency of sampling the snapshots is higher than the frequency of the
+//     timestamp update.
+//   - The absolute value of timestamp is only valid during within the application and
+//     may be different on the next execution.
 type EngineStats struct {
 	ActiveTime uint64
 	Timestamp  uint64
@@ -425,7 +427,8 @@ type EngineStats struct {
 //     may result in a different identifier for a given port.
 //   - The main purpose of this identifier to build up an instantaneous topology map
 //     of system connectivity. An application should enumerate all fabric ports and
-//     match the member of zes_fabric_port_state_t to the member of zes_fabric_port_properties_t.
+//     match the remotePortId member of zes_fabric_port_state_t to the portId member
+//     of zes_fabric_port_properties_t.
 type FabricPortId struct {
 	FabricId   uint32
 	AttachId   uint32
@@ -979,10 +982,10 @@ type PowerLimitExtDesc struct {
 //
 // Extension properties related to device power settings.
 //
-//   - This structure may be returned from zesPowerGetProperties via the member of
-//     zes_power_properties_t.
-//   - This structure may also be returned from zesPowerGetProperties via the member
-//     of zes_power_ext_properties_t
+//   - This structure may be returned from zesPowerGetProperties via the pNext member
+//     of zes_power_properties_t.
+//   - This structure may also be returned from zesPowerGetProperties via the pNext
+//     member of zes_power_ext_properties_t
 //   - Used for determining the power domain level, i.e. card-level v/s package-level
 //     v/s stack-level & the factory default power limits.
 type PowerExtProperties struct {
@@ -1050,7 +1053,7 @@ type PciLinkSpeedDowngradeExtProperties struct {
 //
 // Extension properties for Device State.
 //
-//   - This structure may be returned from zesDeviceGetState via the member of
+//   - This structure may be returned from zesDeviceGetState via the pNext member of
 //     zes_device_state_t
 //   - Provides extended device state information including wedged state, survivability
 //     mode, flash override status, GPU lost condition, and kernel driver binding
