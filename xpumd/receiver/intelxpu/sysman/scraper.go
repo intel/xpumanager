@@ -48,8 +48,10 @@ func newSysmanMetricsScraper(_ context.Context, settings scraper.Settings, cfg *
 	}, nil
 }
 
-func (s *sysmanMetricsScraper) start(ctx context.Context, _ component.Host) error {
-	ctx, s.stop = context.WithCancel(ctx)
+func (s *sysmanMetricsScraper) start(_ context.Context, _ component.Host) error {
+	// NOTE: the context passed to start() is only meant for the startup itself
+	ctx, stop := context.WithCancel(context.Background())
+	s.stop = stop
 
 	s.wg.Go(func() { s.runSampler(ctx) })
 

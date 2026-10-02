@@ -60,8 +60,10 @@ func newSysmanEventsReceiver(devices *deviceRegistry, cfg *Config, logger *zap.S
 }
 
 // Start implements collector component.Component.Start.
-func (r *sysmanEventsReceiver) Start(ctx context.Context, _ component.Host) error {
-	ctx, r.stop = context.WithCancel(ctx)
+func (r *sysmanEventsReceiver) Start(_ context.Context, _ component.Host) error {
+	// NOTE: the context passed to Start() is only meant for the startup itself
+	ctx, stop := context.WithCancel(context.Background())
+	r.stop = stop
 	for _, l := range r.listeners {
 		r.wg.Go(func() {
 			l.run(ctx)
