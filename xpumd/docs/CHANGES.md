@@ -44,7 +44,7 @@
   * Allows `intel_crashlog` module to be used even when L0 driver stack finds no GPUs
   * Re-initializes Sysman after getting device detach / attach event
   * (`fail_on_sysman_init_error` config option restores earlier behavior)
-* Sysman Go bindings: Update to L0 API spec v1.16.24
+* Sysman Go bindings: Update to L0 API spec v1.16.24 (in loader 1.32.0)
 * XPUMD image: L0 driver stack update to 26.27.39122.11
 * Go dependencies: Security enhancements + other version updates (to gRPC, OTel etc modules)
 
@@ -58,7 +58,7 @@
   * Filter out bogus power values caused by Sysman energy counter value wraparounds
     (fixes [#130](https://github.com/intel/xpumanager/issues/130))
 * XPUMD API: New `intelxpuinfo/api` Go module for the GPU info gRPC endpoint
-* XPUMD image: L0 driver stack update to 26.22.38646.4
+* XPUMD image: L0 driver stack update to 1.30.0 / 26.22.38646.4
 * XPUMD code / Go dependencies: Security enhancements
 
 XPUMD integration with other Kubernetes GPU components:
