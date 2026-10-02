@@ -61,6 +61,40 @@ InitialState:
         hw_type: pci_link
         hw_state: retraining_issue
 
+    # gpu-2 fan: only fan 1 & 3 can be created
+    - name: hw_fan_speed_limit_per_min
+      value: 3000
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-1
+        hw_limit_type: max
+    - name: hw_fan_speed_per_min
+      value: 1500
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-1
+    - name: hw_fan_speed_ratio
+      value: 0.5
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-1
+    - name: hw_fan_speed_limit_per_min
+      value: 4500
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-3
+        hw_limit_type: max
+    - name: hw_fan_speed_per_min
+      value: 2250
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-3
+    - name: hw_fan_speed_ratio
+      value: 0.5
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-3
+
     # gpu-2 frequency: freq-3 has no range, freq-4 is healthy
     - name: hw_frequency_request_hertz
       value: 1400000000
@@ -153,6 +187,18 @@ InitialState:
       labels: *gpu1_labels
 
     # gpu-2: instances that could not be created
+    - name: hw_fan_speed_limit_per_min
+      labels: {<<: *gpu2_labels, hw_name: fan-2}
+    - name: hw_fan_speed_per_min
+      labels: {<<: *gpu2_labels, hw_name: fan-2}
+    - name: hw_fan_speed_ratio
+      labels: {<<: *gpu2_labels, hw_name: fan-2}
+    - name: hw_fan_speed_limit_per_min
+      labels: {<<: *gpu2_labels, hw_name: fan-4}
+    - name: hw_fan_speed_per_min
+      labels: {<<: *gpu2_labels, hw_name: fan-4}
+    - name: hw_fan_speed_ratio
+      labels: {<<: *gpu2_labels, hw_name: fan-4}
     - name: hw_frequency_request_hertz
       labels: {<<: *gpu2_labels, hw_name: freq-1}
     - name: hw_frequency_request_hertz
@@ -210,6 +256,24 @@ UpdatedValues:
         hw_name: gpu-2
         hw_state: enabled
 
+    # gpu-2: fan 2&4 did not enumerate, fan-1 failed update, fan-3 goes full speed
+    - name: hw_fan_speed_limit_per_min
+      value: 4500
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-3
+        hw_limit_type: max
+    - name: hw_fan_speed_per_min
+      value: 4500
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-3
+    - name: hw_fan_speed_ratio
+      value: 1.0
+      labels:
+        <<: *gpu2_labels
+        hw_name: fan-3
+
     # gpu-2: siblings of the failed instances, unaffected by the update
     - name: hw_frequency_request_hertz
       value: 1400000000
@@ -258,6 +322,12 @@ UpdatedValues:
       labels: *gpu2_labels
 
     # gpu-2: the previously healthy instances fail
+    - name: hw_fan_speed_limit_per_min
+      labels: {<<: *gpu2_labels, hw_name: fan-1}
+    - name: hw_fan_speed_per_min
+      labels: {<<: *gpu2_labels, hw_name: fan-1}
+    - name: hw_fan_speed_ratio
+      labels: {<<: *gpu2_labels, hw_name: fan-1}
     - name: hw_frequency_limit_hertz
       labels: {<<: *gpu2_labels, hw_name: freq-4}
     - name: hw_frequency_request_hertz

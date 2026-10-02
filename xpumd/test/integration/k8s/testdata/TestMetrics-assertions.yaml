@@ -10,6 +10,10 @@ _templates:
     # YAML 1.1 merge semantics: https://yaml.org/type/merge.html
     <<: *pci_common_labels
     com_intel_subdevice_id: ""
+  fan_common_labels: &fan_common_labels
+    <<: *dev_common_labels
+    hw_sensor_location: gpu
+    hw_name: fan-1
   freq_common_labels: &freq_common_labels
     <<: *dev_common_labels
     hw_frequency_domain: gpu
@@ -87,6 +91,21 @@ InitialValues:
         <<: *dev_common_labels
         hw_name: power-1
         hw_sensor_location: package
+
+    # hw.fan.speed
+    - name: hw_fan_speed_limit_per_min
+      value: 3000
+      labels:
+        <<: *fan_common_labels
+        hw_limit_type: max
+    - name: hw_fan_speed_per_min
+      value: 750
+      labels:
+        <<: *fan_common_labels
+    - name: hw_fan_speed_ratio
+      value: 0.25
+      labels:
+        <<: *fan_common_labels
 
     # hw.frequency
     - name: hw_frequency_hertz
@@ -327,6 +346,16 @@ UpdatedValues:
         hw_sensor_location: package
         com_intel_power_limit_level: sustained
         com_intel_power_limit_source: any
+
+    # hw.fan.speed
+    - name: hw_fan_speed_per_min
+      value: 2250
+      labels:
+        <<: *fan_common_labels
+    - name: hw_fan_speed_ratio
+      value: 0.75
+      labels:
+        <<: *fan_common_labels
 
     # hw.frequency
     - name: hw_frequency_hertz

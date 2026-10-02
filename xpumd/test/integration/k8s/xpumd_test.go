@@ -255,6 +255,7 @@ func TestSysmanErrors(t *testing.T) {
 			// gpu-1: nothing but the device properties is available
 			"Failed to enumerate Sysman engine groups",
 			"Failed to enumerate firmwares",
+			"Failed to enumerate device fans",
 			"Failed to enumerate frequency domains",
 			"Failed to enumerate memory modules",
 			"Failed to enumerate power domains",

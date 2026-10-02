@@ -42,6 +42,7 @@ Drivers:
         ReturnValues:
           zesDeviceEventRegister: 0x70010001
           zesDeviceEnumEngineGroups: 0x70010001
+          zesDeviceEnumFans: 0x70010001
           zesDeviceEnumFirmwares: 0x70010001
           zesDeviceEnumFrequencyDomains: 0x70010001
           zesDeviceEnumMemoryModules: 0x70010001
@@ -131,6 +132,31 @@ Drivers:
             Activity:
               ActiveTime: 500000
               Timestamp: 1000000
+
+        Fans:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              SupportedModes: 7
+              SupportedUnits: 3
+              MaxRPM: 3000
+              MaxPoints: 16
+            Speed: 1500
+          # fan-2: state error -> fail enumeration
+          - Properties:
+              SupportedUnits: 1  # ZES_FAN_SPEED_UNITS_RPM
+              MaxRPM: 4500
+            ReturnValues:
+              zesFanGetState: 0x70010001
+          # fan-3: OK in middle
+          - Properties:
+              SupportedUnits: 1  # ZES_FAN_SPEED_UNITS_RPM
+              MaxRPM: 4500
+            Speed: 2250
+          # fan-4: no RPM support -> fail enumeration
+          - Properties:
+              MaxRPM: 0
 
         FrequencyDomains:
           # Properties unavailable

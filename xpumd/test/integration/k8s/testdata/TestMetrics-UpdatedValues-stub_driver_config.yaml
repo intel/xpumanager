@@ -88,6 +88,42 @@ Drivers:
               ActiveTime: 300000
               Timestamp: 2000000
 
+        Fans:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              SupportedModes: 7 # ZES_FAN_SPEED_MODE_DEFAULT | ZES_FAN_SPEED_MODE_FIXED | ZES_FAN_SPEED_MODE_TABLE
+              SupportedUnits: 3 # ZES_FAN_SPEED_UNITS_RPM | ZES_FAN_SPEED_UNITS_PERCENT
+              MaxRPM: 3000
+              MaxPoints: 16
+            Config:
+              Mode: 2 # ZES_FAN_SPEED_MODE_TABLE
+              SpeedTable:
+                NumPoints: 5
+                Table:
+                  - Temperature: 40
+                    Speed:
+                      Speed: 0
+                      Units: 0 # ZES_FAN_SPEED_UNITS_RPM
+                  - Temperature: 50
+                    Speed:
+                      Speed: 750
+                      Units: 0 # ZES_FAN_SPEED_UNITS_RPM
+                  - Temperature: 60
+                    Speed:
+                      Speed: 1500
+                      Units: 0 # ZES_FAN_SPEED_UNITS_RPM
+                  - Temperature: 70
+                    Speed:
+                      Speed: 2250
+                      Units: 0 # ZES_FAN_SPEED_UNITS_RPM
+                  - Temperature: 80
+                    Speed:
+                      Speed: 3000
+                      Units: 0 # ZES_FAN_SPEED_UNITS_RPM
+            Speed: 2250
+
         FrequencyDomains:
           - Properties:
               Type: 0  # ZES_FREQ_DOMAIN_GPU
