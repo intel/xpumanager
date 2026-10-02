@@ -50,7 +50,7 @@ func newReceiver(settings receiver.Settings, cfg *Config, nextConsumer consumer.
 	}
 }
 
-func (r *crashlogReceiver) Start(ctx context.Context, _ component.Host) error {
+func (r *crashlogReceiver) Start(_ context.Context, _ component.Host) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("failed to create filesystem watcher: %w", err)
@@ -64,10 +64,14 @@ func (r *crashlogReceiver) Start(ctx context.Context, _ component.Host) error {
 	r.watcher = watcher
 	r.ignoreOlderThan = time.Now().Add(-r.config.IgnoreOlderThan)
 
-	ctx, cancel := context.WithCancel(ctx)
+	// NOTE: the context passed to Start() is only meant for the startup itself
+	ctx, cancel := context.WithCancel(context.Background())
 	r.cancel = cancel
 
-	r.wg.Go(func() { r.run(ctx) })
+	r.wg.Go(func() {
+		defer func() { _ = watcher.Close() }()
+		r.run(ctx)
+	})
 
 	return nil
 }
@@ -75,9 +79,6 @@ func (r *crashlogReceiver) Start(ctx context.Context, _ component.Host) error {
 func (r *crashlogReceiver) Shutdown(_ context.Context) error {
 	if r.cancel != nil {
 		r.cancel()
-	}
-	if r.watcher != nil {
-		_ = r.watcher.Close()
 	}
 	r.wg.Wait()
 	return nil
