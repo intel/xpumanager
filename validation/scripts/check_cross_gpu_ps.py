@@ -102,10 +102,21 @@ def check_expected_device(
     return []
 
 
+# Root keys xpu-smi has used for the ps process array, newest first.  Reading only
+# "process_list" silently yielded 0 entries against every real `ps -j` payload, so
+# this check always reported SKIP and could never fail.
+PROC_LIST_KEYS = ("device_util_by_proc_list", "process_list")
+
+
 def load_procs(path: str) -> list[Entry]:
     with open(path) as f:
         data = json.load(f)
-    return data if isinstance(data, list) else data.get("process_list", [])
+    if isinstance(data, list):
+        return data
+    for key in PROC_LIST_KEYS:
+        if isinstance(data.get(key), list):
+            return data[key]
+    return []
 
 
 def main() -> None:
