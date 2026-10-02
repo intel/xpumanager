@@ -300,6 +300,10 @@ int exportTopologyToXml(const std::string &filename, const std::vector<GpuDevice
 	// Add GPU devices to topology
 	if (!gpuDevices.empty()) {
 		hwloc_obj_t root = hwloc_get_root_obj(topology);
+		if (root == nullptr) {
+			hwloc_topology_destroy(topology);
+			return -1;
+		}
 		for (const auto &device : gpuDevices) {
 			const std::string deviceName = xpum::compat::format("Intel GPU Device {}", device.deviceIndex);
 
