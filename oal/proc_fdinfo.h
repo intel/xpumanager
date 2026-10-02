@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -78,11 +79,51 @@ PidUtilMap delta(const std::vector<ProcessSnapshot> &before, const std::vector<P
 /// Takes the maximum across engines that fall in the same category.
 ProcUtil toProcUtil(const EngineUtilMap &engineUtils);
 
-/// Derive a zes_engine_type_flags_t bitmask from the engine keys present in a
-/// snapshot.  The presence of a key (e.g. "rcs") indicates the process holds a
-/// context on that engine even if its cycle count is currently zero.
+/// Map a raw fdinfo engine key suffix ("ccs0", "ccs", "render/0") to its
+/// zes_engine_type_flags_t bits.  Returns 0 for a name matching no reported class.
+[[nodiscard]] uint64_t engineFlagForKey(std::string_view rawEngine);
+
+/// Which per-engine counter an fdinfo key carries.
+enum class EngineField : uint8_t
+{
+	Busy,	  ///< drm-cycles-<eng> (xe, cycles) or drm-engine-<eng> (i915, ns)
+	Total,	  ///< drm-total-cycles-<eng> (xe): the denominator for Busy
+	Capacity, ///< drm-engine-capacity-<eng>: engine count, not client state
+};
+
+/// An fdinfo key recognised as a per-engine counter.
+struct EngineKey
+{
+	EngineField field;
+	std::string engine; ///< normalised class token, e.g. "rcs", "ccs", "vcs"
+};
+
+/**
+ * @brief Classifies an fdinfo key as a per-engine counter.
+ *
+ * The one place that knows the per-engine key spellings, so the parsers in
+ * proc_fdinfo.cpp and process_platform.cpp cannot disagree about them.
+ * drm-engine-capacity- shares its prefix with i915's drm-engine-<eng> busy key;
+ * reading it as Busy would make every client look as if it had run work.
+ *
+ * @param[in] key  Text before the ':' on one fdinfo line, e.g. "drm-cycles-ccs0".
+ *
+ * @retval EngineKey     The key names a per-engine counter.
+ * @retval std::nullopt  Any other key, or an engine counter with no engine name.
+ */
+[[nodiscard]] std::optional<EngineKey> parseEngineKey(std::string_view key);
+
+/// Bitmask of the engines a snapshot shows non-zero cycles for.
+///
+/// Checks the cycle value, not whether the key is there.  xe lists every engine
+/// the hardware has for every client, so a bare open() of the render node already
+/// shows rcs/ccs/bcs/vcs/vecs at zero.  Matching on presence alone made every
+/// process holding a DRM fd look like a compute process.
+///
+/// Cycle counts only ever rise, so a real workload still shows up while idle.
+///
 /// Use this to fill psInfo::engines for processes where L0 reports engines == 0.
-uint64_t enginesFromSnapshot(const ProcessSnapshot &snap);
+[[nodiscard]] uint64_t enginesFromSnapshot(const ProcessSnapshot &snap);
 
 /// Compute device-level engine utilization from two snapshots by summing per-process
 /// utilization across all active PIDs, capping each engine type at 100%.

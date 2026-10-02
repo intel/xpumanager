@@ -10,15 +10,19 @@
 #include "utility/units/units.h"
 #include <algorithm>
 #include <optional>
+#include <unordered_set>
 #include <vector>
 
 /**
  * @brief Queries all processes currently using @p device.
  *
- * Calls zesDeviceProcessesGetState() to enumerate active processes, keeping
- * only entries with memory allocated on this device (memSize > 0 or
- * sharedSize > 0).  Processes that open a context without allocating memory
- * are filtered out so each GPU only lists PIDs with an actual footprint there.
+ * Calls zesDeviceProcessesGetState() to enumerate active processes, then narrows
+ * the result to processes that are genuinely clients of this device.
+ * applyFdinfoCorrections() first rewrites each entry from the OS's own
+ * per-process accounting, where the platform keeps one, and drops processes it
+ * shows never ran work here; see oal/process_platform.h for what each platform
+ * provides.  The filter below then removes entries that have neither engines nor
+ * a memory footprint.
  *
  * @param[in]  device       Sysman device handle.
  * @param[out] processList  Cleared and repopulated on success.
@@ -70,10 +74,13 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 		return result;
 	}
 
+	// PIDs whose engines mask applyFdinfoCorrections replaced with verified activity.
+	// Stays empty where it could not run, which is what the filter below keys off.
+	std::unordered_set<uint32_t> engineVerified;
+
 	if (!processList->empty()) {
-		// Correct memSize via fdinfo before filtering so the filter operates on
+		// Correct memSize and engines before filtering so the filter operates on
 		// accurate per-PID values rather than driver-reported ones.
-		// No-op on platforms without /proc (see win/process_platform.cpp).
 		zes_pci_properties_t pciProps{};
 		pciProps.stype = ZES_STRUCTURE_TYPE_PCI_PROPERTIES;
 		const ze_result_t pciResult = zesDevicePciGetProperties(device, &pciProps);
@@ -85,11 +92,12 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 				xpum::compat::format("{:04x}:{:02x}:{:02x}.{:x}", pciProps.address.domain, pciProps.address.bus,
 									 pciProps.address.device, pciProps.address.function);
 
-			// A device with at least one DEVICE-local memory module is a dGPU.
-			// On dGPUs, fixProcessMemSize uses only drm-total-local/vram bytes so
-			// GTT-only cross-GPU phantom entries are correctly zeroed and filtered.
-			// When enumeration fails (count query or handle fetch) the GPU type is
-			// unknown; skip fdinfo correction to avoid zeroing L0 values on a dGPU.
+			// A device with at least one DEVICE-local memory module is a dGPU, where
+			// only device-local memory counts toward a process's footprint; an iGPU
+			// has none and counts shared memory instead.  When enumeration fails
+			// (count query or handle fetch) the GPU type is unknown and memKind stays
+			// nullopt, which leaves memSize as Level Zero reported it rather than
+			// risk zeroing a valid value on a dGPU.
 			uint32_t memCount = 0;
 			std::optional<MemKind> memKind;
 			if (zesDeviceEnumMemoryModules(device, &memCount, nullptr) == ZE_RESULT_SUCCESS) {
@@ -111,23 +119,33 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 				}
 			}
 
-			if (memKind) {
-				fixProcessMemSize(bdf, processList, *memKind);
-			}
+			// Not gated on memKind: the engine filter does not depend on the GPU
+			// type, so a failed memory-module query must not leave every process
+			// that never ran work here in the list.
+			engineVerified = applyFdinfoCorrections(bdf, processList, memKind);
 		}
 	}
 
-	// Remove processes with no memory on this device and no real engine activity.
-	// fixProcessMemSize corrects memSize via fdinfo, zeroing phantom entries that
-	// the driver over-attributed; any remaining positive value is a verified
+	// Remove processes with no memory on this device and no engine activity.
+	// applyFdinfoCorrections corrects memSize where it can, zeroing phantom entries
+	// that the driver over-attributed; any remaining positive value is a verified
 	// allocation and is preserved regardless of size.
-	std::erase_if(*processList, [](const zes_process_state_t &ps) {
-		const bool hasRealEngines =
-			ps.engines != 0 && ps.engines != static_cast<zes_engine_type_flags_t>(ZES_ENGINE_TYPE_FLAG_OTHER);
-		if (hasRealEngines || ps.memSize > 0 || ps.sharedSize > 0) {
+	//
+	// ZES_ENGINE_TYPE_FLAG_OTHER on its own means opposite things depending on where
+	// the mask came from, so the two cases cannot share one rule. Straight from the
+	// driver it means "no real workload" and XPUM-1242 discards it. Rewritten by
+	// applyFdinfoCorrections it means activity on an engine class this build cannot
+	// name, which is proof of work -- discarding that would drop a running process.
+	// Only engineVerified PIDs carry the second meaning.
+	std::erase_if(*processList, [&engineVerified](const zes_process_state_t &ps) {
+		const bool maskFromFdinfo = engineVerified.contains(ps.processId);
+		const bool hasEngines =
+			ps.engines != 0 &&
+			(maskFromFdinfo || ps.engines != static_cast<zes_engine_type_flags_t>(ZES_ENGINE_TYPE_FLAG_OTHER));
+		if (hasEngines || ps.memSize > 0 || ps.sharedSize > 0) {
 			return false;
 		}
-		DBG("  - PID {} filtered: no memory on this device\n", ps.processId);
+		DBG("  - PID {} filtered: no memory or engine activity on this device\n", ps.processId);
 		return true;
 	});
 

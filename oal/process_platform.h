@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -45,6 +46,26 @@
  *                   fields are zero the process has no allocation on this device
  *                   and Level Zero's figure is mis-attributed (e.g. a parent PID
  *                   credited for memory actually owned by a child process).
+ * engineFlags     - zes_engine_type_flags_t bits for the engines this process has
+ *                   actually executed work on, from drm-cycles-<eng> counters with
+ *                   a non-zero value.  Zero means the process has never run work
+ *                   on this device, which is how a zeInit-only phantom is told
+ *                   apart from a real client: zeInit opens a DRM fd (and small
+ *                   internal allocations) on every GPU, but submits nothing.  The
+ *                   counters only ever rise, so this stays set for a real workload
+ *                   that is idle when sampled.  Only meaningful when
+ *                   engineCountersPresent is true.
+ *
+ *                   A non-zero counter for an engine class this build does not
+ *                   recognise contributes ZES_ENGINE_TYPE_FLAG_OTHER, so the mask
+ *                   is non-zero whenever any work ran.  Without that a process
+ *                   busy on a newly added class would look idle and be dropped.
+ * engineCountersPresent
+ *                 - true when fdinfo exported at least one drm-cycles-<eng> or
+ *                   drm-engine-<eng> field, whatever its value.  Distinguishes
+ *                   "ran nothing" from "driver reports no activity": a driver that
+ *                   omits those fields leaves engineFlags at 0 for every process,
+ *                   and filtering on that would report no processes at all.
  */
 struct FdinfoResult
 {
@@ -53,6 +74,8 @@ struct FdinfoResult
 	bool allInherited{false};
 	bool fdDirAccessible{false};
 	bool fdinfoReliable{false};
+	uint64_t engineFlags{0};
+	bool engineCountersPresent{false};
 };
 
 /**
@@ -84,42 +107,42 @@ struct FdinfoResult
 										  std::unordered_set<uint64_t> *globalSeenIds = nullptr);
 
 /**
- * @brief Rewrites memSize for every entry in @p processList using fdinfo accounting.
+ * @brief Memory class a device allocates from, which decides which of a process's
+ *        allocations count toward its memSize.
+ */
+enum class MemKind : uint8_t
+{
+	Shared, ///< Integrated GPU: no device-local memory, so shared allocations count.
+	Local	///< Discrete GPU: only device-local VRAM counts.
+};
+
+/**
+ * @brief Corrects @p processList from the OS's own per-process GPU accounting.
  *
- * zesDeviceProcessesGetState() accumulates GPU memory from every open fd
- * without deduplicating by drm-client-id, so a process with N fds to the same
- * GPU context is over-reported by a factor of N.  This function corrects memSize
- * by reading /proc/<pid>/fdinfo directly and counting each drm-client-id once.
- * A single globalSeenIds set is shared across all PIDs so contexts inherited via
- * fork are attributed to the first process in the list and not double-counted.
- * Processes whose every drm-client-id was already attributed to another process
- * (allInherited == true) are removed from processList entirely.
+ * Level Zero can attribute memory and engines to processes that are not really
+ * using this device.  Where the OS keeps per-process accounting of its own, this
+ * rewrites memSize and engines from it and erases entries that are not real
+ * clients of the device, leaving the caller to apply its own filter on top.
+ *
+ * On Linux:   reads /proc/<pid>/fdinfo; see oal/lin/process_platform.cpp.
+ * On Windows: no-op; see oal/win/process_platform.cpp.
  *
  * @pre  @p processList must not be null.
  *
  * @param[in]     bdf          PCI BDF string for the device, e.g. "0000:4d:00.0".
- *                             Used to locate the matching DRM nodes under sysfs.
- * @param[in,out] processList  Process entries whose memSize fields are rewritten
- *                             in-place when fdinfo yields a non-zero value;
- *                             the Level Zero-reported memSize is preserved as a
- *                             fallback when /proc/<pid>/fd is unreadable (e.g.
- *                             hidepid or cross-user processes).  Fully-inherited
- *                             entries are erased.  On Windows this is a no-op.
- * @param[in]     memKind      MemKind::Local  — device has dedicated VRAM (dGPU):
- *                             only drm-total-local/drm-total-vram bytes are
- *                             reported; GTT-only entries get memSize=0 so the
- *                             zero-memory filter removes cross-GPU phantoms.
- *                             MemKind::Shared — integrated GPU: all drm-total
- *                             regions are summed since there is no dedicated
- *                             local region.
+ * @param[in,out] processList  Entries corrected in place; those that are not real
+ *                             clients of the device are erased.
+ * @param[in]     memKind      Memory class of the device, or nullopt when it is
+ *                             unknown, in which case memSize is left exactly as
+ *                             Level Zero reported it.
+ *
+ * @return PIDs whose engines mask this call replaced with verified activity.  Only
+ *         for those is a bare ZES_ENGINE_TYPE_FLAG_OTHER evidence of work; on any
+ *         other entry the mask is still the driver's, where OTHER alone means no
+ *         real workload (XPUM-1242).
  */
-enum class MemKind : uint8_t
-{
-	Shared,
-	Local
-};
-
-void fixProcessMemSize(const std::string &bdf, std::vector<zes_process_state_t> *processList,
-					   MemKind memKind = MemKind::Shared);
+[[nodiscard]] std::unordered_set<uint32_t> applyFdinfoCorrections(const std::string &bdf,
+																  std::vector<zes_process_state_t> *processList,
+																  std::optional<MemKind> memKind);
 
 #endif // OAL_PROCESS_PLATFORM_H

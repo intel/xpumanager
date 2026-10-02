@@ -7,12 +7,14 @@
 #include "../proc_fdinfo.h"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <cstdint>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <string_view>
+#include <utility>
 #include <zes_api.h>
 
 namespace fdinfo {
@@ -74,10 +76,6 @@ parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-paramet
 
 	static constexpr std::string_view drivKey = "drm-driver";
 	static constexpr std::string_view pdevKey = "drm-pdev";
-	static constexpr std::string_view cycPfx = "drm-cycles-";
-	static constexpr std::string_view totPfx = "drm-total-cycles-";
-	static constexpr std::string_view engPfx = "drm-engine-";
-	static constexpr std::string_view capPfx = "drm-engine-capacity-";
 
 	std::unordered_map<std::string, EngineCounters> engines;
 	std::string pdev;
@@ -106,17 +104,20 @@ parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-paramet
 			isDrm = true;
 		} else if (key == pdevKey) {
 			pdev = std::string{val};
-		} else if (key.starts_with(cycPfx)) {
-			engines[normaliseEngine(key.substr(cycPfx.size()))].cycles = parseU64(val);
-		} else if (key.starts_with(totPfx)) {
-			engines[normaliseEngine(key.substr(totPfx.size()))].totalCycles = parseU64(val);
-		} else if (key.starts_with(capPfx)) {
-			engines[normaliseEngine(key.substr(capPfx.size()))].capacity = static_cast<uint32_t>(parseU64(val));
-		} else if (key.starts_with(engPfx)) {
-			// i915: "drm-engine-render/0:\t12345 ns"
-			const std::string eng = normaliseEngine(key.substr(engPfx.size()));
-			engines[eng].cycles = parseU64(val);
-			engines[eng].totalCycles = 0; // sentinel: use wall-clock delta
+		} else if (const auto ek = parseEngineKey(key)) {
+			// i915 never emits Total, so its totalCycles stays 0: the wall-clock sentinel.
+			EngineCounters &c = engines[ek->engine];
+			switch (ek->field) {
+			case EngineField::Busy:
+				c.cycles = parseU64(val);
+				break;
+			case EngineField::Total:
+				c.totalCycles = parseU64(val);
+				break;
+			case EngineField::Capacity:
+				c.capacity = static_cast<uint32_t>(parseU64(val));
+				break;
+			}
 		}
 	}
 
@@ -270,20 +271,69 @@ PidUtilMap delta(const std::vector<ProcessSnapshot> &before, // NOLINT(bugprone-
 	return result;
 }
 
+/**
+ * @brief Maps a raw fdinfo engine key suffix to its zes_engine_type_flags_t bits.
+ *
+ * Accepts both driver spellings, which normaliseEngine() reduces to one token:
+ * xe's drm-cycles-<eng> suffixes ("rcs0", "ccs1") and i915's drm-engine-<eng>
+ * suffixes ("render/0", "compute/0").
+ *
+ * @param[in] rawEngine  Text between the drm-cycles- / drm-engine- prefix and ':'.
+ *
+ * @retval RENDER|3D  rcs, render
+ * @retval COMPUTE    ccs, compute
+ * @retval DMA        bcs, copy
+ * @retval MEDIA      vcs, vecs, video, video-enhance
+ * @retval 0          Any other name, including engine classes newer than this build.
+ */
+uint64_t engineFlagForKey(std::string_view rawEngine)
+{
+	const std::string name = normaliseEngine(rawEngine);
+	if (name == "rcs") {
+		return static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_RENDER) | static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_3D);
+	}
+	if (name == "ccs") {
+		return static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_COMPUTE);
+	}
+	if (name == "bcs") {
+		return static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_DMA);
+	}
+	if (name == "vcs" || name == "vecs") {
+		return static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_MEDIA);
+	}
+	return 0;
+}
+
+std::optional<EngineKey> parseEngineKey(std::string_view key)
+{
+	// Longest prefix first: drm-engine-capacity- also starts with drm-engine-.
+	static constexpr std::array<std::pair<std::string_view, EngineField>, 4> prefixes{{
+		{"drm-engine-capacity-", EngineField::Capacity},
+		{"drm-total-cycles-", EngineField::Total},
+		{"drm-cycles-", EngineField::Busy}, // xe
+		{"drm-engine-", EngineField::Busy}, // i915
+	}};
+	for (const auto &[prefix, field] : prefixes) {
+		if (key.starts_with(prefix)) {
+			if (key.size() == prefix.size()) {
+				return std::nullopt;
+			}
+			return EngineKey{field, normaliseEngine(key.substr(prefix.size()))};
+		}
+	}
+	return std::nullopt;
+}
+
 uint64_t enginesFromSnapshot(const ProcessSnapshot &snap)
 {
 	uint64_t flags = 0;
-	for (const auto &[name, _] : snap.engines) {
-		if (name == "rcs" || name == "render") {
-			flags |=
-				static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_RENDER) | static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_3D);
-		} else if (name == "ccs" || name == "compute") {
-			flags |= static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_COMPUTE);
-		} else if (name == "bcs" || name == "copy") {
-			flags |= static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_DMA);
-		} else if (name == "vcs" || name == "vecs" || name == "video" || name == "video-enhance") {
-			flags |= static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_MEDIA);
+	for (const auto &[name, counters] : snap.engines) {
+		// Zero cycles means the client never ran work on this engine; the key is
+		// present regardless because xe lists every class the hardware exposes.
+		if (counters.cycles == 0) {
+			continue;
 		}
+		flags |= engineFlagForKey(name);
 	}
 	return flags;
 }

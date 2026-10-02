@@ -46,9 +46,53 @@ void addSelfClient(const fs::path &procRoot, const std::string &fd, const std::s
 	  << engineLines;
 }
 
+// Another process's DRM client, as fdinfo::capture() scans for it.
+void addPidClient(const fs::path &procRoot, const std::string &pid, const std::string &fd, const std::string &driver,
+				  const std::string &pciAddr, const std::string &engineLines)
+{
+	const fs::path base = procRoot / pid;
+	fs::create_directories(base / "fd");
+	fs::create_directories(base / "fdinfo");
+	fs::create_symlink("/dev/dri/renderD128", base / "fd" / fd);
+	std::ofstream f(base / "fdinfo" / fd);
+	f << "pos:\t0\n"
+	  << "drm-driver:\t" << driver << "\n"
+	  << "drm-pdev:\t" << pciAddr << "\n"
+	  << engineLines;
+}
+
 constexpr const char *BDF = "0000:03:00.0";
 
 } // namespace
+
+TEST_CASE("capture: xe busy, total and capacity keys land in their own fields")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "4242", "5", "xe", BDF,
+				 "drm-cycles-ccs:\t700\ndrm-total-cycles-ccs:\t9000\ndrm-engine-capacity-ccs:\t4\n"
+				 "drm-total-vram0:\t65536 KiB\n");
+	const auto snaps = fdinfo::capture(BDF, proc.path.string());
+	REQUIRE(snaps.size() == 1);
+	CHECK(snaps[0].pid == 4242);
+	REQUIRE(snaps[0].engines.contains("ccs"));
+	const auto &ccs = snaps[0].engines.at("ccs");
+	CHECK(ccs.cycles == 700);		// not the capacity value
+	CHECK(ccs.totalCycles == 9000); // not the busy value
+	CHECK(snaps[0].engines.size() == 1);
+}
+
+TEST_CASE("capture: i915 drm-engine-<eng> is busy time with no total-cycles denominator")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "4343", "5", "i915", BDF,
+				 "drm-engine-render:\t123456 ns\ndrm-engine-capacity-render:\t1\n");
+	const auto snaps = fdinfo::capture(BDF, proc.path.string());
+	REQUIRE(snaps.size() == 1);
+	REQUIRE(snaps[0].engines.contains("rcs"));
+	const auto &rcs = snaps[0].engines.at("rcs");
+	CHECK(rcs.cycles == 123456);
+	CHECK(rcs.totalCycles == 0); // the wall-clock sentinel delta() relies on
+}
 
 TEST_CASE("engineCountsPerClass: capacity gives the count, a class without it has one engine")
 {

@@ -20,6 +20,24 @@ PidUtilMap delta(const std::vector<ProcessSnapshot> & /*before*/, const std::vec
 
 ProcUtil toProcUtil(const EngineUtilMap & /*engineUtils*/) { return {}; }
 
+/**
+ * @brief Stub: Windows has no fdinfo engine keys to map.
+ *
+ * @param[in] rawEngine  Unused.
+ *
+ * @retval 0  Always.
+ */
+uint64_t engineFlagForKey(std::string_view /*rawEngine*/) { return 0; }
+
+/**
+ * @brief Stub: Windows has no fdinfo keys to classify.
+ *
+ * @param[in] key  Unused.
+ *
+ * @retval std::nullopt  Always.
+ */
+std::optional<EngineKey> parseEngineKey(std::string_view /*key*/) { return std::nullopt; }
+
 uint64_t enginesFromSnapshot(const ProcessSnapshot & /*snap*/) { return 0; }
 
 ProcUtil aggregateDeviceUtil(const std::vector<ProcessSnapshot> & /*before*/,
