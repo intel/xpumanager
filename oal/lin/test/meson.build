@@ -110,10 +110,11 @@ if get_option('with_tests')
   test('pch_prod_state_test', pch_prod_state_test)
 
   # Process platform fdinfo tests (vramFromFdinfo, fixProcessMemSize).
-  # Compiles process_platform.cpp directly so the test needs no OAL link.
+  # Compiles process_platform.cpp directly so the test needs no OAL link;
+  # proc_fdinfo.cpp comes with it for fdinfo::engineFlagForKey.
   process_platform_test = executable(
     'process_platform_test',
-    ['process_platform_test.cpp', '../process_platform.cpp'],
+    ['process_platform_test.cpp', '../process_platform.cpp', '../proc_fdinfo.cpp'],
     include_directories: [global_inc, include_directories('..'), include_directories('../..'), include_directories('../../../hal/core')],
     dependencies: [doctest_dep, levelzero_dep],
     link_args: is_linux ? ['-pie'] : [],
