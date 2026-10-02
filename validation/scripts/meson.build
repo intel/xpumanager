@@ -24,3 +24,13 @@ cross_gpu_alloc_exe = executable(
   build_by_default: true,
   install: false,
 )
+
+engine_context_probe_exe = executable(
+  'engine_context_probe',
+  'engine_context_probe.cpp',
+  include_directories: [global_inc],
+  dependencies: [levelzero_dep, compat_dep],
+  link_args: ['-pie'],
+  build_by_default: true,
+  install: false,
+)

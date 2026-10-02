@@ -1,0 +1,158 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression test: process listing follows engine context, not VRAM ownership
+#
+# zeInit() opens a DRM fd to every GPU on the system and the driver makes small
+# internal allocations there, so holding VRAM on a device does not make a
+# process a client of it.  xpu-smi lists a process only where it has actually
+# executed work, which fdinfo reports as a non-zero drm-cycles-<eng> (xe) or
+# drm-engine-<eng> (i915) counter.
+#
+# Presence of those keys proves nothing -- both drivers emit one line per engine
+# class the *hardware* exposes, for every DRM client, so a bare open() of the
+# render node already lists rcs/ccs/bcs/vcs/vecs at zero.  Keying off presence
+# reported every holder of a DRM fd as a compute process.  The counters are
+# cumulative for the client's lifetime, so a non-zero value stays set for a real
+# workload that happens to be idle when xpu-smi samples it.
+#
+# Test helper: engine_context_probe (validation/scripts/engine_context_probe.cpp)
+#   Starts two processes that allocate the same VRAM on the SAME device and
+#   differ only in whether they submitted a GPU command:
+#     submitter  cycles > 0  -> must be listed
+#     idler      cycles == 0 -> must be omitted
+#   Needing one GPU, this runs anywhere, unlike cross_gpu_phantom_process.yaml
+#   which needs two.
+#
+#   Binary resolution order (first found wins):
+#     1. $ENGINE_CONTEXT_PROBE environment variable
+#     2. ./builddir/validation/scripts/engine_context_probe
+#     3. ./validation/scripts/engine_context_probe
+#     4. ./engine_context_probe
+#
+# Validation is delegated to validation/scripts/check_engine_context_ps.py, which
+# refuses to pass vacuously: it requires the submitter to be listed (an empty
+# process list would otherwise satisfy "idler absent") and requires
+# RAW_SYSMAN_IDLER=yes, proving the driver offered the idler and xpu-smi is what
+# dropped it.
+#
+# Note on temp files: a fixed name is used rather than $$ because $$ differs in
+# every step's subshell.
+# ============================================================================
+
+test_suite:
+  name: "Regression: engine-context process filter"
+  description: "xpu-smi must list processes that ran work, not every VRAM holder"
+
+  settings:
+    timeout: 120
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    # -----------------------------------------------------------------------
+    # A VRAM holder that never submitted work must not be reported
+    # -----------------------------------------------------------------------
+    - name: "engine_context_idle_vram_holder_not_listed"
+      description: |
+        engine_context_probe starts a submitter and an idler, each holding
+        128 MiB of VRAM on device 0.  xpu-smi ps must list the submitter
+        (non-zero engine cycles) and omit the idler (zero cycles), even though
+        both hold comparable VRAM and both are reported by
+        zesDeviceProcessesGetState.
+      os: "Linux"
+      type: workflow
+      # Keep going after a failed step so the cleanup step is still reached: the
+      # runner breaks out of the step loop otherwise, leaving the probe and its
+      # child running and the fixed /tmp/xpuval_engctx.* files behind to confuse
+      # the next run.  Steps after a failure are skipped anyway unless they are
+      # cleanup steps, and the workflow is still reported as failed.
+      continue_on_step_failure: true
+
+      steps:
+        - name: "find_and_start"
+          script: |
+            if [ -n "${ENGINE_CONTEXT_PROBE:-}" ] && [ -x "$ENGINE_CONTEXT_PROBE" ]; then
+              TOOL="$ENGINE_CONTEXT_PROBE"
+            elif [ -x "./builddir/validation/scripts/engine_context_probe" ]; then
+              TOOL="./builddir/validation/scripts/engine_context_probe"
+            elif [ -x "./validation/scripts/engine_context_probe" ]; then
+              TOOL="./validation/scripts/engine_context_probe"
+            elif [ -x "./engine_context_probe" ]; then
+              TOOL="./engine_context_probe"
+            else
+              echo "SKIP: engine_context_probe binary not found" > /tmp/xpuval_engctx.status
+              exit 0
+            fi
+
+            "$TOOL" --size 128 --device 0 --duration 90 \
+              > /tmp/xpuval_engctx.out 2>&1 &
+            echo $! > /tmp/xpuval_engctx.pid
+
+            for i in $(seq 1 200); do
+              grep -q "^READY" /tmp/xpuval_engctx.out 2>/dev/null && break
+              sleep 0.1
+            done
+
+            if ! grep -q "^READY" /tmp/xpuval_engctx.out 2>/dev/null; then
+              echo "FAIL: engine_context_probe did not emit READY within 20 s"
+              cat /tmp/xpuval_engctx.out
+              kill "$(cat /tmp/xpuval_engctx.pid)" 2>/dev/null
+              echo "FAIL" > /tmp/xpuval_engctx.status
+              exit 1
+            fi
+
+            echo "OK" > /tmp/xpuval_engctx.status
+            grep -E "^(SUBMITTER|IDLER)_(PID|CYCLES|VRAM_KIB)=|^RAW_SYSMAN_" \
+              /tmp/xpuval_engctx.out
+
+        - name: "query_and_validate"
+          command: "ps -j"
+          script: |
+            STATUS=$(cat /tmp/xpuval_engctx.status 2>/dev/null)
+            case "$STATUS" in
+              "SKIP: engine_context_probe binary not found")
+                echo "SKIP: binary not found"; exit 0 ;;
+              FAIL)
+                echo "FAIL: startup failed"; exit 1 ;;
+            esac
+
+            {command} > /tmp/xpuval_engctx_ps.json 2>&1
+
+            VERDICT=$(python3 validation/scripts/check_engine_context_ps.py \
+              --probe-output /tmp/xpuval_engctx.out \
+              /tmp/xpuval_engctx_ps.json) || { echo "$VERDICT"; exit 1; }
+            echo "$VERDICT"
+
+            # The verdict is asserted here, not in expect:. A step carrying script:
+            # is validated on return_code alone (validation/lib/runner.py), so an
+            # expect: stdout matcher would never be evaluated and a checker that
+            # exited 0 without reaching a conclusion would pass silently. PASS and
+            # SKIP are both accepted -- the helper may be absent, or the driver may
+            # not satisfy the premise -- but one of them must be stated.
+            echo "$VERDICT" | grep -qE '^(PASS|SKIP):' || {
+              echo "FAIL: checker exited 0 without a PASS or SKIP verdict"
+              exit 1
+            }
+          expect:
+            return_code: 0
+
+        - name: "cleanup"
+          cleanup_step: true
+          script: |
+            PID=$(cat /tmp/xpuval_engctx.pid 2>/dev/null)
+            if [ -n "$PID" ]; then
+              kill "$PID" 2>/dev/null
+              wait "$PID" 2>/dev/null
+            fi
+            rm -f /tmp/xpuval_engctx.pid /tmp/xpuval_engctx.out \
+                  /tmp/xpuval_engctx.status /tmp/xpuval_engctx_ps.json
+
+      tags: ["regression", "process", "ps", "engine-context", "filter"]
