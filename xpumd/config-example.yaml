@@ -25,8 +25,8 @@ receivers:
     # Configuration for enabling/disabling individual metrics.
     # See receiver/intelxpu/sysman/documentation.md for list of available metrics.
     metrics:
-#      hw.memory.size:
-#        enabled: false
+    #  hw.memory.size:
+    #    enabled: false
 
   intel_crashlog:
     # Directory to watch for new crashlog files (must exist!).

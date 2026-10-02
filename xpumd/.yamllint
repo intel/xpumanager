@@ -1,0 +1,4 @@
+rules:
+  # avoid issues with convert-thresholds.py config updates
+  comments-indentation:
+    level: error

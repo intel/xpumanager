@@ -227,7 +227,7 @@ coverage-integration-test-existing-cluster:
 
 .PHONY: lint
 # Run all linters
-lint: codespell golint shellcheck
+lint: codespell golint shellcheck yamllint
 
 .PHONY: codespell
 # Run codespell on all sources (requires: <apt|dnf> install codespell)
@@ -247,11 +247,27 @@ golint:
 	fi; \
 	echo "✓ No linter issues found"
 
+# Skipped for "lint" target as Python scripts are just dev helpers, not used in build or CI
+.PHONY: ruff
+# Lint Python files (requires: <apt|dnf> install ruff)
+ruff:
+	@echo -e "\nruff: linting Python files...\n"
+	git ls-files -z '*.py' | xargs -0 ruff check
+
 .PHONY: shellcheck
 # Lint shell scripts (requires: <apt|dnf> install shellcheck)
 shellcheck:
 	@echo -e "\nshellcheck: linting shell scripts...\n"
 	git ls-files -z '*.sh' | xargs -0 shellcheck
+
+# - skip Helm chart template files as they include Jinja syntax
+# - warnings are disabled because e.g. chart "values.yaml" includes
+#   intentional trailing whitespace after @default directives
+.PHONY: yamllint
+# Lint YAML files (requires: <apt|dnf> install yamllint)
+yamllint:
+	@echo -e "\nyamllint: linting non-Jinja'd YAML files...\n"
+	git ls-files -z '*.yml' '*.yaml' | grep -z -v templates/ | xargs -0 yamllint --no-warnings
 
 .PHONY: check-format
 # Check formatting of all sources
