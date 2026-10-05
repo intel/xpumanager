@@ -27,7 +27,7 @@ data:
     processors:
       intel_xpu_status:
         rules:
-          - name: "Intel GPU core temperature health"
+          - name: "Intel GPU core temperature health warning threshold(s)"
             source_metric: "hw.temperature"
             parent_metric: "hw.gpu.info"
             parent_ref_attribute: "hw.id"
@@ -40,22 +40,32 @@ data:
             copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
             add_attributes:
               hw.type: "temperature"
+            # Ordered list of state rules. The rules should be ordered by increasing severity.
+            # All rules are evaluated, the last matching one will be active.
             states:
               # Default state
               - state_name: "ok"
               - state_name: "warning"
                 conditions:
-                  - value: 95.0
-                    parent_filters:
-                      - key: "pci.device_id"
-                        values: ["56c1"]
-                  - value: 100.0
+                  - value: 100
                     parent_filters:
                       - key: "pci.device_id"
                         values: ["56c0", "56c2"]
-                  # Default threshold for other device IDs
-                  - value: 105.0
-          - name: "Intel GPU memory temperature health"
+                  - value: 95
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["56c1"]
+                  # Default core temperature warning threshold for other device IDs
+                  - value: 105
+              - state_name: "critical"
+                conditions:
+                  - value: 125
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["56c0", "56c1", "56c2"]
+                  # Default core temperature critical threshold for other device IDs
+                  - value: 130
+          - name: "Intel GPU memory temperature health critical threshold(s)"
             source_metric: "hw.temperature"
             parent_metric: "hw.gpu.info"
             parent_ref_attribute: "hw.id"
@@ -68,12 +78,74 @@ data:
             copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
             add_attributes:
               hw.type: "temperature"
+            # Ordered list of state rules. The rules should be ordered by increasing severity.
+            # All rules are evaluated, the last matching one will be active.
+            states:
+              # Default state
+              - state_name: "ok"
+              - state_name: "critical"
+                conditions:
+                  - value: 105
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["56c0", "56c1", "56c2"]
+                  # Default memory temperature critical threshold for other device IDs
+                  - value: 100
+          - name: "Intel GPU power usage health warning threshold(s)"
+            source_metric: "hw.power"
+            parent_metric: "hw.gpu.info"
+            parent_ref_attribute: "hw.id"
+            parent_filters:
+              - key: "pci.vendor_id"
+                values: ["8086"]
+            aggregate:
+              function: "Max"
+              group_by: ["hw.sensor_location"]
+            copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
+            add_attributes:
+              hw.type: "gpu"
+            # Ordered list of state rules. The rules should be ordered by increasing severity.
+            # All rules are evaluated, the last matching one will be active.
             states:
               # Default state
               - state_name: "ok"
               - state_name: "warning"
                 conditions:
-                  - value: 85.0
+                  - value: 600
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["0bd0", "0bd4", "0bd5", "0bd6", "0be5"]
+                  - value: 450
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["0bd7", "0bd8"]
+                  - value: 300
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["020a", "0bd9", "0bda", "0bdb", "0b6e"]
+                  - value: 190
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["e20b", "e210"]
+                  - value: 150
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["0205", "0203", "56c0", "56c2", "e20c"]
+                  - value: 75
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["e216"]
+                  - value: 38
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["56c1"]
+                  - value: 25
+                    parent_filters:
+                      - key: "pci.device_id"
+                        values: ["4907"]
+                  # Default power usage warning threshold for other device IDs
+                  - value: 300
+
   # Default configuration for the Intel XPU info exporter. Can be overridden
   # in config.yaml (via .Values.config).
   config-exporter-xpuinfo.yaml: |-

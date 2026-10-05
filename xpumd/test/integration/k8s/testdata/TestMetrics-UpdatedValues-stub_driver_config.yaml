@@ -202,6 +202,30 @@ Drivers:
                 Interval: 1000
                 LimitValueLocked: false
                 Limit: 200000
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              IsEnergyThresholdSupported: true
+              ExtendedProperties:
+                Domain: 1  # ZES_POWER_DOMAIN_CARD
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 550000
+            EnergyCounter:
+              Energy: 665000000
+              # 1 s later than the initial config: 660 J over 1 s -> 660 W
+              Timestamp: 2000000
+            LimitsExt:
+              - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                EnabledStateLocked: false
+                Enabled: true
+                IntervalValueLocked: false
+                Interval: 1000
+                LimitValueLocked: false
+                Limit: 600000
 
         RasErrorSets:
           - Properties:
@@ -245,4 +269,4 @@ Drivers:
               MaxTemperature: 100.0
               IsThreshold1Supported: true
               IsThreshold2Supported: true
-            Temperature: 90.0  # above 85 °C threshold → warning
+            Temperature: 105.0  # above 100 °C default threshold → critical

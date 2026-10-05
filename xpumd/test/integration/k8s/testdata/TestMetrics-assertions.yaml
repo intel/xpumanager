@@ -91,6 +91,12 @@ InitialValues:
         <<: *dev_common_labels
         hw_name: power-1
         hw_sensor_location: package
+    - name: hw_energy_joules_total
+      value: 5
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-2
+        hw_sensor_location: card
 
     # hw.fan.speed
     - name: hw_fan_speed_limit_per_min
@@ -329,7 +335,7 @@ UpdatedValues:
         hw_name: power-1
         hw_sensor_location: package
 
-    # hw.power, 5 J over 0.1 s between the two stub driver configs
+    # hw.power, 50 J over 1s between the two stub driver configs
     - name: hw_power_watts
       value: 50
       labels:
@@ -346,6 +352,50 @@ UpdatedValues:
         hw_sensor_location: package
         com_intel_power_limit_level: sustained
         com_intel_power_limit_source: any
+
+    # hw.energy 2
+    - name: hw_energy_joules_total
+      value: 665
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-2
+        hw_sensor_location: card
+
+    # hw.power 2, 660 J over 1s between the two stub driver configs
+    - name: hw_power_watts
+      value: 660
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-2
+        hw_sensor_location: card
+
+    # hw.power.limit 2, 600000 mW in the stub driver config
+    - name: hw_power_limit_watts
+      value: 600
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-2
+        hw_sensor_location: card
+        com_intel_power_limit_level: sustained
+        com_intel_power_limit_source: any
+
+    # hw.status — max power warning for 0xbd5 600W threshold crossing
+    - name: hw_status
+      value: 1
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-2
+        hw_type: gpu
+        hw_sensor_location: card
+        hw_state: warning
+    - name: hw_status
+      value: 0
+      labels:
+        <<: *dev_common_labels
+        hw_name: power-2
+        hw_type: gpu
+        hw_sensor_location: card
+        hw_state: ok
 
     # hw.fan.speed
     - name: hw_fan_speed_per_min
@@ -584,7 +634,7 @@ UpdatedValues:
       value: 1073741824
       labels: *mem2_common_labels
 
-    # hw.temperature — GPU above 105 °C threshold, memory above 85 °C threshold
+    # hw.temperature — GPU above 105 °C threshold, memory above 100 °C threshold
     - name: hw_temperature_celsius
       value: 110
       labels:
@@ -593,7 +643,7 @@ UpdatedValues:
         hw_sensor_location: gpu
         statistic: max
     - name: hw_temperature_celsius
-      value: 90
+      value: 105
       labels:
         <<: *dev_common_labels
         hw_name: temp-3
@@ -621,7 +671,7 @@ UpdatedValues:
         <<: *temp_status_common_labels
         hw_name: temp-3
         hw_sensor_location: memory
-        hw_state: warning
+        hw_state: critical
     - name: hw_status
       value: 0
       labels:
