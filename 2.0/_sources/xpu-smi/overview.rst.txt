@@ -257,8 +257,9 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Level Zero user-mode driver version string
    * - ``kernel_driver_version``
      - —
-     - Kernel-mode driver source checksum (``modinfo`` ``srcversion``); kernel
-       release when the driver is built into the kernel
+     - Kernel-mode driver release version (``modinfo`` ``version``), declared only
+       by the out-of-tree driver installed via DKMS. The key is omitted when the
+       driver declares no version
    * - ``vbios_version``
      - —
      - VBIOS version string

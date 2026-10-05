@@ -469,8 +469,9 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kernel_driver_version</span></code></p></td>
 <td><p>—</p></td>
-<td><p>Kernel-mode driver source checksum (<code class="docutils literal notranslate"><span class="pre">modinfo</span></code> <code class="docutils literal notranslate"><span class="pre">srcversion</span></code>); kernel
-release when the driver is built into the kernel</p></td>
+<td><p>Kernel-mode driver release version (<code class="docutils literal notranslate"><span class="pre">modinfo</span></code> <code class="docutils literal notranslate"><span class="pre">version</span></code>), declared only
+by the out-of-tree driver installed via DKMS. The key is omitted when the
+driver declares no version</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vbios_version</span></code></p></td>
 <td><p>—</p></td>

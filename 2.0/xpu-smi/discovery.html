@@ -375,7 +375,7 @@ of property IDs. Use <code class="docutils literal notranslate"><span class="pre
 <td><p>Memory IC/Die Info</p></td>
 </tr>
 <tr class="row-odd"><td><p>54</p></td>
-<td><p>Kernel Driver Version</p></td>
+<td><p>KMD Version</p></td>
 </tr>
 </tbody>
 </table>
@@ -409,7 +409,7 @@ Vendor Name, SOC UUID, Serial Number, Part Number, Core Clock Rate,
 Stepping, SKU Type</p></td>
 </tr>
 <tr class="row-odd"><td><p>Driver and Firmware</p></td>
-<td><p>UMD Version, Kernel Driver Version, Kernel Version, GFX Firmware Name,
+<td><p>UMD Version, KMD Version, Kernel Version, GFX Firmware Name,
 GFX Firmware Version, GFX Firmware Status, GFX Data Firmware Name,
 GFX Data Firmware Version</p></td>
 </tr>
@@ -438,20 +438,22 @@ Number of Media Enhancement Engines</p></td>
 are omitted.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><strong>UMD Version</strong> and <strong>Kernel Driver Version</strong> name different components.
-UMD Version is the Level Zero user-mode driver release, reported as
-<code class="docutils literal notranslate"><span class="pre">Major.Minor.Build</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">1.3.36012</span></code>); it is the same value the
-<code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> dashboard banner shows. Kernel Driver Version identifies the
-kernel-mode driver (<code class="docutils literal notranslate"><span class="pre">xe</span></code> or <code class="docutils literal notranslate"><span class="pre">i915</span></code>, whichever is bound to that GPU) by
-its source checksum, the
-<code class="docutils literal notranslate"><span class="pre">srcversion</span></code> field of <code class="docutils literal notranslate"><span class="pre">modinfo</span> <span class="pre">xe</span></code>. The checksum changes with every driver
-source revision, so it is the value that ties a running driver back to the
-package it was built from, including a DKMS rebuild against an unchanged
-kernel — which a kernel release cannot distinguish. A driver compiled into the
-kernel rather than loaded as a module has no checksum; the kernel release is
-reported instead, since that then identifies the driver build. When no
-kernel-mode driver can be identified for the GPU at all, <code class="docutils literal notranslate"><span class="pre">N/A</span></code> is reported
-rather than a kernel release, which would say nothing about the driver.</p>
+<p><strong>UMD Version</strong> and <strong>KMD Version</strong> name different components. UMD Version is
+the Level Zero user-mode driver release, reported as <code class="docutils literal notranslate"><span class="pre">Major.Minor.Build</span></code>
+(e.g. <code class="docutils literal notranslate"><span class="pre">1.3.36012</span></code>). KMD Version identifies the kernel-mode driver (<code class="docutils literal notranslate"><span class="pre">xe</span></code> or
+<code class="docutils literal notranslate"><span class="pre">i915</span></code>, whichever is bound to that GPU) by its release version, the
+<code class="docutils literal notranslate"><span class="pre">version</span></code> field of <code class="docutils literal notranslate"><span class="pre">modinfo</span> <span class="pre">xe</span></code>. Both are also shown in the <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code>
+dashboard banner.</p>
+<p>Only the out-of-tree driver installed via DKMS declares a release version, and
+it names the driver package outright — for example
+<code class="docutils literal notranslate"><span class="pre">xeb_v7.1.4.31_260728.26</span></code>, extracted from the full
+<code class="docutils literal notranslate"><span class="pre">backported</span> <span class="pre">from</span> <span class="pre">(365b81808)</span> <span class="pre">using</span> <span class="pre">backports</span> <span class="pre">xeb_v7.1.4.31_260728.26</span> <span class="pre">for</span>
+<span class="pre">7.0.0-14-generic</span> <span class="pre">Kernel</span></code> string that <code class="docutils literal notranslate"><span class="pre">/sys/module/xe/version</span></code> holds.</p>
+<p>The in-tree driver declares none, as is the case on Windows. KMD Version is
+then omitted from the text output, the JSON key <code class="docutils literal notranslate"><span class="pre">kernel_driver_version</span></code> is
+left out, and the dashboard banner drops the field, rather than showing a
+value that names no release. <code class="docutils literal notranslate"><span class="pre">--dump</span> <span class="pre">54</span></code> asks for the column explicitly, so
+it is spelled <code class="docutils literal notranslate"><span class="pre">N/A</span></code> there instead of disappearing.</p>
 <p><strong>Memory Type</strong> is resolved from two Level Zero sources, because neither is
 complete on its own: the sysman memory type is per memory module and is the
 only source that names a product-specific type such as <code class="docutils literal notranslate"><span class="pre">LPDDR5X</span></code>, while the

@@ -54,7 +54,7 @@ Options
 
 .. option:: -s <sensorId>, --sensorid <sensorId>
 
-   Specify the sensor ID to read. Valid sensor IDs:
+   Specify the sensor ID to read. Supported sensor IDs:
 
    .. list-table::
       :widths: 10 90
@@ -67,15 +67,15 @@ Options
       * - 2
         - Temperature Sensor 1 from Add-In-Card
       * - 3
-        - VR Voltage from Add-In-Card
+        - VR VCCGT Temperature 0 from Add-In-Card
       * - 4
-        - VR Current from Add-In-Card
+        - VR VCCGT Input Power 0 from Add-In-Card
       * - 5
-        - VR Power from Add-In-Card
+        - VR VCCGT Input Voltage 0 from Add-In-Card
       * - 6
-        - VR Temperature Sensor
-      * - 7
-        - Total Board Power
+        - VR VCCGT Input Current 0 from Add-In-Card
+      * - 85
+        - Card Average Power
 
 .. option:: --file
 
@@ -119,11 +119,11 @@ Reset GPU on device 0 via AMC without confirmation:
 
    xpu-smi amc --gpureset --device 0 -y
 
-Read total board power sensor for device 0:
+Read card average power sensor for device 0:
 
 .. code-block:: shell
 
-   xpu-smi amc --sensor --device 0 -s 7
+   xpu-smi amc --sensor --device 0 -s 85
 
 Read temperature sensor 0 and output as JSON:
 

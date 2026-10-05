@@ -212,7 +212,7 @@ which sensor to read.</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-s">
 <span id="cmdoption-sensorid"></span><span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;sensorId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--sensorid</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;sensorId&gt;</span></span><a class="headerlink" href="#cmdoption-s" title="Link to this definition"></a></dt>
-<dd><p>Specify the sensor ID to read. Valid sensor IDs:</p>
+<dd><p>Specify the sensor ID to read. Supported sensor IDs:</p>
 <table class="docutils align-default">
 <colgroup>
 <col style="width: 10.0%" />
@@ -231,19 +231,19 @@ which sensor to read.</p>
 <td><p>Temperature Sensor 1 from Add-In-Card</p></td>
 </tr>
 <tr class="row-even"><td><p>3</p></td>
-<td><p>VR Voltage from Add-In-Card</p></td>
+<td><p>VR VCCGT Temperature 0 from Add-In-Card</p></td>
 </tr>
 <tr class="row-odd"><td><p>4</p></td>
-<td><p>VR Current from Add-In-Card</p></td>
+<td><p>VR VCCGT Input Power 0 from Add-In-Card</p></td>
 </tr>
 <tr class="row-even"><td><p>5</p></td>
-<td><p>VR Power from Add-In-Card</p></td>
+<td><p>VR VCCGT Input Voltage 0 from Add-In-Card</p></td>
 </tr>
 <tr class="row-odd"><td><p>6</p></td>
-<td><p>VR Temperature Sensor</p></td>
+<td><p>VR VCCGT Input Current 0 from Add-In-Card</p></td>
 </tr>
-<tr class="row-even"><td><p>7</p></td>
-<td><p>Total Board Power</p></td>
+<tr class="row-even"><td><p>85</p></td>
+<td><p>Card Average Power</p></td>
 </tr>
 </tbody>
 </table>
@@ -302,8 +302,8 @@ which sensor to read.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>amc<span class="w"> </span>--gpureset<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-y
 </pre></div>
 </div>
-<p>Read total board power sensor for device 0:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>amc<span class="w"> </span>--sensor<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-s<span class="w"> </span><span class="m">7</span>
+<p>Read card average power sensor for device 0:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>amc<span class="w"> </span>--sensor<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-s<span class="w"> </span><span class="m">85</span>
 </pre></div>
 </div>
 <p>Read temperature sensor 0 and output as JSON:</p>
