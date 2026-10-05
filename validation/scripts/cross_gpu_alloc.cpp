@@ -34,6 +34,7 @@
 
 #include "utility/compat/format.h"
 #include <array>
+#include <cerrno>
 #include <chrono>
 #include <csignal>
 #include <iostream>
@@ -203,7 +204,17 @@ uint32_t probeGpuCount()
 		l0Init(s, cfg.alloc);
 		if (cfg.syncFd >= 0) {
 			const char ready = 'R';
-			(void)write(cfg.syncFd, &ready, 1);
+			// The parent blocks on this byte and treats EOF as a failed child, so a failed
+			// write must stop the child too. Retry EINTR: main()'s handlers lack SA_RESTART.
+			ssize_t written = 0;
+			do {
+				written = write(cfg.syncFd, &ready, 1);
+			} while (written < 0 && errno == EINTR);
+			if (written != 1) {
+				perror("write readiness byte");
+				close(cfg.syncFd);
+				return 1;
+			}
 			close(cfg.syncFd);
 		}
 		waitUntilStop(cfg.duration);
