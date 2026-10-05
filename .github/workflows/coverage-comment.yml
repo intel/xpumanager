@@ -1,0 +1,132 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+#
+# Posts/updates the coverage delta PR comment for a Coverage Measure run.
+#
+# Split out from coverage-measure.yml so this job gets a write-scoped
+# GITHUB_TOKEN: workflow_run always runs in the base repo's context, even
+# when a fork triggered the originating workflow, so `permissions:` below
+# is actually honored.
+
+name: Coverage Comment
+
+on:
+  workflow_run:
+    workflows: ["Coverage Measure"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ${{ fromJson(vars.COVERAGE_RUNS_ON) }}
+    permissions:
+      actions: read   # download-artifact from the triggering run
+      contents: read  # actions/checkout
+      issues: write   # post/update PR comment via Issues API
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository (for compare script)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download head coverage artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-pr
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download base coverage artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage-base
+          path: .
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download PR metadata artifact
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: pr-metadata
+          path: pr-metadata
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Post or update PR comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_EVENT: ${{ github.event.workflow_run.event }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          PULL_REQUESTS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        with:
+          script: |
+            const fs = require('fs');
+            const { spawnSync } = require('child_process');
+
+            // pr-metadata comes from a job that also builds PR-sourced code, so
+            // it's untrusted for pull_request runs: resolve the PR from GitHub's
+            // own workflow_run.pull_requests instead, matched by head_sha.
+            let prNumber;
+            let baseRef;
+            const runEvent = process.env.RUN_EVENT;
+            if (runEvent === 'pull_request') {
+              const pulls = JSON.parse(process.env.PULL_REQUESTS_JSON || '[]');
+              const match = pulls.find(pr => pr.head.sha === process.env.RUN_HEAD_SHA);
+              if (!match) {
+                core.info(`No pull_requests entry matched head sha ${process.env.RUN_HEAD_SHA} - skipping comment.`);
+                return;
+              }
+              prNumber = match.number;
+              baseRef = match.base.ref;
+            } else if (runEvent === 'workflow_dispatch') {
+              const artifactPrNumber = parseInt(fs.readFileSync('pr-metadata/pr_number.txt', 'utf8').trim(), 10);
+              if (isNaN(artifactPrNumber) || artifactPrNumber <= 0) {
+                core.info('No valid PR number supplied to workflow_dispatch - skipping comment.');
+                return;
+              }
+              prNumber = artifactPrNumber;
+              baseRef = fs.readFileSync('pr-metadata/base_ref.txt', 'utf8').trim();
+            } else {
+              core.info(`Unsupported triggering event '${runEvent}' - skipping comment.`);
+              return;
+            }
+            if (!baseRef) { core.setFailed('Could not determine base ref.'); return; }
+
+            const result = spawnSync(
+              'python3',
+              ['.github/scripts/compare_coverage.py', 'coverage_base.json', 'coverage_pr.json', '--base-ref', baseRef],
+              { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] },
+            );
+            if (result.status !== 0) { core.setFailed(`compare_coverage.py exited with status ${result.status}`); return; }
+            const reportBody = result.stdout;
+            const runId = process.env.RUN_ID;
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner, repo: context.repo.repo, run_id: runId,
+            });
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${runId}`;
+            const links = [['coverage-pr', 'Head HTML report'], ['coverage-base', `${baseRef} baseline HTML report`]]
+              .map(([name, label]) => { const art = artifacts.find(a => a.name === name); return art ? `[${label}](${runUrl}/artifacts/${art.id})` : null; })
+              .filter(l => l !== null).join(' | ');
+            const marker = '<!-- xpum-coverage-report -->';
+            const fullBody = `${marker}\n${reportBody}\n\n${links}`;
+            // paginate: an unpaginated call misses the marker once the thread
+            // spans multiple pages and starts creating duplicate reports.
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body?.includes(marker) && c.user?.login === 'github-actions[bot]' && c.user?.type === 'Bot');
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body: fullBody,
+              });
+              core.info(`Updated coverage comment (id ${existing.id}) on PR #${prNumber}`);
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, body: fullBody,
+              });
+              core.info(`Created coverage comment on PR #${prNumber}`);
+            }
