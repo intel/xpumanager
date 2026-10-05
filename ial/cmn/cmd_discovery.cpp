@@ -6,12 +6,14 @@
 
 #include "cmd_discovery.h"
 #include "debug.h"
+#include "gfx_firmware_status.h"
 #include <CLI/CLI.hpp>
 #include "printer.h"
 #include "table_builder.h"
 #include "amclib.h"
 #include <os.h>
 #include "oem_serial.h"
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <charconv>
@@ -31,6 +33,41 @@
 #include <sysman.h>
 
 static constexpr int DEVICE_INFO_COL_WIDTH = 84;
+
+namespace {
+
+/**
+ * @brief Resolves the displayed GFX firmware status for a device.
+ *
+ * @param[in] d Device information used to retrieve the PCI firmware status
+ * @param[in] firmwareVersion GFX firmware version displayed for the same device
+ * @param[out] outputLine Resolved firmware status, initialized to "unknown" on failure
+ *
+ * @retval ZE_RESULT_SUCCESS Firmware status was resolved
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT An input pointer was null
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED PCI device properties were unavailable
+ */
+ze_result_t resolveGfxFirmwareStatusForDevice(devInfo *d, std::string_view firmwareVersion, std::string *outputLine)
+{
+	if (outputLine != nullptr) {
+		*outputLine = "unknown";
+	}
+	if (d == nullptr || d->dev == nullptr || outputLine == nullptr) {
+		ERR("Invalid argument while retrieving GFX firmware status\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	auto *const p = d->dev->getPCI();
+	if (p == nullptr) {
+		ERR("Failed to get PCI device properties.\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	*outputLine = discovery::resolveGfxFirmwareStatus(firmwareVersion, p->getFWStatus());
+	return ZE_RESULT_SUCCESS;
+}
+
+} // namespace
 
 /**
  * @brief Reads the kernel-mode driver release version behind a device
@@ -808,7 +845,7 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	props["gfx_firmware_name"] = "GFX";
 	props["gfx_data_firmware_name"] = "GFX_DATA";
 
-	gfxFirmwareStatus(d, &outputLine);
+	resolveGfxFirmwareStatusForDevice(d, props["gfx_firmware_version"], &outputLine);
 	props["gfx_firmware_status"] = outputLine;
 
 	// OPROM and GFX_PSCBIN are also only on devices with AMC
@@ -1196,15 +1233,33 @@ ze_result_t cmdDiscovery::driverVersion(devInfo *d, std::string *outputLine)
 ze_result_t cmdDiscovery::gfxFirmwareVersion(devInfo *d, std::string *outputLine)
 {
 	TRACING();
+	if (outputLine != nullptr) {
+		outputLine->clear();
+	}
+	if (d == nullptr || d->dev == nullptr || outputLine == nullptr) {
+		ERR("Invalid argument while retrieving GFX firmware version\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
 	std::array<char, MAX_PATH> version = {};
 
 	auto *const p = d->dev->getPCI();
 	auto *const fw = d->dev->getFirmware();
+	if (p == nullptr || fw == nullptr) {
+		ERR("GFX firmware dependencies are unavailable\n");
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
 
-	fw->getFWversion(fwType::GFX, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
+	const auto result =
+		fw->getFWversion(fwType::GFX, p->getBDFStr().c_str(), version.data(), static_cast<uint32_t>(version.size()));
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Failed to get GFX firmware version: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
 
 	// Sanitize firmware version by skipping non-printable characters
-	std::string_view versionView(version.data(), strlen(version.data()));
+	const auto terminator = std::find(version.cbegin(), version.cend(), '\0');
+	std::string_view versionView(version.data(), static_cast<size_t>(std::distance(version.cbegin(), terminator)));
 	auto sanitized = versionView | std::views::filter([](char c) { return c >= 32 && c <= 126; });
 	*outputLine = std::string(sanitized.begin(), sanitized.end());
 	return ZE_RESULT_SUCCESS;
@@ -1649,16 +1704,22 @@ ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outpu
 ze_result_t cmdDiscovery::gfxFirmwareStatus(devInfo *d, std::string *outputLine)
 {
 	TRACING();
-
-	auto *const p = d->dev->getPCI();
-	if (p == nullptr) {
-		ERR("Failed to get PCI device properties.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
+	if (outputLine != nullptr) {
+		*outputLine = "unknown";
+	}
+	if (d == nullptr || d->dev == nullptr || outputLine == nullptr) {
+		ERR("Invalid argument while retrieving GFX firmware status\n");
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
-	const auto fwStatus = p->getFWStatus();
-	*outputLine = fwStatus;
-	return ZE_RESULT_SUCCESS;
+	std::string firmwareVersion;
+	const auto versionResult = gfxFirmwareVersion(d, &firmwareVersion);
+	if (versionResult != ZE_RESULT_SUCCESS) {
+		DBG("GFX firmware version unavailable while determining status: 0x{:X} ({})\n", versionResult,
+			l0_error_to_string(versionResult));
+	}
+
+	return resolveGfxFirmwareStatusForDevice(d, firmwareVersion, outputLine);
 }
 
 /**

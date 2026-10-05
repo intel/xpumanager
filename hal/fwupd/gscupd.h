@@ -10,6 +10,7 @@
 #include "fwupd.h"
 #include <device.h>
 #include <pci.h>
+#include <string>
 #include <vector>
 #include <zes_api.h>
 
@@ -68,6 +69,7 @@ public:
 	int getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *version, size_t versionSize);
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
 	std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
+	std::string getGfxFirmwareStatus(const std::string &meiPath);
 	GfxFwStatus getGfxFwStatus(std::string meiPath);
 	int firmware_check_hw_config(struct igsc_device_handle *handle, std::vector<char> &buffer);
 	const char *transGfxFwStatusToString(GfxFwStatus status);

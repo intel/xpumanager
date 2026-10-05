@@ -23,6 +23,21 @@ metrics_registry_test = executable(
 
 test('metrics_registry_test', metrics_registry_test)
 
+discovery_test = executable(
+  'discovery_test',
+  'discovery_test.cpp',
+  include_directories: [
+    global_inc,
+    ial_cmn_inc,
+  ],
+  dependencies: [doctest_dep],
+  link_args: is_linux ? ['-pie'] : [],
+  build_by_default: true,
+  install: false,
+)
+
+test('discovery_test', discovery_test)
+
 if is_linux
   topology_test = executable(
     'topology_test',

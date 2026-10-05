@@ -359,6 +359,9 @@ devFuncType pci::getFuncType()
  */
 ze_result_t pci::init(zes_device_handle_t device)
 {
+	deviceProperties.meiDevicePath.clear();
+	deviceProperties.fwStatus = "unknown";
+
 	ze_result_t result;
 	result = getProperties(device, &deviceProperties.pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -386,8 +389,7 @@ ze_result_t pci::init(zes_device_handle_t device)
 
 			// Found a matching device so copy the meiDevicePath
 			deviceProperties.meiDevicePath = dv.meiDevicePath;
-			// Also copy the fw status
-			deviceProperties.fwStatus = dv.fwStatus;
+			deviceProperties.fwStatus = gsc.getGfxFirmwareStatus(dv.meiDevicePath);
 			break;
 		}
 	}

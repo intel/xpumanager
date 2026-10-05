@@ -159,6 +159,33 @@ if get_option('with_tests')
   message('Engine group unit tests enabled')
 
   if is_linux
+    gscupd_test = executable(
+      'gscupd_test',
+      files('../fwupd/test/gscupd_test.cpp'),
+      include_directories: [
+        global_inc,
+        hal_core_inc,
+        oal_inc_dirs,
+        include_directories('../fwupd'),
+        include_directories('../amc'),
+      ],
+      link_with: libxpum_static,
+      dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+      link_args: [
+        '-pie',
+        '-Wl,--wrap=igsc_device_init_by_device',
+        '-Wl,--wrap=igsc_device_fw_version',
+        '-Wl,--wrap=igsc_get_last_firmware_status',
+        '-Wl,--wrap=igsc_device_close',
+        '-Wl,--wrap=igsc_device_iterator_create',
+        '-Wl,--wrap=igsc_device_iterator_destroy',
+      ],
+      build_by_default: true,
+      install: false,
+    )
+    test('gscupd_tests', gscupd_test)
+    message('GSC firmware update unit tests enabled')
+
     process_test = executable(
       'process_test',
       files('test/process_test.cpp'),

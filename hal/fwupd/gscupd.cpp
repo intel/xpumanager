@@ -9,8 +9,59 @@
 #include <debug.h>
 #include "utility/compat/format.h"
 #include <fstream>
+#include <memory>
 #include <os.h>
+#include <string_view>
 #include <sys/stat.h>
+
+namespace {
+
+constexpr char UNKNOWN_FIRMWARE_STATUS[] = "unknown";
+constexpr char SUCCESS_FIRMWARE_STATUS[] = "Success";
+constexpr char NORMAL_FIRMWARE_STATUS[] = "normal";
+
+struct IgscDeviceIteratorDeleter
+{
+	void operator()(igsc_device_iterator *iter) const noexcept
+	{
+		if (iter != nullptr) {
+			igsc_device_iterator_destroy(iter);
+		}
+	}
+};
+
+using IgscDeviceIterator = std::unique_ptr<igsc_device_iterator, IgscDeviceIteratorDeleter>;
+
+class IgscDeviceHandle
+{
+public:
+	IgscDeviceHandle() = default;
+	igsc_device_handle *get() noexcept { return &handle; }
+	int close() noexcept
+	{
+		if (handle.ctx == nullptr) {
+			return IGSC_SUCCESS;
+		}
+		return igsc_device_close(&handle);
+	}
+
+	~IgscDeviceHandle()
+	{
+		if (handle.ctx != nullptr) {
+			(void)close();
+		}
+	}
+
+	IgscDeviceHandle(const IgscDeviceHandle &) = delete;
+	IgscDeviceHandle &operator=(const IgscDeviceHandle &) = delete;
+	IgscDeviceHandle(IgscDeviceHandle &&) = delete;
+	IgscDeviceHandle &operator=(IgscDeviceHandle &&) = delete;
+
+private:
+	igsc_device_handle handle{};
+};
+
+} // namespace
 
 /**
  * @brief Translates Graphics Firmware Status enumeration to human-readable string
@@ -686,45 +737,81 @@ bool gscupd::isGscRightType(std::vector<char> &buffer, int expectedType)
  */
 std::vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 {
-	std::vector<pci_addr_mei_device> devicesVec = {};
-	struct igsc_device_iterator *iter;
-	struct igsc_device_info info;
-	int ret;
-	struct igsc_device_handle handle;
-
-	memset(&handle, 0, sizeof(handle));
-	ret = igsc_device_iterator_create(&iter);
+	std::vector<pci_addr_mei_device> devicesVec;
+	igsc_device_iterator *rawIter = nullptr;
+	int ret = igsc_device_iterator_create(&rawIter);
+	IgscDeviceIterator iter(rawIter);
 	if (ret != IGSC_SUCCESS) {
 		ERR("Cannot create device iterator {}\n", ret);
 		return devicesVec;
 	}
-	info.name[0] = '\0';
-	while ((ret = igsc_device_iterator_next(iter, &info)) == IGSC_SUCCESS) {
-		pci_addr_mei_device pciAddrMeiDevice = {};
+	if (iter == nullptr) {
+		ERR("IGSC returned a null device iterator\n");
+		return devicesVec;
+	}
 
-		ret = igsc_device_init_by_device_info(&handle, &info);
-		if (ret != IGSC_SUCCESS) {
-			/* make sure we have a printable name */
-			info.name[0] = '\0';
-			continue;
-		}
-
-		pciAddrMeiDevice.fwStatus = igsc_translate_firmware_status(igsc_get_last_firmware_status(&handle));
-		// If fwStatus is "Success", change it to "normal"
-		if (pciAddrMeiDevice.fwStatus == "Success") {
-			pciAddrMeiDevice.fwStatus = "normal";
-		}
+	igsc_device_info info{};
+	while ((ret = igsc_device_iterator_next(iter.get(), &info)) == IGSC_SUCCESS) {
+		pci_addr_mei_device pciAddrMeiDevice{};
 		pciAddrMeiDevice.pciProps.address.domain = info.domain;
 		pciAddrMeiDevice.pciProps.address.bus = info.bus;
 		pciAddrMeiDevice.pciProps.address.device = info.dev;
 		pciAddrMeiDevice.pciProps.address.function = info.func;
 		pciAddrMeiDevice.meiDevicePath = info.name;
 		devicesVec.push_back(pciAddrMeiDevice);
-
-		(void)igsc_device_close(&handle);
 	}
-	igsc_device_iterator_destroy(iter);
+	if (ret != IGSC_ERROR_DEVICE_NOT_FOUND) {
+		ERR("Failed to enumerate IGSC devices: {}\n", ret);
+	}
+
 	return devicesVec;
+}
+
+/**
+ * @brief Gets the firmware-operation status after proving the GFX version is readable.
+ *
+ * igsc_get_last_firmware_status() only reports the status of the last firmware
+ * operation. A newly initialized IGSC context contains the success value even
+ * though no request has reached the device. Run a version query first so a
+ * missing GSC/HECI path cannot be reported as a healthy firmware.
+ *
+ * @param meiPath IGSC device path associated with the GPU
+ * @return "normal" after a successful version transaction, the translated
+ *         firmware status for another successful transaction status, or
+ *         "unknown" when initialization/version retrieval fails
+ */
+std::string gscupd::getGfxFirmwareStatus(const std::string &meiPath)
+{
+	if (meiPath.empty()) {
+		return UNKNOWN_FIRMWARE_STATUS;
+	}
+
+	IgscDeviceHandle device;
+	int ret = igsc_device_init_by_device(device.get(), meiPath.c_str());
+	if (ret != IGSC_SUCCESS) {
+		DBG("Cannot initialize IGSC device {}: {}\n", meiPath, ret);
+		return UNKNOWN_FIRMWARE_STATUS;
+	}
+
+	igsc_fw_version version{};
+	ret = igsc_device_fw_version(device.get(), &version);
+	std::string firmwareStatus = UNKNOWN_FIRMWARE_STATUS;
+	if (ret != IGSC_SUCCESS) {
+		DBG("Cannot read GFX firmware version from {}: {}\n", meiPath, ret);
+	} else {
+		const char *const status = igsc_translate_firmware_status(igsc_get_last_firmware_status(device.get()));
+		if (status != nullptr && status[0] != '\0') {
+			firmwareStatus =
+				std::string_view(status) == SUCCESS_FIRMWARE_STATUS ? NORMAL_FIRMWARE_STATUS : std::string(status);
+		}
+	}
+
+	ret = device.close();
+	if (ret != IGSC_SUCCESS) {
+		ERR("Cannot close IGSC device {}: {}\n", meiPath, ret);
+		return UNKNOWN_FIRMWARE_STATUS;
+	}
+	return firmwareStatus;
 }
 
 /**
