@@ -127,6 +127,27 @@ void cmdCrashlog::help(HELP helpType)
 	helpList.clear();
 }
 
+namespace {
+
+// A bare `crashlog` prints help without touching a device;
+// run() and driverMode() both use this so they cannot disagree.
+[[nodiscard]] bool printsHelpOnly(std::span<char *const> cmdArgs) { return cmdArgs.empty(); }
+
+} // namespace
+
+/**
+ * @brief A bare `crashlog` only prints help; every action resolves a device.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval DriverMode::None  @p cmdArgs is empty.
+ * @retval DriverMode::Full  Otherwise.
+ */
+DriverMode cmdCrashlog::driverMode(std::span<char *const> cmdArgs) const
+{
+	return printsHelpOnly(cmdArgs) ? DriverMode::None : DriverMode::Full;
+}
+
 /**
  * @brief Parse arguments and run the requested crash log operation per device.
  *
@@ -142,7 +163,7 @@ int cmdCrashlog::run(arg_struct *args)
 {
 	TRACING();
 
-	if (args->argc == 2) {
+	if (printsHelpOnly(subcommandArgs(*args))) {
 		help();
 		return ZE_RESULT_SUCCESS;
 	}

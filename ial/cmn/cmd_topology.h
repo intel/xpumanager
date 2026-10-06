@@ -229,6 +229,9 @@ public:
 	 */
 	int run(arg_struct *args) final;
 
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const final;
+
 private:
 	arg_struct *currentArgs = nullptr; ///< Cached pointer to command arguments
 

@@ -36,6 +36,19 @@ void cmdLogs::help(HELP helpType)
 }
 
 /**
+ * @brief Log collection copies files and runs child tools, never Level Zero.
+ *
+ * The discovery section comes from a child `xpu-smi discovery` process, which
+ * initializes the driver itself. Keeping this process off the driver lets logs
+ * be collected on a system where Level Zero fails to initialize.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name (unused).
+ *
+ * @retval DriverMode::None  Always.
+ */
+DriverMode cmdLogs::driverMode(UNUSED std::span<char *const> cmdArgs) const { return DriverMode::None; }
+
+/**
  * @brief Executes the logs run.
  *
  * @return int Returns 0 on success.

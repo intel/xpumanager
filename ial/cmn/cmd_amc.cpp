@@ -165,6 +165,15 @@ void cmdAmc::help(HELP helpType)
 }
 
 /**
+ * @brief AMC operations go over MCTP, so no Level Zero driver is needed.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name (unused).
+ *
+ * @retval DriverMode::None  Always.
+ */
+DriverMode cmdAmc::driverMode(UNUSED std::span<char *const> cmdArgs) const { return DriverMode::None; }
+
+/**
  * @brief Executes the AMC command with parsed arguments
  *
  * This function implements the main execution logic for the AMC command,

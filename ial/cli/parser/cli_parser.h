@@ -21,6 +21,7 @@
 void printSubCommands(const std::vector<std::unique_ptr<cmds>> &cmdList);
 void printVersion(arg_struct *arg);
 std::vector<function_entry> defaultCommandTable();
+[[nodiscard]] std::optional<int> requireDriver(arg_struct *arg, DriverMode mode);
 
 template <typename T> std::unique_ptr<cmds> createInstance() { return std::make_unique<T>(); }
 
@@ -109,8 +110,12 @@ template <CliParser P> int runCli(P &parser, arg_struct *args, OSTYPE currentOS)
 	std::ranges::transform(subcmd, subcmd.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
 	if (auto match = dispatchMap.find(subcmd); match != dispatchMap.end()) {
+		cmds &cmd = *match->second;
+		if (auto rc = requireDriver(args, cmd.requiredDriver(subcommandArgs(*args))); rc.has_value()) {
+			return *rc;
+		}
 		// A known subcommand ran but failed: rc 1 (runtime/command error).
-		return (match->second->run(args) != 0) ? 1 : 0;
+		return (cmd.run(args) != 0) ? 1 : 0;
 	}
 
 	// Unknown subcommand — emit a clear diagnostic, then show the full help so

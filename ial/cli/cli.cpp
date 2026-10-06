@@ -24,6 +24,7 @@
 #include <cctype>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <os.h>
 #include <ranges>
 #include <string>
@@ -108,6 +109,41 @@ void setPrintLvl(arg_struct *arg, LogLevel lvl)
 	arg->sm.setPrintLvl(lvl);
 }
 
+/**
+ * @brief Initializes Level Zero to the extent a command declared it needs.
+ *
+ * Call at most once per process (driver::init is not idempotent), immediately
+ * before the code that uses arg->sm, so help, AMC and other driverless paths
+ * still work when Level Zero is absent or fails to initialize. Driver output is
+ * suppressed during init unless the log level is DBG or higher.
+ *
+ * @param[in,out] arg   Argument structure owning the driver instance.
+ * @param[in]     mode  How much of Level Zero to initialize.
+ *
+ * @retval std::nullopt  @p mode is DriverMode::None, or init succeeded.
+ * @retval -1            Init failed; the exit code main() should return.
+ */
+std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
+{
+	if (mode == DriverMode::None) {
+		return std::nullopt;
+	}
+
+	const LogLevel dbglvl = getDbgLvl();
+	if (dbglvl < LogLevel::DBG) {
+		setPrintLvl(arg, LogLevel::NO_PRINT);
+	}
+	const ze_result_t result = arg->sm.init(mode == DriverMode::SysmanOnly);
+	setPrintLvl(arg, dbglvl);
+
+	if (result != ZE_RESULT_SUCCESS) {
+		PRINT("Sysman driver initialization failed.\n");
+		return -1;
+	}
+	DBG("Sysman driver initialized successfully.\n");
+	return std::nullopt;
+}
+
 using ArgvView = std::span<char *const>;
 
 /**
@@ -134,47 +170,12 @@ int main(int argc, char *argv[])
 			Logger::instance().setLevel(LogLevel::ERR);
 		}
 	}
-	LogLevel dbglvl = getDbgLvl();
 	bool priv = PRIVILEGECHECK();
 	UNUSED_VAR(priv);
 
-	if (dbglvl < LogLevel::DBG) {
-		setPrintLvl(&arg, LogLevel::NO_PRINT);
-	}
-
-	// Detect the "config --reset" invocation before driver init. On that path we
-	// skip initializing the Level Zero compute runtime (zeInit) so it never opens
-	// render fds / GuC exec queues on a device we are about to reset; otherwise
-	// the kernel emits an xe "Missing outer runtime PM protection" WARN when the
-	// stale queues are torn down at process exit. Enumeration falls back to pure
-	// sysman, which is sufficient for the reset. --coldreset does not create
-	// compute queues on the target either, but is addressed by BDF and follows a
-	// different code path, so it is left on the normal init path.
-	bool skipZeInit = false;
-	{
-		bool sawConfig = false;
-		bool sawReset = false;
-		for (const std::string_view av : args.subspan(1)) {
-			if (av == "config") {
-				sawConfig = true;
-			} else if (av == "--reset") {
-				sawReset = true;
-			}
-		}
-		skipZeInit = sawConfig && sawReset;
-	}
-
-	ze_result_t result = arg.sm.init(skipZeInit);
-	switch (result) {
-	case ZE_RESULT_SUCCESS:
-		DBG("Sysman driver initialized successfully.\n");
-		break;
-	default:
-		PRINT("Sysman driver initialization failed.\n");
-		return -1;
-	}
-
-	setPrintLvl(&arg, dbglvl);
+	// Sync the library's log level now; Level Zero itself is brought up per
+	// command by requireDriver().
+	setPrintLvl(&arg, getDbgLvl());
 
 	const OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;
 	/* Detect "compat" subparser prefix: xpu-smi compat <subcommand> [args...]

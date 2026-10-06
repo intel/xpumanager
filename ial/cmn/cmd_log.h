@@ -18,6 +18,9 @@ public:
 	~cmdLogs(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
+
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;
 };
 
 #endif

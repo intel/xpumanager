@@ -374,6 +374,9 @@ void DefaultParser::printExtraOptions()
 std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::vector<std::unique_ptr<cmds>> &cmdList)
 {
 	if (args->argc == 1) {
+		if (auto rc = requireDriver(args, DriverMode::Full); rc.has_value()) {
+			return rc;
+		}
 		return runSmiWithLoop(args, 0, 0);
 	}
 
@@ -449,10 +452,17 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 	}
 
 	if (versionFlag) {
+		// The loader reports no component versions until zesInit has run.
+		if (auto rc = requireDriver(args, DriverMode::SysmanOnly); rc.has_value()) {
+			return rc;
+		}
 		printVersion(args);
 		return 0;
 	}
 	if (listGpusFlag) {
+		if (auto rc = requireDriver(args, DriverMode::Full); rc.has_value()) {
+			return rc;
+		}
 		return cmdDump::listGpus(args);
 	}
 	if (pre.queryGpuFlag || !pre.displayType.empty()) {
@@ -471,6 +481,9 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 		if (fromDisplay) {
 			selector = pre.displayFlag == "--metrics" ? QuerySelector::Metrics : QuerySelector::Display;
 		}
+		if (auto rc = requireDriver(args, DriverMode::Full); rc.has_value()) {
+			return rc;
+		}
 		return cmdDump::runQuery(effectiveQuery, pre.deviceSpec, args, buildQueryFormat(pre, formatStr), selector);
 	}
 
@@ -481,6 +494,9 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 			PRINT("error: --format is not supported without a subcommand; did you mean 'xpu-smi dump --format {}'?\n",
 				  formatStr);
 			return 1;
+		}
+		if (auto rc = requireDriver(args, DriverMode::Full); rc.has_value()) {
+			return rc;
 		}
 		const auto fmt = buildQueryFormat(pre, formatStr);
 		const int loopMs = (fmt.count > 0 && fmt.loopMs <= 0) ? 1000 : fmt.loopMs;

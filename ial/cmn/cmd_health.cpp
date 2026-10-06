@@ -49,6 +49,10 @@ void setTemperatureFailureJson(nlohmann::ordered_json *jsonObj, const std::strin
 	(*jsonObj)[jsonKey] = {
 		{"status", "Unknown"}, {"throttle_threshold", -1}, {"shutdown_threshold", -1}, {"description", description}};
 }
+
+// A bare `health` prints help without touching a device;
+// run() and driverMode() both use this so they cannot disagree.
+[[nodiscard]] bool printsHelpOnly(std::span<char *const> cmdArgs) { return cmdArgs.empty(); }
 } // namespace
 
 static std::unordered_map<healthCmdType, healthCmdStruct> healthCmds = {
@@ -774,6 +778,19 @@ ze_result_t cmdHealth::frequency(UNUSED devInfo *d, nlohmann::ordered_json *json
 }
 
 /**
+ * @brief A bare `health` only prints help; every other form queries devices.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval DriverMode::None  @p cmdArgs is empty.
+ * @retval DriverMode::Full  Otherwise.
+ */
+DriverMode cmdHealth::driverMode(std::span<char *const> cmdArgs) const
+{
+	return printsHelpOnly(cmdArgs) ? DriverMode::None : DriverMode::Full;
+}
+
+/**
  * @brief Executes the health run.
  *
  * @return int Returns 0 on success.
@@ -813,7 +830,7 @@ int cmdHealth::run(arg_struct *args)
 	}
 
 	// If no options were specified, print help
-	if (args->argc == 2) {
+	if (printsHelpOnly(subcommandArgs(*args))) {
 		help();
 		return ZE_RESULT_SUCCESS;
 	}

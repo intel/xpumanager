@@ -82,6 +82,9 @@ public:
 	std::string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 	bool getFrequencyState(const zes_device_handle_t &device, std::string &freqThrottleMessage);
 	int run(arg_struct *args);
+
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;
 };
 
 using healthSubCmdFunc = ze_result_t (cmdHealth::*)(devInfo *d, nlohmann::ordered_json *jsonObj);
