@@ -34,6 +34,9 @@ public:
 	ze_result_t readSensor(amclib *amc, int numCards);
 	ze_result_t readFile(amclib *amc, int numCards);
 
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;
+
 private:
 	ze_result_t getDeviceIndex(amclib *amc, const std::string &val, int numCards, int &deviceIndex);
 };

@@ -96,6 +96,15 @@ void ListgpuTextPrinter::print(nlohmann::ordered_json *jsonObj)
 }
 
 /**
+ * @brief PCI properties come from sysfs, so no Level Zero driver is needed.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name (unused).
+ *
+ * @retval DriverMode::None  Always.
+ */
+DriverMode cmdListpciinfo::driverMode(UNUSED std::span<char *const> cmdArgs) const { return DriverMode::None; }
+
+/**
  * @brief Runs the listpciinfo command
  *
  * Parses arguments, calls GET_XE_DEV_PCI_PROPS to enumerate all xe-bound

@@ -2356,6 +2356,27 @@ ze_result_t cmdConfig::coldResetDevice(devInfo *d)
 }
 
 /**
+ * @brief Keeps the compute runtime off a device that --reset is about to reset.
+ *
+ * zeInit opens render fds and GuC exec queues on the device. Those queues go
+ * stale across the reset, and tearing them down at process exit makes xe emit
+ * a "Missing outer runtime PM protection" WARN. Sysman alone is enough to
+ * perform the reset. --coldreset does not create compute queues on the target
+ * either, but is addressed by BDF and follows a different code path, so it
+ * keeps the full driver.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval DriverMode::SysmanOnly  @p cmdArgs contains --reset.
+ * @retval DriverMode::Full        Otherwise.
+ */
+DriverMode cmdConfig::driverMode(std::span<char *const> cmdArgs) const
+{
+	const bool reset = std::ranges::any_of(cmdArgs, [](std::string_view token) { return token == "--reset"; });
+	return reset ? DriverMode::SysmanOnly : DriverMode::Full;
+}
+
+/**
  * @brief Executes the config run.
  *
  * @return int Returns 0 on success.

@@ -109,6 +109,9 @@ public:
 
 	// prints all available --query-gpu fields with descriptions
 	static void printQueryHelp();
+
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;
 };
 
 #endif

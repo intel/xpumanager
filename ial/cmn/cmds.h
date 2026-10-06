@@ -11,6 +11,7 @@
 #include <device.h>
 #include <driver.h>
 #include <list>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -63,6 +64,23 @@ struct arg_struct
 	driver sm; // sm is short for sysman
 };
 
+/// argv tokens after the subcommand name, i.e. argv[2..argc).
+[[nodiscard]] inline std::span<char *const> subcommandArgs(const arg_struct &args)
+{
+	if (args.argc < 2) {
+		return {};
+	}
+	return std::span<char *const>{args.argv, static_cast<std::size_t>(args.argc)}.subspan(2);
+}
+
+/// How much of Level Zero must be initialized before a command runs.
+enum class DriverMode
+{
+	None,		// args->sm is never touched
+	SysmanOnly, // zesInit only; the compute runtime (zeInit) is never loaded
+	Full,		// zesInit and zeInit
+};
+
 class cmds
 {
 protected:
@@ -75,6 +93,10 @@ public:
 	void printHelp(std::vector<helpCmd> helpList, HELP helpType = FULL_HELP);
 	virtual void help(HELP helpType = FULL_HELP) = 0;
 	virtual int run(arg_struct *args) = 0;
+	[[nodiscard]] DriverMode requiredDriver(std::span<char *const> cmdArgs) const;
+
+protected:
+	[[nodiscard]] virtual DriverMode driverMode(std::span<char *const> cmdArgs) const;
 };
 
 typedef void (cmds::*helpFunc)(HELP helpType);

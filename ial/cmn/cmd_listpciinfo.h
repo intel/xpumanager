@@ -51,6 +51,9 @@ public:
 	~cmdListpciinfo() {}
 	void help(HELP helpType = FULL_HELP) override;
 	int run(arg_struct *args) override;
+
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;
 };
 
 #endif // _CMD_LISTPCIINFO_H

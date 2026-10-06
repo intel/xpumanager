@@ -93,6 +93,10 @@ static void appendLegend(std::vector<helpCmd> &helpList,
 		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
 	}
 }
+
+// A bare `topology` prints help without touching a device;
+// run() and driverMode() both use this so they cannot disagree.
+[[nodiscard]] bool printsHelpOnly(std::span<char *const> cmdArgs) { return cmdArgs.empty(); }
 } // namespace
 
 /**
@@ -1106,6 +1110,19 @@ ze_result_t cmdTopology::showP2PMatrix(bool useJson, P2PCapability capability)
 }
 
 /**
+ * @brief A bare `topology` only prints help; every action queries devices.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval DriverMode::None  @p cmdArgs is empty.
+ * @retval DriverMode::Full  Otherwise.
+ */
+DriverMode cmdTopology::driverMode(std::span<char *const> cmdArgs) const
+{
+	return printsHelpOnly(cmdArgs) ? DriverMode::None : DriverMode::Full;
+}
+
+/**
  * @brief Executes the topology command with parsed command line arguments
  * @ingroup topology_commands
  *
@@ -1139,6 +1156,11 @@ ze_result_t cmdTopology::showP2PMatrix(bool useJson, P2PCapability capability)
 int cmdTopology::run(arg_struct *args)
 {
 	TRACING();
+
+	if (printsHelpOnly(subcommandArgs(*args))) {
+		help();
+		return ZE_RESULT_SUCCESS;
+	}
 
 	// Store args for matrix command
 	currentArgs = args;

@@ -1018,6 +1018,13 @@ void printSelectorGuidance(QuerySelector selector)
 	}
 }
 
+// `dump` and `dump help` print help without touching a device;
+// run() and driverMode() both use this so they cannot disagree.
+[[nodiscard]] bool printsHelpOnly(std::span<char *const> cmdArgs)
+{
+	return cmdArgs.empty() || (cmdArgs.size() == 1 && std::string_view{cmdArgs.front()} == "help");
+}
+
 } // namespace
 
 // -- runQuery ---------------------------------------------------------
@@ -1224,6 +1231,19 @@ void cmdDump::help(HELP helpType)
 	printHelp(helpList, helpType);
 }
 
+/**
+ * @brief `dump` and `dump help` only print help; sampling resolves devices.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval DriverMode::None  @p cmdArgs is empty or the bare `help` keyword.
+ * @retval DriverMode::Full  Otherwise.
+ */
+DriverMode cmdDump::driverMode(std::span<char *const> cmdArgs) const
+{
+	return printsHelpOnly(cmdArgs) ? DriverMode::None : DriverMode::Full;
+}
+
 // -- run
 // -----------------------------------------------------------
 
@@ -1231,7 +1251,7 @@ int cmdDump::run(arg_struct *args)
 {
 	TRACING();
 
-	if (args->argc == 2) {
+	if (printsHelpOnly(subcommandArgs(*args))) {
 		help();
 		return ZE_RESULT_SUCCESS;
 	}

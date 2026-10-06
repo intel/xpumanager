@@ -128,6 +128,9 @@ public:
 	ze_result_t getSelectedFanId(int32_t &fanId);
 	ze_result_t coldResetDevice(devInfo *d);
 	int run(arg_struct *args);
+
+protected:
+	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;
 };
 
 using configSubCmdFunc = ze_result_t (cmdConfig::*)(devInfo *d);
