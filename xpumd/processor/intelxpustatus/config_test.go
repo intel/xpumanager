@@ -132,6 +132,16 @@ func TestConfigValidate(t *testing.T) {
 			},
 			expectErr: "group_by attribute cannot be empty",
 		},
+		{
+			name: "2 defaults - default not last condition",
+			rule: HealthRule{
+				Name:         "gpu-health",
+				SourceMetric: "hw.power",
+				States:       []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}, {Value: 95}}}},
+				Aggregate:    &AggregateRule{Function: AggregateFunctionSum, GroupBy: []string{"hw.id", ""}},
+			},
+			expectErr: "default condition not last one",
+		},
 	}
 
 	for _, tt := range tests {
@@ -293,7 +303,7 @@ func TestConditionRule(t *testing.T) {
 			for k, v := range tt.parentAttrs {
 				parentAttrs.PutStr(k, v)
 			}
-			got := tt.rule.match(tt.value, parentAttrs)
+			got := tt.rule.matchValue(tt.value) && tt.rule.matchParent(parentAttrs)
 			if got != tt.expectMatch {
 				t.Errorf("ConditionRule.match() = %v, want %v", got, tt.expectMatch)
 			}

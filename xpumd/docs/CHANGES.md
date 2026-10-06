@@ -18,6 +18,9 @@ Contents:
 * Breaking changes (for the XPUMD config):
   * `intel_crashlog` receiver `glob` option replaced by `globs` list, to support multiple filename patterns
     * **Action required:** if custom config is used, the `glob: "<pattern>"` needs to be updated to `globs: ["<pattern>"]`
+  * Support defaults which have lower thresholds than more specific thresholds,
+    by stopping conditions processing at first value with a matching parent filter
+    * **Action required:** specify states' default threshold values as the last condition
 
 
 ## XPUM 2.3.0

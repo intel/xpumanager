@@ -171,7 +171,27 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple conditions, one matches",
+			name: "multiple conditions, first default matches regardless of attribs",
+			states: []StateRule{
+				{
+					StateName: "degraded",
+					Conditions: []ConditionRule{
+						{Value: 60.0},
+						{Value: 90.0},
+					},
+				},
+			},
+			value:    70.0,
+			parentID: "parent1",
+			parentAttrs: map[string]any{
+				"hw.type": "gpu",
+			},
+			expectedStates: map[string]uint64{
+				"degraded": 1,
+			},
+		},
+		{
+			name: "multiple conditions, no match for first default",
 			states: []StateRule{
 				{
 					StateName: "degraded",
@@ -184,7 +204,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			value:    70.0,
 			parentID: "parent1",
 			expectedStates: map[string]uint64{
-				"degraded": 1,
+				"degraded": 0,
 			},
 		},
 		{
@@ -278,7 +298,7 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			},
 		},
 		{
-			name: "complex scenario - multiple states with increasing severity",
+			name: "multiple states with increasing severity",
 			states: []StateRule{
 				{
 					StateName: "ok",
@@ -340,6 +360,46 @@ func TestRuleProcessorEvaluatestates(t *testing.T) {
 			expectedStates: map[string]uint64{
 				"ok":      1,
 				"warning": 0,
+			},
+		},
+		{
+			name: "multiple parent filters conditions - 2nd filter match, but no value match",
+			states: []StateRule{
+				{
+					StateName: "test",
+					Conditions: []ConditionRule{
+						{
+							// no filter match
+							Value: 50.0,
+							ParentFilters: common.AttributeFilterList{
+								{
+									Key:    "hw.type",
+									Values: []string{"memory"},
+								},
+							},
+						},
+						{
+							// filter match, but not value => selected
+							Value: 90.0,
+							ParentFilters: common.AttributeFilterList{
+								{
+									Key:    "hw.type",
+									Values: []string{"gpu"},
+								},
+							},
+						},
+						// not reached
+						{Value: 50.0},
+					},
+				},
+			},
+			value:    75.0,
+			parentID: "parent1",
+			parentAttrs: map[string]any{
+				"hw.type": "gpu",
+			},
+			expectedStates: map[string]uint64{
+				"test": 0,
 			},
 		},
 	}

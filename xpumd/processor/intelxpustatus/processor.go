@@ -286,9 +286,14 @@ func (p *ruleProcessor) evaluateStates(value float64, parentID string) map[strin
 		}
 
 		for _, cond := range rule.Conditions {
-			if cond.match(value, parentAttrs) {
-				activeState = rule.StateName
-				break // continue to next state rule
+			// Stop at first condition with parent filter match. Otherwise
+			// default condition with lower threshold than device specific
+			// threshold, would override device specific one.
+			if cond.matchParent(parentAttrs) {
+				if cond.matchValue(value) {
+					activeState = rule.StateName
+				}
+				break
 			}
 		}
 	}

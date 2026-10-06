@@ -128,7 +128,7 @@ states:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `state_name` | string | Value to set to the state attribute (`state_attribute`) of the generated metric (`status_metric`) |
-| `conditions` | []ConditionRule | Conditions to evaluate to apply this state. A logical OR is applied i.e. the rule matches if any of the conditions match. Empty list means always match |
+| `conditions` | []ConditionRule | Conditions to evaluate on whether to apply this state. First condition with a matching `parent_filters` is used for evaluating the threshold value. Empty list means always match. Default (no `parent_filters`) threshold should be the last one (this avoids overriding higher thresholds with more specific conditions) |
 
 #### ConditionRule
 

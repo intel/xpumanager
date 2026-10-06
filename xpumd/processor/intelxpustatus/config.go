@@ -77,8 +77,11 @@ type AggregateRule struct {
 
 // StateRule defines when to apply a specific state.
 type StateRule struct {
-	// Conditions to evaluate to apply this state. A logical OR is applied i.e.
-	// the rule matches if any of the conditions match.
+	// Conditions to evaluate on whether to apply this state.
+	// If condition includes a matching [ConditionRule.ParentFilters] filter,
+	// no further conditions are considered.
+	// Missing filter matches always i.e. acts as a default.
+	// Conditions are evaluated in order, so default should be the last one.
 	Conditions []ConditionRule `mapstructure:"conditions"`
 	// Value to set to the state attribute (HealthRule.StateAttribute) of the
 	// generated metric (HealthRule.StatusMetric).
@@ -171,6 +174,15 @@ func (t *StateRule) Validate() error {
 	if t.StateName == "" {
 		return fmt.Errorf("state_name cannot be empty")
 	}
+	hasDefault := false
+	for _, cond := range t.Conditions {
+		if hasDefault {
+			return fmt.Errorf("default condition not last one")
+		}
+		if len(cond.ParentFilters) == 0 {
+			hasDefault = true
+		}
+	}
 	return nil
 }
 
@@ -182,6 +194,10 @@ func (r *ConditionRule) Validate() error {
 	return nil
 }
 
-func (r *ConditionRule) match(value float64, parentAttrs pcommon.Map) bool {
-	return value >= r.Value && r.ParentFilters.Match(parentAttrs)
+func (r *ConditionRule) matchValue(value float64) bool {
+	return value >= r.Value
+}
+
+func (r *ConditionRule) matchParent(parentAttrs pcommon.Map) bool {
+	return r.ParentFilters.Match(parentAttrs)
 }
