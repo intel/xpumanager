@@ -55,6 +55,22 @@ if is_linux
 
   test('topology_test', topology_test)
 
+  driver_mode_test = executable(
+    'driver_mode_test',
+    'driver_mode_test.cpp',
+    include_directories: [
+      global_inc,
+      ial_cmn_inc,
+    ],
+    link_with: [ial_cmn_lib],
+    dependencies: ial_cmn_test_deps,
+    link_args: ['-pie'],
+    build_by_default: true,
+    install: false,
+  )
+
+  test('driver_mode_test', driver_mode_test)
+
   dump_test = executable(
     'dump_test',
     'dump_test.cpp',
