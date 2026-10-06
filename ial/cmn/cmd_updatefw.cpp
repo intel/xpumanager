@@ -115,14 +115,6 @@ int cmdUpdateFW::run(arg_struct *args)
 	firmwareInfo fwInfo = {};
 	std::vector<devInfo> deviceList;
 	ze_result_t result;
-
-	// Acquire global firmware update lock (cross-process)
-	FSLock fsLock;
-	if (!fsLock.locked()) {
-		ERR("Another firmware update operation is already in progress or lock could not be acquired.\n");
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
 	uint32_t totalThreads = 0;
 	std::atomic<uint32_t> curThread{0};
 	std::atomic<ze_result_t> firstError{ZE_RESULT_SUCCESS};
@@ -197,6 +189,16 @@ int cmdUpdateFW::run(arg_struct *args)
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '{}'.\n", fwInfo.deviceId.c_str());
 		return result;
+	}
+
+	// Acquire global firmware update lock (cross-process) only once the request
+	// is known to be valid, so --help or bad input never touches the lock.  It
+	// is held until run() returns, i.e. across every flash below.
+	FSLock fsLock;
+	if (!fsLock.locked()) {
+		ERR("Another firmware update operation is already in progress or lock could not be acquired "
+			"(firmware update requires root/administrator privileges).\n");
+		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
 	// Print a newline for every thread that we will be creating. Also count the total number of threads

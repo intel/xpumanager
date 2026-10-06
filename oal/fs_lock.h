@@ -10,8 +10,9 @@
 #include <cstdint>
 
 // RAII cross-process lock to ensure only one firmware update runs at a time.
-// The lock file path is an OS-specific constant owned by each acquire()
-// implementation, so it is deliberately not part of this interface.
+// The lock object (a file on Linux, a named semaphore on Windows) and its name are
+// OS-specific constants owned by each acquire() implementation, so they are
+// deliberately not part of this interface.
 class FSLock
 {
 public:
@@ -27,7 +28,8 @@ public:
 	FSLock &operator=(FSLock &&) = delete;
 
 private:
-	uintptr_t handle = 0; // Cast HANDLE/fd to uintptr_t
+	uintptr_t handle = 0;	// Cast HANDLE/fd to uintptr_t
+	uintptr_t nsHandle = 0; // Windows only: private namespace scoping the semaphore
 	bool acquired = false;
 
 	void acquire();

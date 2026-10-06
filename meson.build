@@ -307,6 +307,7 @@ endif
 windows_deps = []
 if is_windows
   windows_deps = [
+    cpp.find_library('advapi32'),
     cpp.find_library('kernel32'),
     cpp.find_library('user32'),
     cpp.find_library('psapi'),
