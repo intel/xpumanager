@@ -69,8 +69,8 @@ constexpr auto GPU = QueryMetric{
 	.aliases = GPU_ALIASES,
 	.unit = "%",
 	.description = "Shader (EU) execution unit active time as a fraction of elapsed time.  Falls back "
-				   "to the busiest sysman engine when EU metrics are unavailable, then to fdinfo "
-				   "compute-engine scheduling when sysman requires elevated privilege.  Per tile or "
+				   "to the busiest engine class when EU metrics are unavailable: from fdinfo where the "
+				   "platform supports it, otherwise from the sysman engine counters.  Per tile or "
 				   "device, device-level is the tile average for multi-tile GPUs.",
 	.source = MetricSource::Live,
 	.groups = MetricGroup::UTILIZATION,
@@ -89,11 +89,13 @@ constexpr auto GPU = QueryMetric{
 		if (const auto r = formatUtil(cache.engines.gpu, out); r == ZE_RESULT_SUCCESS) {
 			return r;
 		}
-		// Tertiary: fdinfo compute-engine scheduling time (no elevated privilege needed).
-		// Measures engine-scheduled time rather than shader execution, so it reads
-		// higher than EU active% under the same workload — but it's non-zero without root.
-		if (cache.fdinfoCompute) {
-			out = xpum::compat::format("{:.2f}", static_cast<double>(*cache.fdinfoCompute));
+		// Tertiary: the busiest engine class by fdinfo scheduling time - the same "busiest
+		// engine" figure as the sysman tier, which resolveInputs() drops in fdinfo's favour
+		// wherever the platform prefers fdinfo. It measures engine-scheduled time rather than
+		// shader execution, so it reads higher than EU active% under the same workload.
+		if (const auto busiest =
+				busiestEngineClass(cache.fdinfoCompute, cache.fdinfoRender, cache.fdinfoMedia, cache.fdinfoCopy)) {
+			out = xpum::compat::format("{:.2f}", static_cast<double>(*busiest));
 			return ZE_RESULT_SUCCESS;
 		}
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;

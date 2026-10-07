@@ -9,6 +9,7 @@
 #include "debug.h"
 #include "fan.h"
 #include "memory.h"
+#include "metrics_registry.h"
 #include "os.h"
 #include "power.h"
 #include "temperature.h"
@@ -274,8 +275,15 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
 		}
 	}
 
-	// Engine activity baseline: every engine group, so utilization can be taken from the
-	// busiest engine rather than from the device-wide average (see computeFromBaseline).
+	// Engine activity baseline: from fdinfo where the platform prefers it (see
+	// fdinfo::preferForEngineUtil), otherwise from every engine group, so utilization can be
+	// taken from the busiest engine rather than from the device-wide average (see
+	// computeFromBaseline).
+	if (fdinfo::preferForEngineUtil(devPciAddr(*di))) {
+		baseline.fdinfoSnap = fdinfo::capture(devPciAddr(*di));
+		baseline.useFdinfo = true;
+		return;
+	}
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
 	if (engGroup != nullptr) {
 		std::vector<EngineActivitySample> engineActivity;
@@ -325,6 +333,14 @@ void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &basel
 	// GPU utilization: busiest engine per tile, averaged across tiles. Sysman's
 	// ZES_ENGINE_GROUP_ALL cannot be used here: it averages the busyness of every engine on
 	// the device, so a compute-only workload saturating one of nine engines reads as 11%.
+	if (baseline.useFdinfo) {
+		const auto util = fdinfo::aggregateDeviceUtil(baseline.fdinfoSnap, fdinfo::capture(devPciAddr(*di)));
+		if (const auto busiest = metrics::busiestEngineClass(util.compute, util.render, util.media, util.copy)) {
+			stats.gpuUtilPercent = static_cast<double>(*busiest);
+			stats.utilValid = true;
+		}
+		return;
+	}
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
 	if (engGroup != nullptr && !baseline.engineActivity.empty()) {
 		std::vector<EngineActivitySample> engineActivity;

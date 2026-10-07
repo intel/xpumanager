@@ -371,6 +371,64 @@ struct QueryMetric
  */
 [[nodiscard]] MetricInput inputsOf(std::span<const QueryMetric *const> fields) noexcept;
 
+/**
+ * @brief Whether any of @p fields reads engine activity that only the sysman engine counters supply
+ *
+ * The per-engine and per-group utilization fields have no fdinfo equivalent; the class-level
+ * ones and utilization.gpu declare @c FDINFO as well and can be served from it.
+ *
+ * @param[in] fields Resolved metrics. Must not contain null pointers.
+ * @retval true  at least one field declares @c ENGINE without @c FDINFO
+ * @retval false every engine-activity figure requested can come from fdinfo
+ */
+[[nodiscard]] bool needsEngineCounters(std::span<const QueryMetric *const> fields) noexcept;
+
+/**
+ * @brief Drops the sysman engine counters from @p inputs when fdinfo is to stand in for them
+ *
+ * Whether fdinfo is preferred is the platform's decision (@c fdinfo::preferForEngineUtil);
+ * this applies it to a set of fields.
+ *
+ * @param[in] inputs          Union of the selected fields' inputs.
+ * @param[in] engineRequired  @ref needsEngineCounters for the same fields.
+ * @param[in] fdinfoPreferred The platform prefers fdinfo for every device being sampled.
+ * @retval inputs             unchanged, when the counters are required or fdinfo is not preferred
+ * @retval inputs-without-ENGINE otherwise
+ */
+[[nodiscard]] constexpr MetricInput preferFdinfo(MetricInput inputs, bool engineRequired, bool fdinfoPreferred) noexcept
+{
+	if (engineRequired || !fdinfoPreferred || !hasInput(inputs, MetricInput::FDINFO)) {
+		return inputs;
+	}
+	return static_cast<MetricInput>(detail::toUnderlying(inputs) & ~detail::toUnderlying(MetricInput::ENGINE));
+}
+
+/**
+ * @brief The inputs to sample for @p fields on @p devices
+ *
+ * @ref inputsOf, then @ref preferFdinfo with @c fdinfo::preferForEngineUtil for each device.
+ *
+ * @param[in] fields  Resolved metrics. Must not contain null pointers.
+ * @param[in] devices Devices that will be sampled.
+ * @retval MetricInput the set to pass to the @c populateMetricCache* functions
+ */
+[[nodiscard]] MetricInput resolveInputs(std::span<const QueryMetric *const> fields, std::span<devInfo> devices);
+
+/**
+ * @brief The busiest of the per-class fdinfo utilizations, the fdinfo analogue of the
+ *        busiest-engine figure @ref enginegroup::computeGpuUtilPerTile reports
+ *
+ * @param[in] compute  Compute-class utilization in percent, if fdinfo reported one.
+ * @param[in] render   Render-class utilization in percent, if fdinfo reported one.
+ * @param[in] media    Media-class utilization in percent, if fdinfo reported one.
+ * @param[in] copy     Copy-class utilization in percent, if fdinfo reported one.
+ *
+ * @retval value        the highest class utilization present, in percent
+ * @retval std::nullopt no class reported anything
+ */
+[[nodiscard]] std::optional<float> busiestEngineClass(std::optional<float> compute, std::optional<float> render,
+													  std::optional<float> media, std::optional<float> copy) noexcept;
+
 // ── Group name table (detail — not part of the public API) ──────────────────────
 
 namespace detail {
@@ -664,7 +722,7 @@ void runMetrics(Output &output, std::span<const QueryMetric *> fields, std::span
 	// Gate on what the selected fields actually read, not merely on whether any of them is
 	// Live: a Live field whose getter queries the HAL directly (e.g. memory.used) needs no
 	// sampling at all, and must not drag in the measurement window or the OA streamer.
-	const MetricInput inputs = inputsOf(fields);
+	const MetricInput inputs = resolveInputs(fields, devices);
 
 	std::vector<MetricCache> caches(devices.size());
 	if (inputs != MetricInput::NONE) {

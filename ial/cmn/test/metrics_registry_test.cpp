@@ -994,6 +994,47 @@ TEST_CASE("inputsOf: only EU fields request the OA metric streamer")
 	}
 }
 
+TEST_CASE("preferFdinfo: drops the sysman engine counters only when fdinfo can serve every field")
+{
+	constexpr MetricInput gpuUtil = MetricInput::EU | MetricInput::ENGINE | MetricInput::FDINFO;
+	// The case this exists for: utilization.gpu on a host where fdinfo sees the device.
+	CHECK(preferFdinfo(gpuUtil, false, true) == (MetricInput::EU | MetricInput::FDINFO));
+	// Kept when some field has no fdinfo equivalent, or fdinfo cannot see the device.
+	CHECK(preferFdinfo(gpuUtil, true, true) == gpuUtil);
+	CHECK(preferFdinfo(gpuUtil, false, false) == gpuUtil);
+	// Never dropped from a set that has no fdinfo to fall back to.
+	CHECK(preferFdinfo(MetricInput::ENGINE | MetricInput::POWER, false, true) ==
+		  (MetricInput::ENGINE | MetricInput::POWER));
+	CHECK(preferFdinfo(MetricInput::POWER, false, true) == MetricInput::POWER);
+}
+
+TEST_CASE("needsEngineCounters: every class-level utilization field can come from fdinfo")
+{
+	for (const std::string_view name :
+		 {"utilization.gpu", "utilization.compute", "utilization.render", "utilization.media", "utilization.copy",
+		  "utilization.compute.single", "utilization.media.group", "power.draw"}) {
+		const auto fields = resolveQuery(name);
+		REQUIRE(fields.size() == 1);
+		CHECK_FALSE(needsEngineCounters(fields));
+	}
+	CHECK_FALSE(needsEngineCounters({}));
+}
+
+TEST_CASE("needsEngineCounters: a field reading engine activity without an fdinfo fallback needs them")
+{
+	static constexpr QueryMetric engineOnly{.name = "test.engine.only",
+											.unit = "%",
+											.description = "engine activity with no fdinfo fallback",
+											.source = MetricSource::Live,
+											.groups = MetricGroup::UTILIZATION,
+											.inputs = MetricInput::ENGINE,
+											.getter = nullptr};
+	const auto gpu = resolveQuery("utilization.gpu");
+	REQUIRE(gpu.size() == 1);
+	const std::array<const QueryMetric *, 2> mixed{gpu[0], &engineOnly};
+	CHECK(needsEngineCounters(mixed));
+}
+
 TEST_CASE("inputsOf: each delta-sampled group is requested by its own fields")
 {
 	struct Expect

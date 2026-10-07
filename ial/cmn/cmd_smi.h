@@ -7,6 +7,7 @@
 #ifndef _CMD_SMI_H
 #define _CMD_SMI_H
 
+#include "proc_fdinfo.h"
 #include "cmds.h"
 #include "table_builder.h"
 #include <enginegroup.h>
@@ -25,6 +26,10 @@ struct SmiBaseline
 
 	// engine util: one busyness counter reading per engine group the device exposes
 	std::vector<EngineActivitySample> engineActivity;
+
+	// engine util from fdinfo instead, where the platform prefers it (fdinfo::preferForEngineUtil)
+	std::vector<fdinfo::ProcessSnapshot> fdinfoSnap;
+	bool useFdinfo = false;
 };
 
 /**
