@@ -243,13 +243,6 @@ MetricInput inputsOf(std::span<const QueryMetric *const> fields) noexcept
 						   [](MetricInput acc, const QueryMetric *f) { return acc | f->inputs; });
 }
 
-bool needsEngineCounters(std::span<const QueryMetric *const> fields) noexcept
-{
-	return std::ranges::any_of(fields, [](const QueryMetric *f) {
-		return hasInput(f->inputs, MetricInput::ENGINE) && !hasInput(f->inputs, MetricInput::FDINFO);
-	});
-}
-
 std::optional<float> busiestEngineClass(std::optional<float> compute, std::optional<float> render,
 										std::optional<float> media, std::optional<float> copy) noexcept
 {
@@ -260,18 +253,6 @@ std::optional<float> busiestEngineClass(std::optional<float> compute, std::optio
 		}
 	}
 	return busiest;
-}
-
-MetricInput resolveInputs(std::span<const QueryMetric *const> fields, std::span<devInfo> devices)
-{
-	const MetricInput inputs = inputsOf(fields);
-	if (!hasInput(inputs, MetricInput::ENGINE)) {
-		return inputs;
-	}
-	const bool fdinfoPreferred = !devices.empty() && std::ranges::all_of(devices, [](const devInfo &d) {
-		return fdinfo::preferForEngineUtil(devPciAddr(d));
-	});
-	return preferFdinfo(inputs, needsEngineCounters(fields), fdinfoPreferred);
 }
 
 MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev, MetricInput inputs)

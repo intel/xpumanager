@@ -90,8 +90,8 @@ constexpr auto GPU = QueryMetric{
 			return r;
 		}
 		// Tertiary: the busiest engine class by fdinfo scheduling time - the same "busiest
-		// engine" figure as the sysman tier, which resolveInputs() drops in fdinfo's favour
-		// wherever the platform prefers fdinfo. It measures engine-scheduled time rather than
+		// engine" figure as the sysman tier, which is unavailable wherever the platform does not
+		// allow the sysman engine counters. It measures engine-scheduled time rather than
 		// shader execution, so it reads higher than EU active% under the same workload.
 		if (const auto busiest =
 				busiestEngineClass(cache.fdinfoCompute, cache.fdinfoRender, cache.fdinfoMedia, cache.fdinfoCopy)) {

@@ -27,7 +27,7 @@ struct SmiBaseline
 	// engine util: one busyness counter reading per engine group the device exposes
 	std::vector<EngineActivitySample> engineActivity;
 
-	// engine util from fdinfo instead, where the platform prefers it (fdinfo::preferForEngineUtil)
+	// engine util from fdinfo instead, where sysman engine counters aren't allowed
 	std::vector<fdinfo::ProcessSnapshot> fdinfoSnap;
 	bool useFdinfo = false;
 };

@@ -275,11 +275,11 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
 		}
 	}
 
-	// Engine activity baseline: from fdinfo where the platform prefers it (see
-	// fdinfo::preferForEngineUtil), otherwise from every engine group, so utilization can be
-	// taken from the busiest engine rather than from the device-wide average (see
-	// computeFromBaseline).
-	if (fdinfo::preferForEngineUtil(devPciAddr(*di))) {
+	// Engine activity baseline: from fdinfo where the platform does not allow the sysman
+	// engine counters (sysmanEngineCountersAllowed), otherwise from every engine group, so
+	// utilization can be taken from the busiest engine rather than from the device-wide
+	// average (see computeFromBaseline).
+	if (!sysmanEngineCountersAllowed()) {
 		baseline.fdinfoSnap = fdinfo::capture(devPciAddr(*di));
 		baseline.useFdinfo = true;
 		return;

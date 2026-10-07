@@ -759,7 +759,7 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 	}
 
 	const std::size_t numDevices = deviceList.size();
-	const metrics::MetricInput inputs = metrics::resolveInputs(fields, std::span<devInfo>(deviceList));
+	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 
 	while (!quitToken.stop_requested()) {
 		std::this_thread::sleep_for(loopInterval);
@@ -846,7 +846,7 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	const std::size_t numDevices = deviceList.size();
 	std::vector<metrics::MetricCache> caches(numDevices);
 
-	const metrics::MetricInput inputs = metrics::resolveInputs(fields, std::span<devInfo>(deviceList));
+	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 
 	const auto firstSampleDeadline = startTime + timing.interval;
 	for (std::size_t i = 0; i < numDevices; ++i) {
@@ -1069,7 +1069,7 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 	std::vector<metrics::MetricCache> caches(numDevices);
 	// Only sample what the selected fields read: a query of nothing but static identity or
 	// direct-HAL fields then skips the measurement window and the OA streamer entirely.
-	const metrics::MetricInput inputs = metrics::resolveInputs(fields, std::span<devInfo>(deviceList));
+	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 	if (inputs != metrics::MetricInput::NONE) {
 		const auto sampleDeadline = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
 		for (std::size_t i = 0; i < numDevices; ++i) {

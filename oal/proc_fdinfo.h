@@ -92,19 +92,6 @@ uint64_t enginesFromSnapshot(const ProcessSnapshot &snap);
 ProcUtil aggregateDeviceUtil(const std::vector<ProcessSnapshot> &before, const std::vector<ProcessSnapshot> &after);
 
 /**
- * @brief Whether engine utilization for a device should come from fdinfo rather than from
- *        the sysman engine counters
- *
- * The platform's policy, not just availability: the per-platform implementations say why.
- *
- * @param[in] pciAddr  PCI address of the device, e.g. "0000:03:00.0".
- * @param[in] procRoot Defaults to "/proc"; override in tests to point at a fixture directory.
- * @retval true  read engine utilization from fdinfo for this device
- * @retval false use the sysman engine counters
- */
-[[nodiscard]] bool preferForEngineUtil(const std::string &pciAddr, const std::string &procRoot = "/proc");
-
-/**
  * @brief Number of engines of each class on a device, from this process's own DRM fdinfo
  *
  * A class listed with drm-engine-capacity-<class> has that many engines; one listed without

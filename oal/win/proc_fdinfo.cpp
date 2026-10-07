@@ -34,8 +34,4 @@ std::unordered_map<std::string, uint32_t> engineCountsPerClass(const std::string
 	return {};
 }
 
-// There is no fdinfo on Windows, so the sysman engine counters stay the source of engine
-// utilization.
-bool preferForEngineUtil(const std::string & /*pciAddr*/, const std::string & /*procRoot*/) { return false; }
-
 } // namespace fdinfo

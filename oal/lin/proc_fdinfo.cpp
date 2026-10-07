@@ -5,7 +5,6 @@
  */
 
 #include "../proc_fdinfo.h"
-#include "os.h"
 
 #include <algorithm>
 #include <charconv>
@@ -367,25 +366,6 @@ std::unordered_map<std::string, uint32_t> engineCountsPerClass(const std::string
 		}
 	}
 	return counts;
-}
-
-bool preferForEngineUtil(const std::string &pciAddr, const std::string &procRoot)
-{
-	// The sysman engine counters are the xe engine-activity perf events. Level Zero opens them
-	// for every engine when engine groups are enumerated and keeps them until the process
-	// exits, and xe keeps a GT out of C6 for as long as one is open - an event on a media-GT
-	// engine wakes both GTs. On Crescent Island a held-awake media GT slows compute running on
-	// the device. fdinfo carries the same per-class busyness and wakes nothing.
-	//
-	// XPU_SMI_SYSMAN_ENGINE_UTIL keeps the counters: fdinfo sees only processes in this PID
-	// namespace, so inside a container it misses GPU work started outside it, while the
-	// counters are device-wide.
-	if (hasEnv("XPU_SMI_SYSMAN_ENGINE_UTIL")) {
-		return false;
-	}
-	// This process is a DRM client of every device it has initialised, so an empty capture
-	// means fdinfo cannot see the device (no /proc, no permission), not that the GPU is idle.
-	return !capture(pciAddr, procRoot).empty();
 }
 
 } // namespace fdinfo
