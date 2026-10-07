@@ -53,9 +53,10 @@ private:
 
 	[[nodiscard]] ze_result_t ensureEnumerated();
 	[[nodiscard]] uint32_t engineGroupCount() const { return static_cast<uint32_t>(engineGroups.size()); }
+	// Private: only ensureEnumerated() may create engine handles.
+	ze_result_t enumGroups(zes_device_handle_t device);
 
 public:
-	ze_result_t enumGroups(zes_device_handle_t device);
 	ze_result_t getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties);
 	ze_result_t getActivity(zes_engine_handle_t engineGroup, zes_engine_stats_t *engineStats);
 	ze_result_t getActivityExt(zes_engine_handle_t engineGroup);

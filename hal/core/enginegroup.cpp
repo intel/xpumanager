@@ -5,6 +5,7 @@
  */
 
 #include "enginegroup.h"
+#include "os.h"
 #include <algorithm>
 #include <ranges>
 #include <tuple>
@@ -47,17 +48,26 @@ ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 /**
  * @brief Enumerates the engine groups the first time any caller needs them
  *
- * The result of the first attempt is kept, so a device whose enumeration fails is not
- * re-queried on every sample.
+ * Every public method that touches engine handles goes through here, so this is the one
+ * place that decides whether they are created at all. Where the platform does not allow the
+ * sysman engine counters (@c sysmanEngineCountersAllowed), creating the handles is what opens
+ * them, so they are never created; callers that need engine data fall back to fdinfo. The
+ * result of the first attempt is kept, so a device is not re-queried on every sample.
  *
  * @retval ZE_RESULT_SUCCESS engine handles are available (possibly zero of them)
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE the platform does not allow the engine counters
  * @retval other the error zesDeviceEnumEngineGroups returned on the first attempt
  */
 ze_result_t enginegroup::ensureEnumerated()
 {
 	if (!enumerated) {
 		enumerated = true;
-		enumResult = zesDevice == nullptr ? ZE_RESULT_ERROR_UNINITIALIZED : enumGroups(zesDevice);
+		if (!sysmanEngineCountersAllowed()) {
+			DBG("Sysman engine groups are not enumerated on this platform.\n");
+			enumResult = ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		} else {
+			enumResult = zesDevice == nullptr ? ZE_RESULT_ERROR_UNINITIALIZED : enumGroups(zesDevice);
+		}
 	}
 	return enumResult;
 }
