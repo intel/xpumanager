@@ -9,6 +9,7 @@
 #include "gfx_firmware_status.h"
 #include <CLI/CLI.hpp>
 #include "printer.h"
+#include "proc_fdinfo.h"
 #include "table_builder.h"
 #include "amclib.h"
 #include <os.h>
@@ -1585,6 +1586,33 @@ ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 }
 
 /**
+ * @brief Writes the number of engines of one class, read from fdinfo instead of sysman
+ *
+ * Used where the platform does not allow the sysman engine counters
+ * (@c sysmanEngineCountersAllowed): enumerating engine groups there would open them for the
+ * rest of the process.
+ *
+ * @param[in]  d           Device to count engines on.
+ * @param[in]  engineClass Engine class as fdinfo names it, e.g. "vcs".
+ * @param[out] outputLine  The count, or "N/A" when fdinfo has no entry for this device.
+ *
+ * @retval ZE_RESULT_SUCCESS the count was written
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE fdinfo has no entry for this device
+ */
+static ze_result_t engineCountFromFdinfo(const devInfo *d, const std::string &engineClass, std::string *outputLine)
+{
+	const auto counts = fdinfo::engineCountsPerClass(devPciAddr(*d));
+	if (counts.empty()) {
+		DBG("No fdinfo engine counts for {}\n", devPciAddr(*d));
+		*outputLine = "N/A";
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	const auto it = counts.find(engineClass);
+	*outputLine = std::to_string(it == counts.end() ? 0U : it->second);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Prints the media engines for a device when user runs discovery --dump 20.
  *
  * @param[in] d Pointer to the device info structure
@@ -1595,6 +1623,10 @@ ze_result_t cmdDiscovery::eus(devInfo *d, std::string *outputLine)
 ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
+
+	if (!sysmanEngineCountersAllowed()) {
+		return engineCountFromFdinfo(d, "vcs", outputLine);
+	}
 
 	auto *const engineGroup = d->dev->getEngineGroup();
 	if (engineGroup == nullptr) {
@@ -1624,6 +1656,10 @@ ze_result_t cmdDiscovery::mediaEngines(devInfo *d, std::string *outputLine)
 ze_result_t cmdDiscovery::mediaEnhancementEngines(devInfo *d, std::string *outputLine)
 {
 	TRACING();
+
+	if (!sysmanEngineCountersAllowed()) {
+		return engineCountFromFdinfo(d, "vecs", outputLine);
+	}
 
 	auto *const engineGroup = d->dev->getEngineGroup();
 	if (engineGroup == nullptr) {
