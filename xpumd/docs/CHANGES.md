@@ -1,6 +1,19 @@
 # XPUM daemon user visible changes
 
-## XPUM 2.x.x
+Contents:
+
+* [XPUM 2.3.0](#xpum-230)
+* [XPUM 2.2.0](#xpum-220)
+* [XPUM 2.1.0](#xpum-210)
+* [XPUM 2.0.1](#xpum-201)
+* [XPUM 2.0.0](#xpum-200)
+  * [XPUM v2.0 vs XPUM v1.x](#xpum-v20-vs-xpum-v1x)
+    * [XPUM 2.x rewrite](#xpum-2x-rewrite)
+      * [Missing metrics](#missing-metrics)
+    * [XPUM 1.x](#xpum-1x)
+
+
+## XPUM 2.3.0
 
 * Breaking changes (for the XPUMD metrics):
   * New `hw.gpu.ecc.state` metric replaces the `ecc_*` ECC configuration states for the `hw.status` metric (to reserve the `hw.status` metric for `ok` and issue states)
@@ -11,8 +24,13 @@
   * New `ok` state for the GPU device in the `hw.status` metric
     * `hw_status{hw_type="gpu",hw_state="ok"}` aggregates the device level GPU states
   *  `hw.memory.free` is reported regardless of whether `hw.memory.size` (+ derived metrics) are available
+* New (experimental) `intel_device_watch` extension that logs device changes and
+  can exit XPUMD so that a restarted container gets updated device files
 * XPUMD fixes:
   * Device re-initialization on attach is done once per device bind
+* Sysman Go bindings: Update to L0 API spec v1.18.31 (in loader 1.33)
+* Go dependencies: OTel collector update to v0.161.0 / v1.67 + security updates
+* XPUMD image: L0 driver stack update to 26.35.39758.10 + loader 1.34.0
 
 
 ## XPUM 2.2.0
@@ -28,7 +46,7 @@
   * This improves security, but there may still be some (typically very old) setups
     that require much wider SYS_ADMIN capability for GPU utilization metrics access
 * XPUMD image:
-  * L0 driver stack update to 26.31.39395.13
+  * L0 driver stack update to 26.31.39395.13 + loader 1.33.1
   * Libraries needed by the RAS metrics (libnl) and the info logs (libtracefs) added
 * Go dependencies: OTel collector update to v0.159.0 / v1.65 + other version updates
 
@@ -45,7 +63,7 @@
   * Re-initializes Sysman after getting device detach / attach event
   * (`fail_on_sysman_init_error` config option restores earlier behavior)
 * Sysman Go bindings: Update to L0 API spec v1.16.24 (in loader 1.32.0)
-* XPUMD image: L0 driver stack update to 26.27.39122.11
+* XPUMD image: L0 driver stack update to 26.27.39122.11 + loader 1.32.0
 * Go dependencies: Security enhancements + other version updates (to gRPC, OTel etc modules)
 
 
@@ -58,7 +76,7 @@
   * Filter out bogus power values caused by Sysman energy counter value wraparounds
     (fixes [#130](https://github.com/intel/xpumanager/issues/130))
 * XPUMD API: New `intelxpuinfo/api` Go module for the GPU info gRPC endpoint
-* XPUMD image: L0 driver stack update to 1.30.0 / 26.22.38646.4
+* XPUMD image: L0 driver stack update to 26.22.38646.4 + loader 1.30.0
 * XPUMD code / Go dependencies: Security enhancements
 
 XPUMD integration with other Kubernetes GPU components:
@@ -68,12 +86,17 @@ XPUMD integration with other Kubernetes GPU components:
 * GPU operator supports installing XPUMD along with the DRA driver
 
 
-## XPUM v2.0 vs XPUM v1.x
+## XPUM 2.0.0
+
+* First release of the XPUM daemon rewrite in Go
+* XPUM image: L0 driver stack 26.18.38308.1 + loader 1.28.6
+
+### XPUM v2.0 vs XPUM v1.x
 
 Below is an overview of the major differences between the XPUM 1.x and
 2.0 versions, for their daemon / exporter / remote API functionality.
 
-### XPUM 2.x rewrite:
+#### XPUM 2.x rewrite
 
 * Daemon and exporter in the same process
   * Implemented in Go on top of OpenTelemetry (OTel) packages and Level-Zero Go bindings
@@ -85,7 +108,7 @@ Below is an overview of the major differences between the XPUM 1.x and
 * Extensive configuration support through YAML configuration file
 * Kubernetes deployment via GHCR Helm repository `xpumd` chart
 
-#### Missing metrics
+##### Missing metrics
 
 Compared to XPUM 1.x, XPUM 2.0 lacks support for the following GPU metrics:
 
@@ -95,7 +118,7 @@ Compared to XPUM 1.x, XPUM 2.0 lacks support for the following GPU metrics:
   * Use instead e.g. VTune for debugging performance issues
 * Fabric (XeLink) metrics - not relevant for BMG
 
-### XPUM 1.x:
+#### XPUM 1.x
 
 * XPUM daemon and exporter functionality in separate processes
   * Daemon implemented in C++, on top of `libxpum`
