@@ -40,12 +40,21 @@ struct EngineActivitySample
 class LIBXPUM_API enginegroup : public sysman
 {
 private:
-	uint32_t engineGroupCount;
-	zes_engine_handle_t *engineGroups;
+	/*
+	 * Engine handles are enumerated on first use, not in init(). Creating them is not free:
+	 * Level Zero sysman may acquire per-engine resources for each handle and hold them until
+	 * the process exits, and on some platforms those resources affect other work on the GPU.
+	 * Only a caller that actually reads engine activity should pay that.
+	 */
+	zes_device_handle_t zesDevice = nullptr;
+	std::vector<zes_engine_handle_t> engineGroups;
+	bool enumerated = false;
+	ze_result_t enumResult = ZE_RESULT_SUCCESS;
+
+	[[nodiscard]] ze_result_t ensureEnumerated();
+	[[nodiscard]] uint32_t engineGroupCount() const { return static_cast<uint32_t>(engineGroups.size()); }
 
 public:
-	enginegroup() : engineGroupCount(0), engineGroups(nullptr) {}
-	~enginegroup();
 	ze_result_t enumGroups(zes_device_handle_t device);
 	ze_result_t getProperties(zes_engine_handle_t engineGroup, zes_engine_properties_t *engineProperties);
 	ze_result_t getActivity(zes_engine_handle_t engineGroup, zes_engine_stats_t *engineStats);

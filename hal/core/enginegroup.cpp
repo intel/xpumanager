@@ -10,21 +10,6 @@
 #include <tuple>
 
 /**
- * @brief Destructor for the enginegroup class
- *
- * This destructor performs cleanup operations for the engine group management
- * object, releasing allocated memory for engine group handles and ensuring
- * proper resource deallocation when the enginegroup object is destroyed.
- */
-enginegroup::~enginegroup()
-{
-	if (engineGroups) {
-		delete[] engineGroups;
-		engineGroups = nullptr;
-	}
-}
-
-/**
  * @brief Enumerates available engine groups for a device
  *
  * This function discovers and catalogs all engine groups available on the
@@ -37,22 +22,44 @@ enginegroup::~enginegroup()
  */
 ze_result_t enginegroup::enumGroups(zes_device_handle_t device)
 {
-	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
+	engineGroups.clear();
 
-	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, nullptr);
+	uint32_t count = 0;
+	ze_result_t result = zesDeviceEnumEngineGroups(device, &count, nullptr);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate engine groups: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
-	DBG("Device has {} engine groups.\n", engineGroupCount);
+	DBG("Device has {} engine groups.\n", count);
 
-	engineGroups = new zes_engine_handle_t[engineGroupCount];
-	result = zesDeviceEnumEngineGroups(device, &engineGroupCount, engineGroups);
+	engineGroups.resize(count);
+	result = zesDeviceEnumEngineGroups(device, &count, engineGroups.data());
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get engine group handles: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		engineGroups.clear();
+		return result;
 	}
+	engineGroups.resize(count);
 	return result;
+}
+
+/**
+ * @brief Enumerates the engine groups the first time any caller needs them
+ *
+ * The result of the first attempt is kept, so a device whose enumeration fails is not
+ * re-queried on every sample.
+ *
+ * @retval ZE_RESULT_SUCCESS engine handles are available (possibly zero of them)
+ * @retval other the error zesDeviceEnumEngineGroups returned on the first attempt
+ */
+ze_result_t enginegroup::ensureEnumerated()
+{
+	if (!enumerated) {
+		enumerated = true;
+		enumResult = zesDevice == nullptr ? ZE_RESULT_ERROR_UNINITIALIZED : enumGroups(zesDevice);
+	}
+	return enumResult;
 }
 
 /**
@@ -211,6 +218,9 @@ ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_
 	zes_engine_properties_t engineProperties = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
+	if (const ze_result_t enumRes = ensureEnumerated(); enumRes != ZE_RESULT_SUCCESS) {
+		return enumRes;
+	}
 
 	if (count == nullptr) {
 		ERR("Count pointer is null.\n");
@@ -219,7 +229,7 @@ ze_result_t enginegroup::getEngineCountByType(uint32_t *count, zes_engine_group_
 
 	*count = 0;
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+	for (uint32_t i = 0; i < engineGroupCount(); ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -251,8 +261,11 @@ std::tuple<ze_result_t, uint64_t, uint64_t> enginegroup::getUtilization(std::spa
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	zes_engine_stats_t engineStats = {};
 	TRACING();
+	if (const ze_result_t enumRes = ensureEnumerated(); enumRes != ZE_RESULT_SUCCESS) {
+		return {enumRes, 0, 0};
+	}
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+	for (uint32_t i = 0; i < engineGroupCount(); ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -299,6 +312,9 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	uint32_t matchIndex = 0;
 	TRACING();
+	if (const ze_result_t enumRes = ensureEnumerated(); enumRes != ZE_RESULT_SUCCESS) {
+		return enumRes;
+	}
 
 	if (activeTime == nullptr) {
 		ERR("Active time pointer is null.\n");
@@ -310,7 +326,7 @@ ze_result_t enginegroup::getEngineActivityByType(zes_engine_group_t type, uint32
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+	for (uint32_t i = 0; i < engineGroupCount(); ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -362,10 +378,13 @@ ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 	zes_engine_stats_t engineStats = {};
 	ze_result_t result = ZE_RESULT_SUCCESS;
 	TRACING();
+	if (const ze_result_t enumRes = ensureEnumerated(); enumRes != ZE_RESULT_SUCCESS) {
+		return enumRes;
+	}
 
 	tileActivity.clear();
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+	for (uint32_t i = 0; i < engineGroupCount(); ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		result = getProperties(engineGroup, &engineProperties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -411,16 +430,19 @@ ze_result_t enginegroup::getEngineActivityPerTile(zes_engine_group_t type,
 ze_result_t enginegroup::getAllEngineActivity(std::vector<EngineActivitySample> &samples)
 {
 	TRACING();
+	if (const ze_result_t enumRes = ensureEnumerated(); enumRes != ZE_RESULT_SUCCESS) {
+		return enumRes;
+	}
 
 	samples.clear();
-	if (engineGroups == nullptr || engineGroupCount == 0) {
+	if (engineGroups.empty()) {
 		DBG("No engine groups enumerated.\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	samples.reserve(engineGroupCount);
+	samples.reserve(engineGroupCount());
 
 	ze_result_t lastError = ZE_RESULT_SUCCESS;
-	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+	for (uint32_t i = 0; i < engineGroupCount(); ++i) {
 		// Queried directly rather than via getProperties()/getActivity() so that an
 		// unreadable handle logs at DBG rather than ERR. Those two log at ERR because a
 		// failure there aborts the caller's query; here it does not, and a device that
@@ -750,7 +772,8 @@ std::optional<double> enginegroup::deviceUtilFromTiles(const std::map<uint32_t, 
 ze_result_t enginegroup::init(zes_device_handle_t device)
 {
 	TRACING();
-	return enumGroups(device);
+	zesDevice = device;
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -771,8 +794,10 @@ ze_result_t enginegroup::zesRun(UNUSED zes_device_handle_t device)
 	zes_engine_properties_t engineProperties = {};
 	zes_engine_stats_t engineStats = {};
 	TRACING();
+	// A diagnostic sweep: if enumeration failed there is simply nothing to sweep.
+	std::ignore = ensureEnumerated();
 
-	for (uint32_t i = 0; i < engineGroupCount; ++i) {
+	for (uint32_t i = 0; i < engineGroupCount(); ++i) {
 		zes_engine_handle_t engineGroup = engineGroups[i];
 		DBG("  - Engine Group handle: {}\n", (void *)engineGroup);
 
