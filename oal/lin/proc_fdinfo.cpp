@@ -111,7 +111,9 @@ parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-paramet
 			engines[normaliseEngine(key.substr(cycPfx.size()))].cycles = parseU64(val);
 		} else if (key.starts_with(totPfx)) {
 			engines[normaliseEngine(key.substr(totPfx.size()))].totalCycles = parseU64(val);
-		} else if (key.starts_with(engPfx) && !key.starts_with(capPfx)) {
+		} else if (key.starts_with(capPfx)) {
+			engines[normaliseEngine(key.substr(capPfx.size()))].capacity = static_cast<uint32_t>(parseU64(val));
+		} else if (key.starts_with(engPfx)) {
 			// i915: "drm-engine-render/0:\t12345 ns"
 			const std::string eng = normaliseEngine(key.substr(engPfx.size()));
 			engines[eng].cycles = parseU64(val);
@@ -339,6 +341,32 @@ ProcUtil aggregateDeviceUtil(const std::vector<ProcessSnapshot> &before, const s
 	agg.media = clamp100(agg.media);
 	agg.copy = clamp100(agg.copy);
 	return agg;
+}
+
+std::unordered_map<std::string, uint32_t> engineCountsPerClass(const std::string &pciAddr, const std::string &procRoot)
+{
+	namespace fs = std::filesystem;
+	std::unordered_map<std::string, uint32_t> counts;
+	if (pciAddr.empty()) {
+		return counts;
+	}
+	const fs::path self = fs::path{procRoot} / "self";
+	std::error_code ec;
+	for (const auto &fdEnt : fs::directory_iterator{self / "fd", ec}) {
+		const fs::path target = fs::read_symlink(fdEnt.path(), ec);
+		if (ec) {
+			ec.clear();
+			continue;
+		}
+		if (target.parent_path() != "/dev/dri") {
+			continue;
+		}
+		for (const auto &[eng, cnt] : parseFdinfo((self / "fdinfo" / fdEnt.path().filename()).string(), pciAddr)) {
+			auto &n = counts[eng];
+			n = std::max(n, std::max<uint32_t>(cnt.capacity, 1));
+		}
+	}
+	return counts;
 }
 
 bool preferForEngineUtil(const std::string &pciAddr, const std::string &procRoot)

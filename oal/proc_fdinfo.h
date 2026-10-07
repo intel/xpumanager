@@ -47,6 +47,7 @@ struct EngineCounters
 {
 	uint64_t cycles = 0;	  ///< busy cycles (xe) or busy ns (i915)
 	uint64_t totalCycles = 0; ///< total GPU cycles (xe); 0 → use wall-clock (i915)
+	uint32_t capacity = 0;	  ///< drm-engine-capacity-<eng>; 0 when not reported, meaning one engine
 };
 
 // All engine counters for one process on one device at one point in time.
@@ -102,5 +103,20 @@ ProcUtil aggregateDeviceUtil(const std::vector<ProcessSnapshot> &before, const s
  * @retval false use the sysman engine counters
  */
 [[nodiscard]] bool preferForEngineUtil(const std::string &pciAddr, const std::string &procRoot = "/proc");
+
+/**
+ * @brief Number of engines of each class on a device, from this process's own DRM fdinfo
+ *
+ * A class listed with drm-engine-capacity-<class> has that many engines; one listed without
+ * it has one. Read from this process's DRM client entries only, so it needs neither engine
+ * enumeration nor any other process's fdinfo.
+ *
+ * @param[in] pciAddr  PCI address of the device, e.g. "0000:03:00.0".
+ * @param[in] procRoot Defaults to "/proc"; override in tests to point at a fixture directory.
+ * @retval map   engine class name as in fdinfo (e.g. "ccs", "vcs") -> number of engines
+ * @retval empty this process holds no DRM client of the device, or the platform has no fdinfo
+ */
+[[nodiscard]] std::unordered_map<std::string, uint32_t> engineCountsPerClass(const std::string &pciAddr,
+																			 const std::string &procRoot = "/proc");
 
 } // namespace fdinfo
