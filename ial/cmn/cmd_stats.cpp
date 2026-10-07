@@ -13,6 +13,9 @@
 #include "metric.h"
 #include "pci.h"
 #include "printer.h"
+#include "os.h"
+#include "proc_fdinfo.h"
+#include "metrics_registry.h"
 #include <assert.h>
 #include <algorithm>
 #include <cinttypes>
@@ -865,6 +868,37 @@ ze_result_t cmdStats::collectGpuUtilPerTile(enginegroup *engineGroup, std::vecto
 }
 
 /**
+ * @brief Collect one sample of device utilization from fdinfo, for a single-tile device
+ *
+ * Used where the platform does not allow the sysman engine counters
+ * (@c sysmanEngineCountersAllowed). fdinfo is device-wide, so the figures are filed under
+ * tile 0 and the caller only uses this on single-tile devices. Overall GPU utilization is
+ * the busiest engine class, as on the sysman path.
+ *
+ * @param [in] device The device being sampled
+ * @param [in,out] baseline Previous fdinfo snapshot; replaced with the current one
+ * @param [in,out] metrics Receives one sample for each utilization fdinfo could compute
+ */
+static void collectFdinfoUtil(const devInfo *device, std::vector<fdinfo::ProcessSnapshot> &baseline,
+							  DeviceMetrics &metrics)
+{
+	auto current = fdinfo::capture(devPciAddr(*device));
+	const auto util = fdinfo::aggregateDeviceUtil(baseline, current);
+	baseline = std::move(current);
+
+	const auto push = [](std::map<uint32_t, std::vector<double>> &perTile, std::optional<float> value) {
+		if (value) {
+			perTile[0].push_back(static_cast<double>(*value));
+		}
+	};
+	push(metrics.gpuUtilPerTile, metrics::busiestEngineClass(util.compute, util.render, util.media, util.copy));
+	push(metrics.computeUtilPerTile, util.compute);
+	push(metrics.renderUtilPerTile, util.render);
+	push(metrics.mediaUtilPerTile, util.media);
+	push(metrics.copyUtilPerTile, util.copy);
+}
+
+/**
  * @brief Collects EU Array metrics (Active/Stall/Idle) per tile using Level Zero metrics API
  *
  * This function uses the HAL metric class to collect Execution Unit utilization metrics
@@ -1102,7 +1136,12 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	auto startTime = std::chrono::system_clock::now();
 	metrics.startTimeIso = formatIso8601Timestamp(startTime);
 
-	auto *engineGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
+	// Where the platform does not allow the sysman engine counters, the engine API is not
+	// touched at all - enumerating engine groups would open them for the rest of the process -
+	// and utilization comes from fdinfo instead. Every engine collector below treats a null
+	// engine group as unavailable.
+	const bool engineFromFdinfo = !sysmanEngineCountersAllowed();
+	auto *engineGroup = engineFromFdinfo ? nullptr : reinterpret_cast<enginegroup *>(dev->getEngineGroup());
 	auto *powerHandler = reinterpret_cast<::power *>(dev->getPower());
 	auto *frequencyHandler = reinterpret_cast<::frequency *>(dev->getFrequency());
 	auto *tempHandler = reinterpret_cast<::temperature *>(dev->getTemperature());
@@ -1116,6 +1155,21 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 	TilePowerSnapshot initialPowerBaseline{};
 	TileMemoryBandwidthSnapshot memoryBaseline{};
 	PcieBandwidthSnapshot pcieBaseline{};
+
+	// fdinfo is device-wide, so it can stand in for the per-tile utilization figures only on a
+	// device known to be single-tile; otherwise they are left unreported rather than misattributed.
+	zes_device_properties_t devProps{};
+	devProps.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+	const ze_result_t propsResult = dev->zesGetDevProps(device->zesDeviceHdl, &devProps);
+	if (propsResult != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get device properties: 0x{:X} ({})\n", propsResult, l0_error_to_string(propsResult));
+	}
+	const bool singleTile = propsResult == ZE_RESULT_SUCCESS && devProps.numSubdevices <= 1;
+	const bool fdinfoUtil = engineFromFdinfo && singleTile;
+	std::vector<fdinfo::ProcessSnapshot> fdinfoBaseline;
+	if (fdinfoUtil) {
+		fdinfoBaseline = fdinfo::capture(devPciAddr(*device));
+	}
 
 	// Per-tile engine utilization baselines
 	std::vector<EngineActivitySample> gpuUtilBaseline{};
@@ -1211,6 +1265,9 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 								 metrics.renderUtilPerTile);
 		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_MEDIA_ALL, mediaUtilBaseline, metrics.mediaUtilPerTile);
 		collectEngineUtilPerTile(engineGroup, ZES_ENGINE_GROUP_COPY_ALL, copyUtilBaseline, metrics.copyUtilPerTile);
+		if (fdinfoUtil) {
+			collectFdinfoUtil(device, fdinfoBaseline, metrics);
+		}
 
 		if (collectEuMetrics) {
 			auto *metricHandler = dev->getMetric();
