@@ -32,7 +32,7 @@ receivers:
     # Directory to watch for new crashlog files (must exist!).
     directory: /var/log/crashlog
     # Filename glob pattern (matched against the base name of each file).
-    glob: "*.bin"
+    glob: "*.crashlog"
     # Ignore files whose modification time is older than this duration before
     # startup. Zero means only files created after startup are processed.
     ignore_older_than: 0s

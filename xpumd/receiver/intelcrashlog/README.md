@@ -20,7 +20,7 @@ See the [Crash Log Framework project](https://github.com/intel/crashlog) for mor
 receivers:
   intel_crashlog:
     directory: /var/log/crashlog
-    glob: "*.bin"
+    glob: "*.crashlog"
     ignore_older_than: 10m
     add_attributes:
       hw.vendor: ACME

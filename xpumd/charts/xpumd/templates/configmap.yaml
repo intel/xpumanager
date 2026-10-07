@@ -11,7 +11,7 @@ data:
     receivers:
       intel_crashlog:
         directory: /var/log/crashlog
-        glob: "*.bin"
+        glob: "*.crashlog"
         ignore_older_than: 0s
   # Default configuration for the GPU info log collection of the Intel XPU
   # receiver. Can be overridden in config.yaml (via .Values.config).

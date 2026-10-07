@@ -392,7 +392,7 @@ func TestCrashlog(t *testing.T) {
 
 	crashlogData := []byte("This is a fake GPU crash dump used by TestCrashlog\n")
 	t.Run("EmitMatchingFile", func(t *testing.T) {
-		const name = "gpu-0000:00:1e.2-crash.bin"
+		const name = "gpu-0000:00:1e.2-crash.crashlog"
 		ch.writeCrashlogFile(t, crashlogData, name)
 
 		rec := ch.waitForCrashlogRecord(t, name, 30*time.Second)
@@ -402,14 +402,14 @@ func TestCrashlog(t *testing.T) {
 	})
 
 	t.Run("IgnoreNonMatchingFile", func(t *testing.T) {
-		const name = "gpu-0000:00:1e.2-crash.txt" // default glob is "*.bin"
+		const name = "gpu-0000:00:1e.2-crash.txt" // default glob is "*.crashlog"
 		ch.writeCrashlogFile(t, crashlogData, name)
 
 		ch.assertNoCrashlogRecord(t, name, 10*time.Second)
 	})
 
 	t.Run("NoBDFInFilename", func(t *testing.T) {
-		const name = "crash-no-bdf.bin"
+		const name = "crash-no-bdf.crashlog"
 		ch.writeCrashlogFile(t, crashlogData, name)
 
 		rec := ch.waitForCrashlogRecord(t, name, 30*time.Second)
