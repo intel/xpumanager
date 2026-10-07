@@ -141,6 +141,15 @@ static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -
 static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
 static inline std::vector<std::string> getDevicesSharingSlotWith(UNUSED const std::string &gpuBdf) { return {}; }
 static inline bool euMetricsSafeOnThisKernel(UNUSED std::string *unsafeKernelRelease = nullptr) { return true; }
+/**
+ * @brief Whether xpu-smi may open the Level Zero sysman engine counters on this host.
+ *
+ * Windows keeps engine utilization on the sysman engine counters; the Linux version says
+ * why Linux does not.
+ *
+ * @retval true always
+ */
+[[nodiscard]] static inline bool sysmanEngineCountersAllowed() { return true; }
 inline bool hasEnv(const char *name)
 {
 	char *value = nullptr;

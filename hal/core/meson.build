@@ -211,6 +211,18 @@ if get_option('with_tests')
     )
     test('proc_fdinfo_tests', proc_fdinfo_test)
 
+    engine_policy_test = executable(
+      'engine_policy_test',
+      files('test/engine_policy_test.cpp'),
+      include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+      link_with: libxpum_static,
+      dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+      link_args: ['-pie'],
+      build_by_default: true,
+      install: false,
+    )
+    test('engine_policy_tests', engine_policy_test)
+
     driver_util_test = executable(
       'driver_util_test',
       files('test/driver_util_test.cpp'),

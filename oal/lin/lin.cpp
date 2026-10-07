@@ -1102,6 +1102,27 @@ bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease)
 }
 
 /**
+ * @brief Whether xpu-smi may open the Level Zero sysman engine counters on this host.
+ *
+ * On Linux, sysman's engine handles are the xe engine-activity perf events
+ * (engine-active-ticks / engine-total-ticks). Level Zero opens them for every engine when
+ * engine groups are enumerated, before any activity is read, and keeps them until the
+ * process exits. xe keeps a GT out of C6 for as long as one of them is open, and an event
+ * on a media-GT engine keeps both GTs awake. On Crescent Island a held-awake media GT
+ * reduces the work the primary GT delivers: a running GEMM slowed by about 25% for the
+ * whole life of an xpu-smi monitoring loop. So by default none are opened, and engine
+ * utilization comes from DRM fdinfo instead.
+ *
+ * @c XPU_SMI_SYSMAN_ENGINE_UTIL opts back in, accepting that cost, for example inside a
+ * container: fdinfo sees only processes in this PID namespace, while the counters are
+ * device-wide.
+ *
+ * @retval true  @c XPU_SMI_SYSMAN_ENGINE_UTIL is set
+ * @retval false otherwise
+ */
+bool sysmanEngineCountersAllowed() { return hasEnv("XPU_SMI_SYSMAN_ENGINE_UTIL"); }
+
+/**
  * @brief Get the PCI slot label/designation for a device
  *
  * This function attempts to retrieve the physical slot designation for a PCI device

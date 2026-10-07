@@ -137,6 +137,7 @@ std::string getKernelVersion();
 std::string getKernelDriverVersion(const std::string &bdf);
 bool isLgciXeDebugKernel(const std::string &release);
 bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease = nullptr);
+[[nodiscard]] bool sysmanEngineCountersAllowed();
 std::string getPciSlotLabel(const std::string &bdf);
 std::string findResourceFile(const std::string &relativePath);
 int coldResetViaSysfs(const std::string &gpuBdf);
