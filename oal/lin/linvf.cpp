@@ -9,6 +9,7 @@
 #include <debug.h>
 #include "utility/logger/logger.h"
 #include <fstream>
+#include <vector>
 #include "lin.h"
 #include <sstream>
 #include <pciaccess.h>
@@ -24,6 +25,8 @@
 #define OFFSET_VF_BAR 0x24
 #define PCI_EXT_CAP_START 0x100
 #define PCI_EXT_CAP_ID_SRIOV 0x0010
+#define VF_DOORBELLS_QUOTA 128
+#define VF_CONTEXTS_QUOTA 32768
 
 /**
  * @brief Initialize PCI access system
@@ -362,6 +365,40 @@ static uint64_t readAvailableVram(const std::string &bdfAddress)
 }
 
 /**
+ * @brief Read free GGTT size from xe debugfs
+ *
+ * @param[in] bdfAddress PCI BDF address (e.g., "0000:03:00.0")
+ * @return uint64_t Free GGTT size in bytes, or 0 on failure
+ */
+static uint64_t readFreeGgttSize(const std::string &bdfAddress)
+{
+	std::string ggttPath = "/sys/kernel/debug/dri/" + bdfAddress + "/tile0/ggtt";
+	std::ifstream ifs(ggttPath);
+	std::string line;
+
+	if (!ifs.is_open()) {
+		ERR("{} {}\n", errno == EACCES ? "Permission denied opening" : "Failed to open", ggttPath.c_str());
+		return 0;
+	}
+
+	// Expected line format: "total: 4271898624, used 50671616 free 4221227008"
+	while (std::getline(ifs, line)) {
+		if (line.length() >= MAX_PATH) {
+			break;
+		}
+		size_t freePos = line.find("free");
+		if (line.find("total") == std::string::npos || freePos == std::string::npos) {
+			continue;
+		}
+
+		return parseVramValueInBytes(line.substr(freePos + 4));
+	}
+
+	ERR("Failed to parse free GGTT size from {}\n", ggttPath.c_str());
+	return 0;
+}
+
+/**
  * @brief Get the amount of free local memory (LMEM) available on the device
  *
  * Reads the visible_avail entry of the device's VRAM manager to determine the
@@ -404,34 +441,134 @@ static uint64_t getFreeLmemSize(const std::string &path)
 }
 
 /**
+ * @brief Provision VF resources through the sysfs sriov_admin interface
+ *
+ * @param[in] sriovAdminPath sriov_admin sysfs base path
+ * @param[in] numVfs Number of Virtual Functions to create
+ * @param[in] lmem Local memory size per VF in bytes
+ * @param[in] isIGPU true if the device is an integrated GPU
+ * @return bool true on success, false if any sriov_admin file could not be written
+ */
+static bool provisionVfsSysfs(const std::string &sriovAdminPath, uint32_t numVfs, uint64_t lmem, bool isIGPU)
+{
+	if (writeFile(sriovAdminPath + "/pf/profile/sched_priority", "normal") != 0) {
+		return false;
+	}
+	if (isIGPU) {
+		return true;
+	}
+	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+		std::string quotaPath = sriovAdminPath + "/vf" + std::to_string(vfNum) + "/profile/vram_quota";
+		if (writeFile(quotaPath, std::to_string(lmem)) != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * @brief Provision VF resources through the legacy debugfs interface
+ *
+ * Splits free LMEM, free GGTT, doorbells and contexts equally across the VFs.
+ *
+ * @param[in] bdfAddress PCI BDF address (e.g., "0000:03:00.0")
+ * @param[in] numVfs Number of Virtual Functions to create
+ * @param[in] lmem Requested local memory size per VF in bytes
+ * @param[in] isIGPU true if the device is an integrated GPU
+ * @return bool true on success, false on failure
+ */
+static bool provisionVfsDebugfs(const std::string &bdfAddress, uint32_t numVfs, uint64_t lmem, bool isIGPU)
+{
+	std::string debugfsPath = std::string("/sys/kernel/debug/dri/") + bdfAddress;
+	if (numVfs == 0) {
+		return false;
+	}
+
+	if (isIGPU) {
+		return true;
+	}
+
+	const uint64_t totalLmem = getFreeLmemSize(debugfsPath);
+	const uint64_t totalGgtt = readFreeGgttSize(bdfAddress);
+	if (totalGgtt == 0 || (!isIGPU && (totalLmem == 0 || lmem > totalLmem / numVfs))) {
+		ERR("Insufficient or unavailable debugfs resources for VF creation\n");
+		return false;
+	}
+	const uint64_t lmemQuota = totalLmem / numVfs;
+	const uint64_t ggttQuota = (totalGgtt / numVfs) / 10 * 9;
+
+	struct QuotaSetting
+	{
+		std::string path;
+		std::string value;
+		std::string originalValue;
+	};
+	std::vector<QuotaSetting> quotaSettings;
+	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
+		std::string vfDebugfsPath = debugfsPath + "/gt0/vf" + std::to_string(vfNum);
+		if (lmem > lmemQuota) {
+			ERR("Requested VF LMEM {} must be less than the available per-VF quota {}\n", lmem, lmemQuota);
+			return false;
+		}
+		quotaSettings.push_back({vfDebugfsPath + "/lmem_quota", std::to_string(lmem), {}});
+		quotaSettings.push_back({vfDebugfsPath + "/ggtt_quota", std::to_string(ggttQuota), {}});
+		quotaSettings.push_back({vfDebugfsPath + "/doorbells_quota", std::to_string(VF_DOORBELLS_QUOTA / numVfs), {}});
+		quotaSettings.push_back({vfDebugfsPath + "/contexts_quota", std::to_string(VF_CONTEXTS_QUOTA / numVfs), {}});
+	}
+
+	for (auto &setting : quotaSettings) {
+		if (readFile(setting.path, setting.originalValue) != 0) {
+			ERR("Failed to read existing debugfs quota {}\n", setting.path.c_str());
+			return false;
+		}
+	}
+
+	for (size_t index = 0; index < quotaSettings.size(); index++) {
+		if (writeFile(quotaSettings[index].path, quotaSettings[index].value) == 0) {
+			continue;
+		}
+
+		ERR("Failed to write debugfs quota {}\n", quotaSettings[index].path.c_str());
+		bool rollbackSucceeded = true;
+		for (size_t rollbackIndex = index + 1; rollbackIndex > 0; rollbackIndex--) {
+			const auto &setting = quotaSettings[rollbackIndex - 1];
+			if (writeFile(setting.path, setting.originalValue) != 0) {
+				ERR("Failed to restore debugfs quota {}\n", setting.path.c_str());
+				rollbackSucceeded = false;
+			}
+		}
+		if (!rollbackSucceeded) {
+			ERR("Debugfs quota rollback was incomplete\n");
+		}
+		return false;
+	}
+	return true;
+}
+
+/**
  * @brief Internal function to create SRIOV Virtual Functions
  *
- * Performs the actual VF creation by programming vfN/profile/vram_quota
- * for each requested VF and then enabling the VF count.
+ * Programs per-VF resources through sriov_admin, falling back to debugfs when the
+ * sysfs interface is missing or its files cannot be written, then enables the
+ * requested VF count.
  *
  * @param[in] drmPath DRM card name (e.g., "card0")
+ * @param[in] bdfAddress PCI BDF address (e.g., "0000:03:00.0")
  * @param[in] numVfs Number of Virtual Functions to create
  * @param[in] lmem Local memory size per VF in bytes
  * @param[in] isIGPU true if the device is an integrated GPU
  * @return bool true on success, false on failure
  */
-static bool createVfInternal(const std::string drmPath, uint32_t numVfs, uint64_t lmem, bool isIGPU)
+static bool createVfInternal(const std::string &drmPath, const std::string &bdfAddress, uint32_t numVfs, uint64_t lmem,
+							 bool isIGPU)
 {
 	std::string devicePathString = std::string("/sys/class/drm/") + drmPath + "/device";
 	std::string sriovAdminPath = getSriovAdminPath(drmPath);
-	if (sriovAdminPath.empty()) {
-		return false;
-	}
 
-	if (writeFile(sriovAdminPath + "/pf/profile/sched_priority", "normal") != 0) {
-		return false;
-	}
-	for (uint32_t vfNum = 1; vfNum <= numVfs; vfNum++) {
-		if (!isIGPU) {
-			std::string quotaPath = sriovAdminPath + "/vf" + std::to_string(vfNum) + "/profile/vram_quota";
-			if (writeFile(quotaPath, std::to_string(lmem)) != 0) {
-				return false;
-			}
+	if (sriovAdminPath.empty() || !provisionVfsSysfs(sriovAdminPath, numVfs, lmem, isIGPU)) {
+		INFO("Falling back to debugfs for VF provisioning\n");
+		if (!provisionVfsDebugfs(bdfAddress, numVfs, lmem, isIGPU)) {
+			return false;
 		}
 	}
 
@@ -601,7 +738,7 @@ int linCreateVFs(DeviceSriovInfo *di)
 		}
 	}
 
-	return createVfInternal(cardName, di->vGpuNumber, di->vGpuMemorySize, di->isIGPU) ? 0 : -1;
+	return createVfInternal(cardName, di->bdfAddress, di->vGpuNumber, di->vGpuMemorySize, di->isIGPU) ? 0 : -1;
 }
 
 /**
@@ -618,11 +755,24 @@ int removeAllVFs(DeviceSriovInfo *devInfo)
 	TRACING();
 	std::stringstream numvfsPath;
 	std::string numVfsString;
+	const std::string drmPath = devInfo->drmPath.empty() ? getDrmPath(devInfo->bdfAddress) : devInfo->drmPath;
+	std::string cardName = getCardNameFromDrmPath(drmPath);
 
 	// Disable all VFs by setting sriov_numvfs to 0
 	numvfsPath << "/sys/bus/pci/devices/" << devInfo->bdfAddress << "/sriov_numvfs";
 	if (readFile(numvfsPath.str(), numVfsString) != 0) {
 		return -1;
+	}
+	if (getSriovAdminPath(cardName).empty()) {
+		const int numVfs = std::stoi(numVfsString);
+		const std::string debugfsPath = "/sys/kernel/debug/dri/" + devInfo->bdfAddress + "/gt0";
+		for (int vfNum = 1; vfNum <= numVfs; vfNum++) {
+			const std::string vfDebugfsPath = debugfsPath + "/vf" + std::to_string(vfNum);
+			if (writeFile(vfDebugfsPath + "/lmem_quota", "0") != 0 ||
+				writeFile(vfDebugfsPath + "/ggtt_quota", "0") != 0) {
+				return -1;
+			}
+		}
 	}
 	if (writeFile(numvfsPath.str(), "0") != 0) {
 		return -1;

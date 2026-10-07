@@ -57,6 +57,10 @@ int writeFile(const std::string &path, const std::string &content)
 	}
 	ofs << content;
 	ofs.flush();
+	if (!ofs) {
+		ERR("write: {} failed\n", path.c_str());
+		return -1;
+	}
 	ofs.close();
 	return 0;
 }
