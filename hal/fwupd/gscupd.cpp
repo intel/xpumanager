@@ -491,7 +491,8 @@ ze_result_t gscupd::updateOpData(firmwareInfo *fwInfo)
  * @param type OPROM type (IGSC_OPROM_CODE or IGSC_OPROM_DATA)
  * @param version Buffer to store version bytes
  * @param versionSize Size of version buffer
- * @return int 0 on success, negative on error
+ * @return int 0 on success, IGSC_ERROR_PERMISSION_DENIED if the caller cannot access the MEI device,
+ *             negative on other errors
  */
 int gscupd::getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *version, size_t versionSize)
 {
@@ -520,6 +521,10 @@ int gscupd::getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *v
 	// Initialize device handle
 	struct igsc_device_handle handle = {};
 	ret = igsc_device_init_by_device(&handle, meiPath.c_str());
+	if (ret == IGSC_ERROR_PERMISSION_DENIED) {
+		DBG("Permission denied initializing device for {}\n", bdfStr);
+		return IGSC_ERROR_PERMISSION_DENIED;
+	}
 	if (ret != IGSC_SUCCESS) {
 		ERR("Failed to initialize device for {}: {}\n", bdfStr, ret);
 		return -1;
@@ -532,7 +537,7 @@ int gscupd::getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *v
 	if (ret != IGSC_SUCCESS) {
 		DBG("Failed to get OPROM version for {} type {}: {}\n", bdfStr, type, ret);
 		igsc_device_close(&handle);
-		return -1;
+		return (ret == IGSC_ERROR_PERMISSION_DENIED) ? IGSC_ERROR_PERMISSION_DENIED : -1;
 	}
 
 	// Copy version bytes (oprom_ver has version fields)

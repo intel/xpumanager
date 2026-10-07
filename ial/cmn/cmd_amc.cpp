@@ -258,6 +258,10 @@ int cmdAmc::run(arg_struct *args)
 	}
 
 	int ret = amc.amcInitialize();
+	if (ret == AMC_ERROR_PERMISSION) {
+		ERR("Access to the AMC devices requires root privileges\n");
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	}
 	if (ret != AMC_SUCCESS) {
 		ERR("Failed to initialize AMC devices (error code: {})\n", ret);
 		return ZE_RESULT_ERROR_UNINITIALIZED;

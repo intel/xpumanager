@@ -61,6 +61,8 @@ public:
 	ze_result_t getActivity(zes_engine_handle_t engineGroup, zes_engine_stats_t *engineStats);
 	ze_result_t getActivityExt(zes_engine_handle_t engineGroup);
 	ze_result_t getEngineCountByType(uint32_t *count, zes_engine_group_t type);
+	// Valid once the engines are enumerated, e.g. after getEngineCountByType()
+	uint32_t getEngineGroupCount() const { return engineGroupCount(); }
 	std::tuple<ze_result_t, uint64_t, uint64_t> getUtilization(std::span<const zes_engine_group_t> typeTable);
 	ze_result_t getEngineActivityByType(zes_engine_group_t type, uint32_t engineIndex, uint64_t *activeTime,
 										uint64_t *timestamp);

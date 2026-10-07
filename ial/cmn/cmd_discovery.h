@@ -15,6 +15,8 @@
 
 inline constexpr char DEVICE_STATE_SURV_MODE[] = "survivability mode";
 inline constexpr char DEVICE_STATE_NORMAL[] = "normal";
+// Shown for properties whose only data source is restricted to privileged users
+inline constexpr char NA_REQUIRES_ROOT[] = "N/A (Requires Root)";
 
 /**
  * @brief Discovery-specific text printer that formats discovery output as human-readable text

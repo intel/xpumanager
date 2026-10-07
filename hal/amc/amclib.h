@@ -17,7 +17,8 @@
 enum amcErrCodes
 {
 	AMC_SUCCESS = 0x00,
-	AMC_ERROR = 0x01
+	AMC_ERROR = 0x01,
+	AMC_ERROR_PERMISSION = 0x02 // Caller lacks permission to access the AMC device (e.g. non-root)
 };
 
 enum oemVrsync

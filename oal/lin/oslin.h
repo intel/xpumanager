@@ -87,7 +87,7 @@ typedef wchar_t TCHAR;
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define GETKERNELDRIVERVERSION(bdf) getKernelDriverVersion(bdf)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define GETPCISLOTLABEL(bdf) getPciSlotLabel(bdf)
+#define GETPCISLOTLABEL(bdf, permissionDenied) getPciSlotLabel(bdf, permissionDenied)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define FINDRESOURCEFILE(relativePath) findResourceFile(relativePath)
 
@@ -140,7 +140,7 @@ std::string getKernelDriverVersion(const std::string &bdf);
 bool isLgciXeDebugKernel(const std::string &release);
 bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease = nullptr);
 [[nodiscard]] bool sysmanEngineCountersAllowed();
-std::string getPciSlotLabel(const std::string &bdf);
+std::string getPciSlotLabel(const std::string &bdf, bool *permissionDenied = nullptr);
 std::string findResourceFile(const std::string &relativePath);
 int coldResetViaSysfs(const std::string &gpuBdf);
 std::string getParentOfUpstreamPortBdf(const std::string &gpuBdf);

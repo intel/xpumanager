@@ -7,6 +7,8 @@
 #include "os.h"
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
+#include <unistd.h>
 #include <debug.h>
 #include <fcntl.h>
 #include <sys/file.h>
@@ -164,6 +166,22 @@ void I2CInterface::unlock()
 	if (amchandle >= 0) {
 		::flock(amchandle, LOCK_UN);
 	}
+}
+
+/**
+ * @brief Checks whether the AMC I2C device node is inaccessible due to permissions
+ * @param devpath Device path (e.g. /dev/i2c-21)
+ * @return bool True only when access is refused with EACCES/EPERM
+ *
+ * /dev/i2c-N is root-only by default, so a non-root user cannot talk to the AMC.
+ * Checking up front lets callers skip AMC queries quietly instead of failing an open().
+ */
+bool amcDeviceAccessDenied(const std::string &devpath)
+{
+	if (access(devpath.c_str(), R_OK | W_OK) == 0) {
+		return false;
+	}
+	return errno == EACCES || errno == EPERM;
 }
 
 /**

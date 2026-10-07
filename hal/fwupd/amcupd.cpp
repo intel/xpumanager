@@ -110,6 +110,7 @@ amcupd::~amcupd()
  * lazily by amclib the first time that card is used.
  *
  * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization,
+ *                     ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS if the caller cannot access the AMC device,
  *                     ZE_RESULT_ERROR_UNKNOWN if initialization fails
  */
 ze_result_t amcupd::init()
@@ -122,22 +123,21 @@ ze_result_t amcupd::init()
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// Flag to track initialization success
-	static std::atomic<bool> initFailed{false};
+	// Result of the one-time initialization, returned to every caller
+	static std::atomic<ze_result_t> initResult{ZE_RESULT_SUCCESS};
 
 	std::call_once(initFlag, [amc]() {
-		if (amc->amcInitialize() != AMC_SUCCESS) {
+		const int ret = amc->amcInitialize();
+		if (ret == AMC_ERROR_PERMISSION) {
+			DBG("AMC access requires root privileges\n");
+			initResult.store(ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS);
+		} else if (ret != AMC_SUCCESS) {
 			ERR("Failed to initialize AMC devices\n");
-			initFailed.store(true);
+			initResult.store(ZE_RESULT_ERROR_UNKNOWN);
 		}
 	});
 
-	// Check if initialization failed
-	if (initFailed.load()) {
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
-	return ZE_RESULT_SUCCESS;
+	return initResult.load();
 }
 
 /*
@@ -177,7 +177,9 @@ int amcupd::amcGetCardInfo(std::string gpuBDF, std::string &serialNum, std::stri
 	// to collect FRU data like version and name of the AMC
 	ze_result_t initResult = init();
 	if (initResult != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize AMC devices before finding BDF\n");
+		if (initResult != ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+			ERR("Failed to initialize AMC devices before finding BDF\n");
+		}
 		return -1;
 	}
 
@@ -201,7 +203,9 @@ int amcupd::amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum)
 {
 	ze_result_t initResult = init();
 	if (initResult != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize AMC devices before querying part number\n");
+		if (initResult != ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+			ERR("Failed to initialize AMC devices before querying part number\n");
+		}
 		return -1;
 	}
 
@@ -235,8 +239,11 @@ int amcupd::amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum)
  */
 std::optional<std::string> amcupd::amcGetSerialNumberByBdf(const std::string &gpuBDF)
 {
-	if (init() != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize AMC devices before querying serial number\n");
+	const ze_result_t initResult = init();
+	if (initResult != ZE_RESULT_SUCCESS) {
+		if (initResult != ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+			ERR("Failed to initialize AMC devices before querying serial number\n");
+		}
 		return std::nullopt;
 	}
 
@@ -266,7 +273,9 @@ int amcupd::amcGetTdp(const std::string &gpuBDF, char *tdp, size_t *bufferSize)
 {
 	ze_result_t initResult = init();
 	if (initResult != ZE_RESULT_SUCCESS) {
-		ERR("Failed to initialize AMC devices before querying TDP\n");
+		if (initResult != ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+			ERR("Failed to initialize AMC devices before querying TDP\n");
+		}
 		return AMC_ERROR;
 	}
 

@@ -1163,14 +1163,20 @@ bool sysmanEngineCountersAllowed() { return hasEnv("XPU_SMI_SYSMAN_ENGINE_UTIL")
  * 1. Read from sysfs /label attribute (fast path, rarely populated)
  * 2. Query SMBIOS/DMI tables via DmiReader (more reliable, works on most systems)
  *
- * @param[in] bdf PCI BDF address string in format "SSSS:BB:DD.F"
+ * @param[in]  bdf              PCI BDF address string in format "SSSS:BB:DD.F"
+ * @param[out] permissionDenied Optional; set to true only when the slot could not be looked up
+ *                              because the caller may not read the SMBIOS/DMI tables.
  * @return std::string PCI slot designation/label or empty string if not available
  *
  * @note SMBIOS lookup provides slot information on most systems where sysfs label is absent
  * @note DMI reader is instantiated on-demand and may require elevated permissions
  */
-std::string getPciSlotLabel(const std::string &bdf)
+std::string getPciSlotLabel(const std::string &bdf, bool *permissionDenied)
 {
+	if (permissionDenied != nullptr) {
+		*permissionDenied = false;
+	}
+
 	if (!isValidBdf(bdf)) {
 		ERR("Rejecting suspicious BDF address: {}\n", bdf.c_str());
 		return "";
@@ -1188,7 +1194,15 @@ std::string getPciSlotLabel(const std::string &bdf)
 		}
 	}
 
-	// Fallback to SMBIOS/DMI tables
+	// Fallback to SMBIOS/DMI tables, which are readable by root only
+	if (access("/sys/firmware/dmi/tables/DMI", R_OK) != 0 && (errno == EACCES || errno == EPERM)) {
+		DBG("Reading the SMBIOS slot of {} requires root privileges\n", bdf.c_str());
+		if (permissionDenied != nullptr) {
+			*permissionDenied = true;
+		}
+		return "";
+	}
+
 	try {
 		static DmiReader dmiReader; // Only read tables once
 

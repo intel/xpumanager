@@ -55,11 +55,12 @@ constexpr unsigned char ASCII_PRINTABLE_MAX = 0x7E;
  *
  * @param[in]  d            Device info structure.
  * @param[out] serialNumber Populated with the FRU serial number on success.
+ * @param[out] permissionDenied Set to true when the caller cannot access the AMC.
  *
  * @retval true  A non-empty serial number was retrieved from the AMC or the cache.
  * @retval false The device has no AMC, or nothing is cached and the AMC query failed.
  */
-bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber)
+bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber, bool &permissionDenied)
 {
 	// hasAmc() returns false when no AMC is present, avoiding any I2C traffic.
 	if (!d.dev->hasAmc()) {
@@ -83,6 +84,11 @@ bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber)
 	const auto cacheKey = currentSerialCacheKey(bdf);
 	const ze_result_t result =
 		fw->getAmcSerialNumber(bdf.c_str(), serialNum.data(), static_cast<uint32_t>(serialNum.size()));
+	if (result == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+		DBG("Reading the serial number from AMC for device {} requires root privileges\n", bdf.c_str());
+		permissionDenied = true;
+		return false;
+	}
 	if (result != ZE_RESULT_SUCCESS || serialNum[0] == '\0') {
 		DBG("Failed to get serial number from AMC for device {} (result: 0x{:X})\n", bdf.c_str(), result);
 		return false;
@@ -108,8 +114,9 @@ bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber)
  * @param[in]  meiDevicePath MEI device path used to open the target device.
  * @param[out] serialNumber  Receives the sanitized OEM serial number.
  *
- * @retval 0  Success.
- * @retval -1 Failure.
+ * @retval 0                            Success.
+ * @retval OEM_SERIAL_PERMISSION_DENIED The caller cannot access the MEI device.
+ * @retval -1                           Other failures.
  */
 int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &serialNumber)
 {
@@ -121,9 +128,10 @@ int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &s
 	}
 
 	igsc_device_handle handle{};
-	if (igsc_device_init_by_device(&handle, meiDevicePath.c_str()) != IGSC_SUCCESS) {
+	const int initRet = igsc_device_init_by_device(&handle, meiDevicePath.c_str());
+	if (initRet != IGSC_SUCCESS) {
 		DBG("Failed to initialize igsc device for path: {}\n", meiDevicePath.c_str());
-		return -1;
+		return (initRet == IGSC_ERROR_PERMISSION_DENIED) ? OEM_SERIAL_PERMISSION_DENIED : -1;
 	}
 	const std::unique_ptr<igsc_device_handle, IgscDeviceCloser> device{&handle};
 
@@ -131,7 +139,7 @@ int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &s
 	const int snRet = igsc_device_oem_serial_number(device.get(), &serial);
 	if (snRet != IGSC_SUCCESS) {
 		DBG("igsc_device_oem_serial_number failed: {}\n", snRet);
-		return -1;
+		return (snRet == IGSC_ERROR_PERMISSION_DENIED) ? OEM_SERIAL_PERMISSION_DENIED : -1;
 	}
 	if (serial.length == 0) {
 		DBG("igsc_device_oem_serial_number returned length 0\n");
@@ -159,13 +167,15 @@ int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &s
  * Sysman is queried first. When it reports "unknown", the AMC FRU data is
  * tried (if the device has an AMC), followed by the OEM serial number via IGSC.
  *
- * @param[in]  d            Device info structure.
- * @param[out] serialNumber Receives the serial number, or "unknown" if no source provides one.
+ * @param[in]  d                Device info structure.
+ * @param[out] serialNumber     Receives the serial number, or "unknown" if no source provides one.
+ * @param[out] permissionDenied Optional; set to true when a fallback source could not be read
+ *                              because the caller is not privileged.
  *
  * @retval ZE_RESULT_SUCCESS Sysman device properties were read; @p serialNumber is populated.
  * @retval ZE_RESULT_ERROR_* Sysman device properties could not be read.
  */
-ze_result_t querySerialNumber(devInfo &d, std::string &serialNumber)
+ze_result_t querySerialNumber(devInfo &d, std::string &serialNumber, bool *permissionDenied)
 {
 	zes_device_properties_t props{};
 	props.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
@@ -179,20 +189,26 @@ ze_result_t querySerialNumber(devInfo &d, std::string &serialNumber)
 		return ZE_RESULT_SUCCESS;
 	}
 
+	bool denied = false;
 	std::string fallback;
-	if (querySerialNumberFromAMC(d, fallback)) {
+	if (querySerialNumberFromAMC(d, fallback, denied)) {
 		DBG("Successfully retrieved serial number from AMC: {}\n", fallback.c_str());
 		serialNumber = std::move(fallback);
 		return ZE_RESULT_SUCCESS;
 	}
 
 	auto *pci = d.dev->getPCI();
-	if (pci != nullptr && getOemSerialNumberByMeiPath(pci->getMeiDevicePath(), fallback) == 0) {
+	const int oemRet = (pci != nullptr) ? getOemSerialNumberByMeiPath(pci->getMeiDevicePath(), fallback) : -1;
+	if (oemRet == 0) {
 		DBG("Successfully retrieved OEM serial number from IGSC: {}\n", fallback.c_str());
 		serialNumber = std::move(fallback);
 	} else {
+		denied = denied || (oemRet == OEM_SERIAL_PERMISSION_DENIED);
 		DBG("Failed to get OEM serial number from IGSC or No IGSC Available\n");
 	}
 
+	if (permissionDenied != nullptr) {
+		*permissionDenied = denied;
+	}
 	return ZE_RESULT_SUCCESS;
 }

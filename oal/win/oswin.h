@@ -140,7 +140,7 @@ struct option
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define GETKERNELDRIVERVERSION(bdf) getKernelDriverVersion(bdf)
 std::string getKernelDriverVersion(const std::string &bdf);
-#define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
+#define GETPCISLOTLABEL(bdf, permissionDenied) (UNUSED_VAR(bdf), UNUSED_VAR(permissionDenied), std::string(""))
 // PCI sysfs recovery is Linux-only: no device is recognised, so nothing is reset.
 [[nodiscard]] constexpr bool isIntelGpu(UNUSED std::string_view bdf) noexcept { return false; }
 [[nodiscard]] constexpr bool isRootComplexIntegrated(UNUSED std::string_view bdf) noexcept { return false; }

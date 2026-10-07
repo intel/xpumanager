@@ -61,4 +61,8 @@ public:
 	[[nodiscard]] bool isBusy() const { return busy; }
 };
 
+// True when the calling process lacks the OS permission to open the AMC device node
+// (e.g. /dev/i2c-N for a non-root user on Linux).
+bool amcDeviceAccessDenied(const std::string &devpath);
+
 #endif // _I2C_INTERFACE_H

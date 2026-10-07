@@ -172,6 +172,16 @@ bool I2CInterface::openAmc(const std::string &devpath)
 }
 
 /**
+ * @brief Checks whether the AMC device is inaccessible due to permissions
+ *
+ * Not applicable on Windows: access failures are reported by openAmc().
+ *
+ * @param devpath Device path (unused)
+ * @return bool Always false
+ */
+bool amcDeviceAccessDenied(UNUSED const std::string &devpath) { return false; }
+
+/**
  * @brief Opens AMC peripheral for I2C communication
  *
  * Uses Windows DeviceIoControl with IOCTL_SPBTESTTOOL_OPEN to establish

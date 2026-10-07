@@ -113,6 +113,7 @@ int amclib::amcEnumFirmwares()
  *
  * @return Status of initialization
  * @retval AMC_SUCCESS Per-card state allocated
+ * @retval AMC_ERROR_PERMISSION The caller is not allowed to access an AMC device node
  * @retval AMC_ERROR No cards enumerated
  *
  * @note amcEnumFirmwares() must be called first
@@ -124,6 +125,16 @@ int amclib::amcInitialize()
 	if (numCards <= 0) {
 		ERR("No AMC cards enumerated\n");
 		return AMC_ERROR;
+	}
+
+	// Check access before opening anything so an unprivileged user gets one clean status
+	// instead of a cascade of I2C/MCTP/PLDM open errors.
+	for (int i = 0; i < numCards; ++i) {
+		if (amcDeviceAccessDenied(amcDeviceList->at(i).amcDevicePath)) {
+			DBG("Permission denied for AMC device {}; root privileges required\n",
+				amcDeviceList->at(i).amcDevicePath.c_str());
+			return AMC_ERROR_PERMISSION;
+		}
 	}
 
 	if (pldmobj != nullptr) {

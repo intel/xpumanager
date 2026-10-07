@@ -212,7 +212,9 @@ ze_result_t firmware::getProperties(zes_firmware_handle_t firmwareHandle)
  * @param bdfStr The BDF string of the device (e.g., "0000:00:02.0")
  * @param version Pointer to buffer to store the version string
  * @param size Size of the version buffer (currently unused)
- * @return ze_result_t ZE_RESULT_SUCCESS if version retrieved, error code otherwise
+ * @return ze_result_t ZE_RESULT_SUCCESS if version retrieved,
+ *         ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS if the AMC cannot be accessed by the caller,
+ *         error code otherwise
  */
 ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *version, UNUSED uint32_t size)
 {
@@ -235,6 +237,9 @@ ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *versio
 
 		if (fwupdArray && fwupdArray[FWUPD_PREFERENCE_AMC]) {
 			amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
+			if (a->init() == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+				return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+			}
 			// Along with the index, let's also find out the serial number and version of the AMC card
 			amc = a->amcGetCardInfo(bdfStr, amcSerialNum, amcVersion);
 
@@ -262,7 +267,8 @@ ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *versio
  * @param[out] serialNum  Buffer to receive the null-terminated serial number string.
  * @param[in]  size       Size of serialNum buffer in bytes.
  * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNINITIALIZED when no AMC
- *         is registered for this device, ZE_RESULT_ERROR_NOT_AVAILABLE on lookup failure.
+ *         is registered for this device, ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS when the
+ *         caller cannot access the AMC, ZE_RESULT_ERROR_NOT_AVAILABLE on lookup failure.
  */
 ze_result_t firmware::getAmcSerialNumber(const char *bdfStr, char *serialNum, uint32_t size)
 {
@@ -278,6 +284,9 @@ ze_result_t firmware::getAmcSerialNumber(const char *bdfStr, char *serialNum, ui
 	amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
 	if (a == nullptr) {
 		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	if (a->init() == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
 	}
 	const auto sn = a->amcGetSerialNumberByBdf(std::string(bdfStr));
 	if (!sn) {
@@ -298,6 +307,7 @@ ze_result_t firmware::getAmcSerialNumber(const char *bdfStr, char *serialNum, ui
  * @retval ZE_RESULT_SUCCESS                Part number retrieved successfully.
  * @retval ZE_RESULT_ERROR_UNINITIALIZED    No AMC entry present in fwupdArray or amcupd cast is null.
  * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT Null pointer or zero-size buffer passed.
+ * @retval ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS The caller cannot access the AMC device.
  * @retval ZE_RESULT_ERROR_NOT_AVAILABLE    AMC init failure, BDF not found, or part number retrieval failed.
  */
 ze_result_t firmware::getAmcPartNumber(const char *bdfStr, char *partNum, uint32_t size)
@@ -315,6 +325,9 @@ ze_result_t firmware::getAmcPartNumber(const char *bdfStr, char *partNum, uint32
 	amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
 	if (a == nullptr) {
 		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	if (a->init() == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
 	}
 
 	std::string pn;
@@ -425,6 +438,7 @@ ze_result_t firmware::runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fw
  * @param[out] tdp        Buffer to receive the null-terminated TDP string, or nullptr to query length.
  * @param[in,out] bufferSize Pointer to buffer size; updated with required length on output.
  * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNINITIALIZED when no AMC is available,
+ *         ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS when the caller cannot access the AMC,
  *         ZE_RESULT_ERROR_NOT_AVAILABLE when TDP is not found in FRU data.
  */
 ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSize)
@@ -442,6 +456,9 @@ ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSiz
 	amcupd *a = static_cast<amcupd *>(fwupdArray[FWUPD_PREFERENCE_AMC]);
 	if (a == nullptr) {
 		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	if (a->init() == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
 	}
 
 	if (a->amcGetTdp(std::string(bdfStr), tdp, bufferSize) != AMC_SUCCESS) {

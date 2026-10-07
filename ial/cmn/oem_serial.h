@@ -16,6 +16,9 @@ struct devInfo;
 /** Value reported when no source provides the board serial number. */
 inline constexpr std::string_view UNKNOWN_SERIAL = "unknown";
 
+/** Returned by getOemSerialNumberByMeiPath() when the caller cannot access the MEI device. */
+inline constexpr int OEM_SERIAL_PERMISSION_DENIED = -2;
+
 /**
  * @brief Retrieves the OEM serial number via IGSC using the MEI device path.
  *
@@ -25,7 +28,8 @@ inline constexpr std::string_view UNKNOWN_SERIAL = "unknown";
  * @param[in]  meiDevicePath MEI device node path used to open the IGSC device.
  * @param[out] serialNumber  Receives the sanitized OEM serial number; cleared on failure.
  *
- * @retval 0  Successfully retrieved a non-empty OEM serial number.
+ * @retval 0                            Successfully retrieved a non-empty OEM serial number.
+ * @retval OEM_SERIAL_PERMISSION_DENIED The caller cannot access the MEI device.
  * @retval -1 The path is empty, the device could not be opened, the query failed,
  *            or the resulting serial number is empty.
  */
@@ -39,10 +43,12 @@ int getOemSerialNumberByMeiPath(const std::string &meiDevicePath, std::string &s
  * Shared by discovery and the "serial" query/dump metric so that all commands
  * report the same value.
  *
- * @param[in]  d            Device info structure.
- * @param[out] serialNumber Receives the serial number, or "unknown" if no source provides one.
+ * @param[in]  d                Device info structure.
+ * @param[out] serialNumber     Receives the serial number, or "unknown" if no source provides one.
+ * @param[out] permissionDenied Optional; set to true when a fallback source (AMC or IGSC) could
+ *                              not be read because the caller is not privileged.
  *
  * @retval ZE_RESULT_SUCCESS Sysman device properties were read; @p serialNumber is populated.
  * @retval ZE_RESULT_ERROR_* Sysman device properties could not be read.
  */
-ze_result_t querySerialNumber(devInfo &d, std::string &serialNumber);
+ze_result_t querySerialNumber(devInfo &d, std::string &serialNumber, bool *permissionDenied = nullptr);
