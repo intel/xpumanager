@@ -578,6 +578,9 @@ static constexpr uint8_t PCI_EXP_TYPE_UPSTREAM = 0x5;  // Upstream Port of a PCI
 // Capabilities may only live in 0x40-0xFF; below that is the standard config header.
 static constexpr uint8_t PCI_CAP_LIST_MIN_OFFSET = 0x40;
 
+// PCI sysfs max_link_width when a device has no valid PCIe Link Capabilities width
+static constexpr int PCIE_LINK_WIDTH_UNKNOWN = 0xFF;
+
 // True if a raw (unmasked) capability pointer could name a real capability. Rejects
 // pointers into the config header and 0xFF (an aborted read). Zero is excluded here
 // because it is the spec's end-of-list terminator, which callers handle separately.
@@ -1321,8 +1324,13 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 				if (!widthStr.empty()) {
 					try {
 						const int w = std::stoi(widthStr);
-						if (w > 0 && (info.maxLinkWidth <= 0 || w < info.maxLinkWidth))
-							info.maxLinkWidth = w;
+						if (w > 0 && (info.maxLinkWidth <= 0 || w < info.maxLinkWidth)) {
+							if (PCIE_LINK_WIDTH_UNKNOWN == w) {
+								info.maxLinkWidth = 0;
+							} else {
+								info.maxLinkWidth = w;
+							}
+						}
 					} catch (const std::exception &) {
 						ERR("Failed to parse max_link_width for {}: \"{}\"\n", linkBdf.c_str(), widthStr.c_str());
 					}

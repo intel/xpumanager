@@ -156,6 +156,12 @@ int cmdListpciinfo::run(arg_struct *args)
 	const std::string &filterBdf = listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_BDF].val;
 	bool filtered = listpciinfoCmds[listpciinfoCmdType::LISTPCIINFO_BDF].enabled;
 	bool found = false;
+	auto pciPropFieldInt = [](int val) -> nlohmann::ordered_json {
+		return (val <= 0) ? nlohmann::ordered_json("N/A") : nlohmann::ordered_json(val);
+	};
+	auto pciPropFieldDouble = [](double val) -> nlohmann::ordered_json {
+		return (val <= 0.0) ? nlohmann::ordered_json("N/A") : nlohmann::ordered_json(val);
+	};
 
 	for (const auto &info : pciPropsList) {
 		if (filtered && info.bdf != filterBdf) {
@@ -165,9 +171,9 @@ int cmdListpciinfo::run(arg_struct *args)
 		deviceArray.push_back({
 			{"bdf", info.bdf},
 			{"pci_slot", info.pciSlot},
-			{"pcie_generation", info.pcieGeneration},
-			{"max_link_width", info.maxLinkWidth},
-			{"max_bandwidth_gbps", info.maxBandwidthGBps},
+			{"pcie_generation", pciPropFieldInt(info.pcieGeneration)},
+			{"max_link_width", pciPropFieldInt(info.maxLinkWidth)},
+			{"max_bandwidth_gbps", pciPropFieldDouble(info.maxBandwidthGBps)},
 		});
 	}
 
