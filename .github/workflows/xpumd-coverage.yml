@@ -9,8 +9,27 @@ on:
       - "xpumd/**"
       - ".github/workflows/xpumd-coverage.yml"
       - ".github/scripts/compare_coverage.py"
-      - ".github/scripts/compare_go_coverage.sh"
       - ".github/scripts/go_cover_summary.py"
+      - ".github/scripts/report_coverage.py"
+      - ".github/scripts/report_go_coverage.sh"
+  # Report the coverage of the branch, without a comparison
+  push:
+    branches:
+      - main
+      - dev
+      - v2*
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+-*
+      - xpumd/v[0-9]+.[0-9]+.[0-9]+
+      - xpumd/v[0-9]+.[0-9]+.[0-9]+-*
+    # Does not apply to tags
+    paths:
+      - "xpumd/**"
+      - ".github/workflows/xpumd-coverage.yml"
+      - ".github/scripts/go_cover_summary.py"
+      - ".github/scripts/report_coverage.py"
+      - ".github/scripts/report_go_coverage.sh"
 
 permissions:
   contents: read
@@ -20,7 +39,8 @@ jobs:
   integration-test:
     strategy:
       matrix:
-        rev: [base, head]
+        # Only the head is measured for a branch/tag push
+        rev: ${{ fromJson(github.event_name == 'pull_request' && '["base","head"]' || '["head"]') }}
     name: Measure ${{ matrix.rev }} integration test coverage
     runs-on: ${{ fromJson(vars.RUNS_ON_INTEGRATION_TEST || vars.RUNS_ON) }}
     permissions:
@@ -34,7 +54,7 @@ jobs:
       - name: Check out the ${{ matrix.rev }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ matrix.rev == 'head' && github.event.pull_request.head.sha || github.event.pull_request.base.sha }}
+          ref: ${{ matrix.rev == 'head' && (github.event.pull_request.head.sha || github.sha) || github.event.pull_request.base.sha }}
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -89,6 +109,8 @@ jobs:
         if: always()
         run: docker image rm "xpumd:$IMAGE_TAG" || true
 
+  # For a pull request, measure base and head and compare the coverage.
+  # For a branch/tag push, measure the head (no comparison).
   coverage:
     needs: integration-test
     strategy:
@@ -121,10 +143,11 @@ jobs:
       - name: Check out the PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0    # the base branch is needed, too
 
       - name: Download the base integration test coverage profile
+        if: github.event_name == 'pull_request'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: integration-test-coverage-base
@@ -144,6 +167,7 @@ jobs:
 
       # The base branch may have different coverage tooling (or no tooling at all)
       - name: Check out the base branch with the coverage tooling of the head
+        if: github.event_name == 'pull_request'
         run: |
           git checkout --detach "$BASE_SHA"
           git checkout "$HEAD_SHA" -- xpumd/Makefile xpumd/scripts/make-dockerized.sh \
@@ -151,17 +175,20 @@ jobs:
             xpumd/level-zero-go/hack/coverage-report.sh
 
       - name: Measure the coverage of the base branch
+        if: github.event_name == 'pull_request'
         run: |
           ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} \
             COVERAGE_TO_MERGE=${{ matrix.root-dir }}/integration-test-coverage/base/integration-tests.cov
           mv ${{ matrix.coverage-dir }} coverage-base
 
       - name: Restore the PR head
+        if: github.event_name == 'pull_request'
         run: git checkout --force "$HEAD_SHA"
 
-      - name: Compare the coverage
+      - name: Report the coverage
+        # For a branch/tag push, BASE_REF so this becomes a plain report (no comparison)
         run: |
-          .github/scripts/compare_go_coverage.sh \
+          .github/scripts/report_go_coverage.sh \
             '${{ matrix.title }}' '${{ matrix.module-prefix }}' "$BASE_REF" > report.md
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -175,11 +202,13 @@ jobs:
             coverage-base/**/*.html
             coverage-head/**/*.txt
             coverage-base/**/*.txt
-          retention-days: 7
+          # 90 days is the maximum (https://github.com/actions/upload-artifact#retention-period)
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || github.ref_type == 'tag' && 90 || 30 }}
 
   # Post coverage delta as a PR comment
   comment:
     needs: coverage
+    if: github.event_name == 'pull_request'
     strategy:
       fail-fast: false
       matrix:
