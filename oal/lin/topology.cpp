@@ -291,6 +291,13 @@ int exportTopologyToXml(const std::string &filename, const std::vector<GpuDevice
 		return -1;
 	}
 
+	// The hwloc 2.13.0 levelzero backend calls zeDeviceGetProperties() with
+	// uninitialised stype/pNext, so the driver can follow a garbage pNext and
+	// crash this process. The GPUs are added as misc objects below, so the
+	// backend adds nothing we need. Fails with EINVAL when hwloc has no
+	// levelzero component, which is already the state we want.
+	static_cast<void>(hwloc_topology_set_components(topology, HWLOC_TOPOLOGY_COMPONENTS_FLAG_BLACKLIST, "levelzero"));
+
 	// Load the topology
 	if (hwloc_topology_load(topology) != 0) {
 		hwloc_topology_destroy(topology);

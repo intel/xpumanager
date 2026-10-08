@@ -1,0 +1,68 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+# ============================================================================
+# Regression test: topology -f crash from the hwloc levelzero backend
+#
+# Root cause: hwloc 2.13.0 (Ubuntu 26.04 libhwloc-plugins) ships a levelzero
+# discovery plugin. exportTopologyToXml() keeps all object types, so
+# hwloc_topology_load() ran that plugin inside xpu-smi. The plugin calls
+# zeDeviceGetProperties() with uninitialised stype/pNext; when the leftover
+# stype looks valid the driver follows the garbage pNext and xpu-smi exits
+# 139 without writing the file. Whether that happens depends on stack
+# contents, so the failure is intermittent.
+#
+# Fix (oal/lin/topology.cpp): blacklist the hwloc levelzero component before
+# loading the topology. xpu-smi adds its own GPU misc objects to the XML.
+#
+# The crash cannot be triggered on demand, so the test checks the cause
+# deterministically: with HWLOC_COMPONENTS_VERBOSE=1 hwloc reports every
+# discovery component it enables, and the levelzero backend leaves a
+# subtype="LevelZero" object in the XML. Neither may appear. On systems whose
+# hwloc has no levelzero plugin (e.g. Ubuntu 24.04, hwloc 2.10) the test
+# passes trivially.
+# ============================================================================
+
+test_suite:
+  name: "Regression: topology -f without the hwloc levelzero backend"
+  description: "topology -f must not run hwloc's in-process Level Zero discovery"
+
+  settings:
+    timeout: 30
+    continue_on_failure: true
+    default_combined_not_contains:
+      - "Error: %s"
+      - "Aborted (core dumped)"
+      - "Segmentation fault"
+      - "Traceback (most recent call last)"
+    default_combined_not_matches_regex:
+      - '\[(?:Error|Warning|Info)\] \.\.\/'
+      - 'ZE_RESULT_[A-Z0-9_]+'
+      - 'XPUM_RESULT_[A-Z0-9_]+'
+
+  tests:
+
+    - name: "topology_file_no_hwloc_levelzero"
+      description: "topology -f writes the XML without enabling hwloc's levelzero backend"
+      os: "Linux"
+      command: 'topology -f "$XML"'
+      script: |
+        XML=$(mktemp)
+        HWLOC_LOG=$(mktemp)
+        trap 'rm -f "$XML" "$HWLOC_LOG"' EXIT
+
+        HWLOC_COMPONENTS_VERBOSE=1 {command} 2>"$HWLOC_LOG"
+        RESULT=$?
+        if [ $RESULT -ne 0 ]; then
+          echo "topology -f exited $RESULT"
+        elif [ ! -s "$XML" ]; then
+          echo "topology XML is empty"
+          RESULT=1
+        elif grep -q "Enabling discovery component .levelzero" "$HWLOC_LOG" ||
+             grep -q 'subtype="LevelZero"' "$XML"; then
+          echo "hwloc levelzero backend ran inside xpu-smi"
+          RESULT=1
+        fi
+        exit $RESULT
+      expect:
+        return_code: 0
+      tags: ["regression", "topology"]
