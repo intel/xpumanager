@@ -2169,18 +2169,21 @@ ze_result_t cmdDiscovery::deviceType(devInfo *d, std::string *outputLine)
  *
  * Queries the PCH production state through the device's MEI path and maps
  * the 2-bit PchProdState field to a human-readable string ("Production ES",
- * "Production QS", or "Production PRQ"). Returns an empty string when the
+ * "Production QS", or "Production PRQ"). Returns "N/A" when the
  * MEI query fails or the device has no MEI path.
  *
  * @param[in]  d          Pointer to the device info structure
- * @param[out] outputLine SKU type string, or empty on failure
+ * @param[out] outputLine SKU type string, or "N/A" on failure
  *
- * @retval ZE_RESULT_SUCCESS Always; failure is surfaced as an empty string.
+ * @retval ZE_RESULT_SUCCESS Always; failure is surfaced as "N/A".
  */
 ze_result_t cmdDiscovery::skuType(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 	*outputLine = GETPCHPRODSTATE(d->dev->getPCI()->getMeiDevicePath());
+	if (outputLine->empty()) {
+		*outputLine = "N/A";
+	}
 	return ZE_RESULT_SUCCESS;
 }
 

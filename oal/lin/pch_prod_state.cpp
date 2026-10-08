@@ -25,7 +25,8 @@ constexpr GUID MKHI_GUID = {
 };
 
 constexpr int TEE_RETRY_DELAY_MS = 50;
-constexpr uint32_t TEE_READ_TIMEOUT_MS = 10U;
+// Firmware can take well over 10 ms to answer GET_PCH_INFO.
+constexpr uint32_t TEE_READ_TIMEOUT_MS = 100U;
 constexpr int TEE_RETRY_COUNT = 3;
 
 } // namespace
