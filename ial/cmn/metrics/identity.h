@@ -10,6 +10,7 @@
 
 #include "device.h"
 #include "metrics_registry.h"
+#include "oem_serial.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include <cstdint>
@@ -113,14 +114,17 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 				"The serial number physically printed on the board. A globally unique immutable alphanumeric value.",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
-			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-				zes_device_properties_t p{};
-				p.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-				auto const r = d.dev->zesGetDevProps(d.zesDeviceHdl, &p);
-				if (r == ZE_RESULT_SUCCESS) {
-					out = p.serialNumber;
+			.getter = [](devInfo &d, MetricValue &out, const MetricCache &cache) -> ze_result_t {
+				if (!cache.serialNumber) {
+					std::string serial;
+					auto const r = querySerialNumber(d, serial);
+					if (r != ZE_RESULT_SUCCESS) {
+						return r;
+					}
+					cache.serialNumber = std::move(serial);
 				}
-				return r;
+				out = *cache.serialNumber;
+				return ZE_RESULT_SUCCESS;
 			},
 		},
 		{

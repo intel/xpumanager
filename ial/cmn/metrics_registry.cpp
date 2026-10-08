@@ -247,6 +247,7 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev,
 {
 	MetricCache curr;
 	curr.inputs = inputs;
+	curr.serialNumber = prev.serialNumber;
 
 	// Promote prev's after-snapshots into curr's before-slots (no sleep needed).
 	// The engine figures are derived rather than carried over: what a new window needs is the

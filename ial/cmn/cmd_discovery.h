@@ -181,8 +181,6 @@ public:
 	ze_result_t tdp(devInfo *d, std::string *outputLine);
 	void printDeviceInfo(std::vector<devInfo> &deviceList, std::vector<devInfo> &survDeviceList,
 						 std::unique_ptr<Printer> &printer, devFuncType type);
-	ze_result_t getOemSerialNumber(const std::string &meiDevicePath, std::string &serialNumber);
-	ze_result_t querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString);
 	ze_result_t queryPartNumberFromAMC(devInfo *d, std::string *partNumberString);
 	ze_result_t partNumber(devInfo *d, std::string *outputLine);
 

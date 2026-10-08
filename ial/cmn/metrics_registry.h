@@ -202,6 +202,7 @@ struct EngineCache
 
 struct MetricCache
 {
+	mutable std::optional<std::string> serialNumber;
 	/**
 	 * Which raw sampling this cache was built with; see @ref MetricInput. Set once by
 	 * @ref populateMetricCacheBegin (or @ref populateMetricCacheContinuous) and read back by

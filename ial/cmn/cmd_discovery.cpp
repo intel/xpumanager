@@ -1083,57 +1083,7 @@ ze_result_t cmdDiscovery::serialNumber(devInfo *d, std::string *outputLine)
 {
 	TRACING();
 
-	zes_device_properties_t zesDevProp = {};
-
-	// L0 sysman route if available
-	const auto result = d->dev->zesGetDevProps(d->zesDeviceHdl, &zesDevProp);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get device properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		return result;
-	}
-	*outputLine = zesDevProp.serialNumber;
-
-	if (d->dev->hasAmc() && *outputLine == "unknown") {
-		std::string serialNumFromAMC;
-		const auto amcResult = querySerialNumberFromAMC(d, &serialNumFromAMC);
-		if (amcResult == ZE_RESULT_SUCCESS && !serialNumFromAMC.empty()) {
-			DBG("Successfully retrieved serial number from AMC: {}\n", serialNumFromAMC.c_str());
-			*outputLine = serialNumFromAMC;
-		} else {
-			DBG("AMC serial number query failed (0x{:X}), falling back to sysman\n", amcResult);
-		}
-	}
-
-	// OEM provided serial number via IGSC if still unknown
-	if (*outputLine == "unknown") {
-		std::string serialNumFromIGSC;
-		const auto igscResult = getOemSerialNumber(d->dev->getPCI()->getMeiDevicePath(), serialNumFromIGSC);
-		if (igscResult != ZE_RESULT_SUCCESS || serialNumFromIGSC.empty()) {
-			DBG("Failed to get OEM serial number from IGSC or No IGSC Available: 0x{:X} ({})\n", igscResult,
-				l0_error_to_string(igscResult));
-		} else {
-			DBG("Successfully retrieved OEM serial number from IGSC: {}\n", serialNumFromIGSC.c_str());
-			*outputLine = serialNumFromIGSC;
-		}
-	}
-
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Retrieves OEM serial number via IGSC using the MEI device path.
- *
- * @param[in] meiDevicePath MEI device node path used by IGSC device initialization.
- * @param[out] serialNumber Extracted printable OEM serial number.
- *
- * @retval ZE_RESULT_SUCCESS Successfully retrieved non-empty OEM serial number.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE IGSC library/symbols are unavailable,
- *         device init/query fails, input path is empty, or extracted serial is empty.
- */
-ze_result_t cmdDiscovery::getOemSerialNumber(const std::string &meiDevicePath, std::string &serialNumber)
-{
-	const int ret = getOemSerialNumberByMeiPath(meiDevicePath, serialNumber);
-	return (ret == 0) ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	return querySerialNumber(*d, *outputLine);
 }
 
 /**
@@ -2462,47 +2412,6 @@ ze_result_t cmdDiscovery::listamcversions(devInfo *d, nlohmann::ordered_json *js
 	// ({"amc_firmware_version": [...]}) instead of emitting a bare JSON array.
 	(*jsonObj)["amc_firmware_version"].push_back(version.data());
 
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Fetches the serial number of the given device from the AMC FRU data if AMC is available.
- *
- * @param[in] d Pointer to the device info structure
- * @param[out] serialNumberString Pointer to string object to populate with the device serial number
- *
- * @retval ZE_RESULT_SUCCESS The AMC query completed. If the device has an AMC entry and the serial
- *         number was successfully retrieved, serialNumberString is populated; otherwise it is left
- *         unchanged.
- * @retval ZE_RESULT_ERROR_UNINITIALIZED No AMC devices were found, AMC initialization failed, or
- *         the serial number could not be retrieved.
- */
-ze_result_t cmdDiscovery::querySerialNumberFromAMC(devInfo *d, std::string *serialNumberString)
-{
-	TRACING();
-
-	// Proceed when this device actually has an AMC associated.
-	// hasAmc() returns false when no AMC is present, avoiding any I2C traffic.
-	if (!d->dev->hasAmc()) {
-		DBG("No AMC associated with device {} — skipping AMC serial number query\n",
-			d->dev->getPCI()->getBDFStr().c_str());
-		return ZE_RESULT_ERROR_UNINITIALIZED;
-	}
-
-	firmware *fw = d->dev->getFirmware();
-	if (!fw) {
-		return ZE_RESULT_ERROR_UNINITIALIZED;
-	}
-
-	char serialNum[MAX_PATH] = {};
-	ze_result_t result = fw->getAmcSerialNumber(d->dev->getPCI()->getBDFStr().c_str(), serialNum, sizeof(serialNum));
-	if (result != ZE_RESULT_SUCCESS || serialNum[0] == '\0') {
-		ERR("Failed to get serial number from AMC for device {} (result: 0x{:X})\n",
-			d->dev->getPCI()->getBDFStr().c_str(), result);
-		return ZE_RESULT_ERROR_UNINITIALIZED;
-	}
-
-	*serialNumberString = serialNum;
 	return ZE_RESULT_SUCCESS;
 }
 
