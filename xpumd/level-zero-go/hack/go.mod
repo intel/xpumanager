@@ -6,18 +6,18 @@ require (
 	cloudeng.io/text v0.0.15
 	github.com/xlab/c-for-go v0.0.0-20200718154222-87b0065af829
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
-	golang.org/x/tools v0.50.0
+	golang.org/x/tools v0.51.0
 )
 
 require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	github.com/stretchr/testify v1.11.1 // indirect
+	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tj/go-spin v1.1.0 // indirect
 	github.com/xlab/pkgconfig v0.0.0-20170226114623-cea12a0fd245 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/telemetry v0.0.0-20260908163034-4bcc4b2ee518 // indirect
+	golang.org/x/telemetry v0.0.0-20260924152758-ed294f943157 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/cc v1.0.0 // indirect
 	modernc.org/golex v1.1.0 // indirect
