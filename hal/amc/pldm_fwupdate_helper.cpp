@@ -7,8 +7,12 @@
 #include "common.h"
 #include "pldm_fwupdate.h"
 #include "pldm.h"
+#include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstring>
 #include <string>
+#include <vector>
 
 static_assert(sizeof(i2cdataPldmInfo::respPayload) <= 256, "respPayload must fit a uint8_t command length");
 static_assert(PLDM_FWU_COMP_VER_STR_SIZE_MAX >= 256, "version string buffer must exceed max uint8_t length");
@@ -182,6 +186,65 @@ uint8_t pldm::fwUpdComp()
 	return PLDM_SUCCESS;
 }
 
+// MCTP-over-SMBus frame as returned by an I2C read (the destination address byte is not part of the stream):
+//   [0] command code (0x0F) | [1] byte count | [2 .. byteCount+1] MCTP/PLDM data | [byteCount+2] PEC
+constexpr size_t kFwuFrameOverhead = 3; // command code + byte count + PEC
+constexpr size_t kFwuHdrVersionIdx = 3; // MCTP header version byte, after the source slave address
+// Smallest byte count that still covers the MCTP transport header (bytes 4..9) and the PLDM header.
+constexpr size_t kFwuMinByteCount = sizeof(struct mctpSmbusI2cHdr) - 3 + sizeof(struct pldmHdr);
+
+enum class FwuFrameStatus
+{
+	Complete, // a full frame was copied out
+	NeedMore, // a frame has started but its remaining bytes are in the next read
+	NotFound  // no frame start in the buffered data
+};
+
+/**
+ * @brief Extract one firmware update request frame from the bytes read so far
+ *
+ * The AMC may place its request anywhere in the 128-byte read, and the frame may
+ * continue into the next read (including the case where 0x0F is the last byte).
+ * Bytes before the 0x0F command code are dropped. Once a full frame is found it is
+ * copied to frame and the buffer is cleared, since anything after it is padding.
+ *
+ * @param stream Bytes read from the AMC that have not been consumed yet
+ * @param frame Output buffer, starting at the command code byte
+ * @param frameMax Size of the output buffer
+ *
+ * @return FwuFrameStatus Whether a complete frame was extracted
+ *
+ * @note A 0x0F with an out-of-range byte count or wrong MCTP header version is
+ *       treated as noise and the search continues after it
+ */
+static FwuFrameStatus extractFwuFrame(std::vector<uint8_t> &stream, uint8_t *frame, size_t frameMax)
+{
+	while (true) {
+		stream.erase(stream.begin(), std::find(stream.begin(), stream.end(), MCTP_CMD_CODE));
+		if (stream.empty()) {
+			return FwuFrameStatus::NotFound;
+		}
+		// Byte count and header version are not here yet (0x0F was near the end of the read).
+		if (stream.size() <= kFwuHdrVersionIdx) {
+			return FwuFrameStatus::NeedMore;
+		}
+
+		size_t frameLen = stream[BYTE_1] + kFwuFrameOverhead;
+		if (stream[BYTE_1] < kFwuMinByteCount || frameLen > frameMax ||
+			(stream[kFwuHdrVersionIdx] & 0x0F) != MCTP_HEADER_VERSION) {
+			stream.erase(stream.begin());
+			continue;
+		}
+		if (stream.size() < frameLen) {
+			return FwuFrameStatus::NeedMore;
+		}
+
+		memcpy(frame, stream.data(), frameLen);
+		stream.clear();
+		return FwuFrameStatus::Complete;
+	}
+}
+
 /**
  * @brief Read firmware data requests from firmware device
  *
@@ -212,22 +275,35 @@ uint8_t pldm::readFromFD()
 	constexpr auto kStateTimeout = std::chrono::seconds(120);
 	auto lastMsgTime = std::chrono::steady_clock::now();
 
+	// The request can start anywhere in a read and may continue into the next one,
+	// so raw reads are buffered here until a complete frame is available.
+	std::array<uint8_t, PLDM_MAX_RESPONSE_SIZE> rawRead{};
+	std::vector<uint8_t> stream;
+	// The frame is copied in from the command code byte; rptr[0] is the destination address.
+	const size_t frameMax = sizeof(*mI2cPldmRead) - 1;
+
 	// for a specific component, do read and write until it reaches end of component
 	while (true) {
 
-		if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
+		if (i2cobj->readAmc(rawRead.data(), rawRead.size()) != true) {
 			ERR("pldm from FD : I2C Read failure\n");
 			return PLDM_ERROR;
 		}
-		hexdump(rptr, PLDM_MAX_RESPONSE_SIZE);
-		if (mI2cPldmRead->mctpSmbusHdr.cmdCode != MCTP_CMD_CODE) {
+		hexdump(rawRead.data(), PLDM_MAX_RESPONSE_SIZE);
+		stream.insert(stream.end(), rawRead.begin(), rawRead.end());
+
+		FwuFrameStatus status = extractFwuFrame(stream, rptr + 1, frameMax);
+		if (status != FwuFrameStatus::Complete) {
 			if (std::chrono::steady_clock::now() - lastMsgTime > kStateTimeout) {
 				ERR("FWU : Timed out waiting for firmware device response "
 					"(>{}s with no valid PLDM message)\n",
 					kStateTimeout.count());
 				return PLDM_ERROR;
 			}
-			MSLEEP(MCTP_RESPONSE_DELAY_MS);
+			// The rest of a partial frame is already pending on the AMC, read it right away.
+			if (status == FwuFrameStatus::NotFound) {
+				MSLEEP(MCTP_RESPONSE_DELAY_MS);
+			}
 			continue;
 		}
 
