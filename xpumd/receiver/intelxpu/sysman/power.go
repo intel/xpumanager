@@ -183,7 +183,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	count := 0
 	for _, limit := range limits {
-		if limit.Enabled == 0 || limit.LimitUnit != l0sysman.LIMIT_UNIT_POWER {
+		if !limit.Enabled.IsTrue() || limit.LimitUnit != l0sysman.LIMIT_UNIT_POWER {
 			// only enabled power limits are relevant for power usage
 			continue
 		}

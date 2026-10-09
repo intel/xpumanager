@@ -254,7 +254,7 @@ func (d *device) init() error {
 		} else {
 			d.logger.Infow("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
 		}
-		if pci.HaveBandwidthCounters != 0 {
+		if pci.HaveBandwidthCounters.IsTrue() {
 			if stats, err := d.PciGetStats(); err == nil {
 				d.state.pci.stats = &stats
 			} else {

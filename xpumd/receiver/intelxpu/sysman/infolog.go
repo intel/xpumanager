@@ -59,11 +59,11 @@ func enumInfoLogs(drv *driver, driverIndex int, cfg InfoLogsConfig, logger *zap.
 		}
 		logger.Infow("Sysman info log found", "infoLog", name, "type", props.InfoLogType,
 			"format", props.InfoLogFormat, "maxSizeKiB", props.MaxSize,
-			"instancedCollection", props.IsInstancedCollectionSupported != 0)
+			"instancedCollection", props.IsInstancedCollectionSupported.IsTrue())
 
 		// Without support for a named collection instance only the default buffer can be used
 		instance := cfg.InstanceName
-		if props.IsInstancedCollectionSupported == 0 {
+		if !props.IsInstancedCollectionSupported.IsTrue() {
 			logger.Warnw("Named collection instances not supported, using the default buffer of the driver",
 				"infoLog", name, "instanceName", instance)
 			instance = ""

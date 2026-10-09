@@ -11,11 +11,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/intel/level-zero-go/core"
 	l0sysman "github.com/intel/level-zero-go/sysman"
 )
 
-func subDeviceIdString(onSubdevice uint8, subdeviceId uint32) string {
-	if onSubdevice != 0 {
+func subDeviceIdString(onSubdevice core.Bool, subdeviceId uint32) string {
+	if onSubdevice.IsTrue() {
 		return strconv.Itoa(int(subdeviceId))
 	}
 	return ""
