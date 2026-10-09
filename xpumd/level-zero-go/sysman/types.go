@@ -105,8 +105,8 @@ type overclockHandle *_Ctype_struct__zes_overclock_handle_t
 //
 // Extension properties queried using zesDriverGetExtensionProperties.
 type DriverExtensionProperties struct {
-	Name    core.StringProperty256
-	Version uint32
+	Name    core.StringProperty256 `yaml:"Name"`
+	Version uint32                 `yaml:"Version"`
 }
 
 // DeviceBaseState is the device state type declared in:
@@ -117,8 +117,8 @@ type DriverExtensionProperties struct {
 type DeviceBaseState struct {
 	stype    structureType
 	pnext    unsafe.Pointer
-	Reset    ResetReasonFlags
-	Repaired RepairStatus
+	Reset    ResetReasonFlags `yaml:"Reset"`
+	Repaired RepairStatus     `yaml:"Repaired"`
 }
 
 // ResetProperties declared in:
@@ -128,8 +128,8 @@ type DeviceBaseState struct {
 type ResetProperties struct {
 	stype     structureType
 	pnext     unsafe.Pointer
-	Force     uint8
-	ResetType ResetType
+	Force     uint8     `yaml:"Force"`
+	ResetType ResetType `yaml:"ResetType"`
 }
 
 // Uuid declared in:
@@ -137,7 +137,7 @@ type ResetProperties struct {
 //
 // Device universal unique id (UUID).
 type Uuid struct {
-	Id uuid.UUID
+	Id uuid.UUID `yaml:"Id"`
 }
 
 // DeviceBaseProperties is the device properties type declared in:
@@ -149,14 +149,14 @@ type Uuid struct {
 type DeviceBaseProperties struct {
 	stype         structureType
 	pnext         unsafe.Pointer
-	Core          core.DeviceProperties
-	NumSubdevices uint32
-	SerialNumber  core.StringProperty64
-	BoardNumber   core.StringProperty64
-	BrandName     core.StringProperty64
-	ModelName     core.StringProperty64
-	VendorName    core.StringProperty64
-	DriverVersion core.StringProperty64
+	Core          core.DeviceProperties `yaml:"Core"`
+	NumSubdevices uint32                `yaml:"NumSubdevices"`
+	SerialNumber  core.StringProperty64 `yaml:"SerialNumber"`
+	BoardNumber   core.StringProperty64 `yaml:"BoardNumber"`
+	BrandName     core.StringProperty64 `yaml:"BrandName"`
+	ModelName     core.StringProperty64 `yaml:"ModelName"`
+	VendorName    core.StringProperty64 `yaml:"VendorName"`
+	DriverVersion core.StringProperty64 `yaml:"DriverVersion"`
 	_             [4]byte
 }
 
@@ -167,9 +167,9 @@ type DeviceBaseProperties struct {
 type DeviceExtProperties struct {
 	stype structureType
 	pnext unsafe.Pointer
-	Uuid  Uuid
-	Type  DeviceType
-	Flags DevicePropertyFlags
+	Uuid  Uuid                `yaml:"Uuid"`
+	Type  DeviceType          `yaml:"Type"`
+	Flags DevicePropertyFlags `yaml:"Flags"`
 }
 
 // ProcessState declared in:
@@ -182,10 +182,10 @@ type DeviceExtProperties struct {
 type ProcessState struct {
 	stype      structureType
 	pnext      unsafe.Pointer
-	ProcessId  uint32
-	MemSize    uint64
-	SharedSize uint64
-	Engines    EngineTypeFlags
+	ProcessId  uint32          `yaml:"ProcessId"`
+	MemSize    uint64          `yaml:"MemSize"`
+	SharedSize uint64          `yaml:"SharedSize"`
+	Engines    EngineTypeFlags `yaml:"Engines"`
 	_          [4]byte
 }
 
@@ -194,10 +194,10 @@ type ProcessState struct {
 //
 // PCI address.
 type PciAddress struct {
-	Domain   uint32
-	Bus      uint32
-	Device   uint32
-	Function uint32
+	Domain   uint32 `yaml:"Domain"`
+	Bus      uint32 `yaml:"Bus"`
+	Device   uint32 `yaml:"Device"`
+	Function uint32 `yaml:"Function"`
 }
 
 // PciSpeed declared in:
@@ -205,9 +205,9 @@ type PciAddress struct {
 //
 // PCI speed.
 type PciSpeed struct {
-	Gen          int32
-	Width        int32
-	MaxBandwidth int64
+	Gen          int32 `yaml:"Gen"`
+	Width        int32 `yaml:"Width"`
+	MaxBandwidth int64 `yaml:"MaxBandwidth"`
 }
 
 // PciBaseProperties is the PCI properties type declared in:
@@ -217,11 +217,11 @@ type PciSpeed struct {
 type PciBaseProperties struct {
 	stype                 structureType
 	pnext                 unsafe.Pointer
-	Address               PciAddress
-	MaxSpeed              PciSpeed
-	HaveBandwidthCounters uint8
-	HavePacketCounters    uint8
-	HaveReplayCounters    uint8
+	Address               PciAddress `yaml:"Address"`
+	MaxSpeed              PciSpeed   `yaml:"MaxSpeed"`
+	HaveBandwidthCounters uint8      `yaml:"HaveBandwidthCounters"`
+	HavePacketCounters    uint8      `yaml:"HavePacketCounters"`
+	HaveReplayCounters    uint8      `yaml:"HaveReplayCounters"`
 	_                     [5]byte
 }
 
@@ -232,10 +232,10 @@ type PciBaseProperties struct {
 type PciBaseState struct {
 	stype           structureType
 	pnext           unsafe.Pointer
-	Status          PciLinkStatus
-	QualityIssues   PciLinkQualIssueFlags
-	StabilityIssues PciLinkStabIssueFlags
-	Speed           PciSpeed
+	Status          PciLinkStatus         `yaml:"Status"`
+	QualityIssues   PciLinkQualIssueFlags `yaml:"QualityIssues"`
+	StabilityIssues PciLinkStabIssueFlags `yaml:"StabilityIssues"`
+	Speed           PciSpeed              `yaml:"Speed"`
 }
 
 // PciBarProperties declared in:
@@ -245,10 +245,10 @@ type PciBaseState struct {
 type PciBarProperties struct {
 	stype structureType
 	pnext unsafe.Pointer
-	Type  PciBarType
-	Index uint32
-	Base  uint64
-	Size  uint64
+	Type  PciBarType `yaml:"Type"`
+	Index uint32     `yaml:"Index"`
+	Base  uint64     `yaml:"Base"`
+	Size  uint64     `yaml:"Size"`
 }
 
 // PciBarProperties12 declared in:
@@ -258,12 +258,12 @@ type PciBarProperties struct {
 type PciBarProperties12 struct {
 	stype                 structureType
 	pnext                 unsafe.Pointer
-	Type                  PciBarType
-	Index                 uint32
-	Base                  uint64
-	Size                  uint64
-	ResizableBarSupported uint8
-	ResizableBarEnabled   uint8
+	Type                  PciBarType `yaml:"Type"`
+	Index                 uint32     `yaml:"Index"`
+	Base                  uint64     `yaml:"Base"`
+	Size                  uint64     `yaml:"Size"`
+	ResizableBarSupported uint8      `yaml:"ResizableBarSupported"`
+	ResizableBarEnabled   uint8      `yaml:"ResizableBarEnabled"`
 	_                     [6]byte
 }
 
@@ -279,12 +279,12 @@ type PciBarProperties12 struct {
 //     equation: bw = 10^6 * ((s2.rxCounter - s1.rxCounter) + (s2.txCounter -
 //     s1.txCounter)) / (s2.maxBandwidth * (s2.timestamp - s1.timestamp))
 type PciStats struct {
-	Timestamp     uint64
-	ReplayCounter uint64
-	PacketCounter uint64
-	RxCounter     uint64
-	TxCounter     uint64
-	Speed         PciSpeed
+	Timestamp     uint64   `yaml:"Timestamp"`
+	ReplayCounter uint64   `yaml:"ReplayCounter"`
+	PacketCounter uint64   `yaml:"PacketCounter"`
+	RxCounter     uint64   `yaml:"RxCounter"`
+	TxCounter     uint64   `yaml:"TxCounter"`
+	Speed         PciSpeed `yaml:"Speed"`
 }
 
 // OverclockProperties declared in:
@@ -297,10 +297,10 @@ type PciStats struct {
 type OverclockProperties struct {
 	stype             structureType
 	pnext             unsafe.Pointer
-	DomainType        OverclockDomain
-	AvailableControls OverclockControls
-	VFProgramType     VfProgramType
-	NumberOfVFPoints  uint32
+	DomainType        OverclockDomain   `yaml:"DomainType"`
+	AvailableControls OverclockControls `yaml:"AvailableControls"`
+	VFProgramType     VfProgramType     `yaml:"VFProgramType"`
+	NumberOfVFPoints  uint32            `yaml:"NumberOfVFPoints"`
 }
 
 // ControlProperty declared in:
@@ -311,11 +311,11 @@ type OverclockProperties struct {
 //   - Provides all the control capabilities supported by the device for the overclock
 //     domain.
 type ControlProperty struct {
-	MinValue     float64
-	MaxValue     float64
-	StepValue    float64
-	RefValue     float64
-	DefaultValue float64
+	MinValue     float64 `yaml:"MinValue"`
+	MaxValue     float64 `yaml:"MaxValue"`
+	StepValue    float64 `yaml:"StepValue"`
+	RefValue     float64 `yaml:"RefValue"`
+	DefaultValue float64 `yaml:"DefaultValue"`
 }
 
 // VfProperty declared in:
@@ -326,12 +326,12 @@ type ControlProperty struct {
 //   - Provides all the VF capabilities supported by the device for the overclock
 //     domain.
 type VfProperty struct {
-	MinFreq  float64
-	MaxFreq  float64
-	StepFreq float64
-	MinVolt  float64
-	MaxVolt  float64
-	StepVolt float64
+	MinFreq  float64 `yaml:"MinFreq"`
+	MaxFreq  float64 `yaml:"MaxFreq"`
+	StepFreq float64 `yaml:"StepFreq"`
+	MinVolt  float64 `yaml:"MinVolt"`
+	MaxVolt  float64 `yaml:"MaxVolt"`
+	StepVolt float64 `yaml:"StepVolt"`
 }
 
 // DiagTest declared in:
@@ -339,8 +339,8 @@ type VfProperty struct {
 //
 // Diagnostic test.
 type DiagTest struct {
-	Index uint32
-	Name  core.StringProperty64
+	Index uint32                `yaml:"Index"`
+	Name  core.StringProperty64 `yaml:"Name"`
 }
 
 // DiagProperties declared in:
@@ -350,10 +350,10 @@ type DiagTest struct {
 type DiagProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	OnSubdevice uint8
-	SubdeviceId uint32
-	Name        core.StringProperty64
-	HaveTests   uint8
+	OnSubdevice uint8                 `yaml:"OnSubdevice"`
+	SubdeviceId uint32                `yaml:"SubdeviceId"`
+	Name        core.StringProperty64 `yaml:"Name"`
+	HaveTests   uint8                 `yaml:"HaveTests"`
 	_           [7]byte
 }
 
@@ -364,7 +364,7 @@ type DiagProperties struct {
 type DeviceEccDesc struct {
 	stype structureType
 	pnext unsafe.Pointer
-	State DeviceEccState
+	State DeviceEccState `yaml:"State"`
 	_     [4]byte
 }
 
@@ -375,9 +375,9 @@ type DeviceEccDesc struct {
 type DeviceEccProperties struct {
 	stype         structureType
 	pnext         unsafe.Pointer
-	CurrentState  DeviceEccState
-	PendingState  DeviceEccState
-	PendingAction DeviceAction
+	CurrentState  DeviceEccState `yaml:"CurrentState"`
+	PendingState  DeviceEccState `yaml:"PendingState"`
+	PendingAction DeviceAction   `yaml:"PendingAction"`
 	_             [4]byte
 }
 
@@ -388,9 +388,9 @@ type DeviceEccProperties struct {
 type EngineBaseProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	Type        EngineGroup
-	OnSubdevice uint8
-	SubdeviceId uint32
+	Type        EngineGroup `yaml:"Type"`
+	OnSubdevice uint8       `yaml:"OnSubdevice"`
+	SubdeviceId uint32      `yaml:"SubdeviceId"`
 	_           [4]byte
 }
 
@@ -413,8 +413,8 @@ type EngineBaseProperties struct {
 //   - The absolute value of timestamp is only valid during within the application and
 //     may be different on the next execution.
 type EngineStats struct {
-	ActiveTime uint64
-	Timestamp  uint64
+	ActiveTime uint64 `yaml:"ActiveTime"`
+	Timestamp  uint64 `yaml:"Timestamp"`
 }
 
 // FabricPortId declared in:
@@ -430,9 +430,9 @@ type EngineStats struct {
 //     match the remotePortId member of zes_fabric_port_state_t to the portId member
 //     of zes_fabric_port_properties_t.
 type FabricPortId struct {
-	FabricId   uint32
-	AttachId   uint32
-	PortNumber uint8
+	FabricId   uint32 `yaml:"FabricId"`
+	AttachId   uint32 `yaml:"AttachId"`
+	PortNumber uint8  `yaml:"PortNumber"`
 	_          [3]byte
 }
 
@@ -441,8 +441,8 @@ type FabricPortId struct {
 //
 // Fabric port speed in one direction.
 type FabricPortSpeed struct {
-	BitRate int64
-	Width   int32
+	BitRate int64 `yaml:"BitRate"`
+	Width   int32 `yaml:"Width"`
 	_       [4]byte
 }
 
@@ -453,12 +453,12 @@ type FabricPortSpeed struct {
 type FabricPortProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	Model       core.StringProperty256
-	OnSubdevice uint8
-	SubdeviceId uint32
-	PortId      FabricPortId
-	MaxRxSpeed  FabricPortSpeed
-	MaxTxSpeed  FabricPortSpeed
+	Model       core.StringProperty256 `yaml:"Model"`
+	OnSubdevice uint8                  `yaml:"OnSubdevice"`
+	SubdeviceId uint32                 `yaml:"SubdeviceId"`
+	PortId      FabricPortId           `yaml:"PortId"`
+	MaxRxSpeed  FabricPortSpeed        `yaml:"MaxRxSpeed"`
+	MaxTxSpeed  FabricPortSpeed        `yaml:"MaxTxSpeed"`
 }
 
 // FabricLinkType declared in:
@@ -466,7 +466,7 @@ type FabricPortProperties struct {
 //
 // Provides information about the fabric link attached to a port.
 type FabricLinkType struct {
-	Desc core.StringProperty256
+	Desc core.StringProperty256 `yaml:"Desc"`
 }
 
 // FabricPortConfig declared in:
@@ -476,8 +476,8 @@ type FabricLinkType struct {
 type FabricPortConfig struct {
 	stype     structureType
 	pnext     unsafe.Pointer
-	Enabled   uint8
-	Beaconing uint8
+	Enabled   uint8 `yaml:"Enabled"`
+	Beaconing uint8 `yaml:"Beaconing"`
 	_         [6]byte
 }
 
@@ -488,12 +488,12 @@ type FabricPortConfig struct {
 type FabricPortState struct {
 	stype          structureType
 	pnext          unsafe.Pointer
-	Status         FabricPortStatus
-	QualityIssues  FabricPortQualIssueFlags
-	FailureReasons FabricPortFailureFlags
-	RemotePortId   FabricPortId
-	RxSpeed        FabricPortSpeed
-	TxSpeed        FabricPortSpeed
+	Status         FabricPortStatus         `yaml:"Status"`
+	QualityIssues  FabricPortQualIssueFlags `yaml:"QualityIssues"`
+	FailureReasons FabricPortFailureFlags   `yaml:"FailureReasons"`
+	RemotePortId   FabricPortId             `yaml:"RemotePortId"`
+	RxSpeed        FabricPortSpeed          `yaml:"RxSpeed"`
+	TxSpeed        FabricPortSpeed          `yaml:"TxSpeed"`
 }
 
 // FabricPortThroughput declared in:
@@ -501,9 +501,9 @@ type FabricPortState struct {
 //
 // Fabric port throughput.
 type FabricPortThroughput struct {
-	Timestamp uint64
-	RxCounter uint64
-	TxCounter uint64
+	Timestamp uint64 `yaml:"Timestamp"`
+	RxCounter uint64 `yaml:"RxCounter"`
+	TxCounter uint64 `yaml:"TxCounter"`
 }
 
 // FabricPortErrorCounters declared in:
@@ -513,10 +513,10 @@ type FabricPortThroughput struct {
 type FabricPortErrorCounters struct {
 	stype            structureType
 	pnext            unsafe.Pointer
-	LinkFailureCount uint64
-	FwCommErrorCount uint64
-	FwErrorCount     uint64
-	LinkDegradeCount uint64
+	LinkFailureCount uint64 `yaml:"LinkFailureCount"`
+	FwCommErrorCount uint64 `yaml:"FwCommErrorCount"`
+	FwErrorCount     uint64 `yaml:"FwErrorCount"`
+	LinkDegradeCount uint64 `yaml:"LinkDegradeCount"`
 }
 
 // FanSpeed declared in:
@@ -524,8 +524,8 @@ type FabricPortErrorCounters struct {
 //
 // Fan speed.
 type FanSpeed struct {
-	Speed int32
-	Units FanSpeedUnits
+	Speed int32         `yaml:"Speed"`
+	Units FanSpeedUnits `yaml:"Units"`
 }
 
 // FanTempSpeed declared in:
@@ -533,8 +533,8 @@ type FanSpeed struct {
 //
 // Fan temperature/speed pair.
 type FanTempSpeed struct {
-	Temperature uint32
-	Speed       FanSpeed
+	Temperature uint32   `yaml:"Temperature"`
+	Speed       FanSpeed `yaml:"Speed"`
 }
 
 // FanSpeedTable declared in:
@@ -542,8 +542,8 @@ type FanTempSpeed struct {
 //
 // Fan speed table.
 type FanSpeedTable struct {
-	NumPoints int32
-	Table     [32]FanTempSpeed
+	NumPoints int32            `yaml:"NumPoints"`
+	Table     [32]FanTempSpeed `yaml:"Table"`
 }
 
 // FanProperties declared in:
@@ -553,13 +553,13 @@ type FanSpeedTable struct {
 type FanProperties struct {
 	stype          structureType
 	pnext          unsafe.Pointer
-	OnSubdevice    uint8
-	SubdeviceId    uint32
-	CanControl     uint8
-	SupportedModes uint32
-	SupportedUnits uint32
-	MaxRPM         int32
-	MaxPoints      int32
+	OnSubdevice    uint8  `yaml:"OnSubdevice"`
+	SubdeviceId    uint32 `yaml:"SubdeviceId"`
+	CanControl     uint8  `yaml:"CanControl"`
+	SupportedModes uint32 `yaml:"SupportedModes"`
+	SupportedUnits uint32 `yaml:"SupportedUnits"`
+	MaxRPM         int32  `yaml:"MaxRPM"`
+	MaxPoints      int32  `yaml:"MaxPoints"`
 	_              [4]byte
 }
 
@@ -570,9 +570,9 @@ type FanProperties struct {
 type FanConfig struct {
 	stype      structureType
 	pnext      unsafe.Pointer
-	Mode       FanSpeedMode
-	SpeedFixed FanSpeed
-	SpeedTable FanSpeedTable
+	Mode       FanSpeedMode  `yaml:"Mode"`
+	SpeedFixed FanSpeed      `yaml:"SpeedFixed"`
+	SpeedTable FanSpeedTable `yaml:"SpeedTable"`
 }
 
 // FirmwareProperties declared in:
@@ -582,11 +582,11 @@ type FanConfig struct {
 type FirmwareProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	OnSubdevice uint8
-	SubdeviceId uint32
-	CanControl  uint8
-	Name        core.StringProperty64
-	Version     core.StringProperty64
+	OnSubdevice uint8                 `yaml:"OnSubdevice"`
+	SubdeviceId uint32                `yaml:"SubdeviceId"`
+	CanControl  uint8                 `yaml:"CanControl"`
+	Name        core.StringProperty64 `yaml:"Name"`
+	Version     core.StringProperty64 `yaml:"Version"`
 	_           [7]byte
 }
 
@@ -603,13 +603,13 @@ type FirmwareProperties struct {
 type FreqProperties struct {
 	stype                    structureType
 	pnext                    unsafe.Pointer
-	Type                     FreqDomain
-	OnSubdevice              uint8
-	SubdeviceId              uint32
-	CanControl               uint8
-	IsThrottleEventSupported uint8
-	Min                      float64
-	Max                      float64
+	Type                     FreqDomain `yaml:"Type"`
+	OnSubdevice              uint8      `yaml:"OnSubdevice"`
+	SubdeviceId              uint32     `yaml:"SubdeviceId"`
+	CanControl               uint8      `yaml:"CanControl"`
+	IsThrottleEventSupported uint8      `yaml:"IsThrottleEventSupported"`
+	Min                      float64    `yaml:"Min"`
+	Max                      float64    `yaml:"Max"`
 }
 
 // FreqRange declared in:
@@ -623,8 +623,8 @@ type FreqProperties struct {
 //   - When setting limits to return to factory settings, specify -1 for both the min
 //     and max limit.
 type FreqRange struct {
-	Min float64
-	Max float64
+	Min float64 `yaml:"Min"`
+	Max float64 `yaml:"Max"`
 }
 
 // FreqState declared in:
@@ -634,12 +634,12 @@ type FreqRange struct {
 type FreqState struct {
 	stype           structureType
 	pnext           unsafe.Pointer
-	CurrentVoltage  float64
-	Request         float64
-	Tdp             float64
-	Efficient       float64
-	Actual          float64
-	ThrottleReasons FreqThrottleReasonFlags
+	CurrentVoltage  float64                 `yaml:"CurrentVoltage"`
+	Request         float64                 `yaml:"Request"`
+	Tdp             float64                 `yaml:"Tdp"`
+	Efficient       float64                 `yaml:"Efficient"`
+	Actual          float64                 `yaml:"Actual"`
+	ThrottleReasons FreqThrottleReasonFlags `yaml:"ThrottleReasons"`
 	_               [4]byte
 }
 
@@ -652,8 +652,8 @@ type FreqState struct {
 //     the equation: throttled = (s2.throttleTime - s1.throttleTime) / (s2.timestamp
 //   - s1.timestamp)
 type FreqThrottleTime struct {
-	ThrottleTime uint64
-	Timestamp    uint64
+	ThrottleTime uint64 `yaml:"ThrottleTime"`
+	Timestamp    uint64 `yaml:"Timestamp"`
 }
 
 // LedProperties declared in:
@@ -663,10 +663,10 @@ type FreqThrottleTime struct {
 type LedProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	OnSubdevice uint8
-	SubdeviceId uint32
-	CanControl  uint8
-	HaveRGB     uint8
+	OnSubdevice uint8  `yaml:"OnSubdevice"`
+	SubdeviceId uint32 `yaml:"SubdeviceId"`
+	CanControl  uint8  `yaml:"CanControl"`
+	HaveRGB     uint8  `yaml:"HaveRGB"`
 	_           [6]byte
 }
 
@@ -675,9 +675,9 @@ type LedProperties struct {
 //
 // LED color.
 type LedColor struct {
-	Red   float64
-	Green float64
-	Blue  float64
+	Red   float64 `yaml:"Red"`
+	Green float64 `yaml:"Green"`
+	Blue  float64 `yaml:"Blue"`
 }
 
 // LedState declared in:
@@ -687,8 +687,8 @@ type LedColor struct {
 type LedState struct {
 	stype structureType
 	pnext unsafe.Pointer
-	IsOn  uint8
-	Color LedColor
+	IsOn  uint8    `yaml:"IsOn"`
+	Color LedColor `yaml:"Color"`
 }
 
 // MemBaseProperties is the memory properties type declared in:
@@ -700,13 +700,13 @@ type LedState struct {
 type MemBaseProperties struct {
 	stype        structureType
 	pnext        unsafe.Pointer
-	Type         MemType
-	OnSubdevice  uint8
-	SubdeviceId  uint32
-	Location     MemLoc
-	PhysicalSize uint64
-	BusWidth     int32
-	NumChannels  int32
+	Type         MemType `yaml:"Type"`
+	OnSubdevice  uint8   `yaml:"OnSubdevice"`
+	SubdeviceId  uint32  `yaml:"SubdeviceId"`
+	Location     MemLoc  `yaml:"Location"`
+	PhysicalSize uint64  `yaml:"PhysicalSize"`
+	BusWidth     int32   `yaml:"BusWidth"`
+	NumChannels  int32   `yaml:"NumChannels"`
 }
 
 // MemState declared in:
@@ -718,9 +718,9 @@ type MemBaseProperties struct {
 type MemState struct {
 	stype  structureType
 	pnext  unsafe.Pointer
-	Health MemHealth
-	Free   uint64
-	Size   uint64
+	Health MemHealth `yaml:"Health"`
+	Free   uint64    `yaml:"Free"`
+	Size   uint64    `yaml:"Size"`
 }
 
 // MemBandwidth declared in:
@@ -738,10 +738,10 @@ type MemState struct {
 //     in case of rollover) needs to be multiplied by 32 to get delta between samples
 //     in actual byte count
 type MemBandwidth struct {
-	ReadCounter  uint64
-	WriteCounter uint64
-	MaxBandwidth uint64
-	Timestamp    uint64
+	ReadCounter  uint64 `yaml:"ReadCounter"`
+	WriteCounter uint64 `yaml:"WriteCounter"`
+	MaxBandwidth uint64 `yaml:"MaxBandwidth"`
+	Timestamp    uint64 `yaml:"Timestamp"`
 }
 
 // PerfProperties declared in:
@@ -751,9 +751,9 @@ type MemBandwidth struct {
 type PerfProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	OnSubdevice uint8
-	SubdeviceId uint32
-	Engines     EngineTypeFlags
+	OnSubdevice uint8           `yaml:"OnSubdevice"`
+	SubdeviceId uint32          `yaml:"SubdeviceId"`
+	Engines     EngineTypeFlags `yaml:"Engines"`
 	_           [4]byte
 }
 
@@ -764,13 +764,13 @@ type PerfProperties struct {
 type PowerBaseProperties struct {
 	stype                      structureType
 	pnext                      unsafe.Pointer
-	OnSubdevice                uint8
-	SubdeviceId                uint32
-	CanControl                 uint8
-	IsEnergyThresholdSupported uint8
-	DefaultLimit               int32
-	MinLimit                   int32
-	MaxLimit                   int32
+	OnSubdevice                uint8  `yaml:"OnSubdevice"`
+	SubdeviceId                uint32 `yaml:"SubdeviceId"`
+	CanControl                 uint8  `yaml:"CanControl"`
+	IsEnergyThresholdSupported uint8  `yaml:"IsEnergyThresholdSupported"`
+	DefaultLimit               int32  `yaml:"DefaultLimit"`
+	MinLimit                   int32  `yaml:"MinLimit"`
+	MaxLimit                   int32  `yaml:"MaxLimit"`
 }
 
 // PowerEnergyCounter declared in:
@@ -781,8 +781,8 @@ type PowerBaseProperties struct {
 //   - Average power is calculated by taking two snapshots (s1, s2) and using the
 //     equation: PowerWatts = (s2.energy - s1.energy) / (s2.timestamp - s1.timestamp)
 type PowerEnergyCounter struct {
-	Energy    uint64
-	Timestamp uint64
+	Energy    uint64 `yaml:"Energy"`
+	Timestamp uint64 `yaml:"Timestamp"`
 }
 
 // EnergyThreshold declared in:
@@ -792,9 +792,9 @@ type PowerEnergyCounter struct {
 //
 // - .
 type EnergyThreshold struct {
-	Enable    uint8
-	Threshold float64
-	ProcessId uint32
+	Enable    uint8   `yaml:"Enable"`
+	Threshold float64 `yaml:"Threshold"`
+	ProcessId uint32  `yaml:"ProcessId"`
 	_         [4]byte
 }
 
@@ -805,10 +805,10 @@ type EnergyThreshold struct {
 type PsuProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	OnSubdevice uint8
-	SubdeviceId uint32
-	HaveFan     uint8
-	AmpLimit    int32
+	OnSubdevice uint8  `yaml:"OnSubdevice"`
+	SubdeviceId uint32 `yaml:"SubdeviceId"`
+	HaveFan     uint8  `yaml:"HaveFan"`
+	AmpLimit    int32  `yaml:"AmpLimit"`
 }
 
 // PsuState declared in:
@@ -818,10 +818,10 @@ type PsuProperties struct {
 type PsuState struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	VoltStatus  PsuVoltageStatus
-	FanFailed   uint8
-	Temperature int32
-	Current     int32
+	VoltStatus  PsuVoltageStatus `yaml:"VoltStatus"`
+	FanFailed   uint8            `yaml:"FanFailed"`
+	Temperature int32            `yaml:"Temperature"`
+	Current     int32            `yaml:"Current"`
 }
 
 // RasProperties declared in:
@@ -831,9 +831,9 @@ type PsuState struct {
 type RasProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	Type        RasErrorType
-	OnSubdevice uint8
-	SubdeviceId uint32
+	Type        RasErrorType `yaml:"Type"`
+	OnSubdevice uint8        `yaml:"OnSubdevice"`
+	SubdeviceId uint32       `yaml:"SubdeviceId"`
 	_           [4]byte
 }
 
@@ -844,7 +844,7 @@ type RasProperties struct {
 type RasState struct {
 	stype    structureType
 	pnext    unsafe.Pointer
-	Category [7]uint64
+	Category [7]uint64 `yaml:"Category"`
 }
 
 // RasConfig declared in:
@@ -865,8 +865,8 @@ type RasState struct {
 type RasConfig struct {
 	stype              structureType
 	pnext              unsafe.Pointer
-	TotalThreshold     uint64
-	DetailedThresholds RasState
+	TotalThreshold     uint64   `yaml:"TotalThreshold"`
+	DetailedThresholds RasState `yaml:"DetailedThresholds"`
 }
 
 // SchedProperties declared in:
@@ -876,11 +876,11 @@ type RasConfig struct {
 type SchedProperties struct {
 	stype          structureType
 	pnext          unsafe.Pointer
-	OnSubdevice    uint8
-	SubdeviceId    uint32
-	CanControl     uint8
-	Engines        EngineTypeFlags
-	SupportedModes uint32
+	OnSubdevice    uint8           `yaml:"OnSubdevice"`
+	SubdeviceId    uint32          `yaml:"SubdeviceId"`
+	CanControl     uint8           `yaml:"CanControl"`
+	Engines        EngineTypeFlags `yaml:"Engines"`
+	SupportedModes uint32          `yaml:"SupportedModes"`
 	_              [4]byte
 }
 
@@ -891,7 +891,7 @@ type SchedProperties struct {
 type SchedTimeoutProperties struct {
 	stype           structureType
 	pnext           unsafe.Pointer
-	WatchdogTimeout uint64
+	WatchdogTimeout uint64 `yaml:"WatchdogTimeout"`
 }
 
 // SchedTimesliceProperties declared in:
@@ -901,8 +901,8 @@ type SchedTimeoutProperties struct {
 type SchedTimesliceProperties struct {
 	stype        structureType
 	pnext        unsafe.Pointer
-	Interval     uint64
-	YieldTimeout uint64
+	Interval     uint64 `yaml:"Interval"`
+	YieldTimeout uint64 `yaml:"YieldTimeout"`
 }
 
 // StandbyProperties declared in:
@@ -912,9 +912,9 @@ type SchedTimesliceProperties struct {
 type StandbyProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	Type        StandbyType
-	OnSubdevice uint8
-	SubdeviceId uint32
+	Type        StandbyType `yaml:"Type"`
+	OnSubdevice uint8       `yaml:"OnSubdevice"`
+	SubdeviceId uint32      `yaml:"SubdeviceId"`
 	_           [4]byte
 }
 
@@ -925,13 +925,13 @@ type StandbyProperties struct {
 type TempProperties struct {
 	stype                   structureType
 	pnext                   unsafe.Pointer
-	Type                    TempSensors
-	OnSubdevice             uint8
-	SubdeviceId             uint32
-	MaxTemperature          float64
-	IsCriticalTempSupported uint8
-	IsThreshold1Supported   uint8
-	IsThreshold2Supported   uint8
+	Type                    TempSensors `yaml:"Type"`
+	OnSubdevice             uint8       `yaml:"OnSubdevice"`
+	SubdeviceId             uint32      `yaml:"SubdeviceId"`
+	MaxTemperature          float64     `yaml:"MaxTemperature"`
+	IsCriticalTempSupported uint8       `yaml:"IsCriticalTempSupported"`
+	IsThreshold1Supported   uint8       `yaml:"IsThreshold1Supported"`
+	IsThreshold2Supported   uint8       `yaml:"IsThreshold2Supported"`
 	_                       [5]byte
 }
 
@@ -940,9 +940,9 @@ type TempProperties struct {
 //
 // Temperature sensor threshold.
 type TempThreshold struct {
-	EnableLowToHigh uint8
-	EnableHighToLow uint8
-	Threshold       float64
+	EnableLowToHigh uint8   `yaml:"EnableLowToHigh"`
+	EnableHighToLow uint8   `yaml:"EnableHighToLow"`
+	Threshold       float64 `yaml:"Threshold"`
 }
 
 // TempConfig declared in:
@@ -953,9 +953,9 @@ type TempThreshold struct {
 type TempConfig struct {
 	stype          structureType
 	pnext          unsafe.Pointer
-	EnableCritical uint8
-	Threshold1     TempThreshold
-	Threshold2     TempThreshold
+	EnableCritical uint8         `yaml:"EnableCritical"`
+	Threshold1     TempThreshold `yaml:"Threshold1"`
+	Threshold2     TempThreshold `yaml:"Threshold2"`
 }
 
 // PowerLimitExtDesc declared in:
@@ -965,15 +965,15 @@ type TempConfig struct {
 type PowerLimitExtDesc struct {
 	stype               structureType
 	pnext               unsafe.Pointer
-	Level               PowerLevel
-	Source              PowerSource
-	LimitUnit           LimitUnit
-	EnabledStateLocked  uint8
-	Enabled             uint8
-	IntervalValueLocked uint8
-	Interval            int32
-	LimitValueLocked    uint8
-	Limit               int32
+	Level               PowerLevel  `yaml:"Level"`
+	Source              PowerSource `yaml:"Source"`
+	LimitUnit           LimitUnit   `yaml:"LimitUnit"`
+	EnabledStateLocked  uint8       `yaml:"EnabledStateLocked"`
+	Enabled             uint8       `yaml:"Enabled"`
+	IntervalValueLocked uint8       `yaml:"IntervalValueLocked"`
+	Interval            int32       `yaml:"Interval"`
+	LimitValueLocked    uint8       `yaml:"LimitValueLocked"`
+	Limit               int32       `yaml:"Limit"`
 	_                   [4]byte
 }
 
@@ -991,8 +991,8 @@ type PowerLimitExtDesc struct {
 type PowerExtProperties struct {
 	stype        structureType
 	pnext        unsafe.Pointer
-	Domain       PowerDomain
-	DefaultLimit *PowerLimitExtDesc
+	Domain       PowerDomain        `yaml:"Domain"`
+	DefaultLimit *PowerLimitExtDesc `yaml:"DefaultLimit"`
 }
 
 // EngineExtProperties declared in:
@@ -1006,7 +1006,7 @@ type PowerExtProperties struct {
 type EngineExtProperties struct {
 	stype                          structureType
 	pnext                          unsafe.Pointer
-	CountOfVirtualFunctionInstance uint32
+	CountOfVirtualFunctionInstance uint32 `yaml:"CountOfVirtualFunctionInstance"`
 	_                              [4]byte
 }
 
@@ -1018,7 +1018,7 @@ type EngineExtProperties struct {
 type DeviceEccDefaultPropertiesExt struct {
 	stype        structureType
 	pnext        unsafe.Pointer
-	DefaultState DeviceEccState
+	DefaultState DeviceEccState `yaml:"DefaultState"`
 	_            [4]byte
 }
 
@@ -1031,7 +1031,7 @@ type DeviceEccDefaultPropertiesExt struct {
 type PciLinkSpeedDowngradeExtState struct {
 	stype                       structureType
 	pnext                       unsafe.Pointer
-	PciLinkSpeedDowngradeStatus uint8
+	PciLinkSpeedDowngradeStatus uint8 `yaml:"PciLinkSpeedDowngradeStatus"`
 	_                           [7]byte
 }
 
@@ -1044,8 +1044,8 @@ type PciLinkSpeedDowngradeExtState struct {
 type PciLinkSpeedDowngradeExtProperties struct {
 	stype                     structureType
 	pnext                     unsafe.Pointer
-	PciLinkSpeedUpdateCapable uint8
-	MaxPciGenSupported        int32
+	PciLinkSpeedUpdateCapable uint8 `yaml:"PciLinkSpeedUpdateCapable"`
+	MaxPciGenSupported        int32 `yaml:"MaxPciGenSupported"`
 }
 
 // DeviceExtState declared in:
@@ -1061,7 +1061,7 @@ type PciLinkSpeedDowngradeExtProperties struct {
 type DeviceExtState struct {
 	stype structureType
 	pnext unsafe.Pointer
-	Flags DeviceStateExtFlags
+	Flags DeviceStateExtFlags `yaml:"Flags"`
 	_     [4]byte
 }
 
@@ -1076,8 +1076,8 @@ type DeviceExtState struct {
 type oemSerialIdExtProperties struct {
 	stype       structureType
 	pnext       unsafe.Pointer
-	Length      uint16
-	OemSerialId [1024]byte
+	Length      uint16     `yaml:"Length"`
+	OemSerialId [1024]byte `yaml:"OemSerialId"`
 	_           [6]byte
 }
 
@@ -1092,9 +1092,9 @@ type oemSerialIdExtProperties struct {
 type memoryVendorInfoExtProperties struct {
 	stype      structureType
 	pnext      unsafe.Pointer
-	VendorId   uint32
-	Length     uint16
-	VendorName [256]byte
+	VendorId   uint32    `yaml:"VendorId"`
+	Length     uint16    `yaml:"Length"`
+	VendorName [256]byte `yaml:"VendorName"`
 	_          [2]byte
 }
 

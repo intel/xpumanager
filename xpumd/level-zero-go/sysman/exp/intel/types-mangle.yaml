@@ -5,6 +5,7 @@
 options:
   prefix: "zes_intel"
   doxygenPath: xml/zes__intel__gpu__sysman_8h.xml
+  yamlTags: true
 
 structs:
   - name: "*"

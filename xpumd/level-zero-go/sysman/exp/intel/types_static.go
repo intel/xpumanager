@@ -53,8 +53,8 @@ type InfoLog struct {
 // by InfoLog.ReadWithMetadata.
 type InfoLogRecord struct {
 	// Metadata describes the record, e.g. the device that it originates from
-	Metadata InfoLogMetadataExp
+	Metadata InfoLogMetadataExp `yaml:"Metadata"`
 	// Data is the record itself, in the format that the InfoLogFormat property of
 	// the info log reports
-	Data []byte
+	Data []byte `yaml:"Data"`
 }

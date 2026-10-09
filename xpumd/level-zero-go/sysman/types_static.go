@@ -258,87 +258,87 @@ type OverclockControls OverclockControl
 
 // OverclockState wraps the overclocking state from zesDeviceReadOverclockState.
 type OverclockState struct {
-	Mode          OverclockMode
-	WaiverSetting bool
-	State         bool
-	PendingAction PendingAction
-	PendingReset  bool
+	Mode          OverclockMode `yaml:"Mode"`
+	WaiverSetting bool          `yaml:"WaiverSetting"`
+	State         bool          `yaml:"State"`
+	PendingAction PendingAction `yaml:"PendingAction"`
+	PendingReset  bool          `yaml:"PendingReset"`
 }
 
 // PowerUsage wraps the power readings from zesPowerGetUsage.
 type PowerUsage struct {
 	// InstantPower is the instantaneous power consumption in milliwatts.
-	InstantPower uint32
+	InstantPower uint32 `yaml:"InstantPower"`
 	// AveragePower is the average power consumption in milliwatts.
-	AveragePower uint32
+	AveragePower uint32 `yaml:"AveragePower"`
 }
 
 // ExtendedDeviceProperties wraps the device property structures from the Sysman API.
 type DeviceProperties struct {
-	DeviceBaseProperties
-	DeviceExtProperties
+	DeviceBaseProperties `yaml:",inline"`
+	DeviceExtProperties  `yaml:",inline"`
 	// OemSerialId provides the OEM serial ID of the device, if available via
 	// the OEM serial ID extension. Value is empty if not available.
-	OemSerialId string
+	OemSerialId string `yaml:"OemSerialId"`
 }
 
 // DeviceState wraps the device state structures from the Sysman API.
 type DeviceState struct {
-	DeviceBaseState
+	DeviceBaseState `yaml:",inline"`
 	// ExtendedState provides optional additional state related to the device
 	// state extension. Value is nil if not available.
-	ExtendedState *DeviceExtState
+	ExtendedState *DeviceExtState `yaml:"ExtendedState"`
 }
 
 // EccProperties wraps the device ECC property structures from the Sysman API.
 type EccProperties struct {
-	DeviceEccProperties
+	DeviceEccProperties `yaml:",inline"`
 	// ExtendedProperties provides optional additional properties that may not
 	// be supported on all devices or drivers. Value is nil if not available.
-	ExtendedProperties *DeviceEccDefaultPropertiesExt
+	ExtendedProperties *DeviceEccDefaultPropertiesExt `yaml:"ExtendedProperties"`
 }
 
 // EngineProperties wraps the engine property structures from the Sysman API.
 type EngineProperties struct {
-	EngineBaseProperties
+	EngineBaseProperties `yaml:",inline"`
 	// ExtendedProperties provides optional additional properties that may not
 	// be supported on all devices or drivers. Value is nil if not available.
-	ExtendedProperties *EngineExtProperties
+	ExtendedProperties *EngineExtProperties `yaml:"ExtendedProperties"`
 }
 
 // MemProperties wraps the memory property structures from the Sysman API.
 type MemProperties struct {
-	MemBaseProperties
+	MemBaseProperties `yaml:",inline"`
 	// VendorId provides the memory vendor ID of the memory module.
 	// Value is zero if not available or could not be determined.
-	VendorId uint32
+	VendorId uint32 `yaml:"VendorId"`
 	// VendorName provides the memory vendor name of the memory module.
 	// Value is empty if not available or could not be determined.
-	VendorName string
+	VendorName string `yaml:"VendorName"`
 }
 
 // PciProperties wraps the PCI property structures from the Sysman API.
 type PciProperties struct {
-	PciBaseProperties
+	PciBaseProperties `yaml:",inline"`
 	// LinkSpeedDowngrade provides optional additional properties related to
 	// PCIe link speed downgrade extension. Value is nil if not available.
-	LinkSpeedDowngrade *PciLinkSpeedDowngradeExtProperties
+	LinkSpeedDowngrade *PciLinkSpeedDowngradeExtProperties `yaml:"LinkSpeedDowngrade"`
 }
 
 // PciState wraps the PCI state structures from the Sysman API.
 type PciState struct {
-	PciBaseState
+	PciBaseState `yaml:",inline"`
 	// LinkSpeedDowngrade provides optional additional state related to
 	// PCIe link speed downgrade extension. Value is nil if not available.
-	LinkSpeedDowngrade *PciLinkSpeedDowngradeExtState
+	LinkSpeedDowngrade *PciLinkSpeedDowngradeExtState `yaml:"LinkSpeedDowngrade"`
 }
 
 // PowerProperties wraps the power property structures from the Sysman API.
 type PowerProperties struct {
-	PowerBaseProperties
+	PowerBaseProperties `yaml:",inline"`
 	// ExtendedProperties provides optional additional properties that may not
 	// be supported on all devices or drivers. Value is nil if not available.
-	ExtendedProperties *PowerExtProperties
+	ExtendedProperties *PowerExtProperties `yaml:"ExtendedProperties"`
 }
 
 // String representation of all set bits of OverclockDomains.

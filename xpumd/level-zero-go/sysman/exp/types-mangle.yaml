@@ -5,6 +5,7 @@
 options:
   prefix: "zes"
   doxygenPath: xml/zes__api_8h.xml
+  yamlTags: true
 
 structs:
   - name: "*"

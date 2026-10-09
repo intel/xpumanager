@@ -13,6 +13,6 @@ type rasHandle *_Ctype_struct__zes_ras_handle_t
 //
 // Extension structure for providing RAS error counters for different error sets.
 type RasStateExp struct {
-	Category     RasErrorCategoryExp
-	ErrorCounter uint64
+	Category     RasErrorCategoryExp `yaml:"Category"`
+	ErrorCounter uint64              `yaml:"ErrorCounter"`
 }

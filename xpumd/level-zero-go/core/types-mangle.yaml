@@ -5,6 +5,7 @@
 options:
   prefix: "ze"
   doxygenPath: xml/ze__api_8h.xml
+  yamlTags: true
 
 structs:
   - name: "*"

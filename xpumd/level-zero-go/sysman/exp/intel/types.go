@@ -26,10 +26,10 @@ type infoLogHandle *_Ctype_struct__zes_intel_info_log_handle_t
 type InfoLogPropertiesExp struct {
 	stype                          structureTypeExt
 	pnext                          unsafe.Pointer
-	InfoLogType                    InfoLogTypeExp
-	InfoLogFormat                  InfoLogFormat
-	MaxSize                        uint32
-	IsInstancedCollectionSupported uint8
+	InfoLogType                    InfoLogTypeExp `yaml:"InfoLogType"`
+	InfoLogFormat                  InfoLogFormat  `yaml:"InfoLogFormat"`
+	MaxSize                        uint32         `yaml:"MaxSize"`
+	IsInstancedCollectionSupported uint8          `yaml:"IsInstancedCollectionSupported"`
 	_                              [3]byte
 }
 
@@ -39,11 +39,11 @@ type InfoLogPropertiesExp struct {
 type InfoLogMetadataExp struct {
 	stype        structureTypeExt
 	pnext        unsafe.Pointer
-	Address      sysman.PciAddress
-	Uuid         sysman.Uuid
-	Timestamp    uint64
-	LengthOfData uint32
-	Offset       uint32
+	Address      sysman.PciAddress `yaml:"Address"`
+	Uuid         sysman.Uuid       `yaml:"Uuid"`
+	Timestamp    uint64            `yaml:"Timestamp"`
+	LengthOfData uint32            `yaml:"LengthOfData"`
+	Offset       uint32            `yaml:"Offset"`
 }
 
 // structureTypeExt declared in include/intel/zes_intel_gpu_sysman.h

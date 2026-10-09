@@ -10,7 +10,7 @@ import "uuid"
 //
 // Device universal unique id (UUID).
 type DeviceUuid struct {
-	Id uuid.UUID
+	Id uuid.UUID `yaml:"Id"`
 }
 
 // DeviceProperties declared in:
@@ -20,25 +20,25 @@ type DeviceUuid struct {
 type DeviceProperties struct {
 	stype                    uint32
 	pnext                    *byte
-	Type                     DeviceType
-	VendorId                 uint32
-	DeviceId                 uint32
-	Flags                    DevicePropertyFlags
-	SubdeviceId              uint32
-	CoreClockRate            uint32
-	MaxMemAllocSize          uint64
-	MaxHardwareContexts      uint32
-	MaxCommandQueuePriority  uint32
-	NumThreadsPerEU          uint32
-	PhysicalEUSimdWidth      uint32
-	NumEUsPerSubslice        uint32
-	NumSubslicesPerSlice     uint32
-	NumSlices                uint32
-	TimerResolution          uint64
-	TimestampValidBits       uint32
-	KernelTimestampValidBits uint32
-	Uuid                     DeviceUuid
-	Name                     StringProperty256
+	Type                     DeviceType          `yaml:"Type"`
+	VendorId                 uint32              `yaml:"VendorId"`
+	DeviceId                 uint32              `yaml:"DeviceId"`
+	Flags                    DevicePropertyFlags `yaml:"Flags"`
+	SubdeviceId              uint32              `yaml:"SubdeviceId"`
+	CoreClockRate            uint32              `yaml:"CoreClockRate"`
+	MaxMemAllocSize          uint64              `yaml:"MaxMemAllocSize"`
+	MaxHardwareContexts      uint32              `yaml:"MaxHardwareContexts"`
+	MaxCommandQueuePriority  uint32              `yaml:"MaxCommandQueuePriority"`
+	NumThreadsPerEU          uint32              `yaml:"NumThreadsPerEU"`
+	PhysicalEUSimdWidth      uint32              `yaml:"PhysicalEUSimdWidth"`
+	NumEUsPerSubslice        uint32              `yaml:"NumEUsPerSubslice"`
+	NumSubslicesPerSlice     uint32              `yaml:"NumSubslicesPerSlice"`
+	NumSlices                uint32              `yaml:"NumSlices"`
+	TimerResolution          uint64              `yaml:"TimerResolution"`
+	TimestampValidBits       uint32              `yaml:"TimestampValidBits"`
+	KernelTimestampValidBits uint32              `yaml:"KernelTimestampValidBits"`
+	Uuid                     DeviceUuid          `yaml:"Uuid"`
+	Name                     StringProperty256   `yaml:"Name"`
 }
 
 // DevicePropertyFlags declared in:
