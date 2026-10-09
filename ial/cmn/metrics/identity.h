@@ -225,18 +225,20 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 		{
 			.name = "pci.sub_device_id",
 			.unit = "",
-			.description = "Board number as reported by the Sysman device properties (used as the PCI sub-device slot "
-						   "identifier).",
+			.description = "PCI subsystem device id, in hex (Linux only).",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY | MetricGroup::PCI,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-				zes_device_properties_t p{};
-				p.stype = ZES_STRUCTURE_TYPE_DEVICE_PROPERTIES;
-				auto const r = d.dev->zesGetDevProps(d.zesDeviceHdl, &p);
-				if (r == ZE_RESULT_SUCCESS) {
-					out = p.boardNumber;
+				auto *p = d.dev->getPCI();
+				if (p == nullptr) {
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 				}
-				return r;
+				const auto id = getPciSubsystemDeviceId(p->getBDFStr());
+				if (!id) {
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+				}
+				out = xpum::compat::format("0x{:04X}", *id);
+				return ZE_RESULT_SUCCESS;
 			},
 		},
 	});

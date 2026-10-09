@@ -38,6 +38,7 @@ elif is_linux
     'lin/linvf.cpp',
     'lin/path_lookup.cpp',
     'lin/pci_database.cpp',
+    'lin/pci_sysfs.cpp',
     'lin/proc_fdinfo.cpp',
     'lin/process_platform.cpp',
     'lin/terminal.cpp',

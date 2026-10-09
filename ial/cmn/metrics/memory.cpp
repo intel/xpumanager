@@ -141,7 +141,8 @@ constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 		const auto dt = static_cast<double>(cache.memAfter.ts - cache.memBefore.ts);
 		const auto deltaBytes = static_cast<double>(cache.memAfter.read + cache.memAfter.write) -
 								static_cast<double>(cache.memBefore.read + cache.memBefore.write);
-		out = xpum::compat::format("{}", 100.0 * deltaBytes * 1.0e6 / dt / static_cast<double>(cache.memMaxBandwidth));
+		// Timestamps are in microseconds: 100 (percent) * 1e6 (us per s) = 1e8.
+		out = xpum::compat::format("{:.2f}", 1.0e8 * deltaBytes / dt / static_cast<double>(cache.memMaxBandwidth));
 		return ZE_RESULT_SUCCESS;
 	}};
 

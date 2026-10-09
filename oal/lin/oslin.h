@@ -27,6 +27,7 @@
 #include "crashlog_lin.h"
 #include "kernel_driver.h"
 #include "pch_prod_state.h"
+#include "pci_sysfs.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH 256

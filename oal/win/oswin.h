@@ -12,6 +12,7 @@
 #define NOMINMAX
 #include <cstdlib>
 #include <string>
+#include <string_view>
 #include <windows.h>
 #include <process.h>
 #include <conio.h>
@@ -141,6 +142,16 @@ static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -
 static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
 static inline std::vector<std::string> getDevicesSharingSlotWith(UNUSED const std::string &gpuBdf) { return {}; }
 static inline bool euMetricsSafeOnThisKernel(UNUSED std::string *unsafeKernelRelease = nullptr) { return true; }
+/**
+ * @brief Reads the PCI subsystem device ID of a device; not implemented on Windows.
+ *
+ * @param [in] bdf PCI BDF address of the device (unused)
+ * @return Always std::nullopt
+ */
+[[nodiscard]] static inline std::optional<uint16_t> getPciSubsystemDeviceId(UNUSED std::string_view bdf)
+{
+	return std::nullopt;
+}
 /**
  * @brief Whether xpu-smi may open the Level Zero sysman engine counters on this host.
  *

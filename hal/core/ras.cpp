@@ -324,7 +324,8 @@ ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vect
 	rasErrStates.clear();
 
 	if (rasHandles == nullptr || rasCount == 0) {
-		ERR("No RAS handles available to query experimental RAS state.\n");
+		// A device without RAS error sets is normal, not a failure.
+		DBG("No RAS handles available to query experimental RAS state.\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 

@@ -2,10 +2,10 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * ECC metrics: current ECC mode, correctable/uncorrectable/aggregate cache error totals,
+ * ECC metrics: current ECC mode, correctable/uncorrectable/aggregate hardware error totals,
  * and individual RAS error category counters (reset, programming, driver, cache, non-compute).
  * ecc.mode.current is a Static metric that queries the ECC HAL directly at getter time.
- * All error-count metrics are Live metrics queried from the RAS HAL.
+ * All error-count metrics are Live metrics read from the same RAS states as `xpu-smi stats -r`.
  */
 
 #include "ecc.h"
@@ -16,214 +16,145 @@
 #include <ras.h>
 #include <array>
 #include "utility/compat/format.h"
+#include <cstdint>
+#include <optional>
 #include <span>
+#include <string>
+#include <string_view>
 
 namespace metrics::ecc {
+
+bool isHardwareRasCategory(zes_ras_error_category_exp_t category) noexcept
+{
+	return category != ZES_RAS_ERROR_CATEGORY_EXP_RESET && category != ZES_RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS &&
+		   category != ZES_RAS_ERROR_CATEGORY_EXP_DRIVER_ERRORS;
+}
+
+std::optional<uint64_t> sumRasErrors(const RasStates &states, RasTypes types, RasCategoryFilter filter) noexcept
+{
+	std::optional<uint64_t> sum;
+	for (const auto &[type, entries] : states) {
+		const bool included = types == RasTypes::BOTH ||
+							  (types == RasTypes::CORRECTABLE && type == ZES_RAS_ERROR_TYPE_CORRECTABLE) ||
+							  (types == RasTypes::UNCORRECTABLE && type == ZES_RAS_ERROR_TYPE_UNCORRECTABLE);
+		if (!included) {
+			continue;
+		}
+		for (const auto &entry : entries) {
+			if (filter(entry.category)) {
+				sum = sum.value_or(0) + entry.errorCount;
+			}
+		}
+	}
+	return sum;
+}
+
+std::optional<std::string_view> eccModeName(std::optional<zes_device_ecc_state_t> sysmanState,
+											std::optional<bool> eccFlag) noexcept
+{
+	if (sysmanState) {
+		switch (*sysmanState) {
+		case ZES_DEVICE_ECC_STATE_ENABLED:
+			return "Enabled";
+		case ZES_DEVICE_ECC_STATE_DISABLED:
+			return "Disabled";
+		default:
+			return "Unavailable";
+		}
+	}
+	if (eccFlag) {
+		return *eccFlag ? "Enabled" : "Disabled";
+	}
+	return std::nullopt;
+}
 
 namespace {
 
 /**
- * @brief Reads the current ECC enable/disable state from the device ECC HAL.
+ * @brief Reads the current ECC mode, resolved the same way as discovery and config.
  *
- * Queries the ECC HAL for the current device state and maps it to a human-readable
- * string: @c "Enabled", @c "Disabled", or @c "Unavailable" for any unrecognised state.
+ * Uses the state from the ECC HAL and, when that cannot be read, whether the core device
+ * properties carry @c ZE_DEVICE_PROPERTY_FLAG_ECC; see eccModeName().
  *
- * @param[in]  d   Device to query. Must have been initialised; returns
- *                 @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if the ECC HAL sub-object
- *                 is @c nullptr.
+ * @param[in]  d   Device to query.
  * @param[out] out On success, set to @c "Enabled", @c "Disabled", or @c "Unavailable".
  *                 Unchanged on failure.
  * @param      unused Unused metric cache parameter; ECC state is always queried live.
  *
- * @retval ZE_RESULT_SUCCESS               The ECC state was read and written to @p out.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The ECC HAL sub-object is @c nullptr.
- * @retval Other                           Any error code propagated from the ECC HAL
- *                                         @c getState() call.
- *
- * @throws None — all HAL calls return @c ze_result_t error codes; no exceptions
- *                are thrown by this function.
+ * @retval ZE_RESULT_SUCCESS                   The ECC mode was written to @p out.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE Neither the ECC HAL nor the core device properties
+ *                                             could be read.
  */
 ze_result_t eccModeGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
 {
-	auto *ecc = d.dev->getECC();
-	if (ecc == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	zes_device_ecc_properties_t props{};
-	props.stype = ZES_STRUCTURE_TYPE_DEVICE_ECC_PROPERTIES;
-	auto const r = ecc->getState(d.zesDeviceHdl, &props);
-	if (r != ZE_RESULT_SUCCESS) {
-		return r;
-	}
-	switch (props.currentState) {
-	case ZES_DEVICE_ECC_STATE_ENABLED:
-		out = "Enabled";
-		break;
-	case ZES_DEVICE_ECC_STATE_DISABLED:
-		out = "Disabled";
-		break;
-	default:
-		out = "Unavailable";
-		break;
-	}
-	return ZE_RESULT_SUCCESS;
-}
-
-// Sum only the cache-error category for correctable/uncorrectable typed totals.
-// The HAL only type-filters cache errors; including other categories would make
-// both totals identical (and therefore misleading).
-/**
- * @brief Sums RAS errors for a specific cache-error type (correctable or uncorrectable).
- *
- * Queries the RAS HAL for the @c ZES_RAS_ERROR_CAT_CACHE_ERRORS category filtered by
- * @p cacheErrorType. Only cache errors are type-filtered; including other categories
- * would make correctable and uncorrectable totals identical and therefore misleading.
- *
- * @param[in]  d              Device to query. Returns @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
- *                            if the RAS HAL sub-object is @c nullptr.
- * @param[in]  cacheErrorType The error type filter: @c ZES_RAS_ERROR_TYPE_CORRECTABLE
- *                            or @c ZES_RAS_ERROR_TYPE_UNCORRECTABLE.
- * @param[out] out            On success, set to the decimal string representation of
- *                            the error count. Unchanged on failure.
- *
- * @retval ZE_RESULT_SUCCESS               The count was read and written to @p out.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The RAS HAL sub-object is @c nullptr.
- * @retval Other                           Any error code propagated from the RAS HAL
- *                                         @c getErrors() call.
- *
- * @throws None — all HAL calls return @c ze_result_t error codes; no exceptions
- *                are thrown by this function.
- */
-ze_result_t aggregateRasErrors(devInfo &d, zes_ras_error_type_t cacheErrorType, MetricValue &out)
-{
-	auto *ras = d.dev->getRAS();
-	if (ras == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	uint64_t n = 0;
-	auto const res = ras->getErrors(ZES_RAS_ERROR_CAT_CACHE_ERRORS, cacheErrorType, &n);
-	if (res == ZE_RESULT_SUCCESS) {
-		out = xpum::compat::format("{}", n);
-	}
-	return res;
-}
-
-// Sum all categories for the untyped grand total, querying correctable and
-// uncorrectable separately to avoid the undefined ZES_RAS_ERROR_TYPE_FORCE_UINT32 sentinel.
-// Categories that return UNSUPPORTED_FEATURE for one type (e.g. RESET is always
-// uncorrectable) are treated as zero for that type so accumulation continues.
-ze_result_t aggregateAllRasErrors(devInfo &d, MetricValue &out)
-{
-	auto *ras = d.dev->getRAS();
-	if (ras == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	static constexpr auto cats =
-		std::to_array<zes_ras_error_cat_t>({ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_CAT_COMPUTE_ERRORS,
-											ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_CAT_DISPLAY_ERRORS});
-	uint64_t total = 0;
-	for (const auto cat : cats) {
-		uint64_t corr = 0, uncorr = 0;
-		const auto rc = ras->getErrors(cat, ZES_RAS_ERROR_TYPE_CORRECTABLE, &corr);
-		if (rc != ZE_RESULT_SUCCESS && rc != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-			return rc;
+	std::optional<zes_device_ecc_state_t> sysmanState;
+	if (auto *ecc = d.dev->getECC(); ecc != nullptr) {
+		zes_device_ecc_properties_t props{};
+		props.stype = ZES_STRUCTURE_TYPE_DEVICE_ECC_PROPERTIES;
+		if (ecc->getState(d.zesDeviceHdl, &props) == ZE_RESULT_SUCCESS) {
+			sysmanState = props.currentState;
 		}
-		const auto ru = ras->getErrors(cat, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &uncorr);
-		if (ru != ZE_RESULT_SUCCESS && ru != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-			return ru;
-		}
-		total += corr + uncorr;
 	}
-	out = xpum::compat::format("{}", total);
+	std::optional<bool> eccFlag;
+	if (!sysmanState) {
+		ze_device_properties_t devProps{};
+		devProps.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+		if (d.dev->getDevProps(d.deviceHdl, &devProps) == ZE_RESULT_SUCCESS) {
+			eccFlag = (devProps.flags & ZE_DEVICE_PROPERTY_FLAG_ECC) != 0;
+		}
+	}
+	const auto name = eccModeName(sysmanState, eccFlag);
+	if (!name) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = std::string{*name};
 	return ZE_RESULT_SUCCESS;
 }
 
 /**
- * @brief Getter for @c ecc.errors.corrected.aggregate.total — correctable cache ECC errors.
+ * @brief Category filter matching exactly one RAS category.
  *
- * Delegates to aggregateRasErrors() with @c ZES_RAS_ERROR_TYPE_CORRECTABLE.
- *
- * @param[in]  d      Device to query.
- * @param[out] out    On success, set to the decimal string of the correctable error count.
- * @param      unused Unused metric cache parameter.
- *
- * @return @c ZE_RESULT_SUCCESS on success; error code on failure.
+ * @tparam CAT Category to match
+ * @param [in] category Category to test
+ * @return true when @p category is @p CAT
  */
-ze_result_t errCorrectedTotalGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
+template <zes_ras_error_category_exp_t CAT> bool isRasCategory(zes_ras_error_category_exp_t category) noexcept
 {
-	return aggregateRasErrors(d, ZES_RAS_ERROR_TYPE_CORRECTABLE, out);
+	return category == CAT;
 }
 
 /**
- * @brief Getter for @c ecc.errors.uncorrected.aggregate.total — uncorrectable cache ECC errors.
+ * @brief Getter for a RAS error counter: the TYPES error sets' counts for the categories FILTER selects.
  *
- * Delegates to aggregateRasErrors() with @c ZES_RAS_ERROR_TYPE_UNCORRECTABLE.
+ * Reads the same experimental RAS states as `xpu-smi stats -r`, so both commands report the same counts.
  *
+ * @tparam TYPES  Error set types to include.
+ * @tparam FILTER Categories to include.
  * @param[in]  d      Device to query.
- * @param[out] out    On success, set to the decimal string of the uncorrectable error count.
+ * @param[out] out    On success, set to the decimal sum. Unchanged on failure.
  * @param      unused Unused metric cache parameter.
  *
- * @return @c ZE_RESULT_SUCCESS on success; error code on failure.
+ * @retval ZE_RESULT_SUCCESS                   The sum was written to @p out.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The device exposes no RAS error sets, or none of them
+ *                                             reports a selected category.
+ * @retval Other                               Any other error returned while reading the RAS states.
  */
-ze_result_t errUncorrectedTotalGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
-{
-	return aggregateRasErrors(d, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, out);
-}
-
-/**
- * @brief Getter for @c ecc.errors.aggregate.total — total RAS errors across all categories.
- *
- * Delegates to aggregateAllRasErrors().
- *
- * @param[in]  d      Device to query.
- * @param[out] out    On success, set to the decimal string of the total error count.
- * @param      unused Unused metric cache parameter.
- *
- * @return @c ZE_RESULT_SUCCESS on success; error code on failure.
- */
-ze_result_t errAggregateTotalGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
-{
-	return aggregateAllRasErrors(d, out);
-}
-
-// Generic getter for a single RAS error category and explicit type (CORRECTABLE or UNCORRECTABLE).
-template <zes_ras_error_cat_t CAT, zes_ras_error_type_t TYPE>
+template <RasTypes TYPES, RasCategoryFilter FILTER>
 ze_result_t rasErrorGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
 {
-	static_assert(TYPE == ZES_RAS_ERROR_TYPE_CORRECTABLE || TYPE == ZES_RAS_ERROR_TYPE_UNCORRECTABLE,
-				  "Use rasAllTypesGetter for unfiltered totals; do not pass FORCE_UINT32");
-	auto *r = d.dev->getRAS();
-	if (r == nullptr) {
+	auto *rasHal = d.dev->getRAS();
+	if (rasHal == nullptr) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	uint64_t n = 0;
-	auto const res = r->getErrors(CAT, TYPE, &n);
-	if (res == ZE_RESULT_SUCCESS) {
-		out = xpum::compat::format("{}", n);
+	RasStates states;
+	if (const auto res = rasHal->getErrorsPerTileRasExp(states); res != ZE_RESULT_SUCCESS) {
+		return res;
 	}
-	return res;
-}
-
-// Getter for an unfiltered per-category total: sums correctable + uncorrectable.
-// Categories that only define one type (e.g. RESET) return UNSUPPORTED for the
-// other type; that is treated as zero so the sum is still correct.
-template <zes_ras_error_cat_t CAT>
-ze_result_t rasAllTypesGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
-{
-	auto *r = d.dev->getRAS();
-	if (r == nullptr) {
+	const auto sum = sumRasErrors(states, TYPES, FILTER);
+	if (!sum) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	uint64_t corr = 0, uncorr = 0;
-	const auto rc = r->getErrors(CAT, ZES_RAS_ERROR_TYPE_CORRECTABLE, &corr);
-	if (rc != ZE_RESULT_SUCCESS && rc != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-		return rc;
-	}
-	const auto ru = r->getErrors(CAT, ZES_RAS_ERROR_TYPE_UNCORRECTABLE, &uncorr);
-	if (ru != ZE_RESULT_SUCCESS && ru != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-		return ru;
-	}
-	out = xpum::compat::format("{}", corr + uncorr);
+	out = xpum::compat::format("{}", *sum);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -239,26 +170,26 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 	{
 		.name = "ecc.errors.corrected.aggregate.total",
 		.unit = "",
-		.description = "Correctable (single-bit) cache ECC errors",
+		.description = "Correctable errors across all hardware RAS categories",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = errCorrectedTotalGetter,
+		.getter = rasErrorGetter<RasTypes::CORRECTABLE, isHardwareRasCategory>,
 	},
 	{
 		.name = "ecc.errors.uncorrected.aggregate.total",
 		.unit = "",
-		.description = "Uncorrectable (double-bit) cache ECC errors",
+		.description = "Uncorrectable errors across all hardware RAS categories",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = errUncorrectedTotalGetter,
+		.getter = rasErrorGetter<RasTypes::UNCORRECTABLE, isHardwareRasCategory>,
 	},
 	{
 		.name = "ecc.errors.aggregate.total",
 		.unit = "",
-		.description = "Total ECC errors across all categories (correctable + uncorrectable)",
+		.description = "Total errors across all hardware RAS categories (correctable + uncorrectable)",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = errAggregateTotalGetter,
+		.getter = rasErrorGetter<RasTypes::BOTH, isHardwareRasCategory>,
 	},
 	{
 		.name = "ras.reset",
@@ -266,7 +197,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "GPU reset count",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_RESET>,
+		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_RESET>>,
 	},
 	{
 		.name = "ras.programming.errors",
@@ -274,7 +205,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Programming error count",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_PROGRAMMING_ERRORS>,
+		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS>>,
 	},
 	{
 		.name = "ras.driver.errors",
@@ -282,7 +213,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Driver error count",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_DRIVER_ERRORS>,
+		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_DRIVER_ERRORS>>,
 	},
 	{
 		.name = "ras.cache.errors.correctable",
@@ -290,7 +221,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Correctable cache ECC errors",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE>,
+		.getter = rasErrorGetter<RasTypes::CORRECTABLE, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS>>,
 	},
 	{
 		.name = "ras.cache.errors.uncorrectable",
@@ -298,7 +229,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Uncorrectable cache ECC errors",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_CACHE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE>,
+		.getter = rasErrorGetter<RasTypes::UNCORRECTABLE, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS>>,
 	},
 	{
 		.name = "ras.non_compute.errors.correctable",
@@ -306,7 +237,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Correctable non-compute ECC errors",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_CORRECTABLE>,
+		.getter = rasErrorGetter<RasTypes::CORRECTABLE, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS>>,
 	},
 	{
 		.name = "ras.non_compute.errors.uncorrectable",
@@ -314,7 +245,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Uncorrectable non-compute ECC errors",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasErrorGetter<ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS, ZES_RAS_ERROR_TYPE_UNCORRECTABLE>,
+		.getter = rasErrorGetter<RasTypes::UNCORRECTABLE, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS>>,
 	},
 	{
 		.name = "ras.non_compute.errors.total",
@@ -322,7 +253,7 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.description = "Non-compute error count (correctable + uncorrectable)",
 		.source = MetricSource::Live,
 		.groups = MetricGroup::ECC,
-		.getter = rasAllTypesGetter<ZES_RAS_ERROR_CAT_NON_COMPUTE_ERRORS>,
+		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS>>,
 	},
 });
 } // namespace
