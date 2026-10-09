@@ -26,6 +26,8 @@ jobs:
     permissions:
       contents: read
     timeout-minutes: 45
+    env:
+      IMAGE_TAG: coverage-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.rev }}
     steps:
       # The base branch is measured with its own tooling: the integration tests
       # need to match the code under test.
@@ -58,7 +60,7 @@ jobs:
           context: ./xpumd
           file: ./xpumd/Dockerfile
           load: true
-          tags: xpumd:coverage
+          tags: xpumd:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -73,7 +75,7 @@ jobs:
           TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
             "$(pwd)/coverage/covdata" coverage/integration-tests.cov \
             --image-repository=xpumd \
-            --image-tag=coverage \
+            --image-tag="$IMAGE_TAG" \
             --kind-load-image
 
       - name: Upload the integration test coverage profile
@@ -82,6 +84,10 @@ jobs:
           name: integration-test-coverage-${{ matrix.rev }}
           path: xpumd/coverage/integration-tests.cov
           retention-days: 7
+
+      - name: Remove the image
+        if: always()
+        run: docker image rm "xpumd:$IMAGE_TAG" || true
 
   coverage:
     needs: integration-test

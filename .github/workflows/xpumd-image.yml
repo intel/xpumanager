@@ -162,6 +162,8 @@ jobs:
   integration-test:
     runs-on: ${{ fromJson(vars.RUNS_ON_INTEGRATION_TEST || vars.RUNS_ON) }}
     timeout-minutes: 20
+    env:
+      IMAGE_TAG: integration-test-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
     - name: Check out code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -184,7 +186,7 @@ jobs:
         context: ./xpumd
         file: ./xpumd/Dockerfile
         load: true
-        tags: xpumd:integration-test
+        tags: xpumd:${{ env.IMAGE_TAG }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
@@ -202,5 +204,9 @@ jobs:
       run: |
         scripts/run-integration-tests.sh \
           --image-repository=xpumd \
-          --image-tag=integration-test \
+          --image-tag="$IMAGE_TAG" \
           --kind-load-image
+
+    - name: Remove the image
+      if: always()
+      run: docker image rm "xpumd:$IMAGE_TAG" || true
