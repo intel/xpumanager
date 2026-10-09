@@ -37,7 +37,18 @@ if [ -f Doxyfile ]; then
     "$SCRIPT_DIR/bin/doxygen"
 fi
 
-CFLAGS="-I$(realpath "$ROOT_DIR/level-zero" --relative-to .)"
+# godefs flattens typedefs to their base type, turning ze_bool_t into uint8.
+# Feed it a header copy where ze_bool_t is a struct (with the same layout/size) to keep a distinct type.
+# Reuse _obj/ which is already used by godefs and cleaned at the end of this script.
+GODEFS_INCLUDE=_obj/level-zero
+rm -rf "$GODEFS_INCLUDE"
+mkdir -p "$GODEFS_INCLUDE"
+cp -r "$ROOT_DIR"/level-zero/. "$GODEFS_INCLUDE"
+sed -i 's/^typedef uint8_t ze_bool_t;$/typedef struct _ze_bool_t { uint8_t value; } ze_bool_t;/' "$GODEFS_INCLUDE/ze_api.h"
+# Verify that the replacement worked
+grep -q "struct _ze_bool_t" "$GODEFS_INCLUDE/ze_api.h"
+
+CFLAGS="-I$GODEFS_INCLUDE"
 
 # Special case for sysman/exp/intel package, which needs to include the vendored headers
 if [ "$PACKAGE" = "sysman/exp/intel" ]; then

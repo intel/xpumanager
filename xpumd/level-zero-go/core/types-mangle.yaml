@@ -7,6 +7,10 @@ options:
   doxygenPath: xml/ze__api_8h.xml
   yamlTags: true
 
+fieldTypes:
+  - type: _Ctype_struct__ze_bool_t
+    newType: Bool
+
 structs:
   - name: "*"
     fields:
