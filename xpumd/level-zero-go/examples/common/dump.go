@@ -80,6 +80,11 @@ func stringify(v reflect.Value) (any, error) {
 		return s.String(), nil
 	}
 
+	// Handle the core.Bool type (and possible similar types with IsTrue() method)
+	if b, ok := v.Interface().(interface{ IsTrue() bool }); ok {
+		return b.IsTrue(), nil
+	}
+
 	switch v.Kind() {
 	case reflect.Struct:
 		// Convert struct to map[<field name>]value
