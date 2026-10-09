@@ -1226,15 +1226,16 @@ static double pcieBandwidthGBps(double speedGTs, int width)
  * reads the following properties directly from sysfs / SMBIOS:
  *
  *  - PCI slot label   : /sys/bus/pci/devices/<bdf>/label  (fallback: SMBIOS)
- *  - PCIe generation  : derived from upstream bridge's max_link_speed in sysfs
- *  - Max link width   : upstream bridge's max_link_width in sysfs
+ *  - PCIe generation  : derived from the slot link's max_link_speed in sysfs
+ *                       (minimum of the root port and its link partner)
+ *  - Max link width   : slot link's max_link_width in sysfs (same minimum)
  *  - Max bandwidth    : computed from speed × width × encoding efficiency
  *
  * Example values for a Gen-5 ×16 slot:
  *   pciSlot        = "PCIEX16(G5)"
  *   pcieGeneration = 5
  *   maxLinkWidth   = 16
- *   maxBandwidthGBps = 63.01
+ *   maxBandwidthGBps = 63.02
  *
  * @param pciPropsList [out] Vector to which one xeDevPciInfo entry per
  *                          discovered device is appended.
@@ -1267,49 +1268,62 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 			// --- PCI slot label ------------------------------------------------
 			info.pciSlot = getPciSlotLabel(bdf);
 
-			// --- Resolve root port BDF for accurate PCIe link attributes -----
+			// --- Resolve the slot link for accurate PCIe link attributes ------
 			// Intel Xe GPU endpoints (and PCIe switch downstream ports) may
-			// report incorrect Gen/width in their own LnkCap registers.  The
-			// root port — first BDF in the symlink path — is always configured
-			// correctly by BIOS for the physical slot.  Walk the raw symlink
-			// target components to find it:
+			// report incorrect Gen/width in their own LnkCap registers, so use
+			// the link between the root port and the card instead.  A link
+			// trains to the lower capability of its two ends, so take the
+			// minimum of the root port (first BDF in the symlink path) and its
+			// link partner (second BDF: the card's switch upstream port, or the
+			// GPU itself when it is attached directly):
 			//   ../../../../devices/pci0000:00/0000:00:06.0/0000:02:00.0/0000:03:01.0/0000:04:00.0
-			//                                               ^^^^^^^^^^^^  ← root port (first valid BDF)
-			std::string linkBdf = bdf;
+			//                                  ^^^^^^^^^^^^ ^^^^^^^^^^^^
+			//                                  root port    link partner
+			std::vector<std::string> linkBdfs;
 			for (const auto &component : targetPath) {
 				const std::string name = component.string();
-				if (isValidBdf(name) && name != bdf) {
-					linkBdf = name;
-					DBG("Using root port BDF {} for link attributes of {}\n", linkBdf.c_str(), bdf.c_str());
-					break;
+				if (isValidBdf(name)) {
+					linkBdfs.push_back(name);
+					if (linkBdfs.size() == 2)
+						break;
 				}
 			}
+			if (linkBdfs.empty())
+				linkBdfs.push_back(bdf);
 
-			// --- PCIe max link speed -------------------------------------------
-			// sysfs format: "32.0 GT/s PCIe"  →  stod stops at the first
-			// non-numeric character, giving us the GT/s value directly.
-			const std::string speedStr = getSysfsLine(linkBdf, "/max_link_speed");
 			double speedGTs = 0.0;
-			if (!speedStr.empty()) {
-				try {
-					speedGTs = std::stod(speedStr);
-				} catch (const std::exception &) {
-					ERR("Failed to parse max_link_speed for {}: \"{}\"\n", linkBdf.c_str(), speedStr.c_str());
+			info.maxLinkWidth = 0;
+			for (const auto &linkBdf : linkBdfs) {
+				DBG("Using BDF {} for link attributes of {}\n", linkBdf.c_str(), bdf.c_str());
+
+				// --- PCIe max link speed -------------------------------------
+				// sysfs format: "32.0 GT/s PCIe"  →  stod stops at the first
+				// non-numeric character, giving us the GT/s value directly.
+				const std::string speedStr = getSysfsLine(linkBdf, "/max_link_speed");
+				if (!speedStr.empty()) {
+					try {
+						const double s = std::stod(speedStr);
+						if (s > 0.0 && (speedGTs <= 0.0 || s < speedGTs))
+							speedGTs = s;
+					} catch (const std::exception &) {
+						ERR("Failed to parse max_link_speed for {}: \"{}\"\n", linkBdf.c_str(), speedStr.c_str());
+					}
+				}
+
+				// --- PCIe max link width -------------------------------------
+				// sysfs format: "16"
+				const std::string widthStr = getSysfsLine(linkBdf, "/max_link_width");
+				if (!widthStr.empty()) {
+					try {
+						const int w = std::stoi(widthStr);
+						if (w > 0 && (info.maxLinkWidth <= 0 || w < info.maxLinkWidth))
+							info.maxLinkWidth = w;
+					} catch (const std::exception &) {
+						ERR("Failed to parse max_link_width for {}: \"{}\"\n", linkBdf.c_str(), widthStr.c_str());
+					}
 				}
 			}
 			info.pcieGeneration = pcieSpeedToGeneration(speedGTs);
-
-			// --- PCIe max link width -------------------------------------------
-			// sysfs format: "16"
-			const std::string widthStr = getSysfsLine(linkBdf, "/max_link_width");
-			info.maxLinkWidth = 0;
-			if (!widthStr.empty()) {
-				try {
-					info.maxLinkWidth = std::stoi(widthStr);
-				} catch (const std::exception &) {
-					ERR("Failed to parse max_link_width for {}: \"{}\"\n", linkBdf.c_str(), widthStr.c_str());
-				}
-			}
 
 			// --- Max bandwidth (derived) ---------------------------------------
 			info.maxBandwidthGBps = pcieBandwidthGBps(speedGTs, info.maxLinkWidth);
