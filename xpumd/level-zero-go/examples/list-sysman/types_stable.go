@@ -9,10 +9,10 @@ package main
 
 // DriverInfo describes an enumerated Sysman driver.
 type DriverInfo struct {
-	BaseDriverInfo
+	BaseDriverInfo `yaml:",inline"`
 }
 
 // RasInfo describes an enumerated Sysman RAS error set.
 type RasInfo struct {
-	BaseRasInfo
+	BaseRasInfo `yaml:",inline"`
 }
