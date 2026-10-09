@@ -402,7 +402,7 @@ func TestCrashlog(t *testing.T) {
 	})
 
 	t.Run("IgnoreNonMatchingFile", func(t *testing.T) {
-		const name = "gpu-0000:00:1e.2-crash.txt" // default glob is "*.crashlog"
+		const name = "gpu-0000:00:1e.2-crash.txt" // default globs are ["*.bin", "*.crashlog"]
 		ch.writeCrashlogFile(t, crashlogData, name)
 
 		ch.assertNoCrashlogRecord(t, name, 10*time.Second)

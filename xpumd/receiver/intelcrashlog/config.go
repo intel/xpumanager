@@ -17,9 +17,9 @@ type Config struct {
 	// Must not be empty.
 	Directory string `mapstructure:"directory"`
 
-	// Glob is a filename glob pattern matched against the base name of files.
-	// Must not be empty.
-	Glob string `mapstructure:"glob"`
+	// Globs are filename glob patterns matched against the base name of files.
+	// A file is processed if it matches any of them. Must not be empty.
+	Globs []string `mapstructure:"globs"`
 
 	// IgnoreOlderThan causes files whose modification time is older than
 	// (startup_time - ignore_older_than) to be ignored.
@@ -35,11 +35,16 @@ func (c *Config) Validate() error {
 	if c.Directory == "" {
 		return fmt.Errorf("directory must not be empty")
 	}
-	if c.Glob == "" {
-		return fmt.Errorf("glob must not be empty")
+	if len(c.Globs) == 0 {
+		return fmt.Errorf("globs must not be empty")
 	}
-	if _, err := filepath.Match(c.Glob, ""); err != nil {
-		return fmt.Errorf("glob is not a valid pattern: %w", err)
+	for _, glob := range c.Globs {
+		if glob == "" {
+			return fmt.Errorf("globs must not contain empty patterns")
+		}
+		if _, err := filepath.Match(glob, ""); err != nil {
+			return fmt.Errorf("glob %q is not a valid pattern: %w", glob, err)
+		}
 	}
 
 	if c.IgnoreOlderThan < 0 {

@@ -20,35 +20,40 @@ func TestConfigValidate(t *testing.T) {
 	}{
 		{
 			name:   "minimal config",
-			config: Config{Directory: "/var/log/crashlog", Glob: "*.bin"},
+			config: Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin"}},
 		},
 		{
 			name: "all fields set",
 			config: Config{
 				Directory:       "/var/log/crashlog",
-				Glob:            "dev-*-crashlog.bin",
+				Globs:           []string{"dev-*-crashlog.bin", "*.crashlog"},
 				IgnoreOlderThan: time.Hour,
 				AddAttributes:   map[string]string{"hw.vendor": "ACME"},
 			},
 		},
 		{
 			name:      "empty directory",
-			config:    Config{Glob: "*.bin"},
+			config:    Config{Globs: []string{"*.bin"}},
 			expectErr: "directory must not be empty",
 		},
 		{
-			name:      "empty glob",
+			name:      "no globs",
 			config:    Config{Directory: "/var/log/crashlog"},
-			expectErr: "glob must not be empty",
+			expectErr: "globs must not be empty",
+		},
+		{
+			name:      "empty glob",
+			config:    Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin", ""}},
+			expectErr: "globs must not contain empty patterns",
 		},
 		{
 			name:      "malformed glob",
-			config:    Config{Directory: "/var/log/crashlog", Glob: "[a-"},
-			expectErr: "glob is not a valid pattern",
+			config:    Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin", "[a-"}},
+			expectErr: `glob "[a-" is not a valid pattern`,
 		},
 		{
 			name:      "negative ignore_older_than",
-			config:    Config{Directory: "/var/log/crashlog", Glob: "*.bin", IgnoreOlderThan: -time.Second},
+			config:    Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin"}, IgnoreOlderThan: -time.Second},
 			expectErr: "ignore_older_than must not be negative",
 		},
 	}

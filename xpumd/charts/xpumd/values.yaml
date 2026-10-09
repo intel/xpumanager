@@ -112,7 +112,6 @@ affinity: {}
 # @schema additionalProperties:false
 crashlog:
   # -- Host directory to watch for collecting GPU crash logs.
-  # Use `*` to match all files.
   directory: /var/log/crashlog
 
 

@@ -57,7 +57,7 @@ func TestReceiverFsnotify(t *testing.T) {
 	sink := &consumertest.LogsSink{}
 	startReceiver(t, &Config{
 		Directory:       dir,
-		Glob:            "*.bin",
+		Globs:           []string{"*.bin"},
 		IgnoreOlderThan: time.Minute,
 		AddAttributes:   map[string]string{"hw.vendor": "ACME", "hw.type": "gpu"},
 	}, sink)
@@ -102,7 +102,7 @@ func TestReceiverIgnoreOlderThan(t *testing.T) {
 	require.NoError(t, os.WriteFile(freshFile, []byte{0xbe, 0xef}, 0o600))
 
 	sink := &consumertest.LogsSink{}
-	startReceiver(t, &Config{Directory: dir, Glob: "*.bin", IgnoreOlderThan: time.Minute}, sink)
+	startReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin"}, IgnoreOlderThan: time.Minute}, sink)
 
 	waitForLogs(t, sink, 1)
 
@@ -114,19 +114,20 @@ func TestReceiverIgnoreOlderThan(t *testing.T) {
 	assert.Equal(t, "fresh.bin", name.AsString())
 }
 
-func TestReceiverGlob(t *testing.T) {
+func TestReceiverGlobs(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "a.bin"), []byte{0x01, 0x02}, 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "b.txt"), []byte{0x03, 0x04}, 0o600))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, "c.bin"), []byte{0x05, 0x06}, 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "d.crashlog"), []byte{0x07, 0x08}, 0o600))
 
 	sink := &consumertest.LogsSink{}
-	startReceiver(t, &Config{Directory: dir, Glob: "*.bin", IgnoreOlderThan: time.Minute}, sink)
+	startReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin", "*.crashlog"}, IgnoreOlderThan: time.Minute}, sink)
 
-	waitForLogs(t, sink, 2)
+	waitForLogs(t, sink, 3)
 
-	// b.txt must never appear; count must stay exactly at 2.
-	require.Never(t, func() bool { return sink.LogRecordCount() > 2 }, time.Second, 10*time.Millisecond)
+	// b.txt must never appear; count must stay exactly at 3.
+	require.Never(t, func() bool { return sink.LogRecordCount() > 3 }, time.Second, 10*time.Millisecond)
 
 	// Collect emitted filenames for order-independent assertions.
 	names := make(map[string]struct{})
@@ -141,6 +142,7 @@ func TestReceiverGlob(t *testing.T) {
 
 	require.Contains(t, names, "a.bin")
 	require.Contains(t, names, "c.bin")
+	require.Contains(t, names, "d.crashlog")
 	assert.NotContains(t, names, "b.txt")
 }
 
@@ -150,7 +152,7 @@ func TestReceiverDuplicatesFiles(t *testing.T) {
 	require.NoError(t, os.WriteFile(filePath, []byte{0xca, 0xfe}, 0o600))
 
 	sink := &consumertest.LogsSink{}
-	startReceiver(t, &Config{Directory: dir, Glob: "*.bin", IgnoreOlderThan: time.Minute}, sink)
+	startReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin"}, IgnoreOlderThan: time.Minute}, sink)
 
 	waitForLogs(t, sink, 1)
 
@@ -165,7 +167,7 @@ func TestReceiverDuplicatesFiles(t *testing.T) {
 func TestReceiverStartUnwatchableDirectory(t *testing.T) {
 	rcvr := createReceiver(t, &Config{
 		Directory: filepath.Join(t.TempDir(), "does-not-exist"),
-		Glob:      "*.bin",
+		Globs:     []string{"*.bin"},
 	}, &consumertest.LogsSink{})
 
 	err := rcvr.Start(context.Background(), componenttest.NewNopHost())
@@ -199,7 +201,7 @@ func TestReceiverSkippedPaths(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sink := &consumertest.LogsSink{}
-			rcvr := createReceiver(t, &Config{Directory: dir, Glob: tt.glob}, sink)
+			rcvr := createReceiver(t, &Config{Directory: dir, Globs: []string{tt.glob}}, sink)
 
 			rcvr.handlePath(context.Background(), tt.path)
 
@@ -214,7 +216,7 @@ func TestReceiverAlreadyProcessedFile(t *testing.T) {
 	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
 
 	sink := &consumertest.LogsSink{}
-	rcvr := createReceiver(t, &Config{Directory: dir, Glob: "*.bin"}, sink)
+	rcvr := createReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin"}}, sink)
 
 	rcvr.handlePath(context.Background(), path)
 	require.Equal(t, 1, sink.LogRecordCount())
@@ -229,7 +231,7 @@ func TestReceiverConsumerError(t *testing.T) {
 	path := filepath.Join(dir, "crash.bin")
 	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
 
-	rcvr := createReceiver(t, &Config{Directory: dir, Glob: "*.bin"},
+	rcvr := createReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin"}},
 		consumertest.NewErr(errors.New("downstream unavailable")))
 
 	// The error is logged rather than propagated, the file is marked as processed
@@ -256,7 +258,7 @@ func TestClosingReceiverWatcherChannels(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			core, logs := observer.New(zap.WarnLevel)
-			rcvr := createReceiver(t, &Config{Directory: t.TempDir(), Glob: "*.bin"}, &consumertest.LogsSink{})
+			rcvr := createReceiver(t, &Config{Directory: t.TempDir(), Globs: []string{"*.bin"}}, &consumertest.LogsSink{})
 			rcvr.logger = zap.New(core).Sugar()
 			// Override receiver watcher with a hand-crafted one to get control over the channels
 			watcher := &fsnotify.Watcher{Events: make(chan fsnotify.Event), Errors: make(chan error)}

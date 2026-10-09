@@ -135,13 +135,25 @@ func (r *crashlogReceiver) scanDirectory(ctx context.Context) error {
 	return nil
 }
 
+// matchesGlobs reports whether name matches any of the configured globs.
+func (r *crashlogReceiver) matchesGlobs(name string) bool {
+	for _, glob := range r.config.Globs {
+		matched, err := filepath.Match(glob, name)
+		if err != nil {
+			// NOTE: this should never happen since the globs are validated at startup, but log it just in case.
+			r.logger.Errorw("invalid glob pattern", "glob", glob, "error", err)
+			continue
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
+}
+
 // handlePath checks a filepath and processes it, if eligible.
 func (r *crashlogReceiver) handlePath(ctx context.Context, path string) {
-	if matched, err := filepath.Match(r.config.Glob, filepath.Base(path)); err != nil || !matched {
-		if err != nil {
-			// NOTE: this should never happen since the glob is validated at startup, but log it just in case.
-			r.logger.Errorw("invalid glob pattern", "glob", r.config.Glob, "error", err)
-		}
+	if !r.matchesGlobs(filepath.Base(path)) {
 		return
 	}
 

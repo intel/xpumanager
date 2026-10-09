@@ -164,7 +164,7 @@
             "type": "object",
             "properties": {
                 "directory": {
-                    "description": "Host directory to watch for collecting GPU crash logs. Use `*` to match all files.",
+                    "description": "Host directory to watch for collecting GPU crash logs.",
                     "type": "string"
                 }
             },

@@ -20,7 +20,7 @@ See the [Crash Log Framework project](https://github.com/intel/crashlog) for mor
 receivers:
   intel_crashlog:
     directory: /var/log/crashlog
-    glob: "*.crashlog"
+    globs: ["*.crashlog"]
     ignore_older_than: 10m
     add_attributes:
       hw.vendor: ACME
@@ -31,7 +31,7 @@ receivers:
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `directory` | string | *required* | Directory to watch for new crashlog files |
-| `glob` | string | *required* | Filename glob pattern matched against the base name of each file,  use `*` to match all files |
+| `globs` | []string | *required* | Filename glob patterns matched against the base name of each file, e.g. `["*.bin", "*.crashlog"]`. A file is processed if it matches any of them, use `["*"]` to match all files |
 | `ignore_older_than` | duration | `0s` | Ignore files whose modification time is older than `startup_time - ignore_older_than`. `0s` means only files modified after startup are processed |
 | `add_attributes` | map[string]string | `{}` | Static key/value attributes added to every emitted log record |
 
