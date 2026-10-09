@@ -26,10 +26,11 @@ import (
 )
 
 type config struct {
-	Options options               `yaml:"options"`
-	Structs []structRewriteConfig `yaml:"structs"`
-	Types   []typeRewriteConfig   `yaml:"types"`
-	Values  []valueRewriteConfig  `yaml:"values"`
+	Options    options                  `yaml:"options"`
+	Structs    []structRewriteConfig    `yaml:"structs"`
+	FieldTypes []fieldTypeRewriteConfig `yaml:"fieldTypes"`
+	Types      []typeRewriteConfig      `yaml:"types"`
+	Values     []valueRewriteConfig     `yaml:"values"`
 }
 
 type options struct {
@@ -37,6 +38,9 @@ type options struct {
 	Prefix string `yaml:"prefix"`
 	// DoxygenPath is the path to the Doxygen XML output file to read documentation from.
 	DoxygenPath string `yaml:"doxygenPath"`
+	// YamlTags tags exported struct fields with their Go name as the YAML key,
+	// and embedded structs with ",inline".
+	YamlTags bool `yaml:"yamlTags"`
 }
 
 // structRewriteConfig holds the configuration mangling struct types
@@ -52,6 +56,11 @@ type fieldRewriteConfig struct {
 	NewName    string `yaml:"newName"`
 	NewType    string `yaml:"newType"`
 	TypeAssert string `yaml:"typeAssert"`
+}
+
+type fieldTypeRewriteConfig struct {
+	Type    string `yaml:"type"`
+	NewType string `yaml:"newType"`
 }
 
 type typeRewriteConfig struct {
@@ -219,6 +228,10 @@ func (t *typeRewriter) handleType(genDecl *ast.GenDecl, typeSpec *ast.TypeSpec) 
 				}
 			}
 		}
+		t.rewriteFieldTypes(v)
+		if t.config.Options.YamlTags {
+			addYamlTags(v)
+		}
 	default:
 	}
 
@@ -275,6 +288,35 @@ func (s *structRewriteConfig) apply(structType *ast.StructType) error {
 		}
 	}
 	return nil
+}
+
+func (t *typeRewriter) rewriteFieldTypes(structType *ast.StructType) {
+	for _, field := range structType.Fields.List {
+		typeIdent := types.ExprString(field.Type)
+		for _, ft := range t.config.FieldTypes {
+			if typeIdent == ft.Type {
+				field.Type = ast.NewIdent(ft.NewType)
+			}
+		}
+	}
+}
+
+func addYamlTags(structType *ast.StructType) {
+	for _, field := range structType.Fields.List {
+		if field.Tag != nil {
+			continue
+		}
+		var tag string
+		switch {
+		case len(field.Names) == 0:
+			tag = ",inline"
+		case len(field.Names) == 1 && field.Names[0].IsExported():
+			tag = field.Names[0].Name
+		default:
+			continue
+		}
+		field.Tag = &ast.BasicLit{Kind: token.STRING, Value: "`yaml:\"" + tag + "\"`"}
+	}
 }
 
 func (f *fieldRewriteConfig) apply(field *ast.Field) error {
