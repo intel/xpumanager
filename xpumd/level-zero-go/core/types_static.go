@@ -42,6 +42,30 @@ func (s StringProperty256) MarshalYAML() (any, error) {
 	return s.String(), nil
 }
 
+// Bool is ze_bool_t, zero meaning false. It is encoded as a JSON and YAML boolean.
+type Bool uint8
+
+// NewBool returns the Bool of b.
+func NewBool(b bool) Bool {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// IsTrue reports whether b is non-zero.
+func (b Bool) IsTrue() bool {
+	return b != 0
+}
+
+func (b Bool) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.IsTrue())
+}
+
+func (b Bool) MarshalYAML() (any, error) {
+	return b.IsTrue(), nil
+}
+
 /* Stringers for flags types */
 
 // String representation of all set bits of DevicePropertyFlags.
