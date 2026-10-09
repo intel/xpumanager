@@ -114,7 +114,7 @@ func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-ras-error-category-exp-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-ras-error-category-exp-t
 	for _, state := range states {
 		// Report zero values only for uncorrectable error metrics.
 		if state.ErrorCounter == 0 && es.attributes.ErrorType != metadata.AttributeErrorTypeUncorrectable {

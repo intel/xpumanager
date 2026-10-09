@@ -119,7 +119,7 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-state-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-mem-state-t
 	state, err := m.GetState()
 	if err != nil {
 		m.logger.Errorw("Memory GetState() failed: mem metrics disabled", zap.Error(err), "attributes", m.attributes)
@@ -212,7 +212,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	// caller's timestamps do not match KMD timestamps)
 
 	// TODO: spec says these read & write counters are in 32-byte units:
-	// - https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-t
+	// - https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-mem-bandwidth-t
 	// Sysman devs say it could be also in 64-byte units, but (new-)XPUM
 	// C++ sources do no such multiplication...
 
@@ -239,8 +239,8 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	)
 
 	// TODO: Go bindings do not provide BW counter value width info:
-	// - Deprecated: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-ext-bandwidth-t
-	// - Experimental: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-mem-bandwidth-counter-bits-exp-properties-t
+	// - Deprecated: https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-mem-ext-bandwidth-t
+	// - Experimental: https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-mem-bandwidth-counter-bits-exp-properties-t
 	// => For now assume their values to wrap at full type width
 	timeDiff := u64CounterDiff(m.state.counter.Timestamp, counter.Timestamp)
 	rxDiff := u64CounterDiff(m.state.counter.ReadCounter, counter.ReadCounter)

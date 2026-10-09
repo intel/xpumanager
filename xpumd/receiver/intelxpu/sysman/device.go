@@ -281,7 +281,7 @@ func (d *device) init() error {
 	}
 
 	// TODO: report types & sizes of device PCI BARs?
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zesdevicepcigetbars
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zesdevicepcigetbars
 
 	// After this, enumerations do enough logging for timing info to be available at adequate granularity
 	d.logger.Debugw("Device init() state + PCI props done", "name", d.attributes.HwName, "BDF", d.attributes.PciBDF)
@@ -305,7 +305,7 @@ func (d *device) init() error {
 
 func gpuType(flags l0sysman.DevicePropertyFlags) metadata.AttributeHwGpuType {
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-property-flags-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-device-property-flags-t
 	switch {
 	case flags&l0sysman.DevicePropertyFlags(l0sysman.DEVICE_PROPERTY_FLAG_SUBDEVICE) != 0:
 		return metadata.AttributeHwGpuTypeSubdevice
@@ -322,7 +322,7 @@ func (d *device) updateEccState() error {
 	retval := error(nil)
 	var name string
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#ecc
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#ecc
 	if available, err := d.EccAvailable(); err != nil {
 		name = "unknown"
 		retval = err
@@ -458,7 +458,7 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		return
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-state-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-device-state-t
 	state, err := d.GetState()
 	if err != nil {
 		d.logger.Errorw("Device GetState() failed: device reset state metric disabled", zap.Error(err), "attributes", d.attributes)
@@ -466,7 +466,7 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		return
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-reset-reason-flags-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-reset-reason-flags-t
 	resetNeeded := state.Reset != 0
 	status.addSource(resetNeeded)
 
@@ -485,7 +485,7 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	)
 
 	// Extended (optional) device state
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-ext-state-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-device-ext-state-t
 	if state.ExtendedState != nil {
 		d.state.stateExtSeen |= state.ExtendedState.Flags
 		// "normal" is the absence of an issue, all the other flags mark a problem
@@ -520,7 +520,7 @@ func (d *device) scrapeHealthStatus(mb *metadata.MetricsBuilder, ts pcommon.Time
 		return
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-device-health-status-ext-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-device-health-status-ext-t
 	health, err := d.GetHealthStatusExt()
 	if err != nil {
 		d.logger.Errorw("Device GetHealthStatusExt() failed: device health status metric disabled", zap.Error(err), "attributes", d.attributes)
@@ -572,7 +572,7 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		return
 	}
 
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-pci-state-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-pci-state-t
 	pci, err := d.PciGetState()
 	if err != nil {
 		d.logger.Errorw("Device PciGetState() failed: PCI link state metrics disabled", zap.Error(err), "attributes", d.attributes)

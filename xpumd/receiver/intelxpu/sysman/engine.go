@@ -71,7 +71,7 @@ func newEngine(i int, metric *l0sysman.Engine, device *device) (*engine, error) 
 	}
 
 	// Note: Sysman engine type don't match to OTel "hw.gpu.task" ones => no mapping required:
-	// - Sysman: https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-group-t
+	// - Sysman: https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-engine-group-t
 	// - Otel: https://opentelemetry.io/docs/specs/semconv/hardware/gpu/#metric-hwgpuutilization
 	hwType := hwTypeString(props.Type.String())
 
@@ -90,7 +90,7 @@ func newEngine(i int, metric *l0sysman.Engine, device *device) (*engine, error) 
 }
 
 // scrape provides only engine activity ratio because L0 spec does not specify unit for the counter values:
-// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-stats-t
+// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-engine-stats-t
 func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if e.state.counter == nil {
 		// previous value failed => skip activity metrics
@@ -104,7 +104,7 @@ func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	}
 
 	// TODO: L0 spec does not provide activity counter / timestamp width info:
-	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-engine-stats-t
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-engine-stats-t
 	// => For now assume their values to wrap at full type width
 	timeDiff := u64CounterDiff(e.state.counter.Timestamp, counter.Timestamp)
 	actDiff := u64CounterDiff(e.state.counter.ActiveTime, counter.ActiveTime)

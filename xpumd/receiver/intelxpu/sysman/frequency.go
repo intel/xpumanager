@@ -282,7 +282,7 @@ func (f *frequency) pollAggregatedMetrics() {
 	f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
 	if state.Actual < 0 {
 		// A negative value indicates "not known", stop polling also in this case:
-		// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-freq-state-t
+		// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-freq-state-t
 		f.state.actual = nil
 	} else {
 		f.state.actual.add(state.Actual)

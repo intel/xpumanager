@@ -113,7 +113,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 //   - OTel timestamps are in nanoseconds and values are in base units (Joules)
 //     https://github.com/open-telemetry/opentelemetry-collector/tree/main/pdata#singular-fields
 //   - Sysman timestamps are in microseconds & counter values are in microjoules
-//     https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-power-energy-counter-t
+//     https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-power-energy-counter-t
 func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if power.state.counter == nil {
 		return

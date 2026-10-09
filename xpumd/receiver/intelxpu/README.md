@@ -98,7 +98,7 @@ receivers:
 ## GPU Events
 
 The receiver registers for all
-[Sysman events](https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api.html#zes-event-type-flags-t)
+[Sysman events](https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/driver.html#zes-event-type-flags-t)
 of every enumerated device and emits each reported event as a log record:
 
 | Field | Value |
