@@ -19,7 +19,6 @@ jobs:
   # Measure the integration test coverage, to be merged into the unit test coverage
   integration-test:
     strategy:
-      fail-fast: false
       matrix:
         rev: [base, head]
     name: Measure ${{ matrix.rev }} integration test coverage
@@ -27,9 +26,6 @@ jobs:
     permissions:
       contents: read
     timeout-minutes: 45
-    # The unit test coverage is reported without it if either side is missing
-    # (e.g. the base branch has no integration test coverage support).
-    continue-on-error: true
     steps:
       # The base branch is measured with its own tooling: the integration tests
       # need to match the code under test.
@@ -73,9 +69,6 @@ jobs:
 
       - name: Measure the integration test coverage
         working-directory: xpumd
-        # HACK: skip if the base lacks the tooling
-        # TODO: the conditional can be removed after the PR has been merged
-        if: hashFiles('xpumd/scripts/run-integration-tests-coverage.sh') != ''
         run: |
           TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
             "$(pwd)/coverage/covdata" coverage/integration-tests.cov \
@@ -127,34 +120,20 @@ jobs:
 
       - name: Download the base integration test coverage profile
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
-        continue-on-error: true
         with:
           name: integration-test-coverage-base
           path: integration-test-coverage/base
 
       - name: Download the head integration test coverage profile
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v4
-        continue-on-error: true
         with:
           name: integration-test-coverage-head
           path: integration-test-coverage/head
 
-      - name: Select the profiles to merge
-        run: |
-          for rev in base head; do
-            profile="integration-test-coverage/${rev}/integration-tests.cov"
-            if [ -f "$profile" ]; then
-              echo "MERGE_${rev^^}=${{ matrix.root-dir }}/$profile" >> "$GITHUB_ENV"
-            else
-              echo "::warning::Integration test coverage not available for $rev"
-            fi
-          done
-
       - name: Measure the coverage of the PR head
         run: |
-          # ${MERGE_HEAD:+"COVERAGE_TO_MERGE=..."} expands to nothing if MERGE_HEAD is unset/empty
-          # (see "Select the profiles to merge" above), so no extra make argument is passed then.
-          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} ${MERGE_HEAD:+"COVERAGE_TO_MERGE=$MERGE_HEAD"}
+          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} \
+            COVERAGE_TO_MERGE=${{ matrix.root-dir }}/integration-test-coverage/head/integration-tests.cov
           mv ${{ matrix.coverage-dir }} coverage-head
 
       # The base branch may have different coverage tooling (or no tooling at all)
@@ -167,8 +146,8 @@ jobs:
 
       - name: Measure the coverage of the base branch
         run: |
-          # Same conditional COVERAGE_TO_MERGE as above, for the base branch's profile.
-          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} ${MERGE_BASE:+"COVERAGE_TO_MERGE=$MERGE_BASE"}
+          ./xpumd/scripts/make-dockerized.sh ${{ matrix.make-args }} \
+            COVERAGE_TO_MERGE=${{ matrix.root-dir }}/integration-test-coverage/base/integration-tests.cov
           mv ${{ matrix.coverage-dir }} coverage-base
 
       - name: Restore the PR head
@@ -224,15 +203,13 @@ jobs:
           script: |
             const fs = require('fs');
             const marker = process.env.MARKER;
-            const prNumber = parseInt(process.env.PR_NUMBER ?? '', 10);
-            if (isNaN(prNumber) || prNumber <= 0) { core.setFailed('No valid PR number available to post a comment on.'); return; }
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
             const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner, repo: context.repo.repo, run_id: context.runId,
             });
             const artifact = artifacts.find(a => a.name === process.env.ARTIFACT);
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const link = artifact ? `\n\n[HTML reports](${runUrl}/artifacts/${artifact.id})` : '';
-            const body = `${marker}\n${fs.readFileSync('report.md', 'utf8')}${link}`;
+            const body = `${marker}\n${fs.readFileSync('report.md', 'utf8')}\n\n[HTML reports](${runUrl}/artifacts/${artifact.id})`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber,
             });
