@@ -271,7 +271,7 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - PCI device ID
    * - ``pci.sub_device_id``
      - —
-     - PCI sub-device ID
+     - PCI subsystem device ID (Linux only)
    * - ``temperature.gpu``
      - C
      - GPU core temperature
@@ -425,3 +425,8 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``fan.speed``
      - %
      - Fan speed percentage
+
+The ``ecc.errors.*`` and ``ras.*`` error counters read the same RAS categories as ``stats -r``;
+the ``ecc.errors.*`` totals add up every hardware category, i.e. all but resets, programming and
+driver errors. A counter shows ``N/A`` when the device reports none of the categories it counts, as
+opposed to ``0``, which means no errors were counted.

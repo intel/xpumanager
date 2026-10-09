@@ -70,6 +70,19 @@ if get_option('with_tests')
 
   test('kernel_driver_test', kernel_driver_test)
 
+  # PCI subsystem device ID reads against a fake sysfs tree. Compiles
+  # pci_sysfs.cpp directly so the test needs no OAL link.
+  pci_sysfs_test = executable(
+    'pci_sysfs_test',
+    ['pci_sysfs_test.cpp', '../pci_sysfs.cpp'],
+    include_directories: [global_inc, include_directories('..')],
+    dependencies: [doctest_dep, bdf_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('pci_sysfs_test', pci_sysfs_test)
+
   # VRAM manager debugfs path resolution tests. Compiles vram_debugfs.cpp
   # directly so the test needs no OAL link.
   vram_debugfs_test = executable(

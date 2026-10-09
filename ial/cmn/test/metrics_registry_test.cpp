@@ -22,8 +22,12 @@
 #include "metrics/memory.h"
 #include "metrics/pci.h"
 #include "metrics/power.h"
+#include "ze_api.h"
+#include "zes_api.h"
 #include <algorithm>
 #include <array>
+#include <cstdint>
+#include <optional>
 #include <ranges>
 #include <span>
 #include <string>
@@ -311,6 +315,13 @@ TEST_CASE("PCI group contains all pci.cpp metrics plus identity metrics tagged P
 	}
 }
 
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "pci.sub_device_id getter: UNSUPPORTED when the device has no PCI address")
+{
+	MetricValue out;
+	const MetricCache c{};
+	CHECK(findMetric("pci.sub_device_id").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+}
+
 TEST_CASE("findMetric resolves Power metric names")
 {
 	CHECK(findMetric("power.draw").has_value());
@@ -497,6 +508,117 @@ TEST_CASE("ECC group size matches getEccMetrics")
 {
 	const auto byEcc = getMetricsByGroup(MetricGroup::ECC);
 	CHECK(byEcc.size() == metrics::ecc::getEccMetrics().size());
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "ECC/RAS error counters: UNSUPPORTED, not 0, when the device has no RAS error sets")
+{
+	// Nothing is counted without an error set, so a 0 would claim an error-free device.
+	const MetricCache c{};
+	for (const auto name : std::to_array<std::string_view>(
+			 {"ecc.errors.corrected.aggregate.total", "ecc.errors.uncorrected.aggregate.total",
+			  "ecc.errors.aggregate.total", "ras.reset", "ras.programming.errors", "ras.driver.errors",
+			  "ras.cache.errors.correctable", "ras.cache.errors.uncorrectable", "ras.non_compute.errors.correctable",
+			  "ras.non_compute.errors.uncorrectable", "ras.non_compute.errors.total"})) {
+		CAPTURE(name);
+		MetricValue out;
+		CHECK(findMetric(name).value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+		CHECK(out.empty());
+	}
+}
+
+namespace {
+
+// Spelled out because a bare ecc:: also matches the HAL's global ecc class.
+using metrics::ecc::eccModeName;
+using metrics::ecc::isHardwareRasCategory;
+using metrics::ecc::RasCategoryFilter;
+using metrics::ecc::RasStates;
+using metrics::ecc::RasTypes;
+using metrics::ecc::sumRasErrors;
+
+/** @brief Category filter selecting cache errors only, for the sumRasErrors tests */
+constexpr RasCategoryFilter CACHE_ONLY = [](zes_ras_error_category_exp_t category) noexcept {
+	return category == ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS;
+};
+
+} // namespace
+
+TEST_CASE("sumRasErrors: nullopt when no selected error set reports a selected category")
+{
+	// A device whose stats -r lists no cache category.
+	const RasStates states{
+		{ZES_RAS_ERROR_TYPE_CORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS, 0, 0}}},
+		{ZES_RAS_ERROR_TYPE_UNCORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 0, 0}}},
+	};
+	CHECK_FALSE(sumRasErrors(states, RasTypes::CORRECTABLE, CACHE_ONLY).has_value());
+	CHECK_FALSE(sumRasErrors({}, RasTypes::BOTH, isHardwareRasCategory).has_value());
+}
+
+TEST_CASE("sumRasErrors: adds the selected error sets' counts for the selected category over every tile")
+{
+	const RasStates states{
+		{ZES_RAS_ERROR_TYPE_CORRECTABLE,
+		 {{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 2, 0},
+		  {ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 3, 1},
+		  {ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS, 5, 0}}},
+		{ZES_RAS_ERROR_TYPE_UNCORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 7, 0}}},
+	};
+	CHECK(sumRasErrors(states, RasTypes::CORRECTABLE, CACHE_ONLY) == uint64_t{5});
+	CHECK(sumRasErrors(states, RasTypes::UNCORRECTABLE, CACHE_ONLY) == uint64_t{7});
+	CHECK(sumRasErrors(states, RasTypes::BOTH, CACHE_ONLY) == uint64_t{12});
+}
+
+TEST_CASE("sumRasErrors: hardware totals leave out resets, programming and driver errors")
+{
+	const RasStates states{
+		{ZES_RAS_ERROR_TYPE_CORRECTABLE,
+		 {{ZES_RAS_ERROR_CATEGORY_EXP_RESET, 1, 0},
+		  {ZES_RAS_ERROR_CATEGORY_EXP_DRIVER_ERRORS, 1, 0},
+		  {ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS, 4, 0}}},
+		{ZES_RAS_ERROR_TYPE_UNCORRECTABLE,
+		 {{ZES_RAS_ERROR_CATEGORY_EXP_PROGRAMMING_ERRORS, 2, 0},
+		  {ZES_RAS_ERROR_CATEGORY_EXP_SOC_INTERNAL_ERRORS, 3, 0}}},
+	};
+	CHECK(sumRasErrors(states, RasTypes::CORRECTABLE, isHardwareRasCategory) == uint64_t{4});
+	CHECK(sumRasErrors(states, RasTypes::UNCORRECTABLE, isHardwareRasCategory) == uint64_t{3});
+	CHECK(sumRasErrors(states, RasTypes::BOTH, isHardwareRasCategory) == uint64_t{7});
+}
+
+TEST_CASE("sumRasErrors: a reported category with no errors sums to 0, not nullopt")
+{
+	const RasStates states{
+		{ZES_RAS_ERROR_TYPE_CORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_MEMORY_ERRORS, 0, 0}}},
+	};
+	CHECK(sumRasErrors(states, RasTypes::CORRECTABLE, isHardwareRasCategory) == uint64_t{0});
+}
+
+TEST_CASE("eccModeName: the Sysman state wins over the device ECC flag")
+{
+	CHECK(eccModeName(ZES_DEVICE_ECC_STATE_ENABLED, false) == "Enabled");
+	CHECK(eccModeName(ZES_DEVICE_ECC_STATE_DISABLED, true) == "Disabled");
+	CHECK(eccModeName(ZES_DEVICE_ECC_STATE_UNAVAILABLE, true) == "Unavailable");
+}
+
+TEST_CASE("eccModeName: falls back to the device ECC flag when Sysman reports no state")
+{
+	// discovery and config read the flag in this case, so ecc.mode.current must too.
+	CHECK(eccModeName(std::nullopt, false) == "Disabled");
+	CHECK(eccModeName(std::nullopt, true) == "Enabled");
+	CHECK_FALSE(eccModeName(std::nullopt, std::nullopt).has_value());
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory.bandwidth.utilization getter: rounds to two decimals")
+{
+	MetricValue out;
+	MetricCache c;
+	c.memAvail = true;
+	c.memBefore = {.read = 0, .write = 0, .ts = 1'000'000};
+	c.memAfter = {.read = 500, .write = 242, .ts = 2'000'000};
+	// 742 bytes in one second against a 1 MB/s peak is 0.0742%.
+	c.memMaxBandwidth = 1'000'000;
+	CHECK(findMetric("memory.bandwidth.utilization").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "0.07");
 }
 
 TEST_CASE("no metric is tagged with mutually exclusive groups simultaneously")
