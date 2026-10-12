@@ -8,12 +8,16 @@ package sysman
 import (
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/intel/level-zero-go/core"
 	l0sysman "github.com/intel/level-zero-go/sysman"
 )
+
+const sysfsPciDevicesPath = "/sys/bus/pci/devices"
 
 func subDeviceIdString(onSubdevice core.Bool, subdeviceId uint32) string {
 	if onSubdevice.IsTrue() {
@@ -31,6 +35,12 @@ func hwTypeString(name string) string {
 // pciBDF returns the PCI address as a domain:bus:device.function string
 func pciBDF(addr l0sysman.PciAddress) string {
 	return fmt.Sprintf("%04x:%02x:%02x.%x", addr.Domain, addr.Bus, addr.Device, addr.Function)
+}
+
+// isPciVF tells if a device is an SR-IOV virtual function.
+func isPciVF(bdf string) bool {
+	_, err := os.Lstat(filepath.Join(sysfsPciDevicesPath, bdf, "physfn"))
+	return err == nil
 }
 
 // u64CounterDiff returns diff from old to new value, assuming that if

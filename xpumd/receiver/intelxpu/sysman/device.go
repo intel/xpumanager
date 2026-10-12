@@ -201,6 +201,12 @@ func enumDevices(driver *l0sysman.Driver, logger *zap.SugaredLogger, cfg deviceC
 	devs := make([]*device, 0, len(zesDevs))
 	for i, d := range zesDevs {
 		name := fmt.Sprintf("gpu-%d", i+1) // match error log index
+		if pci, err := d.PciGetProperties(); err == nil {
+			if bdf := pciBDF(pci.Address); isPciVF(bdf) {
+				logger.Infow("Sysman device is a PCI virtual function, skipped", "name", name, "BDF", bdf)
+				continue
+			}
+		}
 		devs = append(devs, newDevice(name, d, logger, cfg))
 	}
 
