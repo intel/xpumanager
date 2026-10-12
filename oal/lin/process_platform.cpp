@@ -91,7 +91,7 @@ struct FdinfoEntry
  * @param[in]     engine  Normalised engine class from fdinfo::parseEngineKey().
  * @param[in,out] entry   sawEngineCounters is set for any parseable value;
  *                        engineFlags gains the engine's bits when that value is
- *                        non-zero.  An unparseable value leaves it untouched.
+ *                        non-zero.  An unparsable value leaves it untouched.
  */
 void accumulateEngineFlag(std::optional<uint64_t> value, std::string_view engine, FdinfoEntry &entry)
 {
