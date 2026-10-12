@@ -9,7 +9,7 @@ import os
 
 class MeteeConan(ConanFile):
     name = "metee"
-    version = "6.0.0"
+    version = "6.2.6"
     
     # Package metadata
     license = "Apache-2.0"
