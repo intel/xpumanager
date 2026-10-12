@@ -9,7 +9,7 @@ import os
 
 class IgscConan(ConanFile):
     name = "igsc"
-    version = "1.2.0"
+    version = "1.3.2"
 
     # Package metadata
     license = "Apache-2.0"
@@ -31,7 +31,7 @@ class IgscConan(ConanFile):
 
     def requirements(self):
         # IGSC depends on METEE
-        self.requires("metee/6.0.0")
+        self.requires("metee/6.2.6")
 
     def configure(self):
         if self.options.shared:

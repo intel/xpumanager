@@ -44,7 +44,7 @@ class XpumConan(ConanFile):
         if not self.options.use_system_levelzero:
             self.requires("level-zero/1.33.1")
         if not self.options.use_system_igsc:
-            self.requires("igsc/1.2.0")
+            self.requires("igsc/1.3.2")
         self.requires("nlohmann_json/3.10.2")
         if not self.options.use_system_hwloc:
             self.requires("hwloc/2.9.3")
