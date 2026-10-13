@@ -1108,14 +1108,19 @@ bool euMetricsSafeOnThisKernel(std::string *unsafeKernelRelease)
  * (engine-active-ticks / engine-total-ticks). Level Zero opens them for every engine when
  * engine groups are enumerated, before any activity is read, and keeps them until the
  * process exits. xe keeps a GT out of C6 for as long as one of them is open, and an event
- * on a media-GT engine keeps both GTs awake. On Crescent Island a held-awake media GT
- * reduces the work the primary GT delivers: a running GEMM slowed by about 25% for the
- * whole life of an xpu-smi monitoring loop. So by default none are opened, and engine
- * utilization comes from DRM fdinfo instead.
+ * on a media-GT engine keeps both GTs awake. An xpu-smi monitoring loop would therefore
+ * hold GTs awake that would otherwise idle, for its whole run, changing the power state of
+ * the device it is only meant to observe. This interaction between the monitoring path and
+ * GT power management was identified during early development on an engineering-sample
+ * SKU. There, while the media GT was held awake, the primary GT delivered a lower clock, so
+ * a compute workload running alongside the loop took longer per iteration; it returned to
+ * its normal rate as soon as the counters were closed. Other configurations measured showed
+ * little or no effect. So by default none are opened, and engine utilization comes from DRM
+ * fdinfo instead.
  *
- * @c XPU_SMI_SYSMAN_ENGINE_UTIL opts back in, accepting that cost, for example inside a
- * container: fdinfo sees only processes in this PID namespace, while the counters are
- * device-wide.
+ * @c XPU_SMI_SYSMAN_ENGINE_UTIL opts back in, accepting that side effect, for example
+ * inside a container: fdinfo sees only processes in this PID namespace, while the counters
+ * are device-wide.
  *
  * @retval true  @c XPU_SMI_SYSMAN_ENGINE_UTIL is set
  * @retval false otherwise
