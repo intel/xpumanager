@@ -93,6 +93,45 @@ func TestConfigValidate(t *testing.T) {
 			},
 			expectErr: `filter values are required for key "hw.type"`,
 		},
+		{
+			name: "valid aggregate",
+			rule: HealthRule{
+				Name:         "gpu-health",
+				SourceMetric: "hw.power",
+				States:       []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
+				Aggregate:    &AggregateRule{Function: AggregateFunctionSum, GroupBy: []string{"hw.id"}},
+			},
+		},
+		{
+			name: "missing aggregate function",
+			rule: HealthRule{
+				Name:         "gpu-health",
+				SourceMetric: "hw.power",
+				States:       []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
+				Aggregate:    &AggregateRule{GroupBy: []string{"hw.id"}},
+			},
+			expectErr: "aggregate function is required",
+		},
+		{
+			name: "invalid aggregate function",
+			rule: HealthRule{
+				Name:         "gpu-health",
+				SourceMetric: "hw.power",
+				States:       []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
+				Aggregate:    &AggregateRule{Function: "Avg"},
+			},
+			expectErr: `invalid aggregate function "Avg"`,
+		},
+		{
+			name: "empty group_by attribute",
+			rule: HealthRule{
+				Name:         "gpu-health",
+				SourceMetric: "hw.power",
+				States:       []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
+				Aggregate:    &AggregateRule{Function: AggregateFunctionSum, GroupBy: []string{"hw.id", ""}},
+			},
+			expectErr: "group_by attribute cannot be empty",
+		},
 	}
 
 	for _, tt := range tests {

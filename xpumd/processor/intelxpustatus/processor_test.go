@@ -371,6 +371,8 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 	type dataPoint struct {
 		value      float64
 		attributes map[string]any
+		// timestamp is checked only if non-zero
+		timestamp pcommon.Timestamp
 	}
 
 	tests := []struct {
@@ -660,6 +662,426 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "sum aggregation grouped by device",
+			rule: HealthRule{
+				SourceMetric:       "hw.power",
+				ParentMetric:       "hw.gpu.info",
+				ParentRefAttribute: "hw.id",
+				ComponentFilters: common.AttributeFilterList{
+					{
+						Key:      "com.intel.subdevice_id",
+						Operator: common.FilterOperatorNotIn,
+						Values:   []string{""},
+					},
+				},
+				Aggregate: &AggregateRule{
+					Function: AggregateFunctionSum,
+					GroupBy:  []string{"hw.id"},
+				},
+				CopyAttributes: []string{"hw.id", "hw.name"},
+				AddAttributes: map[string]string{
+					"hw.sensor_location": "subdevices",
+				},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+					{
+						StateName: "warning",
+						Conditions: []ConditionRule{
+							{
+								Value: 300,
+								ParentFilters: common.AttributeFilterList{
+									{
+										Key:    "pci.device_id",
+										Values: []string{"abcd"},
+									},
+								},
+							},
+							{
+								Value: 500,
+							},
+						},
+					},
+				},
+			},
+			sourceMetric: "hw.power",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 350,
+					attributes: map[string]any{
+						"hw.id":                  "gpu0",
+						"hw.name":                "power-1",
+						"com.intel.subdevice_id": "",
+					},
+				},
+				{
+					value: 100,
+					attributes: map[string]any{
+						"hw.id":                  "gpu0",
+						"hw.name":                "power-2",
+						"com.intel.subdevice_id": "0",
+					},
+				},
+				{
+					value: 200,
+					attributes: map[string]any{
+						"hw.id":                  "gpu1",
+						"hw.name":                "power-2",
+						"com.intel.subdevice_id": "0",
+					},
+				},
+				{
+					value: 300,
+					attributes: map[string]any{
+						"hw.id":                  "gpu0",
+						"hw.name":                "power-3",
+						"com.intel.subdevice_id": "1",
+					},
+				},
+				{
+					value: 250,
+					attributes: map[string]any{
+						"hw.id":                  "gpu1",
+						"hw.name":                "power-2",
+						"com.intel.subdevice_id": "1",
+					},
+				},
+			},
+			parentAttributes: map[string]map[string]any{
+				"gpu0": {"pci.device_id": "abcd"},
+				"gpu1": {"pci.device_id": "1234"},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				// gpu0: 400 W, hw.name differs between subdevices
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.id":              "gpu0",
+						"hw.name":            "",
+						"hw.sensor_location": "subdevices",
+						"hw.state":           "ok",
+					},
+				},
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.id":              "gpu0",
+						"hw.name":            "",
+						"hw.sensor_location": "subdevices",
+						"hw.state":           "warning",
+					},
+				},
+				// gpu1: 400 W, below default threshold
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.id":              "gpu1",
+						"hw.name":            "power-2",
+						"hw.sensor_location": "subdevices",
+						"hw.state":           "ok",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.id":              "gpu1",
+						"hw.name":            "power-2",
+						"hw.sensor_location": "subdevices",
+						"hw.state":           "warning",
+					},
+				},
+			},
+		},
+		{
+			name: "max aggregation uses latest timestamp",
+			rule: HealthRule{
+				SourceMetric: "hw.temperature",
+				Aggregate: &AggregateRule{
+					Function: AggregateFunctionMax,
+					GroupBy:  []string{"hw.id"},
+				},
+				CopyAttributes: []string{"hw.id"},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+					{
+						StateName: "warning",
+						Conditions: []ConditionRule{
+							{
+								Value: 80,
+							},
+						},
+					},
+				},
+			},
+			sourceMetric: "hw.temperature",
+			sourceDataPoints: []dataPoint{
+				{
+					value:     70,
+					timestamp: 2,
+					attributes: map[string]any{
+						"hw.id": "gpu0",
+					},
+				},
+				{
+					value:     85,
+					timestamp: 1,
+					attributes: map[string]any{
+						"hw.id": "gpu0",
+					},
+				},
+				{
+					value:     60,
+					timestamp: 3,
+					attributes: map[string]any{
+						"hw.id": "gpu0",
+					},
+				},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				{
+					value:     0,
+					timestamp: 3,
+					attributes: map[string]any{
+						"hw.id":    "gpu0",
+						"hw.state": "ok",
+					},
+				},
+				{
+					value:     1,
+					timestamp: 3,
+					attributes: map[string]any{
+						"hw.id":    "gpu0",
+						"hw.state": "warning",
+					},
+				},
+			},
+		},
+		{
+			name: "min aggregation",
+			rule: HealthRule{
+				SourceMetric: "hw.temperature",
+				Aggregate: &AggregateRule{
+					Function: AggregateFunctionMin,
+					GroupBy:  []string{"hw.id"},
+				},
+				CopyAttributes: []string{"hw.id"},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+					{
+						StateName: "warning",
+						Conditions: []ConditionRule{
+							{
+								Value: 65,
+							},
+						},
+					},
+				},
+			},
+			sourceMetric: "hw.temperature",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 70,
+					attributes: map[string]any{
+						"hw.id": "gpu0",
+					},
+				},
+				{
+					value: 60,
+					attributes: map[string]any{
+						"hw.id": "gpu0",
+					},
+				},
+				{
+					value: 80,
+					attributes: map[string]any{
+						"hw.id": "gpu0",
+					},
+				},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.id":    "gpu0",
+						"hw.state": "ok",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.id":    "gpu0",
+						"hw.state": "warning",
+					},
+				},
+			},
+		},
+		{
+			name: "aggregation implicitly grouped by parent",
+			rule: HealthRule{
+				SourceMetric: "hw.power",
+				Aggregate: &AggregateRule{
+					Function: AggregateFunctionSum,
+				},
+				CopyAttributes: []string{"hw.parent", "hw.type"},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+					{
+						StateName: "warning",
+						Conditions: []ConditionRule{
+							{
+								Value: 25,
+							},
+						},
+					},
+				},
+			},
+			sourceMetric: "hw.power",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 10,
+					attributes: map[string]any{
+						"hw.parent": "gpu0",
+						"hw.type":   "gpu",
+					},
+				},
+				{
+					value: 20,
+					attributes: map[string]any{
+						"hw.parent": "gpu1",
+						"hw.type":   "gpu",
+					},
+				},
+				// hw.type missing => empty in the aggregated attributes
+				{
+					value: 10,
+					attributes: map[string]any{
+						"hw.parent": "gpu1",
+					},
+				},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.parent": "gpu0",
+						"hw.type":   "gpu",
+						"hw.state":  "ok",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.parent": "gpu0",
+						"hw.type":   "gpu",
+						"hw.state":  "warning",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.parent": "gpu1",
+						"hw.type":   "",
+						"hw.state":  "ok",
+					},
+				},
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.parent": "gpu1",
+						"hw.type":   "",
+						"hw.state":  "warning",
+					},
+				},
+			},
+		},
+		{
+			name: "aggregation distinguishes non-string, empty and missing group_by values",
+			rule: HealthRule{
+				SourceMetric: "hw.power",
+				Aggregate: &AggregateRule{
+					Function: AggregateFunctionSum,
+					GroupBy:  []string{"hw.id"},
+				},
+				CopyAttributes: []string{"hw.id"},
+				States: []StateRule{
+					{
+						StateName: "warning",
+						Conditions: []ConditionRule{
+							{
+								Value: 15,
+							},
+						},
+					},
+				},
+			},
+			sourceMetric: "hw.power",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 10,
+					attributes: map[string]any{
+						"hw.id": 0,
+					},
+				},
+				{
+					value: 10,
+					attributes: map[string]any{
+						"hw.id": 1,
+					},
+				},
+				{
+					value: 10,
+					attributes: map[string]any{
+						"hw.id": "",
+					},
+				},
+				{
+					value:      10,
+					attributes: map[string]any{},
+				},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.id":    int64(0),
+						"hw.state": "warning",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.id":    int64(1),
+						"hw.state": "warning",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.id":    "",
+						"hw.state": "warning",
+					},
+				},
+				{
+					value: 0,
+					attributes: map[string]any{
+						"hw.state": "warning",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -689,6 +1111,7 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 			for _, sdp := range tt.sourceDataPoints {
 				dp := sourceDps.AppendEmpty()
 				dp.SetDoubleValue(sdp.value)
+				dp.SetTimestamp(sdp.timestamp)
 				_ = dp.Attributes().FromRaw(sdp.attributes)
 			}
 
@@ -714,12 +1137,16 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				dp := statusDps.At(i)
 
 				assert.Equal(t, expectedDp.value, float64(dp.IntValue()))
+				if expectedDp.timestamp != 0 {
+					assert.Equal(t, expectedDp.timestamp, dp.Timestamp())
+				}
 
 				attrs := dp.Attributes()
+				assert.Equal(t, len(expectedDp.attributes), attrs.Len())
 				for k, v := range expectedDp.attributes {
 					val, ok := attrs.Get(k)
 					assert.True(t, ok)
-					assert.Equal(t, v, val.Str())
+					assert.Equal(t, v, val.AsRaw())
 				}
 			}
 		})

@@ -8,6 +8,7 @@ package intelxpustatus
 import (
 	"fmt"
 	"math"
+	"slices"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -47,10 +48,31 @@ type HealthRule struct {
 	ComponentFilters common.AttributeFilterList `mapstructure:"component_filters"`
 	// Filters to apply on the parent metric.
 	ParentFilters common.AttributeFilterList `mapstructure:"parent_filters"`
+	// Aggregate the (filtered) source data points before evaluating the
+	// states. If not set, each data point is evaluated separately.
+	Aggregate *AggregateRule `mapstructure:"aggregate"`
 	// Ordered list of state rules to evaluate. All rules are evaluated, and
 	// the last matching one will be active. Thus, the rules should be ordered
 	// by increasing severity.
 	States []StateRule `mapstructure:"states"`
+}
+
+// AggregateFunction is a function for aggregating data point values.
+type AggregateFunction string
+
+const (
+	AggregateFunctionSum AggregateFunction = "Sum"
+	AggregateFunctionMin AggregateFunction = "Min"
+	AggregateFunctionMax AggregateFunction = "Max"
+)
+
+// AggregateRule defines how source data points are aggregated.
+type AggregateRule struct {
+	// Function to apply to the data points.
+	Function AggregateFunction `mapstructure:"function"`
+	// Source metric attributes to group the data points by. Data points are
+	// also implicitly grouped by their parent (ParentRefAttribute).
+	GroupBy []string `mapstructure:"group_by"`
 }
 
 // StateRule defines when to apply a specific state.
@@ -114,6 +136,34 @@ func (r *HealthRule) Validate() error {
 		return fmt.Errorf("at least one state is required")
 	}
 	return nil
+}
+
+// Validate checks if the configuration is valid.
+func (a *AggregateRule) Validate() error {
+	if slices.Contains(a.GroupBy, "") {
+		return fmt.Errorf("group_by attribute cannot be empty")
+	}
+	switch a.Function {
+	case AggregateFunctionSum, AggregateFunctionMin, AggregateFunctionMax:
+		return nil
+	case "":
+		return fmt.Errorf("aggregate function is required")
+	default:
+		return fmt.Errorf("invalid aggregate function %q", a.Function)
+	}
+}
+
+func (a *AggregateRule) apply(acc, value float64) float64 {
+	switch a.Function {
+	case AggregateFunctionSum:
+		return acc + value
+	case AggregateFunctionMin:
+		return math.Min(acc, value)
+	case AggregateFunctionMax:
+		return math.Max(acc, value)
+	default:
+		return math.NaN()
+	}
 }
 
 // Validate checks if the configuration is valid.
