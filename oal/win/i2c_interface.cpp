@@ -116,7 +116,10 @@ bool I2CInterface::openAmc(const std::string &devpath)
 							FILE_FLAG_OVERLAPPED, nullptr);
 
 	if (amchandle == INVALID_HANDLE_VALUE) {
-		ERR("Error openAmc - {}\n", GetLastError());
+		DWORD err = GetLastError();
+		busy = (err == ERROR_SHARING_VIOLATION);
+		amchandle = NULL;
+		ERR("Error openAmc - {}\n", err);
 		return false;
 	}
 

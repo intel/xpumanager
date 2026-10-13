@@ -344,6 +344,8 @@ public:
 	std::vector<pldmSensorInfo> &getSensorInfoList() { return mSensorInfoList; }
 	uint8_t oemVrsyncCmd(uint8_t cmd);
 	int fwupdProgress() { return mProgPercent; }
+	// True when initialize() failed because the AMC's I2C device is held by another process
+	bool isI2cBusy() { return i2cobj != nullptr && i2cobj->isBusy(); }
 	// pldminit() sets this, but the constructor ignores pldminit()'s failure return,
 	// so a caller polling fwupdProgress() after a failed init must not read garbage.
 	int mProgPercent = 0;

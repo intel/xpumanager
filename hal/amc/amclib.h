@@ -7,6 +7,8 @@
 #ifndef _AMCLIB_H
 #define _AMCLIB_H
 
+#include <atomic>
+#include <mutex>
 #include <vector>
 #include <string>
 #include "pldm.h"
@@ -33,9 +35,22 @@ struct amcSensorInfo
 class LIBXPUM_API amclib
 {
 private:
+	enum cardStates
+	{
+		CARD_UNINIT = 0,
+		CARD_READY,
+		CARD_FAILED
+	};
+
 	pldm **pldmobj;
 	std::vector<amcCardInfo> *amcDeviceList;
 	int numCards;
+	// Per-card lazy init state. Each card's I2C device is opened (and flock'ed) only
+	// when that card is first used, so separate processes can work on separate cards.
+	std::atomic<int> *cardState;
+	std::mutex *cardMutex;
+
+	pldm *getCard(uint32_t cardNum);
 
 public:
 	amclib();

@@ -29,6 +29,8 @@ amclib::amclib()
 	}
 
 	pldmobj = NULL;
+	cardState = nullptr;
+	cardMutex = nullptr;
 }
 
 /**
@@ -54,6 +56,11 @@ amclib::~amclib()
 		pldmobj = nullptr;
 	}
 
+	delete[] cardState;
+	cardState = nullptr;
+	delete[] cardMutex;
+	cardMutex = nullptr;
+
 	if (amcDeviceList != nullptr) {
 		delete amcDeviceList;
 		amcDeviceList = nullptr;
@@ -63,15 +70,12 @@ amclib::~amclib()
 /**
  * @brief Enumerates and initializes AMC firmware devices
  *
- * Discovers all available AMC devices in the system and creates pldm objects
- * for each device. This function must be called before any firmware operations.
+ * Discovers all available AMC devices in the system. No device is opened here;
+ * call amcInitialize() next, and each card is opened on first use.
  *
- * @return Number of AMC cards discovered and initialized, or -1 on error
- * @retval >0 Number of successfully initialized AMC devices
- * @retval -1 No devices found or initialization failed
- *
- * @note This function allocates memory for pldm objects. The destructor
- *       will handle cleanup if this function fails after partial allocation.
+ * @return Number of AMC cards discovered, or -1 on error
+ * @retval >0 Number of discovered AMC devices
+ * @retval -1 No devices found
  */
 int amclib::amcEnumFirmwares()
 {
@@ -87,51 +91,98 @@ int amclib::amcEnumFirmwares()
 }
 
 /**
- * @brief Initialize all discovered AMC devices
+ * @brief Prepare per-card state for all discovered AMC devices
  *
- * Performs initialization of pldm objects for all discovered AMC cards.
- * This is an internal function called by amcEnumFirmwares().
+ * Allocates a slot for each discovered card. No I2C device is opened here; each
+ * card's device is opened, locked and initialized by getCard() the first time that
+ * card is used. This keeps one process from locking every AMC in the system when
+ * it only needs one, so separate processes can work on separate cards concurrently.
  *
  * @return Status of initialization
- * @retval AMC_SUCCESS All devices initialized successfully
- * @retval AMC_ERROR One or more devices failed to initialize
+ * @retval AMC_SUCCESS Per-card state allocated
+ * @retval AMC_ERROR No cards enumerated
  *
- * @note This is a private member function
+ * @note amcEnumFirmwares() must be called first
  */
 int amclib::amcInitialize()
 {
 	TRACING();
 
-	pldmobj = new pldm *[numCards];
-	if (pldmobj == nullptr) {
-		ERR("Failed to allocate memory for pldm object array\n");
+	if (numCards <= 0) {
+		ERR("No AMC cards enumerated\n");
 		return AMC_ERROR;
 	}
 
-	for (int i = 0; i < numCards; ++i) {
-		DBG("############ CARD : {:02} ############\n", i);
-		pldmobj[i] = new pldm(amcDeviceList->at(i).amcDevicePath, i);
-		if (pldmobj[i] == nullptr) {
-			ERR("Failed to allocate memory for pldm object for card : {}\n", i);
-			for (int j = 0; j < i; ++j) {
-				delete pldmobj[j];
-			}
-			delete[] pldmobj;
-			pldmobj = nullptr;
-			return AMC_ERROR;
-		}
-		DBG("#####################################\n\n");
+	if (pldmobj != nullptr) {
+		return AMC_SUCCESS;
 	}
 
-	for (int i = 0; i < numCards; i++) {
-		DBG("############ CARD : {:02} ############\n", i);
-		if (pldmobj[i]->initialize() != PLDM_SUCCESS) {
-			ERR("Failed to initialize pldm Object for card: {}\n", i);
-			return AMC_ERROR;
-		}
-		DBG("#####################################\n");
+	pldmobj = new pldm *[numCards]();
+	cardState = new std::atomic<int>[numCards];
+	cardMutex = new std::mutex[numCards];
+	for (int i = 0; i < numCards; ++i) {
+		cardState[i].store(CARD_UNINIT);
 	}
 	return AMC_SUCCESS;
+}
+
+/**
+ * @brief Get the initialized pldm object for a card, initializing it on first use
+ *
+ * Opens the card's I2C device and runs the MCTP/PLDM init sequence the first time
+ * a card is requested. Thread safe; once a card is ready this is a lock-free lookup.
+ *
+ * If the device is locked by another process the card is left uninitialized so a
+ * later call can retry. Any other init failure is remembered, so a broken card is
+ * not re-probed on every call.
+ *
+ * @param cardNum Zero-based index of the AMC card
+ *
+ * @return Pointer to the card's pldm object, or nullptr if it is unavailable
+ */
+pldm *amclib::getCard(uint32_t cardNum)
+{
+	if (pldmobj == nullptr) {
+		ERR("PLDM objects not initialized\n");
+		return nullptr;
+	}
+	if (cardNum >= static_cast<uint32_t>(numCards)) {
+		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
+		return nullptr;
+	}
+
+	if (cardState[cardNum].load(std::memory_order_acquire) == CARD_READY) {
+		return pldmobj[cardNum];
+	}
+
+	std::lock_guard<std::mutex> lock(cardMutex[cardNum]);
+	int state = cardState[cardNum].load(std::memory_order_relaxed);
+	if (state == CARD_READY) {
+		return pldmobj[cardNum];
+	}
+	if (state == CARD_FAILED) {
+		ERR("AMC card {} failed to initialize earlier\n", cardNum);
+		return nullptr;
+	}
+
+	DBG("############ CARD : {:02} ############\n", cardNum);
+	pldm *card = new pldm(amcDeviceList->at(cardNum).amcDevicePath, cardNum);
+	if (card->initialize() == PLDM_SUCCESS) {
+		pldmobj[cardNum] = card;
+		cardState[cardNum].store(CARD_READY, std::memory_order_release);
+		DBG("#####################################\n");
+		return card;
+	}
+
+	if (card->isI2cBusy()) {
+		ERR("AMC card {} is in use by another process\n", cardNum);
+	} else {
+		ERR("Failed to initialize pldm Object for card: {}\n", cardNum);
+		cardState[cardNum].store(CARD_FAILED, std::memory_order_relaxed);
+	}
+	// Deleting the object closes the I2C device and releases its lock
+	delete card;
+	return nullptr;
 }
 
 /**
@@ -155,11 +206,11 @@ int amclib::amcInitialize()
 int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath, uint16_t compIdFilter)
 {
 	TRACING();
-	if (!pldmobj) {
-		ERR("PLDM objects not initialized\n");
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
-	int ret = pldmobj[cardNum]->fwupd(pkgFilePath, compIdFilter);
+	int ret = card->fwupd(pkgFilePath, compIdFilter);
 	return (ret == PLDM_SUCCESS) ? AMC_SUCCESS : AMC_ERROR;
 }
 
@@ -181,15 +232,11 @@ int amclib::amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath, uint16_t
 int amclib::amcSetForceUpdate(uint32_t cardNum, bool forceUpdate)
 {
 	TRACING();
-	if (!pldmobj) {
-		ERR("PLDM objects not initialized\n");
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
-	if (cardNum >= (uint32_t)numCards) {
-		ERR("Invalid cardNum specified: {}. Max cards: {}\n", cardNum, numCards);
-		return AMC_ERROR;
-	}
-	pldmobj[cardNum]->setForceUpdate(forceUpdate);
+	card->setForceUpdate(forceUpdate);
 	return AMC_SUCCESS;
 }
 
@@ -208,15 +255,11 @@ int amclib::amcSetForceUpdate(uint32_t cardNum, bool forceUpdate)
 int amclib::amcFirmwareProgress(uint32_t cardNum)
 {
 	TRACING();
-	if (cardNum >= (uint32_t)numCards) {
-		ERR("Invalid cardNum specified: {}. Max cards: {}\n", cardNum, numCards);
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return -1;
 	}
-	if (!pldmobj) {
-		ERR("PLDM objects not initialized\n");
-		return -1;
-	}
-	return pldmobj[cardNum]->fwupdProgress();
+	return card->fwupdProgress();
 }
 
 /**
@@ -312,17 +355,21 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 {
 	TRACING();
 
-	if (!pldmobj || !pldmobj[cardIndex]) {
-		ERR("PLDM object not initialized for card index: {}\n", cardIndex);
+	if (cardIndex < 0) {
+		ERR("Invalid card index: {}\n", cardIndex);
+		return AMC_ERROR;
+	}
+	pldm *card = getCard(static_cast<uint32_t>(cardIndex));
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
 
-	uint8_t ret = pldmobj[cardIndex]->getSensorInfoById(sensorId);
+	uint8_t ret = card->getSensorInfoById(sensorId);
 	if (ret != PLDM_SUCCESS) {
 		ERR("Failed to get sensor info for sensor ID {} on card index {}\n", sensorId, cardIndex);
 		return AMC_ERROR;
 	}
-	std::vector<pldmSensorInfo> &sensorInfoList = pldmobj[cardIndex]->getSensorInfoList();
+	std::vector<pldmSensorInfo> &sensorInfoList = card->getSensorInfoList();
 	for (const auto &sensor : sensorInfoList) {
 		if (sensor.sensorId == sensorId) {
 			amcSensorInfo info;
@@ -353,7 +400,8 @@ int amclib::oemVrsync(uint8_t cmd)
 {
 	TRACING();
 	for (int i = 0; i < numCards; i++) {
-		if (pldmobj[i]->oemVrsyncCmd(cmd) != PLDM_SUCCESS) {
+		pldm *card = getCard(i);
+		if (card == nullptr || card->oemVrsyncCmd(cmd) != PLDM_SUCCESS) {
 			ERR("Failed to perform VRSync for card : {}\n", i);
 			return AMC_ERROR;
 		}
@@ -384,25 +432,18 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 {
 	TRACING();
 
-	// Validate card number is within valid range
-	if (cardNum >= numCards) {
-		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
-		return AMC_ERROR;
-	}
-
-	// Ensure PLDM object exists for the specified card
-	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card {}\n", cardNum);
-		return AMC_ERROR;
-	}
-
 	if (bufferSize == nullptr) {
 		ERR("Buffer size parameter cannot be null\n");
 		return AMC_ERROR;
 	}
 
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
+		return AMC_ERROR;
+	}
+
 	// Call the underlying PLDM function directly
-	if (pldmobj[cardNum]->getFruSerialNum(serialNum, *bufferSize) != PLDM_SUCCESS) {
+	if (card->getFruSerialNum(serialNum, *bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get serial number for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
@@ -433,13 +474,8 @@ int amclib::amcGetPartNumber(uint8_t cardNum, char *partNum, size_t *bufferSize)
 {
 	TRACING();
 
-	if (cardNum >= numCards) {
-		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
-		return AMC_ERROR;
-	}
-
-	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card {}\n", cardNum);
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
 
@@ -448,7 +484,7 @@ int amclib::amcGetPartNumber(uint8_t cardNum, char *partNum, size_t *bufferSize)
 		return AMC_ERROR;
 	}
 
-	if (pldmobj[cardNum]->getFruPartNum(partNum, *bufferSize) != PLDM_SUCCESS) {
+	if (card->getFruPartNum(partNum, *bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get part number for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
@@ -483,20 +519,13 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 {
 	TRACING();
 
-	// Validate card number is within valid range
-	if (cardNum >= numCards) {
-		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
-		return AMC_ERROR;
-	}
-
-	// Ensure PLDM object exists for the specified card
-	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card {}\n", cardNum);
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
 
 	// Call the underlying PLDM function directly
-	if (pldmobj[cardNum]->getAmcVersion(amcVersion, bufferSize) != PLDM_SUCCESS) {
+	if (card->getAmcVersion(amcVersion, bufferSize) != PLDM_SUCCESS) {
 		ERR("Failed to get version for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
@@ -525,13 +554,8 @@ int amclib::amcGetTdp(uint8_t cardNum, char *tdp, size_t *bufferSize)
 {
 	TRACING();
 
-	if (cardNum >= numCards) {
-		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
-		return AMC_ERROR;
-	}
-
-	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card {}\n", cardNum);
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
 
@@ -540,7 +564,7 @@ int amclib::amcGetTdp(uint8_t cardNum, char *tdp, size_t *bufferSize)
 		return AMC_ERROR;
 	}
 
-	if (pldmobj[cardNum]->getFruTdp(tdp, *bufferSize) != PLDM_SUCCESS) {
+	if (card->getFruTdp(tdp, *bufferSize) != PLDM_SUCCESS) {
 		DBG("TDP not available for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
@@ -568,20 +592,15 @@ int amclib::amcGpuReset(uint32_t cardNum)
 {
 	TRACING();
 
-	if (cardNum >= static_cast<uint32_t>(numCards)) {
-		ERR("Invalid card number {} (valid range: 0-{})\n", cardNum, numCards - 1);
-		return AMC_ERROR;
-	}
-
-	if (pldmobj[cardNum] == nullptr) {
-		ERR("PLDM object not initialized for card {}\n", cardNum);
+	pldm *card = getCard(cardNum);
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
 
 	DBG("Initiating AMC reset for card {}\n", cardNum);
 
 	// Execute the AMC reset command
-	if (pldmobj[cardNum]->amcGpuReset() != PLDM_SUCCESS) {
+	if (card->amcGpuReset() != PLDM_SUCCESS) {
 		ERR("Failed to reset AMC for card {}\n", cardNum);
 		return AMC_ERROR;
 	}
@@ -610,16 +629,15 @@ int amclib::amcReadFile(int deviceIndex, uint16_t filePdrId, std::vector<uint8_t
 {
 	TRACING();
 
-	if (deviceIndex < 0 || deviceIndex >= numCards) {
-		ERR("Invalid device index {} (valid range: 0-{})\n", deviceIndex, numCards - 1);
+	if (deviceIndex < 0) {
+		ERR("Invalid device index: {}\n", deviceIndex);
+		return AMC_ERROR;
+	}
+	pldm *card = getCard(static_cast<uint32_t>(deviceIndex));
+	if (card == nullptr) {
 		return AMC_ERROR;
 	}
 
-	if (!pldmobj || !pldmobj[deviceIndex]) {
-		ERR("PLDM object not initialized for device index: {}\n", deviceIndex);
-		return AMC_ERROR;
-	}
-
-	int ret = pldmobj[deviceIndex]->getFile(filePdrId, fileData);
+	int ret = card->getFile(filePdrId, fileData);
 	return (ret == PLDM_SUCCESS) ? AMC_SUCCESS : AMC_ERROR;
 }

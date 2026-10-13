@@ -101,9 +101,10 @@ amcupd::~amcupd()
 /*
  * @brief Initialize AMC devices
  *
- * This function initializes the AMC devices by calling the amcInitialize()
- * method of the amclib instance. It ensures that initialization is performed
- * only once across all threads using std::call_once.
+ * This function prepares per-card AMC state by calling the amcInitialize()
+ * method of the amclib instance. It ensures that this is performed only once
+ * across all threads using std::call_once. Each card's I2C device is opened
+ * lazily by amclib the first time that card is used.
  *
  * @return ze_result_t ZE_RESULT_SUCCESS on successful initialization,
  *                     ZE_RESULT_ERROR_UNKNOWN if initialization fails

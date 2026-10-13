@@ -32,6 +32,8 @@ private:
 	int amchandle;
 #endif
 	bool init;
+	// Set when openAmc() fails because another process already holds the device
+	bool busy = false;
 	bool open_amc_peripheral();
 
 public:
@@ -43,6 +45,7 @@ public:
 	bool readAmc(void *readBuffer, size_t readSize);
 	bool closeAmc();
 	bool isInit() { return init; }
+	bool isBusy() { return busy; }
 };
 
 #endif // _I2C_INTERFACE_H
