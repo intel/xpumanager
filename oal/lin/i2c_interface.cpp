@@ -123,6 +123,7 @@ bool I2CInterface::openAmc(const std::string &devpath)
 		return false;
 	}
 	if (::flock(amchandle, LOCK_EX | LOCK_NB) < 0) {
+		busy = (errno == EWOULDBLOCK);
 		ERR("Failed to acquire exclusive lock on I2C device {} with error: {}\n", devpath.c_str(), strerror(errno));
 		close(amchandle);
 		amchandle = -1;
