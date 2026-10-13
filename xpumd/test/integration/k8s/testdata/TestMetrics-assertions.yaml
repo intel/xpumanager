@@ -69,7 +69,7 @@ common:
         hw_memory_demand_paging: "false"
         hw_model: "Super 3000"
         hw_name: gpu-1
-        hw_serial_number: SN-0001
+        hw_serial_number: OEM-0001
         hw_vendor: "ACME Inc."
         pci_device_id: 0bd5
         pci_lanes: "16"

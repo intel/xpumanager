@@ -10,6 +10,8 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_device_health"
         Version: 65536
+      - Name: "ZES_extension_oem_serial_id"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -21,7 +23,8 @@ Drivers:
           NumSubdevices: 2
           ModelName: "Super 3000"
           VendorName: "ACME Inc."
-          SerialNumber: "SN-0001"
+          SerialNumber: "unknown"
+          OemSerialId: "OEM-0001"
           Flags: 1  # ZES_DEVICE_PROPERTY_FLAG_INTEGRATED
 
         State:

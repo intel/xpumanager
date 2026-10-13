@@ -203,6 +203,13 @@ func (d *device) init() error {
 		return fmt.Errorf("device GetProperties() failed: %w", err)
 	}
 
+	serialNumber := props.SerialNumber.String()
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/device-2.html#zes-device-properties-t
+	if serialNumber == "unknown" && props.OemSerialId != "" {
+		// xpu-smi fallbacks to OEM ID
+		serialNumber = props.OemSerialId
+	}
+
 	// Preserve name fields assigned at construction, refresh everything else.
 	d.attributes = deviceAttributes{
 		HwName:    d.attributes.HwName,
@@ -212,7 +219,7 @@ func (d *device) init() error {
 		PciDeviceID:          fmt.Sprintf("%04x", props.Core.DeviceId),
 		PciVendorID:          fmt.Sprintf("%04x", props.Core.VendorId),
 		HwModel:              props.ModelName.String(),
-		HwSerialNumber:       props.SerialNumber.String(),
+		HwSerialNumber:       serialNumber,
 		HwVendor:             props.VendorName.String(),
 		SubdeviceCount:       int64(props.NumSubdevices),
 		HwGpuType:            gpuType(props.Flags),
