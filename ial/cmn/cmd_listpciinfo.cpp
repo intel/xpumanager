@@ -85,11 +85,15 @@ void ListgpuTextPrinter::print(nlohmann::ordered_json *jsonObj)
 
 	for (auto &item : (*jsonObj)["bdf_device_list"]) {
 		const std::string slot = item["pci_slot"].get<std::string>();
-		const int gen = item["pcie_generation"].get<int>();
-		const int width = item["max_link_width"].get<int>();
-		const double bw = item["max_bandwidth_gbps"].get<double>();
-		table.addRow(item["bdf"].get<std::string>(), slot.empty() ? "N/A" : slot, gen > 0 ? std::to_string(gen) : "N/A",
-					 width > 0 ? std::to_string(width) : "N/A", bw > 0.0 ? xpum::compat::format("{:.2f}", bw) : "N/A");
+
+		auto intField = [](const nlohmann::ordered_json &v) -> std::string {
+			return v.is_number() && v.get<int>() > 0 ? std::to_string(v.get<int>()) : "N/A";
+		};
+		auto dblField = [](const nlohmann::ordered_json &v) -> std::string {
+			return v.is_number() && v.get<double>() > 0.0 ? xpum::compat::format("{:.2f}", v.get<double>()) : "N/A";
+		};
+		table.addRow(item["bdf"].get<std::string>(), slot.empty() ? "N/A" : slot, intField(item["pcie_generation"]),
+					 intField(item["max_link_width"]), dblField(item["max_bandwidth_gbps"]));
 	}
 
 	PRINT("{}", table.toString());
