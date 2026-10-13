@@ -89,9 +89,9 @@ func TestConfigValidate(t *testing.T) {
 				Name:          "gpu-health",
 				SourceMetric:  "hw.temperature",
 				States:        []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
-				ParentFilters: common.AttributeFilterList{{Key: "hw.type", Values: []string{""}}},
+				ParentFilters: common.AttributeFilterList{{Key: "hw.type"}},
 			},
-			expectErr: `filter value cannot be empty for key "hw.type"`,
+			expectErr: `filter values are required for key "hw.type"`,
 		},
 	}
 

@@ -17,7 +17,7 @@ func TestAttributeFilter(t *testing.T) {
 	tests := []struct {
 		name        string
 		filter      AttributeFilter
-		attrs       map[string]string
+		attrs       map[string]any
 		expectMatch bool
 	}{
 		{
@@ -26,7 +26,7 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.type",
 				Values: []string{"gpu"},
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"hw.type": "gpu",
 			},
 			expectMatch: true,
@@ -37,7 +37,7 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.type",
 				Values: []string{"gpu", "cpu", "memory"},
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"hw.type": "cpu",
 			},
 			expectMatch: true,
@@ -48,7 +48,7 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.type",
 				Values: []string{"gpu"},
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"hw.type": "cpu",
 			},
 			expectMatch: false,
@@ -59,7 +59,7 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.type",
 				Values: []string{"gpu"},
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"other.key": "value",
 			},
 			expectMatch: false,
@@ -70,7 +70,7 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.type",
 				Values: []string{"GPU"},
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"hw.type": "gpu",
 			},
 			expectMatch: false,
@@ -81,7 +81,7 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.vendor",
 				Values: []string{"acme"},
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"hw.type":            "gpu",
 				"hw.vendor":          "acme",
 				"hw.sensor_location": "memory",
@@ -94,11 +94,88 @@ func TestAttributeFilter(t *testing.T) {
 				Key:    "hw.vendor",
 				Values: []string{"memory"}, // another attr has the wanted value, but on the wrong key
 			},
-			attrs: map[string]string{
+			attrs: map[string]any{
 				"hw.type":            "cpu",
 				"hw.vendor":          "acme",
 				"hw.sensor_location": "memory",
 			},
+			expectMatch: false,
+		},
+		{
+			name: "empty value",
+			filter: AttributeFilter{
+				Key:    "com.intel.subdevice_id",
+				Values: []string{""},
+			},
+			attrs:       map[string]any{"com.intel.subdevice_id": ""},
+			expectMatch: true,
+		},
+		{
+			name: "empty value, key not present",
+			filter: AttributeFilter{
+				Key:    "com.intel.subdevice_id",
+				Values: []string{""},
+			},
+			attrs:       map[string]any{"hw.type": "gpu"},
+			expectMatch: false,
+		},
+		{
+			name: "explicit In operator",
+			filter: AttributeFilter{
+				Key:      "hw.type",
+				Operator: FilterOperatorIn,
+				Values:   []string{"gpu"},
+			},
+			attrs:       map[string]any{"hw.type": "gpu"},
+			expectMatch: true,
+		},
+		{
+			name: "NotIn, match",
+			filter: AttributeFilter{
+				Key:      "hw.type",
+				Operator: FilterOperatorNotIn,
+				Values:   []string{"cpu", "memory"},
+			},
+			attrs:       map[string]any{"hw.type": "gpu"},
+			expectMatch: true,
+		},
+		{
+			name: "NotIn, no match",
+			filter: AttributeFilter{
+				Key:      "hw.type",
+				Operator: FilterOperatorNotIn,
+				Values:   []string{"cpu", "gpu"},
+			},
+			attrs:       map[string]any{"hw.type": "gpu"},
+			expectMatch: false,
+		},
+		{
+			name: "NotIn, key not present",
+			filter: AttributeFilter{
+				Key:      "hw.type",
+				Operator: FilterOperatorNotIn,
+				Values:   []string{"gpu"},
+			},
+			attrs:       map[string]any{"other.key": "value"},
+			expectMatch: true,
+		},
+		{
+			name: "int attribute matching value as string",
+			filter: AttributeFilter{
+				Key:    "com.intel.subdevice_count",
+				Values: []string{"2"},
+			},
+			attrs:       map[string]any{"com.intel.subdevice_count": 2},
+			expectMatch: true,
+		},
+		{
+			name: "unknown operator never matches",
+			filter: AttributeFilter{
+				Key:      "hw.type",
+				Operator: "Foo",
+				Values:   []string{"gpu"},
+			},
+			attrs:       map[string]any{"hw.type": "gpu"},
 			expectMatch: false,
 		},
 	}
@@ -106,9 +183,7 @@ func TestAttributeFilter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			attrs := pcommon.NewMap()
-			for k, v := range tt.attrs {
-				attrs.PutStr(k, v)
-			}
+			assert.NoError(t, attrs.FromRaw(tt.attrs))
 			got := tt.filter.Match(attrs)
 			if got != tt.expectMatch {
 				t.Errorf("AttributeFilter.Match() = %v, want %v", got, tt.expectMatch)
@@ -221,7 +296,20 @@ func TestAttributeFilterList_Validate(t *testing.T) {
 		{
 			name:    "empty value",
 			filters: AttributeFilterList{{Key: "hw.type", Values: []string{""}}},
-			wantErr: `filter value cannot be empty for key "hw.type"`,
+		},
+		{
+			name:    "no values",
+			filters: AttributeFilterList{{Key: "hw.type"}},
+			wantErr: `filter values are required for key "hw.type"`,
+		},
+		{
+			name:    "NotIn operator",
+			filters: AttributeFilterList{{Key: "hw.type", Operator: FilterOperatorNotIn, Values: []string{"gpu"}}},
+		},
+		{
+			name:    "invalid operator",
+			filters: AttributeFilterList{{Key: "hw.type", Operator: "Exists", Values: []string{"gpu"}}},
+			wantErr: `invalid filter operator "Exists" for key "hw.type"`,
 		},
 		{
 			name: "multiple filters, all valid",

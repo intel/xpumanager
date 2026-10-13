@@ -88,7 +88,8 @@ component_filters:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `key` | string | Attribute key to filter on |
-| `values` | []string | Attribute values to match (logical OR) |
+| `operator` | string | `In` (default): attribute exists and its value is one of `values`. `NotIn`: attribute is missing or its value is none of `values` |
+| `values` | []string | Attribute values to match against. At least one is required |
 
 #### StateRule
 
