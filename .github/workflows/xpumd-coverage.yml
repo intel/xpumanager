@@ -99,7 +99,7 @@ jobs:
             --kind-load-image
 
       - name: Upload the integration test coverage profile
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: integration-test-coverage-${{ matrix.rev }}
           path: xpumd/coverage/integration-tests.cov
@@ -193,7 +193,7 @@ jobs:
           cat report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the report and the HTML reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-${{ matrix.name }}
           path: |
