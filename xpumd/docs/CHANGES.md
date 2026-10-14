@@ -13,6 +13,13 @@ Contents:
     * [XPUM 1.x](#xpum-1x)
 
 
+## XPUM 2.x.x
+
+* Breaking changes (for the XPUMD config):
+  * `intel_crashlog` receiver `glob` option replaced by `globs` list, to support multiple filename patterns
+    * **Action required:** if custom config is used, the `glob: "<pattern>"` needs to be updated to `globs: ["<pattern>"]`
+
+
 ## XPUM 2.3.0
 
 * Breaking changes (for the XPUMD metrics):
@@ -20,9 +27,6 @@ Contents:
     * **Action required:** `hw_status{hw_type="gpu",hw_state="ecc_<state>"}` queries need to be updated to `hw_gpu_ecc_state{hw_state="<state>"}`
   * `hw.memory.ecc` attribute of the `hw.gpu.info` metric renamed to `hw.gpu.ecc.support` (to match the new ECC state metric)
     * **Action required:** `hw_gpu_info{hw_memory_ecc=...}` queries need to be updated to `hw_gpu_info{hw_gpu_ecc_support=...}`
-* Breaking changes (for the XPUMD config):
-  * `intel_crashlog` receiver `glob` option replaced by `globs` list, to support multiple filename patterns
-    * **Action required:** if custom config is used, the `glob: "<pattern>"` needs to be updated to `globs: ["<pattern>"]`
 * XPUMD metrics:
   * New `ok` state for the GPU device in the `hw.status` metric
     * `hw_status{hw_type="gpu",hw_state="ok"}` aggregates the device level GPU states
