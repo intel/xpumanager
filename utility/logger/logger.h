@@ -19,6 +19,7 @@
 #include <iostream>
 #include <memory>
 #include <source_location>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -54,6 +55,13 @@ class Logger final
 
 	/// Policy for format errors (vformat throws); default is Report.
 	std::atomic<FormatErrorPolicy> fmtPolicy{FormatErrorPolicy::Report};
+
+	/// Text written once to each diagnostic sink ahead of its first record while
+	/// DBG is enabled; nullptr means no banner. Kept so setSink() can re-arm it.
+	std::atomic<std::shared_ptr<const std::string>> banner;
+	/// The banner still owed to the active sink, or nullptr once written. Claiming
+	/// it and reading its text are one exchange(), so they cannot disagree.
+	std::atomic<std::shared_ptr<const std::string>> pendingBanner;
 
 	// OStreamSink borrows std::cerr by reference; std::cerr outlives the
 	// singleton because <iostream> guarantees ios_base::Init construction.
@@ -94,6 +102,27 @@ class Logger final
 		}
 	}
 
+	/**
+	 * @brief Writes the pending banner to @p s, if debug logging is on.
+	 *
+	 * Logged at INFO with an empty prefix because both stock sinks write that
+	 * verbatim; DBG (OStreamSink) and ERR (FileStreamSink) records gain a
+	 * file:line prefix.
+	 *
+	 * @param[in,out] s  The diagnostic sink about to receive a record.
+	 */
+	void flushBanner(Sink &s) noexcept
+	{
+		// Level first: while debug is off the banner stays pending, so raising the
+		// level later still emits it.
+		if (!isEnabled(LogLevel::DBG)) {
+			return;
+		}
+		if (const auto b = pendingBanner.exchange(nullptr, std::memory_order_acq_rel)) {
+			s.log(LogLevel::INFO, {}, "", *b);
+		}
+	}
+
 public:
 	static Logger &instance() noexcept
 	{
@@ -114,6 +143,25 @@ public:
 			sink.store(std::make_shared<OStreamSink>(std::cerr));
 			printSink.store(std::make_shared<OStreamSink>(std::cout));
 		}
+		pendingBanner.store(banner.load(std::memory_order_acquire), std::memory_order_release);
+	}
+
+	/**
+	 * @brief Installs @p text as the banner and re-arms it for the active sink.
+	 *
+	 * The banner is written once to the diagnostic sink, ahead of the first record
+	 * that reaches it while DBG is enabled, and again for each sink installed later.
+	 *
+	 * @param[in] text  Banner text, written verbatim; empty clears the banner.
+	 *
+	 * @note Written only to the diagnostic sink, never to the PRINT sink, so a run
+	 *       that only uses PRINT never shows it.
+	 */
+	void setBanner(std::string text)
+	{
+		auto b = text.empty() ? nullptr : std::make_shared<const std::string>(std::move(text));
+		banner.store(b, std::memory_order_release);
+		pendingBanner.store(std::move(b), std::memory_order_release);
 	}
 
 	std::shared_ptr<Sink> getSink() noexcept { return sink.load(std::memory_order_acquire); }
@@ -168,9 +216,11 @@ public:
 		if (!isEnabled(lvl)) {
 			return;
 		}
+		const auto s = sink.load(std::memory_order_acquire);
+		flushBanner(*s);
 		try {
-			sink.load(std::memory_order_acquire)
-				->log(lvl, loc, prefix, xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...)));
+			s->log(lvl, loc, prefix,
+				   xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...)));
 		} catch (const std::exception &e) {
 			handleFormatError(e.what(), lvl, prefix, loc);
 		} catch (...) {

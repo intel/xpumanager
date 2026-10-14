@@ -37,28 +37,6 @@
 std::string progName = "xpu-smi";
 
 /**
- * @brief Logs the version report when running at DBG level or higher.
- *
- * @param[in,out] arg          Argument structure owning the driver instance.
- * @param[in]     driverReady  Whether Level Zero has been initialized. The loader
- *                             reports no component versions before zesInit has
- *                             run, so until then only the host half is logged.
- */
-static void logVersion(arg_struct *arg, bool driverReady)
-{
-	if (getDbgLvl() < LogLevel::DBG) {
-		return;
-	}
-	VersionReport report = collectHostVersionReport();
-	if (!driverReady) {
-		DBG("{}", formatHostVersionReport(report));
-		return;
-	}
-	addDriverVersionInfo(report, arg->sm);
-	DBG("{}", formatVersionReport(report));
-}
-
-/**
  * @brief Prints all available subcommands with short help text
  * @param cmdList List of command objects to display
  */
@@ -129,7 +107,6 @@ void setPrintLvl(arg_struct *arg, LogLevel lvl)
 std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
 {
 	if (mode == DriverMode::None) {
-		logVersion(arg, false);
 		return std::nullopt;
 	}
 
@@ -145,7 +122,14 @@ std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
 		return -1;
 	}
 	DBG("Sysman driver initialized successfully.\n");
-	logVersion(arg, true);
+	// The log's banner carries the host half of the -v report; the driver half
+	// can only be read once init has run, since the loader reports no component
+	// versions before then.
+	if (getDbgLvl() >= LogLevel::DBG) {
+		VersionReport report;
+		addDriverVersionInfo(report, arg->sm);
+		DBG("Runtime, after driver init:\n{}", formatDriverVersionReport(report));
+	}
 	return std::nullopt;
 }
 
@@ -181,6 +165,10 @@ int main(int argc, char *argv[])
 	// Sync the library's log level now; Level Zero itself is brought up per
 	// command by requireDriver().
 	setPrintLvl(&arg, getDbgLvl());
+
+	// Debug logs are usually read away from the machine that wrote them; open each
+	// one with the build and runtime that produced it.
+	Logger::instance().setBanner(formatHostVersionReport(collectHostVersionReport()));
 
 	const OSTYPE currentOS = is_windows ? OSTYPE::WINDOWS : OSTYPE::LINUX;
 	/* Detect "compat" subparser prefix: xpu-smi compat <subcommand> [args...]
