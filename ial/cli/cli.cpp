@@ -37,22 +37,60 @@
 std::string progName = "xpu-smi";
 
 /**
+ * @brief Builds the version report shown by "xpu-smi -v"
+ *
+ * @param arg          Argument structure owning the driver instance.
+ * @param driverReady  Whether Level Zero has been initialized; the loader
+ *                     reports no component versions before zesInit has run.
+ * @return The report, one entry per output line (without trailing newline).
+ */
+static std::vector<std::string> versionLines(arg_struct *arg, bool driverReady)
+{
+	const std::string fullVersion = xpum::compat::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
+	std::string lzVersion = "not initialized";
+	if (driverReady) {
+		arg->sm.getLoaderVersion(&lzVersion);
+	}
+
+	const auto line = [](GAP indent, std::string_view text) {
+		return xpum::compat::format("{0:<{1}}{2}", "", static_cast<int>(indent), text);
+	};
+	return {
+		line(TITLE, "CLI:"),
+		line(HEADING, "Version: " + fullVersion),
+		line(HEADING, "Build ID: 8389eee7"),
+		line(TITLE, ""),
+		line(TITLE, "Service:"),
+		line(HEADING, "Version: " + fullVersion),
+		line(HEADING, "Build ID: 8389eee7"),
+		line(HEADING, "Level Zero Version: " + lzVersion),
+	};
+}
+
+/**
  * @brief Prints the version information for both CLI and service components
  */
 void printVersion(arg_struct *arg)
 {
-	const std::string fullVersion = xpum::compat::format("{}.{}.{}.{}", MAJOR, MINOR, PATCH, BUILD_NUMBER);
-	std::string lzVersion;
+	for (const auto &l : versionLines(arg, true)) {
+		PRINT("{}\n", l);
+	}
+}
 
-	PRINT("{0:<{1}}CLI:\n", "", static_cast<int>(TITLE));
-	PRINT("{0:<{1}}Version: {2}\n", "", static_cast<int>(HEADING), fullVersion.c_str());
-	PRINT("{0:<{1}}Build ID: 8389eee7\n", "", static_cast<int>(HEADING));
-	PRINT("{0:<{1}}\n", "", static_cast<int>(TITLE));
-	PRINT("{0:<{1}}Service:\n", "", static_cast<int>(TITLE));
-	PRINT("{0:<{1}}Version: {2}\n", "", static_cast<int>(HEADING), fullVersion.c_str());
-	PRINT("{0:<{1}}Build ID: 8389eee7\n", "", static_cast<int>(HEADING));
-	arg->sm.getLoaderVersion(&lzVersion);
-	PRINT("{0:<{1}}Level Zero Version: {2}\n", "", static_cast<int>(HEADING), lzVersion.c_str());
+/**
+ * @brief Logs the "xpu-smi -v" report when running at DBG level or higher
+ *
+ * @param arg          Argument structure owning the driver instance.
+ * @param driverReady  Whether Level Zero has been initialized.
+ */
+static void logVersion(arg_struct *arg, bool driverReady)
+{
+	if (getDbgLvl() < LogLevel::DBG) {
+		return;
+	}
+	for (const auto &l : versionLines(arg, driverReady)) {
+		DBG("{}\n", l);
+	}
 }
 
 /**
@@ -126,6 +164,7 @@ void setPrintLvl(arg_struct *arg, LogLevel lvl)
 std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
 {
 	if (mode == DriverMode::None) {
+		logVersion(arg, false);
 		return std::nullopt;
 	}
 
@@ -141,6 +180,7 @@ std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
 		return -1;
 	}
 	DBG("Sysman driver initialized successfully.\n");
+	logVersion(arg, true);
 	return std::nullopt;
 }
 
