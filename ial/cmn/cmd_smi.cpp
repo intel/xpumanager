@@ -17,6 +17,7 @@
 #include "table_builder.h"
 #include <algorithm>
 #include <chrono>
+#include <future>
 #include "utility/compat/format.h"
 #include <ranges>
 #include <span>
@@ -160,6 +161,20 @@ static std::string processTypeFromEngines(uint64_t engines, uint64_t memSizeKiB,
 	}
 	return "N/A";
 }
+
+namespace {
+
+/** How long power and utilization deltas are measured over. */
+constexpr auto SMI_SAMPLE_WINDOW = std::chrono::milliseconds{200};
+
+/** Everything collectAndRender() gathers for one device, on that device's own task. */
+struct SmiDeviceSample
+{
+	SmiDeviceStats stats;
+	std::vector<psInfo> procs;
+};
+
+} // namespace
 
 // ── Per-device stat collection ─────────────────────────────────────────────
 
@@ -654,8 +669,13 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 
 /**
  * @brief Build and return the process listing table.
+ *
+ * @param[in] deviceList      Devices, in display order.
+ * @param[in] procsPerDevice  Processes for each entry of @p deviceList; empty where the
+ *                            device's process list could not be read.
  */
-TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList)
+TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList,
+									   const std::vector<std::vector<psInfo>> &procsPerDevice)
 {
 	TableBuilder procTable = TableBuilder::bordered();
 	procTable.addColumn("GPU", Align::Right)
@@ -669,14 +689,10 @@ TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList)
 	procTable.suppressHeaderColumnSeparators();
 	procTable.suppressDataColumnSeparators();
 
-	cmdPs ps;
 	bool anyProcess = false;
-	for (const auto &di : deviceList) {
-		std::vector<psInfo> procs;
-		if (ps.getProcessList(&di, procs) != ZE_RESULT_SUCCESS) {
-			continue;
-		}
-		for (const auto &p : procs) {
+	for (auto i : std::views::iota(size_t{0}, deviceList.size())) {
+		const devInfo &di = deviceList[i];
+		for (const auto &p : procsPerDevice[i]) {
 			// memSize is in KiB (already divided by 1024 in getProcessList)
 			double memMiB = static_cast<double>(p.memSize) / 1024.0;
 			std::string memStr = xpum::compat::format("{:.0f} MiB", memMiB);
@@ -708,9 +724,11 @@ void cmdSmi::help(HELP helpType)
 /**
  * @brief Collect GPU telemetry and render it to a string.
  *
- * Enumerates all available GPU devices, gathers static properties,
- * temperature, memory, power, and utilization metrics (via a 200 ms
- * delta window), then formats the result as a printable table string.
+ * Enumerates all available GPU devices, then samples each one on its own
+ * task: static properties, temperature, memory, power, utilization (via a
+ * 200 ms delta window, SMI_SAMPLE_WINDOW) and its process list, with the
+ * window-independent queries running inside the window. Formats the result
+ * as a printable table string in device order.
  *
  * @param args  CLI arguments used for device enumeration and formatting.
  *
@@ -731,34 +749,51 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 		return {ZE_RESULT_ERROR_DEVICE_LOST, {}};
 	}
 
-	// ── 2. Collect static properties + temperature + memory + TDP ───────
-	std::vector<SmiDeviceStats> devStats(deviceList.size());
-	std::vector<SmiBaseline> baselines(deviceList.size());
+	// ── 2. Sample every device on its own task ──────────────────────────
+	// Each device takes its baseline first and does its window-independent queries (static
+	// properties, process list) while its window runs, so with many processes those queries
+	// no longer add to the window, and with many GPUs devices no longer add to each other.
+	std::vector<std::future<SmiDeviceSample>> samples;
+	samples.reserve(deviceList.size());
+	for (auto &di : deviceList) {
+		samples.push_back(std::async(std::launch::async, [&di] {
+			SmiDeviceSample sample;
+			SmiBaseline baseline;
+			captureBaseline(baseline, &di);
+			const auto windowEnd = std::chrono::steady_clock::now() + SMI_SAMPLE_WINDOW;
 
-	for (auto i : std::views::iota(size_t{0}, deviceList.size())) {
-		collectStaticProps(devStats[i], &deviceList[i]);
-		collectFan(devStats[i], &deviceList[i]);
-		collectTemperature(devStats[i], &deviceList[i]);
-		collectMemory(devStats[i], &deviceList[i]);
-		collectPowerTdp(devStats[i], &deviceList[i]);
-		captureBaseline(baselines[i], &deviceList[i]);
+			collectStaticProps(sample.stats, &di);
+			collectFan(sample.stats, &di);
+			collectTemperature(sample.stats, &di);
+			collectMemory(sample.stats, &di);
+			collectPowerTdp(sample.stats, &di);
+			if (cmdPs::getProcessList(&di, sample.procs) != ZE_RESULT_SUCCESS) {
+				sample.procs.clear();
+			}
+
+			std::this_thread::sleep_until(windowEnd);
+			computeFromBaseline(sample.stats, baseline, &di);
+			return sample;
+		}));
 	}
 
-	// ── 3. Wait for delta window (200 ms) ──────────────────────────────
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
-	// ── 4. Compute delta-based metrics (power, utilization) ─────────────
-	for (auto i : std::views::iota(size_t{0}, deviceList.size())) {
-		computeFromBaseline(devStats[i], baselines[i], &deviceList[i]);
-	}
-
-	// ── 5. Get Level Zero version ───────────────────────────────────────
+	// ── 3. Get Level Zero version, while the devices sample ─────────────
 	std::string lzVersion;
 	args->sm.getLoaderVersion(&lzVersion);
 
-	// ── 6. Render to string ─────────────────────────────────────────────
+	std::vector<SmiDeviceStats> devStats;
+	std::vector<std::vector<psInfo>> procsPerDevice;
+	devStats.reserve(deviceList.size());
+	procsPerDevice.reserve(deviceList.size());
+	for (auto &future : samples) {
+		auto [stats, procs] = future.get();
+		devStats.push_back(std::move(stats));
+		procsPerDevice.push_back(std::move(procs));
+	}
+
+	// ── 4. Render to string ─────────────────────────────────────────────
 	TableBuilder gpuTable = buildGpuTable(devStats, lzVersion);
-	TableBuilder procTable = buildProcessTable(deviceList);
+	TableBuilder procTable = buildProcessTable(deviceList, procsPerDevice);
 	procTable.padToWidth(gpuTable.getTotalWidth());
 	return {result, gpuTable.toString() + "\n" + procTable.toString() + "\n"};
 }

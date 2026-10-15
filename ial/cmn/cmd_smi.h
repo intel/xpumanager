@@ -9,6 +9,7 @@
 
 #include "proc_fdinfo.h"
 #include "cmds.h"
+#include "cmd_ps.h"
 #include "table_builder.h"
 #include <enginegroup.h>
 #include <string>
@@ -103,7 +104,8 @@ private:
 	static void captureBaseline(SmiBaseline &baseline, devInfo *dev);
 	static void computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline, devInfo *dev);
 
-	[[nodiscard]] static TableBuilder buildProcessTable(const std::vector<devInfo> &deviceList);
+	[[nodiscard]] static TableBuilder buildProcessTable(const std::vector<devInfo> &deviceList,
+														const std::vector<std::vector<psInfo>> &procsPerDevice);
 };
 
 #endif
