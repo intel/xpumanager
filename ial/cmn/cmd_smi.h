@@ -12,6 +12,7 @@
 #include "table_builder.h"
 #include <enginegroup.h>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <map>
 #include <cstdint>
@@ -86,6 +87,13 @@ public:
 	int run(arg_struct *args);
 	std::pair<ze_result_t, std::string> collectAndRender(arg_struct *args);
 
+	// Pure helpers for the GPU table and its Name slot. Public so the layout can be unit
+	// tested without a GPU: they read nothing but their arguments.
+	[[nodiscard]] static std::string shortDeviceName(std::string_view deviceName);
+	[[nodiscard]] static std::vector<std::string> wrapDeviceName(std::string_view deviceName, size_t width);
+	[[nodiscard]] static TableBuilder buildGpuTable(const std::vector<SmiDeviceStats> &devStats,
+													const std::string &lzVersion);
+
 private:
 	static void collectStaticProps(SmiDeviceStats &stats, devInfo *dev);
 	static void collectFan(SmiDeviceStats &stats, devInfo *dev);
@@ -95,8 +103,6 @@ private:
 	static void captureBaseline(SmiBaseline &baseline, devInfo *dev);
 	static void computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline, devInfo *dev);
 
-	[[nodiscard]] static TableBuilder buildGpuTable(const std::vector<SmiDeviceStats> &devStats,
-													const std::string &lzVersion);
 	[[nodiscard]] static TableBuilder buildProcessTable(const std::vector<devInfo> &deviceList);
 };
 

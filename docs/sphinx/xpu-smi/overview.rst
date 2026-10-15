@@ -72,6 +72,15 @@ Default Output
 Running ``xpu-smi`` with no arguments displays a GPU status summary of all detected devices,
 followed by the processes using them.
 
+``Name`` is the device name the driver reports, without the words that every Intel device
+name shares: the trademark signs, a leading ``Intel`` (kept when only ``Graphics`` or ``GPU``
+would be left), a ``Data Center GPU`` prefix and a trailing ``Graphics`` or ``GPU`` after the
+model number. So ``Intel(R) Arc(TM) Pro B60 Graphics`` shows as ``Arc Pro B60``, and a name
+still too long for the column wraps at a space. A driver
+that has no product name for a device reports ``Intel(R) Graphics [0x<PCI device ID>]``, shown as
+``Graphics [0x<PCI device ID>]``; a newer driver may name it. :doc:`discovery` and
+``--query-gpu=name`` show the full name.
+
 ``GPU-Util`` is the utilization of the busiest engine on the device: the fraction of the
 sample window during which that engine was executing work. It is not the average across
 all engines — a workload that saturates the compute engine while leaving the media and

@@ -15,9 +15,12 @@
 #include "temperature.h"
 #include <enginegroup.h>
 #include "table_builder.h"
+#include <algorithm>
 #include <chrono>
 #include "utility/compat/format.h"
 #include <ranges>
+#include <span>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -63,6 +66,76 @@ static std::string fmtFan(int32_t pct)
 		return xpum::compat::format("{}%", pct);
 	}
 	return "N/A";
+}
+
+/**
+ * @brief Tell whether a byte starts a UTF-8 code point.
+ *
+ * @param[in] c Byte of UTF-8 text.
+ * @return true unless @p c is a continuation byte (10xxxxxx).
+ */
+static bool startsCodePoint(char c) { return (static_cast<unsigned char>(c) & 0xC0) != 0x80; }
+
+/**
+ * @brief Measure UTF-8 text in code points, the unit TableBuilder measures cell width in.
+ *
+ * @param[in] text UTF-8 text.
+ * @return Number of code points in @p text.
+ */
+static size_t codePointWidth(std::string_view text)
+{
+	return static_cast<size_t>(std::ranges::count_if(text, startsCodePoint));
+}
+
+/**
+ * @brief Find the byte offset at which a code point of UTF-8 text starts.
+ *
+ * @param[in] text  UTF-8 text.
+ * @param[in] index Zero-based index of the code point.
+ * @return Byte offset of code point @p index, or text.size() when @p text has no such code point.
+ */
+static size_t codePointOffset(std::string_view text, size_t index)
+{
+	size_t seen = 0;
+	for (size_t i = 0; i < text.size(); ++i) {
+		if (startsCodePoint(text[i])) {
+			if (seen == index) {
+				return i;
+			}
+			++seen;
+		}
+	}
+	return text.size();
+}
+
+/**
+ * @brief Measure the word separator at the start of a device name fragment.
+ *
+ * The space, the no-break space, control characters (ASCII and C1) and the "(R)" and "(TM)"
+ * marks separate the words of a device name.
+ *
+ * @param[in] text Non-empty rest of a device name.
+ * @return Length in bytes of the separator @p text starts with, or 0 when it starts a word.
+ */
+static size_t separatorLength(std::string_view text)
+{
+	const auto c = static_cast<unsigned char>(text.front());
+	if (c <= ' ' || c == 0x7F) {
+		return 1;
+	}
+	// The C1 controls and the no-break space, U+0080-U+00A0, are 0xC2 then 0x80-0xA0 in UTF-8.
+	if (c == 0xC2 && text.size() > 1) {
+		const auto next = static_cast<unsigned char>(text[1]);
+		if (next >= 0x80 && next <= 0xA0) {
+			return 2;
+		}
+	}
+	for (const std::string_view mark : {"(R)", "(TM)"}) {
+		if (text.starts_with(mark)) {
+			return mark.size();
+		}
+	}
+	return 0;
 }
 
 static std::string processTypeFromEngines(uint64_t engines, uint64_t memSizeKiB, uint64_t sharedSizeKiB)
@@ -357,24 +430,139 @@ void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &basel
 // ── Table rendering ──────────────────────────────────────────────────────────
 
 /**
+ * @brief Shorten a device name to the words that tell devices apart.
+ *
+ * Every Intel device name shares words that identify nothing and push the model number out
+ * of the Name slot. Drops the "(R)" and "(TM)" marks, a leading "Intel" (kept when only
+ * "Graphics" or "GPU" would be left), a "Data Center GPU" prefix and a trailing "Graphics" or
+ * "GPU" after a model number: "Intel(R) Arc(TM) Pro B60 Graphics" becomes "Arc Pro B60".
+ * The name a driver gives a device it has no product name for keeps the PCI device ID:
+ * "Intel(R) Graphics [0xe223]" becomes "Graphics [0xe223]". The space, the no-break space
+ * and control characters only separate words, and the words are joined by single spaces, so
+ * no control character or no-break space reaches the terminal.
+ *
+ * @param[in] deviceName Device name as the driver reports it.
+ * @return The remaining words joined by single spaces; empty when @p deviceName has no words.
+ */
+std::string cmdSmi::shortDeviceName(std::string_view deviceName)
+{
+	std::vector<std::string_view> words;
+	size_t wordStart = 0;
+	for (size_t i = 0; i < deviceName.size();) {
+		const size_t sepLen = separatorLength(deviceName.substr(i));
+		if (sepLen == 0) {
+			++i;
+			continue;
+		}
+		if (i > wordStart) {
+			words.push_back(deviceName.substr(wordStart, i - wordStart));
+		}
+		i += sepLen;
+		wordStart = i;
+	}
+	if (deviceName.size() > wordStart) {
+		words.push_back(deviceName.substr(wordStart));
+	}
+
+	const auto isClassWord = [](std::string_view word) { return word == "Graphics" || word == "GPU"; };
+	const auto hasDigit = [](std::string_view word) {
+		return std::ranges::any_of(word, [](char c) { return c >= '0' && c <= '9'; });
+	};
+
+	std::span<const std::string_view> kept(words);
+	if (!kept.empty() && kept.front() == "Intel" && !std::ranges::all_of(kept.subspan(1), isClassWord)) {
+		kept = kept.subspan(1);
+	}
+	if (kept.size() > 3 && kept[0] == "Data" && kept[1] == "Center" && kept[2] == "GPU") {
+		kept = kept.subspan(3);
+	}
+	if (kept.size() >= 2 && isClassWord(kept.back()) && std::ranges::any_of(kept.first(kept.size() - 1), hasDigit)) {
+		kept = kept.first(kept.size() - 1);
+	}
+
+	std::string shortName;
+	for (const std::string_view word : kept) {
+		if (!shortName.empty()) {
+			shortName += ' ';
+		}
+		shortName += word;
+	}
+	return shortName;
+}
+
+/**
+ * @brief Wrap a device name into lines of the Name slot.
+ *
+ * Breaks lines at spaces, so a model number or device ID is never cut. Only a word wider
+ * than a whole line is split, at a code point boundary. Width is counted in code points.
+ *
+ * @param[in] deviceName Words separated by spaces, as shortDeviceName() returns them.
+ * @param[in] width      Maximum line width in code points; 0 is treated as 1.
+ * @return The lines, none wider than @p width; a single empty line when @p deviceName has no words.
+ */
+std::vector<std::string> cmdSmi::wrapDeviceName(std::string_view deviceName, size_t width)
+{
+	width = std::max<size_t>(width, 1);
+	std::vector<std::string> lines(1);
+	size_t lineWidth = 0;
+	for (size_t pos = 0; pos < deviceName.size();) {
+		const size_t end = std::min(deviceName.find(' ', pos), deviceName.size());
+		std::string_view word = deviceName.substr(pos, end - pos);
+		pos = end + 1;
+		if (word.empty()) {
+			continue;
+		}
+		size_t wordWidth = codePointWidth(word);
+		if (!lines.back().empty()) {
+			if (lineWidth + 1 + wordWidth <= width) {
+				lines.back() += ' ';
+				lines.back() += word;
+				lineWidth += 1 + wordWidth;
+				continue;
+			}
+			lines.emplace_back();
+		}
+		while (wordWidth > width) {
+			const size_t cut = codePointOffset(word, width);
+			lines.back() = word.substr(0, cut);
+			lines.emplace_back();
+			word.remove_prefix(cut);
+			wordWidth -= width;
+		}
+		lines.back() = word;
+		lineWidth = wordWidth;
+	}
+	return lines;
+}
+
+/**
  * @brief Build and return the GPU summary table.
  *
  * Three-column layout with multi-line column headers (via setColumnExtraHeaders):
  *   Col 1: GPU#  Name  Persistence-M  /  Fan  Temp  Pwr:Usage/Cap
  *   Col 2: Bus-Id  Disp.A  /  Memory-Usage
  *   Col 3: Volatile Uncorr. ECC  /  GPU-Util  Compute M.
+ * Each device name is shortened by shortDeviceName() and wrapped at spaces by
+ * wrapDeviceName() to fit the 22-column Name slot.
+ *
+ * @param[in] devStats  Per-device stats, one table row each, in display order.
+ * @param[in] lzVersion Level Zero loader version shown in the banner.
+ * @return The GPU summary table, not yet rendered.
  */
 TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, const std::string &lzVersion)
 {
 	// Keep fan/temp columns aligned for strings like "100% (20000RPM)" and "N/A".
 	constexpr int fanDisplayWidth = static_cast<int>(sizeof("100% (20000RPM)") - 1);
 	constexpr int tempDisplayWidth = 4;
+	constexpr size_t kNameWidth = 22;
+	constexpr std::string_view col0Header = "GPU  Name                    Persistence-M";
+	static_assert(col0Header.find("Persistence-M") == 3 + 2 + kNameWidth + 2, "Off must sit under Persistence-M");
 
 	TableBuilder table = TableBuilder::bordered();
 	// Header text spacing mirrors the data format strings:
-	//   col1 line1: "{:>3}  {:<22}  Off" → "Persistence-M" must start at offset 3+2+22+2=29
+	//   col1 line1: "{:>3}  " + name padded to 22 code points + "  Off" → "Persistence-M" at 3+2+22+2=29
 	//   col2 line1: "{:<16}  Off"         → "Disp.A"         must start at offset 16+2=18
-	table.addColumn("GPU  Name                    Persistence-M", Align::Left)
+	table.addColumn(col0Header, Align::Left)
 		.addColumn("Bus-Id            Disp.A", Align::Left)
 		.addColumn("Volatile Uncorr. ECC", Align::Right);
 
@@ -412,13 +600,15 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	table.addPreHeaderSpanRow(xpum::compat::format("UMD Version: {}    Level Zero: {}", umdVersion, lzVersion));
 
 	for (const auto &s : devStats) {
-		// Build col-0 lines: name wraps in 22-char chunks rather than truncating.
-		constexpr size_t kNameWidth = 22;
+		// Build col-0 lines: the short name, wrapped at spaces rather than cut mid-word. Pad it
+		// by code points, as TableBuilder measures, not with std::format, which pads by bytes
+		// on some compilers and would move "Off" for a non-ASCII name.
+		const std::vector<std::string> nameLines = wrapDeviceName(shortDeviceName(s.name), kNameWidth);
+		const std::string namePad(kNameWidth - std::min(codePointWidth(nameLines.front()), kNameWidth), ' ');
 		std::vector<std::string> col0Lines;
-		col0Lines.push_back(
-			xpum::compat::format("{:>3}  {:<{}}  Off", s.devIndex, s.name.substr(0, kNameWidth), kNameWidth));
-		for (size_t off = kNameWidth; off < s.name.size(); off += kNameWidth) {
-			col0Lines.push_back(xpum::compat::format("     {}", s.name.substr(off, kNameWidth)));
+		col0Lines.push_back(xpum::compat::format("{:>3}  {}{}  Off", s.devIndex, nameLines.front(), namePad));
+		for (const auto &line : nameLines | std::views::drop(1)) {
+			col0Lines.push_back(xpum::compat::format("     {}", line));
 		}
 
 		std::string bdfLine = xpum::compat::format("{:<16}  Off", s.pciBdf);

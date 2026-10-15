@@ -56,7 +56,7 @@ $ xpu-smi
 | GPU  Name                    Persistence-M   | Bus-Id            Disp.A   |   Volatile Uncorr. ECC |
 | Fan  Temp  Pwr:Usage/Cap                     | Memory-Usage               |   GPU-Util  Compute M. |
 +----------------------------------------------+----------------------------+------------------------+
-|   0  Intel(R) Arc(TM) B580   Off             | 0000:03:00.0      Off      |               Disabled |
+|   0  Arc B580                Off             | 0000:03:00.0      Off      |               Disabled |
 | N/A    25C  66W / 380W                       | 239MiB / 12216MiB          |      0%        Default |
 +----------------------------------------------+----------------------------+------------------------+
 
