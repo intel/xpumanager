@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <cstdint>
 #include <limits>
 #include <functional>
@@ -304,6 +305,17 @@ struct OfflinePagesOutcome
 	std::string summaryMessage;
 };
 
+/// fdinfo engine keys ("ccs", "vcs", ...). Transparent comparator so a std::string_view key
+/// can be looked up without building a std::string.
+using FdinfoEngineKeys = std::set<std::string, std::less<>>;
+
+/// One fdinfo sampling window, as cmdStats::collectProcessUtils() closes it.
+struct FdinfoUtilWindow
+{
+	fdinfo::PidUtilMap utilMap;	 ///< Per-process engine utilisation, the caller's own PID excluded.
+	FdinfoEngineKeys measurable; ///< Engine classes fdinfo reported for the device, busy or not.
+};
+
 class cmdStats : public cmds
 {
 
@@ -322,10 +334,11 @@ public:
 
 	// Pure fdinfo fallback helpers for the process/engine-utilization path. Public so they
 	// can be unit tested directly, without a device or Level Zero handle.
-	static void deriveEngineTrackersFromFdinfo(const fdinfo::PidUtilMap &utilMap,
+	static void deriveEngineTrackersFromFdinfo(const fdinfo::PidUtilMap &utilMap, const FdinfoEngineKeys &measurable,
 											   std::vector<EngineInstanceTracker> &trackers,
 											   std::string_view engineKey);
-	static void applyFdinfoUtilFallback(const fdinfo::PidUtilMap &utilMap, DeviceMetrics &metrics);
+	static void applyFdinfoUtilFallback(const fdinfo::PidUtilMap &utilMap, const FdinfoEngineKeys &measurable,
+										DeviceMetrics &metrics);
 	static std::vector<ProcessUtilEntry> buildProcessUtilEntries(const fdinfo::PidUtilMap &utilMap,
 																 const std::vector<zes_process_state_t> &processList,
 																 uint32_t selfPid);
@@ -380,8 +393,8 @@ private:
 										  DeviceMetrics &metrics, nlohmann::ordered_json &deviceJson, bool collectRas,
 										  bool collectEuMetrics);
 	static ze_result_t listOfflinePages(devInfo *device, nlohmann::ordered_json &deviceJson);
-	static fdinfo::PidUtilMap collectProcessUtils(devInfo *device, const std::vector<fdinfo::ProcessSnapshot> &fdBefore,
-												  DeviceMetrics &metrics);
+	static FdinfoUtilWindow collectProcessUtils(devInfo *device, const std::vector<fdinfo::ProcessSnapshot> &fdBefore,
+												DeviceMetrics &metrics);
 };
 
 using statsSubCmdFunc = ze_result_t (cmdStats::*)(devInfo *d);

@@ -1159,15 +1159,27 @@ inline constexpr auto PROC_UTIL_FIELDS = std::to_array<ProcUtilField>({
  * approximation filed under tile 0 rather than a real per-tile breakdown. Series are gated
  * individually because the L0 engine groups fail individually.
  *
- * @param utilMap Per-process engine utilisation from fdinfo::delta(), self PID excluded.
- * @param metrics Per-tile series filled in-place; untouched where L0 already reported.
+ * @param utilMap    Per-process engine utilisation from fdinfo::delta(), self PID excluded.
+ * @param measurable Engine classes fdinfo reported for the device in the same window.
+ * @param metrics    Per-tile series filled in-place; untouched where L0 already reported.
  */
-void cmdStats::applyFdinfoUtilFallback(const fdinfo::PidUtilMap &utilMap, DeviceMetrics &metrics)
+void cmdStats::applyFdinfoUtilFallback(const fdinfo::PidUtilMap &utilMap, const FdinfoEngineKeys &measurable,
+									   DeviceMetrics &metrics)
 {
-	// Sum each category across every visible process. A total stays nullopt until some
-	// process reports that category, so one no process touched is left absent rather than
-	// published as a real 0%.
+	// Sum each category across every visible process. A category fdinfo measures on this
+	// device starts at 0, so an idle one reads 0% as it does on the sysman path; one it
+	// cannot measure stays nullopt and is left absent rather than published as a real 0%.
 	std::array<std::optional<double>, FDINFO_UTIL_CATEGORIES.size()> sums{};
+	fdinfo::EngineUtilMap idle;
+	for (const auto &key : measurable) {
+		idle.emplace(key, 0.0F);
+	}
+	const ProcUtil measured = fdinfo::toProcUtil(idle);
+	for (size_t i = 0; i < FDINFO_UTIL_CATEGORIES.size(); ++i) {
+		if ((measured.*FDINFO_UTIL_CATEGORIES[i].field).has_value()) {
+			sums[i] = 0.0;
+		}
+	}
 	for (const auto &engUtils : std::views::values(utilMap)) {
 		const ProcUtil pu = fdinfo::toProcUtil(engUtils);
 		for (size_t i = 0; i < FDINFO_UTIL_CATEGORIES.size(); ++i) {
@@ -1251,20 +1263,30 @@ std::vector<ProcessUtilEntry> cmdStats::buildProcessUtilEntries(const fdinfo::Pi
  * @param device   Device to sample.
  * @param fdBefore Snapshot taken before the sampling loop.
  * @param metrics  Utilization series and processUtils appended in-place.
- * @return         The per-process delta, for deriveEngineTrackersFromFdinfo().
+ * @return         The per-process delta and the measurable engine classes, for
+ *                 deriveEngineTrackersFromFdinfo().
  */
-fdinfo::PidUtilMap cmdStats::collectProcessUtils(devInfo *device, const std::vector<fdinfo::ProcessSnapshot> &fdBefore,
-												 DeviceMetrics &metrics)
+FdinfoUtilWindow cmdStats::collectProcessUtils(devInfo *device, const std::vector<fdinfo::ProcessSnapshot> &fdBefore,
+											   DeviceMetrics &metrics)
 {
 	TRACING();
 	const uint32_t selfPid = getCurrentProcessId();
 	const auto fdAfter = fdinfo::capture(devPciAddr(*device));
-	auto utilMap = fdinfo::delta(fdBefore, fdAfter);
+	FdinfoUtilWindow window{.utilMap = fdinfo::delta(fdBefore, fdAfter), .measurable = {}};
+	auto &utilMap = window.utilMap;
+	// Every client's fdinfo lists each engine class the device has, busy or not, so the
+	// classes in the whole window - this process's own context included - are the ones
+	// fdinfo can measure here. Collected before the exclusion below for that reason.
+	for (const auto &engUtils : std::views::values(utilMap)) {
+		for (const auto &key : std::views::keys(engUtils)) {
+			window.measurable.insert(key);
+		}
+	}
 	// Before aggregating: fdinfo sees xpu-smi's own probe context, which would otherwise
 	// leak this command's GPU activity into the fallback and every derived tracker.
 	utilMap.erase(selfPid);
 
-	applyFdinfoUtilFallback(utilMap, metrics);
+	applyFdinfoUtilFallback(utilMap, window.measurable, metrics);
 
 	std::vector<zes_process_state_t> processList;
 	auto *ps = device->dev->getProcess();
@@ -1279,7 +1301,7 @@ fdinfo::PidUtilMap cmdStats::collectProcessUtils(devInfo *device, const std::vec
 	metrics.processUtils.insert(metrics.processUtils.end(), std::make_move_iterator(entries.begin()),
 								std::make_move_iterator(entries.end()));
 
-	return utilMap;
+	return window;
 }
 
 /**
@@ -1290,11 +1312,12 @@ fdinfo::PidUtilMap cmdStats::collectProcessUtils(devInfo *device, const std::vec
  * on @p trackers itself because L0 enumerates handles without CAP_PERFMON but
  * getEngineActivityByType() then fails silently — the very case this covers.
  *
- * @param utilMap   Per-process engine utilisation from fdinfo::delta().
- * @param trackers  Replaced in-place when it holds no readable sample.
- * @param engineKey Normalised fdinfo engine key to sum, e.g. "ccs".
+ * @param utilMap    Per-process engine utilisation from fdinfo::delta().
+ * @param measurable Engine classes fdinfo reported for the device in the same window.
+ * @param trackers   Replaced in-place when it holds no readable sample.
+ * @param engineKey  Normalised fdinfo engine key to sum, e.g. "ccs".
  */
-void cmdStats::deriveEngineTrackersFromFdinfo(const fdinfo::PidUtilMap &utilMap,
+void cmdStats::deriveEngineTrackersFromFdinfo(const fdinfo::PidUtilMap &utilMap, const FdinfoEngineKeys &measurable,
 											  std::vector<EngineInstanceTracker> &trackers, std::string_view engineKey)
 {
 	if (std::ranges::any_of(trackers, [](const EngineInstanceTracker &t) { return !t.samples.empty(); })) {
@@ -1302,7 +1325,12 @@ void cmdStats::deriveEngineTrackersFromFdinfo(const fdinfo::PidUtilMap &utilMap,
 	}
 	trackers.clear();
 
+	// A class fdinfo measures on this device starts at 0, so an idle one reads 0% as it does
+	// on the sysman path rather than N/A.
 	std::optional<double> total;
+	if (measurable.contains(engineKey)) {
+		total = 0.0;
+	}
 	for (const auto &engUtils : std::views::values(utilMap)) {
 		if (const auto it = engUtils.find(std::string{engineKey}); it != engUtils.end()) {
 			total = total.value_or(0.0) + static_cast<double>(it->second);
@@ -1548,15 +1576,15 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 		}
 	}
 
-	const auto fdUtilMap = collectProcessUtils(device, fdBefore, metrics);
-	deriveEngineTrackersFromFdinfo(fdUtilMap, computeEngines, "ccs");
-	deriveEngineTrackersFromFdinfo(fdUtilMap, renderEngines, "rcs");
-	deriveEngineTrackersFromFdinfo(fdUtilMap, copyEngines, "bcs");
-	deriveEngineTrackersFromFdinfo(fdUtilMap, decoderEngines, "vcs");
+	const auto fdWindow = collectProcessUtils(device, fdBefore, metrics);
+	deriveEngineTrackersFromFdinfo(fdWindow.utilMap, fdWindow.measurable, computeEngines, "ccs");
+	deriveEngineTrackersFromFdinfo(fdWindow.utilMap, fdWindow.measurable, renderEngines, "rcs");
+	deriveEngineTrackersFromFdinfo(fdWindow.utilMap, fdWindow.measurable, copyEngines, "bcs");
+	deriveEngineTrackersFromFdinfo(fdWindow.utilMap, fdWindow.measurable, decoderEngines, "vcs");
 	// fdinfo has no counter distinct from "vecs" for encode; attributing it here would
 	// duplicate the enhancement figure below rather than report real encode activity, so
 	// encoderEngines is left without an fdinfo fallback and reports N/A when L0 can't enumerate it.
-	deriveEngineTrackersFromFdinfo(fdUtilMap, mediaEmEngines, "vecs");
+	deriveEngineTrackersFromFdinfo(fdWindow.utilMap, fdWindow.measurable, mediaEmEngines, "vecs");
 
 	auto endTime = std::chrono::system_clock::now();
 	metrics.endTimeIso = formatIso8601Timestamp(endTime);

@@ -62,7 +62,7 @@ TEST_SUITE("cmdStats::deriveEngineTrackersFromFdinfo")
 		std::vector<EngineInstanceTracker> trackers;
 		const auto utilMap = oneEngine(111, "ccs", 42.0F);
 
-		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, trackers, "ccs");
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, {}, trackers, "ccs");
 
 		checkSingleAggregate(trackers, 42.0);
 	}
@@ -74,7 +74,7 @@ TEST_SUITE("cmdStats::deriveEngineTrackersFromFdinfo")
 		trackers[0].samples.push_back(17.5);
 		const auto utilMap = oneEngine(111, "ccs", 99.0F);
 
-		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, trackers, "ccs");
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, {}, trackers, "ccs");
 
 		REQUIRE(trackers.size() == 1);
 		CHECK(trackers[0].engineIndex == 3);
@@ -92,7 +92,7 @@ TEST_SUITE("cmdStats::deriveEngineTrackersFromFdinfo")
 		trackers[1].engineIndex = 1;
 		const auto utilMap = oneEngine(222, "rcs", 55.0F);
 
-		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, trackers, "rcs");
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, {}, trackers, "rcs");
 
 		checkSingleAggregate(trackers, 55.0);
 	}
@@ -102,7 +102,7 @@ TEST_SUITE("cmdStats::deriveEngineTrackersFromFdinfo")
 		std::vector<EngineInstanceTracker> trackers;
 		const auto utilMap = oneEngine(333, "bcs", 10.0F); // does not match "vecs"
 
-		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, trackers, "vecs");
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, {}, trackers, "vecs");
 
 		CHECK(trackers.empty());
 	}
@@ -114,9 +114,41 @@ TEST_SUITE("cmdStats::deriveEngineTrackersFromFdinfo")
 		utilMap[1]["ccs"] = 80.0F;
 		utilMap[2]["ccs"] = 60.0F; // 140% combined, must clamp
 
-		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, trackers, "ccs");
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, {}, trackers, "ccs");
 
 		checkSingleAggregate(trackers, 100.0);
+	}
+	TEST_CASE("a class fdinfo measures but nothing else used reads 0, not N/A")
+	{
+		std::vector<EngineInstanceTracker> trackers;
+		const fdinfo::PidUtilMap utilMap; // only xpu-smi's own context saw the device
+		const FdinfoEngineKeys measurable{"ccs", "vcs"};
+
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, measurable, trackers, "vcs");
+
+		checkSingleAggregate(trackers, 0.0);
+	}
+
+	TEST_CASE("a measured class adds other processes' busy time on top of 0")
+	{
+		std::vector<EngineInstanceTracker> trackers;
+		const auto utilMap = oneEngine(111, "ccs", 42.0F);
+		const FdinfoEngineKeys measurable{"ccs"};
+
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, measurable, trackers, "ccs");
+
+		checkSingleAggregate(trackers, 42.0);
+	}
+
+	TEST_CASE("a class fdinfo does not measure on the device stays N/A")
+	{
+		std::vector<EngineInstanceTracker> trackers;
+		const fdinfo::PidUtilMap utilMap;
+		const FdinfoEngineKeys measurable{"ccs"}; // no render engine on this device
+
+		cmdStats::deriveEngineTrackersFromFdinfo(utilMap, measurable, trackers, "rcs");
+
+		CHECK(trackers.empty());
 	}
 }
 
@@ -134,7 +166,7 @@ TEST_SUITE("cmdStats::applyFdinfoUtilFallback")
 		utilMap[1]["ccs"] = 30.0F; // compute — series already populated, must stay untouched
 		utilMap[1]["rcs"] = 20.0F; // render — series empty, must be filled
 
-		cmdStats::applyFdinfoUtilFallback(utilMap, metrics);
+		cmdStats::applyFdinfoUtilFallback(utilMap, {}, metrics);
 
 		CHECK(metrics.computeUtilPerTile[0] == std::vector<double>{12.0, 14.0});
 		REQUIRE(metrics.renderUtilPerTile.count(0) == 1);
@@ -149,7 +181,7 @@ TEST_SUITE("cmdStats::applyFdinfoUtilFallback")
 		utilMap[1]["ccs"] = 30.0F;
 		utilMap[1]["bcs"] = 70.0F;
 
-		cmdStats::applyFdinfoUtilFallback(utilMap, metrics);
+		cmdStats::applyFdinfoUtilFallback(utilMap, {}, metrics);
 
 		REQUIRE(metrics.gpuUtilPerTile.count(0) == 1);
 		REQUIRE(metrics.gpuUtilPerTile[0].size() == 1);
@@ -161,7 +193,7 @@ TEST_SUITE("cmdStats::applyFdinfoUtilFallback")
 		DeviceMetrics metrics;
 		const fdinfo::PidUtilMap empty;
 
-		cmdStats::applyFdinfoUtilFallback(empty, metrics);
+		cmdStats::applyFdinfoUtilFallback(empty, {}, metrics);
 
 		CHECK(metrics.computeUtilPerTile.empty());
 		CHECK(metrics.renderUtilPerTile.empty());
@@ -177,10 +209,36 @@ TEST_SUITE("cmdStats::applyFdinfoUtilFallback")
 		utilMap[1]["ccs"] = 80.0F;
 		utilMap[2]["ccs"] = 60.0F;
 
-		cmdStats::applyFdinfoUtilFallback(utilMap, metrics);
+		cmdStats::applyFdinfoUtilFallback(utilMap, {}, metrics);
 
 		REQUIRE(metrics.computeUtilPerTile[0].size() == 1);
 		CHECK(metrics.computeUtilPerTile[0][0] == doctest::Approx(100.0));
+	}
+	TEST_CASE("measured but idle categories read 0, unmeasured ones stay absent")
+	{
+		DeviceMetrics metrics;
+		const fdinfo::PidUtilMap utilMap; // only xpu-smi's own context saw the device
+		const FdinfoEngineKeys measurable{"ccs", "bcs", "vcs", "vecs"};
+
+		cmdStats::applyFdinfoUtilFallback(utilMap, measurable, metrics);
+
+		CHECK(metrics.computeUtilPerTile[0] == std::vector<double>{0.0});
+		CHECK(metrics.copyUtilPerTile[0] == std::vector<double>{0.0});
+		CHECK(metrics.mediaUtilPerTile[0] == std::vector<double>{0.0});
+		CHECK(metrics.gpuUtilPerTile[0] == std::vector<double>{0.0});
+		CHECK(metrics.renderUtilPerTile.empty());
+	}
+
+	TEST_CASE("an idle measured category does not overwrite a Level Zero series")
+	{
+		DeviceMetrics metrics;
+		metrics.computeUtilPerTile[0] = {12.0};
+		const fdinfo::PidUtilMap utilMap;
+		const FdinfoEngineKeys measurable{"ccs"};
+
+		cmdStats::applyFdinfoUtilFallback(utilMap, measurable, metrics);
+
+		CHECK(metrics.computeUtilPerTile[0] == std::vector<double>{12.0});
 	}
 }
 
