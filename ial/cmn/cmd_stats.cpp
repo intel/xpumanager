@@ -433,11 +433,13 @@ cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
 		return ZE_RESULT_SUCCESS; // Not an error, just not supported
 	}
 
+	// Level Zero marks an unknown frequency with a negative value. 0 is a real reading: the
+	// actual clock of a GT that is idle in C6, so it is kept rather than shown as N/A.
 	std::map<uint32_t, double> gpuTileFreqs;
 	ze_result_t result = frequencyHandler->getCurFreqPerTile(ZES_FREQ_DOMAIN_GPU, gpuTileFreqs);
 	if (result == ZE_RESULT_SUCCESS) {
 		for (const auto &[tileId, freq] : gpuTileFreqs) {
-			if (freq > 0.0) {
+			if (freq >= 0.0) {
 				gpuFreqSamplesPerTile[tileId].push_back(freq);
 				DBG("Tile {} GPU frequency sample: {:.2f} MHz\n", tileId, freq);
 			}
@@ -448,7 +450,7 @@ cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
 	result = frequencyHandler->getCurFreqPerTile(ZES_FREQ_DOMAIN_MEDIA, mediaTileFreqs);
 	if (result == ZE_RESULT_SUCCESS) {
 		for (const auto &[tileId, freq] : mediaTileFreqs) {
-			if (freq > 0.0) {
+			if (freq >= 0.0) {
 				mediaFreqSamplesPerTile[tileId].push_back(freq);
 				DBG("Tile {} Media frequency sample: {:.2f} MHz\n", tileId, freq);
 			}
@@ -459,7 +461,7 @@ cmdStats::collectFrequencyMetricsPerTile(frequency *frequencyHandler,
 	result = frequencyHandler->getCurFreqPerTile(ZES_FREQ_DOMAIN_MEMORY, memoryTileFreqs);
 	if (result == ZE_RESULT_SUCCESS) {
 		for (const auto &[tileId, freq] : memoryTileFreqs) {
-			if (freq > 0.0) {
+			if (freq >= 0.0) {
 				memoryFreqSamplesPerTile[tileId].push_back(freq);
 				DBG("Tile {} Memory frequency sample: {:.2f} MHz\n", tileId, freq);
 			}
