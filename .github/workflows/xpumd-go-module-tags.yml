@@ -1,0 +1,40 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+
+name: Linux - xpumd Go module tags
+
+# Tag Go submodules on release: vX.Y.Z -> <module-dir>/v0.X.Y-Z
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (vX.Y.Z) to create module tags for"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  tag-modules:
+    if: github.repository == 'intel/xpumanager'
+    runs-on: ${{ fromJson(vars.RUNS_ON) }}
+    permissions:
+      contents: write
+    steps:
+    - name: Check out code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        # The script reads the modules from the release tag, not the checkout
+        fetch-depth: 0
+        fetch-tags: true
+
+    - name: Create and push module tags
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        .github/scripts/tag_go_modules.sh "$RELEASE_TAG" github.com/intel/xpumanager/
+      env:
+        RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
