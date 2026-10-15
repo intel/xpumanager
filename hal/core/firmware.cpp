@@ -310,14 +310,18 @@ ze_result_t firmware::getAmcPartNumber(const char *bdfStr, char *partNum, uint32
 	STRCPY_S(partNum, size, pn.c_str());
 	return ZE_RESULT_SUCCESS;
 }
-/*
+/**
  * @brief Runs the pre-update, update and post-update handlers of one firmware type
  *
  * The post-update handler is always given a chance to run, so a failed pre-update or update
  * still releases whatever the pre-update acquired.
  *
- * @param cmd The firmware update command row to run
- * @param fwInfo Pointer to firmware information structure containing update details
+ * A failed update handler gets a generic error line, unless it has already printed its own, see
+ * fwupd::failureAlreadyReported().
+ *
+ * @param [in] cmd The firmware update command row to run
+ * @param [in,out] fwInfo Pointer to firmware information structure containing update details; the
+ *                 handlers may fill in its image buffer
  * @return ze_result_t ZE_RESULT_SUCCESS if update successful, error code otherwise
  */
 ze_result_t firmware::runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fwInfo)
@@ -353,8 +357,7 @@ ze_result_t firmware::runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fw
 	}
 	result = (fw->*cmd.updateFunc)(fwInfo);
 	if (result != ZE_RESULT_SUCCESS) {
-		if (result != ZE_RESULT_ERROR_UNINITIALIZED && result != ZE_RESULT_ERROR_INVALID_ARGUMENT &&
-			result != ZE_RESULT_ERROR_INVALID_SIZE) {
+		if (!fwupd::failureAlreadyReported(result)) {
 			ERR("Failed to update firmware 0x{:X} ({})\n", result, l0_error_to_string(result));
 		}
 		(fw->*cmd.postUpdateFunc)(fwInfo);

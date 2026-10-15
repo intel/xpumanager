@@ -66,6 +66,21 @@ Options
       * - ``COMPOSITE``
         - PLDM (DSP0267 Type 5) firmware update package holding several components
 
+   .. note::
+
+      Before a ``GFX_DATA`` image is flashed, its version is compared with the
+      GFX data firmware installed on the device, by the version rules of the IGSC
+      library, and an image the device would refuse is not flashed. The main
+      rule concerns the OEM manufacturing data version: an image in version
+      format 1 must have a higher one than the installed firmware, and an image
+      in format 2 a different one, so the installed ``GFX_DATA`` version cannot
+      be flashed again. If the device records an unfinished ``GFX_DATA``
+      update, the image is compared with that update instead. The error message
+      names the version that blocked the update; ``xpu-smi discovery`` shows the
+      installed one as *GFX Data Firmware Version*. If either version cannot be
+      read, the image is flashed and the device decides. ``--force`` does not
+      override these rules.
+
 .. option:: -f <path>, --file <path>
 
    Path to the firmware image file on the local filesystem. With

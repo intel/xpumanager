@@ -111,13 +111,15 @@ struct firmwareInfo
 	// Composite (PLDM Type 5) package handling. Only meaningful while a COMPOSITE update is running.
 	bool fdoOnly;				// --fdo was passed: flash the IFWI component and nothing else
 	compositeScope scope;		// which components this call is responsible for
-	bool imagePreloaded;		// buffer already holds the image to flash, do not read filePath
 	std::string imageLabel;		// component being flashed, e.g. "GFX_CODE 1/3", for progress and errors
 	uint16_t pldmComponentId;	// component to select from filePath, 0 for the whole package
 	uint32_t componentsApplied; // out: components flashed by this call, set by a COMPOSITE update
 
 	igsc_device_handle handle;
 	std::vector<char> buffer;
+	// buffer already holds the image to flash, do not read filePath: set for a component of a composite package
+	// and by fwupd::updateGfxData(), which reads the image to check its version
+	bool imagePreloaded;
 	igsc_fwdata_image *oimg;
 	igsc_oprom_image *opimg;
 
@@ -143,6 +145,24 @@ public:
 	virtual ~fwupd() {}
 	std::vector<char> readImageContent(const char *filePath);
 	ze_result_t updateFW(firmwareInfo *fwInfo);
+	[[nodiscard]] static std::string checkFwDataImage(const std::string &meiPath, const std::vector<char> &image);
+
+	/**
+	 * @brief Tells whether an update handler has already printed its own error for a failed update
+	 *
+	 * updateFW() explains ZE_RESULT_ERROR_UNINITIALIZED, ZE_RESULT_ERROR_INVALID_ARGUMENT and
+	 * ZE_RESULT_ERROR_INVALID_SIZE, and updateGfxData() explains ZE_RESULT_ERROR_UNSUPPORTED_VERSION, so a
+	 * caller adds a generic error line only for the other codes.
+	 *
+	 * @param [in] result Result of the failed update handler
+	 * @return bool true if the handler has already printed an error for result
+	 */
+	[[nodiscard]] static constexpr bool failureAlreadyReported(ze_result_t result) noexcept
+	{
+		return result == ZE_RESULT_ERROR_UNINITIALIZED || result == ZE_RESULT_ERROR_INVALID_ARGUMENT ||
+			   result == ZE_RESULT_ERROR_INVALID_SIZE || result == ZE_RESULT_ERROR_UNSUPPORTED_VERSION;
+	}
+
 	virtual ze_result_t preUpdateAMC(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateAMC(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t postUpdateAMC(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
@@ -150,7 +170,7 @@ public:
 	virtual ze_result_t updateGfx(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateGfx(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t preUpdateGfxData(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
-	virtual ze_result_t updateGfxData(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
+	virtual ze_result_t updateGfxData(firmwareInfo *fwInfo);
 	virtual ze_result_t preUpdateFdo(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
 	virtual ze_result_t updateFdo(firmwareInfo *fwInfo) { return updateFW(fwInfo); };
 	virtual ze_result_t postUpdateFdo(UNUSED firmwareInfo *fwInfo) { return ZE_RESULT_SUCCESS; };
