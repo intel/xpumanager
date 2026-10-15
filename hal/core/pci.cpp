@@ -361,6 +361,7 @@ ze_result_t pci::init(zes_device_handle_t device)
 {
 	deviceProperties.meiDevicePath.clear();
 	deviceProperties.fwStatus = "unknown";
+	fwStatusQueried = false;
 
 	ze_result_t result;
 	result = getProperties(device, &deviceProperties.pciProps);
@@ -389,12 +390,34 @@ ze_result_t pci::init(zes_device_handle_t device)
 
 			// Found a matching device so copy the meiDevicePath
 			deviceProperties.meiDevicePath = dv.meiDevicePath;
-			deviceProperties.fwStatus = gsc.getGfxFirmwareStatus(dv.meiDevicePath);
 			break;
 		}
 	}
 
 	return result;
+}
+
+/**
+ * @brief Reports the GFX firmware status read from the device's GSC.
+ *
+ * Queried over MEI on the first call and cached. The query opens an IGSC session and asks
+ * the GSC firmware for its version, which costs ~200 ms per device as root on some
+ * platforms; doing it here rather than in init() means only callers that show the status
+ * pay for it. /dev/mei* is root-only, so unprivileged callers get "unknown" quickly.
+ *
+ * @retval "unknown"  No MEI device matched this GPU, or the GSC could not be queried.
+ * @retval other      The status reported by the GSC firmware.
+ */
+std::string pci::getFWStatus()
+{
+	if (!fwStatusQueried) {
+		fwStatusQueried = true;
+		if (!deviceProperties.meiDevicePath.empty()) {
+			gscupd gsc;
+			deviceProperties.fwStatus = gsc.getGfxFirmwareStatus(deviceProperties.meiDevicePath);
+		}
+	}
+	return deviceProperties.fwStatus;
 }
 
 /**

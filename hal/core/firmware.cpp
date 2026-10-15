@@ -9,6 +9,7 @@
 #include <gscupd.h>
 #include <pldmextraction.h>
 #include <sysmanupd.h>
+#include <tuple>
 #include <ze_api.h>
 
 /**
@@ -213,6 +214,10 @@ ze_result_t firmware::getFWversion(fwType type, const char *bdfStr, char *versio
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// A failed enumeration is logged where it happens and leaves the version empty, as when
+	// enumeration ran in init().
+	std::ignore = ensureEnumerated();
+
 	// AMC fw version is retrieved differently because we have to ask the AMC card itself
 	if (type == fwType::AMC) {
 		int amc = -1;
@@ -415,6 +420,10 @@ ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSiz
 ze_result_t firmware::updateFW(firmwareInfo *fwInfo)
 {
 	TRACING();
+
+	// Firmware handles come from enumeration. A failure is logged where it happens and leaves the
+	// handle null, as when enumeration ran in init(); the update then fails in its own sequence.
+	std::ignore = ensureEnumerated();
 
 	// A composite package is not a single image: it is unwrapped and its components are flashed
 	// through the firmware types below.
@@ -693,22 +702,47 @@ bool firmware::hasAmcFirmware()
  */
 ze_result_t firmware::init(zes_device_handle_t device)
 {
-	ze_result_t result = enumFirmwares(device);
+	zesDevice = device;
+	enumerated = false;
 
-	// Create a fwupd array that holds all different types of firmware updates
+	// Create a fwupd array that holds all different types of firmware updates. The AMC entry is
+	// used during device init (getAmcIndex), so this part stays eager.
 	fwupdArray = new fwupd *[FWUPD_PREFERENCE_MAX];
 	fwupdArray[FWUPD_PREFERENCE_GSC] = new gscupd();
 	fwupdArray[FWUPD_PREFERENCE_SYSMAN] = new sysmanupd();
 	fwupdArray[FWUPD_PREFERENCE_AMC] = new amcupd();
 
-	for (uint32_t i = 0; i < firmwareCount; i++) {
-		result = getProperties(firmwareList[i]);
-		if (result != ZE_RESULT_SUCCESS) {
-			return result;
-		}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Enumerates the device's firmware and reads its properties the first time it is needed
+ *
+ * zesDeviceEnumFirmwares and zesFirmwareGetProperties talk to the GSC over MEI, which costs
+ * ~1 s per device as root on some platforms. Only firmware version queries and updates need
+ * the result, so every method that reads updateFWCmds calls this instead of init() doing it.
+ * The outcome of the first attempt is kept, so a device is not re-queried.
+ *
+ * @retval ZE_RESULT_SUCCESS  Firmware handles and versions are populated (possibly none).
+ * @retval other              The error from the first enumeration or property query.
+ */
+ze_result_t firmware::ensureEnumerated()
+{
+	if (enumerated) {
+		return enumResult;
+	}
+	enumerated = true;
+
+	if (zesDevice == nullptr) {
+		enumResult = ZE_RESULT_ERROR_UNINITIALIZED;
+		return enumResult;
 	}
 
-	return result;
+	enumResult = enumFirmwares(zesDevice);
+	for (uint32_t i = 0; enumResult == ZE_RESULT_SUCCESS && i < firmwareCount; i++) {
+		enumResult = getProperties(firmwareList[i]);
+	}
+	return enumResult;
 }
 
 /**

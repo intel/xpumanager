@@ -40,6 +40,9 @@ private:
 	uint32_t func = 0;
 	char bdfStr[BDF_STR_LEN] = {};
 	zes_driver_handle_t zesDriver = nullptr;
+	// The GSC query behind fwStatus costs ~200 ms per device as root on some platforms, so it
+	// runs on the first getFWStatus() call instead of in init().
+	bool fwStatusQueried = false;
 	typedef ze_result_t (*pfnZesIntelDevicePciLinkSpeedUpdateExp_t)(zes_device_handle_t hDevice, ze_bool_t bDowngrade,
 																	zes_device_action_t *pPendingAction);
 
@@ -57,7 +60,7 @@ public:
 	ze_result_t zesRun(zes_device_handle_t device);
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
-	std::string getFWStatus() { return deviceProperties.fwStatus; }
+	std::string getFWStatus();
 	void getBDF(bdfID &bdf) const
 	{
 		bdf.domain = this->domain;

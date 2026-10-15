@@ -24,6 +24,13 @@ private:
 	zes_firmware_properties_t *propertiesList;
 	updateFWCmdStruct *updateFWCmds;
 	fwupd **fwupdArray;
+	// Enumeration goes through the GSC over MEI and costs ~1 s per device as root on some
+	// platforms, so it runs on first use instead of in init().
+	zes_device_handle_t zesDevice = nullptr;
+	bool enumerated = false;
+	ze_result_t enumResult = ZE_RESULT_SUCCESS;
+
+	[[nodiscard]] ze_result_t ensureEnumerated();
 
 	ze_result_t runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fwInfo);
 	ze_result_t updateComposite(firmwareInfo *fwInfo);
