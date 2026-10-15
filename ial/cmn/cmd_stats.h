@@ -327,8 +327,8 @@ public:
 											   std::string_view engineKey);
 	static void applyFdinfoUtilFallback(const fdinfo::PidUtilMap &utilMap, DeviceMetrics &metrics);
 	static std::vector<ProcessUtilEntry> buildProcessUtilEntries(const fdinfo::PidUtilMap &utilMap,
-																  const std::vector<zes_process_state_t> &processList,
-																  uint32_t selfPid);
+																 const std::vector<zes_process_state_t> &processList,
+																 uint32_t selfPid);
 
 private:
 	static ze_result_t runListOfflinePages(std::vector<devInfo> &deviceList, Printer *printer, bool jsonMode);

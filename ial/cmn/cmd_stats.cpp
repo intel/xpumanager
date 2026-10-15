@@ -22,6 +22,8 @@
 #include <array>
 #include <cinttypes>
 #include <cmath>
+#include <functional>
+#include <future>
 #include <numeric>
 #include <optional>
 #include <ranges>
@@ -1099,6 +1101,13 @@ void cmdStats::populateEngineStats(const std::vector<EngineInstanceTracker> &tra
 
 namespace {
 
+/** One device's stats, collected on its own thread by cmdStats::run(). */
+struct DeviceStatsResult
+{
+	ze_result_t status{};
+	nlohmann::ordered_json deviceJson;
+};
+
 /** Pointer to one of the DeviceMetrics per-tile sample series. */
 using TileSeries = std::map<uint32_t, std::vector<double>> DeviceMetrics::*;
 
@@ -1197,8 +1206,8 @@ void cmdStats::applyFdinfoUtilFallback(const fdinfo::PidUtilMap &utilMap, Device
  * @param selfPid     Caller's own PID, excluded from @p processList.
  */
 std::vector<ProcessUtilEntry> cmdStats::buildProcessUtilEntries(const fdinfo::PidUtilMap &utilMap,
-																 const std::vector<zes_process_state_t> &processList,
-																 uint32_t selfPid)
+																const std::vector<zes_process_state_t> &processList,
+																uint32_t selfPid)
 {
 	const auto makeEntry = [](uint32_t pid, const ProcUtil &util) {
 		ProcessUtilEntry entry;
@@ -1423,6 +1432,15 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 
 	const size_t actualSampleCount = std::max<size_t>(sampleCount, 2);
 	for (size_t i = 0; i < actualSampleCount; ++i) {
+		// The EU collector blocks for its own fixed window, so it runs across the interval sleep
+		// rather than after it: a sample then costs max(interval, EU window), not both. It only
+		// writes metrics.euMetrics, which nothing else in this loop touches.
+		std::future<ze_result_t> euFut;
+		if (collectEuMetrics) {
+			euFut = std::async(std::launch::async, collectEuMetricsPerTile, dev->getMetric(), dev->getDeviceHandle(),
+							   dev->getDriverHandle(), std::ref(metrics.euMetrics));
+		}
+
 		std::this_thread::sleep_for(sampleInterval);
 
 		auto sampleEngineType = [&](zes_engine_group_t engineType, std::vector<EngineInstanceTracker> &trackers) {
@@ -1483,9 +1501,9 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 			collectFdinfoUtil(device, fdinfoBaseline, metrics);
 		}
 
-		if (collectEuMetrics) {
-			auto *metricHandler = dev->getMetric();
-			collectEuMetricsPerTile(metricHandler, dev->getDeviceHandle(), dev->getDriverHandle(), metrics.euMetrics);
+		if (euFut.valid()) {
+			// A failed collection is logged inside and leaves the EU rows empty, as before.
+			static_cast<void>(euFut.get());
 		}
 	}
 
@@ -2932,14 +2950,27 @@ int cmdStats::run(arg_struct *args)
 		return runListOfflinePages(deviceList, printer.get(), statsCmds[STATS_JSON].enabled);
 	}
 
+	// Each device samples over its own window; running them concurrently makes the command take
+	// one device's sampling time instead of the sum. Results are printed in device order.
+	const bool collectRas = statsCmds[STATS_RAS].enabled;
+	const bool collectEu = statsCmds[STATS_EU].enabled;
+	std::vector<std::future<DeviceStatsResult>> deviceFutures;
+	deviceFutures.reserve(deviceList.size());
 	for (auto &device : deviceList) {
-		DeviceMetrics metrics;
-		nlohmann::ordered_json deviceJson;
+		deviceFutures.push_back(std::async(
+			std::launch::async, [&device, sampleCount, sampleInterval, collectRas, collectEu]() -> DeviceStatsResult {
+				DeviceMetrics metrics;
+				DeviceStatsResult out;
+				out.status = collectDeviceStats(&device, sampleCount, sampleInterval, metrics, out.deviceJson,
+												collectRas, collectEu);
+				return out;
+			}));
+	}
 
-		result = collectDeviceStats(&device, sampleCount, sampleInterval, metrics, deviceJson,
-									statsCmds[STATS_RAS].enabled, statsCmds[STATS_EU].enabled);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to collect stats for device {}.\n", device.index);
+	for (std::size_t i = 0; i < deviceList.size(); ++i) {
+		auto [status, deviceJson] = deviceFutures[i].get();
+		if (status != ZE_RESULT_SUCCESS) {
+			ERR("Failed to collect stats for device {}.\n", deviceList[i].index);
 			continue;
 		}
 
