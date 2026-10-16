@@ -279,6 +279,7 @@ ze_result_t memory::getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t
 ze_result_t memory::getMemorySize(uint64_t *size)
 {
 	ze_result_t result = ZE_RESULT_SUCCESS;
+	zes_mem_properties_t properties = {};
 	zes_mem_state_t state = {};
 
 	if (size == nullptr) {
@@ -288,12 +289,18 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 	*size = 0;
 
 	for (std::size_t i = 0; i < memoryModules.size(); i++) {
+		result = getProperties(memoryModules[i], &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get Memory properties for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			return result;
+		}
 		result = getState(memoryModules[i], &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to get Memory state for module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
 			return result;
 		}
-		*size += state.size;
+		// state.size (deprecated) is the fallback when properties.physicalSize is 0
+		*size += (properties.physicalSize > 0) ? properties.physicalSize : state.size;
 	}
 	return result;
 }
