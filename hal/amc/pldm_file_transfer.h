@@ -21,6 +21,12 @@
 #define PLDM_FT_DF_READ_SIZE 23
 #define PLDM_FT_DF_FIFO_SEND_SIZE 23
 
+// Bytes requested per DfRead (one DSP0240 MultipartReceive section). Chosen by the File Client.
+#define PLDM_FT_DF_READ_SECTION_SIZE 512
+
+// Minimum multipart transfer part size (DSP0240 NegotiateTransferParameters)
+#define PLDM_MIN_PART_SIZE 256
+
 #define MAX_NUM_RETRIES 3
 
 enum pldm_ft_command_code

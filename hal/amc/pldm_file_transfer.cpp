@@ -8,6 +8,7 @@
 #include "pldm_constants.h"
 #include "pldm.h"
 #include <algorithm>
+#include <cstddef>
 #include <cstring>
 #include <limits>
 
@@ -271,6 +272,15 @@ uint8_t pldm::PldmFillFileTxPayload(uint8_t cmd, uint8_t size)
 		payloadPtr[offset] = crc8Smbus(payloadPtr, offset);
 		break;
 
+	case PLDM_NEGOTIATE_TRANSFER_PARAMETERS:
+		memcpy(payloadPtr + offset, &mNegotiateTransferReq.partSize, sizeof(mNegotiateTransferReq.partSize));
+		offset += sizeof(mNegotiateTransferReq.partSize);
+		memcpy(payloadPtr + offset, mNegotiateTransferReq.protocolSupport,
+			   sizeof(mNegotiateTransferReq.protocolSupport));
+		offset += sizeof(mNegotiateTransferReq.protocolSupport);
+		payloadPtr[offset] = crc8Smbus(payloadPtr, offset);
+		break;
+
 	default:
 		ERR("PLDM File Transfer: Unsupported command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
@@ -316,7 +326,9 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 		instanceID = 1;
 	}
 
-	auto cmdType = (cmd == PLDM_MULTIPART_RECEIVE) ? PLDM_MESSAGE_DISCOVERY : PLDM_FILE_TRANSFER;
+	// MultipartReceive (DfRead) and NegotiateTransferParameters are PLDM base (type 0) commands
+	auto cmdType = (cmd == PLDM_MULTIPART_RECEIVE || cmd == PLDM_NEGOTIATE_TRANSFER_PARAMETERS) ? PLDM_MESSAGE_DISCOVERY
+																								: PLDM_FILE_TRANSFER;
 	ret = pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, static_cast<uint8_t>(cmdType), cmd,
 							  PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
 	if (ret != PLDM_SUCCESS) {
@@ -330,7 +342,7 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 		return ret;
 	}
 
-	DBG("PLDM File Transfer TX :: ");
+	DBG("PLDM File Transfer TX for command:: 0x{:02x}", cmd);
 	hexdump((uint8_t *)mI2cPldmWrite, size);
 
 	if (i2cobj->writeAmc(wptr + 1, size) != true) {
@@ -393,6 +405,8 @@ uint8_t pldm::pldmFileTransferResp(uint8_t cmd, uint8_t id)
 		return handleDfReadResp(respPayload, respPayloadLen, totalFrameSize);
 	case PLDM_MULTIPART_RECEIVE:
 		return handleMultipartReceiveResp(respPayload, respPayloadLen, totalFrameSize);
+	case PLDM_NEGOTIATE_TRANSFER_PARAMETERS:
+		return handleNegotiateTransferParamsResp(respPayload, respPayloadLen);
 	case PLDM_FT_CMDCODE_DF_FIFO_SEND:
 	case PLDM_FT_CMDCODE_DF_PROPERTIES:
 	case PLDM_FT_CMDCODE_DF_GET_FILE_ATTRIBUTE:
@@ -561,6 +575,49 @@ uint8_t pldm::handleMultipartReceiveResp(const uint8_t *respPayload, size_t resp
 }
 
 /**
+ * @brief Parses the payload of the PLDM NEGOTIATE_TRANSFER_PARAMETERS response.
+ *
+ * Checks that the File Host supports multipart transfers for PLDM File Transfer (type 7) and records the negotiated
+ * part size, the smaller of the requester and responder part sizes.
+ *
+ * @param[in] respPayload Pointer to the response payload data.
+ * @param[in] respPayloadLen Length of the response payload data.
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure.
+ */
+uint8_t pldm::handleNegotiateTransferParamsResp(const uint8_t *respPayload, size_t respPayloadLen)
+{
+	if (respPayloadLen < sizeof(mNegotiateTransferResp)) {
+		ERR("PLDM File Transfer: NegotiateTransferParameters response payload too short ({})\n", respPayloadLen);
+		return PLDM_ERROR;
+	}
+
+	memcpy(&mNegotiateTransferResp, respPayload, sizeof(mNegotiateTransferResp));
+	DBG("PLDM File Transfer NegotiateTransferParameters response: completion=0x{:02x} part size={} protocol "
+		"support[0]=0x{:02x}\n",
+		mNegotiateTransferResp.completionCode, mNegotiateTransferResp.partSize,
+		mNegotiateTransferResp.protocolSupport[0]);
+
+	const uint8_t fileTransferBit = static_cast<uint8_t>(1U << (PLDM_FILE_TRANSFER % 8));
+	if ((mNegotiateTransferResp.protocolSupport[PLDM_FILE_TRANSFER / 8] & fileTransferBit) == 0) {
+		ERR("PLDM File Transfer: File Host does not support multipart transfer for PLDM type {}\n",
+			static_cast<int>(PLDM_FILE_TRANSFER));
+		return PLDM_ERROR;
+	}
+
+	if (mNegotiateTransferResp.partSize < PLDM_MIN_PART_SIZE) {
+		ERR("PLDM File Transfer: Responder part size {} is below the minimum {}\n", mNegotiateTransferResp.partSize,
+			PLDM_MIN_PART_SIZE);
+		return PLDM_ERROR;
+	}
+
+	// Our offer is the receive buffer size, so the negotiated part size always fits it
+	mNegotiatedPartSize = std::min(mNegotiateTransferReq.partSize, mNegotiateTransferResp.partSize);
+	DBG("PLDM File Transfer: Negotiated part size {} bytes\n", mNegotiatedPartSize);
+
+	return PLDM_SUCCESS;
+}
+
+/**
  * @brief Validates the response payload for PLDM file transfer commands
  *
  * Checks the completion code and other relevant fields in the response payload to determine if the command was
@@ -614,8 +671,12 @@ uint8_t pldm::pldmFileTransferRespPayload(const uint8_t *respPayload, const size
 	}
 
 	if (respPayload[0] != PLDM_SUCCESS) {
-		if (cmd == PLDM_MULTIPART_RECEIVE && respPayload[0] == PLDM_ERROR_UNSUPPORTED_PLDM_CMD) {
-			return PLDM_SUCCESS;
+		if (cmd == PLDM_MULTIPART_RECEIVE) {
+			// Record the responder's completion code so a DfRead failure can report it
+			mMultipartReceiveResp.completionCode = respPayload[0];
+			if (respPayload[0] == PLDM_ERROR_UNSUPPORTED_PLDM_CMD) {
+				return PLDM_SUCCESS;
+			}
 		}
 
 		if (cmd != PLDM_MULTIPART_RECEIVE && (respPayload[0] >= PLDM_FT_COMPLCODE_INVALID_FILE_DESCRIPTOR) &&
@@ -634,6 +695,33 @@ uint8_t pldm::pldmFileTransferRespPayload(const uint8_t *respPayload, const size
 	}
 
 	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Executes the PLDM NEGOTIATE_TRANSFER_PARAMETERS command for PLDM File Transfer.
+ *
+ * DSP0242 requires PLDM type 7 to be negotiated with the File Host before DfRead (MultipartReceive) is used.
+ *
+ * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
+ */
+uint8_t pldm::pldmNegotiateTransferParamsCommand()
+{
+	TRACING();
+
+	mNegotiateTransferReq = {};
+	mNegotiateTransferReq.partSize = static_cast<uint16_t>(sizeof(mDfReadResp.data));
+	mNegotiateTransferReq.protocolSupport[PLDM_FILE_TRANSFER / 8] =
+		static_cast<uint8_t>(1U << (PLDM_FILE_TRANSFER % 8));
+	mNegotiateTransferResp = {};
+	mNegotiatedPartSize = 0;
+
+	uint8_t size =
+		sizeof(mctpSmbusI2cHdr) + sizeof(struct pldmHdr) + sizeof(struct pldm_negotiate_transfer_parameters_req);
+	uint8_t ret = pldmFileTransferCmd(PLDM_NEGOTIATE_TRANSFER_PARAMETERS, size);
+	if (ret != PLDM_SUCCESS) {
+		ERR("PLDM File Transfer: NegotiateTransferParameters failed\n");
+	}
+	return ret;
 }
 
 /**
@@ -685,79 +773,169 @@ uint8_t pldm::pldmDfCloseCommand(uint16_t fileDescriptor)
 }
 
 /**
- * @brief Executes the PLDM MULTIPART_RECEIVE command to receive a file in multiple parts.
+ * @brief Acknowledges the end of a DfRead section with XFER_COMPLETE (DSP0240 clause 8.6.2).
  *
- * This function constructs and sends the MULTIPART_RECEIVE command, then processes the response to retrieve the file
- * data.
+ * The section transfer is complete only once the File Host responds with ACKNOWLEDGE_COMPLETION.
  *
- * @param[in] fileDescriptor The file descriptor to read from
- * @param[out] fileData The vector to store the received file data
- * @return uint8_t PLDM_SUCCESS on success, PLDM_ERROR on failure
+ * @param[in] fileDescriptor The file descriptor the section was read from
+ * @return uint8_t PLDM_SUCCESS on success, error code on failure
  */
-uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<uint8_t> &fileData)
+uint8_t pldm::pldmDfReadCompleteSection(uint16_t fileDescriptor)
 {
 	TRACING();
 
-	const uint32_t maxReadChunk = static_cast<uint32_t>(sizeof(mDfReadResp.data));
-	uint32_t totalBytesRead = 0;
-	uint32_t currentOffset = 0;
+	// DataTransferHandle is zero for XFER_COMPLETE. The offset and length stay zero: the next section, if any, is
+	// started with XFER_FIRST_PART.
+	mMultipartReceiveReq = {};
+	mMultipartReceiveReq.pldmType = PLDM_FILE_TRANSFER;
+	mMultipartReceiveReq.transferOperation = PLDM_XFER_COMPLETE;
+	mMultipartReceiveReq.transferContext = fileDescriptor;
+	mMultipartReceiveResp = {};
+
+	uint8_t size = sizeof(mctpSmbusI2cHdr) + sizeof(struct pldmHdr) + sizeof(struct pldm_base_multipart_receive_req);
+	uint8_t ret = pldmFileTransferCmd(PLDM_MULTIPART_RECEIVE, size);
+	if (ret != PLDM_SUCCESS) {
+		ERR("PLDM File Transfer: DfRead XFER_COMPLETE failed for descriptor 0x{:04x} (completion=0x{:02x})\n",
+			fileDescriptor, mMultipartReceiveResp.completionCode);
+		return ret;
+	}
+
+	if (mMultipartReceiveResp.transferFlag != PLDM_ACKNOWLEDGE_COMPLETION ||
+		mMultipartReceiveResp.dataLengthBytes != 0) {
+		ERR("PLDM File Transfer: Unexpected XFER_COMPLETE response (flag 0x{:02x}, {} data bytes)\n",
+			mMultipartReceiveResp.transferFlag, mMultipartReceiveResp.dataLengthBytes);
+		return PLDM_ERROR;
+	}
+
+	return PLDM_SUCCESS;
+}
+
+/**
+ * @brief Executes one PLDM DfRead (DSP0240 MULTIPART_RECEIVE section) starting at a given file offset.
+ *
+ * Issues XFER_FIRST_PART for the section, then XFER_NEXT_PART until the File Host reports the end of the section
+ * (END or START_AND_END), then acknowledges the section with XFER_COMPLETE. The received data is appended to
+ * fileData.
+ *
+ * @param[in] fileDescriptor The file descriptor to read from
+ * @param[in] fileOffset The file offset at which the section starts
+ * @param[in] sectionLength The number of bytes requested for this section
+ * @param[in,out] fileData The vector the section data is appended to
+ * @param[out] sectionBytesRead The number of bytes received for this section
+ * @return uint8_t PLDM_SUCCESS on success, error code on failure
+ */
+uint8_t pldm::pldmDfReadSection(uint16_t fileDescriptor, uint32_t fileOffset, uint32_t sectionLength,
+								std::vector<uint8_t> &fileData, uint32_t &sectionBytesRead)
+{
+	TRACING();
+
+	sectionBytesRead = 0;
 
 	mMultipartReceiveReq = {};
 	mMultipartReceiveReq.pldmType = PLDM_FILE_TRANSFER;
 	mMultipartReceiveReq.transferOperation = PLDM_XFER_FIRST_PART;
 	mMultipartReceiveReq.transferContext = fileDescriptor;
 	mMultipartReceiveReq.dataTransferHandle = 0;
+	mMultipartReceiveReq.requestedSectionOffset = fileOffset;
+	mMultipartReceiveReq.requestedSectionLengthBytes = sectionLength;
 
-	mMultipartReceiveResp = {};
-	mMultipartReceiveData.clear();
 	uint8_t size = sizeof(mctpSmbusI2cHdr) + sizeof(struct pldmHdr) + sizeof(struct pldm_base_multipart_receive_req);
-	uint8_t ret = PLDM_SUCCESS;
 
 	while (true) {
-		mMultipartReceiveReq.requestedSectionOffset = currentOffset;
-		mMultipartReceiveReq.requestedSectionLengthBytes = maxReadChunk;
-
-		ret = pldmFileTransferCmd(PLDM_MULTIPART_RECEIVE, size);
+		mMultipartReceiveResp = {};
+		uint8_t ret = pldmFileTransferCmd(PLDM_MULTIPART_RECEIVE, size);
 		if (ret != PLDM_SUCCESS) {
-			ERR("PLDM File Transfer: Multipart Receive failed for descriptor 0x{:04x}\n", fileDescriptor);
+			ERR("PLDM File Transfer: DfRead failed for descriptor 0x{:04x} at offset {} (completion=0x{:02x})\n",
+				fileDescriptor, fileOffset, mMultipartReceiveResp.completionCode);
 			return ret;
 		}
 
-		if (mMultipartReceiveResp.dataLengthBytes > maxReadChunk) {
-			ERR("PLDM File Transfer: Multipart Receive data length {} exceeds request chunk {}\n",
-				mMultipartReceiveResp.dataLengthBytes, maxReadChunk);
+		// DSP0240: the part size counts the PLDM header and payload (response fields, data and DataIntegrityChecksum)
+		constexpr uint32_t partOverheadBytes =
+			sizeof(struct pldmHdr) + offsetof(struct pldm_base_multipart_receive_resp, data) + sizeof(uint32_t);
+		const uint32_t partBytes = mMultipartReceiveResp.dataLengthBytes;
+		if (partBytes + partOverheadBytes > mNegotiatedPartSize) {
+			ERR("PLDM File Transfer: DfRead part of {} data bytes + {} bytes overhead exceeds part size {}\n",
+				partBytes, partOverheadBytes, mNegotiatedPartSize);
+			return PLDM_ERROR;
+		}
+		if (partBytes > sectionLength - sectionBytesRead) {
+			ERR("PLDM File Transfer: DfRead part of {} bytes overruns section ({} of {} bytes received)\n", partBytes,
+				sectionBytesRead, sectionLength);
 			return PLDM_ERROR;
 		}
 
-		if (mMultipartReceiveResp.dataLengthBytes > 0) {
-			mMultipartReceiveData.insert(mMultipartReceiveData.end(), mDfReadResp.data,
-										 mDfReadResp.data + mMultipartReceiveResp.dataLengthBytes);
-			totalBytesRead += mMultipartReceiveResp.dataLengthBytes;
-			currentOffset += mMultipartReceiveResp.dataLengthBytes;
+		fileData.insert(fileData.end(), mDfReadResp.data, mDfReadResp.data + partBytes);
+		sectionBytesRead += partBytes;
+		DBG("PLDM File Transfer: DfRead offset={} part={} bytes flag=0x{:02x}, section total={} bytes\n", fileOffset,
+			partBytes, mMultipartReceiveResp.transferFlag, sectionBytesRead);
 
-			INFO("PLDM File Transfer: Read {} bytes this chunk, total read={} bytes\n",
-				 mMultipartReceiveResp.dataLengthBytes, totalBytesRead);
+		const uint8_t flag = mMultipartReceiveResp.transferFlag;
+		if (flag == PLDM_END || flag == PLDM_START_AND_END) {
+			return pldmDfReadCompleteSection(fileDescriptor);
 		}
 
-		if (mMultipartReceiveResp.completionCode == PLDM_ERROR_UNSUPPORTED_PLDM_CMD ||
-			mMultipartReceiveResp.dataLengthBytes == 0 || mMultipartReceiveResp.transferFlag == PLDM_END ||
-			mMultipartReceiveResp.transferFlag == PLDM_START_AND_END ||
-			mMultipartReceiveResp.dataLengthBytes < maxReadChunk) {
-			break;
-		}
-
-		if (mMultipartReceiveResp.transferFlag != PLDM_START && mMultipartReceiveResp.transferFlag != PLDM_MIDDLE) {
-			ERR("PLDM File Transfer: Unexpected multipart transfer flag 0x{:02x}\n",
-				mMultipartReceiveResp.transferFlag);
+		if (flag != PLDM_START && flag != PLDM_MIDDLE) {
+			ERR("PLDM File Transfer: Unexpected multipart transfer flag 0x{:02x}\n", flag);
 			return PLDM_ERROR;
 		}
 
+		// A non-final part without data would never make progress
+		if (partBytes == 0) {
+			ERR("PLDM File Transfer: Empty non-final DfRead part (flag 0x{:02x})\n", flag);
+			return PLDM_ERROR;
+		}
+
+		// DSP0240: the section offset and length are zero for XFER_NEXT_PART
 		mMultipartReceiveReq.transferOperation = PLDM_XFER_NEXT_PART;
 		mMultipartReceiveReq.dataTransferHandle = mMultipartReceiveResp.nextDataTransferHandle;
+		mMultipartReceiveReq.requestedSectionOffset = 0;
+		mMultipartReceiveReq.requestedSectionLengthBytes = 0;
+	}
+}
+
+/**
+ * @brief Reads a whole file using consecutive PLDM DfRead commands (DSP0240 MULTIPART_RECEIVE sections).
+ *
+ * Each DfRead requests up to PLDM_FT_DF_READ_SECTION_SIZE bytes. The next FileOffset is the previous FileOffset plus
+ * the bytes returned for the previous section. The read stops at maxFileSize, or at end of file, which is a section
+ * returning fewer bytes than requested.
+ *
+ * @param[in] fileDescriptor The file descriptor to read from
+ * @param[in] maxFileSize Upper bound of the file size (File Descriptor PDR FileMaximumSize), 0 if unknown
+ * @param[out] fileData The vector to store the received file data
+ * @return uint8_t PLDM_SUCCESS on success, error code on failure
+ */
+uint8_t pldm::pldmMultipartReceiveCommand(uint16_t fileDescriptor, uint32_t maxFileSize, std::vector<uint8_t> &fileData)
+{
+	TRACING();
+
+	const uint32_t fileSizeLimit = (maxFileSize != 0) ? maxFileSize : std::numeric_limits<uint32_t>::max();
+	uint32_t fileOffset = 0;
+
+	mMultipartReceiveData.clear();
+
+	while (fileOffset < fileSizeLimit) {
+		const uint32_t sectionLength =
+			std::min(static_cast<uint32_t>(PLDM_FT_DF_READ_SECTION_SIZE), fileSizeLimit - fileOffset);
+		uint32_t sectionBytesRead = 0;
+
+		uint8_t ret =
+			pldmDfReadSection(fileDescriptor, fileOffset, sectionLength, mMultipartReceiveData, sectionBytesRead);
+		if (ret != PLDM_SUCCESS) {
+			return ret;
+		}
+
+		fileOffset += sectionBytesRead;
+		INFO("PLDM File Transfer: Read {} bytes this section, total read={} bytes\n", sectionBytesRead, fileOffset);
+
+		if (sectionBytesRead < sectionLength) {
+			break;
+		}
 	}
 
 	fileData.assign(mMultipartReceiveData.begin(), mMultipartReceiveData.end());
-	DBG("PLDM File Transfer: Multipart transfer completed, total bytes={}\n", totalBytesRead);
+	DBG("PLDM File Transfer: Multipart transfer completed, total bytes={}\n", fileData.size());
 	return PLDM_SUCCESS;
 }
 
@@ -826,7 +1004,13 @@ uint8_t pldm::getFile(uint16_t filePdrId, std::vector<uint8_t> &fileData)
 
 	const auto *fileDescPdr = reinterpret_cast<const struct pldmFileDescriptorPdr *>(filePdr->data.data());
 	uint16_t fileIdentifier = fileDescPdr->fileIdentifier;
-	DBG("PLDM File Transfer: Found file PDR with identifier {}, file identifier=0x{:04x}\n", filePdrId, fileIdentifier);
+	DBG("PLDM File Transfer: Found file PDR with identifier {}, file identifier=0x{:04x} file maximum size={}\n",
+		filePdrId, fileIdentifier, fileDescPdr->fileMaximumSize);
+
+	ret = pldmNegotiateTransferParamsCommand();
+	if (ret != PLDM_SUCCESS) {
+		return ret;
+	}
 
 	uint16_t fileDescriptor = 0;
 	ret = pldmDfOpenCommand(fileIdentifier, fileDescriptor);
@@ -837,7 +1021,7 @@ uint8_t pldm::getFile(uint16_t filePdrId, std::vector<uint8_t> &fileData)
 		fileDescriptor);
 
 	fileData.clear();
-	ret = pldmMultipartReceiveCommand(fileDescriptor, fileData);
+	ret = pldmMultipartReceiveCommand(fileDescriptor, fileDescPdr->fileMaximumSize, fileData);
 
 	uint8_t closeRet = pldmDfCloseCommand(fileDescriptor);
 	if (closeRet != PLDM_SUCCESS) {

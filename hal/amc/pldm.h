@@ -44,7 +44,8 @@ enum pldmTransferFlag
 	PLDM_START = 0x01,
 	PLDM_MIDDLE = 0x02,
 	PLDM_END = 0x04,
-	PLDM_START_AND_END = 0x05
+	PLDM_START_AND_END = 0x05,
+	PLDM_ACKNOWLEDGE_COMPLETION = 0x08
 };
 
 #pragma pack(push, 1)
@@ -199,6 +200,9 @@ private:
 	struct pldm_file_df_read_resp mDfReadResp = {};
 	struct pldm_base_multipart_receive_req mMultipartReceiveReq = {};
 	struct pldm_base_multipart_receive_resp mMultipartReceiveResp = {};
+	struct pldm_negotiate_transfer_parameters_req mNegotiateTransferReq = {};
+	struct pldm_negotiate_transfer_parameters_resp mNegotiateTransferResp = {};
+	uint16_t mNegotiatedPartSize = 0;
 	std::vector<uint8_t> mMultipartReceiveData;
 	std::vector<uint8_t> mRxAssembledFrame;
 	std::vector<uint8_t> mRxAssembledPayload;
@@ -315,9 +319,14 @@ private:
 	uint8_t handleDfHeartbeatResp(const uint8_t *respPayload, size_t respPayloadLen);
 	uint8_t handleDfReadResp(const uint8_t *respPayload, size_t respPayloadLen, size_t totalFrameSize);
 	uint8_t handleMultipartReceiveResp(const uint8_t *respPayload, size_t respPayloadLen, size_t totalFrameSize);
+	uint8_t handleNegotiateTransferParamsResp(const uint8_t *respPayload, size_t respPayloadLen);
+	uint8_t pldmNegotiateTransferParamsCommand();
 	uint8_t pldmDfOpenCommand(uint16_t fileIdentifier, uint16_t &fileDescriptor);
 	uint8_t pldmDfCloseCommand(uint16_t fileDescriptor);
-	uint8_t pldmMultipartReceiveCommand(uint16_t fileDescriptor, std::vector<uint8_t> &fileData);
+	uint8_t pldmDfReadCompleteSection(uint16_t fileDescriptor);
+	uint8_t pldmDfReadSection(uint16_t fileDescriptor, uint32_t fileOffset, uint32_t sectionLength,
+							  std::vector<uint8_t> &fileData, uint32_t &sectionBytesRead);
+	uint8_t pldmMultipartReceiveCommand(uint16_t fileDescriptor, uint32_t maxFileSize, std::vector<uint8_t> &fileData);
 	const PdrRecord *getFilePdrById(uint16_t filePdrId);
 
 public:
