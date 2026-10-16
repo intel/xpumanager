@@ -77,7 +77,8 @@ ze_result_t resolveGfxFirmwareStatusForDevice(devInfo *d, std::string_view firmw
  * way, while each decides for itself how to present an absent version.
  *
  * @param[in] d Pointer to the device info structure
- * @return Release version, or an empty string when the driver declares none
+ * @return Release version, the in-tree kernel version (e.g. "6.8.0-45 (in-tree)"), or an
+ *         empty string when the driver cannot be identified
  */
 static std::string kmdVersionOf(devInfo *d)
 {
@@ -2102,10 +2103,10 @@ ze_result_t cmdDiscovery::kernelVersion(UNUSED devInfo *d, std::string *outputLi
  * carries and which names the driver package outright
  * (e.g. "xeb_v7.1.4.31_260728.26").
  *
- * The in-tree driver declares no MODULE_VERSION and so has no release version,
- * and Windows exposes none at all. The column is requested explicitly here, so it
- * is spelled "N/A" rather than dropped; the text and JSON views omit the field
- * instead.
+ * The in-tree driver declares no MODULE_VERSION, so the kernel's version is
+ * reported for it instead (e.g. "6.8.0-45 (in-tree)"). Windows exposes neither. The
+ * column is requested explicitly here, so an unknown version is spelled "N/A"
+ * rather than dropped; the text and JSON views omit the field instead.
  *
  * @param[in] d Pointer to the device info structure
  * @param[out] outputLine Pointer to the output line string (release version or "N/A")

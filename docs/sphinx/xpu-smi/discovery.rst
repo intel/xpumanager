@@ -218,11 +218,20 @@ are omitted.
    ``backported from (365b81808) using backports xeb_v7.1.4.31_260728.26 for
    7.0.0-14-generic Kernel`` string that ``/sys/module/xe/version`` holds.
 
-   The in-tree driver declares none, as is the case on Windows. KMD Version is
-   then omitted from the text output, the JSON key ``kernel_driver_version`` is
-   left out, and the dashboard banner drops the field, rather than showing a
-   value that names no release. ``--dump 54`` asks for the column explicitly, so
-   it is spelled ``N/A`` there instead of disappearing.
+   The in-tree driver declares none, but it ships with the kernel, so the
+   kernel's version identifies it and is reported instead, marked as in-tree —
+   for example ``6.8.0-45 (in-tree)`` for kernel ``6.8.0-45-generic``. The
+   distro build number (``-45``) is kept because distributions backport driver
+   code without changing the base version: Ubuntu ``6.8.0-45`` and ``6.8.0-90``
+   carry different driver code, and RHEL 9 ``5.14.0-503.40.1.el9_5.x86_64``,
+   reported as ``5.14.0-503.40.1 (in-tree)``, carries a driver backported from
+   6.x. The full release is shown under Kernel Version. On a host that mixes
+   both drivers, the dashboard banner shows the out-of-tree release.
+
+   Windows exposes no KMD version. KMD Version is then omitted from the text
+   output, the JSON key ``kernel_driver_version`` is left out, and the dashboard
+   banner drops the field. ``--dump 54`` asks for the column explicitly, so it
+   is spelled ``N/A`` there instead of disappearing.
 
    **Memory Type** is resolved from two Level Zero sources, because neither is
    complete on its own: the sysman memory type is per memory module and is the

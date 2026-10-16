@@ -298,9 +298,10 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Level Zero user-mode driver version string
    * - ``kernel_driver_version``
      - —
-     - Kernel-mode driver release version (``modinfo`` ``version``), declared only
-       by the out-of-tree driver installed via DKMS. The key is omitted when the
-       driver declares no version
+     - Kernel-mode driver release version (``modinfo`` ``version``) for the
+       out-of-tree driver installed via DKMS, or the kernel version marked as
+       in-tree (e.g. ``6.8.0-45 (in-tree)``) for the in-tree driver. The key is
+       omitted when neither is available, as on Windows
    * - ``vbios_version``
      - —
      - GFX firmware version (shown as GFX Firmware Version in the query report)

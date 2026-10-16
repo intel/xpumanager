@@ -67,3 +67,35 @@ std::string getKernelDriverName(const std::string &bdf, const KernelDriverPaths 
  *         the module carries no MODULE_VERSION
  */
 std::string getKernelDriverModuleVersion(const std::string &bdf, const KernelDriverPaths &paths = {});
+
+/**
+ * @brief Shortens a kernel release string to its version and distro build number
+ *
+ * The distro build number is kept because it, not the base version, identifies the
+ * driver code a distro kernel carries. Anything from the first letter on is dropped.
+ *
+ * Examples: "6.8.0-45-generic" -> "6.8.0-45",
+ * "5.14.0-503.40.1.el9_5.x86_64" -> "5.14.0-503.40.1",
+ * "7.1.0-lgci-xe-xe-internal-1441-5b9f3e73-nodebug+" -> "7.1.0"
+ *
+ * @param[in] release Kernel release string, as returned by uname -r
+ * @return Short version, or an empty string if @p release doesn't start with one
+ */
+std::string getKernelReleaseShortVersion(const std::string &release);
+
+/**
+ * @brief Returns the kernel version as the driver version for an in-tree GPU driver
+ *
+ * Only call this once getKernelDriverModuleVersion() has come back empty: an
+ * out-of-tree driver names its own release, and that is not checked again here.
+ *
+ * If @p bdf is given, a driver must be bound to that device. If @p bdf is empty,
+ * any loaded Intel GPU module is used.
+ *
+ * @param[in] bdf           PCI BDF address of the device, or "" for any loaded GPU module
+ * @param[in] kernelRelease Kernel release string, as returned by uname -r
+ * @param[in] paths         sysfs root paths (defaults to live sysfs; override in tests)
+ * @return Short kernel version (e.g. "6.8.0-45"), or an empty string if no driver is found
+ */
+std::string getInTreeKernelDriverVersion(const std::string &bdf, const std::string &kernelRelease,
+										 const KernelDriverPaths &paths = {});

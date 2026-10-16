@@ -546,6 +546,33 @@ std::vector<std::string> cmdSmi::wrapDeviceName(std::string_view deviceName, siz
 }
 
 /**
+ * @brief Picks the KMD version shown in the dashboard banner
+ *
+ * A mixed host can pair an iGPU on the in-tree module, reported by kernel version
+ * (e.g. "6.8.0-45 (in-tree)"), with a dGPU on the DKMS one, reported by release
+ * (e.g. "xeb_v7.1.4.31_260728.26"). The banner names one version, and an
+ * out-of-tree release is preferred whichever device carries it: it names the driver
+ * package, so it is the one a reader can act on.
+ *
+ * @param[in] devStats Per-device stats, in device order
+ * @return The first out-of-tree release, else the first in-tree version, else an
+ *         empty string when no device reports one
+ */
+std::string cmdSmi::bannerKmdVersion(const std::vector<SmiDeviceStats> &devStats)
+{
+	std::string kmd;
+	for (const auto &s : devStats) {
+		if (s.kmdVersion.empty()) {
+			continue;
+		}
+		if (kmd.empty() || (kmd.ends_with(KMD_IN_TREE_SUFFIX) && !s.kmdVersion.ends_with(KMD_IN_TREE_SUFFIX))) {
+			kmd = s.kmdVersion;
+		}
+	}
+	return kmd;
+}
+
+/**
  * @brief Build and return the GPU summary table.
  *
  * Three-column layout with multi-line column headers (via setColumnExtraHeaders):
@@ -585,9 +612,8 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	const std::string shortVer = xpum::compat::format("v{}.{}", XPUM_VERSION_MAJOR, XPUM_VERSION_MINOR);
 
 	// Take the first device that reports a version rather than device 0, whose value
-	// may be absent: a mixed host can pair an iGPU on the in-tree module, which names
-	// no release, with a dGPU on the DKMS one that does. The banner summarises, so it
-	// names one version; discovery reports each device's own.
+	// may be absent. The banner summarises, so it names one version; discovery reports
+	// each device's own.
 	const auto firstReported = [&devStats](std::string SmiDeviceStats::*field) -> std::string {
 		for (const auto &s : devStats) {
 			if (!(s.*field).empty()) {
@@ -600,7 +626,7 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	const std::string umd = firstReported(&SmiDeviceStats::driverVersion);
 	const std::string umdVersion = umd.empty() ? "N/A" : umd;
 
-	const std::string kmd = firstReported(&SmiDeviceStats::kmdVersion);
+	const std::string kmd = bannerKmdVersion(devStats);
 	const std::string kmdSegment = kmd.empty() ? "" : xpum::compat::format("    KMD Version: {}", kmd);
 
 	table.addPreHeaderSpanRow(xpum::compat::format("Intel XPU-SMI {}{}", shortVer, kmdSegment), BorderStyle::None);

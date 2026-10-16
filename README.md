@@ -67,6 +67,13 @@ $ xpu-smi
 |     0     2874292     C      xpu-smi                                                       206 MiB |
 +-------+-----------+--------+----------------+------------------------------------------------------+
 ```
+With the in-tree kernel driver, which declares no release version, KMD Version
+shows the kernel version instead, marked as in-tree:
+
+```
+|                       Intel XPU-SMI v2.0    KMD Version: 6.8.0-45 (in-tree)                        |
+```
+
 ### Running xpu-smi discovery
 
 ```

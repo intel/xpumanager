@@ -87,6 +87,7 @@ public:
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
 	std::pair<ze_result_t, std::string> collectAndRender(arg_struct *args);
+	[[nodiscard]] static std::string bannerKmdVersion(const std::vector<SmiDeviceStats> &devStats);
 
 	/// --all: keep the idle runtime contexts a multi-GPU process holds on GPUs it is not
 	/// using in the process table, as "ps --all" does.

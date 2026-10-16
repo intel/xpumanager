@@ -170,7 +170,8 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			.unit = "",
 			.description = "Release version (modinfo version) of the kernel-mode GPU driver, which only the "
 						   "out-of-tree driver installed via DKMS declares (e.g. xeb_v7.1.4.31_260728.26). "
-						   "Unavailable on a stock kernel, whose in-tree driver names no release.",
+						   "The in-tree driver names no release, so the kernel version is reported for it "
+						   "instead (e.g. 6.8.0-45 (in-tree)).",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {

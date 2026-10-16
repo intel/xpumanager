@@ -12,6 +12,7 @@
 #include <functional>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #ifndef ARRAY_SIZE
@@ -64,6 +65,11 @@ void progressBegin(int lines);
 void progressEnd();
 void progressPrintAbove(const std::function<void()> &write, bool endsLine = true);
 inline std::mutex progressPrintMutex;
+
+// Marks a KMD version that is the kernel's own, reported for the in-tree driver, which
+// names no release (e.g. "6.8.0-45 (in-tree)"). Shared so the xpu-smi banner, which
+// prefers an out-of-tree release over it, recognises the value the OAL produces.
+inline constexpr std::string_view KMD_IN_TREE_SUFFIX = " (in-tree)";
 
 #ifdef _WIN32
 #include "win/oswin.h"

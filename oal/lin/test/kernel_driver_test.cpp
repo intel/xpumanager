@@ -258,3 +258,60 @@ TEST_CASE("getKernelDriverModuleVersion reports nothing when the driver cannot b
 
 	CHECK(getKernelDriverModuleVersion(BDF, sysfs.paths).empty());
 }
+
+TEST_CASE("getKernelReleaseShortVersion keeps the version and distro build number of a kernel release")
+{
+	CHECK(getKernelReleaseShortVersion("7.1.0-lgci-xe-xe-internal-1441-5b9f3e73-nodebug+") == "7.1.0");
+	CHECK(getKernelReleaseShortVersion("6.8.0-45-generic") == "6.8.0-45");
+	CHECK(getKernelReleaseShortVersion("7.1.0+") == "7.1.0");
+	CHECK(getKernelReleaseShortVersion("6.12") == "6.12");
+	CHECK(getKernelReleaseShortVersion("6.19.0-rc6") == "6.19.0");
+	CHECK(getKernelReleaseShortVersion("").empty());
+	CHECK(getKernelReleaseShortVersion("generic-6.8").empty());
+	CHECK(getKernelReleaseShortVersion(".1-rc").empty());
+	CHECK(getKernelReleaseShortVersion("-45-generic").empty());
+}
+
+TEST_CASE("getKernelReleaseShortVersion keeps the RHEL build number up to the dist tag")
+{
+	// RHEL 9 keeps the 5.14.0 base while backporting xe/i915 from 6.x, so only the build
+	// number tells its kernels apart.
+	CHECK(getKernelReleaseShortVersion("5.14.0-503.40.1.el9_5.x86_64") == "5.14.0-503.40.1");
+	CHECK(getKernelReleaseShortVersion("5.14.0-503.el9.x86_64") == "5.14.0-503");
+}
+
+TEST_CASE("getInTreeKernelDriverVersion reports the kernel version for an in-tree driver")
+{
+	const FakeSysfs sysfs("in_tree");
+	// The in-tree driver declares no MODULE_VERSION, so sysfs exposes no version file.
+	sysfs.addModule("xe");
+	sysfs.bindDevice(BDF, "xe");
+
+	CHECK(getInTreeKernelDriverVersion(BDF, "6.8.0-45-generic", sysfs.paths) == "6.8.0-45");
+}
+
+TEST_CASE("getInTreeKernelDriverVersion reports nothing when the driver cannot be identified")
+{
+	const FakeSysfs sysfs("in_tree_unknown_driver");
+	sysfs.addUnboundDevice(BDF);
+
+	CHECK(getInTreeKernelDriverVersion(BDF, "7.1.0-generic", sysfs.paths).empty());
+}
+
+TEST_CASE("getInTreeKernelDriverVersion reports nothing for an unbound device beside a loaded in-tree driver")
+{
+	const FakeSysfs sysfs("in_tree_unbound");
+	// Another GPU has the in-tree xe loaded, but nothing is bound to this one.
+	sysfs.addModule("xe");
+	sysfs.addUnboundDevice(BDF);
+
+	CHECK(getInTreeKernelDriverVersion(BDF, "7.1.0-generic", sysfs.paths).empty());
+}
+
+TEST_CASE("getInTreeKernelDriverVersion uses the loaded in-tree driver when no device is given")
+{
+	const FakeSysfs sysfs("in_tree_no_bdf");
+	sysfs.addModule("xe");
+
+	CHECK(getInTreeKernelDriverVersion("", "7.1.0-generic", sysfs.paths) == "7.1.0");
+}

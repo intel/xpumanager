@@ -6,7 +6,8 @@
 
 /**
  * @file smi_test.cpp
- * @brief Unit tests for the Name slot of the default xpu-smi view (cmd_smi.cpp).
+ * @brief Unit tests for the Name slot and the KMD version banner of the default xpu-smi
+ *        view (cmd_smi.cpp).
  *
  * The GPU table is rendered from SmiDeviceStats filled in here, so no GPU or Level Zero
  * handle is needed. The TEST_CASE names state each covered behaviour.
@@ -23,6 +24,7 @@
 std::string progName = "test";
 
 #include "cmd_smi.h"
+#include "os.h"
 #include <algorithm>
 #include <cstdint>
 #include <string_view>
@@ -117,6 +119,26 @@ std::vector<DeviceRow> renderRows(const std::vector<std::string> &names)
 std::string nameLine(uint32_t index, std::string_view name)
 {
 	return "  " + std::to_string(index) + "  " + std::string(name);
+}
+
+// Built from the shared suffix, as the OAL builds it, so a change to the marker that
+// the banner fails to follow breaks these tests.
+const std::string IN_TREE = std::string("6.8.0-45").append(KMD_IN_TREE_SUFFIX);
+const std::string DKMS = "xeb_v7.1.4.31_260728.26";
+
+/**
+ * @brief Build device stats that carry only an index and a KMD version.
+ *
+ * @param[in] devIndex   Device index.
+ * @param[in] kmdVersion KMD version string; empty when the device reports none.
+ * @return Stats with every other field left at its default.
+ */
+SmiDeviceStats deviceWithKmd(uint32_t devIndex, const std::string &kmdVersion)
+{
+	SmiDeviceStats s;
+	s.devIndex = devIndex;
+	s.kmdVersion = kmdVersion;
+	return s;
 }
 
 } // namespace
@@ -256,5 +278,46 @@ TEST_SUITE("cmd_smi utilization")
 		SmiDeviceStats stats{};
 		cmdSmi::applyFdinfoUtil(stats, ProcUtil{});
 		CHECK_FALSE(stats.utilValid);
+	}
+}
+
+TEST_SUITE("cmd_smi banner KMD version")
+{
+	TEST_CASE("bannerKmdVersion prefers the DKMS release over an in-tree iGPU listed first")
+	{
+		// A mixed host: device 0 is an iGPU on the in-tree driver, device 1 a dGPU on DKMS.
+		const std::vector<SmiDeviceStats> devStats{deviceWithKmd(0, IN_TREE), deviceWithKmd(1, DKMS)};
+
+		CHECK(cmdSmi::bannerKmdVersion(devStats) == DKMS);
+	}
+
+	TEST_CASE("bannerKmdVersion keeps the DKMS release when an in-tree device follows it")
+	{
+		const std::vector<SmiDeviceStats> devStats{deviceWithKmd(0, DKMS), deviceWithKmd(1, IN_TREE)};
+
+		CHECK(cmdSmi::bannerKmdVersion(devStats) == DKMS);
+	}
+
+	TEST_CASE("bannerKmdVersion reports the in-tree version when no device runs DKMS")
+	{
+		const std::vector<SmiDeviceStats> devStats{deviceWithKmd(0, ""), deviceWithKmd(1, IN_TREE)};
+
+		CHECK(cmdSmi::bannerKmdVersion(devStats) == IN_TREE);
+	}
+
+	TEST_CASE("bannerKmdVersion keeps the first in-tree version when no device runs DKMS")
+	{
+		const std::string otherInTree = std::string("6.9.0-1").append(KMD_IN_TREE_SUFFIX);
+		const std::vector<SmiDeviceStats> devStats{deviceWithKmd(0, IN_TREE), deviceWithKmd(1, otherInTree)};
+
+		CHECK(cmdSmi::bannerKmdVersion(devStats) == IN_TREE);
+	}
+
+	TEST_CASE("bannerKmdVersion reports nothing when no device has a KMD version")
+	{
+		const std::vector<SmiDeviceStats> devStats{deviceWithKmd(0, ""), deviceWithKmd(1, "")};
+
+		CHECK(cmdSmi::bannerKmdVersion(devStats).empty());
+		CHECK(cmdSmi::bannerKmdVersion({}).empty());
 	}
 }

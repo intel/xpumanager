@@ -19,6 +19,7 @@
 #include "kernel_driver.h"
 #include "bdf.h"
 #include <array>
+#include <cctype>
 #include <fstream>
 #include <string>
 #include <string_view>
@@ -143,4 +144,63 @@ std::string getKernelDriverModuleVersion(const std::string &bdf, const KernelDri
 		return {};
 	}
 	return extractBackportsRelease(version);
+}
+
+/**
+ * @brief Shortens a kernel release string to its version and distro build number
+ *
+ * Examples: "6.8.0-45-generic" -> "6.8.0-45",
+ * "5.14.0-503.40.1.el9_5.x86_64" -> "5.14.0-503.40.1",
+ * "7.1.0-lgci-xe-xe-internal-1441-5b9f3e73-nodebug+" -> "7.1.0"
+ *
+ * @param[in] release Kernel release string, as returned by uname -r
+ * @return Short version, or an empty string if @p release doesn't start with one
+ */
+std::string getKernelReleaseShortVersion(const std::string &release)
+{
+	// Digits and dots up to the first other character. A distro build number right after
+	// it is kept, since distros backport driver code into a kernel without changing its
+	// base version: 6.8.0-45 and 6.8.0-90 carry different xe/i915 code, and RHEL's 5.14.0
+	// carries xe/i915 from 6.x. Anything from the first letter on is a flavour or
+	// architecture tag and is dropped, as is a trailing dot.
+	constexpr std::string_view numeric = "0123456789.";
+	auto end = release.find_first_not_of(numeric);
+	if (end != std::string::npos && end > 0 && release[end] == '-' && end + 1 < release.size() &&
+		std::isdigit(static_cast<unsigned char>(release[end + 1])) != 0) {
+		end = release.find_first_not_of(numeric, end + 1);
+	}
+	std::string version = release.substr(0, end);
+	while (!version.empty() && version.back() == '.') {
+		version.pop_back();
+	}
+	if (version.empty() || version.front() == '.') {
+		return {};
+	}
+	return version;
+}
+
+/**
+ * @brief Returns the kernel version as the driver version for an in-tree GPU driver
+ *
+ * Only call this once getKernelDriverModuleVersion() has come back empty: an
+ * out-of-tree driver names its own release, and that is not checked again here.
+ *
+ * If @p bdf is given, a driver must be bound to that device. If @p bdf is empty,
+ * any loaded Intel GPU module is used.
+ *
+ * @param[in] bdf           PCI BDF address of the device, or "" for any loaded GPU module
+ * @param[in] kernelRelease Kernel release string, as returned by uname -r
+ * @param[in] paths         sysfs root paths (defaults to live sysfs; override in tests)
+ * @return Short kernel version (e.g. "6.8.0-45"), or an empty string if no driver is found
+ */
+std::string getInTreeKernelDriverVersion(const std::string &bdf, const std::string &kernelRelease,
+										 const KernelDriverPaths &paths)
+{
+	// No driver means nothing to attribute the kernel version to. A device given by BDF
+	// must have a driver bound: a loaded module may be driving another GPU, not this one.
+	const std::string driver = bdf.empty() ? getKernelDriverName(bdf, paths) : getBoundPciDriverName(bdf, paths);
+	if (driver.empty()) {
+		return {};
+	}
+	return getKernelReleaseShortVersion(kernelRelease);
 }
