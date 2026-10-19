@@ -28,7 +28,27 @@ stats:
 		printf " %-14s %5d %8d\n" $$ext $$files $$lines; \
 	done
 
+.PHONY: versions
+# List versions specified in XPUMD files that may need to be updated for a release
+versions:
+	@echo "CHANGES.md: $$(awk '/^##/{print;exit}' docs/CHANGES.md)" && \
+	echo "API: $$(find -name deviceinfo.proto | xargs grep go_package)" && \
+	echo "XPUMD_VERSION: $(XPUMD_VERSION)" && \
+	grep -H version: charts/xpumd/Chart.yaml && \
+	grep -H XPU charts/xpumd/json/dashboard.json
+
+# Helm chart version must be a valid semver
+.PHONY: versions-update
+# Update XPUMD version in files that are not updated automatically
+versions-update:
+	scripts/semver-check.py $(XPUMD_VERSION)
+	sed -i 's/^version:.*$$/version: $(XPUMD_VERSION)/g' charts/xpumd/Chart.yaml
+	sed -i 's/ 2[.][0-9]\+[.][0-9]\+[^ ]* / $(XPUMD_VERSION) /' charts/xpumd/json/dashboard.json
+
+
 # --- Build targets ---
+
+XPUMD_VERSION ?= $(shell git describe --tags --dirty --always | tr / -)
 
 OTEL_VERSION ?= 0.163.0
 IMAGE_REPOSITORY ?= registry.local/xpumd
@@ -53,7 +73,7 @@ GO_COVER_FLAGS := -cover -coverpkg=$(XPUMD_PKG)/...,$(LEVEL_ZERO_GO_PKG)/...
 .PHONY: build
 # Build xpumd + xpuinfo-cli
 build:
-	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in | \
+	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/' -e 's/@XPUMD_VERSION@/$(XPUMD_VERSION)/' builder-config.yaml.in |\
 	  go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=/dev/stdin
 	go -C dist build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
@@ -65,7 +85,11 @@ level-zero-stub:
 .PHONY: build-stub
 # Build xpumd + xpuinfo-cli against the level-zero-stub driver
 build-stub: level-zero-stub
-	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' -e 's#output_path: ./dist#output_path: ./dist-stub#' builder-config.yaml.in | \
+	sed \
+	  -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/' \
+	  -e 's/@XPUMD_VERSION@/$(XPUMD_VERSION)/' \
+	  -e 's#output_path: ./dist#output_path: ./dist-stub#' \
+	  builder-config.yaml.in | \
 	  $(BUILD_STUB_ENV) go tool -modfile tools/go.mod builder --ldflags "$(GO_FLAGS)" --config=/dev/stdin
 	$(BUILD_STUB_ENV) go -C dist-stub build --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 	@echo "Give stub driver config with SYSMAN_STUB_CONFIG, for example:"
@@ -75,7 +99,7 @@ build-stub: level-zero-stub
 .PHONY: build-cover
 # Build coverage-instrumented xpumd + xpuinfo-cli
 build-cover:
-	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in | \
+	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/' -e 's/@XPUMD_VERSION@/$(XPUMD_VERSION)/' builder-config.yaml.in |\
 	  go tool -modfile tools/go.mod builder --skip-compilation --config=/dev/stdin
 	go -C dist build $(GO_COVER_FLAGS) --ldflags "$(GO_FLAGS)" -o xpumd .
 	go -C dist build $(GO_COVER_FLAGS) --ldflags "$(GO_FLAGS)" github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
@@ -84,7 +108,7 @@ build-cover:
 # Build race detector versions (incompatible with PIE mode)
 # Log errors to file with: GORACE=log_path=xpumd-races
 race:
-	sed 's/@OTEL_VERSION@/$(OTEL_VERSION)/g' builder-config.yaml.in | \
+	sed -e 's/@OTEL_VERSION@/$(OTEL_VERSION)/' -e 's/@XPUMD_VERSION@/$(XPUMD_VERSION)/' builder-config.yaml.in |\
 	  GOFLAGS=-race go tool -modfile tools/go.mod builder --config=/dev/stdin
 	go -C dist build -race github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
