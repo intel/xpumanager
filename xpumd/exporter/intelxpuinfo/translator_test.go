@@ -116,7 +116,7 @@ func TestTranslate(t *testing.T) {
 		dp.Attributes().PutStr("hw.parent", "gpu0")
 		dp.Attributes().PutStr("hw.memory.location", "device")
 		dp.Attributes().PutStr("hw.memory.type", "hbm")
-		dp.Attributes().PutStr("subdevice_id", subdeviceID)
+		dp.Attributes().PutStr("com.intel.subdevice_id", subdeviceID)
 	}
 
 	// Metric types other than gauge and sum are skipped (but don't cause panic/errors)
@@ -408,7 +408,7 @@ func TestUpdateMemoryInfo(t *testing.T) {
 		dp.Attributes().PutStr("hw.memory.type", memType)
 		dp.Attributes().PutStr("hw.memory.location", memLocation)
 		if subdeviceID != "" {
-			dp.Attributes().PutStr("subdevice_id", subdeviceID)
+			dp.Attributes().PutStr("com.intel.subdevice_id", subdeviceID)
 		}
 	}
 
@@ -425,6 +425,25 @@ func TestUpdateMemoryInfo(t *testing.T) {
 			expected: map[string][]*pb.MemoryInfo{
 				"gpu0": {
 					{Type: "hbm", SubdeviceId: "", Size: 8e9},
+				},
+			},
+		},
+		{
+			name: "receiver attributes keep tiles separate",
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				for _, subdeviceID := range []string{"0", "1"} {
+					dp := dps.AppendEmpty()
+					dp.SetIntValue(1024)
+					dp.Attributes().PutStr("hw.id", "gpu0")
+					dp.Attributes().PutStr("hw.memory.type", "hbm")
+					dp.Attributes().PutStr("hw.memory.location", "device")
+					dp.Attributes().PutStr("com.intel.subdevice_id", subdeviceID)
+				}
+			},
+			expected: map[string][]*pb.MemoryInfo{
+				"gpu0": {
+					{Type: "hbm", SubdeviceId: "0", Size: 1024},
+					{Type: "hbm", SubdeviceId: "1", Size: 1024},
 				},
 			},
 		},

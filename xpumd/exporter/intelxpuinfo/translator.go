@@ -18,6 +18,9 @@ import (
 	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
 )
 
+// Attribute names. Must be in sync with the intelxpu receiver.
+const subdeviceIDAttribute = "com.intel.subdevice_id"
+
 // metricsTranslator translates OpenTelemetry metrics into the gRPC API format.
 type metricsTranslator struct {
 	logger *zap.SugaredLogger
@@ -331,7 +334,7 @@ func (t *metricsTranslator) updateMemoryInfo(metricName string, dps pmetric.Numb
 		}
 
 		memTypeVal, _ := attrs.Get("hw.memory.type")
-		subdeviceIdVal, _ := attrs.Get("subdevice_id")
+		subdeviceIdVal, _ := attrs.Get(subdeviceIDAttribute)
 
 		t.aggregateMemoryInfo(id, memTypeVal.Str(), subdeviceIdVal.Str(), uint64(size))
 	}
