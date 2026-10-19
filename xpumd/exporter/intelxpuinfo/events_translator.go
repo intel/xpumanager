@@ -38,17 +38,17 @@ func translateLogRecord(lr plog.LogRecord, logger *zap.SugaredLogger) *pb.Device
 	}
 
 	attrs := lr.Attributes()
-	hwIDVal, _ := attrs.Get("hw.id")
+	hwIDVal, _ := attrs.Get(hwIDAttribute)
 	id := hwIDVal.Str()
 	if id == "" {
 		logger.Warnw("event log record missing hw.id, skipping", "eventName", lr.EventName())
 		return nil
 	}
 
-	hwModelVal, _ := attrs.Get("hw.model")
-	pciBDFVal, _ := attrs.Get("pci.bdf")
-	pciDeviceIDVal, _ := attrs.Get("pci.device_id")
-	pciVendorIDVal, _ := attrs.Get("pci.vendor_id")
+	hwModelVal, _ := attrs.Get(hwModelAttribute)
+	pciBDFVal, _ := attrs.Get(pciBDFAttribute)
+	pciDeviceIDVal, _ := attrs.Get(pciDeviceIDAttribute)
+	pciVendorIDVal, _ := attrs.Get(pciVendorIDAttribute)
 
 	return &pb.DeviceEventResponse{
 		Device: &pb.DeviceIdentification{
