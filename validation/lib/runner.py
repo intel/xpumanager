@@ -614,7 +614,10 @@ class CLITestRunner:
                 if result['return_code'] == 0 and result['stdout'].strip():
                     data = json.loads(result['stdout'])
                     if isinstance(data, dict):
-                        versions = data.get('amc_fw_version', data.get('amc_versions', []))
+                        # discovery --listamcversions -j reports the versions as
+                        # amc_firmware_version; the other keys are older spellings.
+                        versions = next((data[k] for k in ('amc_firmware_version', 'amc_fw_version', 'amc_versions')
+                                         if k in data), [])
                     else:
                         versions = data
                     if isinstance(versions, list):
