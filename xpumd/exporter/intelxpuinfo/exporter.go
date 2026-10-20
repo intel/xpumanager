@@ -113,8 +113,11 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 	return nil
 }
 
-func (e *xpuInfoExporter) pushMetrics(_ context.Context, md pmetric.Metrics) error {
+func (e *xpuInfoExporter) pushMetrics(ctx context.Context, md pmetric.Metrics) error {
 	e.logger.Debugw("Pushing metrics", "dataPoints", md.DataPointCount())
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 
 	// NOTE: No batching is in place. We rely on the property that md contains
 	// all metrics for a particular device.
@@ -123,8 +126,11 @@ func (e *xpuInfoExporter) pushMetrics(_ context.Context, md pmetric.Metrics) err
 	return nil
 }
 
-func (e *xpuInfoExporter) pushLogs(_ context.Context, ld plog.Logs) error {
+func (e *xpuInfoExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
 	e.logger.Debugw("Pushing logs", "logRecords", ld.LogRecordCount())
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	e.infoServer.broadcastEvents(ld)
 	return nil
 }

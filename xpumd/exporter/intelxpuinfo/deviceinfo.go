@@ -16,6 +16,21 @@ import (
 	"go.uber.org/zap"
 )
 
+// eventQueueSize is the maximum number of events queued for a single client.
+const eventQueueSize = 1024
+
+// healthClient represents one DeviceHealth subscriber.
+type healthClient struct {
+	// latest holds the latest health snapshot not yet sent to the client
+	latest chan *pb.DeviceHealthResponse
+}
+
+// eventClient represents one DeviceEvents subscriber.
+type eventClient struct {
+	// queue holds the events not yet sent to the client
+	queue chan *pb.DeviceEventResponse
+}
+
 type deviceInfoServer struct {
 	pb.UnimplementedDeviceInfoServer
 	logger    *zap.SugaredLogger
@@ -24,46 +39,77 @@ type deviceInfoServer struct {
 
 	stopChan chan struct{}
 
+	// healthLock protects the cached health data and the health clients
+	healthLock sync.Mutex
 	// Cached health data
-	healthDataLock sync.RWMutex
-	healthData     *pb.DeviceHealthResponse
+	healthData *pb.DeviceHealthResponse
 	// Active health clients
-	deviceHealthClients sync.Map
+	healthClients map[*healthClient]struct{}
+
+	// eventLock protects the event clients
+	eventLock sync.Mutex
 	// Active event clients
-	deviceEventClients sync.Map
+	eventClients map[*eventClient]struct{}
 }
 
 func newDeviceInfoServer(logger *zap.SugaredLogger, tb *metadata.TelemetryBuilder, cfg *Config) *deviceInfoServer {
 	return &deviceInfoServer{
-		logger:    logger,
-		telemetry: tb,
-		cfg:       cfg,
-		stopChan:  make(chan struct{}),
+		logger:        logger,
+		telemetry:     tb,
+		cfg:           cfg,
+		stopChan:      make(chan struct{}),
+		healthClients: make(map[*healthClient]struct{}),
+		eventClients:  make(map[*eventClient]struct{}),
 	}
 }
 
 func (s *deviceInfoServer) WatchDeviceHealth(req *pb.WatchDeviceHealthRequest, stream pb.DeviceInfo_WatchDeviceHealthServer) error {
 	s.logger.Info("new DeviceHealth client connected")
-	if err := s.sendHealthData(stream); err != nil {
-		// Bail out if the initial send sync fails
-		return err
+
+	c := &healthClient{latest: make(chan *pb.DeviceHealthResponse, 1)}
+
+	// Register the client and queue the initial health data
+	s.healthLock.Lock()
+	s.healthClients[c] = struct{}{}
+	if s.healthData != nil {
+		c.updateData(s.healthData)
 	}
+	s.healthLock.Unlock()
 
-	errChan := make(chan error, 1)
-	s.deviceHealthClients.Store(stream, errChan)
-	defer s.deviceHealthClients.Delete(stream)
+	defer func() {
+		s.healthLock.Lock()
+		delete(s.healthClients, c)
+		s.healthLock.Unlock()
+	}()
 
+	for {
+		select {
+		case <-s.stopChan:
+			s.logger.Info("server stopping, closing DeviceHealth stream")
+			return nil
+		case <-stream.Context().Done():
+			s.logger.Infow("DeviceHealth stream closed", "error", stream.Context().Err())
+			return stream.Context().Err()
+		case data := <-c.latest:
+			s.logger.Debug("sending device health data")
+			if err := stream.Send(data); err != nil {
+				s.logger.Errorw("failed to send health data to client", "error", err)
+				s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
+				return err
+			}
+			s.telemetry.ExporterRequestsSent.Add(context.Background(), 1)
+		}
+	}
+}
+
+// updateData sends new health data (replacing pending data, if any).
+func (c *healthClient) updateData(data *pb.DeviceHealthResponse) {
 	select {
-	case <-s.stopChan:
-		s.logger.Info("server stopping, closing DeviceHealth stream")
-		return nil
-	case <-stream.Context().Done():
-		s.logger.Infow("stream closed", "error", stream.Context().Err())
-		return stream.Context().Err()
-	case e := <-errChan:
-		s.logger.Infow("stopping DeviceHealth stream", "error", e)
-		return e
+	case <-c.latest:
+	default:
 	}
+	// NOTE: Each update is a full snapshot of all devices so simple replacement is safe
+	c.latest <- data
 }
 
 func (s *deviceInfoServer) stop() {
@@ -73,20 +119,34 @@ func (s *deviceInfoServer) stop() {
 func (s *deviceInfoServer) WatchDeviceEvents(req *pb.WatchDeviceEventsRequest, stream pb.DeviceInfo_WatchDeviceEventsServer) error {
 	s.logger.Info("new DeviceEvents client connected")
 
-	errChan := make(chan error, 1)
-	s.deviceEventClients.Store(stream, errChan)
-	defer s.deviceEventClients.Delete(stream)
+	c := &eventClient{queue: make(chan *pb.DeviceEventResponse, eventQueueSize)}
 
-	select {
-	case <-s.stopChan:
-		s.logger.Info("server stopping, closing DeviceEvents stream")
-		return nil
-	case <-stream.Context().Done():
-		s.logger.Infow("stream closed", "error", stream.Context().Err())
-		return stream.Context().Err()
-	case e := <-errChan:
-		s.logger.Infow("stopping DeviceEvents stream", "error", e)
-		return e
+	s.eventLock.Lock()
+	s.eventClients[c] = struct{}{}
+	s.eventLock.Unlock()
+
+	defer func() {
+		s.eventLock.Lock()
+		delete(s.eventClients, c)
+		s.eventLock.Unlock()
+	}()
+
+	for {
+		select {
+		case <-s.stopChan:
+			s.logger.Info("server stopping, closing DeviceEvents stream")
+			return nil
+		case <-stream.Context().Done():
+			s.logger.Infow("DeviceEvents stream closed", "error", stream.Context().Err())
+			return stream.Context().Err()
+		case ev := <-c.queue:
+			if err := stream.Send(ev); err != nil {
+				s.logger.Errorw("failed to send event to client", "error", err)
+				s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
+				return err
+			}
+			s.telemetry.ExporterRequestsSent.Add(context.Background(), 1)
+		}
 	}
 }
 
@@ -95,77 +155,40 @@ func (s *deviceInfoServer) broadcastEvents(ld plog.Logs) {
 	if len(events) == 0 {
 		return
 	}
-	s.deviceEventClients.Range(func(key, value any) bool {
-		stream, ok := key.(pb.DeviceInfo_WatchDeviceEventsServer)
-		if !ok {
-			panic("invalid type assertion for device event client stream")
+
+	s.eventLock.Lock()
+	defer s.eventLock.Unlock()
+	for c := range s.eventClients {
+		if dropped := c.enqueue(events); dropped > 0 {
+			s.logger.Warnw("DeviceEvents client too slow, event queue full, dropping events", "dropped", dropped)
+			s.telemetry.ExporterRequestErrors.Add(context.Background(), int64(dropped))
 		}
-		errChan, ok := value.(chan error)
-		if !ok {
-			panic("invalid type assertion for device event client stop channel")
+	}
+}
+
+// enqueue queues the events for the client. Returns the number of events
+// dropped because the queue is full.
+func (c *eventClient) enqueue(events []*pb.DeviceEventResponse) int {
+	for i, ev := range events {
+		select {
+		case c.queue <- ev:
+		default:
+			return len(events) - i
 		}
-		for _, ev := range events {
-			if err := stream.Send(ev); err != nil {
-				s.logger.Errorw("failed to send event to client", "error", err)
-				s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
-				select {
-				case errChan <- err:
-				default:
-				}
-				return true
-			}
-			s.telemetry.ExporterRequestsSent.Add(context.Background(), 1)
-		}
-		return true
-	})
+	}
+	return 0
 }
 
 func (s *deviceInfoServer) updateHealthData(md pmetric.Metrics) {
 	mt := newMetricsTranslator(s.logger, s.cfg)
-	data := mt.translate(md)
+	s.publishHealthData(mt.translate(md))
+}
 
-	s.healthDataLock.Lock()
+func (s *deviceInfoServer) publishHealthData(data *pb.DeviceHealthResponse) {
+	s.healthLock.Lock()
+	defer s.healthLock.Unlock()
 	s.healthData = data
-	s.healthDataLock.Unlock()
-
-	s.broadcastHealthData()
-}
-
-func (s *deviceInfoServer) broadcastHealthData() {
-	s.deviceHealthClients.Range(func(key, value any) bool {
-		stream, ok := key.(pb.DeviceInfo_WatchDeviceHealthServer)
-		if !ok {
-			panic("invalid type assertion for device health client stream")
-		}
-		errChan, ok := value.(chan error)
-		if !ok {
-			panic("invalid type assertion for device health client stop channel")
-		}
-		if err := s.sendHealthData(stream); err != nil {
-			select {
-			case errChan <- err:
-			default:
-			}
-		}
-		return true
-	})
-}
-
-// sendHealthData sends the cached health data to the given stream, and does locking for it.
-func (s *deviceInfoServer) sendHealthData(stream pb.DeviceInfo_WatchDeviceHealthServer) error {
-	s.healthDataLock.RLock()
-	defer s.healthDataLock.RUnlock()
-	if s.healthData == nil {
-		// initial data not yet available
-		return nil
+	for c := range s.healthClients {
+		c.updateData(data)
 	}
-
-	s.logger.Debug("sending device health data")
-	if err := stream.Send(s.healthData); err != nil {
-		s.logger.Errorw("failed to send health data to client", "error", err)
-		s.telemetry.ExporterRequestErrors.Add(context.Background(), 1)
-		return err
-	}
-	s.telemetry.ExporterRequestsSent.Add(context.Background(), 1)
-	return nil
 }

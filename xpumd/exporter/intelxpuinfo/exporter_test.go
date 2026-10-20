@@ -18,6 +18,8 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/confignet"
 	"go.opentelemetry.io/collector/exporter/exportertest"
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 )
@@ -140,4 +142,16 @@ func TestMultipleStart(t *testing.T) {
 	assert.NoError(t, e.shutdown(context.Background()))
 	assert.Equal(t, 1, logs.FilterMessage("Shutting down XPU Info exporter").Len())
 	assert.Equal(t, 1, logs.FilterMessage("gRPC server stopped gracefully").Len())
+}
+
+// TestPushCancelledContext verifies that the exporter callbacks honour context cancellation.
+func TestPushCancelledContext(t *testing.T) {
+	cfg, ok := defaultConfig().(*Config)
+	require.True(t, ok)
+	e := newXpuInfoExporter(cfg, exportertest.NewNopSettings(typ))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	assert.ErrorIs(t, e.pushMetrics(ctx, pmetric.NewMetrics()), context.Canceled)
+	assert.ErrorIs(t, e.pushLogs(ctx, plog.NewLogs()), context.Canceled)
 }
