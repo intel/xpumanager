@@ -5,6 +5,7 @@
  */
 
 #include <fs_lock.h>
+#include "scoped_fd.h"
 #include "utility/logger/logger.h"
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -15,9 +16,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <system_error>
 #include <tuple>
-#include <utility>
 
 namespace {
 
@@ -34,51 +33,9 @@ constexpr std::string_view LOCK_NAME_SUFFIX = ".lock";
 constexpr mode_t LOCK_DIR_MODE = 0700;
 constexpr mode_t LOCK_FILE_MODE = 0600;
 
-/*
- * @brief	Minimal RAII owner for a file descriptor so that no early return
- * out of acquire() can leak it.  Ownership is handed to FSLock::handle via
- * release() only once the lock has actually been taken.
- */
-struct ScopedFd
-{
-	int fd = -1;
-
-	explicit ScopedFd(int rawFd) noexcept : fd(rawFd) {}
-	~ScopedFd() noexcept
-	{
-		if (fd >= 0) {
-			close(fd);
-		}
-	}
-	ScopedFd(const ScopedFd &) = delete;
-	ScopedFd &operator=(const ScopedFd &) = delete;
-	ScopedFd(ScopedFd &&o) noexcept : fd(std::exchange(o.fd, -1)) {}
-	ScopedFd &operator=(ScopedFd &&other) noexcept
-	{
-		if (this != &other) {
-			if (fd >= 0) {
-				close(fd);
-			}
-			fd = std::exchange(other.fd, -1);
-		}
-		return *this;
-	}
-	[[nodiscard]] bool valid() const noexcept { return fd >= 0; }
-	[[nodiscard]] int get() const noexcept { return fd; }
-	int release() noexcept { return std::exchange(fd, -1); }
-};
-
-// std::system_category() is thread safe, unlike strerror().
-std::string errnoText(int err) { return std::system_category().message(err); }
-
 // True if fd refers to an object of the given type, owned by root and not
 // writable by group or others.
-bool isRootOnly(int fd, mode_t type)
-{
-	struct stat st = {};
-	return fstat(fd, &st) == 0 && (st.st_mode & S_IFMT) == type && st.st_uid == 0 &&
-		   (st.st_mode & (S_IWGRP | S_IWOTH)) == 0;
-}
+bool isRootOnly(int fd, mode_t type) { return isPrivateTo(fd, type, 0); }
 
 } // namespace
 
