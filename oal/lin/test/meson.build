@@ -162,6 +162,20 @@ if get_option('with_tests')
 
   test('watchdog_os_test', watchdog_os_test)
 
+  # Board serial number cache tests against a scratch cache directory and fake
+  # boot ID and sysfs files. Compiles serial_cache.cpp directly so the test needs
+  # no OAL link.
+  serial_cache_test = executable(
+    'serial_cache_test',
+    ['serial_cache_test.cpp', '../serial_cache.cpp'],
+    include_directories: [global_inc, include_directories('..'), include_directories('../..')],
+    dependencies: [doctest_dep, bdf_dep, compat_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('serial_cache_test', serial_cache_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')

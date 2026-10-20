@@ -10,6 +10,7 @@
 #include <device.h>
 #include <firmware.h>
 #include <pci.h>
+#include <serial_cache.h>
 #include "zes_api.h"
 
 #ifdef __GNUC__
@@ -32,6 +33,7 @@
 #include <ranges>
 #include <span>
 #include <string_view>
+#include <utility>
 #include <cstring>
 
 namespace {
@@ -47,11 +49,15 @@ constexpr unsigned char ASCII_PRINTABLE_MAX = 0x7E;
 /**
  * @brief Fetches the serial number of the given device from the AMC FRU data.
  *
+ * Every serial number read from the AMC is cached for the rest of the boot. A cached one is used
+ * without asking the AMC: the serial number of a device instance does not change, and an AMC in use
+ * by another process can take many seconds to answer, or not answer at all.
+ *
  * @param[in]  d            Device info structure.
  * @param[out] serialNumber Populated with the FRU serial number on success.
  *
- * @retval true  A non-empty serial number was retrieved.
- * @retval false The device has no AMC, or the AMC query failed.
+ * @retval true  A non-empty serial number was retrieved from the AMC or the cache.
+ * @retval false The device has no AMC, or nothing is cached and the AMC query failed.
  */
 bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber)
 {
@@ -65,8 +71,16 @@ bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber)
 		return false;
 	}
 
-	std::array<char, 256> serialNum{};
 	const auto bdf = d.dev->getPCI()->getBDFStr();
+	if (auto cached = loadCachedBoardSerial(bdf)) {
+		DBG("Serial number of {} is from the cache: it was read from the AMC earlier in this boot\n", bdf.c_str());
+		serialNumber = std::move(*cached);
+		return true;
+	}
+
+	std::array<char, 256> serialNum{};
+	// Taken before the read, so a card replaced during it does not get this serial number cached
+	const auto cacheKey = currentSerialCacheKey(bdf);
 	const ze_result_t result =
 		fw->getAmcSerialNumber(bdf.c_str(), serialNum.data(), static_cast<uint32_t>(serialNum.size()));
 	if (result != ZE_RESULT_SUCCESS || serialNum[0] == '\0') {
@@ -75,6 +89,10 @@ bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber)
 	}
 
 	serialNumber.assign(serialNum.data(), strnlen(serialNum.data(), serialNum.size()));
+	DBG("Serial number of {} read live from the AMC\n", bdf.c_str());
+	if (cacheKey) {
+		storeCachedBoardSerial(bdf, serialNumber, *cacheKey);
+	}
 	return true;
 }
 
