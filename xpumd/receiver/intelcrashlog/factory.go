@@ -41,5 +41,5 @@ func createLogsReceiver(_ context.Context, settings receiver.Settings, cfg compo
 	if !ok {
 		return nil, fmt.Errorf("invalid config type: %T", cfg)
 	}
-	return newReceiver(settings, c, nextConsumer), nil
+	return newReceiver(settings, c, nextConsumer)
 }

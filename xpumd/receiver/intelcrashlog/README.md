@@ -53,3 +53,7 @@ Each crashlog file produces a single log record:
 |-----------|------|-------------|
 | `file.name` | string | Base name of the crashlog file |
 | `pci.bdf` | string | PCI Bus:Device.Function address parsed from the filename (e.g. `0000:00:1e.2`). Omitted if no BDF is found in the filename |
+
+## Internal Telemetry
+
+See [documentation.md](documentation.md) for the emitted metrics.

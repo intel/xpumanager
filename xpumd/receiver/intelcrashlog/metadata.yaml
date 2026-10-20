@@ -7,3 +7,24 @@ status:
     development: [logs]
   codeowners:
     active: [marquiz]
+
+attributes:
+  reason:
+    description: Why a crashlog was dropped.
+    type: string
+    enum:
+      - too_large
+      - read_error
+      - internal_consumer_error
+
+telemetry:
+  metrics:
+    crashlogs_dropped:
+      enabled: true
+      stability: development
+      description: Number of crashlog files that were not emitted.
+      unit: "{file}"
+      sum:
+        value_type: int
+        monotonic: true
+      attributes: [reason]

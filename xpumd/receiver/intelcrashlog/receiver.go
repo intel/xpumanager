@@ -7,6 +7,7 @@ package intelcrashlog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,6 +22,8 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/receiver"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
 
 	"github.com/intel/xpumanager/xpumd/receiver/intelcrashlog/internal/metadata"
@@ -29,10 +32,22 @@ import (
 // bdfRegexp matches PCI BDF addresses of the form DDDD:BB:DD.F (e.g. 0000:00:1e.2).
 var bdfRegexp = regexp.MustCompile(`(?:^|[^0-9a-zA-Z])([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F])(?:[^0-9a-zA-Z]|$)`)
 
+// attributeKeyReason is the attribute the dropped crashlog counter uses.
+const attributeKeyReason = attribute.Key("reason")
+
+const (
+	reasonTooLarge              = "too_large"
+	reasonReadError             = "read_error"
+	reasonInternalConsumerError = "internal_consumer_error"
+)
+
+var errFileTooLarge = errors.New("file too large")
+
 type crashlogReceiver struct {
-	config   *Config
-	consumer consumer.Logs
-	logger   *zap.SugaredLogger
+	config    *Config
+	consumer  consumer.Logs
+	logger    *zap.SugaredLogger
+	telemetry *metadata.TelemetryBuilder
 
 	processedFiles  map[string]bool
 	ignoreOlderThan time.Time
@@ -42,13 +57,19 @@ type crashlogReceiver struct {
 	wg      sync.WaitGroup
 }
 
-func newReceiver(settings receiver.Settings, cfg *Config, nextConsumer consumer.Logs) *crashlogReceiver {
+func newReceiver(settings receiver.Settings, cfg *Config, nextConsumer consumer.Logs) (*crashlogReceiver, error) {
+	telemetry, err := metadata.NewTelemetryBuilder(settings.TelemetrySettings)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create telemetry builder: %w", err)
+	}
+
 	return &crashlogReceiver{
 		config:         cfg,
 		consumer:       nextConsumer,
 		logger:         settings.Logger.Sugar(),
+		telemetry:      telemetry,
 		processedFiles: make(map[string]bool),
-	}
+	}, nil
 }
 
 func (r *crashlogReceiver) Start(_ context.Context, _ component.Host) error {
@@ -82,6 +103,7 @@ func (r *crashlogReceiver) Shutdown(_ context.Context) error {
 		r.cancel()
 	}
 	r.wg.Wait()
+	r.telemetry.Shutdown()
 	return nil
 }
 
@@ -180,6 +202,7 @@ func (r *crashlogReceiver) handlePath(ctx context.Context, path string) {
 
 	if info.Size() > r.config.MaxFileSize {
 		r.logger.Warnw("skipping too large crashlog", "path", path, "size", info.Size(), "maxFileSize", r.config.MaxFileSize)
+		r.recordDropped(ctx, reasonTooLarge)
 		return
 	}
 
@@ -191,6 +214,11 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 	data, err := r.readFile(path, info.Size())
 	if err != nil {
 		r.logger.Errorw("failed to read crashlog", "path", path, "error", err)
+		if errors.Is(err, errFileTooLarge) {
+			r.recordDropped(ctx, reasonTooLarge)
+		} else {
+			r.recordDropped(ctx, reasonReadError)
+		}
 		return
 	}
 	r.processedFiles[path] = true
@@ -218,6 +246,7 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 
 	if err := r.consumer.ConsumeLogs(ctx, logs); err != nil {
 		r.logger.Errorw("failed to emit crashlog", "path", path, "error", err)
+		r.recordDropped(ctx, reasonInternalConsumerError)
 	} else {
 		r.logger.Debugw("emitted crashlog", "path", path, "attributes", attrs)
 	}
@@ -240,9 +269,13 @@ func (r *crashlogReceiver) readFile(path string, size int64) (pcommon.ByteSlice,
 		return data, err
 	}
 	if n > r.config.MaxFileSize {
-		return data, fmt.Errorf("file grew past the size limit of %d bytes", r.config.MaxFileSize)
+		return data, fmt.Errorf("file grew past the size limit of %d bytes: %w", r.config.MaxFileSize, errFileTooLarge)
 	}
 	return data, nil
+}
+
+func (r *crashlogReceiver) recordDropped(ctx context.Context, reason string) {
+	r.telemetry.CrashlogsDropped.Add(ctx, 1, metric.WithAttributes(attributeKeyReason.String(reason)))
 }
 
 // byteSliceWriter is a wrapper around pcommon.ByteSlice that implements io.Writer.

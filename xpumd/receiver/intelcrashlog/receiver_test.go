@@ -29,7 +29,9 @@ func createReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) *cras
 	if cfg.MaxFileSize == 0 {
 		cfg.MaxFileSize = defaultMaxFileSize
 	}
-	return newReceiver(receivertest.NewNopSettings(typ), cfg, nextConsumer)
+	rcvr, err := newReceiver(receivertest.NewNopSettings(typ), cfg, nextConsumer)
+	require.NoError(t, err)
+	return rcvr
 }
 
 func startReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) {
