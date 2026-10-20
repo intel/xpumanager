@@ -100,174 +100,261 @@ func TestMetricsBuilder(t *testing.T) {
 			mb.RecordHwEnergyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwEnergyDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwEnergyDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				assert.Equal(t, 2, mb.metricHwEnergy.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwErrorsDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", AttributeHwTypeFrequency, AttributeErrorTypeCorrectable, "error.category-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwErrorsDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", AttributeHwTypeGpu, AttributeErrorTypeUncorrectable, "error.category-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwErrorsDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", AttributeHwTypeGpu, AttributeErrorTypeUncorrectable, "error.category-val-2")
+				assert.Equal(t, 2, mb.metricHwErrors.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFanSpeedDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFanSpeedDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFanSpeedDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				assert.Equal(t, 2, mb.metricHwFanSpeed.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFanSpeedLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "hw.limit_type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFanSpeedLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", "hw.limit_type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFanSpeedLimitDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", "hw.limit_type-val-2")
+				assert.Equal(t, 2, mb.metricHwFanSpeedLimit.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFanSpeedRatioDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFanSpeedRatioDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFanSpeedRatioDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				assert.Equal(t, 2, mb.metricHwFanSpeedRatio.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeAggregationMin)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", AttributeAggregationMax)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFrequencyDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", AttributeAggregationMax)
+				assert.Equal(t, 2, mb.metricHwFrequency.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "hw.limit_type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", "hw.limit_type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFrequencyLimitDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", "hw.limit_type-val-2")
+				assert.Equal(t, 2, mb.metricHwFrequencyLimit.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyRequestDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyRequestDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFrequencyRequestDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2")
+				assert.Equal(t, 2, mb.metricHwFrequencyRequest.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencySamplesDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", AttributeSampleStatusCollected)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencySamplesDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", AttributeSampleStatusDropped)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFrequencySamplesDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", AttributeSampleStatusDropped)
+				assert.Equal(t, 2, mb.metricHwFrequencySamples.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.frequency.domain-val", "com.intel.speed.throttle_reason-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwFrequencyThrottleStatusDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", "com.intel.speed.throttle_reason-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwFrequencyThrottleStatusDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.frequency.domain-val-2", "com.intel.speed.throttle_reason-val-2")
+				assert.Equal(t, 2, mb.metricHwFrequencyThrottleStatus.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuBandwidthLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuBandwidthLimitDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
+				assert.Equal(t, 2, mb.metricHwGpuBandwidthLimit.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuBandwidthUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuBandwidthUtilizationDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
+				assert.Equal(t, 2, mb.metricHwGpuBandwidthUtilization.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuEccStateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.state-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuEccStateDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.state-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuEccStateDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.state-val-2")
+				assert.Equal(t, 2, mb.metricHwGpuEccState.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuInfoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "pci.vendor_id-val", "pci.device_id-val", "hw.model-val", "hw.serial_number-val", "hw.vendor-val", "hw.firmware_version-val", AttributeHwGpuTypeDiscrete, 25, "pci.lanes-val", "pci.link_gen-val", false, AttributeHwGpuEccSupportAvailable)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuInfoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "pci.vendor_id-val-2", "pci.device_id-val-2", "hw.model-val-2", "hw.serial_number-val-2", "hw.vendor-val-2", "hw.firmware_version-val-2", AttributeHwGpuTypeIntegrated, 26, "pci.lanes-val-2", "pci.link_gen-val-2", true, AttributeHwGpuEccSupportConfigurable)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuInfoDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "pci.vendor_id-val-2", "pci.device_id-val-2", "hw.model-val-2", "hw.serial_number-val-2", "hw.vendor-val-2", "hw.firmware_version-val-2", AttributeHwGpuTypeIntegrated, 26, "pci.lanes-val-2", "pci.link_gen-val-2", true, AttributeHwGpuEccSupportConfigurable)
+				assert.Equal(t, 2, mb.metricHwGpuInfo.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuIoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuIoDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricHwGpuIo.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuIoRateDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuIoRateDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2")
+				assert.Equal(t, 2, mb.metricHwGpuIoRate.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwGpuUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.gpu.task-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwGpuUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.gpu.task-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwGpuUtilizationDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.gpu.task-val-2")
+				assert.Equal(t, 2, mb.metricHwGpuUtilization.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryBandwidthLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryBandwidthLimitDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemoryBandwidthLimit.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryBandwidthUtilizationDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemoryBandwidthUtilization.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryFreeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryFreeDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryFreeDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemoryFree.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryIoDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val", AttributeNetworkIoDirectionReceive)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryIoDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2", AttributeNetworkIoDirectionTransmit)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryIoDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2", AttributeNetworkIoDirectionTransmit)
+				assert.Equal(t, 2, mb.metricHwMemoryIo.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryIoRateDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryIoRateDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryIoRateDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemoryIoRate.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemorySizeDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemorySizeDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemorySizeDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemorySize.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryUsageDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryUsageDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryUsageDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemoryUsage.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwMemoryUtilizationDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.memory.location-val", "hw.memory.type-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwMemoryUtilizationDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwMemoryUtilizationDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.memory.location-val-2", "hw.memory.type-val-2")
+				assert.Equal(t, 2, mb.metricHwMemoryUtilization.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwPowerDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwPowerDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwPowerDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2")
+				assert.Equal(t, 2, mb.metricHwPower.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwPowerLimitDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", "com.intel.power.limit.level-val", "com.intel.power.limit.source-val")
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwPowerLimitDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", "com.intel.power.limit.level-val-2", "com.intel.power.limit.source-val-2")
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwPowerLimitDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", "com.intel.power.limit.level-val-2", "com.intel.power.limit.source-val-2")
+				assert.Equal(t, 2, mb.metricHwPowerLimit.data.Gauge().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwStatusDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.state-val", AttributeHwTypeFrequency)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwStatusDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.state-val-2", AttributeHwTypeGpu)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwStatusDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.state-val-2", AttributeHwTypeGpu)
+				assert.Equal(t, 2, mb.metricHwStatus.data.Sum().DataPoints().Len())
 			}
 			defaultMetricsCount++
 			allMetricsCount++
 			mb.RecordHwTemperatureDataPoint(ts, 1, "hw.id-val", "hw.name-val", "pci.bdf-val", "com.intel.subdevice_id-val", "hw.sensor_location-val", AttributeStatisticMin)
 			if tt.name == "reaggregate_set" {
 				mb.RecordHwTemperatureDataPoint(ts, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", AttributeStatisticMax)
+				// a different timestamp is a different key: must not merge with the above.
+				mb.RecordHwTemperatureDataPoint(ts+1, 3, "hw.id-val-2", "hw.name-val-2", "pci.bdf-val-2", "com.intel.subdevice_id-val-2", "hw.sensor_location-val-2", AttributeStatisticMax)
+				assert.Equal(t, 2, mb.metricHwTemperature.data.Gauge().DataPoints().Len())
 			}
 
 			res := pcommon.NewResource()
@@ -363,7 +450,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.energy"], "Found a duplicate in the metrics slice: hw.energy")
 						validatedMetrics["hw.energy"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Energy consumed by the hardware component.", mi.Description())
 						assert.Equal(t, "J", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -433,7 +522,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.errors"], "Found a duplicate in the metrics slice: hw.errors")
 						validatedMetrics["hw.errors"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Number of GPU errors. Correctable `error.type` error metrics are reported only when non-zero.", mi.Description())
 						assert.Equal(t, "{error}", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -499,7 +590,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.fan.speed"], "Found a duplicate in the metrics slice: hw.fan.speed")
 						validatedMetrics["hw.fan.speed"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "GPU fan speed.", mi.Description())
 						assert.Equal(t, "{rev}/min", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -562,7 +655,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.fan.speed.limit"], "Found a duplicate in the metrics slice: hw.fan.speed.limit")
 						validatedMetrics["hw.fan.speed.limit"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "GPU fan speed limit.", mi.Description())
 						assert.Equal(t, "{rev}/min", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -624,7 +719,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.fan.speed_ratio"], "Found a duplicate in the metrics slice: hw.fan.speed_ratio")
 						validatedMetrics["hw.fan.speed_ratio"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "GPU fan speed ratio. Derived from `hw.fan.speed` + `hw.fan.speed.limit`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -687,7 +784,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.frequency"], "Found a duplicate in the metrics slice: hw.frequency")
 						validatedMetrics["hw.frequency"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Operating frequency of the hardware component.", mi.Description())
 						assert.Equal(t, "Hz", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -752,7 +851,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.frequency.limit"], "Found a duplicate in the metrics slice: hw.frequency.limit")
 						validatedMetrics["hw.frequency.limit"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Frequency limit in Hertz.", mi.Description())
 						assert.Equal(t, "Hz", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -814,7 +915,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.frequency.request"], "Found a duplicate in the metrics slice: hw.frequency.request")
 						validatedMetrics["hw.frequency.request"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Requested operating frequency.", mi.Description())
 						assert.Equal(t, "Hz", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -877,7 +980,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.frequency.samples"], "Found a duplicate in the metrics slice: hw.frequency.samples")
 						validatedMetrics["hw.frequency.samples"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Number of frequency samples during the last collection interval.", mi.Description())
 						assert.Equal(t, "{count}", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -944,7 +1049,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.frequency.throttle_status"], "Found a duplicate in the metrics slice: hw.frequency.throttle_status")
 						validatedMetrics["hw.frequency.throttle_status"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Hardware component frequency throttle status.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1004,7 +1111,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.bandwidth.limit"], "Found a duplicate in the metrics slice: hw.gpu.bandwidth.limit")
 						validatedMetrics["hw.gpu.bandwidth.limit"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Maximum (read+write) PCI bandwidth in bytes/sec for the GPU device.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1056,7 +1165,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.bandwidth.utilization"], "Found a duplicate in the metrics slice: hw.gpu.bandwidth.utilization")
 						validatedMetrics["hw.gpu.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "GPU device (read+write) PCI bandwidth utilization ratio. Derived from `hw.gpu.bandwidth.limit` + `hw.gpu.io.rate`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -1114,7 +1225,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.ecc.state"], "Found a duplicate in the metrics slice: hw.gpu.ecc.state")
 						validatedMetrics["hw.gpu.ecc.state"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Known device memory ECC states. Reported only if the ECC state is configurable, or if it has changed.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1208,7 +1321,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.info"], "Found a duplicate in the metrics slice: hw.gpu.info")
 						validatedMetrics["hw.gpu.info"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Information about the GPU device.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1289,7 +1404,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.io"], "Found a duplicate in the metrics slice: hw.gpu.io")
 						validatedMetrics["hw.gpu.io"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Bytes received / transmitted over PCI bus by the GPU device.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -1343,7 +1460,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.io.rate"], "Found a duplicate in the metrics slice: hw.gpu.io.rate")
 						validatedMetrics["hw.gpu.io.rate"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Current (read+write) PCI bandwidth usage in bytes/sec for the GPU device. Derived from `hw.gpu.io`.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -1399,7 +1518,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.gpu.utilization"], "Found a duplicate in the metrics slice: hw.gpu.utilization")
 						validatedMetrics["hw.gpu.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "GPU engine / task pipeline utilization ratio.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -1464,7 +1585,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.bandwidth.limit"], "Found a duplicate in the metrics slice: hw.memory.bandwidth.limit")
 						validatedMetrics["hw.memory.bandwidth.limit"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Maximum total memory (read+write) bandwidth in bytes/sec.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1531,7 +1654,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.bandwidth.utilization"], "Found a duplicate in the metrics slice: hw.memory.bandwidth.utilization")
 						validatedMetrics["hw.memory.bandwidth.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Memory bandwidth (read+write) utilization ratio. Derived from `hw.memory.bandwidth.limit` + `hw.memory.io.rate`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -1598,7 +1723,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.free"], "Found a duplicate in the metrics slice: hw.memory.free")
 						validatedMetrics["hw.memory.free"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Free memory.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1670,7 +1797,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.io"], "Found a duplicate in the metrics slice: hw.memory.io")
 						validatedMetrics["hw.memory.io"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Bytes read from / written to memory.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.True(t, mi.Sum().IsMonotonic())
@@ -1739,7 +1868,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.io.rate"], "Found a duplicate in the metrics slice: hw.memory.io.rate")
 						validatedMetrics["hw.memory.io.rate"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Current memory bandwidth (read+write) usage in bytes/sec. Derived from `hw.memory.io`.", mi.Description())
 						assert.Equal(t, "By/s", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -1806,7 +1937,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.size"], "Found a duplicate in the metrics slice: hw.memory.size")
 						validatedMetrics["hw.memory.size"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Memory size. If physical memory size info is unavailable, provides max allocatable size.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1875,7 +2008,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.usage"], "Found a duplicate in the metrics slice: hw.memory.usage")
 						validatedMetrics["hw.memory.usage"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Used memory amount. Derived from `hw.memory.size` + `hw.memory.free`.", mi.Description())
 						assert.Equal(t, "By", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -1942,7 +2077,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.memory.utilization"], "Found a duplicate in the metrics slice: hw.memory.utilization")
 						validatedMetrics["hw.memory.utilization"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Memory utilization ratio. Derived from `hw.memory.size` + `hw.memory.usage`.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -2004,7 +2141,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.power"], "Found a duplicate in the metrics slice: hw.power")
 						validatedMetrics["hw.power"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Instantaneous power usage of the hardware component.", mi.Description())
 						assert.Equal(t, "W", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -2070,7 +2209,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.power.limit"], "Found a duplicate in the metrics slice: hw.power.limit")
 						validatedMetrics["hw.power.limit"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Power usage limit for the hardware component.", mi.Description())
 						assert.Equal(t, "W", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
@@ -2139,7 +2280,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.status"], "Found a duplicate in the metrics slice: hw.status")
 						validatedMetrics["hw.status"] = true
 						assert.Equal(t, pmetric.MetricTypeSum, mi.Type())
-						assert.Equal(t, 1, mi.Sum().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Sum().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Sum().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Known hardware component states. Problem state reporting starts after issue becomes known / active for the first time (to greatly reduce number of state metrics). Unknown state is reported only if state was known before.", mi.Description())
 						assert.Equal(t, "1", mi.Unit())
 						assert.False(t, mi.Sum().IsMonotonic())
@@ -2206,7 +2349,9 @@ func TestMetricsBuilder(t *testing.T) {
 						assert.False(t, validatedMetrics["hw.temperature"], "Found a duplicate in the metrics slice: hw.temperature")
 						validatedMetrics["hw.temperature"] = true
 						assert.Equal(t, pmetric.MetricTypeGauge, mi.Type())
-						assert.Equal(t, 1, mi.Gauge().DataPoints().Len())
+						// 2 points: the merged one above, plus one with a different timestamp that must not have merged with it.
+						assert.Equal(t, 2, mi.Gauge().DataPoints().Len())
+						assert.Equal(t, ts+1, mi.Gauge().DataPoints().At(1).Timestamp())
 						assert.Equal(t, "Temperature of the hardware component in degrees Celsius.", mi.Description())
 						assert.Equal(t, "Cel", mi.Unit())
 						dp := mi.Gauge().DataPoints().At(0)
