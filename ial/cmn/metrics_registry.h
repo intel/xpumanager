@@ -203,6 +203,9 @@ struct EngineCache
 struct MetricCache
 {
 	mutable std::optional<std::string> serialNumber;
+	/** When a cached "unknown" serial number is queried again; it can be transient, e.g. while
+	 *  another process holds the AMC. */
+	mutable std::chrono::steady_clock::time_point serialRetryAt{};
 	/**
 	 * Which raw sampling this cache was built with; see @ref MetricInput. Set once by
 	 * @ref populateMetricCacheBegin (or @ref populateMetricCacheContinuous) and read back by

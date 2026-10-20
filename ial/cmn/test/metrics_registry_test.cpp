@@ -1329,9 +1329,15 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous promotes pre
 		{.type = ZES_ENGINE_GROUP_COPY_SINGLE, .tileId = 1, .activeTime = 50, .timestamp = 1200},
 	};
 	prev.populated = true;
+	// An "unknown" serial number and when to query it again: dropping the deadline would query
+	// it on every iteration.
+	prev.serialNumber = "unknown";
+	prev.serialRetryAt = std::chrono::steady_clock::now() + std::chrono::minutes{1};
 
 	const MetricCache curr = populateMetricCacheContinuous(di, prev);
 
+	CHECK(curr.serialNumber == prev.serialNumber);
+	CHECK(curr.serialRetryAt == prev.serialRetryAt);
 	CHECK(curr.cardPowerBefore.energy == prev.cardPowerAfter.energy);
 	CHECK(curr.cardPowerBefore.ts == prev.cardPowerAfter.ts);
 	CHECK(curr.gpuPowerBefore.energy == prev.gpuPowerAfter.energy);

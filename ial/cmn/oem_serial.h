@@ -9,8 +9,12 @@
 
 #include "ze_api.h"
 #include <string>
+#include <string_view>
 
 struct devInfo;
+
+/** Value reported when no source provides the board serial number. */
+inline constexpr std::string_view UNKNOWN_SERIAL = "unknown";
 
 /**
  * @brief Retrieves the OEM serial number via IGSC using the MEI device path.

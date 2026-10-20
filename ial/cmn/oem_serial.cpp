@@ -44,9 +44,6 @@ struct IgscDeviceCloser
 constexpr unsigned char ASCII_PRINTABLE_MIN = 0x20;
 constexpr unsigned char ASCII_PRINTABLE_MAX = 0x7E;
 
-/** Value Sysman reports when the board serial number is not available. */
-constexpr std::string_view SYSMAN_UNKNOWN_SERIAL = "unknown";
-
 /**
  * @brief Fetches the serial number of the given device from the AMC FRU data.
  *
@@ -160,7 +157,7 @@ ze_result_t querySerialNumber(devInfo &d, std::string &serialNumber)
 		return result;
 	}
 	serialNumber = props.serialNumber;
-	if (serialNumber != SYSMAN_UNKNOWN_SERIAL) {
+	if (serialNumber != UNKNOWN_SERIAL) {
 		return ZE_RESULT_SUCCESS;
 	}
 

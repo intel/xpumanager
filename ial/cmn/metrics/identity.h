@@ -115,12 +115,15 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-				if (!cache.serialNumber) {
+				constexpr auto unknownRetryInterval = std::chrono::seconds{10};
+				const auto now = std::chrono::steady_clock::now();
+				if (!cache.serialNumber || (*cache.serialNumber == UNKNOWN_SERIAL && now >= cache.serialRetryAt)) {
 					std::string serial;
 					auto const r = querySerialNumber(d, serial);
 					if (r != ZE_RESULT_SUCCESS) {
 						return r;
 					}
+					cache.serialRetryAt = now + unknownRetryInterval;
 					cache.serialNumber = std::move(serial);
 				}
 				out = *cache.serialNumber;
