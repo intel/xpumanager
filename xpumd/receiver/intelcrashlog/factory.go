@@ -16,6 +16,9 @@ import (
 	"github.com/intel/xpumanager/xpumd/receiver/intelcrashlog/internal/metadata"
 )
 
+// defaultMaxFileSize is the default maximum size of a crashlog file (1 MiB).
+const defaultMaxFileSize = 1024 * 1024
+
 // NewFactory creates a factory for the receiver.
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
@@ -29,6 +32,7 @@ func createDefaultConfig() component.Config {
 	return &Config{
 		Directory:       "",
 		IgnoreOlderThan: 0,
+		MaxFileSize:     defaultMaxFileSize,
 	}
 }
 

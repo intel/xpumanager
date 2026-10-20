@@ -8,6 +8,7 @@ package intelcrashlog
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -177,12 +178,17 @@ func (r *crashlogReceiver) handlePath(ctx context.Context, path string) {
 		return
 	}
 
+	if info.Size() > r.config.MaxFileSize {
+		r.logger.Warnw("skipping too large crashlog", "path", path, "size", info.Size(), "maxFileSize", r.config.MaxFileSize)
+		return
+	}
+
 	r.emitFile(ctx, path, info)
 }
 
 // emitFile reads the crashlog file and emits a log record.
 func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.FileInfo) {
-	data, err := os.ReadFile(path)
+	data, err := r.readFile(path, info.Size())
 	if err != nil {
 		r.logger.Errorw("failed to read crashlog", "path", path, "error", err)
 		return
@@ -197,7 +203,7 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 
 	lr.SetObservedTimestamp(pcommon.NewTimestampFromTime(time.Now()))
 	lr.SetTimestamp(pcommon.NewTimestampFromTime(info.ModTime()))
-	lr.Body().SetEmptyBytes().FromRaw(data)
+	data.MoveTo(lr.Body().SetEmptyBytes())
 
 	attrs := lr.Attributes()
 	attrs.PutStr("file.name", filepath.Base(path))
@@ -215,6 +221,36 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 	} else {
 		r.logger.Debugw("emitted crashlog", "path", path, "attributes", attrs)
 	}
+}
+
+// readFile reads the contents of a file directly into a pcommon.ByteSlice (avoiding a copy of the data on emit).
+func (r *crashlogReceiver) readFile(path string, size int64) (pcommon.ByteSlice, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return pcommon.ByteSlice{}, err
+	}
+	defer f.Close() //nolint: errcheck // read-only
+
+	data := pcommon.NewByteSlice()
+	data.EnsureCapacity(int(size))
+
+	// Read one byte more than the limit to detect growth past it
+	n, err := io.Copy(byteSliceWriter(data), io.LimitReader(f, r.config.MaxFileSize+1))
+	if err != nil {
+		return data, err
+	}
+	if n > r.config.MaxFileSize {
+		return data, fmt.Errorf("file grew past the size limit of %d bytes", r.config.MaxFileSize)
+	}
+	return data, nil
+}
+
+// byteSliceWriter is a wrapper around pcommon.ByteSlice that implements io.Writer.
+type byteSliceWriter pcommon.ByteSlice
+
+func (w byteSliceWriter) Write(p []byte) (int, error) {
+	pcommon.ByteSlice(w).Append(p...)
+	return len(p), nil
 }
 
 // parseBDF extracts the PCI BDF address found in string or returns an empty string.

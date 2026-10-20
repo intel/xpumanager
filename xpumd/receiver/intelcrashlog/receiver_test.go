@@ -26,6 +26,9 @@ import (
 
 func createReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) *crashlogReceiver {
 	t.Helper()
+	if cfg.MaxFileSize == 0 {
+		cfg.MaxFileSize = defaultMaxFileSize
+	}
 	return newReceiver(receivertest.NewNopSettings(typ), cfg, nextConsumer)
 }
 

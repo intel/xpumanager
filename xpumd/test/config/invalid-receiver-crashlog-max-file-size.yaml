@@ -1,0 +1,7 @@
+# Zero crashlog size limit
+#
+# expect-error: max_file_size must be positive
+
+receivers:
+  intel_crashlog:
+    max_file_size: 0

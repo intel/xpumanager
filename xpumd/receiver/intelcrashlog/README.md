@@ -22,6 +22,7 @@ receivers:
     directory: /var/log/crashlog
     globs: ["*.crashlog"]
     ignore_older_than: 10m
+    max_file_size: 4194304
     add_attributes:
       hw.vendor: ACME
 ```
@@ -33,6 +34,7 @@ receivers:
 | `directory` | string | *required* | Directory to watch for new crashlog files |
 | `globs` | []string | *required* | Filename glob patterns matched against the base name of each file, e.g. `["*.bin", "*.crashlog"]`. A file is processed if it matches any of them, use `["*"]` to match all files |
 | `ignore_older_than` | duration | `0s` | Ignore files whose modification time is older than `startup_time - ignore_older_than`. `0s` means only files modified after startup are processed |
+| `max_file_size` | int | `1048576` (1 MiB) | Maximum crashlog file size in bytes, must be positive. Larger files are skipped |
 | `add_attributes` | map[string]string | `{}` | Static key/value attributes added to every emitted log record |
 
 ## Log Record Format
