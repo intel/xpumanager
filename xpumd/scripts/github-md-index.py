@@ -18,7 +18,8 @@ E.g. if document has (single) top level title marked with '#', specify
 
 import os
 import sys
-from typing import Never
+from typing import Never, TextIO
+
 
 def error_exit(msg: str) -> Never:
     "show usage, given error message and exit"
@@ -33,12 +34,12 @@ def create_translation() -> dict:
         to_remove[ord(char)] = None
     return to_remove
 
-def output_index(path: str, skip: int) -> Never:
+def output_index(mdfile: TextIO, skip: int) -> Never:
     "output index for given Markdown file"
     to_remove = create_translation()
     anchors = {}
     literal = False
-    for line in open(path, encoding="utf-8"):
+    for line in mdfile:
         if line.startswith("```"):
             literal = not literal
             continue
@@ -78,7 +79,8 @@ def main() -> Never:
             error_exit(f"invalid skip level value: {args[1]}")
     else:
         skip = 0
-    output_index(path, skip)
+    with open(path, encoding="utf-8") as mdfile:
+        output_index(mdfile, skip)
 
 if __name__ == "__main__":
     main()
