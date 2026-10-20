@@ -3,20 +3,27 @@
 # Copyright (C) 2026 Intel Corporation
 #
 # SPDX-License-Identifier: MIT
+#
+# Helper script for testing releases with different driver versions
 
 # exit with error code after printing error message arg
 error_exit ()
 {
 	echo
-	echo "Usage: ${0##*/} <image registry> <driver DEB packages dir> [prefix]"
+	echo "Usage: ${0##*/} <image registry> <driver DEB packages dir> [alias tag]"
 	echo
-	echo "Image tag will be <prefix>-<L0 GPU driver package version>."
-	echo "If prefix argument is missing, fallbacks are (in this order):"
+	echo "Image tag will be <commit>-<L0 GPU driver package version>,"
+	echo "Where <commit> will be one of these (in this order):"
 	echo "Current commit Git tag, branch name, commit ID."
+	echo
+	echo "If [alias tag] is specified (e.g. 'latest-v2.3.0'),"
+	echo "that will be added as an alias for the resulting image."
 	echo
 	echo "ERROR: $1!"
 	exit 1
 }
+
+# --- check arguments ---
 
 if [ $# -lt 2 ]; then
 	error_exit "not enough arguments"
@@ -44,39 +51,45 @@ if [ -z "$L0_VERSION" ]; then
 	error_exit "unable to determine L0 backend version from '$DEB_DIR/libze-intel-gpu*.deb'"
 fi
 
+ALIAS=$1
+
+# --- build image ---
+
 # XPUMD root dir needed for image build
 cd ..
 
-PREFIX=$1
-if [ -z "$PREFIX" ]; then
-	# Git repo tag, branch name, or commit ID available?
-	PREFIX=$(git describe --tags --exact-match 2>/dev/null)
-	if [ -z "$PREFIX" ]; then
-		COMMIT_TYPE="branch name"
-		PREFIX=$(git branch --show-current)
-		if [ -z "$PREFIX" ]; then
-			COMMIT_TYPE="commit ID"
-			PREFIX=$(git rev-parse --short=12 HEAD)
-			if [ -z "$PREFIX" ]; then
-				error_exit "failed to get either Git branch or commit ID => specify tag prefix explicitly"
-			fi
+# Git repo tag, branch name, or commit ID available?
+COMMIT=$(git describe --tags --exact-match 2>/dev/null)
+if [ -z "$COMMIT" ]; then
+	COMMIT_TYPE="branch name"
+	COMMIT=$(git branch --show-current)
+	if [ -z "$COMMIT" ]; then
+		COMMIT_TYPE="commit ID"
+		COMMIT=$(git rev-parse --short=12 HEAD)
+		if [ -z "$COMMIT" ]; then
+			error_exit "failed to get Git tag, branch name, or commit ID => run from a valid Git checkout"
 		fi
-		echo "Not on tagged commit => using git $COMMIT_TYPE as image tag prefix!"
 	fi
-	PREFIX=$(echo "$PREFIX" | tr / -)
+	echo "Not on tagged commit => using git $COMMIT_TYPE as image tag prefix!"
 fi
 
-image="$REGISTRY/xpumd:$PREFIX-$L0_VERSION"
+TAG="$(echo "$COMMIT" | tr / -)-$L0_VERSION"
+IMAGE="$REGISTRY/xpumd:$TAG"
+
 echo "Building XPUMD image:"
-echo "$image"
+echo "$IMAGE"
 
 echo
-set -x
+set -ex
 # Real Docker requires explicit passing of proxy variables, Podman wrapper does not.
 # shellcheck disable=SC2154
-docker build -t "$image" \
+docker build -t "$IMAGE" \
   --build-arg BACKEND="local" \
   --build-arg FILES_DIR="debs/$DEB_DIR" \
   --build-arg https_proxy="$https_proxy" \
   --build-arg http_proxy="$http_proxy" \
   .
+
+if [ -n "$ALIAS" ]; then
+	docker tag "$IMAGE" "$REGISTRY/xpumd:$ALIAS"
+fi

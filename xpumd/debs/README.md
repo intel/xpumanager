@@ -16,7 +16,7 @@ Build XPUMD image using locally downloaded driver DEB packages:
 
 Then build XPUMD image with the downloaded driver packages:
 ```
-./docker-build.sh  <my-registry/project>  <driver-DEBs-subdir>
+./docker-build.sh  <my-registry/project>  <driver-DEBs-subdir>  [alias tag]
 ```
 
 (Script will forward `http_proxy` and `https_proxy` variables in case
