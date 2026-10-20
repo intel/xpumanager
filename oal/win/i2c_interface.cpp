@@ -210,6 +210,8 @@ bool I2CInterface::writeAmc(void *writebuffer, size_t writesize)
 			} else {
 				ERR("WaitForSingleObject timeout or error: {}\n", GetLastError());
 				CancelIo(amchandle);
+				// The kernel writes the stack OVERLAPPED when the cancel completes, so wait for it
+				GetOverlappedResult(amchandle, &overlapped, &byteswritten, TRUE);
 				return false;
 			}
 		} else {
@@ -274,6 +276,8 @@ bool I2CInterface::readAmc(void *readbuffer, size_t readsize)
 			} else {
 				ERR("WaitForSingleObject timeout or error: {}\n", GetLastError());
 				CancelIo(amchandle);
+				// The kernel writes the stack OVERLAPPED when the cancel completes, so wait for it
+				GetOverlappedResult(amchandle, &overlapped, &bytesread, TRUE);
 				return false;
 			}
 		} else {
