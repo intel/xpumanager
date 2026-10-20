@@ -102,7 +102,7 @@ void hexdump(const uint8_t buff[], unsigned int len)
 	if (buff == nullptr || len == 0) {
 		return;
 	}
-	if (!Logger::instance().isEnabled(LogLevel::DBG)) {
+	if (!Logger::isEnabled(LogLevel::DBG)) {
 		return;
 	}
 

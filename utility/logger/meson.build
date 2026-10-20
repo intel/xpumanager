@@ -24,6 +24,21 @@ if get_option('with_tests')
         install: false,
     )
     test('logger_tests', logger_test)
+
+    # Logging from a destructor that runs after the logger's, at exit. A separate program,
+    # since the case only exists after main() returns.
+    if is_linux
+        logger_exit_test = executable(
+            'logger_exit_test',
+            files('test/logger_exit_test.cpp', '../../hal/core/debug.cpp'),
+            include_directories: [global_inc, logger_inc, hal_core_inc],
+            dependencies: [compat_dep],
+            link_args: ['-pie'],
+            build_by_default: true,
+            install: false,
+        )
+        test('logger_exit_test', logger_exit_test)
+    endif
     message('Logger unit tests enabled')
 else
     message('Skipping logger tests (pass -Dwith_tests=true to enable)')

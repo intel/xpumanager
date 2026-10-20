@@ -43,12 +43,24 @@ static constexpr bool DEBUG_ENABLED = true;
  */
 class Logger final
 {
+	/// Where the singleton is in its life. A static object destroyed after the logger may still
+	/// log from its destructor; this flag tells the logging calls that the sinks are gone.
+	enum class Lifetime : unsigned char
+	{
+		NotCreated,
+		Alive,
+		Destroyed
+	};
+
+	// Both are static and trivially destructible, so they are never destroyed and stay valid
+	// while static objects are destroyed at exit, before and after the logger itself.
+	static inline constinit std::atomic<Lifetime> lifetime{Lifetime::NotCreated};
+	/// Current log level - relaxed ordering is sufficient: a momentarily
+	/// stale read can suppress or emit at most one extra line.
+	static inline constinit std::atomic<LogLevel> level{LogLevel::INFO};
+
 	std::atomic<std::shared_ptr<Sink>> sink;
 	std::atomic<std::shared_ptr<Sink>> printSink;
-
-	/// Current log level — relaxed ordering is sufficient: a momentarily
-	/// stale read can suppress or emit at most one extra line.
-	std::atomic<LogLevel> level{LogLevel::INFO};
 
 	/// Active error callback; nullptr → write to stderr.
 	std::atomic<std::shared_ptr<LogErrorCallback>> onError;
@@ -68,7 +80,33 @@ class Logger final
 	// Diagnostic output (ERR/INFO/DBG/TRACE) goes to stderr so it doesn't
 	// corrupt stdout which carries user-facing data (JSON, CSV, tables).
 	// PRINT() uses a separate stdout-backed sink.
-	Logger() : sink(std::make_shared<OStreamSink>(std::cerr)), printSink(std::make_shared<OStreamSink>(std::cout)) {}
+	Logger() : sink(std::make_shared<OStreamSink>(std::cerr)), printSink(std::make_shared<OStreamSink>(std::cout))
+	{
+		lifetime.store(Lifetime::Alive, std::memory_order_release);
+	}
+
+	// Formats a record the way OStreamSink does and writes it to a C stream. Used once the
+	// logger is destroyed: C streams are flushed only after every static object is destroyed.
+	template <typename... Args>
+	static void writeWithoutSink(std::FILE *out, LogLevel lvl, const char *prefix, std::source_location loc,
+								 xpum::compat::format_string<Args...> fmt, Args... args) noexcept
+	{
+		try {
+			std::string line = prefix;
+			if (lvl == LogLevel::DBG) {
+				line += xpum::compat::format("{}:{}: ", loc.file_name(), loc.line());
+			}
+			const std::string msg =
+				xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...));
+			line += msg;
+			if (msg.empty() || (msg.back() != '\n' && msg.find('\r') == std::string::npos)) {
+				line += '\n';
+			}
+			// Length-aware, as a formatted argument may contain a NUL
+			std::fwrite(line.data(), 1, line.size(), out);
+		} catch (...) {
+		}
+	}
 
 	void invokeOnError(std::string_view what) noexcept
 	{
@@ -91,7 +129,8 @@ class Logger final
 			break;
 		case FormatErrorPolicy::Substitute:
 			try {
-				sink.load(std::memory_order_acquire)->log(lvl, loc, prefix, xpum::compat::format("[format error: {}]", what));
+				sink.load(std::memory_order_acquire)
+					->log(lvl, loc, prefix, xpum::compat::format("[format error: {}]", what));
 			} catch (...) {
 			}
 			break;
@@ -132,6 +171,56 @@ public:
 
 	Logger(const Logger &) = delete;
 	Logger &operator=(const Logger &) = delete;
+	Logger(Logger &&) = delete;
+	Logger &operator=(Logger &&) = delete;
+	~Logger() { lifetime.store(Lifetime::Destroyed, std::memory_order_release); }
+
+	/**
+	 * @brief Reports whether the singleton has already been destroyed at exit
+	 *
+	 * @retval true  instance() must not be used; logging calls write to stderr/stdout directly
+	 * @retval false The logger exists, or will be created by the next instance() call
+	 */
+	[[nodiscard]] static bool isDestroyed() noexcept
+	{
+		return lifetime.load(std::memory_order_acquire) == Lifetime::Destroyed;
+	}
+
+	/**
+	 * @brief Writes a diagnostic record through the sink, or straight to stderr after exit
+	 *
+	 * Entry point of ERR/INFO/DBG/TRACE, safe to call from any destructor, including those of
+	 * static objects destroyed after the logger.
+	 */
+	template <typename... Args>
+	static void emit(LogLevel lvl, const char *prefix, std::source_location loc,
+					 xpum::compat::format_string<Args...> fmt, Args... args) noexcept
+	{
+		if (!isEnabled(lvl)) {
+			return;
+		}
+		if (isDestroyed()) {
+			writeWithoutSink(stderr, lvl, prefix, loc, fmt, std::move(args)...);
+			return;
+		}
+		instance().write(lvl, prefix, loc, fmt, std::move(args)...);
+	}
+
+	/**
+	 * @brief Writes user-facing output through the print sink, or straight to stdout after exit
+	 *
+	 * Entry point of PRINT, safe to call from any destructor.
+	 */
+	template <typename... Args> static void emitPrint(xpum::compat::format_string<Args...> fmt, Args... args) noexcept
+	{
+		if (isDestroyed()) {
+			// The print sink logs at TRACE with no prefix; formatting it the same way keeps its
+			// newline handling.
+			writeWithoutSink(stdout, LogLevel::TRACE, "", {}, fmt, std::move(args)...);
+			return;
+		}
+		instance().print(fmt, std::move(args)...);
+	}
 
 	/// Atomically replace the active sink; nullptr resets to OStreamSink(cerr).
 	void setSink(std::shared_ptr<Sink> s) noexcept
@@ -175,11 +264,11 @@ public:
 		onError.store(std::make_shared<LogErrorCallback>(std::move(cb)), std::memory_order_relaxed);
 	}
 
-	void setLevel(LogLevel lvl) noexcept { level.store(lvl, std::memory_order_relaxed); }
+	static void setLevel(LogLevel lvl) noexcept { level.store(lvl, std::memory_order_relaxed); }
 
-	[[nodiscard]] LogLevel getLevel() const noexcept { return level.load(std::memory_order_relaxed); }
+	[[nodiscard]] static LogLevel getLevel() noexcept { return level.load(std::memory_order_relaxed); }
 
-	[[nodiscard]] bool isEnabled([[maybe_unused]] LogLevel lvl) const noexcept
+	[[nodiscard]] static bool isEnabled([[maybe_unused]] LogLevel lvl) noexcept
 	{
 		if constexpr (!detail::DEBUG_ENABLED) {
 			return false;
@@ -201,7 +290,8 @@ public:
 	{
 		try {
 			printSink.load(std::memory_order_acquire)
-				->log(LogLevel::TRACE, {}, "", xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...)));
+				->log(LogLevel::TRACE, {}, "",
+					  xpum::compat::vformat(xpum::compat::fmt_view(fmt), xpum::compat::make_format_args(args...)));
 		} catch (const std::exception &e) {
 			handleFormatError(e.what(), LogLevel::TRACE, "", {});
 		} catch (...) {
@@ -243,7 +333,7 @@ template <typename... Args> struct PRINT
 {
 	explicit PRINT(xpum::compat::format_string<Args...> fmt, Args... args) noexcept
 	{
-		Logger::instance().print(fmt, std::move(args)...);
+		Logger::emitPrint(fmt, std::move(args)...);
 	}
 };
 template <typename... Args> PRINT(xpum::compat::format_string<Args...>, Args...) -> PRINT<Args...>;
@@ -253,10 +343,7 @@ template <typename... Args> struct ERR // NOLINT(readability-identifier-naming)
 	explicit ERR(xpum::compat::format_string<Args...> fmt, Args... args,
 				 std::source_location loc = std::source_location::current()) noexcept
 	{
-		if (!Logger::instance().isEnabled(LogLevel::ERR)) {
-			return;
-		}
-		Logger::instance().write(LogLevel::ERR, "[Error] ", loc, fmt, std::move(args)...);
+		Logger::emit(LogLevel::ERR, "[Error] ", loc, fmt, std::move(args)...);
 	}
 };
 template <typename... Args> ERR(xpum::compat::format_string<Args...>, Args...) -> ERR<Args...>;
@@ -266,10 +353,7 @@ template <typename... Args> struct INFO // NOLINT(readability-identifier-naming)
 	explicit INFO(xpum::compat::format_string<Args...> fmt, Args... args,
 				  std::source_location loc = std::source_location::current()) noexcept
 	{
-		if (!Logger::instance().isEnabled(LogLevel::INFO)) {
-			return;
-		}
-		Logger::instance().write(LogLevel::INFO, "[Info] ", loc, fmt, std::move(args)...);
+		Logger::emit(LogLevel::INFO, "[Info] ", loc, fmt, std::move(args)...);
 	}
 };
 template <typename... Args> INFO(xpum::compat::format_string<Args...>, Args...) -> INFO<Args...>;
@@ -279,10 +363,7 @@ template <typename... Args> struct DBG // NOLINT(readability-identifier-naming)
 	explicit DBG(xpum::compat::format_string<Args...> fmt, Args... args,
 				 std::source_location loc = std::source_location::current()) noexcept
 	{
-		if (!Logger::instance().isEnabled(LogLevel::DBG)) {
-			return;
-		}
-		Logger::instance().write(LogLevel::DBG, "[DBG] ", loc, fmt, std::move(args)...);
+		Logger::emit(LogLevel::DBG, "[DBG] ", loc, fmt, std::move(args)...);
 	}
 };
 template <typename... Args> DBG(xpum::compat::format_string<Args...>, Args...) -> DBG<Args...>;
@@ -292,10 +373,7 @@ template <typename... Args> struct TRACE // NOLINT(readability-identifier-naming
 	explicit TRACE(xpum::compat::format_string<Args...> fmt, Args... args,
 				   std::source_location loc = std::source_location::current()) noexcept
 	{
-		if (!Logger::instance().isEnabled(LogLevel::TRACE)) {
-			return;
-		}
-		Logger::instance().write(LogLevel::TRACE, "", loc, fmt, std::move(args)...);
+		Logger::emit(LogLevel::TRACE, "", loc, fmt, std::move(args)...);
 	}
 };
 template <typename... Args> TRACE(xpum::compat::format_string<Args...>, Args...) -> TRACE<Args...>;

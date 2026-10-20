@@ -78,11 +78,11 @@ static const int is_windows __attribute__((unused)) = 0; // NOLINT(readability-i
 #ifdef __cplusplus
 inline int setDbgLvl(LogLevel lvl)
 {
-	Logger::instance().setLevel(lvl);
+	Logger::setLevel(lvl);
 	return 0;
 }
 
-[[nodiscard]] inline LogLevel getDbgLvl() { return Logger::instance().getLevel(); }
+[[nodiscard]] inline LogLevel getDbgLvl() { return Logger::getLevel(); }
 #else
 inline int setDbgLvl(int lvl)
 {
