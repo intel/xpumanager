@@ -17,6 +17,7 @@
 #include "pldm_pdr_manager.h"
 #include "pldm_amc_gpu_reset.h"
 #include <i2c_interface.h>
+#include <atomic>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -164,7 +165,7 @@ private:
 	struct fwuPassCompTable mPassCompTable = {};
 	struct fwUpdComp mUpdComp = {};
 	uint8_t mFwuCurrentState = 0;
-	bool mForceUpdate; // Set when the user requested a forced (downgrade-capable) firmware update
+	bool mForceUpdate; // The current update was requested as forced (downgrade-capable)
 	uint8_t mLastFwuCompletionCode;
 	uint16_t mCompIdFilter; // Only transfer the component with this ComponentIdentifier, 0 for all of them
 
@@ -346,19 +347,32 @@ public:
 
 	// pldm Base APIs
 	int initialize();
-	int fwupd(const char *pkgFilePath, uint16_t compIdFilter = 0);
-	void setForceUpdate(bool forceUpdate) { mForceUpdate = forceUpdate; }
+	int fwupd(const char *pkgFilePath, uint16_t compIdFilter = 0, bool forceUpdate = false);
 	uint8_t getSensorInfoById(uint16_t sensorId);
 	uint8_t getSensorInfoByUnit(sensorUnits unit);
 	uint8_t getFile(uint16_t filePdrId, std::vector<uint8_t> &fileData);
 	std::vector<pldmSensorInfo> &getSensorInfoList() { return mSensorInfoList; }
 	uint8_t oemVrsyncCmd(uint8_t cmd);
-	int fwupdProgress() { return mProgPercent; }
-	// True when initialize() failed because the AMC's I2C device is held by another process
+	[[nodiscard]] int fwupdProgress() const { return mProgPercent.load(); }
+	// The AMC bus is locked only for the duration of one amclib operation, so a long-running
+	// process does not keep every other process away from the card.
+	[[nodiscard]] bool isI2cOpen() const { return i2cobj != nullptr && i2cobj->isInit(); }
+	[[nodiscard]] bool tryLockBus() { return i2cobj != nullptr && i2cobj->tryLock(); }
+	void unlockBus()
+	{
+		if (i2cobj != nullptr) {
+			i2cobj->unlock();
+		}
+	}
+	// True when the last tryLockBus() failed because the AMC's I2C device is held by another process
 	bool isI2cBusy() { return i2cobj != nullptr && i2cobj->isBusy(); }
+	// Set while a wait for the bus has timed out and the bus has not been acquired since, so
+	// later calls fail fast instead of each waiting again
+	bool mBusWaitExpired = false;
 	// pldminit() sets this, but the constructor ignores pldminit()'s failure return,
 	// so a caller polling fwupdProgress() after a failed init must not read garbage.
-	int mProgPercent = 0;
+	// Written by the flash thread while amclib::amcFirmwareProgress() reads it from another one.
+	std::atomic<int> mProgPercent{0};
 	uint8_t amcGpuReset();
 };
 

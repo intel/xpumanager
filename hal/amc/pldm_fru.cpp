@@ -483,7 +483,7 @@ uint8_t pldm::getFruTdp(char *tdp, size_t &bufferSize)
  * @retval PLDM_SUCCESS AMC version retrieved successfully or length returned successfully
  * @retval PLDM_ERROR FRU table initialization failed, AMC version not available, or buffer too small
  *
- * @note The function performs lazy initialization of the FRU table on first access
+ * @note The version is read from the AMC on every call, never from an earlier one
  * @note When querying length, pass nullptr for version and check returned bufferSize
  * @note When copying data, ensure bufferSize >= returned length from previous query
  * @note Debug messages are logged when FRU table is not initialized or AMC version is unavailable
@@ -493,11 +493,11 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 {
 	TRACING();
 
-	if (!mFwParamsInitialized) {
-		if (getFirmwareParameters() != PLDM_SUCCESS) {
-			ERR("FWU: GET_FIRMWARE_PARAMETERS failed on card {}\n", mCardNum);
-			return PLDM_ERROR;
-		}
+	// Not cached: the bus is locked per operation, so another process may have updated the
+	// firmware since the last call.
+	if (getFirmwareParameters() != PLDM_SUCCESS) {
+		ERR("FWU: GET_FIRMWARE_PARAMETERS failed on card {}\n", mCardNum);
+		return PLDM_ERROR;
 	}
 
 	const size_t requiredLength = mFwParamActiveVersion.size() + 1; // +1 for null terminator

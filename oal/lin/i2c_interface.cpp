@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <fstream>
 #include <i2c_interface.h>
+#include "scoped_fd.h"
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 #include <sys/ioctl.h>
@@ -22,6 +23,7 @@
  * @param devpath Wide character std::string containing the device path to the I2C device
  *
  * Initializes the I2C interface by opening the AMC device and setting up peripheral access.
+ * The device is not locked here; call tryLock() before each AMC transaction sequence.
  * Sets the init flag to true if successful, false otherwise.
  */
 I2CInterface::I2CInterface(const std::string &devpath)
@@ -107,8 +109,8 @@ std::string getI2CDeviceName(const std::string &devicePath)
  * @param devpath Narrow std::string device path (e.g. /dev/i2c-21)
  * @return bool True if device opened successfully, false otherwise
  *
- * Converts the wide character device path to a regular std::string and opens
- * the I2C device with read/write and non-blocking flags.
+ * Opens the I2C device read/write, non-blocking and close-on-exec. The device is
+ * not locked here; see tryLock().
  */
 bool I2CInterface::openAmc(const std::string &devpath)
 {
@@ -117,19 +119,51 @@ bool I2CInterface::openAmc(const std::string &devpath)
 		ERR("Device path is empty\n");
 		return false;
 	}
-	amchandle = open(devpath.c_str(), O_RDWR | O_NONBLOCK);
+	// flock() belongs to the open file, so a child that inherited the fd would keep the AMC
+	// locked after this process released it or exited.
+	amchandle = open(devpath.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
 	if (amchandle < 0) {
-		ERR("Failed to open I2C device {}: {}\n", devpath.c_str(), strerror(errno));
-		return false;
-	}
-	if (::flock(amchandle, LOCK_EX | LOCK_NB) < 0) {
-		busy = (errno == EWOULDBLOCK);
-		ERR("Failed to acquire exclusive lock on I2C device {} with error: {}\n", devpath.c_str(), strerror(errno));
-		close(amchandle);
-		amchandle = -1;
+		ERR("Failed to open I2C device {}: {}\n", devpath.c_str(), errnoText(errno));
 		return false;
 	}
 	return true;
+}
+
+/**
+ * @brief Takes the exclusive lock that keeps other processes off the AMC bus
+ *
+ * Does not wait. The lock is per open file, so it is held across every
+ * transaction until unlock() and taking it again on the same handle succeeds.
+ *
+ * @retval true  The lock is held.
+ * @retval false The lock is held by another process (isBusy() is then true), or flock() failed.
+ */
+bool I2CInterface::tryLock()
+{
+	TRACING();
+	busy = false;
+	if (amchandle < 0) {
+		return false;
+	}
+	if (::flock(amchandle, LOCK_EX | LOCK_NB) == 0) {
+		return true;
+	}
+	busy = (errno == EWOULDBLOCK);
+	if (!busy) {
+		ERR("Failed to lock I2C device: {}\n", errnoText(errno));
+	}
+	return false;
+}
+
+/**
+ * @brief Releases the lock taken by tryLock() so other processes can reach the AMC
+ */
+void I2CInterface::unlock()
+{
+	TRACING();
+	if (amchandle >= 0) {
+		::flock(amchandle, LOCK_UN);
+	}
 }
 
 /**
@@ -168,7 +202,7 @@ bool I2CInterface::writeAmc(void *writeBuffer, size_t writeSize)
 
 	ssize_t bytesWritten = write(amchandle, writeBuffer, writeSize);
 	if (bytesWritten < 0) {
-		ERR("Failed to write to I2C device: {}\n", strerror(errno));
+		ERR("Failed to write to I2C device: {}\n", errnoText(errno));
 		return false;
 	}
 	return true;
@@ -193,7 +227,7 @@ bool I2CInterface::readAmc(void *readBuffer, size_t readSize)
 	ssize_t bytesRead = read(amchandle, readBuffer, readSize);
 	DBG("Number of bytes read from AMC: {}\n", bytesRead);
 	if (bytesRead < 0) {
-		ERR("Failed to read from I2C device: {}\n", strerror(errno));
+		ERR("Failed to read from I2C device: {}\n", errnoText(errno));
 		return false;
 	}
 	return true;

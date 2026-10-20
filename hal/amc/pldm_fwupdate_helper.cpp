@@ -326,7 +326,7 @@ uint8_t pldm::readFromFD()
 			mProgPercent = (int)(offset * 100) / pkg->compImagesInfo.compImages[mCurComp].compSize;
 
 			DBG("Card - {:02} :: offset = {}, lenToSend = {}, mProgPercent = {}\n", mCardNum, offset, lenToSend,
-				mProgPercent);
+				mProgPercent.load());
 			if (offset >= pkg->compImagesInfo.compImages[mCurComp].compSize) {
 				DBG("FWU : Offset exceeds component size, Respond back to AMC!!!\n");
 				if (respondtoamc(DATA_OUT_OF_RANGE) != PLDM_SUCCESS) {

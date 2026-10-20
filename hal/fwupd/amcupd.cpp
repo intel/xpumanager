@@ -355,20 +355,15 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// Set the per-card ForceUpdate flag on the underlying PLDM object.
-	if (amc->amcSetForceUpdate(amcIndex, fwInfo->forceUpdate) != AMC_SUCCESS) {
-		ERR("Failed to configure force-update flag for card {}\n", amcIndex);
-		return ZE_RESULT_ERROR_UNKNOWN;
-	}
-
 	// Shared state for thread coordination
 	std::atomic<bool> flashCompleted{false};
 	std::atomic<bool> flashSuccess{false};
 	std::atomic<bool> stopProgress{false};
 
 	// Create a thread to flash firmware
-	std::thread flashThread([amc, amcIndex, filePath, compIdFilter, &flashCompleted, &flashSuccess]() {
-		int result = amc->amcFirmwareFlash(amcIndex, filePath.c_str(), compIdFilter);
+	const bool forceUpdate = fwInfo->forceUpdate;
+	std::thread flashThread([amc, amcIndex, filePath, compIdFilter, forceUpdate, &flashCompleted, &flashSuccess]() {
+		int result = amc->amcFirmwareFlash(amcIndex, filePath.c_str(), compIdFilter, forceUpdate);
 		flashSuccess.store(result == AMC_SUCCESS);
 		flashCompleted.store(true);
 

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <vector>
 #include <string>
+#include <utility>
 #include "pldm.h"
 
 enum amcErrCodes
@@ -42,22 +43,57 @@ private:
 		CARD_FAILED
 	};
 
+	// One AMC operation's hold on a card: the card's in-process mutex and its I2C bus lock,
+	// both released when the lease goes out of scope. It adopts an already locked mutex and
+	// holds only raw pointers, so the exported amclib needs no dll-interface for it.
+	class CardLease
+	{
+	public:
+		CardLease() = default;
+		CardLease(std::mutex *lockedMutex, pldm *leasedCard) noexcept : mutex(lockedMutex), card(leasedCard) {}
+		~CardLease()
+		{
+			if (card != nullptr) {
+				card->unlockBus();
+			}
+			if (mutex != nullptr) {
+				mutex->unlock();
+			}
+		}
+		CardLease(const CardLease &) = delete;
+		CardLease &operator=(const CardLease &) = delete;
+		CardLease(CardLease &&other) noexcept
+			: mutex(std::exchange(other.mutex, nullptr)), card(std::exchange(other.card, nullptr))
+		{}
+		CardLease &operator=(CardLease &&) = delete;
+
+		[[nodiscard]] explicit operator bool() const noexcept { return card != nullptr; }
+		[[nodiscard]] pldm *operator->() const noexcept { return card; }
+
+	private:
+		std::mutex *mutex = nullptr;
+		pldm *card = nullptr;
+	};
+
 	pldm **pldmobj;
 	std::vector<amcCardInfo> *amcDeviceList;
 	int numCards;
-	// Per-card lazy init state. Each card's I2C device is opened (and flock'ed) only
-	// when that card is first used, so separate processes can work on separate cards.
+	// Per-card lazy init state. Each card's I2C device is opened only when that card is
+	// first used, and locked only while an operation runs, so separate processes can work
+	// on separate cards and take turns on the same card.
 	std::atomic<int> *cardState;
 	std::mutex *cardMutex;
 
-	pldm *getCard(uint32_t cardNum);
+	[[nodiscard]] CardLease acquireCard(uint32_t cardNum);
+	[[nodiscard]] bool lockBus(uint32_t cardNum, pldm *card);
 
 public:
 	amclib();
 	~amclib();
 	int amcInitialize();
 	int amcEnumFirmwares();
-	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath, uint16_t compIdFilter = 0);
+	int amcFirmwareFlash(uint32_t cardNum, const char *pkgFilePath, uint16_t compIdFilter = 0,
+						 bool forceUpdate = false);
 	int amcFirmwareProgress(uint32_t cardNum);
 	int amcGetIndex(const std::string &gpuBDF);
 	int amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::string &versionStr);
@@ -69,7 +105,6 @@ public:
 	int amcGetVersion(uint8_t card_num, char *amc_version, size_t *bufferSize);
 	int amcGpuReset(uint32_t cardNum);
 	int amcReadFile(int deviceIndex, uint16_t filePdrId, std::vector<uint8_t> &fileData);
-	int amcSetForceUpdate(uint32_t cardNum, bool forceUpdate);
 };
 
 #endif
