@@ -79,7 +79,7 @@ uint8_t mctp::controlResponse(uint8_t cmd, uint8_t id)
  *       - Completion code indicates success (MCTP_COMPLETION_SUCCESS)
  * @note Provides debug hex dump of received packet for troubleshooting
  */
-uint8_t mctp::getRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
+uint8_t mctp::getRespPayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
 	unsigned int totalSize = 0;
@@ -90,6 +90,18 @@ uint8_t mctp::getRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 
 	DBG("mctp RX  :: ");
 	hexdump((uint8_t *)mI2cMctpRead, totalSize);
+
+	// A reply left over from an earlier request has a valid completion code too. The message type
+	// tells a PLDM reply apart: its type byte is where the control command code would be, and a
+	// PLDM type such as FRU (0x04) equals a control command such as GET_VERSION.
+	const unsigned msgType = mI2cMctpRead->mctpSmbusHdr.msgType;
+	const struct mctpControlHdr &hdr = mI2cMctpRead->mctpCtrlHdr;
+	if (msgType != MCTP_CONTROL || hdr.request != MCTP_RESPONSE || hdr.cmdCode != cmd || hdr.instanceID != id) {
+		ERR("mctp : Response does not match request cmd 0x{:02x} instance {} (got message type 0x{:02x} cmd 0x{:02x} "
+			"instance {} request {})\n",
+			cmd, id, msgType, hdr.cmdCode, static_cast<unsigned>(hdr.instanceID), static_cast<unsigned>(hdr.request));
+		return MCTP_FAILURE;
+	}
 
 	if (mI2cMctpRead->respPayload[BYTE_0] != MCTP_COMPLETION_SUCCESS) {
 		ERR("mctp : Command Completion Error!!!\n");

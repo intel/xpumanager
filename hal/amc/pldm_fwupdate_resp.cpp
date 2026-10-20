@@ -137,7 +137,7 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
  * @note Validates message integrity and completion codes
  * @note Extracts command-specific response data
  */
-uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, UNUSED uint8_t id)
+uint8_t pldm::pldmFwUpdateRespPayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
 	unsigned int totalSize = 0;

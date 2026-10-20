@@ -128,7 +128,7 @@ uint8_t pldm::oemVrsyncResp(uint8_t cmd, uint8_t id)
  * @note Sets up proper addressing for response message handling
  * @note Provides detailed error logging for OEM command debugging
  */
-uint8_t pldm::oemVrsyncRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
+uint8_t pldm::oemVrsyncRespPayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
 	unsigned int totalSize = 0;
@@ -139,6 +139,10 @@ uint8_t pldm::oemVrsyncRespPayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 
 	DBG("pldm RX  :: ");
 	hexdump((uint8_t *)mI2cPldmRead, totalSize);
+
+	if (!isResponseTo(PLDM_OEM_SPECIFIC, cmd, id)) {
+		return PLDM_ERROR;
+	}
 
 	if (mI2cPldmRead->respPayload[BYTE_0] != PLDM_SUCCESS) {
 		ERR("OEM Cmd : Completion Error Code : 0x{:02x}\n", mI2cPldmRead->respPayload[BYTE_0]);

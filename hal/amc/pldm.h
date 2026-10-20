@@ -213,6 +213,7 @@ private:
 	uint8_t receivePldmMessage();
 	uint8_t pldmHdrConstruction(struct pldmHdr *pldmHdr, uint8_t instanceID, uint8_t cmdType, uint8_t cmd,
 								uint8_t async, uint8_t reqresp);
+	[[nodiscard]] bool isResponseTo(uint8_t cmdType, uint8_t cmd, uint8_t id) const;
 
 	//============== pldm Discovery ================
 	// pldm Discovery Command

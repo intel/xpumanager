@@ -287,6 +287,9 @@ uint8_t pldm::pfSensorReadingRespPayload()
 uint8_t pldm::processPlatformResponse(uint8_t cmd, uint8_t id)
 {
 	TRACING();
+	if (!isResponseTo(PLDM_PLATFORM_MONITORING, cmd, id)) {
+		return PLDM_ERROR;
+	}
 	switch (cmd) {
 	case PLDM_GET_PDR_REPOSITORY_INFO:
 		return pfPdrRepoRespPayload();
@@ -300,8 +303,6 @@ uint8_t pldm::processPlatformResponse(uint8_t cmd, uint8_t id)
 		ERR("PLDM Platform: Unknown command response\n");
 		return PLDM_ERROR;
 	}
-	UNUSED_VAR(id);
-	return PLDM_ERROR;
 }
 
 /**

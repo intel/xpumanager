@@ -155,7 +155,7 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
  * @note Sets up proper addressing for response message handling
  * @note Provides detailed error logging for debugging
  */
-uint8_t pldm::pldmFruResponsePayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
+uint8_t pldm::pldmFruResponsePayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
 
@@ -167,6 +167,10 @@ uint8_t pldm::pldmFruResponsePayload(UNUSED uint8_t cmd, UNUSED uint8_t id)
 
 	DBG("PLDM RX  :: ");
 	hexdump((uint8_t *)mI2cPldmRead, totalSize);
+
+	if (!isResponseTo(PLDM_FRU, cmd, id)) {
+		return PLDM_ERROR;
+	}
 
 	if (mI2cPldmRead->respPayload[0] != PLDM_SUCCESS) {
 		ERR("PLDM : Command Completion Error!!!\n");
