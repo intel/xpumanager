@@ -72,20 +72,20 @@ TEST_CASE("the report prints exactly the agreed field set")
 	report.interposed = {"/usr/lib/libigc.so.2"};
 
 	CHECK(formatVersionReport(report) == "test version 2.2.0 (internal-2026.40.1-1-gdeadbee)\n"
-							"\n"
-							"Build:\n"
-							"  Git commit:          deadbeefcafe\n"
-							"  Commit date:         2026-09-26 09:14:02 UTC\n"
-							"  Built:               2026-09-28 14:02:11 UTC\n"
-							"  Build type:          release\n"
-							"  Platform:            linux/x86_64\n"
-							"\n"
-							"Runtime:\n"
-							"  Loader path:         /usr/lib/libze_loader.so.1\n"
-							"  Interposed (LD_PRELOAD):\n"
-							"    /usr/lib/libigc.so.2\n"
-							"  Level Zero:\n"
-							"    loader             1.33.1     (spec 1.18)\n");
+										 "\n"
+										 "Build:\n"
+										 "  Git commit:          deadbeefcafe\n"
+										 "  Commit date:         2026-09-26 09:14:02 UTC\n"
+										 "  Built:               2026-09-28 14:02:11 UTC\n"
+										 "  Build type:          release\n"
+										 "  Platform:            linux/x86_64\n"
+										 "\n"
+										 "Runtime:\n"
+										 "  Loader path:         /usr/lib/libze_loader.so.1\n"
+										 "  Interposed (LD_PRELOAD):\n"
+										 "    /usr/lib/libigc.so.2\n"
+										 "  Level Zero:\n"
+										 "    loader             1.33.1     (spec 1.18)\n");
 }
 
 TEST_CASE("timestamps render as readable UTC, and only when available")
@@ -101,7 +101,8 @@ TEST_CASE("the headline carries git describe, or the bare version without git me
 	// describe --dirty is the only remaining trace of local edits, via its suffix.
 	VersionReport dirty = sampleReport();
 	dirty.describe = "internal-2026.40.1-1-gdeadbee-dirty";
-	CHECK(formatVersionReport(dirty).find("test version 2.2.0 (internal-2026.40.1-1-gdeadbee-dirty)\n") != std::string::npos);
+	CHECK(formatVersionReport(dirty).find("test version 2.2.0 (internal-2026.40.1-1-gdeadbee-dirty)\n") !=
+		  std::string::npos);
 
 	// A source-tarball build has no git metadata; "(unknown)" would be noise.
 	VersionReport noGit = sampleReport();

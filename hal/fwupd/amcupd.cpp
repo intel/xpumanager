@@ -12,6 +12,8 @@
 #include <atomic>
 #include <mutex>
 #include <memory>
+#include <array>
+#include <cstring>
 
 // Static member definitions for singleton pattern using smart pointer
 std::unique_ptr<amclib> amcupd::amcobj = nullptr;
@@ -216,6 +218,39 @@ int amcupd::amcGetPartNumberByBdf(std::string gpuBDF, std::string &partNum)
 
 	partNum = std::string(buf);
 	return idx;
+}
+
+/**
+ * @brief Retrieves the FRU serial number for the AMC card associated with a GPU BDF.
+ *
+ * Reads only the serial number, so a failure to read other AMC data (such as the firmware
+ * version) cannot lose it.
+ *
+ * @param[in] gpuBDF PCI BDF string identifying the GPU (e.g. "0000:03:00.0").
+ *
+ * @retval serial  The FRU serial number.
+ * @retval nullopt The AMC subsystem failed to initialize, no AMC belongs to @p gpuBDF, or the
+ *                 serial number could not be read.
+ */
+std::optional<std::string> amcupd::amcGetSerialNumberByBdf(const std::string &gpuBDF)
+{
+	if (init() != ZE_RESULT_SUCCESS) {
+		ERR("Failed to initialize AMC devices before querying serial number\n");
+		return std::nullopt;
+	}
+
+	amclib *amc = getAmcObj();
+	const int idx = amc->amcGetIndex(gpuBDF);
+	if (idx < 0) {
+		return std::nullopt;
+	}
+
+	std::array<char, MAX_PATH> buf{};
+	size_t bufSize = buf.size();
+	if (amc->amcGetSerialNumber(static_cast<uint8_t>(idx), buf.data(), &bufSize) != AMC_SUCCESS) {
+		return std::nullopt;
+	}
+	return std::string(buf.data(), strnlen(buf.data(), buf.size()));
 }
 
 /**

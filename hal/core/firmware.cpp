@@ -269,12 +269,12 @@ ze_result_t firmware::getAmcSerialNumber(const char *bdfStr, char *serialNum, ui
 	if (a == nullptr) {
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
-	std::string sn, ver;
-	if (a->amcGetCardInfo(std::string(bdfStr), sn, ver) == -1) {
+	const auto sn = a->amcGetSerialNumberByBdf(std::string(bdfStr));
+	if (!sn) {
 		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
 
-	STRCPY_S(serialNum, size, sn.c_str());
+	STRCPY_S(serialNum, size, sn->c_str());
 	return ZE_RESULT_SUCCESS;
 }
 
