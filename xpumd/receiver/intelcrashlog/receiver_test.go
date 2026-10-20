@@ -19,19 +19,38 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/consumer"
 	"go.opentelemetry.io/collector/consumer/consumertest"
-	"go.opentelemetry.io/collector/receiver/receivertest"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/intel/xpumanager/xpumd/receiver/intelcrashlog/internal/metadatatest"
 )
 
 func createReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) *crashlogReceiver {
 	t.Helper()
+	rcvr, _ := createReceiverWithTelemetry(t, cfg, nextConsumer)
+	return rcvr
+}
+
+func createReceiverWithTelemetry(t *testing.T, cfg *Config, nextConsumer consumer.Logs) (*crashlogReceiver, *componenttest.Telemetry) {
+	t.Helper()
 	if cfg.MaxFileSize == 0 {
 		cfg.MaxFileSize = defaultMaxFileSize
 	}
-	rcvr, err := newReceiver(receivertest.NewNopSettings(typ), cfg, nextConsumer)
+	tel := componenttest.NewTelemetry()
+	t.Cleanup(func() { require.NoError(t, tel.Shutdown(context.Background())) })
+	rcvr, err := newReceiver(metadatatest.NewSettings(tel), cfg, nextConsumer)
 	require.NoError(t, err)
-	return rcvr
+	return rcvr, tel
+}
+
+func assertDropped(t *testing.T, tel *componenttest.Telemetry, reason string, want int64) {
+	t.Helper()
+	metadatatest.AssertEqualCrashlogsDropped(t, tel, []metricdata.DataPoint[int64]{
+		{Attributes: attribute.NewSet(attributeKeyReason.String(reason)), Value: want},
+	}, metricdatatest.IgnoreTimestamp())
 }
 
 func startReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) {
@@ -227,6 +246,33 @@ func TestReceiverAlreadyProcessedFile(t *testing.T) {
 	require.Equal(t, 1, sink.LogRecordCount())
 
 	// A second notification for the same path must not re-emit it
+	rcvr.handlePath(context.Background(), path)
+	assert.Equal(t, 1, sink.LogRecordCount())
+}
+
+func TestReceiverMaxFileSize(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+
+	sink := &consumertest.LogsSink{}
+	rcvr, tel := createReceiverWithTelemetry(t, &Config{Directory: dir, Globs: []string{"*.bin"}, MaxFileSize: 1}, sink)
+
+	// Too large at stat time
+	rcvr.handlePath(context.Background(), path)
+	// Grow past the limit after stat
+	rcvr.config.MaxFileSize = 2
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe, 0xba}, 0o600))
+	rcvr.emitFile(context.Background(), path, info)
+
+	assert.Zero(t, sink.LogRecordCount())
+	assert.NotContains(t, rcvr.processedFiles, path)
+	assertDropped(t, tel, reasonTooLarge, 2)
+
+	// A file of exactly the limit is emitted
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
 	rcvr.handlePath(context.Background(), path)
 	assert.Equal(t, 1, sink.LogRecordCount())
 }

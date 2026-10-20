@@ -419,6 +419,19 @@ func TestCrashlog(t *testing.T) {
 		assert.False(t, hasBDF, "pci.bdf attribute should be omitted when filename has no BDF")
 		assert.Equal(t, crashlogData, rec.Body, "crashlog record body mismatch")
 	})
+
+	t.Run("DropTooLargeFile", func(t *testing.T) {
+		const name = "too-large.crashlog"
+		ch.writeCrashlogFile(t, make([]byte, 129), name) // max_file_size is 128 in the helm values
+
+		tunnel := tc.forwardPort(t, 8888)
+		t.Cleanup(tunnel.stop)
+		metricAssertion{
+			Name:   "otelcol_crashlogs_dropped",
+			Labels: labels{"reason": "too_large"},
+			Value:  new(1.0),
+		}.waitFor(t, tunnel.endpoint(), 30*time.Second)
+	})
 }
 
 // TestInfoLogs verifies the info log collection of the intel_xpu receiver, i.e.
