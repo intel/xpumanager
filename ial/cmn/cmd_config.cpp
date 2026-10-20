@@ -639,9 +639,9 @@ ze_result_t cmdConfig::getSelectedFanId(int32_t &fanId)
 }
 
 /**
- * @brief Adds help commands to the provided help list.
+ * @brief Builds the config help text and prints it.
  *
- * @param helpList A pointer to a list of help commands.
+ * @param[in] helpType SHORT_HELP prints the one-line summary; FULL_HELP prints the usage and options.
  */
 void cmdConfig::help(HELP helpType)
 {
@@ -679,8 +679,6 @@ void cmdConfig::help(HELP helpType)
 		HEADING,
 		"%s config --device [deviceId] [--fanid <id|-1>] --fancurve-rpm [curve] temp:rpm pairs, e.g. 40:1200,70:2800",
 		progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "--fanid                     Fan target: -1 (all fans, default) or 0..N-1"));
-
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --reset", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [pciBdfAddress] --coldreset", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --clear-ras-errors", progName.c_str()));
@@ -724,8 +722,7 @@ void cmdConfig::help(HELP helpType)
 											"ID. Aborts if processes are using the GPU or if other devices share "
 											"the PCIe slot. Override with the flags below."));
 	helpList.push_back(
-		helpCmd(HEADING, "--ignore-gpu-user-processes Proceed with --coldreset even if processes have the GPU"));
-	helpList.push_back(helpCmd(SUB_HEADING, "open."));
+		helpCmd(HEADING, "--ignore-gpu-user-processes Proceed with --coldreset even if processes have the GPU open."));
 	helpList.push_back(
 		helpCmd(HEADING, "--force-reset-gpus          Proceed with --coldreset even if other PCI devices share"));
 	helpList.push_back(helpCmd(SUB_HEADING, "the PCIe slot. All devices on the slot will be reset together."));
@@ -737,7 +734,8 @@ void cmdConfig::help(HELP helpType)
 		HEADING,
 		"--powertype                 Device-level power limit type. Valid options: \"sustain\"; \"peak\"; \"burst\""));
 	helpList.push_back(
-		helpCmd(HEADING, "--pciedowngrade                 Enable/disable PCIe downgrade setting. 0:disable; 1:enable"));
+		helpCmd(HEADING, "--pciedowngrade             Enable/disable PCIe downgrade setting. 0:disable; 1:enable"));
+	helpList.push_back(helpCmd(HEADING, "--fanid                     Fan target: -1 (all fans, default) or 0..N-1"));
 	helpList.push_back(helpCmd(HEADING, "--fanspeed                  Set fan speed percentage: 0-100; default (auto)"));
 	helpList.push_back(helpCmd(
 		SUB_HEADING, "Examples: --fanspeed 50   --fanspeed 50%%   --fanspeed default   --fanid 1 --fanspeed 50"));
