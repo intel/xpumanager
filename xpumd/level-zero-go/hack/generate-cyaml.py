@@ -20,6 +20,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
+
 @dataclass
 class Annotations:
     """Parsed // gen: directives for a struct field."""
@@ -139,7 +140,7 @@ def parse_members(struct_name, body):
         # Skip pure comment lines (not gen annotations)
         if stripped.startswith("//") and not re.search(r"//\s*gen:", stripped):
             continue
-        if stripped.startswith("/*") or stripped.startswith("*"):
+        if stripped.startswith(("/*", "*")):
             continue
         # Strip all inline comments (//, ///, //gen:) to get bare code
         code_only = re.split(r"\s*//", stripped)[0].strip()
@@ -194,7 +195,7 @@ def collect_enum_string_tables(text):
         ok = True
         for raw_line in body.splitlines():
             stripped = raw_line.strip()
-            if not stripped or stripped.startswith("//") or stripped.startswith("*"):
+            if not stripped or stripped.startswith(("//", "*")):
                 continue
             mm = re.match(r"(\w+)", stripped)
             if not mm:
