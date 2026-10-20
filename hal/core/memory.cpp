@@ -19,6 +19,10 @@
 // enum. The legacy value must remain recognized for older CRI drivers.
 #if __has_include(<zes_intel_gpu_sysman.h>)
 #include <zes_intel_gpu_sysman.h>
+#endif
+// A system copy of the header from an older driver can win over the bundled one and predate
+// ZES_INTEL_MEM_TYPE_LPDDR5X, so the check runs only where the value is defined.
+#ifdef ZES_INTEL_MEM_TYPE_LPDDR5X
 static_assert(static_cast<int32_t>(MEMORY_INTEL_TYPE_LPDDR5X) == ZES_INTEL_MEM_TYPE_LPDDR5X,
 			  "MEMORY_INTEL_TYPE_LPDDR5X must match the Intel sysman extension value");
 #endif
