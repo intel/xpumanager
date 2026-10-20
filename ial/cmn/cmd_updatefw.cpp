@@ -14,6 +14,9 @@
 #include <cerrno>
 #include <cstring>
 #include <fstream>
+#include <optional>
+#include <string>
+#include <vector>
 #include <sys/stat.h>
 
 static const char *validFwTypes[] = {"GFX", "GFX_DATA", "FDO", "AMC", "OP_CODE", "OP_DATA", "COMPOSITE"};
@@ -191,13 +194,30 @@ int cmdUpdateFW::run(arg_struct *args)
 		return result;
 	}
 
-	// Acquire global firmware update lock (cross-process) only once the request
-	// is known to be valid, so --help or bad input never touches the lock.  It
-	// is held until run() returns, i.e. across every flash below.
-	FSLock fsLock;
-	if (!fsLock.locked()) {
-		ERR("Another firmware update operation is already in progress or lock could not be acquired "
-			"(firmware update requires root/administrator privileges).\n");
+	// Acquire each device's firmware update lock (cross-process) only once the request
+	// is known to be valid, so --help or bad input never touches the locks. They are
+	// held until run() returns, i.e. across every flash below. Updates of other devices,
+	// in this process or another, are not blocked.
+	std::vector<PciAddress> addresses;
+	addresses.reserve(deviceList.size());
+	for (auto &device : deviceList) {
+		const std::string bdf = device.dev->getPCI()->getBDFStr();
+		const std::optional<PciAddress> address = PciAddress::parse(bdf);
+		if (!address) {
+			ERR("Unrecognized PCI address '{}' of a device to update.\n", bdf);
+			return ZE_RESULT_ERROR_UNKNOWN;
+		}
+		addresses.push_back(*address);
+	}
+	const FSLockSet fsLocks{addresses};
+	if (!fsLocks.locked()) {
+		if (fsLocks.failedBecauseBusy()) {
+			ERR("A firmware update of device {} is already in progress.\n", *fsLocks.failedDevice());
+		} else {
+			ERR("Could not acquire the firmware update lock of device {} (firmware update requires "
+				"root/administrator privileges).\n",
+				*fsLocks.failedDevice());
+		}
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 

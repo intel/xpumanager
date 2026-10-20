@@ -23,7 +23,7 @@
 //
 // Note: Remove when C++23 is the minimum standard.
 
-#ifdef __cpp_lib_format
+#ifdef XPUM_COMPAT_FORMAT_STD
 
 namespace std // NOLINT(cert-dcl58-cpp) — extending std::formatter for external types
 {
@@ -50,7 +50,7 @@ struct formatter<EnumType, char> : formatter<std::underlying_type_t<EnumType>, c
 
 } // namespace std
 
-#else // !__cpp_lib_format — using {fmt}
+#else // !XPUM_COMPAT_FORMAT_STD - using {fmt}
 
 namespace fmt // NOLINT(cert-dcl58-cpp) — extending fmt::formatter for external types
 {
@@ -78,6 +78,6 @@ struct formatter<EnumType> : formatter<std::underlying_type_t<EnumType>>
 
 } // namespace fmt
 
-#endif // __cpp_lib_format
+#endif // XPUM_COMPAT_FORMAT_STD
 
 #endif /* LOGGER_FORMATTERS_H */

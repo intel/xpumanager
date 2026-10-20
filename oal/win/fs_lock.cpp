@@ -10,6 +10,8 @@
 #include <windows.h>
 #include <sddl.h>
 #include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace {
 
@@ -18,7 +20,8 @@ namespace {
 // Global\ namespace, a non-elevated user cannot create or open this namespace,
 // so it cannot pre-create or hold the lock to block an administrator update.
 constexpr const wchar_t *NAMESPACE_ALIAS = L"xpum";
-constexpr const wchar_t *LOCK_NAME = L"xpum\\firmware_update";
+// One semaphore per device: xpum\\firmware_update_<BDF>
+constexpr std::wstring_view LOCK_NAME_PREFIX = L"xpum\\firmware_update_";
 
 // Protected DACL: full access for Administrators and SYSTEM only.
 constexpr const wchar_t *LOCK_SDDL = L"D:P(A;;GA;;;BA)(A;;GA;;;SY)";
@@ -81,11 +84,17 @@ bool isElevated()
  * closes the handle if the process dies, so a crashed update never leaves a
  * stale lock behind.
  */
-void FSLock::acquire()
+void FSLock::acquire(const PciAddress &device)
 {
 	if (acquired) {
 		DBG("firmware update lock already held; ignoring acquire()\n");
 		return;
+	}
+	// The canonical text of an address has only hex digits, ':' and '.', so the name cannot
+	// refer to anything outside the private namespace.
+	std::wstring lockName{LOCK_NAME_PREFIX};
+	for (const char c : device.toString()) {
+		lockName.push_back(static_cast<wchar_t>(c));
 	}
 	if (!isElevated()) {
 		ERR("firmware update requires administrator privileges\n");
@@ -110,7 +119,7 @@ void FSLock::acquire()
 		DBG("cannot open firmware update lock namespace (administrator required): {}\n", GetLastError());
 		return;
 	}
-	HANDLE sem = CreateSemaphoreW(&sa, 1, 1, LOCK_NAME);
+	HANDLE sem = CreateSemaphoreW(&sa, 1, 1, lockName.c_str());
 	// Declared after closeNs so the semaphore is closed before the namespace.
 	ScopeExit closeSem{[&sem] {
 		if (sem != nullptr) {
@@ -122,7 +131,12 @@ void FSLock::acquire()
 		return;
 	}
 	// Non-blocking: a timeout means another update holds the lock.
-	if (WaitForSingleObject(sem, 0) != WAIT_OBJECT_0) {
+	const DWORD wait = WaitForSingleObject(sem, 0);
+	if (wait != WAIT_OBJECT_0) {
+		heldByAnotherUpdate = (wait == WAIT_TIMEOUT);
+		if (!heldByAnotherUpdate) {
+			DBG("cannot wait for firmware update lock: {}\n", GetLastError());
+		}
 		return;
 	}
 	acquired = true;

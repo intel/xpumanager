@@ -15,15 +15,25 @@
 // __cpp_lib_format is defined when the compiler/stdlib ships a conforming
 // std::format implementation (GCC 13+, Clang 14+ with libc++, MSVC 19.29+).
 //
-// On MSVC the compiler pre-defines all feature-test macros without needing
-// <version>.  Avoid the include on Windows: the project's root-level VERSION
-// file is reachable via -I.. and a case-insensitive filesystem would resolve
-// #include <version> to it, producing a parse error.
-#ifndef _MSC_VER
+// Avoid <version> on Windows: the project's root-level VERSION file is
+// reachable via -I.. and a case-insensitive filesystem would resolve
+// #include <version> to it, producing a parse error. MSVC defines the
+// library feature-test macros in <yvals_core.h>, which every standard header
+// includes, so include one: without it, a file whose first include leads here
+// would see no __cpp_lib_format and take the {fmt} branch.
+#ifdef _MSC_VER
+#include <cstddef>
+#else
 #include <version>
 #endif
 
-#ifdef __cpp_lib_format
+// The branch taken is announced as XPUM_COMPAT_FORMAT_STD. Headers that specialize a formatter
+// must test that, not __cpp_lib_format: a header included later (e.g. <chrono> pulling in
+// <format>) can define __cpp_lib_format after {fmt} was chosen. Define XPUM_COMPAT_FORMAT_USE_FMT
+// to take the {fmt} branch even where std::format exists, e.g. to build the GCC 12 configuration
+// with a newer compiler.
+#if defined(__cpp_lib_format) && !defined(XPUM_COMPAT_FORMAT_USE_FMT)
+#define XPUM_COMPAT_FORMAT_STD 1
 #include <format>
 namespace xpum::compat {
 using std::format;

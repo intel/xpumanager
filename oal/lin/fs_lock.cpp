@@ -14,6 +14,7 @@
 #include <cerrno>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <tuple>
 #include <utility>
@@ -25,7 +26,9 @@ namespace {
 // /tmp: an unprivileged user must not be able to pre-create the lock file (or
 // a symlink in its place) and thereby block or redirect a root firmware update.
 constexpr const char *LOCK_DIR = "/run/xpum";
-constexpr const char *LOCK_NAME = "firmware_update.lock";
+// One lock per device: firmware_update_<BDF>.lock
+constexpr std::string_view LOCK_NAME_PREFIX = "firmware_update_";
+constexpr std::string_view LOCK_NAME_SUFFIX = ".lock";
 
 // Only root touches either: firmware updates require root.
 constexpr mode_t LOCK_DIR_MODE = 0700;
@@ -81,16 +84,21 @@ bool isRootOnly(int fd, mode_t type)
 
 /*
  * @brief 	On Linux, we use flock on a lock file to create an exclusive lock.
- * The lock file lives in the root-only directory /run/xpum and is persistent:
- * it is created once and never removed, so every process locks the same inode.
+ * Each device has its own lock file in the root-only directory /run/xpum. The
+ * files are persistent: created once and never removed, so every process
+ * updating a device locks the same inode.
  * The lock is released by closing the file descriptor.
  */
-void FSLock::acquire()
+void FSLock::acquire(const PciAddress &device)
 {
 	if (acquired) {
 		DBG("firmware update lock already held; ignoring acquire()\n");
 		return;
 	}
+	// The canonical text of an address has only hex digits, ':' and '.', so the name cannot
+	// refer to anything outside the lock directory.
+	std::string lockName{LOCK_NAME_PREFIX};
+	lockName.append(device.toString()).append(LOCK_NAME_SUFFIX);
 	// Deliberately stricter than PRIVILEGECHECK() (root or 'xpum' group): the
 	// lock directory is root-only, and opening it to the xpum group would let
 	// any group member hold the lock and block a root firmware update.
@@ -111,27 +119,28 @@ void FSLock::acquire()
 		return;
 	}
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — openat() is variadic by POSIX
-	ScopedFd lockFd{openat(dirFd.get(), LOCK_NAME, O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, LOCK_FILE_MODE)};
+	ScopedFd lockFd{openat(dirFd.get(), lockName.c_str(), O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, LOCK_FILE_MODE)};
 	if (!lockFd.valid()) {
-		ERR("cannot open {}/{}: {}\n", LOCK_DIR, LOCK_NAME, errnoText(errno));
+		ERR("cannot open {}/{}: {}\n", LOCK_DIR, lockName, errnoText(errno));
 		return;
 	}
 	if (!isRootOnly(lockFd.get(), S_IFREG)) {
-		ERR("{}/{} is not a regular root-owned file; refusing to use it\n", LOCK_DIR, LOCK_NAME);
+		ERR("{}/{} is not a regular root-owned file; refusing to use it\n", LOCK_DIR, lockName);
 		return;
 	}
 	// Try non-blocking exclusive lock
 	if (flock(lockFd.get(), LOCK_EX | LOCK_NB) != 0) {
 		// EWOULDBLOCK (== EAGAIN) is the expected "another update is running"
 		// case and is reported by the caller; anything else is worth logging.
-		if (errno != EWOULDBLOCK) {
-			ERR("cannot lock {}/{}: {}\n", LOCK_DIR, LOCK_NAME, errnoText(errno));
+		heldByAnotherUpdate = (errno == EWOULDBLOCK);
+		if (!heldByAnotherUpdate) {
+			ERR("cannot lock {}/{}: {}\n", LOCK_DIR, lockName, errnoText(errno));
 		}
 		return;
 	}
 	// Write PID (truncate first); failures are not fatal, we keep the lock
 	if (ftruncate(lockFd.get(), 0) != 0) {
-		DBG("cannot truncate {}/{}: {}\n", LOCK_DIR, LOCK_NAME, errnoText(errno));
+		DBG("cannot truncate {}/{}: {}\n", LOCK_DIR, lockName, errnoText(errno));
 	}
 	const std::string pid = std::to_string(getpid());
 	std::ignore = write(lockFd.get(), pid.c_str(), pid.size()); // best effort

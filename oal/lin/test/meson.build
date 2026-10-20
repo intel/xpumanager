@@ -123,6 +123,19 @@ if get_option('with_tests')
 
   test('process_platform_test', process_platform_test)
 
+  # Per-device firmware update lock. Needs root; reports itself skipped otherwise.
+  # Compiles fs_lock.cpp directly so the test needs no OAL link.
+  fs_lock_test = executable(
+    'fs_lock_test',
+    ['fs_lock_test.cpp', '../fs_lock.cpp'],
+    include_directories: [global_inc, include_directories('..'), include_directories('../..')],
+    dependencies: [doctest_dep, bdf_dep, compat_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('fs_lock_test', fs_lock_test)
+
   message('Unit tests enabled for OAL diagnostics')
 else
   message('Skipping OAL diagnostic tests (pass -Dwith_tests=true to enable)')
