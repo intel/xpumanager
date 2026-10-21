@@ -15,6 +15,7 @@
 #include <cmd_raslog.h>
 #include <cmd_log.h>
 #include <cmd_ps.h>
+#include <cmd_query.h>
 #include <cmd_stats.h>
 #include <cmd_topology.h>
 #include <cmd_updatefw.h>
@@ -65,6 +66,7 @@ std::vector<function_entry> defaultCommandTable()
 		{.createFunc = createInstance<cmdVgpu>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdStats>, .osType = OSTYPE::BOTH},
 		{.createFunc = createInstance<cmdDump>, .osType = OSTYPE::BOTH},
+		{.createFunc = createInstance<cmdQuery>, .osType = OSTYPE::BOTH},
 		{.createFunc = createInstance<cmdLogs>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdRasLog>, .osType = OSTYPE::LINUX},
 		{.createFunc = createInstance<cmdHealth>, .osType = OSTYPE::LINUX},

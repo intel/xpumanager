@@ -21,6 +21,7 @@ ial_cmn_sources = files(
   'cmd_listpciinfo.cpp',
   'cmd_log.cpp',
   'cmd_ps.cpp',
+  'cmd_query.cpp',
   'cmd_smi.cpp',
   'cmd_stats.cpp',
   'cmd_topology.cpp',

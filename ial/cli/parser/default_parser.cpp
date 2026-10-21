@@ -344,16 +344,7 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 		return std::nullopt; // subcommand name — fall through to dispatch
 	}
 
-	/* Top-level flags (-h/--help, -v/--version, -q/--query/--query-gpu).
-	 *
-	 * Note: -q/--query is handled before CLI11 to avoid CLI11 prefix-matching
-	 * '--query' against '--query-gpu' (since '--query' is a prefix of '--query-gpu'). */
-	const std::string_view flag{args->argv[1]};
-	if (flag == "-q" || flag == "--query") {
-		PRINT("query: not yet implemented.\n");
-		return 0;
-	}
-
+	// Top-level flags (-h/--help, -v/--version, --list-gpus, --query-gpu, ...).
 	CLI::App topApp{"", std::string{DefaultParser::progName()}};
 	topApp.set_help_flag("-h,--help", "Print this help message and exit");
 
