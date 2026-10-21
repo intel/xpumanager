@@ -13,9 +13,9 @@
 #include "os.h"
 #include <CLI/CLI.hpp>
 #include <algorithm>
-#include <atomic>
 #include <chrono>
 #include <cmd_smi.h>
+#include <frame_loop.h>
 #include <cmd_dump.h>
 #include <metrics_registry.h>
 #include <version_report.h>
@@ -27,12 +27,10 @@
 #include <optional>
 #include <memory>
 #include <ranges>
-#include <csignal>
 #include "terminal.h"
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <thread>
 #include <vector>
 
 // ---- Implementation helpers -----------------------------------------------
@@ -245,20 +243,17 @@ QueryFormat buildQueryFormat(const PreArgs &pre, const std::string &formatStr)
 	return fmt;
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::atomic<bool> gSmiQuit{false};
-
 /**
  * @brief Run cmdSmi once or repeatedly at a fixed interval.
  *
  * When @p loopMs is zero, runs cmdSmi exactly once and returns its result
  * (@p count is ignored in single-shot mode).
- * When @p loopMs is positive, renders frames repeatedly, sleeping @p loopMs
- * milliseconds between frames, until SIGINT or SIGTERM is received or
+ * When @p loopMs is positive, renders frames through runFrameLoop(), sleeping
+ * @p loopMs milliseconds between frames, until a stop event arrives or
  * @p count frames have been produced.  With @p tty true, uses an alternate
  * screen buffer so each frame overwrites the previous cleanly; with @p tty
  * false, frames are appended without ANSI sequences.  The alternate screen is
- * always restored before returning, including on error and on SIGTERM.
+ * always restored before returning, including on error and on a stop event.
  *
  * @param args   CLI arguments forwarded to cmdSmi.
  * @param loopMs Interval between frames in milliseconds; 0 = single-shot.
@@ -277,59 +272,12 @@ int runSmiWithLoop(arg_struct *args, int loopMs, int count, bool tty = true)
 		return smi.run(args);
 	}
 
-	constexpr int pollSliceMs = 100;
-	gSmiQuit.store(false, std::memory_order_relaxed);
-	const auto sigHandler = [](int) { gSmiQuit.store(true, std::memory_order_relaxed); };
-	UNUSED auto prevSigint = std::signal(SIGINT, sigHandler);
-	UNUSED auto prevSigterm = std::signal(SIGTERM, sigHandler);
-
-	if (tty) {
-		PRINT("\033[?1049h"); // enter alternate screen buffer
-	}
-
-	int iterations = 0;
-	ze_result_t loopResult = ZE_RESULT_SUCCESS;
-	while (!gSmiQuit.load(std::memory_order_relaxed) && (count <= 0 || iterations < count)) {
-		// Start the deadline before collection so the interval accounts for the
-		// 200 ms sampling window inside collectAndRender.
-		const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(loopMs);
-		auto [result, output] = smi.collectAndRender(args);
-		if (result != ZE_RESULT_SUCCESS) {
-			loopResult = result;
-			break;
-		}
-		if (tty) {
-			PRINT("\033[H\033[J"); // cursor home + erase to end — clear stale rows
-		}
-		PRINT("{}", output.c_str());
-		++iterations;
-		if (count > 0 && iterations >= count) {
-			break;
-		}
-
-		// Sleep in pollSliceMs chunks so SIGINT/SIGTERM is noticed promptly.
-		while (!gSmiQuit.load(std::memory_order_relaxed) && std::chrono::steady_clock::now() < deadline) {
-			const auto remaining =
-				std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now());
-			std::this_thread::sleep_for(std::min(remaining, std::chrono::milliseconds(pollSliceMs)));
-		}
-	}
-
-	if (tty) {
-		PRINT("\033[?1049l"); // restore normal screen buffer before any diagnostic output
-	}
-	std::signal(SIGINT, prevSigint);
-	std::signal(SIGTERM, prevSigterm);
-
-	if (loopResult != ZE_RESULT_SUCCESS) {
-		if (loopResult == ZE_RESULT_ERROR_DEVICE_LOST) {
-			PRINT("No GPU devices found.\n");
-		} else {
-			PRINT("Device error: 0x{:X}\n", static_cast<uint32_t>(loopResult));
-		}
-		return loopResult;
-	}
-	return 0;
+	return runFrameLoop(
+		[&smi, args] {
+			auto [status, text] = smi.collectAndRender(args);
+			return RenderedFrame{status, std::move(text)};
+		},
+		{.interval = std::chrono::milliseconds{loopMs}, .count = count, .tty = tty});
 }
 
 } // namespace

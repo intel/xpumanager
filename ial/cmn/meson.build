@@ -27,6 +27,7 @@ ial_cmn_sources = files(
   'cmd_updatefw.cpp',
   'cmd_vgpu.cpp',
   'cmds.cpp',
+  'frame_loop.cpp',
   'metrics_registry.cpp',
   'oem_serial.cpp',
   'printer.cpp',
