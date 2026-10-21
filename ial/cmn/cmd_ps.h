@@ -12,8 +12,10 @@
 #include "proc_fdinfo.h"
 #include <metric.h>
 #include <os.h>
+#include <cstdint>
 #include <optional>
 #include <span>
+#include <string_view>
 
 class PsTextPrinter : public TextPrinter
 {
@@ -113,6 +115,51 @@ void applyDeviceEu(std::span<psInfo> procs, const std::optional<EuMetricsData> &
 		return "Copy";
 	}
 	return "-";
+}
+
+/**
+ * @brief Classify a process for display as a single-letter or short type code.
+ *
+ * Engines are checked in the order compute, graphics, media, copy, other, so a process
+ * that uses several is reported as the first that matches. A process that names no
+ * engine but holds device or shared memory is reported as compute.
+ *
+ * @param[in] engines       Engine-type flag mask from the driver.
+ * @param[in] memSizeKiB    Device memory held by the process, in KiB.
+ * @param[in] sharedSizeKiB Shared memory held by the process, in KiB.
+ *
+ * @retval "C"     Compute engine in use, or memory held with no engine named.
+ * @retval "G"     Render or 3D engine in use.
+ * @retval "M"     Media engine in use.
+ * @retval "DMA"   Copy engine in use.
+ * @retval "Other" Only an engine of another kind in use.
+ * @retval "N/A"   No engine named and no memory held.
+ */
+[[nodiscard]] inline std::string_view processTypeFromEngines(uint64_t engines, uint64_t memSizeKiB,
+															 uint64_t sharedSizeKiB) noexcept
+{
+	const auto uses = [engines](zes_engine_type_flag_t flag) {
+		return (engines & static_cast<uint64_t>(flag)) != 0ULL;
+	};
+	if (uses(ZES_ENGINE_TYPE_FLAG_COMPUTE)) {
+		return "C";
+	}
+	if (uses(ZES_ENGINE_TYPE_FLAG_RENDER) || uses(ZES_ENGINE_TYPE_FLAG_3D)) {
+		return "G";
+	}
+	if (uses(ZES_ENGINE_TYPE_FLAG_MEDIA)) {
+		return "M";
+	}
+	if (uses(ZES_ENGINE_TYPE_FLAG_DMA)) {
+		return "DMA";
+	}
+	if (uses(ZES_ENGINE_TYPE_FLAG_OTHER)) {
+		return "Other";
+	}
+	if (memSizeKiB > 0 || sharedSizeKiB > 0) {
+		return "C";
+	}
+	return "N/A";
 }
 
 #endif

@@ -204,3 +204,41 @@ TEST_SUITE("cmd_ps eu_available field")
 		CHECK(procs[1].euAvailable == false); // must not be touched
 	}
 }
+
+TEST_SUITE("processTypeFromEngines")
+{
+	constexpr auto COMPUTE = static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_COMPUTE);
+	constexpr auto RENDER = static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_RENDER);
+	constexpr auto THREE_D = static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_3D);
+	constexpr auto MEDIA = static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_MEDIA);
+	constexpr auto DMA = static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_DMA);
+	constexpr auto OTHER = static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_OTHER);
+
+	TEST_CASE("each engine kind maps to its code")
+	{
+		CHECK(processTypeFromEngines(COMPUTE, 0, 0) == "C");
+		CHECK(processTypeFromEngines(RENDER, 0, 0) == "G");
+		CHECK(processTypeFromEngines(THREE_D, 0, 0) == "G");
+		CHECK(processTypeFromEngines(MEDIA, 0, 0) == "M");
+		CHECK(processTypeFromEngines(DMA, 0, 0) == "DMA");
+		CHECK(processTypeFromEngines(OTHER, 0, 0) == "Other");
+	}
+
+	TEST_CASE("the first matching engine wins when a process uses several")
+	{
+		CHECK(processTypeFromEngines(COMPUTE | RENDER | MEDIA, 0, 0) == "C");
+		CHECK(processTypeFromEngines(RENDER | MEDIA, 0, 0) == "G");
+		CHECK(processTypeFromEngines(MEDIA | DMA, 0, 0) == "M");
+		CHECK(processTypeFromEngines(DMA | OTHER, 0, 0) == "DMA");
+	}
+
+	TEST_CASE("memory alone classifies a process as compute")
+	{
+		CHECK(processTypeFromEngines(0, 1, 0) == "C");
+		CHECK(processTypeFromEngines(0, 0, 1) == "C");
+	}
+
+	TEST_CASE("an engine takes precedence over memory") { CHECK(processTypeFromEngines(MEDIA, 4096, 4096) == "M"); }
+
+	TEST_CASE("no engine and no memory is not available") { CHECK(processTypeFromEngines(0, 0, 0) == "N/A"); }
+}

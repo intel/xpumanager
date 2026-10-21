@@ -139,29 +139,6 @@ static size_t separatorLength(std::string_view text)
 	return 0;
 }
 
-static std::string processTypeFromEngines(uint64_t engines, uint64_t memSizeKiB, uint64_t sharedSizeKiB)
-{
-	if (engines & ZES_ENGINE_TYPE_FLAG_COMPUTE) {
-		return "C";
-	}
-	if (engines & ZES_ENGINE_TYPE_FLAG_RENDER || engines & ZES_ENGINE_TYPE_FLAG_3D) {
-		return "G";
-	}
-	if (engines & ZES_ENGINE_TYPE_FLAG_MEDIA) {
-		return "M";
-	}
-	if (engines & ZES_ENGINE_TYPE_FLAG_DMA) {
-		return "DMA";
-	}
-	if (engines & ZES_ENGINE_TYPE_FLAG_OTHER) {
-		return "Other";
-	}
-	if (memSizeKiB > 0 || sharedSizeKiB > 0) {
-		return "C";
-	}
-	return "N/A";
-}
-
 namespace {
 
 /** How long power and utilization deltas are measured over. */
@@ -690,7 +667,7 @@ TableBuilder cmdSmi::buildProcessTable(const std::vector<devInfo> &deviceList,
 			// memSize is in KiB (already divided by 1024 in getProcessList)
 			double memMiB = static_cast<double>(p.memSize) / 1024.0;
 			std::string memStr = xpum::compat::format("{:.0f} MiB", memMiB);
-			std::string procType = processTypeFromEngines(p.engines, p.memSize, p.sharedSize);
+			const std::string procType{processTypeFromEngines(p.engines, p.memSize, p.sharedSize)};
 			procTable.addRow(di.index, p.processId, procType, p.commandName, memStr);
 			anyProcess = true;
 		}
