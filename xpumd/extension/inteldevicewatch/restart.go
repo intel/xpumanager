@@ -68,12 +68,11 @@ func (l *restartLimiter) init() {
 		return
 	}
 
-	state, err := l.loadState()
-	if err != nil {
+	if err := l.loadState(); err != nil {
 		l.logger.Error(msgStateLoadFailed, zap.Error(err))
 	}
 
-	l.state = state.prune(l.cutoff())
+	l.pruneState()
 	if count := len(l.state.Restarts); count > 0 {
 		l.logger.Info("restarts recorded in the current window",
 			zap.Int("restarts", count),
@@ -94,7 +93,7 @@ func (l *restartLimiter) record(fingerprint string) (allowed bool, count int, er
 		return true, 0, nil
 	}
 
-	l.state = l.state.prune(l.cutoff())
+	l.pruneState()
 	if count := len(l.state.Restarts); count >= l.maxRestarts {
 		l.logger.Warn(msgRestartLimitReached,
 			zap.Int("restarts", count),
@@ -114,39 +113,42 @@ func (l *restartLimiter) record(fingerprint string) (allowed bool, count int, er
 	return true, len(l.state.Restarts), nil
 }
 
-func (l *restartLimiter) cutoff() time.Time {
-	return l.now().Add(-l.restartWindow)
-}
-
-// prune drops entries older than the restart window.
-func (s restartState) prune(cutoff time.Time) restartState {
+// pruneState drops entries older than the restart window and caps timestamps to the present time.
+func (l *restartLimiter) pruneState() {
+	s := l.state
+	now := l.now()
+	cutoff := now.Add(-l.restartWindow)
 	kept := make([]time.Time, 0, len(s.Restarts))
 	for _, t := range s.Restarts {
+		if t.After(now) {
+			t = now
+		}
 		if t.After(cutoff) {
 			kept = append(kept, t)
 		}
 	}
-	out := restartState{Restarts: kept}
+	l.state = restartState{Restarts: kept}
 	if len(kept) > 0 {
-		out.ExitFingerprint = s.ExitFingerprint
+		l.state.ExitFingerprint = s.ExitFingerprint
 	}
-	return out
 }
 
 // loadState reads the state file.
-func (l *restartLimiter) loadState() (restartState, error) {
+func (l *restartLimiter) loadState() error {
+	l.state = restartState{}
 	data, err := os.ReadFile(l.stateFilePath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return restartState{}, nil
+			return nil
 		}
-		return restartState{}, fmt.Errorf("failed to read %s: %w", l.stateFilePath, err)
+		return fmt.Errorf("failed to read %s: %w", l.stateFilePath, err)
 	}
 	var state restartState
 	if err := json.Unmarshal(data, &state); err != nil {
-		return restartState{}, fmt.Errorf("failed to parse %s: %w", l.stateFilePath, err)
+		return fmt.Errorf("failed to parse %s: %w", l.stateFilePath, err)
 	}
-	return state, nil
+	l.state = state
+	return nil
 }
 
 // saveState writes the state file atomically.
