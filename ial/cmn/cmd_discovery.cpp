@@ -2020,7 +2020,7 @@ ze_result_t cmdDiscovery::memoryEccState(devInfo *d, std::string *outputLine)
 
 	// Use Sysman ECC state API to get the actual runtime ECC state
 	zes_device_ecc_properties_t eccState = {};
-	ze_result_t result = zesDeviceGetEccState(d->zesDeviceHdl, &eccState);
+	ze_result_t result = d->dev->getECC()->getState(d->zesDeviceHdl, &eccState);
 	if (result == ZE_RESULT_SUCCESS) {
 		switch (eccState.currentState) {
 		case ZES_DEVICE_ECC_STATE_ENABLED:
