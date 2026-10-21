@@ -20,17 +20,30 @@ ARG BASE_IMAGE=scratch
 #      FILES_DIR=debs/<package-dir>
 ARG BACKEND=deb
 
+# NOTE: The base images are pinned by digest for reproducible builds (Dependabot updates them).
+
+# --- Go toolchain (self-contained, so it can be copied to the builder image) ---
+FROM golang:1.27.3-trixie@sha256:290a54a1f70d617560f843301bcb32b339f1687e8e0bff49ebc043903aeb19d8 AS go
+
 # --- Base build stage with necessary distro setup / packages ---
-FROM golang:1.27-trixie AS builder-base
+#
+# NOTE: The final image gets its runtime libraries (libc, libstdc++, libudev...) from here,
+# match distro with what the driver stack packages are built for.
+# (buildpack-deps is Ubuntu with common build tools: compilers, make, git, curl...)
+FROM buildpack-deps:24.04@sha256:27bdb6ab1ca0df6acfe341752ee4d9c08a341d80e3ee75ccc3b34b79af0dfaf1 AS builder-base
+
+COPY --from=go /usr/local/go/ /usr/local/go/
+ENV GOPATH=/go \
+    GOTOOLCHAIN=local \
+    PATH=/go/bin:/usr/local/go/bin:$PATH
 
 # Enable source packages, install IGSC build dependencies and extra Sysman dependencies
 # (Sysman does not link the latter but loads them at runtime: netlink for RAS and
 # fabric metrics, tracefs for info logs)
-RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources && \
+RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources && \
     apt-get update && apt-get install -y --no-install-recommends \
     cmake \
     libcyaml-dev \
-    libyaml-dev \
     ninja-build \
     libudev-dev \
     pkg-config \
