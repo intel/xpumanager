@@ -143,56 +143,60 @@ ze_result_t getBestLimitW(devInfo &d, MetricValue &out)
 }
 
 /**
- * @brief Queries the device for the maximum configurable power limit.
+ * @brief Reads the power limit set at one level.
  *
- * Iterates over all power domain handles returned by the power HAL and returns the
- * maximum power limit from the first card-level (non-subdevice) domain that reports
- * a positive @c maxLimit value.
+ * @tparam LEVEL The level to read: sustained, burst or peak.
  *
- * @param[in]  d   Device to query. Must have been initialised; the function safely
- *                 returns @c ZE_RESULT_ERROR_UNSUPPORTED_FEATURE if the power HAL
- *                 sub-object is @c nullptr or returns no handles.
- * @param[out] out On success, set to a string formatted as @c "%.2f" watts
- *                 (e.g. @c "300.00"). Unchanged on failure.
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to the limit in watts, formatted as @c "%.2f". Unchanged on failure.
  *
- * @retval ZE_RESULT_SUCCESS               A card-domain handle with a positive
- *                                         @c maxLimit was found and written to @p out.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The power HAL is unavailable, no handles
- *                                         are exposed, or no card-domain handle reports
- *                                         a positive @c maxLimit.
- *
- * @pre @p d.dev must not be @c nullptr (undefined behaviour otherwise).
- *
- * @throws None — all HAL calls return @c ze_result_t error codes; no exceptions
- *                are thrown by this function.
- *
- * @note A local @c zes_power_ext_properties_t is always passed to @c getProperties
- *       because the HAL implementation dereferences it unconditionally
- *       (memset + pNext assignment).
+ * @retval ZE_RESULT_SUCCESS                   The device has a limit at this level.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The power HAL is unavailable, or no limit is set at this level.
  */
-ze_result_t getMaxLimitW(devInfo &d, MetricValue &out)
+template <zes_power_level_t LEVEL> ze_result_t levelLimitGetter(devInfo &d, MetricValue &out, const MetricCache &)
 {
 	auto *pw = d.dev->getPower();
 	if (pw == nullptr) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	const uint32_t count = pw->getPowerCount();
-	auto *handles = pw->getPowerHandles();
-	if (handles == nullptr) {
+	std::vector<PowerLimitExt> limits;
+	if (pw->getLimitsExt(limits) != ZE_RESULT_SUCCESS) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	for (uint32_t i = 0; i < count; ++i) {
-		zes_power_properties_t props{};
-		zes_power_ext_properties_t extProps{};
-		props.stype = ZES_STRUCTURE_TYPE_POWER_PROPERTIES;
-		extProps.stype = ZES_STRUCTURE_TYPE_POWER_EXT_PROPERTIES;
-		if (pw->getProperties(handles[i], &props, &extProps) == ZE_RESULT_SUCCESS && (props.onSubdevice == 0U) &&
-			props.maxLimit > 0) {
-			out = xpum::compat::format("{:.2f}", static_cast<double>(props.maxLimit) / 1000.0);
-			return ZE_RESULT_SUCCESS;
-		}
+	const auto set =
+		std::ranges::find_if(limits, [](const PowerLimitExt &l) { return l.level == LEVEL && l.limitMw != 0; });
+	if (set == limits.end()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	out = xpum::compat::format("{:.2f}", static_cast<double>(set->limitMw) / 1000.0);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads one end of the range the device allows its power limit to take.
+ *
+ * @tparam FIELD Which figure of the range to read: the default, minimum or maximum.
+ *
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to the figure in watts, formatted as @c "%.2f". Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The device reports a positive figure.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The power HAL is unavailable, no device-level domain reports a
+ *                                             maximum, or it leaves this figure unknown.
+ */
+template <uint32_t PowerLimitBounds::*FIELD>
+ze_result_t limitBoundGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *pw = d.dev->getPower();
+	if (pw == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	PowerLimitBounds bounds;
+	if (pw->getLimitBounds(bounds) != ZE_RESULT_SUCCESS || bounds.*FIELD == 0U) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = xpum::compat::format("{:.2f}", static_cast<double>(bounds.*FIELD) / 1000.0);
+	return ZE_RESULT_SUCCESS;
 }
 
 constexpr auto CARD_DRAW =
@@ -299,10 +303,49 @@ constexpr auto MAX_LIMIT = QueryMetric{
 				   "user-settable power limit",
 	.source = MetricSource::Static,
 	.groups = MetricGroup::POWER,
-	.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t { return getMaxLimitW(d, out); }};
+	.getter = limitBoundGetter<&PowerLimitBounds::maxMw>};
+
+constexpr auto SUSTAINED_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
+											 .name = "power.limit.sustained",
+											 .unit = "W",
+											 .description = "Sustained (long-term) power limit",
+											 .source = MetricSource::Static,
+											 .groups = MetricGroup::POWER,
+											 .getter = levelLimitGetter<ZES_POWER_LEVEL_SUSTAINED>};
+
+constexpr auto BURST_LIMIT =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "power.limit.burst",		.unit = "W",
+				.description = "Burst power limit", .source = MetricSource::Static,
+				.groups = MetricGroup::POWER,		.getter = levelLimitGetter<ZES_POWER_LEVEL_BURST>};
+
+constexpr auto PEAK_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
+										.name = "power.limit.peak",
+										.unit = "W",
+										.description = "Peak (short-term) power limit",
+										.source = MetricSource::Static,
+										.groups = MetricGroup::POWER,
+										.getter = levelLimitGetter<ZES_POWER_LEVEL_PEAK>};
+
+constexpr auto DEFAULT_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
+										   .name = "power.limit.default",
+										   .unit = "W",
+										   .description = "Power limit the device ships with",
+										   .source = MetricSource::Static,
+										   .groups = MetricGroup::POWER,
+										   .getter = limitBoundGetter<&PowerLimitBounds::defaultMw>};
+
+constexpr auto MIN_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
+									   .name = "power.limit.min",
+									   .unit = "W",
+									   .description = "Lowest power limit the device allows",
+									   .source = MetricSource::Static,
+									   .groups = MetricGroup::POWER,
+									   .getter = limitBoundGetter<&PowerLimitBounds::minMw>};
 
 constexpr auto ALL =
-	std::to_array<QueryMetric>({CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, ENERGY_CONSUMED_GPU, LIMIT, MAX_LIMIT});
+	std::to_array<QueryMetric>({CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, ENERGY_CONSUMED_GPU, LIMIT, MAX_LIMIT,
+								SUSTAINED_LIMIT, BURST_LIMIT, PEAK_LIMIT, DEFAULT_LIMIT, MIN_LIMIT});
 
 } // namespace
 
@@ -316,6 +359,8 @@ constexpr auto ALL =
  * - @c energy.consumed.gpu  (Live)   — cumulative GPU-domain energy in joules
  * - @c power.limit          (Static) — current enforced power limit in watts
  * - @c power.max_limit      (Static) — maximum configurable power limit in watts
+ * - @c power.limit.sustained, @c power.limit.burst, @c power.limit.peak (Static) - the limit at each level
+ * - @c power.limit.default, @c power.limit.min (Static) - default and lowest allowed limit in watts
  *
  * @return A non-owning @c std::span over the internal @c ALL array. The span is valid
  *         for the lifetime of the program (the backing array has static storage duration).

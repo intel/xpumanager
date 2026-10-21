@@ -342,6 +342,14 @@ constexpr std::string_view MEBIBYTES = "MiB";
 									 fieldOf("Max Power Limit", "max_power_limit", "power.max_limit"),
 									 fieldOf("Energy Consumed", "energy_consumed", "energy.consumed"),
 									 fieldOf("GPU Energy Consumed", "gpu_energy_consumed", "energy.consumed.gpu"),
+									 sectionOf("Power Limits", "power_limits",
+											   {
+												   fieldOf("Sustained", "sustained", "power.limit.sustained"),
+												   fieldOf("Burst", "burst", "power.limit.burst"),
+												   fieldOf("Peak", "peak", "power.limit.peak"),
+												   fieldOf("Default", "default", "power.limit.default"),
+												   fieldOf("Min", "min", "power.limit.min"),
+											   }),
 									 staticOf("Thermal Design Power", "thermal_design_power", "tdp"),
 								 }));
 		rows.push_back(sectionOf("Clocks", "clocks",

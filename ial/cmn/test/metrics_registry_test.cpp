@@ -1554,3 +1554,31 @@ TEST_CASE("the PERFORMANCE and SUPPORTED_CLOCKS sections parse and select their 
 	// The new sections have no one-letter shortcut, so no letter selects them.
 	CHECK_FALSE(hasGroup(parseGroupMask("p"), MetricGroup::PERFORMANCE));
 }
+
+// -- power limit fields added for the full device report ---------------------------------
+
+TEST_CASE("power limit fields: each level and both bounds are registered Static POWER fields in watts")
+{
+	for (const std::string_view name : {"power.limit.sustained", "power.limit.burst", "power.limit.peak",
+										"power.limit.default", "power.limit.min", "power.max_limit"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		CHECK_MESSAGE(field->unit == "W", name);
+		CHECK_MESSAGE(field->source == MetricSource::Static, name);
+		CHECK_MESSAGE(field->groups == MetricGroup::POWER, name);
+		CHECK_MESSAGE(field->inputs == MetricInput::NONE, name);
+	}
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "power limit fields: a device with no power domain reports them unsupported")
+{
+	const MetricCache cache;
+	for (const std::string_view name : {"power.limit.sustained", "power.limit.burst", "power.limit.peak",
+										"power.limit.default", "power.limit.min", "power.max_limit"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		MetricValue out = "untouched";
+		CHECK_MESSAGE(field->getter(di, out, cache) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, name);
+		CHECK_MESSAGE(out == "untouched", name);
+	}
+}
