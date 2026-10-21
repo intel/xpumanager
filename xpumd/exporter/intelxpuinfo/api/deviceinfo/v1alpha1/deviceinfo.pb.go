@@ -274,7 +274,7 @@ type DeviceEventResponse struct {
 	// Detailed message about the event.
 	Message string `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
 	// Severity of the event.
-	Severity      EventSeverityLevel `protobuf:"varint,4,opt,name=severity,proto3,enum=deviceinfo.EventSeverityLevel" json:"severity,omitempty"`
+	Severity      EventSeverityLevel `protobuf:"varint,4,opt,name=severity,proto3,enum=deviceinfo.v1alpha1.EventSeverityLevel" json:"severity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -720,7 +720,7 @@ type HealthStatus struct {
 	// Name of the health domain.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Severity level of the status condition.
-	Severity SeverityLevel `protobuf:"varint,2,opt,name=severity,proto3,enum=deviceinfo.SeverityLevel" json:"severity,omitempty"`
+	Severity SeverityLevel `protobuf:"varint,2,opt,name=severity,proto3,enum=deviceinfo.v1alpha1.SeverityLevel" json:"severity,omitempty"`
 	// Short (single word) reason for the status.
 	Reason string `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
 	// Detailed message about the status.
@@ -791,30 +791,29 @@ var File_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto protoref
 
 const file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc = "" +
 	"\n" +
-	">exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto\x12\n" +
-	"deviceinfo\"\x1a\n" +
+	">exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto\x12\x13deviceinfo.v1alpha1\"\x1a\n" +
 	"\x18WatchDeviceHealthRequest\"\x1a\n" +
-	"\x18WatchDeviceEventsRequest\"J\n" +
-	"\x14DeviceHealthResponse\x122\n" +
-	"\adevices\x18\x01 \x03(\v2\x18.deviceinfo.DeviceHealthR\adevices\"\xbd\x01\n" +
-	"\x13DeviceEventResponse\x128\n" +
-	"\x06device\x18\x01 \x01(\v2 .deviceinfo.DeviceIdentificationR\x06device\x12\x16\n" +
+	"\x18WatchDeviceEventsRequest\"S\n" +
+	"\x14DeviceHealthResponse\x12;\n" +
+	"\adevices\x18\x01 \x03(\v2!.deviceinfo.v1alpha1.DeviceHealthR\adevices\"\xcf\x01\n" +
+	"\x13DeviceEventResponse\x12A\n" +
+	"\x06device\x18\x01 \x01(\v2).deviceinfo.v1alpha1.DeviceIdentificationR\x06device\x12\x16\n" +
 	"\x06reason\x18\x02 \x01(\tR\x06reason\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\x12:\n" +
-	"\bseverity\x18\x04 \x01(\x0e2\x1e.deviceinfo.EventSeverityLevelR\bseverity\"s\n" +
-	"\fDeviceHealth\x121\n" +
-	"\x04info\x18\x01 \x01(\v2\x1d.deviceinfo.DeviceInformationR\x04info\x120\n" +
-	"\x06health\x18\x02 \x03(\v2\x18.deviceinfo.HealthStatusR\x06health\"\xcc\x01\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12C\n" +
+	"\bseverity\x18\x04 \x01(\x0e2'.deviceinfo.v1alpha1.EventSeverityLevelR\bseverity\"\x85\x01\n" +
+	"\fDeviceHealth\x12:\n" +
+	"\x04info\x18\x01 \x01(\v2&.deviceinfo.v1alpha1.DeviceInformationR\x04info\x129\n" +
+	"\x06health\x18\x02 \x03(\v2!.deviceinfo.v1alpha1.HealthStatusR\x06health\"\xe7\x01\n" +
 	"\x11DeviceInformation\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x14\n" +
-	"\x05model\x18\x02 \x01(\tR\x05model\x12%\n" +
-	"\x03pci\x18\x03 \x01(\v2\x13.deviceinfo.PciInfoR\x03pci\x126\n" +
-	"\tfirmwares\x18\x04 \x03(\v2\x18.deviceinfo.FirmwareInfoR\tfirmwares\x12.\n" +
-	"\x06memory\x18\x05 \x03(\v2\x16.deviceinfo.MemoryInfoR\x06memory\"g\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x12.\n" +
+	"\x03pci\x18\x03 \x01(\v2\x1c.deviceinfo.v1alpha1.PciInfoR\x03pci\x12?\n" +
+	"\tfirmwares\x18\x04 \x03(\v2!.deviceinfo.v1alpha1.FirmwareInfoR\tfirmwares\x127\n" +
+	"\x06memory\x18\x05 \x03(\v2\x1f.deviceinfo.v1alpha1.MemoryInfoR\x06memory\"p\n" +
 	"\x14DeviceIdentification\x12\x12\n" +
 	"\x04uuid\x18\x01 \x01(\tR\x04uuid\x12\x14\n" +
-	"\x05model\x18\x02 \x01(\tR\x05model\x12%\n" +
-	"\x03pci\x18\x03 \x01(\v2\x13.deviceinfo.PciInfoR\x03pci\"U\n" +
+	"\x05model\x18\x02 \x01(\tR\x05model\x12.\n" +
+	"\x03pci\x18\x03 \x01(\v2\x1c.deviceinfo.v1alpha1.PciInfoR\x03pci\"U\n" +
 	"\aPciInfo\x12\x10\n" +
 	"\x03bdf\x18\x01 \x01(\tR\x03bdf\x12\x1b\n" +
 	"\tdevice_id\x18\x02 \x01(\tR\bdeviceId\x12\x1b\n" +
@@ -827,10 +826,10 @@ const file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDes
 	"MemoryInfo\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12!\n" +
 	"\fsubdevice_id\x18\x02 \x01(\tR\vsubdeviceId\x12\x12\n" +
-	"\x04size\x18\x03 \x01(\x04R\x04size\"\x8b\x01\n" +
+	"\x04size\x18\x03 \x01(\x04R\x04size\"\x94\x01\n" +
 	"\fHealthStatus\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x125\n" +
-	"\bseverity\x18\x02 \x01(\x0e2\x19.deviceinfo.SeverityLevelR\bseverity\x12\x16\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12>\n" +
+	"\bseverity\x18\x02 \x01(\x0e2\".deviceinfo.v1alpha1.SeverityLevelR\bseverity\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage*\x96\x01\n" +
 	"\rSeverityLevel\x12\x1a\n" +
@@ -846,11 +845,11 @@ const file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDes
 	"\x19EVENT_SEVERITY_LEVEL_INFO\x10\x03\x12\x1d\n" +
 	"\x19EVENT_SEVERITY_LEVEL_WARN\x10\x04\x12\x1e\n" +
 	"\x1aEVENT_SEVERITY_LEVEL_ERROR\x10\x05\x12\x1e\n" +
-	"\x1aEVENT_SEVERITY_LEVEL_FATAL\x10\x062\xc9\x01\n" +
+	"\x1aEVENT_SEVERITY_LEVEL_FATAL\x10\x062\xed\x01\n" +
 	"\n" +
-	"DeviceInfo\x12]\n" +
-	"\x11WatchDeviceHealth\x12$.deviceinfo.WatchDeviceHealthRequest\x1a .deviceinfo.DeviceHealthResponse0\x01\x12\\\n" +
-	"\x11WatchDeviceEvents\x12$.deviceinfo.WatchDeviceEventsRequest\x1a\x1f.deviceinfo.DeviceEventResponse0\x01BDZBgithub.com/intel/xpumanager/xpumd/exporter/api/deviceinfo/v1alpha1b\x06proto3"
+	"DeviceInfo\x12o\n" +
+	"\x11WatchDeviceHealth\x12-.deviceinfo.v1alpha1.WatchDeviceHealthRequest\x1a).deviceinfo.v1alpha1.DeviceHealthResponse0\x01\x12n\n" +
+	"\x11WatchDeviceEvents\x12-.deviceinfo.v1alpha1.WatchDeviceEventsRequest\x1a(.deviceinfo.v1alpha1.DeviceEventResponse0\x01BQZOgithub.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1b\x06proto3"
 
 var (
 	file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDescOnce sync.Once
@@ -867,35 +866,35 @@ func file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_rawDesc
 var file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_goTypes = []any{
-	(SeverityLevel)(0),               // 0: deviceinfo.SeverityLevel
-	(EventSeverityLevel)(0),          // 1: deviceinfo.EventSeverityLevel
-	(*WatchDeviceHealthRequest)(nil), // 2: deviceinfo.WatchDeviceHealthRequest
-	(*WatchDeviceEventsRequest)(nil), // 3: deviceinfo.WatchDeviceEventsRequest
-	(*DeviceHealthResponse)(nil),     // 4: deviceinfo.DeviceHealthResponse
-	(*DeviceEventResponse)(nil),      // 5: deviceinfo.DeviceEventResponse
-	(*DeviceHealth)(nil),             // 6: deviceinfo.DeviceHealth
-	(*DeviceInformation)(nil),        // 7: deviceinfo.DeviceInformation
-	(*DeviceIdentification)(nil),     // 8: deviceinfo.DeviceIdentification
-	(*PciInfo)(nil),                  // 9: deviceinfo.PciInfo
-	(*FirmwareInfo)(nil),             // 10: deviceinfo.FirmwareInfo
-	(*MemoryInfo)(nil),               // 11: deviceinfo.MemoryInfo
-	(*HealthStatus)(nil),             // 12: deviceinfo.HealthStatus
+	(SeverityLevel)(0),               // 0: deviceinfo.v1alpha1.SeverityLevel
+	(EventSeverityLevel)(0),          // 1: deviceinfo.v1alpha1.EventSeverityLevel
+	(*WatchDeviceHealthRequest)(nil), // 2: deviceinfo.v1alpha1.WatchDeviceHealthRequest
+	(*WatchDeviceEventsRequest)(nil), // 3: deviceinfo.v1alpha1.WatchDeviceEventsRequest
+	(*DeviceHealthResponse)(nil),     // 4: deviceinfo.v1alpha1.DeviceHealthResponse
+	(*DeviceEventResponse)(nil),      // 5: deviceinfo.v1alpha1.DeviceEventResponse
+	(*DeviceHealth)(nil),             // 6: deviceinfo.v1alpha1.DeviceHealth
+	(*DeviceInformation)(nil),        // 7: deviceinfo.v1alpha1.DeviceInformation
+	(*DeviceIdentification)(nil),     // 8: deviceinfo.v1alpha1.DeviceIdentification
+	(*PciInfo)(nil),                  // 9: deviceinfo.v1alpha1.PciInfo
+	(*FirmwareInfo)(nil),             // 10: deviceinfo.v1alpha1.FirmwareInfo
+	(*MemoryInfo)(nil),               // 11: deviceinfo.v1alpha1.MemoryInfo
+	(*HealthStatus)(nil),             // 12: deviceinfo.v1alpha1.HealthStatus
 }
 var file_exporter_intelxpuinfo_api_deviceinfo_v1alpha1_deviceinfo_proto_depIdxs = []int32{
-	6,  // 0: deviceinfo.DeviceHealthResponse.devices:type_name -> deviceinfo.DeviceHealth
-	8,  // 1: deviceinfo.DeviceEventResponse.device:type_name -> deviceinfo.DeviceIdentification
-	1,  // 2: deviceinfo.DeviceEventResponse.severity:type_name -> deviceinfo.EventSeverityLevel
-	7,  // 3: deviceinfo.DeviceHealth.info:type_name -> deviceinfo.DeviceInformation
-	12, // 4: deviceinfo.DeviceHealth.health:type_name -> deviceinfo.HealthStatus
-	9,  // 5: deviceinfo.DeviceInformation.pci:type_name -> deviceinfo.PciInfo
-	10, // 6: deviceinfo.DeviceInformation.firmwares:type_name -> deviceinfo.FirmwareInfo
-	11, // 7: deviceinfo.DeviceInformation.memory:type_name -> deviceinfo.MemoryInfo
-	9,  // 8: deviceinfo.DeviceIdentification.pci:type_name -> deviceinfo.PciInfo
-	0,  // 9: deviceinfo.HealthStatus.severity:type_name -> deviceinfo.SeverityLevel
-	2,  // 10: deviceinfo.DeviceInfo.WatchDeviceHealth:input_type -> deviceinfo.WatchDeviceHealthRequest
-	3,  // 11: deviceinfo.DeviceInfo.WatchDeviceEvents:input_type -> deviceinfo.WatchDeviceEventsRequest
-	4,  // 12: deviceinfo.DeviceInfo.WatchDeviceHealth:output_type -> deviceinfo.DeviceHealthResponse
-	5,  // 13: deviceinfo.DeviceInfo.WatchDeviceEvents:output_type -> deviceinfo.DeviceEventResponse
+	6,  // 0: deviceinfo.v1alpha1.DeviceHealthResponse.devices:type_name -> deviceinfo.v1alpha1.DeviceHealth
+	8,  // 1: deviceinfo.v1alpha1.DeviceEventResponse.device:type_name -> deviceinfo.v1alpha1.DeviceIdentification
+	1,  // 2: deviceinfo.v1alpha1.DeviceEventResponse.severity:type_name -> deviceinfo.v1alpha1.EventSeverityLevel
+	7,  // 3: deviceinfo.v1alpha1.DeviceHealth.info:type_name -> deviceinfo.v1alpha1.DeviceInformation
+	12, // 4: deviceinfo.v1alpha1.DeviceHealth.health:type_name -> deviceinfo.v1alpha1.HealthStatus
+	9,  // 5: deviceinfo.v1alpha1.DeviceInformation.pci:type_name -> deviceinfo.v1alpha1.PciInfo
+	10, // 6: deviceinfo.v1alpha1.DeviceInformation.firmwares:type_name -> deviceinfo.v1alpha1.FirmwareInfo
+	11, // 7: deviceinfo.v1alpha1.DeviceInformation.memory:type_name -> deviceinfo.v1alpha1.MemoryInfo
+	9,  // 8: deviceinfo.v1alpha1.DeviceIdentification.pci:type_name -> deviceinfo.v1alpha1.PciInfo
+	0,  // 9: deviceinfo.v1alpha1.HealthStatus.severity:type_name -> deviceinfo.v1alpha1.SeverityLevel
+	2,  // 10: deviceinfo.v1alpha1.DeviceInfo.WatchDeviceHealth:input_type -> deviceinfo.v1alpha1.WatchDeviceHealthRequest
+	3,  // 11: deviceinfo.v1alpha1.DeviceInfo.WatchDeviceEvents:input_type -> deviceinfo.v1alpha1.WatchDeviceEventsRequest
+	4,  // 12: deviceinfo.v1alpha1.DeviceInfo.WatchDeviceHealth:output_type -> deviceinfo.v1alpha1.DeviceHealthResponse
+	5,  // 13: deviceinfo.v1alpha1.DeviceInfo.WatchDeviceEvents:output_type -> deviceinfo.v1alpha1.DeviceEventResponse
 	12, // [12:14] is the sub-list for method output_type
 	10, // [10:12] is the sub-list for method input_type
 	10, // [10:10] is the sub-list for extension type_name

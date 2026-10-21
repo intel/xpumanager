@@ -21,6 +21,9 @@ Contents:
   * Support defaults which have lower thresholds than more specific thresholds,
     by stopping conditions processing at first value with a matching parent filter
     * **Action required:** specify states' default threshold values as the last condition
+* Breaking changes (for the `intel_xpu_info` exporter gRPC API):
+  * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha1`
+    * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
 
 
 ## XPUM 2.3.0

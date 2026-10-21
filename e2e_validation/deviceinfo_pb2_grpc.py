@@ -41,12 +41,12 @@ class DeviceInfoStub(object):
             channel: A grpc.Channel.
         """
         self.WatchDeviceHealth = channel.unary_stream(
-                '/deviceinfo.DeviceInfo/WatchDeviceHealth',
+                '/deviceinfo.v1alpha1.DeviceInfo/WatchDeviceHealth',
                 request_serializer=deviceinfo__pb2.WatchDeviceHealthRequest.SerializeToString,
                 response_deserializer=deviceinfo__pb2.DeviceHealthResponse.FromString,
                 _registered_method=True)
         self.WatchDeviceEvents = channel.unary_stream(
-                '/deviceinfo.DeviceInfo/WatchDeviceEvents',
+                '/deviceinfo.v1alpha1.DeviceInfo/WatchDeviceEvents',
                 request_serializer=deviceinfo__pb2.WatchDeviceEventsRequest.SerializeToString,
                 response_deserializer=deviceinfo__pb2.DeviceEventResponse.FromString,
                 _registered_method=True)
@@ -86,9 +86,9 @@ def add_DeviceInfoServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'deviceinfo.DeviceInfo', rpc_method_handlers)
+            'deviceinfo.v1alpha1.DeviceInfo', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('deviceinfo.DeviceInfo', rpc_method_handlers)
+    server.add_registered_method_handlers('deviceinfo.v1alpha1.DeviceInfo', rpc_method_handlers)
 
 
  # This class is part of an EXPERIMENTAL API.
@@ -110,7 +110,7 @@ class DeviceInfo(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/deviceinfo.DeviceInfo/WatchDeviceHealth',
+            '/deviceinfo.v1alpha1.DeviceInfo/WatchDeviceHealth',
             deviceinfo__pb2.WatchDeviceHealthRequest.SerializeToString,
             deviceinfo__pb2.DeviceHealthResponse.FromString,
             options,
@@ -137,7 +137,7 @@ class DeviceInfo(object):
         return grpc.experimental.unary_stream(
             request,
             target,
-            '/deviceinfo.DeviceInfo/WatchDeviceEvents',
+            '/deviceinfo.v1alpha1.DeviceInfo/WatchDeviceEvents',
             deviceinfo__pb2.WatchDeviceEventsRequest.SerializeToString,
             deviceinfo__pb2.DeviceEventResponse.FromString,
             options,
