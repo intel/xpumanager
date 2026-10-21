@@ -8,10 +8,10 @@ Helper script to output XPUMD config file with its "intel_xpu_status" section
 rules & conditions overwritten by ones taken from "xpu-smi" metric thresholds JSON file.
 
 Usage:
-	convert-thresholds.py <config.yaml> <thresholds.json>
+	{name} <config.yaml> <thresholds.json>
 
 Example:
-	scripts/convert-thresholds.py config-example.yaml ../resources/config/device_thresholds.json > new.yaml
+	{path} config-example.yaml ../resources/config/device_thresholds.json > new.yaml
 """
 
 import json
@@ -19,9 +19,12 @@ import os
 import sys
 from typing import Never, TextIO
 
+
 def error_exit(msg: str) -> Never:
     "show usage, error message and exit with 1"
-    sys.stderr.write(__doc__)
+    path = sys.argv[0]
+    name = os.path.basename(path)
+    sys.stderr.write(__doc__.format_map({"name": name, "path": path}))
     sys.stderr.write(f"\nERROR: {msg}!\n")
     sys.exit(1)
 
@@ -32,13 +35,14 @@ SECTION_ID = "intel_xpu_status:"
 
 def conf_has_section(path: str) -> bool:
     "check that given config includes required section heading"
-    for line in open(path, "r", encoding="utf-8"):
-        if line.strip() == SECTION_ID:
-            return True
+    with open(path, "r", encoding="utf-8") as conf:
+        for line in conf:
+            if line.strip() == SECTION_ID:
+                return True
     return False
 
 # output conf until section, skip the current section and return next section start
-def output_until_section(f: TextIO) -> (int, str):
+def output_until_section(f: TextIO, note: str) -> (int, str):
     "output given file content until required section starts, and skip to section end"
     indent = 0
     found = False
@@ -57,7 +61,8 @@ def output_until_section(f: TextIO) -> (int, str):
         print(line, end="")
         if stripped == SECTION_ID:
             indent = line.index(SECTION_ID)
-            print(f"{' '*(indent+2)}rules:")
+            print_indented(indent+RULE_LIST_INDENT, "rules:")
+            print_indented(indent+RULE_INDENT, note)
             found = True
     if found:
         return indent, ""
@@ -73,20 +78,7 @@ def output_after_section(f: TextIO, headline: str) -> None:
 
 # --- check arg files & load JSON file ---
 
-if len(sys.argv) != 3:
-    error_exit("incorrect number of args")
-
-conf_path = sys.argv[1]
-json_path = sys.argv[2]
-if not os.path.exists(conf_path):
-    error_exit(f"specified conf file does not exist: {conf_path}")
-if not os.path.exists(json_path):
-    error_exit(f"specified thresholds file does not exist: {json_path}")
-
-if not conf_has_section(conf_path):
-    error_exit(f"specified conf file misses require {SECTION_ID} {conf_path}")
-
-def check_duplicate_keys(pairs):
+def check_duplicate_keys(pairs: dict) -> dict:
     # JSON loading silently overrides dict content with later key values
     "hook function for JSON loading that exits with error if it duplicates keys"
     result_dict = {}
@@ -96,32 +88,59 @@ def check_duplicate_keys(pairs):
         result_dict[key] = val
     return result_dict
 
-try:
-    loaded = json.load(open(json_path, "r", encoding="utf-8"), object_pairs_hook=check_duplicate_keys)
-except json.decoder.JSONDecodeError as err:
-    error_exit(f"JSON decoding failed for '{json_path}': {err}")
+def parse_args(args: list[str]) -> (str, str, dict, dict):
+    "parse CLI args and return: generator note + config path + thresholds + their defaults"
+    if len(args) != 3:
+        error_exit("incorrect number of args")
+
+    conf_path = args[1]
+    json_path = args[2]
+    if not os.path.exists(conf_path):
+        error_exit(f"specified conf file does not exist: {conf_path}")
+    if not conf_has_section(conf_path):
+        error_exit(f"specified conf file misses require {SECTION_ID}: {conf_path}")
+
+    if not os.path.exists(json_path):
+        error_exit(f"specified thresholds file does not exist: {json_path}")
+
+    try:
+        with open(json_path, "r", encoding="utf-8") as conf:
+            loaded = json.load(conf, object_pairs_hook=check_duplicate_keys)
+    except json.decoder.JSONDecodeError as err:
+        error_exit(f"JSON decoding failed for '{json_path}': {err}")
+
+    thresholds, defaults = parse_thresholds(loaded, json_path)
+
+    script = os.path.basename(args[0])
+    rules = os.path.basename(json_path)
+    note = f"# generated from xpu-smi '{rules}' by '{script}'"
+
+    return note, conf_path, thresholds, defaults
 
 
 # --- check / get relevant thresholds from JSON file ---
 
 DEFAULTS = "default_thresholds"
 
-defaults = {}
-if DEFAULTS in loaded:
-    defaults = loaded[DEFAULTS]
-    del loaded[DEFAULTS]
-else:
-    error_exit(f"thresholds file is missing '{DEFAULTS}' values")
+def parse_thresholds(loaded: dict, path: str) -> (dict, dict):
+    "parse loaded xpu-smi JSON content thresholds and their defaults"
+    defaults = {}
+    if DEFAULTS in loaded:
+        defaults = loaded[DEFAULTS]
+        del loaded[DEFAULTS]
+    else:
+        error_exit(f"thresholds file is missing '{DEFAULTS}' values: {path}")
 
-thresholds = {}
-for metric_name, limits in loaded.items():
-    # check intermediate metric level name, and pick limits under it as their names are unique
-    if not metric_name.endswith("_thresholds"):
-        error_exit(f"metric threshold limits has no '_thresholds' suffix for '{metric_name}'")
-    for limit_name, items in limits.items():
-        if not items:
-            error_exit(f"JSON '{limit_name}' dict lists no limits")
-        thresholds[limit_name] = items
+    thresholds = {}
+    for metric_name, limits in loaded.items():
+        # check intermediate metric level name, and pick limits under it as their names are unique
+        if not metric_name.endswith("_thresholds"):
+            error_exit(f"metric threshold limits has no '_thresholds' suffix for '{metric_name}' in '{path}'")
+        for limit_name, items in limits.items():
+            if not items:
+                error_exit(f"JSON '{limit_name}' dict lists no limits in '{path}'")
+            thresholds[limit_name] = items
+    return thresholds, defaults
 
 
 # --- mappings for known xpu-smi thresholds ---
@@ -187,6 +206,8 @@ def is_same_metric(prev: dict, current: dict) -> bool:
 # --- output templates for those thresholds ---
 
 # indent from section header
+RULE_LIST_INDENT = 2
+
 RULE_INDENT = 4
 RULE_TEMPLATE = """\
 - name: "Intel GPU {name} health {level} threshold(s)"
@@ -246,42 +267,51 @@ def print_indented(count: int, template: str) -> None:
 
 # --- output conf with replacement status rules, their states and conditions ---
 
-old_conf = open(conf_path, "r", encoding="utf-8")
-section_indent, nextline = output_until_section(old_conf)
+def output_rules(section_indent: int, thresholds: dict, defaults: dict):
+    "output given thresholds & defaults based 'intelxpustatus' config section"
+    prev_rule = {}
+    for rule in RULE_MAP:
+        thkey = rule["thkey"]
+        if not thkey in thresholds:
+            error_exit(f"thresholds file missing '{thkey}'")
+        values = {}
+        # collect quoted + prefix-removed device IDs, per threshold value
+        for devid, value in thresholds[thkey].items():
+            if value not in values:
+                values[value] = {}
+            devid = devid.removeprefix("0x")
+            values[value][f'"{devid.lower()}"'] = True
+        if len(values) == 0:
+            sys.stderr.write(f"skipping '{thkey}', no threshold values\n")
+            continue
+        if not is_same_metric(prev_rule, rule):
+            if rule.get("aggfunc"):
+                rule["aggfunc"] = rule["aggfunc"].capitalize()
+                rule["filters"] = AGGREGATE_TEMPLATE.format_map(rule)
+            else:
+                rule["filters"] = FILTERS_TEMPLATE.format_map(rule)
+            print_indented(section_indent+RULE_INDENT, RULE_TEMPLATE.format_map(rule))
+            prev_rule = rule
+        print_indented(section_indent+STATE_INDENT, STATE_TEMPLATE % rule["level"])
+        # JSON items are key'd by device ID so there cannot be overlapping ones,
+        # but order conditions from largest to smallest value for clarity
+        for value, devids in sorted(values.items(), reverse=True):
+            condvars = {"value": value, "devids": ', '.join(devids.keys())}
+            print_indented(section_indent+COND_INDENT, COND_TEMPLATE.format_map(condvars))
+        defkey = rule["defkey"]
+        if defkey in defaults:
+            values = {"name": rule["name"], "level": rule["level"], "value": defaults[defkey]}
+            print_indented(section_indent+COND_INDENT, COND_DEFAULT_TEMPLATE.format_map(values))
 
-prev_rule = {}
-for rule in RULE_MAP:
-    thkey = rule["thkey"]
-    if not thkey in thresholds:
-        error_exit(f"thresholds file missing '{thkey}'")
-    values = {}
-    # collect quoted + prefix-removed device IDs, per threshold value
-    for devid, value in thresholds[thkey].items():
-        if value not in values:
-            values[value] = {}
-        if devid.startswith("0x"):
-            devid = devid[2:]
-        values[value][f'"{devid.lower()}"'] = True
-    if len(values) == 0:
-        sys.stderr.write(f"skipping '{thkey}', no threshold values\n")
-        continue
-    if not is_same_metric(prev_rule, rule):
-        if "aggfunc" in rule and rule["aggfunc"]:
-            rule["aggfunc"] = rule["aggfunc"].capitalize()
-            rule["filters"] = AGGREGATE_TEMPLATE.format_map(rule)
-        else:
-            rule["filters"] = FILTERS_TEMPLATE.format_map(rule)
-        print_indented(section_indent+RULE_INDENT, RULE_TEMPLATE.format_map(rule))
-        prev_rule = rule
-    print_indented(section_indent+STATE_INDENT, STATE_TEMPLATE % rule["level"])
-    # JSON items are key'd by device ID so there cannot be overlapping ones,
-    # but order conditions from largest to smallest value for clarity
-    for value, devids in reversed(sorted(values.items())):
-        condvars = {"value": value, "devids": ', '.join(devids.keys())}
-        print_indented(section_indent+COND_INDENT, COND_TEMPLATE.format_map(condvars))
-    defkey = rule["defkey"]
-    if defkey in defaults:
-        values = {"name": rule["name"], "level": rule["level"], "value": defaults[defkey]}
-        print_indented(section_indent+COND_INDENT, COND_DEFAULT_TEMPLATE.format_map(values))
+def main() -> Never:
+    "parse args and JSON thresholds file specified in them"
+    note, conf_path, thresholds, defaults = parse_args(sys.argv)
 
-output_after_section(old_conf, nextline)
+    # output updated configuration based on the old one
+    with open(conf_path, "r", encoding="utf-8") as old_conf:
+        section_indent, nextline = output_until_section(old_conf, note)
+        output_rules(section_indent, thresholds, defaults)
+        output_after_section(old_conf, nextline)
+
+if __name__ == "__main__":
+    main()

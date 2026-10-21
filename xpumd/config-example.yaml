@@ -47,6 +47,7 @@ receivers:
 processors:
   intel_xpu_status:
     rules:
+      # generated from xpu-smi 'device_thresholds.json' by 'convert-thresholds.py'
       - name: "Intel GPU core temperature health warning threshold(s)"
         source_metric: "hw.temperature"
         parent_metric: "hw.gpu.info"
