@@ -26,6 +26,7 @@
 #include "zes_api.h"
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cstdint>
 #include <optional>
 #include <ranges>
@@ -418,7 +419,10 @@ TEST_CASE("findMetric resolves clock aliases")
 TEST_CASE("clock aliases do not appear as separate entries in group expansion")
 {
 	const auto byClock = getMetricsByGroup(MetricGroup::CLOCK);
-	CHECK(byClock.size() == metrics::clock::getClockMetrics().size());
+	const auto clockEntries = metrics::clock::getClockMetrics();
+	CHECK(byClock.size() == static_cast<std::size_t>(std::ranges::count_if(clockEntries, [](const QueryMetric &m) {
+			  return hasGroup(m.groups, MetricGroup::CLOCK);
+		  })));
 	// Aliases (sm/video/max.sm/max.video) resolve to canonical entries; they must not produce duplicate rows.
 	const auto present = [&](std::string_view n) {
 		return std::ranges::any_of(byClock, [n](const auto *m) { return m->name == n; });
@@ -1473,4 +1477,80 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCache skips the sleep when M
 
 	CHECK(cache.populated);
 	CHECK(elapsed < std::chrono::seconds{1});
+}
+
+// -- clock fields added for the full device report ---------------------------------------
+
+TEST_CASE("describeClockList: evenly spaced clocks are summarised as a range")
+{
+	CHECK(metrics::clock::describeClockList(std::vector<double>{400, 450, 500, 550, 600}) == "400-600 step 50");
+	CHECK(metrics::clock::describeClockList(std::vector<double>{300, 400, 500}) == "300-500 step 100");
+}
+
+TEST_CASE("describeClockList: short, uneven or descending lists are written out")
+{
+	CHECK(metrics::clock::describeClockList({}).empty());
+	CHECK(metrics::clock::describeClockList(std::vector<double>{400}) == "400");
+	CHECK(metrics::clock::describeClockList(std::vector<double>{400, 450}) == "400; 450");
+	CHECK(metrics::clock::describeClockList(std::vector<double>{400, 450, 500, 550, 2850}) ==
+		  "400; 450; 500; 550; 2850");
+	CHECK(metrics::clock::describeClockList(std::vector<double>{600, 500, 400}) == "600; 500; 400");
+	CHECK(metrics::clock::describeClockList(std::vector<double>{400, 400, 400}) == "400; 400; 400");
+}
+
+TEST_CASE("describeClockList: a list never contains a comma, so it cannot break CSV output")
+{
+	CHECK(metrics::clock::describeClockList(std::vector<double>{1, 2, 4, 8}).find(',') == std::string::npos);
+	CHECK(metrics::clock::describeClockList(std::vector<double>{1, 2, 3, 4}).find(',') == std::string::npos);
+}
+
+TEST_CASE("throttle reasons: each is one distinct flag with a distinct registry field")
+{
+	const auto &reasons = metrics::clock::THROTTLE_REASONS;
+	for (std::size_t i = 0; i < reasons.size(); ++i) {
+		CHECK_MESSAGE(std::popcount(static_cast<uint32_t>(reasons[i].flag)) == 1, reasons[i].metricName);
+		for (std::size_t j = i + 1; j < reasons.size(); ++j) {
+			CHECK(reasons[i].flag != reasons[j].flag);
+			CHECK(reasons[i].metricName != reasons[j].metricName);
+			CHECK(reasons[i].key != reasons[j].key);
+			CHECK(reasons[i].shortName != reasons[j].shortName);
+		}
+	}
+}
+
+TEST_CASE("throttle reasons: every one is in the registry as a Live PERFORMANCE field")
+{
+	for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
+		const auto field = findMetric(reason.metricName);
+		REQUIRE_MESSAGE(field.has_value(), reason.metricName);
+		CHECK(field->groups == MetricGroup::PERFORMANCE);
+		CHECK(field->source == MetricSource::Live);
+		CHECK(field->inputs == MetricInput::NONE);
+		CHECK_FALSE(field->description.empty());
+	}
+	CHECK(getMetricsByGroup(MetricGroup::PERFORMANCE).size() >= metrics::clock::THROTTLE_REASONS.size());
+}
+
+TEST_CASE("clock fields: minimum, requested, range and supported clocks are registered in MHz")
+{
+	for (const std::string_view name :
+		 {"clocks.min.graphics", "clocks.min.media", "clocks.requested.graphics", "clocks.efficient.graphics",
+		  "clocks.tdp.graphics", "clocks.range.min", "clocks.range.max", "clocks.supported.graphics"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		CHECK_MESSAGE(field->unit == "MHz", name);
+	}
+	CHECK(findMetric("clocks.min.graphics")->source == MetricSource::Static);
+	CHECK(findMetric("clocks.requested.graphics")->source == MetricSource::Live);
+	CHECK(findMetric("clocks.supported.graphics")->groups == MetricGroup::SUPPORTED_CLOCKS);
+	CHECK(hasGroup(findMetric("clocks.range.max")->groups, MetricGroup::CLOCK));
+}
+
+TEST_CASE("the PERFORMANCE and SUPPORTED_CLOCKS sections parse and select their fields")
+{
+	CHECK(hasGroup(parseGroupMask("PERFORMANCE"), MetricGroup::PERFORMANCE));
+	CHECK(hasGroup(parseGroupMask("supported_clocks"), MetricGroup::SUPPORTED_CLOCKS));
+	CHECK_FALSE(getMetricsByGroup(MetricGroup::SUPPORTED_CLOCKS).empty());
+	// The new sections have no one-letter shortcut, so no letter selects them.
+	CHECK_FALSE(hasGroup(parseGroupMask("p"), MetricGroup::PERFORMANCE));
 }

@@ -13,7 +13,11 @@
 #include "metrics_registry.h"
 #include "zes_api.h"
 #include <frequency.h>
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <cstddef>
+#include <vector>
 #include "utility/compat/format.h"
 #include <string>
 #include <string_view>
@@ -259,31 +263,148 @@ ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
-	using Entry = std::pair<zes_freq_throttle_reason_flags_t, std::string_view>;
-	static constexpr auto table = std::to_array<Entry>({
-		{ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT, "Thermal"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP, "Power"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP, "PowerBurst"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT, "Current"},
-		// Power supply assertion. On CRI this carries the power break event, which the
-		// driver derives from the RATL perf limit reason.
-		{ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT, "PsuAlert"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE, "SW"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE, "HW"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE, "Voltage"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL, "ThermalAlert"},
-		{ZES_FREQ_THROTTLE_REASON_FLAG_POWER, "PowerAlert"},
-	});
 	std::string resultStr;
-	for (const auto &[bit, name] : table) {
-		if ((flags & bit) != 0U) {
+	for (const auto &reason : THROTTLE_REASONS) {
+		if ((flags & reason.flag) != 0U) {
 			if (!resultStr.empty()) {
 				resultStr += ',';
 			}
-			resultStr += name;
+			resultStr += reason.shortName;
 		}
 	}
 	out = resultStr.empty() ? "None" : resultStr;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads whether one throttle reason is active.
+ *
+ * @tparam FLAG The reason to test.
+ *
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to "Active" or "Not Active". Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The reasons were read.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval Other                               Any error from the frequency HAL.
+ */
+template <zes_freq_throttle_reason_flags_t FLAG>
+ze_result_t throttleFlagGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	zes_freq_throttle_reason_flags_t flags{};
+	auto const result = freq->getThrottleReason(&flags);
+	if (result == ZE_RESULT_SUCCESS) {
+		out = (flags & FLAG) != 0U ? "Active" : "Not Active";
+	}
+	return result;
+}
+
+/**
+ * @brief Reads the lowest clock a domain can run at.
+ *
+ * @tparam DOMAIN The frequency domain to query.
+ *
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to the minimum in MHz. Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The minimum was read.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No frequency HAL, or the domain reports no minimum.
+ */
+template <zes_freq_domain_t DOMAIN> ze_result_t minFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	double minMHz = 0.0;
+	auto const result = freq->getMinFreqForDomain(DOMAIN, minMHz);
+	if (result == ZE_RESULT_SUCCESS) {
+		out = xpum::compat::format("{}", minMHz);
+	}
+	return result;
+}
+
+/**
+ * @brief Reads one of the GPU clocks the driver derives from the frequency state.
+ *
+ * @tparam READ The frequency HAL getter to call: the requested, efficient or TDP clock.
+ *
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to the clock in MHz. Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The clock was read.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No frequency HAL, or the driver does not know the clock.
+ */
+template <ze_result_t (::frequency::*READ)(double *, zes_freq_domain_t)>
+ze_result_t gpuStateFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	double mhz = 0.0;
+	auto const result = (freq->*READ)(&mhz, ZES_FREQ_DOMAIN_GPU);
+	if (result == ZE_RESULT_SUCCESS) {
+		out = xpum::compat::format("{}", mhz);
+	}
+	return result;
+}
+
+/**
+ * @brief Reads one end of the range the GPU clock is currently allowed to move in.
+ *
+ * @tparam UPPER True for the highest allowed clock, false for the lowest.
+ *
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to the clock in MHz. Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The range was read.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval Other                               Any error from the frequency HAL.
+ */
+template <bool UPPER> ze_result_t rangeEndGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	double lowMHz = 0.0;
+	double highMHz = 0.0;
+	auto const result = freq->getFreqRangeForTile(0, lowMHz, highMHz);
+	if (result == ZE_RESULT_SUCCESS) {
+		out = xpum::compat::format("{}", UPPER ? highMHz : lowMHz);
+	}
+	return result;
+}
+
+/**
+ * @brief Reads the clocks the GPU can be set to.
+ *
+ * @param[in]  d   Device to query.
+ * @param[out] out Set to the description from describeClockList(). Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The clocks were read.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No frequency HAL, or the driver lists no clocks.
+ * @retval Other                               Any error from the frequency HAL.
+ */
+ze_result_t supportedGraphicsGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	std::vector<double> clocks;
+	if (auto const result = freq->getFreqAvailableClocks(0, clocks); result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	if (clocks.empty()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = describeClockList(clocks);
 	return ZE_RESULT_SUCCESS;
 }
 
@@ -292,7 +413,7 @@ constexpr auto MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.current.
 constexpr auto MAX_GRAPHICS_ALIASES = std::to_array<std::string_view>({"clocks.max.sm"});
 constexpr auto MAX_MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.max.video"});
 
-constexpr auto CLOCK_METRICS = std::to_array<QueryMetric>({
+constexpr auto SCALAR_CLOCK_METRICS = std::to_array<QueryMetric>({
 	{
 		.name = "clocks.current.graphics",
 		.aliases = GRAPHICS_ALIASES,
@@ -354,9 +475,142 @@ constexpr auto CLOCK_METRICS = std::to_array<QueryMetric>({
 		.groups = MetricGroup::CLOCK,
 		.getter = mediaMaxFreqGetter,
 	},
+	// Minimum hardware clock frequencies
+	{
+		.name = "clocks.min.graphics",
+		.unit = "MHz",
+		.description = "Minimum GPU core (graphics) clock",
+		.source = MetricSource::Static,
+		.groups = MetricGroup::CLOCK,
+		.getter = minFreqGetter<ZES_FREQ_DOMAIN_GPU>,
+	},
+	{
+		.name = "clocks.min.media",
+		.unit = "MHz",
+		.description = "Minimum media engine clock",
+		.source = MetricSource::Static,
+		.groups = MetricGroup::CLOCK,
+		.getter = minFreqGetter<ZES_FREQ_DOMAIN_MEDIA>,
+	},
+	// What the driver is asking of the GPU clock right now
+	{
+		.name = "clocks.requested.graphics",
+		.unit = "MHz",
+		.description = "GPU core clock the driver is currently asking for",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = gpuStateFreqGetter<&::frequency::getRequestedFreq>,
+	},
+	{
+		.name = "clocks.efficient.graphics",
+		.unit = "MHz",
+		.description = "Most efficient GPU core clock",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = gpuStateFreqGetter<&::frequency::getEfficientFreq>,
+	},
+	{
+		.name = "clocks.tdp.graphics",
+		.unit = "MHz",
+		.description = "Highest GPU core clock the current power and thermal limits allow",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = gpuStateFreqGetter<&::frequency::getTdpFreq>,
+	},
+	// The range the GPU clock is currently allowed to move in (what `config --frequencyrange` sets)
+	{
+		.name = "clocks.range.min",
+		.unit = "MHz",
+		.description = "Lowest GPU core clock the device is currently allowed to run at",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = rangeEndGetter<false>,
+	},
+	{
+		.name = "clocks.range.max",
+		.unit = "MHz",
+		.description = "Highest GPU core clock the device is currently allowed to run at",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::CLOCK,
+		.getter = rangeEndGetter<true>,
+	},
+	{
+		.name = "clocks.supported.graphics",
+		.unit = "MHz",
+		.description = "GPU core clocks the device can be set to: 'low-high step N' when evenly spaced, "
+					   "otherwise a ';' separated list",
+		.source = MetricSource::Static,
+		.groups = MetricGroup::SUPPORTED_CLOCKS,
+		.getter = supportedGraphicsGetter,
+	},
 });
 
+/// The registry entry that reports whether the throttle reason at index @p I of THROTTLE_REASONS is active.
+template <std::size_t I> constexpr QueryMetric throttleFlagMetric()
+{
+	return QueryMetric{
+		.name = THROTTLE_REASONS[I].metricName,
+		.unit = "",
+		.description = THROTTLE_REASONS[I].description,
+		.source = MetricSource::Live,
+		.groups = MetricGroup::PERFORMANCE,
+		.getter = throttleFlagGetter<THROTTLE_REASONS[I].flag>,
+	};
+}
+
+template <std::size_t... I> constexpr auto throttleFlagMetrics(std::index_sequence<I...>)
+{
+	return std::array<QueryMetric, sizeof...(I)>{throttleFlagMetric<I>()...};
+}
+
+template <typename T, std::size_t A, std::size_t B>
+constexpr std::array<T, A + B> concatenated(const std::array<T, A> &first, const std::array<T, B> &second)
+{
+	std::array<T, A + B> all{};
+	std::ranges::copy(first, all.begin());
+	std::ranges::copy(second, all.begin() + A);
+	return all;
+}
+
+constexpr auto CLOCK_METRICS =
+	concatenated(SCALAR_CLOCK_METRICS, throttleFlagMetrics(std::make_index_sequence<THROTTLE_REASONS.size()>{}));
+
 } // namespace
+
+/**
+ * @brief Describes a list of supported clocks in one line without commas.
+ *
+ * @param[in] clocks Supported clocks in MHz, in the order the driver reported them.
+ *
+ * @return "low-high step N" for three or more evenly spaced clocks, otherwise the clocks
+ *         separated by "; ". Empty when @p clocks is empty.
+ */
+std::string describeClockList(std::span<const double> clocks)
+{
+	constexpr double sameStep = 1e-6;
+	constexpr std::size_t shortestRange = 3;
+	if (clocks.empty()) {
+		return {};
+	}
+	if (clocks.size() >= shortestRange) {
+		const double step = clocks[1] - clocks[0];
+		bool even = step > 0.0;
+		for (std::size_t i = 2; i < clocks.size() && even; ++i) {
+			even = std::abs((clocks[i] - clocks[i - 1]) - step) < sameStep;
+		}
+		if (even) {
+			return xpum::compat::format("{}-{} step {}", clocks.front(), clocks.back(), step);
+		}
+	}
+	std::string text;
+	for (const double clock : clocks) {
+		if (!text.empty()) {
+			text += "; ";
+		}
+		text += xpum::compat::format("{}", clock);
+	}
+	return text;
+}
 
 /**
  * @brief Returns the compile-time array of all clock @c QueryMetric descriptors.

@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "driver_util.h"
 #include "frame_loop.h"
+#include "metrics/clock.h"
 #include "terminal.h"
 #include "utility/compat/format.h"
 #include "utility/logger/logger.h"
@@ -258,6 +259,13 @@ constexpr std::string_view MEBIBYTES = "MiB";
 						  fieldOf("Rx Throughput", "rx_throughput", "pcie.rx.throughput"),
 					  }));
 		rows.push_back(fieldOf("Fan Speed", "fan_speed", "fan.speed"));
+		{
+			std::vector<Spec> reasons;
+			for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
+				reasons.push_back(fieldOf(reason.label, reason.key, reason.metricName));
+			}
+			rows.push_back(sectionOf("Clocks Event Reasons", "clocks_event_reasons", std::move(reasons)));
+		}
 		rows.push_back(sectionOf(
 			"Memory Usage", "memory_usage",
 			{
@@ -343,12 +351,28 @@ constexpr std::string_view MEBIBYTES = "MiB";
 									 fieldOf("Memory", "memory", "clocks.current.memory"),
 									 fieldOf("Memory Voltage", "memory_voltage", "clocks.current.memory.voltage"),
 									 staticOf("Core Clock Rate", "core_clock_rate", "core_clock_rate"),
-									 fieldOf("Clocks Event Reasons", "clocks_event_reasons", "clocks.throttle.reason"),
+									 fieldOf("Requested Graphics", "requested_graphics", "clocks.requested.graphics"),
+									 fieldOf("Efficient Graphics", "efficient_graphics", "clocks.efficient.graphics"),
+									 fieldOf("TDP Graphics", "tdp_graphics", "clocks.tdp.graphics"),
 								 }));
 		rows.push_back(sectionOf("Max Clocks", "max_clocks",
 								 {
 									 fieldOf("Graphics", "graphics", "clocks.max.graphics"),
 									 fieldOf("Media", "media", "clocks.max.media"),
+								 }));
+		rows.push_back(sectionOf("Min Clocks", "min_clocks",
+								 {
+									 fieldOf("Graphics", "graphics", "clocks.min.graphics"),
+									 fieldOf("Media", "media", "clocks.min.media"),
+								 }));
+		rows.push_back(sectionOf("Frequency Range", "frequency_range",
+								 {
+									 fieldOf("Min", "min", "clocks.range.min"),
+									 fieldOf("Max", "max", "clocks.range.max"),
+								 }));
+		rows.push_back(sectionOf("Supported Clocks", "supported_clocks",
+								 {
+									 fieldOf("Graphics", "graphics", "clocks.supported.graphics"),
 								 }));
 		return rows;
 	}();
