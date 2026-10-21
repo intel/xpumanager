@@ -21,6 +21,7 @@
 std::string progName = "test";
 
 #include "cmd_query.h"
+#include "metrics/clock.h"
 #include "metrics_registry.h"
 #include <algorithm>
 #include <ranges>
@@ -450,7 +451,50 @@ TEST_SUITE("query layout")
 		CHECK(position("Temperature") < position("Power Readings"));
 		CHECK(position("Power Readings") < position("Clocks"));
 		CHECK(position("Clocks") < position("Max Clocks"));
+		CHECK(position("Max Clocks") < position("Min Clocks"));
+		CHECK(position("Min Clocks") < position("Frequency Range"));
+		CHECK(position("Frequency Range") < position("Supported Clocks"));
+		CHECK(position("Fan Speed") < position("Fan Mode"));
+		CHECK(position("Fan Mode") < position("Clocks Event Reasons"));
+		CHECK(position("Clocks Event Reasons") < position("Standby Mode"));
+		CHECK(position("Standby Mode") < position("Memory Usage"));
+		CHECK(position("ECC Errors") < position("Page Retirement"));
+		CHECK(position("Page Retirement") < position("Temperature"));
 		CHECK(labels.back() == "Processes");
+	}
+
+	TEST_CASE("the clocks event reasons section has one row per throttle reason, in table order")
+	{
+		const MarkedInputs inputs;
+		const auto device = buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.statics, {});
+		const auto it = std::ranges::find(device.children, "Clocks Event Reasons", &QueryNode::label);
+		REQUIRE(it != device.children.end());
+		REQUIRE(it->children.size() == metrics::clock::THROTTLE_REASONS.size());
+		for (std::size_t i = 0; i < it->children.size(); ++i) {
+			CHECK(it->children[i].label == metrics::clock::THROTTLE_REASONS[i].label);
+			CHECK(it->children[i].key == metrics::clock::THROTTLE_REASONS[i].key);
+			CHECK(it->children[i].value == "M:" + std::string{metrics::clock::THROTTLE_REASONS[i].metricName});
+		}
+	}
+
+	TEST_CASE("the scheduler, health and link rows sit in their sections")
+	{
+		const MarkedInputs inputs;
+		const auto device = buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.statics, {});
+		const auto text = rendered(device);
+		const auto lines = linesOf(text);
+		const auto indexOf = [&lines](std::string_view label) {
+			const auto it = std::ranges::find_if(
+				lines, [label](const std::string &l) { return l.find(label) != std::string::npos; });
+			REQUIRE(it != lines.end());
+			return it - lines.begin();
+		};
+		CHECK(indexOf("Device State") < indexOf("Device Health"));
+		CHECK(indexOf("Max Command Queue Priority") < indexOf("Scheduler Mode"));
+		CHECK(indexOf("Scheduler Mode") < indexOf("    PCI"));
+		CHECK(indexOf("Max Bandwidth") < indexOf("Link Status"));
+		CHECK(indexOf("Composite Temp") < indexOf("GPU Throttle Temp"));
+		CHECK(indexOf("Memory Shutdown Temp") < indexOf("    Power Readings"));
 	}
 
 	TEST_CASE("the device node carries its PCI address")

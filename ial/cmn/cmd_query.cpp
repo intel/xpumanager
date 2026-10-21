@@ -256,11 +256,13 @@ constexpr std::string_view MEBIBYTES = "MiB";
 												  }),
 									}),
 						  staticOf("Max Bandwidth", "max_bandwidth", "pcie_max_bandwidth"),
+						  fieldOf("Link Status", "link_status", "pcie.link.status"),
 						  fieldOf("Replays Since Reset", "replays_since_reset", "pcie.replay.counter"),
 						  fieldOf("Tx Throughput", "tx_throughput", "pcie.tx.throughput"),
 						  fieldOf("Rx Throughput", "rx_throughput", "pcie.rx.throughput"),
 					  }));
 		rows.push_back(fieldOf("Fan Speed", "fan_speed", "fan.speed"));
+		rows.push_back(fieldOf("Fan Mode", "fan_mode", "fan.mode"));
 		{
 			std::vector<Spec> reasons;
 			for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
@@ -338,12 +340,17 @@ constexpr std::string_view MEBIBYTES = "MiB";
 								 {
 									 fieldOf("Offline Pages", "offline_pages", "retired_pages.count"),
 								 }));
-		rows.push_back(sectionOf("Temperature", "temperature",
-								 {
-									 fieldOf("GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
-									 fieldOf("Memory Current Temp", "memory_current_temp", "temperature.memory"),
-									 fieldOf("Composite Temp", "composite_temp", "temperature.composite"),
-								 }));
+		rows.push_back(sectionOf(
+			"Temperature", "temperature",
+			{
+				fieldOf("GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
+				fieldOf("Memory Current Temp", "memory_current_temp", "temperature.memory"),
+				fieldOf("Composite Temp", "composite_temp", "temperature.composite"),
+				fieldOf("GPU Throttle Temp", "gpu_throttle_temp", "temperature.gpu.threshold.throttle"),
+				fieldOf("GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
+				fieldOf("Memory Throttle Temp", "memory_throttle_temp", "temperature.memory.threshold.throttle"),
+				fieldOf("Memory Shutdown Temp", "memory_shutdown_temp", "temperature.memory.threshold.shutdown"),
+			}));
 		rows.push_back(sectionOf("Power Readings", "power_readings",
 								 {
 									 fieldOf("Power Draw", "power_draw", "power.draw"),

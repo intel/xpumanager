@@ -38,7 +38,45 @@ constexpr auto speed = QueryMetric{// NOLINT(readability-identifier-naming)
 									   return r;
 								   }};
 
-constexpr auto ALL = std::to_array<QueryMetric>({speed});
+constexpr auto mode = QueryMetric{// NOLINT(readability-identifier-naming)
+								  .name = "fan.mode",
+								  .unit = "",
+								  .description = "Fan speed mode of the first fan (default/fixed/table)",
+								  .source = MetricSource::Static,
+								  .groups = MetricGroup::FAN,
+								  .getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+									  auto *f = d.dev->getFan();
+									  if (f == nullptr) {
+										  return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+									  }
+									  zes_fan_config_t config{};
+									  auto const r = f->getConfig(config, 0);
+									  if (r == ZE_RESULT_SUCCESS) {
+										  out = std::string{fanModeName(config.mode)};
+									  }
+									  return r;
+								  }};
+
+constexpr auto count = QueryMetric{// NOLINT(readability-identifier-naming)
+								   .name = "fan.count",
+								   .unit = "",
+								   .description = "Number of fans",
+								   .source = MetricSource::Static,
+								   .groups = MetricGroup::FAN,
+								   .getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+									   auto *f = d.dev->getFan();
+									   if (f == nullptr) {
+										   return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+									   }
+									   uint32_t fans = 0;
+									   auto const r = f->getFanCount(fans);
+									   if (r == ZE_RESULT_SUCCESS) {
+										   out = std::to_string(fans);
+									   }
+									   return r;
+								   }};
+
+constexpr auto ALL = std::to_array<QueryMetric>({speed, mode, count});
 
 } // namespace
 

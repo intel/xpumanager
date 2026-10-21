@@ -1699,3 +1699,54 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 		CHECK_MESSAGE(out == "untouched", name);
 	}
 }
+
+// -- temperature threshold, PCIe link status and fan fields added for the full device report --
+
+TEST_CASE("linkStatusName: every status has a name and anything else is unknown")
+{
+	using metrics::pci::linkStatusName;
+	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_GOOD) == "good");
+	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_QUALITY_ISSUES) == "quality issues");
+	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_STABILITY_ISSUES) == "stability issues");
+	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_UNKNOWN) == "unknown");
+	CHECK(linkStatusName(static_cast<zes_pci_link_status_t>(0x7fffffff)) == "unknown");
+}
+
+TEST_CASE("fanModeName: every mode has a name and anything else is unknown")
+{
+	using metrics::fan::fanModeName;
+	CHECK(fanModeName(ZES_FAN_SPEED_MODE_DEFAULT) == "default");
+	CHECK(fanModeName(ZES_FAN_SPEED_MODE_FIXED) == "fixed");
+	CHECK(fanModeName(ZES_FAN_SPEED_MODE_TABLE) == "table");
+	CHECK(fanModeName(static_cast<zes_fan_speed_mode_t>(0x7fffffff)) == "unknown");
+}
+
+TEST_CASE("temperature thresholds are registered Static TEMPERATURE fields in degrees Celsius")
+{
+	for (const std::string_view name :
+		 {"temperature.gpu.threshold.throttle", "temperature.gpu.threshold.shutdown",
+		  "temperature.memory.threshold.throttle", "temperature.memory.threshold.shutdown"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		CHECK_MESSAGE(field->unit == "C", name);
+		CHECK_MESSAGE(field->source == MetricSource::Static, name);
+		CHECK_MESSAGE(field->groups == MetricGroup::TEMPERATURE, name);
+		CHECK_MESSAGE(field->inputs == MetricInput::NONE, name);
+	}
+}
+
+TEST_CASE("pcie.link.status is a Live PCI field and the fan fields are Static FAN fields")
+{
+	const auto link = findMetric("pcie.link.status");
+	REQUIRE(link.has_value());
+	CHECK(link->groups == MetricGroup::PCI);
+	CHECK(link->source == MetricSource::Live);
+
+	for (const std::string_view name : {"fan.mode", "fan.count"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		CHECK_MESSAGE(field->groups == MetricGroup::FAN, name);
+		CHECK_MESSAGE(field->source == MetricSource::Static, name);
+	}
+	CHECK(getMetricsByGroup(MetricGroup::FAN).size() == metrics::fan::getFanMetrics().size());
+}
