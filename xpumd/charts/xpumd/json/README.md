@@ -29,9 +29,10 @@ Unless new XPUM dashboard is intended to replace the old one, its
 
 # Generating Grafana dashboard Helm chart configMap templates
 
-User would need to manually load Grafana dashboard JSON file, but if
-Helm chart installs it to Grafana namespace inside a suitably labeled
-configMap, Grafana will load it automatically.
+Non-Kubernetes users need to manually load Grafana dashboard JSON
+file, but in Kubernetes, Helm chart can install it to Grafana
+namespace inside a suitably labeled configMap, and then Grafana
+should load it automatically.
 
 Dashboard JSON spec file(s) in here are used as sources for those
 configMaps. After dashboard is updated in Grafana, it can be saved
