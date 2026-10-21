@@ -18,4 +18,4 @@ Number of crashlog files that were not emitted.
 
 | Name | Description | Values | Semantic Convention |
 | ---- | ----------- | ------ | ------------------- |
-| reason | Why a crashlog was dropped. | Str: ``too_large``, ``read_error``, ``internal_consumer_error`` | - |
+| reason | Why a crashlog was dropped. | Str: ``too_large``, ``too_small``, ``read_error``, ``internal_consumer_error`` | - |

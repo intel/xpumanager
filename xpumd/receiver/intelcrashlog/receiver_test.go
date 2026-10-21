@@ -277,6 +277,33 @@ func TestReceiverMaxFileSize(t *testing.T) {
 	assert.Equal(t, 1, sink.LogRecordCount())
 }
 
+func TestReceiverMinFileSize(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(path, []byte{0xca}, 0o600))
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+
+	sink := &consumertest.LogsSink{}
+	rcvr, tel := createReceiverWithTelemetry(t, &Config{Directory: dir, Globs: []string{"*.bin"}, MinFileSize: 2}, sink)
+
+	// Too small at stat time
+	rcvr.handlePath(context.Background(), path)
+	// Shrink below the limit after stat
+	rcvr.config.MinFileSize = 1
+	require.NoError(t, os.WriteFile(path, []byte{}, 0o600))
+	rcvr.emitFile(context.Background(), path, info)
+
+	assert.Zero(t, sink.LogRecordCount())
+	assert.NotContains(t, rcvr.processedFiles, path)
+	assertDropped(t, tel, reasonTooSmall, 2)
+
+	// A file of exactly the limit is emitted
+	require.NoError(t, os.WriteFile(path, []byte{0xca}, 0o600))
+	rcvr.handlePath(context.Background(), path)
+	assert.Equal(t, 1, sink.LogRecordCount())
+}
+
 func TestReceiverConsumerError(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "crash.bin")

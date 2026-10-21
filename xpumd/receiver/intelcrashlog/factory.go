@@ -19,6 +19,9 @@ import (
 // defaultMaxFileSize is the default maximum size of a crashlog file (1 MiB).
 const defaultMaxFileSize = 1024 * 1024
 
+// defaultMinFileSize is the default minimum size of a crashlog file (skip empty files).
+const defaultMinFileSize = 1
+
 // NewFactory creates a factory for the receiver.
 func NewFactory() receiver.Factory {
 	return receiver.NewFactory(
@@ -33,6 +36,7 @@ func createDefaultConfig() component.Config {
 		Directory:       "",
 		IgnoreOlderThan: 0,
 		MaxFileSize:     defaultMaxFileSize,
+		MinFileSize:     defaultMinFileSize,
 	}
 }
 

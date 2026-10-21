@@ -38,6 +38,8 @@ receivers:
     ignore_older_than: 0s
     # Maximum crashlog file size in bytes, larger files are skipped.
     max_file_size: 1048576
+    # Minimum crashlog file size in bytes, smaller files are skipped.
+    min_file_size: 1
     # Static attributes added to every emitted log record (optional).
     # add_attributes:
     #   hw.vendor: "ACME"

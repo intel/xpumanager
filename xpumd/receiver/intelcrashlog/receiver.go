@@ -37,11 +37,15 @@ const attributeKeyReason = attribute.Key("reason")
 
 const (
 	reasonTooLarge              = "too_large"
+	reasonTooSmall              = "too_small"
 	reasonReadError             = "read_error"
 	reasonInternalConsumerError = "internal_consumer_error"
 )
 
-var errFileTooLarge = errors.New("file too large")
+var (
+	errFileTooLarge = errors.New("file too large")
+	errFileTooSmall = errors.New("file too small")
+)
 
 type crashlogReceiver struct {
 	config    *Config
@@ -205,6 +209,11 @@ func (r *crashlogReceiver) handlePath(ctx context.Context, path string) {
 		r.recordDropped(ctx, reasonTooLarge)
 		return
 	}
+	if info.Size() < r.config.MinFileSize {
+		r.logger.Warnw("skipping too small crashlog", "path", path, "size", info.Size(), "minFileSize", r.config.MinFileSize)
+		r.recordDropped(ctx, reasonTooSmall)
+		return
+	}
 
 	r.emitFile(ctx, path, info)
 }
@@ -214,9 +223,12 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 	data, err := r.readFile(path, info.Size())
 	if err != nil {
 		r.logger.Errorw("failed to read crashlog", "path", path, "error", err)
-		if errors.Is(err, errFileTooLarge) {
+		switch {
+		case errors.Is(err, errFileTooLarge):
 			r.recordDropped(ctx, reasonTooLarge)
-		} else {
+		case errors.Is(err, errFileTooSmall):
+			r.recordDropped(ctx, reasonTooSmall)
+		default:
 			r.recordDropped(ctx, reasonReadError)
 		}
 		return
@@ -270,6 +282,9 @@ func (r *crashlogReceiver) readFile(path string, size int64) (pcommon.ByteSlice,
 	}
 	if n > r.config.MaxFileSize {
 		return data, fmt.Errorf("file grew past the size limit of %d bytes: %w", r.config.MaxFileSize, errFileTooLarge)
+	}
+	if n < r.config.MinFileSize {
+		return data, fmt.Errorf("file shrank below the size limit of %d bytes: %w", r.config.MinFileSize, errFileTooSmall)
 	}
 	return data, nil
 }

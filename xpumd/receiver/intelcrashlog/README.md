@@ -23,6 +23,7 @@ receivers:
     globs: ["*.crashlog"]
     ignore_older_than: 10m
     max_file_size: 4194304
+    min_file_size: 64
     add_attributes:
       hw.vendor: ACME
 ```
@@ -35,6 +36,7 @@ receivers:
 | `globs` | []string | *required* | Filename glob patterns matched against the base name of each file, e.g. `["*.bin", "*.crashlog"]`. A file is processed if it matches any of them, use `["*"]` to match all files |
 | `ignore_older_than` | duration | `0s` | Ignore files whose modification time is older than `startup_time - ignore_older_than`. `0s` means only files modified after startup are processed |
 | `max_file_size` | int | `1048576` (1 MiB) | Maximum crashlog file size in bytes, must be positive. Larger files are skipped |
+| `min_file_size` | int | `1` | Minimum crashlog file size in bytes, must not be negative or greater than `max_file_size`. Smaller files are skipped. The default skips empty files |
 | `add_attributes` | map[string]string | `{}` | Static key/value attributes added to every emitted log record |
 
 ## Log Record Format

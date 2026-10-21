@@ -29,6 +29,7 @@ func TestConfigValidate(t *testing.T) {
 				Globs:           []string{"dev-*-crashlog.bin", "*.crashlog"},
 				IgnoreOlderThan: time.Hour,
 				MaxFileSize:     defaultMaxFileSize,
+				MinFileSize:     defaultMinFileSize,
 				AddAttributes:   map[string]string{"hw.vendor": "ACME"},
 			},
 		},
@@ -66,6 +67,20 @@ func TestConfigValidate(t *testing.T) {
 			name:      "negative max_file_size",
 			config:    Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin"}, MaxFileSize: -1},
 			expectErr: "max_file_size must be positive",
+		},
+		{
+			name:   "min_file_size equal to max_file_size",
+			config: Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin"}, MaxFileSize: 2, MinFileSize: 2},
+		},
+		{
+			name:      "negative min_file_size",
+			config:    Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin"}, MaxFileSize: 1, MinFileSize: -1},
+			expectErr: "min_file_size must not be negative",
+		},
+		{
+			name:      "min_file_size greater than max_file_size",
+			config:    Config{Directory: "/var/log/crashlog", Globs: []string{"*.bin"}, MaxFileSize: 1, MinFileSize: 2},
+			expectErr: "min_file_size must not be greater than max_file_size",
 		},
 	}
 

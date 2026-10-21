@@ -30,6 +30,10 @@ type Config struct {
 	// Must be positive.
 	MaxFileSize int64 `mapstructure:"max_file_size"`
 
+	// MinFileSize is the minimum size of a crashlog file in bytes. Smaller files are skipped.
+	// Must not be negative or greater than MaxFileSize.
+	MinFileSize int64 `mapstructure:"min_file_size"`
+
 	// AddAttributes is a map of static key/value pairs added to every emitted log record.
 	AddAttributes map[string]string `mapstructure:"add_attributes"`
 }
@@ -56,6 +60,12 @@ func (c *Config) Validate() error {
 	}
 	if c.MaxFileSize <= 0 {
 		return fmt.Errorf("max_file_size must be positive")
+	}
+	if c.MinFileSize < 0 {
+		return fmt.Errorf("min_file_size must not be negative")
+	}
+	if c.MinFileSize > c.MaxFileSize {
+		return fmt.Errorf("min_file_size must not be greater than max_file_size")
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ attributes:
     type: string
     enum:
       - too_large
+      - too_small
       - read_error
       - internal_consumer_error
 
