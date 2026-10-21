@@ -39,3 +39,14 @@ updates:
       level-zero-go:
         patterns:
           - "*"
+  - package-ecosystem: "docker"
+    directory: "/xpumd"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Go minor version (i.e. 1.X to 1.X+1) bumped manually
+      - dependency-name: "golang"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Manage manually, to match the distro version with what the driver stack packages are built for
+      - dependency-name: "buildpack-deps"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
