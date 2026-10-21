@@ -23,6 +23,8 @@ public:
 	ze_result_t getProperties(zes_sched_handle_t schedulerHandle, zes_sched_properties_t *props);
 	ze_result_t getCurrentMode(zes_sched_handle_t schedulerHandle);
 	ze_result_t getCurrentMode(zes_sched_handle_t schedulerHandle, zes_sched_mode_t *mode);
+	/// Current mode of the scheduler that describes the device as a whole.
+	[[nodiscard]] ze_result_t getDeviceMode(zes_sched_mode_t &mode);
 	ze_result_t getTimeoutModeProperties(zes_sched_handle_t schedulerHandle);
 	ze_result_t getTimeoutModeProperties(zes_sched_handle_t schedulerHandle, bool getDefaults,
 										 zes_sched_timeout_properties_t *props);

@@ -23,6 +23,8 @@ public:
 	ze_result_t getProperties(zes_standby_handle_t standbyHandle, zes_standby_properties_t *props);
 	ze_result_t getMode(zes_standby_handle_t standbyHandle);
 	ze_result_t getMode(zes_standby_handle_t standbyHandle, zes_standby_promo_mode_t *mode);
+	/// Promotion mode of the standby domain that describes the device as a whole.
+	[[nodiscard]] ze_result_t getDeviceMode(zes_standby_promo_mode_t &mode);
 	ze_result_t setMode(zes_standby_promo_mode_t mode);
 
 	uint32_t getStandbyCount() const { return standbyCount; }

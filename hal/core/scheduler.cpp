@@ -5,6 +5,8 @@
  */
 
 #include "scheduler.h"
+#include "driver_util.h"
+#include <vector>
 
 /**
  * @brief Destructor for the scheduler class
@@ -394,4 +396,33 @@ ze_result_t scheduler::zesRun(UNUSED zes_device_handle_t device)
 	}
 
 	return result;
+}
+/**
+ * @brief Gets the current mode of the scheduler that describes the device as a whole.
+ *
+ * A multi-tile device lists a scheduler for each tile as well as its own; the device's own is
+ * the one reported. A device that lists only per-tile schedulers is described by the first.
+ *
+ * @param[out] mode Set to the current scheduler mode.
+ *
+ * @retval ZE_RESULT_SUCCESS                   The mode was read.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The device exposes no scheduler.
+ * @retval Other                               The error from reading the mode.
+ */
+ze_result_t scheduler::getDeviceMode(zes_sched_mode_t &mode)
+{
+	std::vector<ze_bool_t> onSubdevice;
+	onSubdevice.reserve(schedulerCount);
+	for (uint32_t i = 0; i < schedulerCount; ++i) {
+		zes_sched_properties_t props{};
+		props.stype = ZES_STRUCTURE_TYPE_SCHED_PROPERTIES;
+		// A scheduler whose properties cannot be read is counted as a sub-device one, so it is chosen last.
+		onSubdevice.push_back(getProperties(schedulerHandles[i], &props) == ZE_RESULT_SUCCESS ? props.onSubdevice
+																							  : ze_bool_t{1});
+	}
+	const auto index = xpum::detail::deviceLevelIndex(onSubdevice);
+	if (!index) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	return getCurrentMode(schedulerHandles[*index], &mode);
 }

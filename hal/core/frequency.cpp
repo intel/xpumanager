@@ -6,7 +6,9 @@
 
 #include "frequency.h"
 #include "device.h"
+#include <optional>
 #include <ranges>
+#include <span>
 #include <vector>
 
 /**
@@ -98,11 +100,85 @@ ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq
 	return result;
 }
 
+std::vector<zes_freq_properties_t> frequency::readAllProperties()
+{
+	std::vector<zes_freq_properties_t> all;
+	all.reserve(frequencyCount);
+	for (const auto handle : getFrequencyHandles()) {
+		zes_freq_properties_t props{};
+		props.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+		if (getProperties(handle, &props) == ZE_RESULT_SUCCESS) {
+			all.push_back(props);
+		}
+	}
+	return all;
+}
+
+/**
+ * @brief Picks the lowest positive minimum frequency of one domain.
+ *
+ * @param[in] props  Properties of the enumerated frequency handles.
+ * @param[in] domain The frequency domain to look for.
+ *
+ * @retval value   The lowest minimum above zero among the handles of @p domain.
+ * @retval nullopt No handle of @p domain reports a positive minimum.
+ */
+std::optional<double> frequency::minFrequencyOf(std::span<const zes_freq_properties_t> props,
+												zes_freq_domain_t domain) noexcept
+{
+	std::optional<double> lowest;
+	for (const auto &p : props) {
+		if (p.type == domain && p.min > 0.0 && (!lowest || p.min < *lowest)) {
+			lowest = p.min;
+		}
+	}
+	return lowest;
+}
+
+/**
+ * @brief Picks the highest positive maximum frequency of one domain.
+ *
+ * @param[in] props  Properties of the enumerated frequency handles.
+ * @param[in] domain The frequency domain to look for.
+ *
+ * @retval value   The highest maximum above zero among the handles of @p domain.
+ * @retval nullopt No handle of @p domain reports a positive maximum.
+ */
+std::optional<double> frequency::maxFrequencyOf(std::span<const zes_freq_properties_t> props,
+												zes_freq_domain_t domain) noexcept
+{
+	std::optional<double> highest;
+	for (const auto &p : props) {
+		if (p.type == domain && p.max > 0.0 && (!highest || p.max > *highest)) {
+			highest = p.max;
+		}
+	}
+	return highest;
+}
+
+/**
+ * @brief Tells a frequency the driver reported from one it does not know.
+ *
+ * Level Zero reports an unknown frequency in a state as a negative number.
+ *
+ * @param[in] reported The value from the driver.
+ *
+ * @retval value   @p reported, when it is zero or more.
+ * @retval nullopt @p reported is negative or not a number.
+ */
+std::optional<double> frequency::knownFrequencyOf(double reported) noexcept
+{
+	if (!(reported >= 0.0)) {
+		return std::nullopt;
+	}
+	return reported;
+}
+
 /**
  * @brief Gets the maximum frequency for a specific frequency domain
  *
- * Scans the enumerated frequency handles to find the one matching the
- * requested domain and returns its maximum hardware frequency.
+ * Scans the enumerated frequency handles of the requested domain and returns the
+ * highest maximum hardware frequency among them.
  *
  * @param domain The frequency domain to query (e.g. ZES_FREQ_DOMAIN_GPU)
  * @param maxMHz Output parameter filled with the maximum frequency in MHz
@@ -110,31 +186,108 @@ ze_result_t frequency::getProperties(zes_freq_handle_t frequencyHandle, zes_freq
  */
 ze_result_t frequency::getMaxFreqForDomain(zes_freq_domain_t domain, double &maxMHz)
 {
-	auto handles = std::span(frequencyHandles, frequencyCount);
-
-	// Transform handles to properties, filtering out invalid ones
-	auto validProps =
-		handles | std::views::transform([this](const auto &handle) -> std::optional<zes_freq_properties_t> {
-			zes_freq_properties_t props{};
-			props.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
-			if (getProperties(handle, &props) == ZE_RESULT_SUCCESS) {
-				return props;
-			}
-			return std::nullopt;
-		}) |
-		std::views::filter([](const auto &opt) { return opt.has_value(); }) |
-		std::views::transform([](const auto &opt) { return *opt; }) |
-		std::views::filter([domain](const auto &props) { return props.type == domain && props.max > 0.0; });
-
-	// Find the maximum frequency
-
-	if (auto maxIt = std::ranges::max_element(validProps, {}, &zes_freq_properties_t::max);
-		maxIt != std::ranges::end(validProps)) {
-		maxMHz = (*maxIt).max;
+	if (const auto highest = maxFrequencyOf(readAllProperties(), domain)) {
+		maxMHz = *highest;
 		return ZE_RESULT_SUCCESS;
 	}
-
 	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
+ * @brief Gets the minimum frequency for a specific frequency domain
+ *
+ * @param[in]  domain The frequency domain to query (e.g. ZES_FREQ_DOMAIN_GPU)
+ * @param[out] minMHz Set to the lowest minimum hardware frequency in MHz among the domain's handles
+ *
+ * @retval ZE_RESULT_SUCCESS                   A minimum was found.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No handle of the domain reports a positive minimum.
+ */
+ze_result_t frequency::getMinFreqForDomain(zes_freq_domain_t domain, double &minMHz)
+{
+	if (const auto lowest = minFrequencyOf(readAllProperties(), domain)) {
+		minMHz = *lowest;
+		return ZE_RESULT_SUCCESS;
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+ze_result_t frequency::getDomainState(zes_freq_domain_t domain, zes_freq_state_t &state)
+{
+	for (const auto handle : getFrequencyHandles()) {
+		zes_freq_properties_t properties{};
+		properties.stype = ZES_STRUCTURE_TYPE_FREQ_PROPERTIES;
+		if (const auto result = getProperties(handle, &properties); result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		if (properties.type != domain) {
+			continue;
+		}
+		state.stype = ZES_STRUCTURE_TYPE_FREQ_STATE;
+		return getState(handle, &state);
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+ze_result_t frequency::getDomainStateFrequency(double zes_freq_state_t::*member, zes_freq_domain_t domain, double *out)
+{
+	if (out == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	zes_freq_state_t state{};
+	if (const auto result = getDomainState(domain, state); result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	const auto known = knownFrequencyOf(state.*member);
+	if (!known) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	*out = *known;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Gets the frequency the driver is currently being asked to run a domain at
+ *
+ * @param[out] requestedFreq Set to the requested frequency in MHz
+ * @param[in]  domain        The frequency domain to query
+ *
+ * @retval ZE_RESULT_SUCCESS                   The request is known.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE There is no such domain, or the driver does not know the request.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p requestedFreq is null.
+ */
+ze_result_t frequency::getRequestedFreq(double *requestedFreq, zes_freq_domain_t domain)
+{
+	return getDomainStateFrequency(&zes_freq_state_t::request, domain, requestedFreq);
+}
+
+/**
+ * @brief Gets the most efficient frequency of a domain
+ *
+ * @param[out] efficientFreq Set to the efficient minimum frequency in MHz
+ * @param[in]  domain        The frequency domain to query
+ *
+ * @retval ZE_RESULT_SUCCESS                   The efficient frequency is known.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE There is no such domain, or the driver does not know it.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p efficientFreq is null.
+ */
+ze_result_t frequency::getEfficientFreq(double *efficientFreq, zes_freq_domain_t domain)
+{
+	return getDomainStateFrequency(&zes_freq_state_t::efficient, domain, efficientFreq);
+}
+
+/**
+ * @brief Gets the highest frequency a domain can run at under the current TDP conditions
+ *
+ * @param[out] tdpFreq Set to the frequency in MHz
+ * @param[in]  domain  The frequency domain to query
+ *
+ * @retval ZE_RESULT_SUCCESS                   The frequency is known.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE There is no such domain, or the driver does not know it.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p tdpFreq is null.
+ */
+ze_result_t frequency::getTdpFreq(double *tdpFreq, zes_freq_domain_t domain)
+{
+	return getDomainStateFrequency(&zes_freq_state_t::tdp, domain, tdpFreq);
 }
 
 /**

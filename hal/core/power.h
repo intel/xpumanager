@@ -14,6 +14,8 @@
 #include <map>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
+#include <span>
 #include <fstream>
 #include <functional>
 
@@ -26,6 +28,14 @@
  * or subdevice power domain. It provides information about specific power level
  * settings, current limit values, and whether the limit is locked.
  */
+/** The range a device allows its power limit to take, in milliwatts. Zero means the driver did not say. */
+struct PowerLimitBounds
+{
+	uint32_t defaultMw = 0;
+	uint32_t minMw = 0;
+	uint32_t maxMw = 0;
+};
+
 struct PowerLimitExt
 {
 	zes_power_level_t level; ///< Power level type (e.g., sustained, burst, peak)
@@ -98,6 +108,11 @@ public:
 	ze_result_t setLimitsExt(int32_t tile_id, zes_power_level_t level, uint32_t limit_mw);
 	ze_result_t getDomainLimits(std::map<zes_power_domain_t, std::map<zes_power_level_t, int32_t>> &domainLimits);
 	ze_result_t getMaxPowerLimit(std::string &range);
+
+	/// The limit range of the first device-level domain that reports a positive maximum, if there is one.
+	[[nodiscard]] static std::optional<PowerLimitBounds>
+	cardLimitBoundsOf(std::span<const zes_power_properties_t> props) noexcept;
+	[[nodiscard]] ze_result_t getLimitBounds(PowerLimitBounds &bounds);
 
 	uint32_t getPowerCount() { return powerCount; }
 	uint64_t getThrottlePower(uint32_t pciDeviceId);

@@ -887,6 +887,57 @@ ze_result_t power::getDomainLimits(std::map<zes_power_domain_t, std::map<zes_pow
 }
 
 /**
+ * @brief Picks the power limit range of the device as a whole.
+ *
+ * Domains on a sub-device are skipped, and so is a domain that reports no positive maximum.
+ * Limits a domain does not report, which Level Zero marks as zero or negative, come out as zero.
+ *
+ * @param[in] props Properties of the enumerated power domains.
+ *
+ * @retval bounds  The default, minimum and maximum limit of the first device-level domain with a maximum.
+ * @retval nullopt No such domain.
+ */
+std::optional<PowerLimitBounds> power::cardLimitBoundsOf(std::span<const zes_power_properties_t> props) noexcept
+{
+	const auto milliwatts = [](int32_t limit) { return static_cast<uint32_t>(limit > 0 ? limit : 0); };
+	for (const auto &p : props) {
+		if (p.onSubdevice == 0U && p.maxLimit > 0) {
+			return PowerLimitBounds{.defaultMw = milliwatts(p.defaultLimit),
+									.minMw = milliwatts(p.minLimit),
+									.maxMw = milliwatts(p.maxLimit)};
+		}
+	}
+	return std::nullopt;
+}
+
+/**
+ * @brief Gets the range the device allows its power limit to take.
+ *
+ * @param[out] bounds Set to the default, minimum and maximum limit in milliwatts.
+ *
+ * @retval ZE_RESULT_SUCCESS                   A device-level domain reported a maximum.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No power domain, or none at device level with a maximum.
+ */
+ze_result_t power::getLimitBounds(PowerLimitBounds &bounds)
+{
+	std::vector<zes_power_properties_t> all;
+	all.reserve(powerCount);
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t props{};
+		zes_power_ext_properties_t extProps{};
+		if (getProperties(powerHandles[i], &props, &extProps) == ZE_RESULT_SUCCESS) {
+			props.pNext = nullptr; // pointed at extProps, which is about to go out of scope
+			all.push_back(props);
+		}
+	}
+	if (const auto found = cardLimitBoundsOf(all)) {
+		bounds = *found;
+		return ZE_RESULT_SUCCESS;
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Gets the maximum power limit as a formatted string range
  *
  * This function queries all power handles to find the maximum power limit

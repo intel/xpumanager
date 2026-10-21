@@ -7,8 +7,11 @@
 
 #include "device.h"
 
+#include <algorithm>
 #include <charconv>
+#include <cstddef>
 #include <optional>
+#include <span>
 #include <string_view>
 #include <unordered_set>
 #include <vector>
@@ -49,6 +52,30 @@ inline void deduplicateByIndex(std::vector<devInfo> &devList)
 {
 	std::unordered_set<uint32_t> seen;
 	std::erase_if(devList, [&](const devInfo &d) { return !seen.insert(d.index).second; });
+}
+
+/**
+ * @brief Pick the handle that describes the device as a whole.
+ *
+ * A device lists its scheduler or standby domains once for itself and, on a multi-tile device,
+ * again for each tile. The first one that is not on a sub-device is the device's own; a device
+ * that lists only sub-device domains is described by the first of them.
+ *
+ * @param[in] onSubdevice One flag per handle, in handle order: nonzero when the handle is on a sub-device.
+ *
+ * @retval index   Position of the first handle that is not on a sub-device, else 0.
+ * @retval nullopt There are no handles.
+ */
+[[nodiscard]] inline std::optional<std::size_t> deviceLevelIndex(std::span<const ze_bool_t> onSubdevice) noexcept
+{
+	const auto device = std::ranges::find(onSubdevice, ze_bool_t{0});
+	if (device != onSubdevice.end()) {
+		return static_cast<std::size_t>(device - onSubdevice.begin());
+	}
+	if (!onSubdevice.empty()) {
+		return std::size_t{0};
+	}
+	return std::nullopt;
 }
 
 } // namespace xpum::detail

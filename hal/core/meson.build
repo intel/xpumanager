@@ -145,6 +145,32 @@ if get_option('with_tests')
   test('memory_tests', memory_test)
   message('Memory unit tests enabled')
 
+  frequency_test = executable(
+    'frequency_test',
+    files('test/frequency_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('frequency_tests', frequency_test)
+  message('Frequency unit tests enabled')
+
+  power_test = executable(
+    'power_test',
+    files('test/power_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('power_tests', power_test)
+  message('Power unit tests enabled')
+
   enginegroup_test = executable(
     'enginegroup_test',
     files('test/enginegroup_test.cpp'),

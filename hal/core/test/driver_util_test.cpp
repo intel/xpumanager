@@ -11,7 +11,10 @@
 
 #include "driver_util.h"
 
+#include <array>
+
 using xpum::detail::deduplicateByIndex;
+using xpum::detail::deviceLevelIndex;
 using xpum::detail::parseUint32;
 
 // ---------------------------------------------------------------------------
@@ -92,4 +95,31 @@ TEST_CASE("deduplicateByIndex: empty list is a no-op")
 	std::vector<devInfo> list;
 	deduplicateByIndex(list);
 	CHECK(list.empty());
+}
+
+// ---------------------------------------------------------------------------
+// deviceLevelIndex
+// ---------------------------------------------------------------------------
+
+TEST_CASE("deviceLevelIndex: no handles gives nothing") { CHECK_FALSE(deviceLevelIndex({}).has_value()); }
+
+TEST_CASE("deviceLevelIndex: the first handle that is not on a sub-device is chosen")
+{
+	const std::array<ze_bool_t, 4> flags{1, 1, 0, 0};
+	CHECK(deviceLevelIndex(flags) == std::optional<std::size_t>{2});
+
+	const std::array<ze_bool_t, 2> first{0, 1};
+	CHECK(deviceLevelIndex(first) == std::optional<std::size_t>{0});
+}
+
+TEST_CASE("deviceLevelIndex: with only sub-device handles the first is chosen")
+{
+	const std::array<ze_bool_t, 3> flags{1, 1, 1};
+	CHECK(deviceLevelIndex(flags) == std::optional<std::size_t>{0});
+}
+
+TEST_CASE("deviceLevelIndex: a single device-level handle is chosen")
+{
+	const std::array<ze_bool_t, 1> flags{0};
+	CHECK(deviceLevelIndex(flags) == std::optional<std::size_t>{0});
 }
