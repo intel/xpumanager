@@ -14,7 +14,17 @@ ARG COMPUTE_RUNTIME_RELEASE=26.35.39758.10
 ARG LIBIGDGMM12_VERSION=22.10.0
 ARG LEVEL_ZERO_VERSION=1.34.0
 
-FROM golang:1.27-trixie AS builder
+# Go toolchain (self-contained, so it can be copied to the builder image)
+FROM golang:1.27-trixie AS go
+
+# The builder is Ubuntu (with common build tools), matching what the driver stack
+# packages are built for
+FROM buildpack-deps:24.04 AS builder
+
+COPY --from=go /usr/local/go/ /usr/local/go/
+ENV GOPATH=/go \
+    GOTOOLCHAIN=local \
+    PATH=/go/bin:/usr/local/go/bin:$PATH
 
 ARG APP=list-sysman
 
@@ -104,7 +114,7 @@ FROM builder AS backend-deb
 # manifests/manifest.yml pins for that revision. The build args of this stage are
 # pinned by hack/vendor-intel-header.sh, together with the vendored headers, the ones
 # at the top of this file by hand.
-FROM golang:1.26-trixie AS backend-src
+FROM buildpack-deps:24.04 AS backend-src
 
 # Compute-runtime commit date 2026-08-25
 ARG COMPUTE_RUNTIME_COMMIT=9c2abbc844661895dc8c45ad84cdc50eb19e146c
