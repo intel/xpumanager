@@ -109,10 +109,10 @@ constexpr auto STATIC_TABLE = std::to_array<StaticSpec>({
 	return it == BY_NAME.end() ? nullptr : it->second;
 }
 
-/// An empty text is a value the platform could not supply, so it reads as absent.
+/// An empty text, or the text N/A that some getters report instead of failing, is a value nobody could supply.
 [[nodiscard]] std::optional<std::string> presentOrNull(std::optional<std::string> value)
 {
-	if (value && value->empty()) {
+	if (value && (value->empty() || *value == NOT_AVAILABLE)) {
 		return std::nullopt;
 	}
 	return value;
@@ -281,6 +281,7 @@ constexpr std::string_view MEBIBYTES = "MiB";
 				staticOf("Number of Memory Channels", "number_of_memory_channels", "number_of_memory_channels"),
 				staticOf("Memory Bus Width", "memory_bus_width", "memory_bus_width"),
 				staticOf("Max Memory Alloc Size", "max_memory_alloc_size", "max_mem_alloc_size"),
+				fieldOf("Memory Health", "memory_health", "memory.health"),
 			}));
 		rows.push_back(sectionOf("Utilization", "utilization",
 								 {
@@ -299,6 +300,8 @@ constexpr std::string_view MEBIBYTES = "MiB";
 		rows.push_back(sectionOf("ECC Mode", "ecc_mode",
 								 {
 									 fieldOf("Current", "current", "ecc.mode.current"),
+									 fieldOf("Pending", "pending", "ecc.mode.pending"),
+									 fieldOf("Pending Action", "pending_action", "ecc.pending_action"),
 								 }));
 		rows.push_back(sectionOf(
 			"ECC Errors", "ecc_errors",
@@ -328,6 +331,10 @@ constexpr std::string_view MEBIBYTES = "MiB";
 								  }),
 					}),
 			}));
+		rows.push_back(sectionOf("Page Retirement", "page_retirement",
+								 {
+									 fieldOf("Offline Pages", "offline_pages", "retired_pages.count"),
+								 }));
 		rows.push_back(sectionOf("Temperature", "temperature",
 								 {
 									 fieldOf("GPU Current Temp", "gpu_current_temp", "temperature.gpu"),

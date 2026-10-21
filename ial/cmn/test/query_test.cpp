@@ -550,6 +550,18 @@ TEST_SUITE("query layout")
 		CHECK(text.find("Kernel Version                    : N/A\n") != std::string::npos);
 	}
 
+	TEST_CASE("a getter that reports the text N/A is shown as N/A without its unit, and as null in JSON")
+	{
+		MetricValues values;
+		values["memory.read.bandwidth"] = "N/A";
+		const auto device = buildDeviceNode("x", *parseSelection("MEMORY"), values, {}, {});
+		CHECK(rendered(device).find("Read Bandwidth                    : N/A\n") != std::string::npos);
+
+		QueryReport report;
+		report.gpus = {device};
+		CHECK(toJson(report)["gpus"][0]["memory_usage"]["read_bandwidth"].is_null());
+	}
+
 	TEST_CASE("the largest allocation is converted from bytes to MiB")
 	{
 		QueryStatics statics;

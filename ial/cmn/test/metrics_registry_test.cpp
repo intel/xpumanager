@@ -375,12 +375,15 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 	}
 }
 
-TEST_CASE("MEMORY group contains utilization.memory first, then all memory.cpp metrics")
+TEST_CASE("MEMORY group contains utilization.memory first, then the memory.cpp metrics that belong to it")
 {
 	const auto byMem = getMetricsByGroup(MetricGroup::MEMORY);
 	REQUIRE_FALSE(byMem.empty());
 	CHECK(byMem[0]->name == "utilization.memory"); // registered before memory.cpp metrics
-	CHECK(byMem.size() == metrics::memory::getMemoryMetrics().size() + 1);
+	const auto memoryEntries = metrics::memory::getMemoryMetrics();
+	const auto inMemoryGroup = std::ranges::count_if(
+		memoryEntries, [](const QueryMetric &m) { return hasGroup(m.groups, MetricGroup::MEMORY); });
+	CHECK(byMem.size() == static_cast<std::size_t>(inMemoryGroup) + 1);
 }
 
 TEST_CASE("findMetric resolves Temperature metric names")
@@ -1581,4 +1584,51 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power limit fields: a device with no power
 		CHECK_MESSAGE(field->getter(di, out, cache) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, name);
 		CHECK_MESSAGE(out == "untouched", name);
 	}
+}
+
+// -- ECC, memory health and retired page fields added for the full device report ----------
+
+TEST_CASE("memoryHealthName: every state has a name and anything else is Unknown")
+{
+	using metrics::memory::memoryHealthName;
+	CHECK(memoryHealthName(ZES_MEM_HEALTH_OK) == "OK");
+	CHECK(memoryHealthName(ZES_MEM_HEALTH_DEGRADED) == "Degraded");
+	CHECK(memoryHealthName(ZES_MEM_HEALTH_CRITICAL) == "Critical");
+	CHECK(memoryHealthName(ZES_MEM_HEALTH_REPLACE) == "Replace");
+	CHECK(memoryHealthName(ZES_MEM_HEALTH_UNKNOWN) == "Unknown");
+	CHECK(memoryHealthName(static_cast<zes_mem_health_t>(0x7fffffff)) == "Unknown");
+}
+
+TEST_CASE("ECC pending fields are registered Static ECC fields")
+{
+	for (const std::string_view name : {"ecc.mode.pending", "ecc.pending_action"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		CHECK_MESSAGE(field->groups == MetricGroup::ECC, name);
+		CHECK_MESSAGE(field->source == MetricSource::Static, name);
+	}
+}
+
+TEST_CASE("memory.health is a Live MEMORY field and retired_pages.count is the only PAGE_RETIREMENT field")
+{
+	const auto health = findMetric("memory.health");
+	REQUIRE(health.has_value());
+	CHECK(health->groups == MetricGroup::MEMORY);
+	CHECK(health->source == MetricSource::Live);
+
+	const auto pages = getMetricsByGroup(MetricGroup::PAGE_RETIREMENT);
+	REQUIRE(pages.size() == 1);
+	CHECK(pages[0]->name == "retired_pages.count");
+	CHECK(hasGroup(parseGroupMask("page_retirement"), MetricGroup::PAGE_RETIREMENT));
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "retired_pages.count: a device whose driver cannot take pages offline reports it unsupported")
+{
+	const MetricCache cache;
+	const auto field = findMetric("retired_pages.count");
+	REQUIRE(field.has_value());
+	MetricValue out = "untouched";
+	CHECK(field->getter(di, out, cache) != ZE_RESULT_SUCCESS);
+	CHECK(out == "untouched");
 }
