@@ -45,6 +45,19 @@ if get_option('with_tests')
   )
 
   test('path_lookup_test', path_lookup_test)
+
+  # Terminal size tests, against a pseudo-terminal. Compiles terminal.cpp directly so the
+  # test needs no OAL link.
+  terminal_test = executable(
+    'terminal_test',
+    ['terminal_test.cpp', '../terminal.cpp'],
+    include_directories: [global_inc, include_directories('..'), include_directories('../..')],
+    dependencies: [doctest_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('terminal_test', terminal_test)
   pci_switch_test = executable(
     'pci_switch_test',
     'pci_switch_test.cpp',

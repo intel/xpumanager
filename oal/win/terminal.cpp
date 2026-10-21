@@ -35,3 +35,24 @@ bool stdoutIsTerminal()
 	}
 	return SetConsoleMode(h, mode | requiredFlags) != 0;
 }
+
+/**
+ * @brief Returns the size of the console window stdout is attached to.
+ *
+ * @retval size    stdout is a console with a visible window of at least one row and one column.
+ * @retval nullopt stdout is redirected, or the console cannot be queried.
+ */
+std::optional<TerminalSize> stdoutSize()
+{
+	HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO info{};
+	if (h == INVALID_HANDLE_VALUE || h == nullptr || !GetConsoleScreenBufferInfo(h, &info)) {
+		return std::nullopt;
+	}
+	const int rows = info.srWindow.Bottom - info.srWindow.Top + 1;
+	const int columns = info.srWindow.Right - info.srWindow.Left + 1;
+	if (rows <= 0 || columns <= 0) {
+		return std::nullopt;
+	}
+	return TerminalSize{.rows = static_cast<unsigned>(rows), .columns = static_cast<unsigned>(columns)};
+}

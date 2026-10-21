@@ -1256,7 +1256,10 @@ int cmdQuery::run(arg_struct *args)
 
 	// Only the reports go to the file; diagnostics stay on the terminal, so a JSON report stays valid.
 	std::ofstream file;
-	FrameLoopOptions loop{.interval = opts.loop, .count = opts.count, .tty = stdoutIsTerminal() && !opts.file};
+	FrameLoopOptions loop{.interval = opts.loop,
+						  .count = opts.count,
+						  .tty = stdoutIsTerminal() && !opts.file,
+						  .redraw = Redraw::ChangedLines};
 	if (opts.file) {
 		file.open(*opts.file, std::ios::out | std::ios::trunc);
 		if (!file.is_open()) {

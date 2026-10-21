@@ -6,7 +6,8 @@
 /**
  * @file frame_loop_test.cpp
  * @brief Unit tests for runFrameLoop(): frame counting, failure handling, screen control
- *        sequences and stop-event handling. No GPU or Level Zero handle is needed.
+ *        sequences, in-place updates of changed lines, window resizes and stop-event handling.
+ *        No GPU or Level Zero handle is needed.
  */
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
@@ -19,6 +20,7 @@
 #include <string>
 std::string progName = "test";
 
+#include "debug.h"
 #include "frame_loop.h"
 #include "utility/logger/logger.h"
 #include "utility/logger/ostream_sink.h"
@@ -26,6 +28,7 @@ std::string progName = "test";
 #include <csignal>
 #include <memory>
 #include <sstream>
+#include <vector>
 
 #ifdef INFO
 #undef INFO
@@ -36,6 +39,7 @@ namespace {
 constexpr std::string_view ENTER_ALTERNATE_SCREEN = "\033[?1049h";
 constexpr std::string_view LEAVE_ALTERNATE_SCREEN = "\033[?1049l";
 constexpr std::string_view CLEAR_FRAME = "\033[H\033[J";
+constexpr std::string_view NOTICE = "cannot be kept up to date";
 
 /// Collects everything PRINT() writes while it is alive, then restores the default sinks.
 class PrintCapture
@@ -64,7 +68,46 @@ public:
 
 constexpr auto SHORT_INTERVAL = std::chrono::milliseconds{1};
 
+using ScreenSize = std::function<std::optional<TerminalSize>()>;
+
+[[nodiscard]] ScreenSize fixedScreen(unsigned rows, unsigned columns)
+{
+	return [rows, columns] { return std::optional<TerminalSize>{TerminalSize{.rows = rows, .columns = columns}}; };
+}
+
+/// A frame of @p lines distinct lines, "row 0" to "row N-1".
+[[nodiscard]] std::string frameOfLines(std::size_t lines)
+{
+	std::string frame;
+	for (std::size_t i = 0; i < lines; ++i) {
+		frame += "row " + std::to_string(i) + "\n";
+	}
+	return frame;
+}
+
+/// Renders the given frames in turn, then the last one for as long as it is asked.
+[[nodiscard]] FrameRenderer playing(std::vector<std::string> frames, int *calls = nullptr)
+{
+	return [frames = std::move(frames), calls, next = std::size_t{0}]() mutable {
+		if (calls != nullptr) {
+			++*calls;
+		}
+		const auto &frame = frames[std::min(next, frames.size() - 1)];
+		++next;
+		return RenderedFrame{ZE_RESULT_SUCCESS, frame};
+	};
+}
+
+FrameLoopOptions inPlaceOptions(int count)
+{
+	return {.interval = SHORT_INTERVAL, .count = count, .tty = true, .redraw = Redraw::ChangedLines};
+}
+
 } // namespace
+
+// ---------------------------------------------------------------------------------------
+// Counting, failures and plain output
+// ---------------------------------------------------------------------------------------
 
 TEST_CASE("a zero interval renders exactly one frame whatever the count")
 {
@@ -98,28 +141,17 @@ TEST_CASE("the loop stops after the requested number of frames")
 	CHECK(countOf(capture.text(), "frame\n") == 3);
 }
 
-TEST_CASE("without a tty no escape sequence is written")
+TEST_CASE("without a tty no escape sequence is written, whatever the redraw mode")
 {
-	PrintCapture capture;
-	const int rc = runFrameLoop([] { return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"}; },
-								{.interval = SHORT_INTERVAL, .count = 2, .tty = false});
+	for (const Redraw redraw : {Redraw::ClearAndPrint, Redraw::ChangedLines}) {
+		PrintCapture capture;
+		const int rc = runFrameLoop(
+			[] { return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"}; },
+			{.interval = SHORT_INTERVAL, .count = 2, .tty = false, .redraw = redraw, .screenSize = fixedScreen(2, 80)});
 
-	CHECK(rc == 0);
-	CHECK(capture.text().find('\033') == std::string::npos);
-}
-
-TEST_CASE("with a tty each frame is cleared and the normal screen is restored last")
-{
-	PrintCapture capture;
-	const int rc = runFrameLoop([] { return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"}; },
-								{.interval = SHORT_INTERVAL, .count = 2, .tty = true});
-	const std::string out = capture.text();
-
-	CHECK(rc == 0);
-	CHECK(out.starts_with(ENTER_ALTERNATE_SCREEN));
-	CHECK(countOf(out, ENTER_ALTERNATE_SCREEN) == 1);
-	CHECK(countOf(out, CLEAR_FRAME) == 2);
-	CHECK(out.rfind(LEAVE_ALTERNATE_SCREEN) > out.rfind("frame\n"));
+		CHECK(rc == 0);
+		CHECK(capture.text() == "frame\nframe\n");
+	}
 }
 
 TEST_CASE("with a writer the frames go only to it, and diagnostics stay on the print sinks")
@@ -172,6 +204,24 @@ TEST_CASE("other failures are reported by code")
 	CHECK(capture.text().find("Device error: 0x") != std::string::npos);
 }
 
+// ---------------------------------------------------------------------------------------
+// ClearAndPrint: the whole frame is redrawn each time
+// ---------------------------------------------------------------------------------------
+
+TEST_CASE("with a tty each frame is cleared and the normal screen is restored last")
+{
+	PrintCapture capture;
+	const int rc = runFrameLoop([] { return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"}; },
+								{.interval = SHORT_INTERVAL, .count = 2, .tty = true});
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	CHECK(out.starts_with(ENTER_ALTERNATE_SCREEN));
+	CHECK(countOf(out, ENTER_ALTERNATE_SCREEN) == 1);
+	CHECK(countOf(out, CLEAR_FRAME) == 2);
+	CHECK(out.rfind(LEAVE_ALTERNATE_SCREEN) > out.rfind("frame\n"));
+}
+
 TEST_CASE("the normal screen is restored before the failure is reported")
 {
 	PrintCapture capture;
@@ -182,6 +232,284 @@ TEST_CASE("the normal screen is restored before the failure is reported")
 	CHECK(rc == static_cast<int>(ZE_RESULT_ERROR_DEVICE_LOST));
 	CHECK(out.find(LEAVE_ALTERNATE_SCREEN) < out.find("No GPU devices found."));
 }
+
+TEST_CASE("ClearAndPrint ignores the window size, as the default view always has")
+{
+	PrintCapture capture;
+	const std::string frame = frameOfLines(10);
+	const int rc =
+		runFrameLoop([&frame] { return RenderedFrame{ZE_RESULT_SUCCESS, frame}; },
+					 {.interval = SHORT_INTERVAL, .count = 3, .tty = true, .screenSize = fixedScreen(4, 80)});
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), CLEAR_FRAME) == 3);
+	CHECK(countOf(capture.text(), "row 0\n") == 3);
+}
+
+// ---------------------------------------------------------------------------------------
+// ChangedLines: only what changed is rewritten
+// ---------------------------------------------------------------------------------------
+
+TEST_CASE("the first frame is drawn whole after the screen is entered and the cursor hidden")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(1);
+	options.screenSize = fixedScreen(50, 120);
+	const int rc = runFrameLoop(playing({"A\nB\nC\n"}), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	CHECK(out.starts_with("\033[?1049h\033[?25l\033[H\033[JA\nB\nC\n"));
+	CHECK(out.find("\033[?25h") != std::string::npos);
+	CHECK(out.rfind(LEAVE_ALTERNATE_SCREEN) > out.rfind("C\n"));
+}
+
+TEST_CASE("a later frame rewrites only the lines that changed")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 120);
+	const int rc = runFrameLoop(playing({"A\nB\nC\n", "A\nX\nC\n"}), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	CHECK(countOf(out, CLEAR_FRAME) == 1);
+	const auto update = out.substr(out.find("\033[2;1H"));
+	CHECK(update.starts_with("\033[2;1HX\033[K"));
+	CHECK(update.find('A') == std::string::npos);
+	CHECK(update.find('C') == std::string::npos);
+	CHECK(update.find("\033[1;1H") == std::string::npos);
+	CHECK(update.find("\033[3;1H") == std::string::npos);
+}
+
+TEST_CASE("an unchanged frame rewrites nothing")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(3);
+	options.screenSize = fixedScreen(50, 120);
+	const int rc = runFrameLoop(playing({"A\nB\nC\n"}), options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), "\033[K") == 0);
+	CHECK(countOf(capture.text(), "A\nB\nC\n") == 1);
+}
+
+TEST_CASE("a longer frame writes its new rows and a shorter one erases the rows it no longer uses")
+{
+	{
+		PrintCapture capture;
+		auto options = inPlaceOptions(2);
+		options.screenSize = fixedScreen(50, 120);
+		const int rc = runFrameLoop(playing({"A\nB\n", "A\nB\nnew\n"}), options);
+		CHECK(rc == 0);
+		CHECK(capture.text().find("\033[3;1Hnew\033[K") != std::string::npos);
+	}
+	{
+		PrintCapture capture;
+		auto options = inPlaceOptions(2);
+		options.screenSize = fixedScreen(50, 120);
+		const int rc = runFrameLoop(playing({"A\nB\nC\n", "A\nB\n"}), options);
+		CHECK(rc == 0);
+		CHECK(capture.text().find("\033[3;1H\033[J") != std::string::npos);
+	}
+}
+
+TEST_CASE("an update never ends in a newline, which would scroll a screen the frame fills")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(4, 120); // three lines, one row to spare
+	const int rc = runFrameLoop(playing({"A\nB\nC\n", "A\nX\nC\n"}), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	const auto update = out.substr(out.find("\033[2;1H"));
+	CHECK(update.find('\n') == std::string::npos);
+}
+
+TEST_CASE("a window that changes size gets the whole frame again")
+{
+	PrintCapture capture;
+	int asked = 0;
+	auto options = inPlaceOptions(3);
+	options.screenSize = [&asked] {
+		return std::optional<TerminalSize>{TerminalSize{.rows = ++asked <= 2 ? 50U : 60U, .columns = 120}};
+	};
+	const int rc = runFrameLoop(playing({"A\nB\nC\n"}), options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), CLEAR_FRAME) == 2);
+	CHECK(countOf(capture.text(), ENTER_ALTERNATE_SCREEN) == 1);
+}
+
+TEST_CASE("diagnostics are held back once the screen is being edited, but not before the first frame")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(3);
+	options.screenSize = fixedScreen(50, 120);
+	const int rc = runFrameLoop(
+		[] {
+			ERR("noise\n");
+			return RenderedFrame{ZE_RESULT_SUCCESS, "A\nB\n"};
+		},
+		options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), "noise") == 1);
+	CHECK(capture.text().find("noise") < capture.text().find(ENTER_ALTERNATE_SCREEN));
+	CHECK(getDbgLvl() == LogLevel::INFO); // the level is put back
+}
+
+TEST_CASE("a first frame that fails never switches screens")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(0);
+	options.screenSize = fixedScreen(50, 120);
+	const int rc = runFrameLoop([] { return RenderedFrame{ZE_RESULT_ERROR_DEVICE_LOST, {}}; }, options);
+
+	CHECK(rc == static_cast<int>(ZE_RESULT_ERROR_DEVICE_LOST));
+	CHECK(capture.text().find('\033') == std::string::npos);
+	CHECK(capture.text().find("No GPU devices found.") != std::string::npos);
+}
+
+TEST_CASE("an unknown window size keeps the frame on the alternate screen")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = [] { return std::optional<TerminalSize>{}; };
+	const int rc = runFrameLoop(playing({frameOfLines(500)}), options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), ENTER_ALTERNATE_SCREEN) == 1);
+}
+
+// ---------------------------------------------------------------------------------------
+// ChangedLines: a frame the window cannot hold
+// ---------------------------------------------------------------------------------------
+
+// Cutting the frame to fit would hide data and appending it every interval grows without
+// bound, so it is printed once and the loop waits for the window to grow.
+
+TEST_CASE("a frame too tall for the window is printed once whole, and the loop keeps going")
+{
+	PrintCapture capture;
+	int calls = 0;
+	auto options = inPlaceOptions(5);
+	options.screenSize = fixedScreen(4, 120);
+	const std::string frame = frameOfLines(10);
+	const int rc = runFrameLoop(playing({frame}, &calls), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	CHECK(calls == 5);
+	CHECK(out.starts_with(frame));
+	CHECK(countOf(out, "row 0\n") == 1);
+	CHECK(countOf(out, NOTICE) == 1);
+	CHECK(out.find('\033') == std::string::npos);
+}
+
+TEST_CASE("a line that wraps counts as too tall, because it shifts the rows below it")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 40);
+	const int rc = runFrameLoop(playing({std::string(100, 'x') + "\nB\n"}), options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), NOTICE) == 1);
+	CHECK(capture.text().find(ENTER_ALTERNATE_SCREEN) == std::string::npos);
+}
+
+TEST_CASE("a window that grows enough starts live updates, with the whole frame drawn at once")
+{
+	PrintCapture capture;
+	int asked = 0;
+	int calls = 0;
+	auto options = inPlaceOptions(4);
+	options.screenSize = [&asked] {
+		return std::optional<TerminalSize>{TerminalSize{.rows = ++asked <= 2 ? 4U : 50U, .columns = 120}};
+	};
+	const std::string frame = frameOfLines(10);
+	const int rc = runFrameLoop(playing({frame}, &calls), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	CHECK(calls == 4);
+	CHECK(countOf(out, NOTICE) == 1);
+	CHECK(countOf(out, ENTER_ALTERNATE_SCREEN) == 1);
+	CHECK(out.find(NOTICE) < out.find(ENTER_ALTERNATE_SCREEN));
+	CHECK(out.find(std::string{CLEAR_FRAME} + frame) != std::string::npos);
+}
+
+TEST_CASE("a window that shrinks below the frame leaves the alternate screen and prints it once")
+{
+	PrintCapture capture;
+	int asked = 0;
+	auto options = inPlaceOptions(4);
+	options.screenSize = [&asked] {
+		return std::optional<TerminalSize>{TerminalSize{.rows = ++asked <= 2 ? 50U : 4U, .columns = 120}};
+	};
+	const std::string frame = frameOfLines(10);
+	const int rc = runFrameLoop(playing({frame}), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	CHECK(countOf(out, ENTER_ALTERNATE_SCREEN) == 1);
+	CHECK(countOf(out, LEAVE_ALTERNATE_SCREEN) == 1);
+	CHECK(countOf(out, NOTICE) == 1);
+	CHECK(out.find(LEAVE_ALTERNATE_SCREEN) < out.find(NOTICE));
+	CHECK(out.rfind("row 9\n") > out.find(LEAVE_ALTERNATE_SCREEN)); // printed on the normal screen
+}
+
+TEST_CASE("diagnostics are held back while the loop waits for room, so they do not pile up")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(4);
+	options.screenSize = fixedScreen(4, 120);
+	const int rc = runFrameLoop(
+		[] {
+			ERR("noise\n");
+			return RenderedFrame{ZE_RESULT_SUCCESS, frameOfLines(10)};
+		},
+		options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), "noise") == 1);
+}
+
+// ---------------------------------------------------------------------------------------
+// Fitting
+// ---------------------------------------------------------------------------------------
+
+TEST_CASE("rowsNeeded: one row per line, and a long line wraps")
+{
+	CHECK(rowsNeeded("", 80) == 0);
+	CHECK(rowsNeeded("a", 80) == 1);
+	CHECK(rowsNeeded("a\n", 80) == 1);
+	CHECK(rowsNeeded("a\nb\n", 80) == 2);
+	CHECK(rowsNeeded("a\n\nb\n", 80) == 3);
+	CHECK(rowsNeeded("a\nb", 80) == 2);
+	CHECK(rowsNeeded(std::string(80, 'x') + "\n", 80) == 1);
+	CHECK(rowsNeeded(std::string(81, 'x') + "\n", 80) == 2);
+	CHECK(rowsNeeded(std::string(160, 'x') + "\n", 80) == 2);
+	CHECK(rowsNeeded(std::string(161, 'x') + "\n", 80) == 3);
+	CHECK(rowsNeeded(std::string(500, 'x') + "\n", 0) == 1);
+}
+
+TEST_CASE("fitsScreen: a row must be left free, and no line may wrap")
+{
+	const TerminalSize screen{.rows = 4, .columns = 80};
+	CHECK(fitsScreen(frameOfLines(3), screen));
+	CHECK_FALSE(fitsScreen(frameOfLines(4), screen));
+	CHECK_FALSE(fitsScreen(frameOfLines(5), screen));
+	CHECK_FALSE(fitsScreen(std::string(81, 'x') + "\n", TerminalSize{.rows = 50, .columns = 80}));
+	CHECK(fitsScreen(std::string(80, 'x') + "\n", TerminalSize{.rows = 50, .columns = 80}));
+	CHECK(fitsScreen(frameOfLines(1000), std::nullopt));
+}
+
+// ---------------------------------------------------------------------------------------
+// Stop events
+// ---------------------------------------------------------------------------------------
 
 TEST_CASE("a stop event ends an unbounded loop without waiting out the interval")
 {
