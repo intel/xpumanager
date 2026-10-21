@@ -1,0 +1,8 @@
+# gRPC server authentication is not supported (no auth extensions available)
+#
+# expect-error: auth is not supported
+
+exporters:
+  intel_xpu_info:
+    auth:
+      authenticator: basicauth

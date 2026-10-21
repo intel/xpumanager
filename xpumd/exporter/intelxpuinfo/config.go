@@ -122,6 +122,13 @@ func (cfg *Config) Validate() error {
 	if cfg.NetAddr.Transport != confignet.TransportTypeUnix {
 		return fmt.Errorf("unsupported transport type: %q, only %q is supported", cfg.NetAddr.Transport, confignet.TransportTypeUnix)
 	}
+	// No auth or middleware extensions are available, so these would fail at start.
+	if cfg.Auth.HasValue() {
+		return fmt.Errorf("auth is not supported for local gRPC")
+	}
+	if len(cfg.Middlewares) > 0 {
+		return fmt.Errorf("middlewares are not supported for local gRPC")
+	}
 	return nil
 }
 

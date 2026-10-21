@@ -77,7 +77,8 @@ ones and a possible catch-all (empty `filters`) last.
 In addition to `endpoint`, the exporter supports a wide range of gRPC
 configuration options not listed above. See the OTel collector
 [gRPC configuration settings](https://github.com/open-telemetry/opentelemetry-collector/blob/main/config/configgrpc/README.md)
-documentation for details.
+documentation for details. The `auth` and `middlewares` settings are not
+supported.
 
 #### HwStatusMapping
 
