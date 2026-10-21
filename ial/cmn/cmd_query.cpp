@@ -189,6 +189,7 @@ constexpr std::string_view MEBIBYTES = "MiB";
 		rows.push_back(staticOf("SKU Type", "sku_type", "sku_type"));
 		rows.push_back(staticOf("Stepping", "stepping", "stepping"));
 		rows.push_back(staticOf("Device State", "device_state", "device_state"));
+		rows.push_back(fieldOf("Device Health", "device_health", "health.status"));
 		rows.push_back(fieldOf("Serial Number", "serial_number", "serial"));
 		rows.push_back(fieldOf("GPU UUID", "gpu_uuid", "uuid"));
 		rows.push_back(staticOf("Vendor Name", "vendor_name", "vendor_name"));
@@ -227,6 +228,7 @@ constexpr std::string_view MEBIBYTES = "MiB";
 						 "number_of_media_enh_engines"),
 				staticOf("Max Hardware Contexts", "max_hardware_contexts", "max_hardware_contexts"),
 				staticOf("Max Command Queue Priority", "max_command_queue_priority", "max_command_queue_priority"),
+				fieldOf("Scheduler Mode", "scheduler_mode", "scheduler.mode"),
 			}));
 		rows.push_back(
 			sectionOf("PCI", "pci",
@@ -266,6 +268,7 @@ constexpr std::string_view MEBIBYTES = "MiB";
 			}
 			rows.push_back(sectionOf("Clocks Event Reasons", "clocks_event_reasons", std::move(reasons)));
 		}
+		rows.push_back(fieldOf("Standby Mode", "standby_mode", "standby.mode"));
 		rows.push_back(sectionOf(
 			"Memory Usage", "memory_usage",
 			{

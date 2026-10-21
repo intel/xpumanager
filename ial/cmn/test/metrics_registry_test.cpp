@@ -20,6 +20,7 @@
 #include "metrics/fan.h"
 #include "metrics/identity.h"
 #include "metrics/memory.h"
+#include "metrics/mode.h"
 #include "metrics/pci.h"
 #include "metrics/power.h"
 #include "ze_api.h"
@@ -124,16 +125,25 @@ TEST_CASE("every advertised section name is accepted by parseGroupMask")
 	}
 }
 
-TEST_CASE("XPUM-1480: COMPUTE and PIDS are not display sections")
+TEST_CASE("XPUM-1480: PIDS is not a display section")
 {
-	// Both were advertised by the top-level --display help text but never existed in
-	// GROUP_TABLE, so --display=COMPUTE / --display=PIDS failed. If either is ever
-	// implemented as a real section, it must appear in sectionNames() too.
-	for (const std::string_view bogus : std::to_array<std::string_view>({"COMPUTE", "PIDS"})) {
+	// It was advertised by the top-level --display help text but never existed in GROUP_TABLE,
+	// so --display=PIDS failed. The query command accepts it as a section of its own, but the
+	// registry still has no process fields; if it is ever implemented as a real section, it must
+	// appear in sectionNames() too. COMPUTE was in the same position until scheduler.mode gave it
+	// a field, and it now round-trips like every other advertised section.
+	for (const std::string_view bogus : std::to_array<std::string_view>({"PIDS"})) {
 		CHECK_MESSAGE(parseGroupMask(bogus) == MetricGroup::NONE, bogus, " unexpectedly parses as a group");
 		CHECK_MESSAGE(std::ranges::find(sectionNames(), bogus) == sectionNames().end(), bogus,
 					  " is advertised but parseGroupMask rejects it");
 	}
+}
+
+TEST_CASE("XPUM-1480: COMPUTE is a display section because a field implements it")
+{
+	CHECK(std::ranges::find(sectionNames(), std::string_view{"COMPUTE"}) != sectionNames().end());
+	CHECK(hasGroup(parseGroupMask("COMPUTE"), MetricGroup::COMPUTE));
+	CHECK_FALSE(getMetricsByGroup(MetricGroup::COMPUTE).empty());
 }
 
 TEST_CASE("XPUM-1480: --display resolves individual field names, as its help text claims")
@@ -285,9 +295,16 @@ TEST_CASE("findMetric resolves identity metric names")
 	CHECK(findMetric("pci.sub_device_id").has_value());
 }
 
-TEST_CASE("IDENTITY group size matches getIdentityMetrics")
+TEST_CASE("IDENTITY group contains every getIdentityMetrics entry")
 {
-	CHECK(getMetricsByGroup(MetricGroup::IDENTITY).size() == metrics::identity::getIdentityMetrics().size());
+	// Other files may add identity-section fields of their own (health.status), so the group can
+	// be larger than the identity file but must never miss one of its entries.
+	const auto byIdentity = getMetricsByGroup(MetricGroup::IDENTITY);
+	for (const auto &field : metrics::identity::getIdentityMetrics()) {
+		CHECK_MESSAGE(std::ranges::any_of(byIdentity, [&field](const auto *m) { return m->name == field.name; }),
+					  field.name, " missing from the IDENTITY group");
+	}
+	CHECK(byIdentity.size() >= metrics::identity::getIdentityMetrics().size());
 }
 
 TEST_CASE("findMetric resolves PCI metric names")
@@ -1631,4 +1648,54 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 	MetricValue out = "untouched";
 	CHECK(field->getter(di, out, cache) != ZE_RESULT_SUCCESS);
 	CHECK(out == "untouched");
+}
+
+// -- scheduler, standby and health fields added for the full device report ----------------
+
+TEST_CASE("mode names: each reported mode has the word the config and stats commands use")
+{
+	using namespace metrics::mode;
+	CHECK(schedulerModeName(ZES_SCHED_MODE_TIMEOUT) == "timeout");
+	CHECK(schedulerModeName(ZES_SCHED_MODE_TIMESLICE) == "timeslice");
+	CHECK(schedulerModeName(ZES_SCHED_MODE_EXCLUSIVE) == "exclusive");
+	CHECK(schedulerModeName(ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG) == "unknown");
+	CHECK(schedulerModeName(static_cast<zes_sched_mode_t>(0x7fffffff)) == "unknown");
+
+	CHECK(standbyModeName(ZES_STANDBY_PROMO_MODE_DEFAULT) == "default");
+	CHECK(standbyModeName(ZES_STANDBY_PROMO_MODE_NEVER) == "never");
+	CHECK(standbyModeName(static_cast<zes_standby_promo_mode_t>(0x7fffffff)) == "unknown");
+
+	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_OK) == "OK");
+	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_WARNING) == "Warning");
+	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL) == "Critical");
+	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_FAILED) == "Failed");
+	CHECK(healthStatusName(static_cast<zes_device_health_status_ext_t>(0x7fffffff)) == "Unknown");
+}
+
+TEST_CASE("mode fields: scheduler in COMPUTE, standby in PERFORMANCE, health in IDENTITY")
+{
+	const auto scheduler = findMetric("scheduler.mode");
+	const auto standby = findMetric("standby.mode");
+	const auto health = findMetric("health.status");
+	REQUIRE(scheduler.has_value());
+	REQUIRE(standby.has_value());
+	REQUIRE(health.has_value());
+	CHECK(scheduler->groups == MetricGroup::COMPUTE);
+	CHECK(standby->groups == MetricGroup::PERFORMANCE);
+	CHECK(health->groups == MetricGroup::IDENTITY);
+	CHECK(scheduler->source == MetricSource::Static);
+	CHECK(health->source == MetricSource::Live);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "scheduler.mode and standby.mode: a device with no such domain reports them unsupported")
+{
+	const MetricCache cache;
+	for (const std::string_view name : {"scheduler.mode", "standby.mode"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		MetricValue out = "untouched";
+		CHECK_MESSAGE(field->getter(di, out, cache) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, name);
+		CHECK_MESSAGE(out == "untouched", name);
+	}
 }

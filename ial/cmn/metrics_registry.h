@@ -96,6 +96,7 @@ enum class MetricGroup : uint32_t
 	PERFORMANCE = 1U << 10,		 /**< clocks.event_reasons.*: why the GPU clock is held back */
 	SUPPORTED_CLOCKS = 1U << 11, /**< clocks.supported.*: the clocks the GPU can be set to */
 	PAGE_RETIREMENT = 1U << 12,	 /**< retired_pages.*: memory pages the driver has taken offline */
+	COMPUTE = 1U << 13,			 /**< scheduler.*: how the device schedules compute work */
 	ALL = ~0U,
 };
 
@@ -420,6 +421,7 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 	{"ECC", "e", MetricGroup::ECC},
 	{"EU_ARRAY", "x", MetricGroup::EU_ARRAY},
 	{"FAN", "f", MetricGroup::FAN},
+	{"COMPUTE", "", MetricGroup::COMPUTE},
 	{"PERFORMANCE", "", MetricGroup::PERFORMANCE},
 	{"PAGE_RETIREMENT", "", MetricGroup::PAGE_RETIREMENT},
 	{"SUPPORTED_CLOCKS", "", MetricGroup::SUPPORTED_CLOCKS},

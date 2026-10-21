@@ -16,6 +16,7 @@
 #include "metrics/ecc.h"
 #include "metrics/identity.h"
 #include "metrics/clock.h"
+#include "metrics/mode.h"
 #include "device.h"
 #include "zes_api.h"
 #include "ze_api.h"
@@ -307,10 +308,11 @@ std::span<const QueryMetric> getQueryMetrics() noexcept
 		const auto power = power::getPowerMetrics();
 		const auto ecc = ecc::getEccMetrics();
 		const auto clock = clock::getClockMetrics();
+		const auto mode = mode::getModeMetrics();
 
 		std::vector<QueryMetric> metricVec;
 		for (const std::span<const QueryMetric> s :
-			 {identity, temperature, utilization, pci, euArray, fan, memory, power, ecc, clock}) {
+			 {identity, temperature, utilization, pci, euArray, fan, memory, power, ecc, clock, mode}) {
 			metricVec.insert(metricVec.end(), s.begin(), s.end());
 		}
 		return metricVec;
