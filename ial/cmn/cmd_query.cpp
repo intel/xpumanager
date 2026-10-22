@@ -9,6 +9,7 @@
 #include "driver_util.h"
 #include "frame_loop.h"
 #include "metrics/clock.h"
+#include "table_builder.h"
 #include "terminal.h"
 #include "utility/compat/format.h"
 #include "utility/logger/logger.h"
@@ -896,7 +897,7 @@ namespace {
 
 constexpr auto SINGLE_SHOT_INTERVAL = std::chrono::milliseconds{0};
 constexpr auto DEFAULT_LOOP_INTERVAL = std::chrono::seconds{1};
-constexpr std::size_t SECTION_LIST_WIDTH = 56;
+constexpr int OPTION_TEXT_WIDTH = 72;
 constexpr std::size_t ERROR_LIST_WIDTH = 68;
 
 /// The normal and the survivability GPUs a --device value names.
@@ -969,6 +970,49 @@ struct SelectedDevices
 	return lines;
 }
 
+// clang-format off
+constexpr auto OPTIONS = std::to_array<std::pair<std::string_view, std::string_view>>({
+	{"-h,--help",               "Print this help message and exit"},
+	{"-j,--json",               "Print the report as JSON"},
+	{"-d,--device,--id <spec>", "Device index or PCI BDF address, comma-separated (default: all)"},
+	{"--display <sections>",    "Comma-separated sections to print (default: all but SUPPORTED_CLOCKS):"},
+	{"--loop <sec>",            "Print the report every <sec> seconds"},
+	{"--loop-ms <ms>",          "Print the report every <ms> milliseconds (overrides --loop)"},
+	{"--count <n>",             "Number of reports (default: unlimited with --loop)"},
+	{"-f,--file <path>",        "Write the report to <path> instead of stdout"},
+});
+// clang-format on
+
+/// Append the options as an aligned two-column list whose descriptions wrap at a space.
+void appendOptions(std::vector<helpCmd> &helpList)
+{
+	TableBuilder table;
+	table.setMaxCellWidth(OPTION_TEXT_WIDTH + 2).enableWordWrap().addColumn("").addColumn("").setColumnWrap(0, false);
+	for (const auto &[option, text] : OPTIONS) {
+		if (option.starts_with("--display")) {
+			std::string withNames{text};
+			const auto names = query::sectionNames();
+			for (std::size_t i = 0; i < names.size(); ++i) {
+				withNames += xpum::compat::format(" {}{}", names[i], i + 1 < names.size() ? "," : "");
+			}
+			table.addRow(option, withNames);
+		} else {
+			table.addRow(option, text);
+		}
+	}
+	// The borderless table frames each line with a space and pads it; the help list indents instead.
+	for (const auto part : std::views::split(table.asTable(), '\n')) {
+		std::string_view line{part.begin(), part.end()};
+		const auto last = line.find_last_not_of(' ');
+		if (last == std::string_view::npos) {
+			continue;
+		}
+		line = line.substr(0, last + 1);
+		line.remove_prefix(std::min(line.find_first_not_of(' '), std::size_t{2}));
+		helpList.emplace_back(HEADING, "%.*s", static_cast<int>(line.size()), line.data());
+	}
+}
+
 } // namespace
 
 void cmdQuery::help(HELP helpType)
@@ -984,20 +1028,7 @@ void cmdQuery::help(HELP helpType)
 	helpList.emplace_back(HEADING, "%s query --loop 5 --count 3 --file report.txt", progName.c_str());
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Options:");
-	helpList.emplace_back(HEADING, "-h,--help                   Print this help message and exit");
-	helpList.emplace_back(HEADING, "-j,--json                   Print the report as JSON");
-	helpList.emplace_back(HEADING, "-d,--device,--id <spec>     Device index or PCI BDF address, comma-separated "
-								   "(default: all)");
-	helpList.emplace_back(
-		HEADING, "--display <sections>        Comma-separated sections to print (default: all but SUPPORTED_CLOCKS):");
-	for (const auto &line : wrapSectionNames(SECTION_LIST_WIDTH)) {
-		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
-	}
-	helpList.emplace_back(HEADING, "--loop <sec>                Print the report every <sec> seconds");
-	helpList.emplace_back(HEADING, "--loop-ms <ms>              Print the report every <ms> milliseconds "
-								   "(overrides --loop)");
-	helpList.emplace_back(HEADING, "--count <n>                 Number of reports (default: unlimited with --loop)");
-	helpList.emplace_back(HEADING, "-f,--file <path>            Write the report to <path> instead of stdout");
+	appendOptions(helpList);
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Notes:");
 	helpList.emplace_back(HEADING, "A value the device cannot supply is printed as N/A.");
