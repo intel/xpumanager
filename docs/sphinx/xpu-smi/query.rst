@@ -220,9 +220,10 @@ Reading the Report
 - GPU utilization comes from the EU array when the hardware metrics stream is available,
   which adds about 100 ms after the measurement window, and otherwise from the busiest
   engine.
-- As root, the VBIOS version is read from the GSC firmware interface, which can take a
-  second or more per device on some platforms; on a device with an AMC the board part
-  number is read from the AMC.
+- As root, the VBIOS version is read from the GSC firmware interface, which takes about
+  200 ms per device on some platforms. Devices are read in parallel, and the read overlaps
+  the measurement window. On a device with an AMC the board part number is read from the
+  AMC.
 - The slowdown and shutdown temperatures are the configured thresholds the
   :doc:`health` command compares against, not sensor readings.
 - Attributes that other vendors' GPUs have and Intel GPUs do not, such as persistence

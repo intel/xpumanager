@@ -21,6 +21,7 @@
 #include <future>
 #include <limits>
 #include <ios>
+#include <iterator>
 #include <memory>
 #include <ranges>
 #include <system_error>
@@ -736,17 +737,29 @@ namespace {
 	return statics;
 }
 
-/// Run each field's getter for one device; a getter that fails reads as absent.
-[[nodiscard]] MetricValues evaluate(std::span<const metrics::QueryMetric *const> fields, devInfo &dev,
-									const metrics::MetricCache &cache)
+/// Run each field's getter for one device into @p values; a getter that fails reads as absent.
+void evaluate(std::span<const metrics::QueryMetric *const> fields, devInfo &dev, const metrics::MetricCache &cache,
+			  MetricValues &values)
 {
-	MetricValues values;
-	values.reserve(fields.size());
 	for (const auto *field : fields) {
 		metrics::MetricValue out;
 		values[field->name] = field->getter(dev, out, cache) == ZE_RESULT_SUCCESS ? std::optional{out} : std::nullopt;
 	}
-	return values;
+}
+
+/// Fields read at one point in time, split from those measured over the sampling window.
+struct FieldSplit
+{
+	std::vector<const metrics::QueryMetric *> instant;
+	std::vector<const metrics::QueryMetric *> windowed;
+};
+
+[[nodiscard]] FieldSplit splitByWindow(std::span<const metrics::QueryMetric *const> fields)
+{
+	FieldSplit split;
+	std::ranges::partition_copy(fields, std::back_inserter(split.instant), std::back_inserter(split.windowed),
+								[](const metrics::QueryMetric *f) { return f->inputs == metrics::MetricInput::NONE; });
+	return split;
 }
 
 [[nodiscard]] std::string nowIso8601()
@@ -768,8 +781,8 @@ public:
 	QuerySession(arg_struct *cli, std::vector<devInfo> found, std::vector<devInfo> survivabilityFound,
 				 const QueryOptions &opts)
 		: args(cli), devices(std::move(found)), survivability(std::move(survivabilityFound)), options(opts),
-		  fields(selectedMetrics(opts.selection)), inputs(metrics::inputsOf(fields)), caches(devices.size()),
-		  statics(devices.size())
+		  fields(selectedMetrics(opts.selection)), split(splitByWindow(fields)), inputs(metrics::inputsOf(fields)),
+		  caches(devices.size()), statics(devices.size())
 	{}
 
 	[[nodiscard]] RenderedFrame renderFrame();
@@ -783,6 +796,7 @@ private:
 	std::vector<devInfo> survivability;
 	const QueryOptions &options;
 	std::vector<const metrics::QueryMetric *> fields;
+	FieldSplit split;
 	metrics::MetricInput inputs;
 	std::vector<metrics::MetricCache> caches;
 	std::vector<QueryStatics> statics;
@@ -806,7 +820,11 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 		}
 	}
 
-	// Work that does not depend on the window runs while it elapses.
+	// Work that does not depend on the window runs while it elapses. As root the VBIOS read
+	// alone can take longer than the window on some platforms.
+	MetricValues values;
+	values.reserve(fields.size());
+	evaluate(split.instant, dev, cache, values);
 	if (first) {
 		statics[index] = gatherStatics(dev, options.selection);
 	}
@@ -822,7 +840,8 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 		std::this_thread::sleep_until(windowEnd);
 		metrics::populateMetricCacheEnd(dev, cache);
 	}
-	return buildDeviceNode(devPciAddr(dev), options.selection, evaluate(fields, dev, cache), statics[index], procs);
+	evaluate(split.windowed, dev, cache, values);
+	return buildDeviceNode(devPciAddr(dev), options.selection, values, statics[index], procs);
 }
 
 std::optional<std::string> QuerySession::headerValue(std::string_view fieldName)
