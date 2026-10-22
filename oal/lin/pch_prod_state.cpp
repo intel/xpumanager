@@ -16,7 +16,7 @@
 
 namespace {
 
-// BUP_COMMON MKHI client GUID.
+// GSC MKHI client GUID (GUID_METEE_MKHI in igsc lib/ifr.c).
 constexpr GUID MKHI_GUID = {
 	.l = 0xe2c2afa2U,
 	.w1 = 0x3817U,
@@ -25,8 +25,8 @@ constexpr GUID MKHI_GUID = {
 };
 
 constexpr int TEE_RETRY_DELAY_MS = 50;
-// Firmware can take well over 10 ms to answer GET_PCH_INFO.
-constexpr uint32_t TEE_READ_TIMEOUT_MS = 100U;
+// Firmware may take up to 120 ms to answer GET_PCH_INFO.
+constexpr uint32_t TEE_READ_TIMEOUT_MS = 120U;
 constexpr int TEE_RETRY_COUNT = 3;
 
 } // namespace
@@ -59,6 +59,7 @@ constexpr int TEE_RETRY_COUNT = 3;
 		if (status == TEE_SUCCESS) {
 			break;
 		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(TEE_RETRY_DELAY_MS));
 	}
 	if (status != TEE_SUCCESS) {
 		TeeDisconnect(&cl);
