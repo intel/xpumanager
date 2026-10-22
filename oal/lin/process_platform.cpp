@@ -7,6 +7,7 @@
 #include "proc_fdinfo.h"
 #include <debug.h>
 #include <algorithm>
+#include <charconv>
 #include <filesystem>
 #include "utility/compat/format.h"
 #include <fstream>
@@ -25,6 +26,7 @@ using namespace std::string_view_literals;
 constexpr std::string_view CLIENT_ID_PREFIX = "drm-client-id:"sv;
 constexpr std::string_view MEM_TOTAL_PREFIX = "drm-total-"sv;
 constexpr uint64_t KIB_TO_BYTES = 1024;
+constexpr uint64_t MIB_TO_BYTES = 1024 * KIB_TO_BYTES;
 
 enum class ParseState : uint8_t
 {
@@ -47,20 +49,20 @@ bool isLocalRegion(std::string_view fieldName)
 struct FdinfoEntry
 {
 	uint64_t clientId{0};
-	uint64_t localKiB{0};		   // drm-total-local* / drm-total-vram* (physical VRAM)
-	uint64_t totalKiB{0};		   // all drm-total-* regions combined
+	uint64_t localBytes{0};		   // drm-total-local* / drm-total-vram* (physical VRAM)
+	uint64_t totalBytes{0};		   // all drm-total-* regions combined
 	uint64_t engineFlags{0};	   // engines with a non-zero busy counter
 	bool sawEngineCounters{false}; // driver exported any engine counter at all
 };
 
 /**
- * @brief Reads the KiB/ns/cycle value following the "key:" separator on one fdinfo line.
+ * @brief Reads the ns/cycle counter value following the "key:" separator on one fdinfo line.
  *
  * @param[in] line   One line of a /proc/<pid>/fdinfo/<fd> file.
  * @param[in] colon  Offset of the ':' that ends the key in @p line.
  *
  * @retval value         The leading unsigned integer after the separator; any unit
- *                       suffix ("KiB", "ns") is ignored.
+ *                       suffix ("ns") is ignored.  Memory sizes use sizeBytes().
  * @retval std::nullopt  The line has no value after the separator, or it does not
  *                       parse as an unsigned integer.
  */
@@ -111,7 +113,48 @@ void accumulateEngineFlag(std::optional<uint64_t> value, std::string_view engine
 	entry.engineFlags |= flag != 0 ? flag : static_cast<uint64_t>(ZES_ENGINE_TYPE_FLAG_OTHER);
 }
 
-// Parses one drm-total-* line and accumulates its KiB value into entry.
+/**
+ * @brief Reads the memory size following the "key:" separator on one fdinfo line, in bytes.
+ *
+ * The DRM core prints each size in the largest unit that divides it exactly, so
+ * one file can mix "120 MiB", "264 KiB" and "4096" (no suffix: bytes).
+ *
+ * @param[in] line   One line of a /proc/<pid>/fdinfo/<fd> file.
+ * @param[in] colon  Offset of the ':' that ends the key in @p line.
+ *
+ * @retval bytes         The value scaled by its suffix: "KiB", "MiB", or none.
+ * @retval std::nullopt  No value, a value that does not parse, or an unknown suffix.
+ */
+[[nodiscard]] std::optional<uint64_t> sizeBytes(std::string_view line, size_t colon)
+{
+	const size_t pos = line.find_first_not_of(" \t", colon + 1);
+	if (pos == std::string_view::npos) {
+		return std::nullopt;
+	}
+	uint64_t value = 0;
+	const char *end = line.data() + line.size();
+	const auto [ptr, ec] = std::from_chars(line.data() + pos, end, value);
+	if (ec != std::errc{}) {
+		return std::nullopt;
+	}
+	std::string_view unit{ptr, static_cast<size_t>(end - ptr)};
+	const size_t unitStart = unit.find_first_not_of(" \t");
+	unit = unitStart == std::string_view::npos ? std::string_view{} : unit.substr(unitStart);
+	unit = unit.substr(0, unit.find_last_not_of(" \t\r") + 1);
+	if (unit == "KiB"sv) {
+		return value * KIB_TO_BYTES;
+	}
+	if (unit == "MiB"sv) {
+		return value * MIB_TO_BYTES;
+	}
+	if (unit.empty()) {
+		return value;
+	}
+	DBG("fdinfo: unknown memory unit \"{}\" in \"{}\", line ignored\n", unit, line);
+	return std::nullopt;
+}
+
+// Parses one drm-total-* line and accumulates its size in bytes into entry.
 // Returns false if the line should be skipped (cycles counter or parse error).
 bool accumulateTotalMemLine(std::string_view line, FdinfoEntry &entry)
 {
@@ -123,14 +166,14 @@ bool accumulateTotalMemLine(std::string_view line, FdinfoEntry &entry)
 	if (colon == std::string::npos) {
 		return false;
 	}
-	const auto kib = fieldValue(line, colon);
-	if (!kib) {
+	const auto bytes = sizeBytes(line, colon);
+	if (!bytes) {
 		return false;
 	}
 	const std::string_view fieldName = line.substr(MEM_TOTAL_PREFIX.size(), colon - MEM_TOTAL_PREFIX.size());
-	entry.totalKiB += *kib;
+	entry.totalBytes += *bytes;
 	if (isLocalRegion(fieldName)) {
-		entry.localKiB += *kib;
+		entry.localBytes += *bytes;
 	}
 	return true;
 }
@@ -141,6 +184,7 @@ std::optional<FdinfoEntry> parseFdinfo(const fs::path &path)
 {
 	std::ifstream fin(path);
 	if (!fin) {
+		DBG("fdinfo: failed to open {}\n", path.string());
 		return std::nullopt;
 	}
 	FdinfoEntry entry;
@@ -257,24 +301,24 @@ FdinfoResult vramFromFdinfo(uint32_t pid, const std::vector<std::string> &device
 		}
 
 		auto [it, inserted] = clientMem.emplace(entry->clientId, *entry);
-		if (!inserted && entry->totalKiB > it->second.totalKiB) {
+		if (!inserted && entry->totalBytes > it->second.totalBytes) {
 			it->second = *entry;
 		}
 	}
 
-	uint64_t localKiB = 0;
-	uint64_t totalKiB = 0;
+	uint64_t localBytes = 0;
+	uint64_t totalBytes = 0;
 	for (const auto &[id, mem] : clientMem) {
-		localKiB += mem.localKiB;
-		totalKiB += mem.totalKiB;
+		localBytes += mem.localBytes;
+		totalBytes += mem.totalBytes;
 		if (globalSeenIds != nullptr) {
 			globalSeenIds->insert(id);
 		}
 	}
 	const bool allInherited = (parseState == ParseState::GotClientId) && clientMem.empty();
 	const bool fdinfoReliable = parseState != ParseState::DeviceFdOnly;
-	return {.localBytes = localKiB * KIB_TO_BYTES,
-			.totalBytes = totalKiB * KIB_TO_BYTES,
+	return {.localBytes = localBytes,
+			.totalBytes = totalBytes,
 			.allInherited = allInherited,
 			.fdDirAccessible = fdDirAccessible,
 			.fdinfoReliable = fdinfoReliable,

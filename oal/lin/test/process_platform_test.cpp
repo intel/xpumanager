@@ -284,6 +284,33 @@ TEST_CASE("vramFromFdinfo: localBytes counts only VRAM regions; totalBytes inclu
 }
 
 // ---------------------------------------------------------------------------
+// Size suffixes - the DRM core prints each size in the largest unit that divides
+// it exactly, so one fdinfo file can mix MiB, KiB and plain bytes.
+// ---------------------------------------------------------------------------
+
+TEST_CASE("vramFromFdinfo: sizes are scaled by their KiB / MiB suffix")
+{
+	FakeProc proc("units");
+	proc.addDrmFd(8100, 3, GPU0_NODE, /*clientId=*/60, /*vramKiB=*/264);
+	proc.appendFdinfo(8100, 3, "drm-total-vram1:\t2048 MiB\ndrm-total-gtt:\t4096\n");
+
+	const FdinfoResult r = vramFromFdinfo(8100, {GPU0_NODE}, proc.path());
+	CHECK(r.localBytes == 264ULL * 1024 + 2048ULL * 1024 * 1024);
+	CHECK(r.totalBytes == 264ULL * 1024 + 2048ULL * 1024 * 1024 + 4096);
+}
+
+TEST_CASE("vramFromFdinfo: a size with an unknown suffix is ignored, not misread")
+{
+	FakeProc proc("bad_unit");
+	proc.addDrmFd(8101, 3, GPU0_NODE, /*clientId=*/61, /*vramKiB=*/1);
+	proc.appendFdinfo(8101, 3, "drm-total-vram1:\t5 GiB\n");
+
+	const FdinfoResult r = vramFromFdinfo(8101, {GPU0_NODE}, proc.path());
+	CHECK(r.localBytes == 1024);
+	CHECK(r.totalBytes == 1024);
+}
+
+// ---------------------------------------------------------------------------
 // engineFlags - distinguishes a real client from a zeInit-only phantom
 //
 // xe prints a drm-cycles-<eng> line for every engine class the hardware exposes
