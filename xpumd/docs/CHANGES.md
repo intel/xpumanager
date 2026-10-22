@@ -18,12 +18,18 @@ Contents:
 * Breaking changes (for the XPUMD config):
   * `intel_crashlog` receiver `glob` option replaced by `globs` list, to support multiple filename patterns
     * **Action required:** if custom config is used, the `glob: "<pattern>"` needs to be updated to `globs: ["<pattern>"]`
-  * Support defaults which have lower thresholds than more specific thresholds,
+  * `intel_xpu_status` processor support for defaults which have lower thresholds than more specific thresholds,
     by stopping conditions processing at first value with a matching parent filter
     * **Action required:** specify states' default threshold values as the last condition
 * Breaking changes (for the `intel_xpu_info` exporter gRPC API):
   * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha1`
     * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
+* Metric updates:
+  * Fan metrics support
+  * Log output includes all relevant metric (differentiation) attributes
+* Config updates:
+  * Metrics aggregation support for `intel_xpu_status` processor rules
+  * Temperature and power warning threshold rules synced with `xpu-smi`
 
 
 ## XPUM 2.3.0
