@@ -28,6 +28,29 @@ namespace metrics::clock {
 namespace {
 
 /**
+ * @brief Reads the current clock of one frequency domain, in MHz.
+ *
+ * The driver reports a frequency it does not know as a negative number (-1), which some
+ * devices do for the memory domain; that is read as no value rather than printed.
+ */
+ze_result_t curFreqOf(devInfo &d, MetricValue &out, zes_freq_domain_t domain)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	double val = 0.0;
+	if (auto const result = freq->getCurFreq(&val, domain); result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	if (val < 0.0) {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+	out = xpum::compat::format("{}", val);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Reads the current GPU (graphics) core clock frequency.
  *
  * Queries the frequency HAL for the active clock on @c ZES_FREQ_DOMAIN_GPU and
@@ -41,6 +64,7 @@ namespace {
  *
  * @retval ZE_RESULT_SUCCESS               The frequency was read and written to @p out.
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE   The driver does not know the frequency.
  * @retval Other                           Any error code propagated from the frequency
  *                                         HAL @c getCurFreq() call.
  *
@@ -49,16 +73,7 @@ namespace {
  */
 ze_result_t gpuCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
 {
-	auto *freq = d.dev->getFrequency();
-	if (freq == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	double val = 0.0;
-	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_GPU);
-	if (result == ZE_RESULT_SUCCESS) {
-		out = xpum::compat::format("{}", val);
-	}
-	return result;
+	return curFreqOf(d, out, ZES_FREQ_DOMAIN_GPU);
 }
 
 /**
@@ -75,6 +90,7 @@ ze_result_t gpuCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
  *
  * @retval ZE_RESULT_SUCCESS               The frequency was read and written to @p out.
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE   The driver does not know the frequency.
  * @retval Other                           Any error code propagated from the frequency
  *                                         HAL @c getCurFreq() call.
  *
@@ -83,16 +99,7 @@ ze_result_t gpuCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
  */
 ze_result_t mediaCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
 {
-	auto *freq = d.dev->getFrequency();
-	if (freq == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	double val = 0.0;
-	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_MEDIA);
-	if (result == ZE_RESULT_SUCCESS) {
-		out = xpum::compat::format("{}", val);
-	}
-	return result;
+	return curFreqOf(d, out, ZES_FREQ_DOMAIN_MEDIA);
 }
 
 /**
@@ -109,6 +116,7 @@ ze_result_t mediaCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
  *
  * @retval ZE_RESULT_SUCCESS               The frequency was read and written to @p out.
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE   The driver does not know the frequency.
  * @retval Other                           Any error code propagated from the frequency
  *                                         HAL @c getCurFreq() call.
  *
@@ -116,16 +124,7 @@ ze_result_t mediaCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
  */
 ze_result_t memoryCurFreqGetter(devInfo &d, MetricValue &out, const MetricCache &)
 {
-	auto *freq = d.dev->getFrequency();
-	if (freq == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	double val = 0.0;
-	auto const result = freq->getCurFreq(&val, ZES_FREQ_DOMAIN_MEMORY);
-	if (result == ZE_RESULT_SUCCESS) {
-		out = xpum::compat::format("{}", val);
-	}
-	return result;
+	return curFreqOf(d, out, ZES_FREQ_DOMAIN_MEMORY);
 }
 
 /**
