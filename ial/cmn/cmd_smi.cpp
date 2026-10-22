@@ -554,7 +554,7 @@ std::vector<std::string> cmdSmi::wrapDeviceName(std::string_view deviceName, siz
  * @brief Build and return the GPU summary table.
  *
  * Three-column layout with multi-line column headers (via setColumnExtraHeaders):
- *   Col 1: GPU#  Name  Persistence-M  /  Fan  Temp  Pwr:Usage/Cap
+ *   Col 1: GPU#  Name  /  Fan  Temp  Pwr:Usage/Cap
  *   Col 2: Bus-Id  Disp.A  /  Memory-Usage
  *   Col 3: Volatile Uncorr. ECC  /  GPU-Util  Compute M.
  * Each device name is shortened by shortDeviceName() and wrapped at spaces by
@@ -570,14 +570,11 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	constexpr int fanDisplayWidth = static_cast<int>(sizeof("100% (20000RPM)") - 1);
 	constexpr int tempDisplayWidth = 4;
 	constexpr size_t kNameWidth = 22;
-	constexpr std::string_view col0Header = "GPU  Name                    Persistence-M";
-	static_assert(col0Header.find("Persistence-M") == 3 + 2 + kNameWidth + 2, "Off must sit under Persistence-M");
 
 	TableBuilder table = TableBuilder::bordered();
 	// Header text spacing mirrors the data format strings:
-	//   col1 line1: "{:>3}  " + name padded to 22 code points + "  Off" → "Persistence-M" at 3+2+22+2=29
 	//   col2 line1: "{:<16}  Off"         → "Disp.A"         must start at offset 16+2=18
-	table.addColumn(col0Header, Align::Left)
+	table.addColumn("GPU  Name", Align::Left)
 		.addColumn("Bus-Id            Disp.A", Align::Left)
 		.addColumn("Volatile Uncorr. ECC", Align::Right);
 
@@ -615,13 +612,10 @@ TableBuilder cmdSmi::buildGpuTable(const std::vector<SmiDeviceStats> &devStats, 
 	table.addPreHeaderSpanRow(xpum::compat::format("UMD Version: {}    Level Zero: {}", umdVersion, lzVersion));
 
 	for (const auto &s : devStats) {
-		// Build col-0 lines: the short name, wrapped at spaces rather than cut mid-word. Pad it
-		// by code points, as TableBuilder measures, not with std::format, which pads by bytes
-		// on some compilers and would move "Off" for a non-ASCII name.
+		// Build col-0 lines: the short name, wrapped at spaces rather than cut mid-word.
 		const std::vector<std::string> nameLines = wrapDeviceName(shortDeviceName(s.name), kNameWidth);
-		const std::string namePad(kNameWidth - std::min(codePointWidth(nameLines.front()), kNameWidth), ' ');
 		std::vector<std::string> col0Lines;
-		col0Lines.push_back(xpum::compat::format("{:>3}  {}{}  Off", s.devIndex, nameLines.front(), namePad));
+		col0Lines.push_back(xpum::compat::format("{:>3}  {}", s.devIndex, nameLines.front()));
 		for (const auto &line : nameLines | std::views::drop(1)) {
 			col0Lines.push_back(xpum::compat::format("     {}", line));
 		}

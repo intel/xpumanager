@@ -111,32 +111,19 @@ std::vector<DeviceRow> renderRows(const std::vector<std::string> &names)
  * @brief Build the first column-0 line expected for a device.
  *
  * @param[in] index Device index, 0-9.
- * @param[in] name  Short name, ASCII, at most 22 characters.
- * @return The index, the name padded to the 22-column slot, then "Off".
+ * @param[in] name  Short name.
+ * @return The right-aligned index, then the name.
  */
 std::string nameLine(uint32_t index, std::string_view name)
 {
-	return "  " + std::to_string(index) + "  " + std::string(name) + std::string(22 - name.size(), ' ') + "  Off";
-}
-
-/**
- * @brief Find the code point column at which "Off" ends a line.
- *
- * @param[in] line UTF-8 line ending in "Off".
- * @return Number of code points before the final "Off".
- */
-size_t offColumn(std::string_view line)
-{
-	const std::string_view before = line.substr(0, line.rfind("Off"));
-	return static_cast<size_t>(
-		std::ranges::count_if(before, [](char c) { return (static_cast<unsigned char>(c) & 0xC0) != 0x80; }));
+	return "  " + std::to_string(index) + "  " + std::string(name);
 }
 
 } // namespace
 
 TEST_SUITE("cmd_smi name slot")
 {
-	TEST_CASE("each name sits whole on one line, with Off under Persistence-M")
+	TEST_CASE("each name sits whole on one line")
 	{
 		const auto rows = renderRows({"Intel(R) Arc(TM) Pro B60 Graphics", "Intel(R) Graphics [0xe223]",
 									  "Intel(R) Arc(TM) B580 Graphics", "Intel(R) Data Center GPU Max 1550"});
@@ -146,7 +133,6 @@ TEST_SUITE("cmd_smi name slot")
 			CAPTURE(i);
 			REQUIRE(rows[i].col0.size() == 2); // name line + fan/temp/power line
 			CHECK(rows[i].col0[0] == nameLine(i, expected[i]));
-			CHECK(offColumn(rows[i].col0[0]) == 29);
 		}
 	}
 
@@ -174,18 +160,15 @@ TEST_SUITE("cmd_smi name slot")
 		CHECK(rows[1].col1 == std::vector<std::string>{"0000:01:00.0      Off", "", "", "N/A"});
 	}
 
-	TEST_CASE("Off stays under Persistence-M for a non-ASCII name")
+	TEST_CASE("a non-ASCII name sits whole on its line")
 	{
 		// "\303\211lan" is "Elan" with an acute accent on the E: 4 code points in 5 bytes.
 		// "\342\202\254" is the euro sign: 1 code point in 3 bytes.
 		const auto rows = renderRows({"Intel(R) Arc(TM) B580 Graphics", "Intel \303\211lan Graphics",
 									  "Intel(R) Arc(TM) B580 \342\202\254 Graphics"});
 		REQUIRE(rows.size() == 3);
-		CHECK(rows[1].col0[0].starts_with("  1  \303\211lan Graphics "));
-		CHECK(rows[2].col0[0].starts_with("  2  Arc B580 \342\202\254 "));
-		for (const auto &row : rows) {
-			CHECK(offColumn(row.col0[0]) == 29);
-		}
+		CHECK(rows[1].col0[0] == nameLine(1, "\303\211lan Graphics"));
+		CHECK(rows[2].col0[0] == nameLine(2, "Arc B580 \342\202\254"));
 	}
 
 	TEST_CASE("shortDeviceName drops the words every device name shares")
