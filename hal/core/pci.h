@@ -8,6 +8,7 @@
 #define PCI_H
 
 #include "sysman.h"
+#include <optional>
 #include <string>
 #include <osvf.h>
 
@@ -41,9 +42,11 @@ private:
 	uint32_t func = 0;
 	char bdfStr[BDF_STR_LEN] = {};
 	zes_driver_handle_t zesDriver = nullptr;
-	// The GSC query behind fwStatus costs ~200 ms per device as root on some platforms, so it
-	// runs on the first getFWStatus() call instead of in init().
-	bool fwStatusQueried = false;
+	// The GSC query behind fwStatus and gfxFwVersion costs ~200 ms per device as root on some
+	// platforms, so it runs on the first call that needs either instead of in init().
+	bool gfxFirmwareQueried = false;
+	std::optional<std::string> gfxFwVersion;
+	void queryGfxFirmware();
 	typedef ze_result_t (*pfnZesIntelDevicePciLinkSpeedUpdateExp_t)(zes_device_handle_t hDevice, ze_bool_t bDowngrade,
 																	zes_device_action_t *pPendingAction);
 
@@ -63,6 +66,7 @@ public:
 	bool isBDF(const char *bdf);
 	std::string getMeiDevicePath() { return deviceProperties.meiDevicePath; }
 	std::string getFWStatus();
+	std::optional<std::string> getGfxFwVersion();
 	void getBDF(bdfID &bdf) const
 	{
 		bdf.domain = this->domain;

@@ -8,6 +8,7 @@
 #include "fwupd.h"
 #include <debug.h>
 #include "utility/compat/format.h"
+#include <cstring>
 #include <fstream>
 #include <memory>
 #include <os.h>
@@ -768,40 +769,47 @@ std::vector<pci_addr_mei_device> gscupd::getPCIAddrAndMeiDevices()
 }
 
 /**
- * @brief Gets the firmware-operation status after proving the GFX version is readable.
+ * @brief Reads the GFX firmware version and the firmware-operation status in one IGSC session.
  *
  * igsc_get_last_firmware_status() only reports the status of the last firmware
  * operation. A newly initialized IGSC context contains the success value even
- * though no request has reached the device. Run a version query first so a
+ * though no request has reached the device. The version query runs first so a
  * missing GSC/HECI path cannot be reported as a healthy firmware.
  *
+ * The version is formatted as Level Zero formats the GFX firmware version, so either
+ * source gives the same string. Reading it here takes one GSC request, where Level Zero
+ * enumerates every firmware component first.
+ *
  * @param meiPath IGSC device path associated with the GPU
- * @return "normal" after a successful version transaction, the translated
- *         firmware status for another successful transaction status, or
- *         "unknown" when initialization/version retrieval fails
+ * @return The version, empty when initialization or the version read fails, and the
+ *         status: "normal" after a successful version transaction, the translated
+ *         firmware status for another successful transaction status, or "unknown"
+ *         when initialization, version retrieval or cleanup fails
  */
-std::string gscupd::getGfxFirmwareStatus(const std::string &meiPath)
+GfxFirmwareInfo gscupd::readGfxFirmware(const std::string &meiPath)
 {
+	GfxFirmwareInfo info{std::nullopt, UNKNOWN_FIRMWARE_STATUS};
 	if (meiPath.empty()) {
-		return UNKNOWN_FIRMWARE_STATUS;
+		return info;
 	}
 
 	IgscDeviceHandle device;
 	int ret = igsc_device_init_by_device(device.get(), meiPath.c_str());
 	if (ret != IGSC_SUCCESS) {
 		DBG("Cannot initialize IGSC device {}: {}\n", meiPath, ret);
-		return UNKNOWN_FIRMWARE_STATUS;
+		return info;
 	}
 
 	igsc_fw_version version{};
 	ret = igsc_device_fw_version(device.get(), &version);
-	std::string firmwareStatus = UNKNOWN_FIRMWARE_STATUS;
 	if (ret != IGSC_SUCCESS) {
 		DBG("Cannot read GFX firmware version from {}: {}\n", meiPath, ret);
 	} else {
+		const std::string_view project(version.project, strnlen(version.project, sizeof(version.project)));
+		info.version = xpum::compat::format("{}_{}.{}", project, version.hotfix, version.build);
 		const char *const status = igsc_translate_firmware_status(igsc_get_last_firmware_status(device.get()));
 		if (status != nullptr && status[0] != '\0') {
-			firmwareStatus =
+			info.status =
 				std::string_view(status) == SUCCESS_FIRMWARE_STATUS ? NORMAL_FIRMWARE_STATUS : std::string(status);
 		}
 	}
@@ -809,10 +817,18 @@ std::string gscupd::getGfxFirmwareStatus(const std::string &meiPath)
 	ret = device.close();
 	if (ret != IGSC_SUCCESS) {
 		ERR("Cannot close IGSC device {}: {}\n", meiPath, ret);
-		return UNKNOWN_FIRMWARE_STATUS;
+		info.status = UNKNOWN_FIRMWARE_STATUS;
 	}
-	return firmwareStatus;
+	return info;
 }
+
+/**
+ * @brief Gets the firmware-operation status after proving the GFX version is readable.
+ *
+ * @param meiPath IGSC device path associated with the GPU
+ * @return The status from readGfxFirmware()
+ */
+std::string gscupd::getGfxFirmwareStatus(const std::string &meiPath) { return readGfxFirmware(meiPath).status; }
 
 /**
  * @brief Retrieves Graphics Firmware status from MEI device

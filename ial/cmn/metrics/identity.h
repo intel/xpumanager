@@ -183,6 +183,12 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 				if (p == nullptr) {
 					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 				}
+				// The direct GSC read is one request; the fallback enumerates every firmware
+				// component and costs over a second per device as root on some platforms.
+				if (auto direct = p->getGfxFwVersion()) {
+					out = std::move(*direct);
+					return ZE_RESULT_SUCCESS;
+				}
 				std::array<char, 256> ver{};
 				auto const r = fw->getFWversion(fwType::GFX, p->getBDFStr().c_str(), ver.data(),
 												static_cast<uint32_t>(ver.size()));

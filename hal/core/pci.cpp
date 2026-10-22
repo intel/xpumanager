@@ -394,7 +394,7 @@ void pci::adoptAddress(const zes_pci_address_t &address)
 {
 	deviceProperties.meiDevicePath.clear();
 	deviceProperties.fwStatus = "unknown";
-	fwStatusQueried = false;
+	gfxFirmwareQueried = false;
 
 	domain = address.domain;
 	bus = address.bus;
@@ -415,26 +415,52 @@ void pci::adoptAddress(const zes_pci_address_t &address)
 }
 
 /**
- * @brief Reports the GFX firmware status read from the device's GSC.
+ * @brief Reads the GFX firmware version and status from the device's GSC, once.
  *
- * Queried over MEI on the first call and cached. The query opens an IGSC session and asks
- * the GSC firmware for its version, which costs ~200 ms per device as root on some
- * platforms; doing it here rather than in init() means only callers that show the status
- * pay for it. /dev/mei* is root-only, so unprivileged callers get "unknown" quickly.
+ * The query opens an IGSC session and asks the GSC firmware for its version, which costs
+ * ~200 ms per device as root on some platforms; doing it on first use rather than in init()
+ * means only callers that show either value pay for it. /dev/mei* is root-only, so
+ * unprivileged callers fail fast.
+ */
+void pci::queryGfxFirmware()
+{
+	if (gfxFirmwareQueried) {
+		return;
+	}
+	gfxFirmwareQueried = true;
+	if (!deviceProperties.meiDevicePath.empty()) {
+		gscupd gsc;
+		auto info = gsc.readGfxFirmware(deviceProperties.meiDevicePath);
+		deviceProperties.fwStatus = std::move(info.status);
+		gfxFwVersion = std::move(info.version);
+	}
+}
+
+/**
+ * @brief Reports the GFX firmware status read from the device's GSC.
  *
  * @retval "unknown"  No MEI device matched this GPU, or the GSC could not be queried.
  * @retval other      The status reported by the GSC firmware.
  */
 std::string pci::getFWStatus()
 {
-	if (!fwStatusQueried) {
-		fwStatusQueried = true;
-		if (!deviceProperties.meiDevicePath.empty()) {
-			gscupd gsc;
-			deviceProperties.fwStatus = gsc.getGfxFirmwareStatus(deviceProperties.meiDevicePath);
-		}
-	}
+	queryGfxFirmware();
 	return deviceProperties.fwStatus;
+}
+
+/**
+ * @brief Reports the GFX firmware version read directly from the device's GSC.
+ *
+ * Same string as the Level Zero GFX firmware version, without enumerating every firmware
+ * component first.
+ *
+ * @retval std::nullopt No MEI device matched this GPU, or the GSC could not be queried.
+ * @retval version      The GFX firmware version.
+ */
+std::optional<std::string> pci::getGfxFwVersion()
+{
+	queryGfxFirmware();
+	return gfxFwVersion;
 }
 
 /**

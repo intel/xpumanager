@@ -9,6 +9,7 @@
 
 #include "fwupd.h"
 #include <device.h>
+#include <optional>
 #include <pci.h>
 #include <string>
 #include <vector>
@@ -26,6 +27,13 @@ enum GfxFwStatus
 	OP_STATE_TRANS,
 	INVALID_CPU_PLUGGED_IN,
 	UNKNOWN
+};
+
+/// What one IGSC session reports about the GFX firmware.
+struct GfxFirmwareInfo
+{
+	std::optional<std::string> version; // as Level Zero formats it: <project>_<hotfix>.<build>
+	std::string status;
 };
 
 struct img
@@ -69,6 +77,7 @@ public:
 	int getOpromVersion(const char *bdfStr, igsc_oprom_type type, uint8_t *version, size_t versionSize);
 	bool isGscRightType(std::vector<char> &buffer, int expectedType);
 	std::vector<pci_addr_mei_device> getPCIAddrAndMeiDevices();
+	GfxFirmwareInfo readGfxFirmware(const std::string &meiPath);
 	std::string getGfxFirmwareStatus(const std::string &meiPath);
 	GfxFwStatus getGfxFwStatus(std::string meiPath);
 	int firmware_check_hw_config(struct igsc_device_handle *handle, std::vector<char> &buffer);

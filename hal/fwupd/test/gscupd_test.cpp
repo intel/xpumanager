@@ -34,6 +34,7 @@ struct IgscMockState
 	int closeResult = IGSC_SUCCESS;
 	int iteratorCreateResult = IGSC_SUCCESS;
 	uint32_t firmwareStatus = 0;
+	igsc_fw_version fwVersion{};
 	int initCalls = 0;
 	int versionCalls = 0;
 	int statusCalls = 0;
@@ -185,9 +186,10 @@ extern "C" int __wrap_igsc_device_init_by_device(igsc_device_handle *handle, con
 	return mock.initResult;
 }
 
-extern "C" int __wrap_igsc_device_fw_version(igsc_device_handle *, igsc_fw_version *)
+extern "C" int __wrap_igsc_device_fw_version(igsc_device_handle *, igsc_fw_version *version)
 {
 	++mock.versionCalls;
+	*version = mock.fwVersion;
 	return mock.versionResult;
 }
 
@@ -337,6 +339,38 @@ TEST_CASE("GFX firmware status is unknown when IGSC cleanup fails")
 	CHECK(mock.versionCalls == 1);
 	CHECK(mock.statusCalls == 1);
 	CHECK(mock.closeCalls == 1);
+}
+
+TEST_CASE("GFX firmware version is read in the same IGSC session as the status")
+{
+	resetMock();
+	mock.fwVersion = {{'D', 'G', '0', '2'}, 3, 2027};
+	gscupd updater;
+
+	const auto info = updater.readGfxFirmware(MEI_DEVICE_PATH);
+	CHECK(info.version == std::optional<std::string>{"DG02_3.2027"});
+	CHECK(info.status == "normal");
+	CHECK(mock.initCalls == 1);
+	CHECK(mock.versionCalls == 1);
+	CHECK(mock.closeCalls == 1);
+}
+
+TEST_CASE("GFX firmware version is absent when it cannot be read")
+{
+	resetMock();
+	gscupd updater;
+
+	SUBCASE("no MEI device path") { CHECK_FALSE(updater.readGfxFirmware("").version); }
+	SUBCASE("initialization fails")
+	{
+		mock.initResult = IGSC_ERROR_DEVICE_NOT_FOUND;
+		CHECK_FALSE(updater.readGfxFirmware(MEI_DEVICE_PATH).version);
+	}
+	SUBCASE("version read fails")
+	{
+		mock.versionResult = IGSC_ERROR_TIMEOUT;
+		CHECK_FALSE(updater.readGfxFirmware(MEI_DEVICE_PATH).version);
+	}
 }
 
 TEST_CASE("IGSC iterator returned with a create error is released")
