@@ -95,6 +95,22 @@ struct FakeArgs
 	return node;
 }
 
+/// The value printed on the line for @p label, or nothing when there is no such line.
+[[nodiscard]] std::optional<std::string> valueOnLine(const std::string &text, std::string_view label)
+{
+	std::istringstream in{text};
+	for (std::string line; std::getline(in, line);) {
+		const auto start = line.find_first_not_of(' ');
+		if (start == std::string::npos || line.compare(start, label.size(), label) != 0) {
+			continue;
+		}
+		if (const auto colon = line.find(" : ", start); colon != std::string::npos) {
+			return line.substr(colon + 3);
+		}
+	}
+	return std::nullopt;
+}
+
 [[nodiscard]] std::string rendered(const QueryNode &node, std::size_t depth = 0)
 {
 	std::string out;
@@ -116,9 +132,7 @@ struct MarkedInputs
 			metricValues[name] = "M:" + std::string{name};
 		}
 		for (const auto &known : staticKeys()) {
-			// The allocation size is converted from bytes, so it needs a number to be shown.
-			statics.values.push_back(
-				{known.key, known.key == "max_mem_alloc_size" ? "1048576" : "S:" + std::string{known.key}});
+			statics.values.push_back({known.key, "S:" + std::string{known.key}});
 		}
 	}
 };
@@ -299,15 +313,15 @@ TEST_SUITE("query text rendering")
 						  .memSize = 206 * 1024,
 						  .util = {}};
 		const auto lines = linesOf(rendered(processesSection(std::span{&proc, 1})));
-		REQUIRE(lines.size() == 6);
+		REQUIRE(lines.size() == 5);
 		CHECK(lines[0] == "Processes");
 		CHECK(lines[1].starts_with("    Process ID"));
 		CHECK(lines[1].ends_with(": 4242"));
 		CHECK(lines[2].starts_with("        Type"));
 		CHECK(lines[2].ends_with(": C"));
 		CHECK(lines[3].ends_with(": app"));
+		CHECK(lines[4].starts_with("        Used GPU Memory"));
 		CHECK(lines[4].ends_with(": 206 MiB"));
-		CHECK(lines[5].ends_with(": 2 MiB"));
 	}
 
 	TEST_CASE("the report has a banner, a header block and one block per device")
@@ -416,51 +430,39 @@ TEST_SUITE("query layout")
 		}
 	}
 
-	TEST_CASE("every static property is shown exactly once and every field exactly once")
+	TEST_CASE("every static property and every field is shown exactly once when ALL is selected")
 	{
 		const MarkedInputs inputs;
-		const auto device = buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.statics, {});
+		const auto device =
+			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.statics, {});
 		const auto text = rendered(device);
-		// device_state shows its own marker like the rest
-		CHECK(countOf(text, ": S:") == staticKeys().size() - 1);
+		CHECK(countOf(text, ": S:") == staticKeys().size());
 		CHECK(countOf(text, ": M:") == referencedMetricNames().size());
-		CHECK(text.find(": 1.00 MiB") != std::string::npos);
 		for (const auto name : referencedMetricNames()) {
-			CHECK_MESSAGE(countOf(text, ": M:" + std::string{name}) >= 1, name);
+			// A row with a unit reads "M:<name> <unit>", one without ends at the name.
+			const std::string row = ": M:" + std::string{name};
+			CHECK_MESSAGE(countOf(text, row + "\n") + countOf(text, row + " ") == 1, name);
 		}
 	}
 
 	TEST_CASE("the sections appear in report order with the process list last")
 	{
 		const MarkedInputs inputs;
-		const auto device = buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.statics, {});
+		const auto device =
+			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.statics, {});
 		const auto labels = topLevelLabels(device);
-		const auto position = [&labels](std::string_view label) {
-			const auto it = std::ranges::find(labels, label);
-			REQUIRE(it != labels.end());
-			return it - labels.begin();
-		};
-		CHECK(position("Driver") < position("Firmware"));
-		CHECK(position("Firmware") < position("Compute Resources"));
-		CHECK(position("Compute Resources") < position("PCI"));
-		CHECK(position("PCI") < position("Memory Usage"));
-		CHECK(position("Memory Usage") < position("Utilization"));
-		CHECK(position("Utilization") < position("ECC Mode"));
-		CHECK(position("ECC Mode") < position("ECC Errors"));
-		CHECK(position("ECC Errors") < position("Temperature"));
-		CHECK(position("Temperature") < position("Power Readings"));
-		CHECK(position("Power Readings") < position("Clocks"));
-		CHECK(position("Clocks") < position("Max Clocks"));
-		CHECK(position("Max Clocks") < position("Min Clocks"));
-		CHECK(position("Min Clocks") < position("Frequency Range"));
-		CHECK(position("Frequency Range") < position("Supported Clocks"));
-		CHECK(position("Fan Speed") < position("Fan Mode"));
-		CHECK(position("Fan Mode") < position("Clocks Event Reasons"));
-		CHECK(position("Clocks Event Reasons") < position("Standby Mode"));
-		CHECK(position("Standby Mode") < position("Memory Usage"));
-		CHECK(position("ECC Errors") < position("Page Retirement"));
-		CHECK(position("Page Retirement") < position("Temperature"));
-		CHECK(labels.back() == "Processes");
+		const std::vector<std::string> expected{"Product Name",		"Serial Number",
+												"GPU UUID",			"Device Index",
+												"VBIOS Version",	"Board Part Number",
+												"Device State",		"PCI",
+												"Fan Speed",		"Clocks Event Reasons",
+												"FB Memory Usage",	"Scheduler Mode",
+												"Utilization",		"ECC Mode",
+												"ECC Errors",		"Retired Pages",
+												"Temperature",		"GPU Power Readings",
+												"Clocks",			"Max Clocks",
+												"Supported Clocks", "Processes"};
+		CHECK(labels == expected);
 	}
 
 	TEST_CASE("the clocks event reasons section has one row per throttle reason, in table order")
@@ -477,24 +479,54 @@ TEST_SUITE("query layout")
 		}
 	}
 
-	TEST_CASE("the scheduler, health and link rows sit in their sections")
+	TEST_CASE("supported clocks are left out unless asked for")
 	{
 		const MarkedInputs inputs;
-		const auto device = buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.statics, {});
-		const auto text = rendered(device);
-		const auto lines = linesOf(text);
-		const auto indexOf = [&lines](std::string_view label) {
-			const auto it = std::ranges::find_if(
-				lines, [label](const std::string &l) { return l.find(label) != std::string::npos; });
-			REQUIRE(it != lines.end());
-			return it - lines.begin();
-		};
-		CHECK(indexOf("Device State") < indexOf("Device Health"));
-		CHECK(indexOf("Max Command Queue Priority") < indexOf("Scheduler Mode"));
-		CHECK(indexOf("Scheduler Mode") < indexOf("    PCI"));
-		CHECK(indexOf("Max Bandwidth") < indexOf("Link Status"));
-		CHECK(indexOf("Composite Temp") < indexOf("GPU Throttle Temp"));
-		CHECK(indexOf("Memory Shutdown Temp") < indexOf("    Power Readings"));
+		const auto byDefault =
+			rendered(buildDeviceNode("x", QuerySelection{}, inputs.metricValues, inputs.statics, {}));
+		CHECK(byDefault.find("Supported Clocks") == std::string::npos);
+		CHECK(byDefault.find("Max Clocks") != std::string::npos);
+		for (const char *sections : {"SUPPORTED_CLOCKS", "ALL", "clock,supported_clocks"}) {
+			const auto text =
+				rendered(buildDeviceNode("x", *parseSelection(sections), inputs.metricValues, inputs.statics, {}));
+			CHECK_MESSAGE(text.find("Supported Clocks") != std::string::npos, sections);
+		}
+	}
+
+	TEST_CASE("rows other tools do not report, or that need extra GSC or AMC queries, are not in the report")
+	{
+		const MarkedInputs inputs;
+		const auto text =
+			rendered(buildDeviceNode("x", *parseSelection("ALL"), inputs.metricValues, inputs.statics, {}));
+		for (const char *gone : {"SKU Type",
+								 "Stepping",
+								 "Vendor Name",
+								 "DRM Device",
+								 "Kernel Version",
+								 "GFX Firmware Status",
+								 "GFX Data Firmware Version",
+								 "AMC Firmware Version",
+								 "PSCBIN",
+								 "OPROM",
+								 "Number of EUs",
+								 "PCI Slot",
+								 "Max Bandwidth",
+								 "Link Status",
+								 "Fan Mode",
+								 "Standby Mode",
+								 "Memory Type",
+								 "Memory Health",
+								 "EU Array",
+								 "Pending Action",
+								 "RAS Counters",
+								 "Composite Temp",
+								 "Energy Consumed",
+								 "Thermal Design Power",
+								 "Core Clock Rate",
+								 "Min Clocks",
+								 "Frequency Range"}) {
+			CHECK_MESSAGE(text.find(gone) == std::string::npos, gone);
+		}
 	}
 
 	TEST_CASE("the device node carries its PCI address")
@@ -510,7 +542,8 @@ TEST_SUITE("query layout")
 		const MarkedInputs inputs;
 		const auto device =
 			buildDeviceNode("0000:03:00.0", *parseSelection("MEMORY"), inputs.metricValues, inputs.statics, {});
-		CHECK(topLevelLabels(device) == std::vector<std::string>{"Memory Usage"});
+		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Utilization"});
+		CHECK(rendered(device).find("M:utilization.gpu") == std::string::npos);
 	}
 
 	TEST_CASE("selecting PIDS shows only the process list")
@@ -519,16 +552,6 @@ TEST_SUITE("query layout")
 		const auto device =
 			buildDeviceNode("0000:03:00.0", *parseSelection("PIDS"), inputs.metricValues, inputs.statics, {});
 		CHECK(topLevelLabels(device) == std::vector<std::string>{"Processes"});
-	}
-
-	TEST_CASE("a row with a shared field is shown when either of its sections is selected")
-	{
-		const MarkedInputs inputs;
-		for (const char *sections : {"UTILIZATION", "EU_ARRAY"}) {
-			const auto device =
-				buildDeviceNode("0000:03:00.0", *parseSelection(sections), inputs.metricValues, inputs.statics, {});
-			CHECK_MESSAGE(rendered(device).find("EU Array") != std::string::npos, sections);
-		}
 	}
 
 	TEST_CASE("memory utilization appears under both MEMORY and UTILIZATION")
@@ -544,15 +567,14 @@ TEST_SUITE("query layout")
 	TEST_CASE("a property that does not apply to the device is left out, one that failed reads N/A")
 	{
 		QueryStatics statics;
-		statics.values.push_back({"stepping", std::nullopt});
+		statics.values.push_back({"device_state", std::nullopt});
 		const auto device = buildDeviceNode("0000:03:00.0", *parseSelection("IDENTITY"), {}, statics, {});
 		const auto text = rendered(device);
-		CHECK(text.find("Stepping") != std::string::npos);
-		CHECK(text.find("SKU Type") == std::string::npos);
-		CHECK(text.find("Part Number") == std::string::npos);
+		CHECK(valueOnLine(text, "Device State") == "N/A");
+		CHECK(text.find("Board Part Number") == std::string::npos);
 	}
 
-	TEST_CASE("the PCI address is also shown as its four fields")
+	TEST_CASE("the PCI address is also shown as its bus, device and domain")
 	{
 		MetricValues values;
 		values["pci.bus_id"] = "00a1:3c:1f.2";
@@ -560,7 +582,6 @@ TEST_SUITE("query layout")
 		CHECK(text.find(": 0x3c\n") != std::string::npos);
 		CHECK(text.find(": 0x1f\n") != std::string::npos);
 		CHECK(text.find(": 0x00a1\n") != std::string::npos);
-		CHECK(text.find(": 0x2\n") != std::string::npos);
 		CHECK(text.find(": 00a1:3c:1f.2\n") != std::string::npos);
 	}
 
@@ -588,34 +609,22 @@ TEST_SUITE("query layout")
 		MetricValues values;
 		values["vbios_version"] = "";
 		QueryStatics statics;
-		statics.values.push_back({"kernel_version", std::string{}});
+		statics.values.push_back({"part_number", std::string{}});
 		const auto text = rendered(buildDeviceNode("x", *parseSelection("IDENTITY"), values, statics, {}));
-		CHECK(text.find("GFX Firmware Version              : N/A\n") != std::string::npos);
-		CHECK(text.find("Kernel Version                    : N/A\n") != std::string::npos);
+		CHECK(valueOnLine(text, "VBIOS Version") == "N/A");
+		CHECK(valueOnLine(text, "Board Part Number") == "N/A");
 	}
 
 	TEST_CASE("a getter that reports the text N/A is shown as N/A without its unit, and as null in JSON")
 	{
 		MetricValues values;
-		values["memory.read.bandwidth"] = "N/A";
+		values["memory.used"] = "N/A";
 		const auto device = buildDeviceNode("x", *parseSelection("MEMORY"), values, {}, {});
-		CHECK(rendered(device).find("Read Bandwidth                    : N/A\n") != std::string::npos);
+		CHECK(valueOnLine(rendered(device), "Used") == "N/A");
 
 		QueryReport report;
 		report.gpus = {device};
-		CHECK(toJson(report)["gpus"][0]["memory_usage"]["read_bandwidth"].is_null());
-	}
-
-	TEST_CASE("the largest allocation is converted from bytes to MiB")
-	{
-		QueryStatics statics;
-		statics.values.push_back({"max_mem_alloc_size", std::string{"12168933376"}});
-		const auto text = rendered(buildDeviceNode("x", *parseSelection("MEMORY"), {}, statics, {}));
-		CHECK(text.find(": 11605.20 MiB\n") != std::string::npos);
-
-		statics.values.front().value = "not a number";
-		CHECK(rendered(buildDeviceNode("x", *parseSelection("MEMORY"), {}, statics, {}))
-				  .find("Max Memory Alloc Size             : N/A\n") != std::string::npos);
+		CHECK(toJson(report)["gpus"][0]["fb_memory_usage"]["used"].is_null());
 	}
 
 	TEST_CASE("a survivability device shows only its state and recovery action")
@@ -704,7 +713,8 @@ TEST_SUITE("query command line")
 	TEST_CASE("no options asks for one report of everything")
 	{
 		const auto opts = parsedOptions({"xpu-smi", "query"});
-		CHECK(opts.selection.groups == metrics::MetricGroup::ALL);
+		CHECK(opts.selection.groups == DEFAULT_SECTIONS);
+		CHECK_FALSE(metrics::hasGroup(opts.selection.groups, metrics::MetricGroup::SUPPORTED_CLOCKS));
 		CHECK(opts.selection.processes);
 		CHECK(opts.deviceSpec.empty());
 		CHECK_FALSE(opts.json);

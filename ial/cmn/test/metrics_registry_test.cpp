@@ -1551,19 +1551,13 @@ TEST_CASE("throttle reasons: every one is in the registry as a Live PERFORMANCE 
 	CHECK(getMetricsByGroup(MetricGroup::PERFORMANCE).size() >= metrics::clock::THROTTLE_REASONS.size());
 }
 
-TEST_CASE("clock fields: minimum, requested, range and supported clocks are registered in MHz")
+TEST_CASE("clocks.supported.graphics is a Static SUPPORTED_CLOCKS field in MHz")
 {
-	for (const std::string_view name :
-		 {"clocks.min.graphics", "clocks.min.media", "clocks.requested.graphics", "clocks.efficient.graphics",
-		  "clocks.tdp.graphics", "clocks.range.min", "clocks.range.max", "clocks.supported.graphics"}) {
-		const auto field = findMetric(name);
-		REQUIRE_MESSAGE(field.has_value(), name);
-		CHECK_MESSAGE(field->unit == "MHz", name);
-	}
-	CHECK(findMetric("clocks.min.graphics")->source == MetricSource::Static);
-	CHECK(findMetric("clocks.requested.graphics")->source == MetricSource::Live);
-	CHECK(findMetric("clocks.supported.graphics")->groups == MetricGroup::SUPPORTED_CLOCKS);
-	CHECK(hasGroup(findMetric("clocks.range.max")->groups, MetricGroup::CLOCK));
+	const auto field = findMetric("clocks.supported.graphics");
+	REQUIRE(field.has_value());
+	CHECK(field->unit == "MHz");
+	CHECK(field->source == MetricSource::Static);
+	CHECK(field->groups == MetricGroup::SUPPORTED_CLOCKS);
 }
 
 TEST_CASE("the PERFORMANCE and SUPPORTED_CLOCKS sections parse and select their fields")
@@ -1577,10 +1571,9 @@ TEST_CASE("the PERFORMANCE and SUPPORTED_CLOCKS sections parse and select their 
 
 // -- power limit fields added for the full device report ---------------------------------
 
-TEST_CASE("power limit fields: each level and both bounds are registered Static POWER fields in watts")
+TEST_CASE("power limit bounds: default, min and max are registered Static POWER fields in watts")
 {
-	for (const std::string_view name : {"power.limit.sustained", "power.limit.burst", "power.limit.peak",
-										"power.limit.default", "power.limit.min", "power.max_limit"}) {
+	for (const std::string_view name : {"power.limit.default", "power.limit.min", "power.max_limit"}) {
 		const auto field = findMetric(name);
 		REQUIRE_MESSAGE(field.has_value(), name);
 		CHECK_MESSAGE(field->unit == "W", name);
@@ -1590,11 +1583,10 @@ TEST_CASE("power limit fields: each level and both bounds are registered Static 
 	}
 }
 
-TEST_CASE_FIXTURE(ZeroDeviceFixture, "power limit fields: a device with no power domain reports them unsupported")
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "power limit bounds: a device with no power domain reports them unsupported")
 {
 	const MetricCache cache;
-	for (const std::string_view name : {"power.limit.sustained", "power.limit.burst", "power.limit.peak",
-										"power.limit.default", "power.limit.min", "power.max_limit"}) {
+	for (const std::string_view name : {"power.limit.default", "power.limit.min", "power.max_limit"}) {
 		const auto field = findMetric(name);
 		REQUIRE_MESSAGE(field.has_value(), name);
 		MetricValue out = "untouched";
@@ -1603,39 +1595,22 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power limit fields: a device with no power
 	}
 }
 
-// -- ECC, memory health and retired page fields added for the full device report ----------
+// -- ECC pending state and retired page fields added for the full device report ----------
 
-TEST_CASE("memoryHealthName: every state has a name and anything else is Unknown")
+TEST_CASE("ecc.mode.pending is a Static ECC field")
 {
-	using metrics::memory::memoryHealthName;
-	CHECK(memoryHealthName(ZES_MEM_HEALTH_OK) == "OK");
-	CHECK(memoryHealthName(ZES_MEM_HEALTH_DEGRADED) == "Degraded");
-	CHECK(memoryHealthName(ZES_MEM_HEALTH_CRITICAL) == "Critical");
-	CHECK(memoryHealthName(ZES_MEM_HEALTH_REPLACE) == "Replace");
-	CHECK(memoryHealthName(ZES_MEM_HEALTH_UNKNOWN) == "Unknown");
-	CHECK(memoryHealthName(static_cast<zes_mem_health_t>(0x7fffffff)) == "Unknown");
+	const auto field = findMetric("ecc.mode.pending");
+	REQUIRE(field.has_value());
+	CHECK(field->groups == MetricGroup::ECC);
+	CHECK(field->source == MetricSource::Static);
 }
 
-TEST_CASE("ECC pending fields are registered Static ECC fields")
+TEST_CASE("retired_pages.count is the only PAGE_RETIREMENT field")
 {
-	for (const std::string_view name : {"ecc.mode.pending", "ecc.pending_action"}) {
-		const auto field = findMetric(name);
-		REQUIRE_MESSAGE(field.has_value(), name);
-		CHECK_MESSAGE(field->groups == MetricGroup::ECC, name);
-		CHECK_MESSAGE(field->source == MetricSource::Static, name);
-	}
-}
-
-TEST_CASE("memory.health is a Live MEMORY field and retired_pages.count is the only PAGE_RETIREMENT field")
-{
-	const auto health = findMetric("memory.health");
-	REQUIRE(health.has_value());
-	CHECK(health->groups == MetricGroup::MEMORY);
-	CHECK(health->source == MetricSource::Live);
-
 	const auto pages = getMetricsByGroup(MetricGroup::PAGE_RETIREMENT);
 	REQUIRE(pages.size() == 1);
 	CHECK(pages[0]->name == "retired_pages.count");
+	CHECK(pages[0]->source == MetricSource::Live);
 	CHECK(hasGroup(parseGroupMask("page_retirement"), MetricGroup::PAGE_RETIREMENT));
 }
 
@@ -1650,76 +1625,38 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 	CHECK(out == "untouched");
 }
 
-// -- scheduler, standby and health fields added for the full device report ----------------
+// -- scheduler mode field added for the full device report --------------------------------
 
-TEST_CASE("mode names: each reported mode has the word the config and stats commands use")
+TEST_CASE("schedulerModeName: each mode has the word the config command uses")
 {
-	using namespace metrics::mode;
+	using metrics::mode::schedulerModeName;
 	CHECK(schedulerModeName(ZES_SCHED_MODE_TIMEOUT) == "timeout");
 	CHECK(schedulerModeName(ZES_SCHED_MODE_TIMESLICE) == "timeslice");
 	CHECK(schedulerModeName(ZES_SCHED_MODE_EXCLUSIVE) == "exclusive");
 	CHECK(schedulerModeName(ZES_SCHED_MODE_COMPUTE_UNIT_DEBUG) == "unknown");
 	CHECK(schedulerModeName(static_cast<zes_sched_mode_t>(0x7fffffff)) == "unknown");
-
-	CHECK(standbyModeName(ZES_STANDBY_PROMO_MODE_DEFAULT) == "default");
-	CHECK(standbyModeName(ZES_STANDBY_PROMO_MODE_NEVER) == "never");
-	CHECK(standbyModeName(static_cast<zes_standby_promo_mode_t>(0x7fffffff)) == "unknown");
-
-	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_OK) == "OK");
-	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_WARNING) == "Warning");
-	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL) == "Critical");
-	CHECK(healthStatusName(ZES_DEVICE_HEALTH_STATUS_EXT_FAILED) == "Failed");
-	CHECK(healthStatusName(static_cast<zes_device_health_status_ext_t>(0x7fffffff)) == "Unknown");
 }
 
-TEST_CASE("mode fields: scheduler in COMPUTE, standby in PERFORMANCE, health in IDENTITY")
+TEST_CASE("scheduler.mode is the Static COMPUTE field")
 {
-	const auto scheduler = findMetric("scheduler.mode");
-	const auto standby = findMetric("standby.mode");
-	const auto health = findMetric("health.status");
-	REQUIRE(scheduler.has_value());
-	REQUIRE(standby.has_value());
-	REQUIRE(health.has_value());
-	CHECK(scheduler->groups == MetricGroup::COMPUTE);
-	CHECK(standby->groups == MetricGroup::PERFORMANCE);
-	CHECK(health->groups == MetricGroup::IDENTITY);
-	CHECK(scheduler->source == MetricSource::Static);
-	CHECK(health->source == MetricSource::Live);
+	const auto field = findMetric("scheduler.mode");
+	REQUIRE(field.has_value());
+	CHECK(field->groups == MetricGroup::COMPUTE);
+	CHECK(field->source == MetricSource::Static);
+	CHECK(getMetricsByGroup(MetricGroup::COMPUTE).size() == 1);
 }
 
-TEST_CASE_FIXTURE(ZeroDeviceFixture,
-				  "scheduler.mode and standby.mode: a device with no such domain reports them unsupported")
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "scheduler.mode: a device with no scheduler reports it unsupported")
 {
 	const MetricCache cache;
-	for (const std::string_view name : {"scheduler.mode", "standby.mode"}) {
-		const auto field = findMetric(name);
-		REQUIRE_MESSAGE(field.has_value(), name);
-		MetricValue out = "untouched";
-		CHECK_MESSAGE(field->getter(di, out, cache) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, name);
-		CHECK_MESSAGE(out == "untouched", name);
-	}
+	const auto field = findMetric("scheduler.mode");
+	REQUIRE(field.has_value());
+	MetricValue out = "untouched";
+	CHECK(field->getter(di, out, cache) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(out == "untouched");
 }
 
-// -- temperature threshold, PCIe link status and fan fields added for the full device report --
-
-TEST_CASE("linkStatusName: every status has a name and anything else is unknown")
-{
-	using metrics::pci::linkStatusName;
-	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_GOOD) == "good");
-	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_QUALITY_ISSUES) == "quality issues");
-	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_STABILITY_ISSUES) == "stability issues");
-	CHECK(linkStatusName(ZES_PCI_LINK_STATUS_UNKNOWN) == "unknown");
-	CHECK(linkStatusName(static_cast<zes_pci_link_status_t>(0x7fffffff)) == "unknown");
-}
-
-TEST_CASE("fanModeName: every mode has a name and anything else is unknown")
-{
-	using metrics::fan::fanModeName;
-	CHECK(fanModeName(ZES_FAN_SPEED_MODE_DEFAULT) == "default");
-	CHECK(fanModeName(ZES_FAN_SPEED_MODE_FIXED) == "fixed");
-	CHECK(fanModeName(ZES_FAN_SPEED_MODE_TABLE) == "table");
-	CHECK(fanModeName(static_cast<zes_fan_speed_mode_t>(0x7fffffff)) == "unknown");
-}
+// -- temperature threshold fields added for the full device report ------------------------
 
 TEST_CASE("temperature thresholds are registered Static TEMPERATURE fields in degrees Celsius")
 {
@@ -1733,20 +1670,4 @@ TEST_CASE("temperature thresholds are registered Static TEMPERATURE fields in de
 		CHECK_MESSAGE(field->groups == MetricGroup::TEMPERATURE, name);
 		CHECK_MESSAGE(field->inputs == MetricInput::NONE, name);
 	}
-}
-
-TEST_CASE("pcie.link.status is a Live PCI field and the fan fields are Static FAN fields")
-{
-	const auto link = findMetric("pcie.link.status");
-	REQUIRE(link.has_value());
-	CHECK(link->groups == MetricGroup::PCI);
-	CHECK(link->source == MetricSource::Live);
-
-	for (const std::string_view name : {"fan.mode", "fan.count"}) {
-		const auto field = findMetric(name);
-		REQUIRE_MESSAGE(field.has_value(), name);
-		CHECK_MESSAGE(field->groups == MetricGroup::FAN, name);
-		CHECK_MESSAGE(field->source == MetricSource::Static, name);
-	}
-	CHECK(getMetricsByGroup(MetricGroup::FAN).size() == metrics::fan::getFanMetrics().size());
 }

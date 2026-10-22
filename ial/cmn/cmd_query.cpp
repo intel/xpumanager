@@ -48,41 +48,8 @@ struct StaticSpec
 
 // clang-format off
 constexpr auto STATIC_TABLE = std::to_array<StaticSpec>({
-	{"device_type",                    MetricGroup::IDENTITY, &cmdDiscovery::deviceType,                   false},
-	{"sku_type",                       MetricGroup::IDENTITY, &cmdDiscovery::skuType,                      false},
-	{"stepping",                       MetricGroup::IDENTITY, &cmdDiscovery::stepping,                     false},
-	{"device_state",                   MetricGroup::IDENTITY, nullptr,                                     false},
-	{"vendor_name",                    MetricGroup::IDENTITY, &cmdDiscovery::vendorName,                   false},
-	{"part_number",                    MetricGroup::IDENTITY, &cmdDiscovery::partNumber,                   true},
-	{"drm_device",                     MetricGroup::IDENTITY, &cmdDiscovery::drmDevice,                    false},
-	{"kernel_version",                 MetricGroup::IDENTITY, &cmdDiscovery::kernelVersion,                false},
-	{"gfx_firmware_status",            MetricGroup::IDENTITY, &cmdDiscovery::gfxFirmwareStatus,            false},
-	{"gfx_data_firmware_version",      MetricGroup::IDENTITY, &cmdDiscovery::gfxDataFirmwareVersion,       false},
-	{"amc_firmware_version",           MetricGroup::IDENTITY, &cmdDiscovery::amcFirmwareVersion,           true},
-	{"gfx_pscbin_firmware_version",    MetricGroup::IDENTITY, &cmdDiscovery::gfxPscBinFirmwareVersion,     true},
-	{"oprom_code_firmware_version",    MetricGroup::IDENTITY, &cmdDiscovery::opromCodeFirmwareVersion,     true},
-	{"oprom_data_firmware_version",    MetricGroup::IDENTITY, &cmdDiscovery::opromDataFirmwareVersion,     true},
-	{"number_of_tiles",                MetricGroup::IDENTITY, &cmdDiscovery::numberOfTiles,                false},
-	{"number_of_slices",               MetricGroup::IDENTITY, &cmdDiscovery::numberOfSlices,               false},
-	{"number_of_sub_slices_per_slice", MetricGroup::IDENTITY, &cmdDiscovery::numberOfSubslicesPerSlice,    false},
-	{"number_of_eus_per_sub_slice",    MetricGroup::IDENTITY, &cmdDiscovery::numberOfEUsPerSubslice,       false},
-	{"number_of_eus",                  MetricGroup::IDENTITY, &cmdDiscovery::eus,                          false},
-	{"number_of_threads_per_eu",       MetricGroup::IDENTITY, &cmdDiscovery::numberOfThreadsPerEU,         false},
-	{"physical_eu_simd_width",         MetricGroup::IDENTITY, &cmdDiscovery::physicalEUSimdWidth,          false},
-	{"number_of_media_engines",        MetricGroup::IDENTITY, &cmdDiscovery::mediaEngines,                 false},
-	{"number_of_media_enh_engines",    MetricGroup::IDENTITY, &cmdDiscovery::mediaEnhancementEngines,      false},
-	{"max_hardware_contexts",          MetricGroup::IDENTITY, &cmdDiscovery::maxHardwareContexts,          false},
-	{"max_command_queue_priority",     MetricGroup::IDENTITY, &cmdDiscovery::maxCommandQueuePriority,      false},
-	{"pci_vendor_id",                  MetricGroup::PCI,      &cmdDiscovery::pciVendorID,                  false},
-	{"pci_slot",                       MetricGroup::PCI,      &cmdDiscovery::pciSlot,                      false},
-	{"pcie_max_bandwidth",             MetricGroup::PCI,      &cmdDiscovery::pcieMaxBandwidth,             false},
-	{"memory_type",                    MetricGroup::MEMORY,   &cmdDiscovery::memoryType,                   false},
-	{"memory_vendor",                  MetricGroup::MEMORY,   &cmdDiscovery::memoryVendor,                 false},
-	{"number_of_memory_channels",      MetricGroup::MEMORY,   &cmdDiscovery::memoryChannels,               false},
-	{"memory_bus_width",               MetricGroup::MEMORY,   &cmdDiscovery::memoryBusWidth,               false},
-	{"max_mem_alloc_size",             MetricGroup::MEMORY,   &cmdDiscovery::maxMemAllocSize,              false},
-	{"core_clock_rate",                MetricGroup::CLOCK,    &cmdDiscovery::coreClockRate,                false},
-	{"tdp",                            MetricGroup::POWER,    &cmdDiscovery::tdp,                          true},
+	{"device_state", MetricGroup::IDENTITY, nullptr,                     false},
+	{"part_number",  MetricGroup::IDENTITY, &cmdDiscovery::partNumber,   true},
 });
 // clang-format on
 
@@ -130,7 +97,6 @@ enum class SpecKind
 	BdfDomain,
 	BdfBus,
 	BdfDevice,
-	BdfFunction,
 };
 
 /** Describes one row or section of the device report. */
@@ -145,10 +111,6 @@ struct Spec
 };
 
 constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
-
-/// Discovery reports the largest single allocation in bytes; the report shows it in MiB like the other sizes.
-constexpr std::string_view ALLOCATION_SIZE_KEY = "max_mem_alloc_size";
-constexpr std::string_view MEBIBYTES = "MiB";
 
 [[nodiscard]] Spec sectionOf(std::string_view label, std::string_view key, std::vector<Spec> children)
 {
@@ -181,67 +143,27 @@ constexpr std::string_view MEBIBYTES = "MiB";
 /// The device report, top to bottom. Each row names where its value comes from.
 [[nodiscard]] const std::vector<Spec> &reportLayout()
 {
+	// Rows follow the order and section names of the device report other GPU tools print, keeping
+	// only attributes with an Intel equivalent. Static detail that discovery --dump already lists is
+	// left out, as are values that need extra GSC or AMC round trips per device.
 	static const std::vector<Spec> LAYOUT = [] {
 		std::vector<Spec> rows;
 		rows.push_back(fieldOf("Product Name", "product_name", "name"));
-		rows.push_back(fieldOf("Device Index", "device_index", "index"));
-		rows.push_back(staticOf("Device Type", "device_type", "device_type"));
-		rows.push_back(staticOf("SKU Type", "sku_type", "sku_type"));
-		rows.push_back(staticOf("Stepping", "stepping", "stepping"));
-		rows.push_back(staticOf("Device State", "device_state", "device_state"));
-		rows.push_back(fieldOf("Device Health", "device_health", "health.status"));
 		rows.push_back(fieldOf("Serial Number", "serial_number", "serial"));
 		rows.push_back(fieldOf("GPU UUID", "gpu_uuid", "uuid"));
-		rows.push_back(staticOf("Vendor Name", "vendor_name", "vendor_name"));
-		rows.push_back(staticOf("Part Number", "part_number", "part_number"));
-		rows.push_back(staticOf("DRM Device", "drm_device", "drm_device"));
-		rows.push_back(sectionOf("Driver", "driver",
-								 {
-									 fieldOf("UMD Version", "umd_version", "driver_version"),
-									 fieldOf("KMD Version", "kmd_version", "kernel_driver_version"),
-									 staticOf("Kernel Version", "kernel_version", "kernel_version"),
-								 }));
-		rows.push_back(sectionOf(
-			"Firmware", "firmware",
-			{
-				fieldOf("GFX Firmware Version", "gfx_firmware_version", "vbios_version"),
-				staticOf("GFX Firmware Status", "gfx_firmware_status", "gfx_firmware_status"),
-				staticOf("GFX Data Firmware Version", "gfx_data_firmware_version", "gfx_data_firmware_version"),
-				staticOf("AMC Firmware Version", "amc_firmware_version", "amc_firmware_version"),
-				staticOf("GFX PSCBIN Firmware Version", "gfx_pscbin_firmware_version", "gfx_pscbin_firmware_version"),
-				staticOf("OPROM Code Firmware Version", "oprom_code_firmware_version", "oprom_code_firmware_version"),
-				staticOf("OPROM Data Firmware Version", "oprom_data_firmware_version", "oprom_data_firmware_version"),
-			}));
-		rows.push_back(sectionOf(
-			"Compute Resources", "compute_resources",
-			{
-				staticOf("Number of Tiles", "number_of_tiles", "number_of_tiles"),
-				staticOf("Number of Slices", "number_of_slices", "number_of_slices"),
-				staticOf("Number of Sub-slices per Slice", "number_of_sub_slices_per_slice",
-						 "number_of_sub_slices_per_slice"),
-				staticOf("Number of EUs per Sub-slice", "number_of_eus_per_sub_slice", "number_of_eus_per_sub_slice"),
-				staticOf("Number of EUs", "number_of_eus", "number_of_eus"),
-				staticOf("Number of Threads per EU", "number_of_threads_per_eu", "number_of_threads_per_eu"),
-				staticOf("Physical EU SIMD Width", "physical_eu_simd_width", "physical_eu_simd_width"),
-				staticOf("Number of Media Engines", "number_of_media_engines", "number_of_media_engines"),
-				staticOf("Number of Media Enhancement Engines", "number_of_media_enh_engines",
-						 "number_of_media_enh_engines"),
-				staticOf("Max Hardware Contexts", "max_hardware_contexts", "max_hardware_contexts"),
-				staticOf("Max Command Queue Priority", "max_command_queue_priority", "max_command_queue_priority"),
-				fieldOf("Scheduler Mode", "scheduler_mode", "scheduler.mode"),
-			}));
+		rows.push_back(fieldOf("Device Index", "device_index", "index"));
+		rows.push_back(fieldOf("VBIOS Version", "vbios_version", "vbios_version"));
+		rows.push_back(staticOf("Board Part Number", "board_part_number", "part_number"));
+		rows.push_back(staticOf("Device State", "device_state", "device_state"));
 		rows.push_back(
 			sectionOf("PCI", "pci",
 					  {
 						  pciPartOf(SpecKind::BdfBus, "Bus", "bus"),
 						  pciPartOf(SpecKind::BdfDevice, "Device", "device"),
 						  pciPartOf(SpecKind::BdfDomain, "Domain", "domain"),
-						  pciPartOf(SpecKind::BdfFunction, "Function", "function"),
-						  fieldOf("Bus Id", "bus_id", BUS_ID_FIELD),
 						  fieldOf("Device Id", "device_id", "pci.device_id"),
+						  fieldOf("Bus Id", "bus_id", BUS_ID_FIELD),
 						  fieldOf("Sub System Id", "sub_system_id", "pci.sub_device_id"),
-						  staticOf("Vendor Id", "vendor_id", "pci_vendor_id"),
-						  staticOf("PCI Slot", "pci_slot", "pci_slot"),
 						  sectionOf("GPU Link Info", "gpu_link_info",
 									{
 										sectionOf("PCIe Generation", "pcie_generation",
@@ -255,14 +177,11 @@ constexpr std::string_view MEBIBYTES = "MiB";
 													  linkFieldOf("Current", "current", "pcie.link.width.current"),
 												  }),
 									}),
-						  staticOf("Max Bandwidth", "max_bandwidth", "pcie_max_bandwidth"),
-						  fieldOf("Link Status", "link_status", "pcie.link.status"),
 						  fieldOf("Replays Since Reset", "replays_since_reset", "pcie.replay.counter"),
-						  fieldOf("Tx Throughput", "tx_throughput", "pcie.tx.throughput"),
-						  fieldOf("Rx Throughput", "rx_throughput", "pcie.rx.throughput"),
+						  fieldOf("Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
+						  fieldOf("Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
 					  }));
 		rows.push_back(fieldOf("Fan Speed", "fan_speed", "fan.speed"));
-		rows.push_back(fieldOf("Fan Mode", "fan_mode", "fan.mode"));
 		{
 			std::vector<Spec> reasons;
 			for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
@@ -270,43 +189,26 @@ constexpr std::string_view MEBIBYTES = "MiB";
 			}
 			rows.push_back(sectionOf("Clocks Event Reasons", "clocks_event_reasons", std::move(reasons)));
 		}
-		rows.push_back(fieldOf("Standby Mode", "standby_mode", "standby.mode"));
-		rows.push_back(sectionOf(
-			"Memory Usage", "memory_usage",
-			{
-				fieldOf("Total", "total", "memory.total"),
-				fieldOf("Used", "used", "memory.used"),
-				fieldOf("Free", "free", "memory.free"),
-				fieldOf("Memory Utilization", "memory_utilization", "utilization.memory"),
-				fieldOf("Read Bandwidth", "read_bandwidth", "memory.read.bandwidth"),
-				fieldOf("Write Bandwidth", "write_bandwidth", "memory.write.bandwidth"),
-				fieldOf("Bandwidth Utilization", "bandwidth_utilization", "memory.bandwidth.utilization"),
-				staticOf("Memory Type", "memory_type", "memory_type"),
-				staticOf("Memory Vendor", "memory_vendor", "memory_vendor"),
-				staticOf("Number of Memory Channels", "number_of_memory_channels", "number_of_memory_channels"),
-				staticOf("Memory Bus Width", "memory_bus_width", "memory_bus_width"),
-				staticOf("Max Memory Alloc Size", "max_memory_alloc_size", "max_mem_alloc_size"),
-				fieldOf("Memory Health", "memory_health", "memory.health"),
-			}));
+		rows.push_back(sectionOf("FB Memory Usage", "fb_memory_usage",
+								 {
+									 fieldOf("Total", "total", "memory.total"),
+									 fieldOf("Used", "used", "memory.used"),
+									 fieldOf("Free", "free", "memory.free"),
+								 }));
+		rows.push_back(fieldOf("Scheduler Mode", "scheduler_mode", "scheduler.mode"));
 		rows.push_back(sectionOf("Utilization", "utilization",
 								 {
 									 fieldOf("GPU", "gpu", "utilization.gpu"),
+									 fieldOf("Memory", "memory", "utilization.memory"),
 									 fieldOf("Compute", "compute", "utilization.compute"),
 									 fieldOf("Render", "render", "utilization.render"),
 									 fieldOf("Media", "media", "utilization.media"),
 									 fieldOf("Copy", "copy", "utilization.copy"),
-									 sectionOf("EU Array", "eu_array",
-											   {
-												   fieldOf("Active", "active", "eu.active"),
-												   fieldOf("Stall", "stall", "eu.stall"),
-												   fieldOf("Idle", "idle", "eu.idle"),
-											   }),
 								 }));
 		rows.push_back(sectionOf("ECC Mode", "ecc_mode",
 								 {
 									 fieldOf("Current", "current", "ecc.mode.current"),
 									 fieldOf("Pending", "pending", "ecc.mode.pending"),
-									 fieldOf("Pending Action", "pending_action", "ecc.pending_action"),
 								 }));
 		rows.push_back(sectionOf(
 			"ECC Errors", "ecc_errors",
@@ -315,28 +217,9 @@ constexpr std::string_view MEBIBYTES = "MiB";
 						  {
 							  fieldOf("Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
 							  fieldOf("Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
-							  fieldOf("Total", "total", "ecc.errors.aggregate.total"),
 						  }),
-				sectionOf(
-					"RAS Counters", "ras_counters",
-					{
-						fieldOf("Reset", "reset", "ras.reset"),
-						fieldOf("Programming Errors", "programming_errors", "ras.programming.errors"),
-						fieldOf("Driver Errors", "driver_errors", "ras.driver.errors"),
-						sectionOf("Cache Errors", "cache_errors",
-								  {
-									  fieldOf("Correctable", "correctable", "ras.cache.errors.correctable"),
-									  fieldOf("Uncorrectable", "uncorrectable", "ras.cache.errors.uncorrectable"),
-								  }),
-						sectionOf("Non-Compute Errors", "non_compute_errors",
-								  {
-									  fieldOf("Correctable", "correctable", "ras.non_compute.errors.correctable"),
-									  fieldOf("Uncorrectable", "uncorrectable", "ras.non_compute.errors.uncorrectable"),
-									  fieldOf("Total", "total", "ras.non_compute.errors.total"),
-								  }),
-					}),
 			}));
-		rows.push_back(sectionOf("Page Retirement", "page_retirement",
+		rows.push_back(sectionOf("Retired Pages", "retired_pages",
 								 {
 									 fieldOf("Offline Pages", "offline_pages", "retired_pages.count"),
 								 }));
@@ -344,56 +227,30 @@ constexpr std::string_view MEBIBYTES = "MiB";
 			"Temperature", "temperature",
 			{
 				fieldOf("GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
-				fieldOf("Memory Current Temp", "memory_current_temp", "temperature.memory"),
-				fieldOf("Composite Temp", "composite_temp", "temperature.composite"),
-				fieldOf("GPU Throttle Temp", "gpu_throttle_temp", "temperature.gpu.threshold.throttle"),
 				fieldOf("GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
-				fieldOf("Memory Throttle Temp", "memory_throttle_temp", "temperature.memory.threshold.throttle"),
+				fieldOf("GPU Slowdown Temp", "gpu_slowdown_temp", "temperature.gpu.threshold.throttle"),
+				fieldOf("Memory Current Temp", "memory_current_temp", "temperature.memory"),
 				fieldOf("Memory Shutdown Temp", "memory_shutdown_temp", "temperature.memory.threshold.shutdown"),
+				fieldOf("Memory Slowdown Temp", "memory_slowdown_temp", "temperature.memory.threshold.throttle"),
 			}));
-		rows.push_back(sectionOf("Power Readings", "power_readings",
+		rows.push_back(sectionOf("GPU Power Readings", "gpu_power_readings",
 								 {
-									 fieldOf("Power Draw", "power_draw", "power.draw"),
-									 fieldOf("GPU Power Draw", "gpu_power_draw", "power.draw.gpu"),
+									 fieldOf("Average Power Draw", "average_power_draw", "power.draw"),
 									 fieldOf("Current Power Limit", "current_power_limit", "power.limit"),
+									 fieldOf("Default Power Limit", "default_power_limit", "power.limit.default"),
+									 fieldOf("Min Power Limit", "min_power_limit", "power.limit.min"),
 									 fieldOf("Max Power Limit", "max_power_limit", "power.max_limit"),
-									 fieldOf("Energy Consumed", "energy_consumed", "energy.consumed"),
-									 fieldOf("GPU Energy Consumed", "gpu_energy_consumed", "energy.consumed.gpu"),
-									 sectionOf("Power Limits", "power_limits",
-											   {
-												   fieldOf("Sustained", "sustained", "power.limit.sustained"),
-												   fieldOf("Burst", "burst", "power.limit.burst"),
-												   fieldOf("Peak", "peak", "power.limit.peak"),
-												   fieldOf("Default", "default", "power.limit.default"),
-												   fieldOf("Min", "min", "power.limit.min"),
-											   }),
-									 staticOf("Thermal Design Power", "thermal_design_power", "tdp"),
 								 }));
 		rows.push_back(sectionOf("Clocks", "clocks",
 								 {
 									 fieldOf("Graphics", "graphics", "clocks.current.graphics"),
-									 fieldOf("Media", "media", "clocks.current.media"),
 									 fieldOf("Memory", "memory", "clocks.current.memory"),
-									 fieldOf("Memory Voltage", "memory_voltage", "clocks.current.memory.voltage"),
-									 staticOf("Core Clock Rate", "core_clock_rate", "core_clock_rate"),
-									 fieldOf("Requested Graphics", "requested_graphics", "clocks.requested.graphics"),
-									 fieldOf("Efficient Graphics", "efficient_graphics", "clocks.efficient.graphics"),
-									 fieldOf("TDP Graphics", "tdp_graphics", "clocks.tdp.graphics"),
+									 fieldOf("Media", "media", "clocks.current.media"),
 								 }));
 		rows.push_back(sectionOf("Max Clocks", "max_clocks",
 								 {
 									 fieldOf("Graphics", "graphics", "clocks.max.graphics"),
 									 fieldOf("Media", "media", "clocks.max.media"),
-								 }));
-		rows.push_back(sectionOf("Min Clocks", "min_clocks",
-								 {
-									 fieldOf("Graphics", "graphics", "clocks.min.graphics"),
-									 fieldOf("Media", "media", "clocks.min.media"),
-								 }));
-		rows.push_back(sectionOf("Frequency Range", "frequency_range",
-								 {
-									 fieldOf("Min", "min", "clocks.range.min"),
-									 fieldOf("Max", "max", "clocks.range.max"),
 								 }));
 		rows.push_back(sectionOf("Supported Clocks", "supported_clocks",
 								 {
@@ -455,21 +312,6 @@ struct BuildContext
 	return it == values.end() ? std::nullopt : it->second;
 }
 
-[[nodiscard]] std::optional<std::string> mebibytesOf(const std::optional<std::string> &bytesText)
-{
-	if (!bytesText) {
-		return std::nullopt;
-	}
-	uint64_t bytes = 0;
-	const auto *end = bytesText->data() + bytesText->size();
-	const auto [stop, error] = std::from_chars(bytesText->data(), end, bytes);
-	if (error != std::errc{} || stop != end) {
-		return std::nullopt;
-	}
-	constexpr double bytesPerMebibyte = 1024.0 * 1024.0;
-	return xpum::compat::format("{:.2f}", static_cast<double>(bytes) / bytesPerMebibyte);
-}
-
 [[nodiscard]] std::optional<std::string> pciPartText(SpecKind kind, const std::optional<std::string> &busId)
 {
 	if (!busId) {
@@ -486,8 +328,6 @@ struct BuildContext
 		return xpum::compat::format("0x{:02x}", parts->bus);
 	case SpecKind::BdfDevice:
 		return xpum::compat::format("0x{:02x}", parts->device);
-	case SpecKind::BdfFunction:
-		return xpum::compat::format("0x{:x}", parts->function);
 	default:
 		return std::nullopt;
 	}
@@ -526,9 +366,6 @@ struct BuildContext
 		const auto *known = staticSpecOf(spec.source);
 		if (known == nullptr || !shown(known->group, ctx.selection) || !ctx.statics.has(spec.source)) {
 			return std::nullopt;
-		}
-		if (spec.source == ALLOCATION_SIZE_KEY) {
-			return leafOf(spec.label, spec.key, mebibytesOf(ctx.statics.get(spec.source)), MEBIBYTES);
 		}
 		return leafOf(spec.label, spec.key, ctx.statics.get(spec.source));
 	}
@@ -812,8 +649,6 @@ QueryNode processNode(const psInfo &proc)
 	record.children.push_back(leafOf("Name", "name", proc.commandName));
 	record.children.push_back(
 		leafOf("Used GPU Memory", "used_gpu_memory", std::to_string(proc.memSize / 1024), mebibytes));
-	record.children.push_back(
-		leafOf("Used Shared Memory", "used_shared_memory", std::to_string(proc.sharedSize / 1024), mebibytes));
 	return record;
 }
 
@@ -1122,7 +957,7 @@ void cmdQuery::help(HELP helpType)
 	TRACING();
 	std::vector<helpCmd> helpList;
 
-	helpList.emplace_back(TITLE, "Print a full report of every GPU attribute");
+	helpList.emplace_back(TITLE, "Print a report of the main attributes of each GPU");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Usage: %s query [Options]", progName.c_str());
 	helpList.emplace_back(HEADING, "%s query --display MEMORY,ECC --id 0", progName.c_str());
@@ -1134,7 +969,8 @@ void cmdQuery::help(HELP helpType)
 	helpList.emplace_back(HEADING, "-j,--json                   Print the report as JSON");
 	helpList.emplace_back(HEADING, "-d,--device,--id <spec>     Device index or PCI BDF address, comma-separated "
 								   "(default: all)");
-	helpList.emplace_back(HEADING, "--display <sections>        Comma-separated sections to print (default: all):");
+	helpList.emplace_back(
+		HEADING, "--display <sections>        Comma-separated sections to print (default: all but SUPPORTED_CLOCKS):");
 	for (const auto &line : wrapSectionNames(SECTION_LIST_WIDTH)) {
 		helpList.emplace_back(SUB_HEADING, "%s", line.c_str());
 	}
@@ -1146,8 +982,7 @@ void cmdQuery::help(HELP helpType)
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Notes:");
 	helpList.emplace_back(HEADING, "A value the device cannot supply is printed as N/A.");
-	helpList.emplace_back(HEADING, "UTILIZATION, EU_ARRAY and ALL sample the EU array, which takes one extra "
-								   "measurement window.");
+	helpList.emplace_back(HEADING, "Static detail is in 'discovery'; single metrics are in --query-gpu and 'dump'.");
 	helpList.emplace_back(HEADING, "Engine utilization needs CAP_PERFMON; without it the values read N/A.");
 	helpList.emplace_back(BLANK);
 
@@ -1174,7 +1009,7 @@ std::variant<QueryOptions, int> cmdQuery::parseOptions(arg_struct *args)
 	int loopSeconds = 0;
 	int loopMilliseconds = 0;
 
-	CLI::App sub{"Print a full report of every GPU attribute", "query"};
+	CLI::App sub{"Print a report of the main attributes of each GPU", "query"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", opts.json, "Print the report as JSON");
 	sub.add_option("-d,--device,--id", opts.deviceSpec,

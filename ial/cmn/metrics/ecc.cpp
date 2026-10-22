@@ -137,31 +137,6 @@ ze_result_t eccPendingModeGetter(devInfo &d, MetricValue &out, const MetricCache
 }
 
 /**
- * @brief Reads what has to happen before a pending ECC change takes effect.
- *
- * @param[in]  d   Device to query.
- * @param[out] out Set to the action, e.g. @c "None" or @c "Warm reset of the card". Unchanged on failure.
- *
- * @retval ZE_RESULT_SUCCESS                   The action was written to @p out.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The ECC HAL is unavailable.
- * @retval Other                               Any error from the ECC HAL.
- */
-ze_result_t eccPendingActionGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
-{
-	auto *ecc = d.dev->getECC();
-	if (ecc == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	zes_device_ecc_properties_t props{};
-	props.stype = ZES_STRUCTURE_TYPE_DEVICE_ECC_PROPERTIES;
-	if (const auto result = ecc->getState(d.zesDeviceHdl, &props); result != ZE_RESULT_SUCCESS) {
-		return result;
-	}
-	out = ecc->printEccPendingAction(props.pendingAction);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
  * @brief Category filter matching exactly one RAS category.
  *
  * @tparam CAT Category to match
@@ -224,14 +199,6 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.source = MetricSource::Static,
 		.groups = MetricGroup::ECC,
 		.getter = eccPendingModeGetter,
-	},
-	{
-		.name = "ecc.pending_action",
-		.unit = "",
-		.description = "What has to happen before a pending ECC state change takes effect",
-		.source = MetricSource::Static,
-		.groups = MetricGroup::ECC,
-		.getter = eccPendingActionGetter,
 	},
 	{
 		.name = "ecc.errors.corrected.aggregate.total",

@@ -146,25 +146,6 @@ constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 		return ZE_RESULT_SUCCESS;
 	}};
 
-constexpr auto HEALTH = QueryMetric{// NOLINT(readability-identifier-naming)
-									.name = "memory.health",
-									.unit = "",
-									.description = "Health of the GPU memory (OK/Degraded/Critical/Replace/Unknown)",
-									.source = MetricSource::Live,
-									.groups = MetricGroup::MEMORY,
-									.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-										auto *mem = d.dev->getMemory();
-										if (mem == nullptr) {
-											return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-										}
-										auto health = ZES_MEM_HEALTH_UNKNOWN;
-										auto const r = mem->getMemoryHealth(&health);
-										if (r == ZE_RESULT_SUCCESS) {
-											out = std::string{memoryHealthName(health)};
-										}
-										return r;
-									}};
-
 constexpr auto RETIRED_PAGES =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "retired_pages.count",
@@ -186,7 +167,7 @@ constexpr auto RETIRED_PAGES =
 				}};
 
 constexpr auto ALL = std::to_array<QueryMetric>(
-	{total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION, HEALTH, RETIRED_PAGES});
+	{total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION, RETIRED_PAGES});
 
 } // namespace
 

@@ -1,8 +1,11 @@
 Query
 =====
 
-Print a full report of every attribute ``xpu-smi`` knows about each GPU, as an indented
-``Key : Value`` listing. The report can be restricted to chosen sections, written as JSON,
+Print a report of the main attributes of each GPU, as an indented ``Key : Value`` listing:
+identity, PCI link, clock throttle reasons, memory, utilization, ECC, retired pages,
+temperatures, power and clocks, and the processes using the device. Use :doc:`discovery`
+for static detail such as compute resources and firmware components, and ``--query-gpu``
+or :doc:`dump` for any single metric. The report can be restricted to chosen sections, written as JSON,
 repeated at an interval, or saved to a file.
 
 Synopsis
@@ -67,9 +70,10 @@ Sections
 
 ``--display`` accepts the names below. A field that belongs to a section is printed
 wherever it sits in the report, so ``--display PCI`` prints the PCI address fields from the
-PCI part of the report, and a few fields appear under more than one section: memory
-utilization under both ``MEMORY`` and ``UTILIZATION``, and the EU array under both
-``UTILIZATION`` and ``EU_ARRAY``. A section or heading with nothing to show is left out.
+PCI part of the report, and memory utilization appears under both ``MEMORY`` and
+``UTILIZATION``. A section or heading with nothing to show is left out. Without
+``--display`` every section is printed except ``SUPPORTED_CLOCKS``, which must be named
+(or ``ALL`` given) because it lists every clock the GPU can be set to.
 
 .. list-table::
    :widths: 22 78
@@ -78,56 +82,53 @@ utilization under both ``MEMORY`` and ``UTILIZATION``, and the EU array under bo
    * - Section
      - Report content
    * - ``IDENTITY``
-     - Product name, index, type, stepping, state, health, serial number, UUID, vendor, DRM
-       device, driver and firmware versions, compute resources (tiles, slices, EUs, engines)
-       and the PCI address
+     - Product name, index, serial number, UUID, VBIOS (GFX firmware) version, board part
+       number, device state and the PCI address
    * - ``MEMORY``
-     - Memory total, used and free, utilization, read and write bandwidth, type, vendor,
-       channels, bus width, largest allocation and health
+     - Memory total, used and free, and memory utilization
    * - ``UTILIZATION``
-     - GPU, compute, render, media and copy engine utilization and the EU array
+     - GPU, memory, compute, render, media and copy engine utilization
    * - ``TEMPERATURE``
-     - GPU core, memory and composite temperatures, and the configured throttle and
-       shutdown temperatures
+     - GPU core and memory temperatures and their configured shutdown and slowdown
+       temperatures
    * - ``POWER``
-     - Power draw, energy consumed, the current and maximum power limit, the limit at each
-       level (sustained, burst, peak, default, minimum) and the thermal design power
+     - Power draw and the current, default, minimum and maximum power limit
    * - ``CLOCK``
-     - Current, requested, efficient and TDP-limited clocks, the maximum and minimum
-       clocks, the allowed frequency range and the core clock rate
+     - Current graphics, memory and media clocks and the maximum graphics and media clocks
    * - ``PCI``
-     - PCI address fields, IDs, slot, link generation and width (maximum and current), link
-       status, maximum bandwidth, replays and throughput
+     - PCI address fields and IDs, link generation and width (maximum and current), replays
+       and throughput
    * - ``ECC``
-     - ECC mode now and after the next reset, the action that change needs, and error
-       counters
+     - ECC mode now and after the next reset, and aggregate error counts
    * - ``EU_ARRAY``
-     - EU array active, stall and idle percentages
+     - Nothing of its own in this report; the GPU utilization row uses the EU array. Use
+       ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array figures
    * - ``FAN``
-     - Fan speed and mode
+     - Fan speed
    * - ``COMPUTE``
      - Scheduler mode
    * - ``PERFORMANCE``
-     - Whether each clock throttle reason is active, and the standby mode
+     - Whether each clock throttle reason is active
    * - ``PAGE_RETIREMENT``
      - Number of memory pages the driver has taken offline
    * - ``SUPPORTED_CLOCKS``
-     - The clocks the GPU can be set to, summarised as ``low-high step N`` when evenly spaced
+     - The clocks the GPU can be set to, summarised as ``low-high step N`` when evenly
+       spaced. Printed only when named
    * - ``PIDS``
      - Processes using the device
    * - ``ALL``
-     - Everything above
+     - Everything above, including ``SUPPORTED_CLOCKS``
 
 Sample Output
 -------------
 
-The report below is shortened; ``...`` marks parts left out.
+From an Intel Arc B580 run by a non-root user; ``...`` marks rows left out here.
 
 .. code-block:: text
 
    ==============XPU-SMI LOG==============
 
-   Timestamp                                 : 2026-10-21T13:28:16Z
+   Timestamp                                 : 2026-10-22T17:28:53Z
    UMD Version                               : 1.17.39980
    KMD Version                               : N/A
    Level Zero Version                        : 1.33.1
@@ -135,56 +136,74 @@ The report below is shortened; ``...`` marks parts left out.
    Attached GPUs                             : 1
    GPU 0000:03:00.0
        Product Name                          : Intel(R) Arc(TM) B580 Graphics
-       Device Index                          : 0
-       Device Type                           : Discrete GPU
-       SKU Type                              : N/A
-       Stepping                              : A0
-       Device State                          : normal
-       Device Health                         : N/A
        Serial Number                         : unknown
        GPU UUID                              : 00000000-0000-0003-0000-0000e20b8086
-       Vendor Name                           : Intel(R) Corporation
-       DRM Device                            : /dev/dri/card0
-       ...
-       Memory Usage
-           Total                             : 12216 MiB
-           Used                              : 218.62 MiB
-           Free                              : 11997.38 MiB
-           Memory Utilization                : 1.79 %
-           Read Bandwidth                    : 479141.91 kB/s
-           Write Bandwidth                   : 887930.75 kB/s
-           Bandwidth Utilization             : 2.34 %
-           Memory Type                       : GDDR6
-       ...
+       Device Index                          : 0
+       VBIOS Version                         : N/A
+       Device State                          : normal
+       PCI
+           Bus                               : 0x03
+           Device                            : 0x00
+           Domain                            : 0x0000
+           Device Id                         : 0xE20B
+           Bus Id                            : 0000:03:00.0
+           Sub System Id                     : 0x1100
+           GPU Link Info
+               PCIe Generation
+                   Max                       : N/A
+                   Current                   : N/A
+               Link Width
+                   Max                       : N/A
+                   Current                   : N/A
+           Replays Since Reset               : N/A
+           Tx Throughput                     : 84 kB/s
+           Rx Throughput                     : 1582 kB/s
+       Fan Speed                             : N/A
        Clocks Event Reasons
            Thermal Limit                     : Not Active
            Average Power Cap                 : Not Active
-           Burst Power Cap                   : Not Active
            ...
-       Power Readings
-           Power Draw                        : 59.67 W
-           GPU Power Draw                    : 0.34 W
+       FB Memory Usage
+           Total                             : 12216 MiB
+           Used                              : 218.62 MiB
+           Free                              : 11997.38 MiB
+       Scheduler Mode                        : timeslice
+       Utilization
+           GPU                               : 0.00 %
+           Memory                            : 1.79 %
+           Compute                           : 0.00 %
+           Render                            : 0.00 %
+           Media                             : 0.00 %
+           Copy                              : 0.00 %
+       ECC Mode
+           Current                           : Disabled
+           Pending                           : N/A
+       ECC Errors
+           Aggregate
+               Correctable                   : N/A
+               Uncorrectable                 : N/A
+       Retired Pages
+           Offline Pages                     : N/A
+       Temperature
+           GPU Current Temp                  : 33.00 C
+           GPU Shutdown Temp                 : 130 C
+           GPU Slowdown Temp                 : 105 C
+           Memory Current Temp               : 52.00 C
+           Memory Shutdown Temp              : 100 C
+           Memory Slowdown Temp              : 85 C
+       GPU Power Readings
+           Average Power Draw                : 58.88 W
            Current Power Limit               : 380.00 W
+           Default Power Limit               : N/A
+           Min Power Limit                   : N/A
            Max Power Limit                   : N/A
-           Energy Consumed                   : 133850.88 J
-           GPU Energy Consumed               : 172.12 J
-           Power Limits
-               Sustained                     : N/A
-               Burst                         : N/A
-               Peak                          : 380.00 W
-               Default                       : N/A
-               Min                           : N/A
        Clocks
            Graphics                          : 400 MHz
-           Media                             : 0 MHz
            Memory                            : 9500 MHz
-           Memory Voltage                    : 1.35 V
-           Core Clock Rate                   : 2850 MHz
-           Requested Graphics                : 400 MHz
-           Efficient Graphics                : 400 MHz
-           TDP Graphics                      : 2850 MHz
-       Supported Clocks
-           Graphics                          : 400-2850 step 50 MHz
+           Media                             : 1200 MHz
+       Max Clocks
+           Graphics                          : 2850 MHz
+           Media                             : 1500 MHz
        Processes
            None
 
@@ -198,15 +217,17 @@ Reading the Report
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
-- Selecting ``UTILIZATION``, ``EU_ARRAY`` or ``ALL`` also samples the EU array, which
-  takes one extra measurement window. The EU array reads ``N/A`` when the hardware metrics
-  stream is unavailable, for instance because another process holds it.
-- The throttle and shutdown temperatures are the configured thresholds the
+- GPU utilization comes from the EU array when the hardware metrics stream is available,
+  which adds about 100 ms after the measurement window, and otherwise from the busiest
+  engine.
+- As root, the VBIOS version is read from the GSC firmware interface, which can take a
+  second or more per device on some platforms; on a device with an AMC the board part
+  number is read from the AMC.
+- The slowdown and shutdown temperatures are the configured thresholds the
   :doc:`health` command compares against, not sensor readings.
 - Attributes that other vendors' GPUs have and Intel GPUs do not, such as persistence
   mode, partitioning and accounting, are not part of the report.
-- On Windows the kernel and kernel-mode driver versions, PCI slot and DRM device read
-  ``N/A``.
+- On Windows the kernel-mode driver version reads ``N/A``.
 
 A device in survivability mode is listed with only its state and the recovery action
 (``Firmware update and GPU reset``).
@@ -230,9 +251,10 @@ in the unit shown in the text report, and ``processes`` is an array.
            {
                "pci_bus_id": "0000:03:00.0",
                "product_name": "Intel(R) Arc(TM) B580 Graphics",
-               "memory_usage": {
+               "fb_memory_usage": {
                    "total": "12216",
-                   "used": "218.62109375"
+                   "used": "218.62109375",
+                   "free": "11997.37890625"
                },
                "processes": []
            }

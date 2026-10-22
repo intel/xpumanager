@@ -5,8 +5,6 @@
  */
 
 #include "standby.h"
-#include "driver_util.h"
-#include <vector>
 
 /**
  * @brief Destructor for the standby class
@@ -226,33 +224,4 @@ ze_result_t standby::zesRun(UNUSED zes_device_handle_t device)
 	}
 
 	return result;
-}
-/**
- * @brief Gets the promotion mode of the standby domain that describes the device as a whole.
- *
- * A multi-tile device lists a standby domain for each tile as well as its own; the device's own
- * is the one reported. A device that lists only per-tile domains is described by the first.
- *
- * @param[out] mode Set to the promotion mode.
- *
- * @retval ZE_RESULT_SUCCESS                   The mode was read.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The device exposes no standby domain.
- * @retval Other                               The error from reading the mode.
- */
-ze_result_t standby::getDeviceMode(zes_standby_promo_mode_t &mode)
-{
-	std::vector<ze_bool_t> onSubdevice;
-	onSubdevice.reserve(standbyCount);
-	for (uint32_t i = 0; i < standbyCount; ++i) {
-		zes_standby_properties_t props{};
-		props.stype = ZES_STRUCTURE_TYPE_STANDBY_PROPERTIES;
-		// A domain whose properties cannot be read is counted as a sub-device one, so it is chosen last.
-		onSubdevice.push_back(getProperties(standbyHandles[i], &props) == ZE_RESULT_SUCCESS ? props.onSubdevice
-																							: ze_bool_t{1});
-	}
-	const auto index = xpum::detail::deviceLevelIndex(onSubdevice);
-	if (!index) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	return getMode(standbyHandles[*index], &mode);
 }

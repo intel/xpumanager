@@ -143,36 +143,6 @@ ze_result_t getBestLimitW(devInfo &d, MetricValue &out)
 }
 
 /**
- * @brief Reads the power limit set at one level.
- *
- * @tparam LEVEL The level to read: sustained, burst or peak.
- *
- * @param[in]  d   Device to query.
- * @param[out] out Set to the limit in watts, formatted as @c "%.2f". Unchanged on failure.
- *
- * @retval ZE_RESULT_SUCCESS                   The device has a limit at this level.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The power HAL is unavailable, or no limit is set at this level.
- */
-template <zes_power_level_t LEVEL> ze_result_t levelLimitGetter(devInfo &d, MetricValue &out, const MetricCache &)
-{
-	auto *pw = d.dev->getPower();
-	if (pw == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	std::vector<PowerLimitExt> limits;
-	if (pw->getLimitsExt(limits) != ZE_RESULT_SUCCESS) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	const auto set =
-		std::ranges::find_if(limits, [](const PowerLimitExt &l) { return l.level == LEVEL && l.limitMw != 0; });
-	if (set == limits.end()) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	out = xpum::compat::format("{:.2f}", static_cast<double>(set->limitMw) / 1000.0);
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
  * @brief Reads one end of the range the device allows its power limit to take.
  *
  * @tparam FIELD Which figure of the range to read: the default, minimum or maximum.
@@ -305,28 +275,6 @@ constexpr auto MAX_LIMIT = QueryMetric{
 	.groups = MetricGroup::POWER,
 	.getter = limitBoundGetter<&PowerLimitBounds::maxMw>};
 
-constexpr auto SUSTAINED_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
-											 .name = "power.limit.sustained",
-											 .unit = "W",
-											 .description = "Sustained (long-term) power limit",
-											 .source = MetricSource::Static,
-											 .groups = MetricGroup::POWER,
-											 .getter = levelLimitGetter<ZES_POWER_LEVEL_SUSTAINED>};
-
-constexpr auto BURST_LIMIT =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "power.limit.burst",		.unit = "W",
-				.description = "Burst power limit", .source = MetricSource::Static,
-				.groups = MetricGroup::POWER,		.getter = levelLimitGetter<ZES_POWER_LEVEL_BURST>};
-
-constexpr auto PEAK_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
-										.name = "power.limit.peak",
-										.unit = "W",
-										.description = "Peak (short-term) power limit",
-										.source = MetricSource::Static,
-										.groups = MetricGroup::POWER,
-										.getter = levelLimitGetter<ZES_POWER_LEVEL_PEAK>};
-
 constexpr auto DEFAULT_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
 										   .name = "power.limit.default",
 										   .unit = "W",
@@ -343,9 +291,8 @@ constexpr auto MIN_LIMIT = QueryMetric{// NOLINT(readability-identifier-naming)
 									   .groups = MetricGroup::POWER,
 									   .getter = limitBoundGetter<&PowerLimitBounds::minMw>};
 
-constexpr auto ALL =
-	std::to_array<QueryMetric>({CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, ENERGY_CONSUMED_GPU, LIMIT, MAX_LIMIT,
-								SUSTAINED_LIMIT, BURST_LIMIT, PEAK_LIMIT, DEFAULT_LIMIT, MIN_LIMIT});
+constexpr auto ALL = std::to_array<QueryMetric>(
+	{CARD_DRAW, CARD_DRAW_GPU, ENERGY_CONSUMED, ENERGY_CONSUMED_GPU, LIMIT, MAX_LIMIT, DEFAULT_LIMIT, MIN_LIMIT});
 
 } // namespace
 
@@ -359,7 +306,6 @@ constexpr auto ALL =
  * - @c energy.consumed.gpu  (Live)   — cumulative GPU-domain energy in joules
  * - @c power.limit          (Static) — current enforced power limit in watts
  * - @c power.max_limit      (Static) — maximum configurable power limit in watts
- * - @c power.limit.sustained, @c power.limit.burst, @c power.limit.peak (Static) - the limit at each level
  * - @c power.limit.default, @c power.limit.min (Static) - default and lowest allowed limit in watts
  *
  * @return A non-owning @c std::span over the internal @c ALL array. The span is valid

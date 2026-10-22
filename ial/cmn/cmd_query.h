@@ -49,10 +49,16 @@ struct QueryNode
 	[[nodiscard]] bool isLeaf() const noexcept { return children.empty() && !isList; }
 };
 
-/// What the user selected with --display. Default-constructed selects everything.
+/// Sections printed without --display: everything except the supported clocks, which list every
+/// clock the GPU can be set to and are shown only when SUPPORTED_CLOCKS or ALL is named.
+inline constexpr metrics::MetricGroup DEFAULT_SECTIONS =
+	static_cast<metrics::MetricGroup>(metrics::detail::toUnderlying(metrics::MetricGroup::ALL) &
+									  ~metrics::detail::toUnderlying(metrics::MetricGroup::SUPPORTED_CLOCKS));
+
+/// What the user selected with --display. Default-constructed selects the default sections.
 struct QuerySelection
 {
-	metrics::MetricGroup groups = metrics::MetricGroup::ALL;
+	metrics::MetricGroup groups = DEFAULT_SECTIONS;
 	bool processes = true;
 };
 

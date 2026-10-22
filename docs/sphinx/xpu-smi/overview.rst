@@ -203,10 +203,10 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - Description
    * - ``IDENTITY``
      - —
-     - Device identity fields (name, index, UUID, serial, driver/vbios version, PCI IDs, health status)
+     - Device identity fields (name, index, UUID, serial, driver/vbios version, PCI IDs)
    * - ``MEMORY``
      - ``m``
-     - Memory total/used/free, read/write bandwidth, bandwidth utilization, memory health
+     - Memory total/used/free, read/write bandwidth, bandwidth utilization
    * - ``UTILIZATION``
      - ``u``
      - GPU, compute, render, media, copy engine utilization (%)
@@ -215,28 +215,28 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - GPU core, memory and composite temperatures, configured throttle/shutdown thresholds. Shortcut ``p`` also enables POWER.
    * - ``POWER``
      - ``p``
-     - Card- and GPU-domain power draw, energy counters, power limits (current, maximum, per level, default, minimum). Shortcut ``p`` also enables TEMPERATURE.
+     - Card- and GPU-domain power draw, energy counters, power limits (current, maximum, default, minimum). Shortcut ``p`` also enables TEMPERATURE.
    * - ``CLOCK``
      - ``c``
-     - Current, requested, efficient, TDP, maximum and minimum clock frequencies, allowed frequency range, throttle reason
+     - Current and max graphics/media clock frequencies, throttle reason
    * - ``PCI``
      - ``t``
-     - PCIe link gen/width (max and current), link status, TX/RX throughput, replay counter
+     - PCIe link gen/width (max and current), TX/RX throughput, replay counter
    * - ``ECC``
      - ``e``
-     - ECC mode (current and pending), pending action, corrected/uncorrected error counts, RAS error categories
+     - ECC mode (current and pending), corrected/uncorrected error counts, RAS error categories
    * - ``EU_ARRAY``
      - ``x``
      - EU active/stall/idle percentages (Intel Xe only)
    * - ``FAN``
      - ``f``
-     - Fan speed (%), mode and count
+     - Fan speed (%)
    * - ``COMPUTE``
      - —
      - Scheduler mode
    * - ``PERFORMANCE``
      - —
-     - Whether each clock throttle reason is active, standby mode
+     - Whether each clock throttle reason is active
    * - ``PAGE_RETIREMENT``
      - —
      - Number of memory pages the driver has taken offline
@@ -328,15 +328,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``power.max_limit``
      - W
      - Maximum power limit
-   * - ``power.limit.sustained``
-     - W
-     - Sustained (long-term) power limit
-   * - ``power.limit.burst``
-     - W
-     - Burst power limit
-   * - ``power.limit.peak``
-     - W
-     - Peak (short-term) power limit
    * - ``power.limit.default``
      - W
      - Power limit the device ships with
@@ -386,9 +377,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``memory.bandwidth.utilization``
      - %
      - Memory bandwidth utilization
-   * - ``memory.health``
-     - —
-     - Memory health: OK, Degraded, Critical, Replace or Unknown
    * - ``retired_pages.count``
      - —
      - Number of memory pages the driver has taken offline
@@ -404,27 +392,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``clocks.max.media`` (alias: ``clocks.max.video``)
      - MHz
      - Max media clock
-   * - ``clocks.min.graphics``
-     - MHz
-     - Min graphics clock
-   * - ``clocks.min.media``
-     - MHz
-     - Min media clock
-   * - ``clocks.requested.graphics``
-     - MHz
-     - Graphics clock the driver is currently asking for
-   * - ``clocks.efficient.graphics``
-     - MHz
-     - Most efficient graphics clock
-   * - ``clocks.tdp.graphics``
-     - MHz
-     - Highest graphics clock the current power and thermal limits allow
-   * - ``clocks.range.min``
-     - MHz
-     - Lowest graphics clock the device is currently allowed to run at
-   * - ``clocks.range.max``
-     - MHz
-     - Highest graphics clock the device is currently allowed to run at
    * - ``clocks.supported.graphics``
      - MHz
      - Graphics clocks the device can be set to: ``low-high step N`` when evenly
@@ -464,18 +431,12 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``pcie.replay.counter``
      - —
      - PCIe replay error counter
-   * - ``pcie.link.status``
-     - —
-     - PCIe link health: good, quality issues, stability issues or unknown
    * - ``ecc.mode.current``
      - —
      - ECC mode (enabled/disabled)
    * - ``ecc.mode.pending``
      - —
      - ECC mode after the next reset (enabled/disabled)
-   * - ``ecc.pending_action``
-     - —
-     - What has to happen before a pending ECC mode change takes effect
    * - ``ecc.errors.corrected.aggregate.total``
      - —
      - Total corrected ECC errors
@@ -521,21 +482,9 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``fan.speed``
      - %
      - Fan speed percentage
-   * - ``fan.mode``
-     - —
-     - Fan speed mode of the first fan: default, fixed or table
-   * - ``fan.count``
-     - —
-     - Number of fans
    * - ``scheduler.mode``
      - —
      - Scheduler mode: timeout, timeslice or exclusive
-   * - ``standby.mode``
-     - —
-     - Standby promotion mode: default or never
-   * - ``health.status``
-     - —
-     - Health status the driver assigns to the device: OK, Warning, Critical or Failed
 
 The ``ecc.errors.*`` and ``ras.*`` error counters read the same RAS categories as ``stats -r``;
 the ``ecc.errors.*`` totals add up every hardware category, i.e. all but resets, programming and

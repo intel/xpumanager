@@ -190,26 +190,6 @@ constexpr auto TX_THROUGHPUT_KBS =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto LINK_STATUS =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "pcie.link.status",
-				.unit = "",
-				.description = "PCIe link health (good/quality issues/stability issues/unknown)",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::PCI,
-				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-					auto *p = d.dev->getPCI();
-					if (p == nullptr) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					auto status = ZES_PCI_LINK_STATUS_UNKNOWN;
-					auto const r = p->getState(d.zesDeviceHdl, status);
-					if (r == ZE_RESULT_SUCCESS) {
-						out = std::string{linkStatusName(status)};
-					}
-					return r;
-				}};
-
 constexpr auto ALL = std::to_array<QueryMetric>({
 	LINK_GEN_MAX,
 	LINK_WIDTH_MAX,
@@ -220,7 +200,6 @@ constexpr auto ALL = std::to_array<QueryMetric>({
 	REPLAY_COUNTER,
 	RX_THROUGHPUT_KBS,
 	TX_THROUGHPUT_KBS,
-	LINK_STATUS,
 });
 
 } // namespace
