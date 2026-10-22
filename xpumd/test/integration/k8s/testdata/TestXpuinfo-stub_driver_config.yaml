@@ -4,6 +4,10 @@ Drivers:
   - ExtensionProperties:
       - Name: "ZES_extension_power_limits"
         Version: 65536
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -136,3 +140,21 @@ Drivers:
               IsThreshold1Supported: true
               IsThreshold2Supported: true
             Temperature: 48.0
+
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 4096  # in kilobytes
+          IsInstancedCollectionSupported: true
+        Records:
+          # Only read when the driver reports CPER data available
+          - Data: "CPER-RECORD-DEVICE"
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            Uuid:
+              Id: "12345678-000a-00b0-0c00-00000000d000"
+            Timestamp: 1234567  # microseconds since boot

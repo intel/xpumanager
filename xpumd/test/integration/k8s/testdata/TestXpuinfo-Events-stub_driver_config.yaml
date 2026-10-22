@@ -6,6 +6,10 @@ Drivers:
         Version: 65536
       - Name: "ZES_extension_device_state"
         Version: 65536
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536
     Devices:
       - Properties:
           Core:
@@ -146,3 +150,10 @@ Drivers:
               IsThreshold1Supported: true
               IsThreshold2Supported: true
             Temperature: 48.0
+
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 4096  # in kilobytes
+          IsInstancedCollectionSupported: true

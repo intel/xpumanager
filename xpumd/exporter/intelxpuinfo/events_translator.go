@@ -6,8 +6,10 @@
 package intelxpuinfo
 
 import (
+	"fmt"
 	"strings"
 
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.uber.org/zap"
 
@@ -61,9 +63,16 @@ func translateLogRecord(lr plog.LogRecord, logger *zap.SugaredLogger) *pb.Device
 			},
 		},
 		Reason:   strings.TrimPrefix(strings.ToLower(lr.EventName()), common.EventNamePrefix),
-		Message:  lr.Body().Str(),
+		Message:  eventMessage(lr.Body()),
 		Severity: otelSevToProto(lr.SeverityNumber()),
 	}
+}
+
+func eventMessage(body pcommon.Value) string {
+	if body.Type() == pcommon.ValueTypeBytes {
+		return fmt.Sprintf("binary record, %d bytes", body.Bytes().Len())
+	}
+	return body.AsString()
 }
 
 // otelSevToProto maps an OTel log SeverityNumber to the proto EventSeverityLevel.

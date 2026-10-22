@@ -1,0 +1,173 @@
+# SPDX-License-Identifier: MIT
+
+# Same as TestXpuinfo-Events-stub_driver_config.yaml except for
+# - device events cleared
+# - driver events added
+# - info log records added
+Drivers:
+  - ExtensionProperties:
+      - Name: "ZES_extension_power_limits"
+        Version: 65536
+      - Name: "ZES_extension_device_state"
+        Version: 65536
+      - Name: "ZES_intel_experimental_driver_info_logs"
+        Version: 65536
+      - Name: "ZES_intel_experimental_driver_event"
+        Version: 65536
+    Events: 65536  # ZES_INTEL_CPER_DATA_AVAILABLE
+    Devices:
+      - Properties:
+          Core:
+            Type: 1       # ZE_DEVICE_TYPE_GPU
+            VendorId: 0x8086
+            DeviceId: 0x0bd5
+            Uuid:
+              Id: "12345678-0000-0000-0000-000000000000"
+          NumSubdevices: 2
+          ModelName: "Super 3000"
+          VendorName: "ACME Inc."
+          SerialNumber: "SN-0001"
+
+        State:
+          Reset: 0
+          Repaired: 1  # ZES_REPAIR_STATUS_NOT_PERFORMED
+          ExtendedState:
+            Flags: 1  # ZES_DEVICE_STATE_EXT_FLAG_NORMAL
+
+        PCI:
+          Properties:
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            MaxSpeed:
+              Gen: 4
+              Width: 16
+              MaxBandwidth: 0
+            HaveBandwidthCounters: true
+
+        Firmwares:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Name: "GFX"
+              Version: "1.2.3.4"
+
+        Fans:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              SupportedModes: 7
+              SupportedUnits: 3
+              MaxRPM: 3000
+              MaxPoints: 16
+            Config:
+              Mode: 0 # ZES_FAN_SPEED_MODE_DEFAULT
+            Speed: 1500
+
+        FrequencyDomains:
+          - Properties:
+              Type: 0  # ZES_FREQ_DOMAIN_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              Min: 300
+              Max: 1600
+            Range:
+              Min: 300
+              Max: 1600
+            State:
+              Request: 1400
+              Tdp: 1600
+              Efficient: 300
+              Actual: 1200
+              ThrottleReasons: 0
+
+        MemoryModules:
+          - Properties:
+              Type: 0  # ZES_MEM_TYPE_HBM
+              OnSubdevice: false
+              SubdeviceId: 0
+              Location: 1  # ZES_MEM_LOC_DEVICE
+              PhysicalSize: 17179869184
+            State:
+              Health: 1  # ZES_MEM_HEALTH_OK
+              Free: 8589934592
+              Size: 17179869184
+            Bandwidth:
+              ReadCounter: 1073741824
+              WriteCounter: 536870912
+              MaxBandwidth: 512000000000
+              Timestamp: 123456789
+
+        PowerDomains:
+          - Properties:
+              OnSubdevice: false
+              SubdeviceId: 0
+              CanControl: true
+              IsEnergyThresholdSupported: true
+              ExtendedProperties:
+                Domain: 2  # ZES_POWER_DOMAIN_PACKAGE
+                DefaultLimit:
+                  Enabled: true
+                  Limit: 150000
+            EnergyCounter:
+              Energy: 5000000
+              Timestamp: 123456789
+            LimitsExt:
+              - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
+                Source: 0  # ZES_POWER_SOURCE_ANY
+                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                EnabledStateLocked: false
+                Enabled: true
+                IntervalValueLocked: false
+                Interval: 1000
+                LimitValueLocked: false
+                Limit: 200000
+
+        TemperatureSensors:
+          - Properties:
+              Type: 0  # ZES_TEMP_SENSORS_GLOBAL
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 110.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+          - Properties:
+              Type: 1  # ZES_TEMP_SENSORS_GPU
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 110.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+          - Properties:
+              Type: 2  # ZES_TEMP_SENSORS_MEMORY
+              OnSubdevice: false
+              SubdeviceId: 0
+              MaxTemperature: 100.0
+              IsThreshold1Supported: true
+              IsThreshold2Supported: true
+            Temperature: 48.0
+
+    InfoLogs:
+      - Properties:
+          InfoLogType: 0  # ZES_INTEL_INFO_LOG_TYPE_EXP_DEVICE
+          InfoLogFormat: 0  # ZES_INTEL_INFO_LOG_FORMAT_CPER
+          MaxSize: 4096  # in kilobytes
+          IsInstancedCollectionSupported: true
+        Records:
+          # Only read when the driver reports CPER data available
+          - Data: "CPER-RECORD-DEVICE"
+            Address:
+              Domain: 0
+              Bus: 5
+              Device: 0
+              Function: 0
+            Uuid:
+              Id: "12345678-000a-00b0-0c00-00000000d000"
+            Timestamp: 1234567  # microseconds since boot

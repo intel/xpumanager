@@ -2,6 +2,10 @@ service:
   create: false
 
 config:
+  receivers:
+    intel_xpu:
+      info_logs:
+        enabled: true
   service:
     pipelines:
       metrics:

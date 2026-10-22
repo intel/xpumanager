@@ -379,6 +379,32 @@ func TestXpuinfo(t *testing.T) {
 		}
 		assert.Empty(t, cmp.Diff(want, &resp, protocmp.Transform()), "event response mismatch (-want +got)")
 	})
+
+	t.Run("InfoLogEvents", func(t *testing.T) {
+		// Load stub config before starting the client to clears events from previous subtest
+		tc.loadStubDriverConfig(t)
+		logs := tc.runXpuinfoCLI(context.Background(), t, "xpuinfo-cli-infolog-events",
+			[]string{"--no-health", "--oneshot"}, nil)
+
+		var resp pb.DeviceEventResponse
+		require.NoError(t, yaml.Unmarshal([]byte(logs), &resp), "unmarshal event response\nlogs:\n%s", logs)
+
+		want := &pb.DeviceEventResponse{
+			Device: &pb.DeviceIdentification{
+				Uuid:  "12345678-0000-0000-0000-000000000000",
+				Model: "Super 3000",
+				Pci: &pb.PciInfo{
+					Bdf:      "0000:05:00.0",
+					DeviceId: "0bd5",
+					VendorId: "8086",
+				},
+			},
+			Reason:   "info_log.cper",
+			Message:  "binary record, 18 bytes", // "CPER-RECORD-DEVICE"
+			Severity: pb.EventSeverityLevel_EVENT_SEVERITY_LEVEL_ERROR,
+		}
+		assert.Empty(t, cmp.Diff(want, &resp, protocmp.Transform()), "event response mismatch (-want +got)")
+	})
 }
 
 // TestCrashlog verifies the intel_crashlog receiver.
