@@ -269,3 +269,38 @@ func TestHealthDomainFor(t *testing.T) {
 		})
 	}
 }
+
+func TestHealthDomainLiteral(t *testing.T) {
+	tests := []struct {
+		tmplText      string
+		expectLiteral bool
+	}{
+		{tmplText: "memory", expectLiteral: true},
+		{tmplText: "gpu.health", expectLiteral: true},
+		{tmplText: "{{ .hw_type }}", expectLiteral: false},
+		{tmplText: "memory-{{ .x }}", expectLiteral: false},
+		{tmplText: "{{/* comment */}}memory", expectLiteral: false},
+	}
+
+	attrs := pcommon.NewMap()
+	attrs.PutStr("hw.type", "gpu")
+	attrs.PutStr("x", "y")
+
+	for _, tt := range tests {
+		t.Run(tt.tmplText, func(t *testing.T) {
+			m := HwStatusMapping{HealthDomain: tt.tmplText}
+			require.NoError(t, m.Validate())
+			assert.Equal(t, tt.expectLiteral, m.healthDomainTmpl == nil)
+
+			// Result must be identical to the general template path.
+			ref := HwStatusMapping{
+				HealthDomain:     tt.tmplText,
+				healthDomainTmpl: mustParseTemplate(tt.tmplText),
+			}
+			wantDomain, wantErr := ref.healthDomainFor(attrs)
+			gotDomain, gotErr := m.healthDomainFor(attrs)
+			assert.Equal(t, wantDomain, gotDomain)
+			assert.Equal(t, wantErr, gotErr)
+		})
+	}
+}
