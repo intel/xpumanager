@@ -370,6 +370,12 @@ struct QueryMetric
 	 * header text alone size the column, which truncates such values with an ellipsis.
 	 */
 	int minWidth = 0;
+	/**
+	 * The getter asks the device firmware directly, over the GSC or the AMC, which can take
+	 * hundreds of milliseconds. Such a getter reads no window data, does not change while the
+	 * device runs, and is safe to run on its own thread alongside the device's other getters.
+	 */
+	bool readsFirmware = false;
 	ze_result_t (*getter)(devInfo &d, MetricValue &out, const MetricCache &cache);
 };
 

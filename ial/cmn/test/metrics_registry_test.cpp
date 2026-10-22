@@ -1671,3 +1671,16 @@ TEST_CASE("temperature thresholds are registered Static TEMPERATURE fields in de
 		CHECK_MESSAGE(field->inputs == MetricInput::NONE, name);
 	}
 }
+
+TEST_CASE("a field that reads the firmware reads no window data, and VBIOS and serial are such fields")
+{
+	std::vector<std::string_view> firmwareFields;
+	for (const auto &m : getQueryMetrics()) {
+		if (m.readsFirmware) {
+			CHECK_MESSAGE(m.inputs == MetricInput::NONE, m.name);
+			firmwareFields.push_back(m.name);
+		}
+	}
+	CHECK(std::ranges::find(firmwareFields, "vbios_version") != firmwareFields.end());
+	CHECK(std::ranges::find(firmwareFields, "serial") != firmwareFields.end());
+}

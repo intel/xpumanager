@@ -114,6 +114,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 				"The serial number physically printed on the board. A globally unique immutable alphanumeric value.",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
+			.readsFirmware = true,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &cache) -> ze_result_t {
 				constexpr auto unknownRetryInterval = std::chrono::seconds{10};
 				const auto now = std::chrono::steady_clock::now();
@@ -174,6 +175,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			.description = "The version of the GFX firmware currently running on the GPU board.",
 			.source = MetricSource::Static,
 			.groups = MetricGroup::IDENTITY,
+			.readsFirmware = true,
 			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
 				auto *fw = d.dev->getFirmware();
 				if (fw == nullptr) {

@@ -760,9 +760,10 @@ void evaluate(std::span<const metrics::QueryMetric *const> fields, devInfo &dev,
 	}
 }
 
-/// Fields read at one point in time, split from those measured over the sampling window.
+/// Fields grouped by when they are read: from the firmware, at one point in time, or over the window.
 struct FieldSplit
 {
+	std::vector<const metrics::QueryMetric *> firmware;
 	std::vector<const metrics::QueryMetric *> instant;
 	std::vector<const metrics::QueryMetric *> windowed;
 };
@@ -770,9 +771,40 @@ struct FieldSplit
 [[nodiscard]] FieldSplit splitByWindow(std::span<const metrics::QueryMetric *const> fields)
 {
 	FieldSplit split;
-	std::ranges::partition_copy(fields, std::back_inserter(split.instant), std::back_inserter(split.windowed),
-								[](const metrics::QueryMetric *f) { return f->inputs == metrics::MetricInput::NONE; });
+	for (const auto *field : fields) {
+		if (field->readsFirmware) {
+			split.firmware.push_back(field);
+		} else if (field->inputs == metrics::MetricInput::NONE) {
+			split.instant.push_back(field);
+		} else {
+			split.windowed.push_back(field);
+		}
+	}
 	return split;
+}
+
+/**
+ * @brief Reads each firmware field of one device on a thread of its own and waits for them all.
+ *
+ * Each of these reads is a separate firmware request that can take hundreds of milliseconds,
+ * so reading them one after another could outlast the sampling window.
+ */
+[[nodiscard]] MetricValues readFirmwareFields(std::span<const metrics::QueryMetric *const> fields, devInfo &dev,
+											  const metrics::MetricCache &cache)
+{
+	std::vector<std::future<std::optional<std::string>>> reads;
+	reads.reserve(fields.size());
+	for (const auto *field : fields) {
+		reads.push_back(std::async(std::launch::async, [field, &dev, &cache]() -> std::optional<std::string> {
+			metrics::MetricValue out;
+			return field->getter(dev, out, cache) == ZE_RESULT_SUCCESS ? std::optional{out} : std::nullopt;
+		}));
+	}
+	MetricValues values;
+	for (std::size_t i = 0; i < fields.size(); ++i) {
+		values[fields[i]->name] = reads[i].get();
+	}
+	return values;
 }
 
 [[nodiscard]] std::string nowIso8601()
@@ -795,7 +827,7 @@ public:
 				 const QueryOptions &opts)
 		: args(cli), devices(std::move(found)), survivability(std::move(survivabilityFound)), options(opts),
 		  fields(selectedMetrics(opts.selection)), split(splitByWindow(fields)), inputs(metrics::inputsOf(fields)),
-		  caches(devices.size()), statics(devices.size())
+		  caches(devices.size()), statics(devices.size()), firmwareValues(devices.size())
 	{}
 
 	[[nodiscard]] RenderedFrame renderFrame();
@@ -813,6 +845,9 @@ private:
 	metrics::MetricInput inputs;
 	std::vector<metrics::MetricCache> caches;
 	std::vector<QueryStatics> statics;
+	/// Firmware fields of each device, read on the first frame only: they cannot change while the
+	/// device runs, and a read that fails would otherwise be retried, as slowly, on every frame.
+	std::vector<MetricValues> firmwareValues;
 	bool firstFrame = true;
 };
 
@@ -833,8 +868,13 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 		}
 	}
 
-	// Work that does not depend on the window runs while it elapses. As root the VBIOS read
-	// alone can take longer than the window on some platforms.
+	// Work that does not depend on the window runs while it elapses. As root on some platforms
+	// each firmware read takes most of the window, so they run on threads of their own.
+	std::future<MetricValues> firmwareRead;
+	if (first) {
+		firmwareRead = std::async(std::launch::async, readFirmwareFields, std::span{split.firmware}, std::ref(dev),
+								  std::cref(cache));
+	}
 	MetricValues values;
 	values.reserve(fields.size());
 	evaluate(split.instant, dev, cache, values);
@@ -849,6 +889,11 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 		}
 	}
 
+	// Joined before the end of the window is sampled into the cache the firmware reads were given.
+	if (first) {
+		firmwareValues[index] = firmwareRead.get();
+	}
+	values.insert(firmwareValues[index].begin(), firmwareValues[index].end());
 	if (windowed && first) {
 		std::this_thread::sleep_until(windowEnd);
 		metrics::populateMetricCacheEnd(dev, cache);
