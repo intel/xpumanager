@@ -405,6 +405,25 @@ metrics:
       value_type: double
     attributes: [hw.id, hw.name, pci.bdf, com.intel.subdevice_id, hw.sensor_location, statistic]
 
+telemetry:
+  metrics:
+    sysman_sampler_interval_usage:
+      enabled: true
+      stability: development
+      description: Portion of the sampling interval used on one sampler tick, measured from the tick to the completion of polling the aggregated metrics of all devices. Values above 1 mean that the next sampling deadline was delayed or missed.
+      unit: "1"
+      histogram:
+        value_type: double
+        bucket_boundaries: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1]
+    sysman_sampler_missed_deadlines:
+      enabled: true
+      stability: development
+      description: Number of `sampling_interval` deadlines missed for aggregated metrics. Unlike dropped samples (`hw.frequency.samples`), these samples were never queried.
+      unit: "{deadline}"
+      sum:
+        value_type: int
+        monotonic: true
+
 tests:
   # TODO: explore using a stub l0 driver for enabling lifecycle tests
   # (for environments without real target hardware)

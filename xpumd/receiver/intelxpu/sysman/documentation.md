@@ -556,3 +556,23 @@ Temperature of the hardware component in degrees Celsius.
 | com.intel.subdevice_id | Sub-device ID of the hardware component. | Any Str | Recommended | - |
 | hw.sensor_location | Location of the sensor. | Any Str | Recommended | - |
 | statistic | Statistic type for the metric. | Str: ``min``, ``max`` | Recommended | - |
+
+## Internal Telemetry
+
+The following telemetry is emitted by this component.
+
+### otelcol_sysman_sampler_interval_usage
+
+Portion of the sampling interval used on one sampler tick, measured from the tick to the completion of polling the aggregated metrics of all devices. Values above 1 mean that the next sampling deadline was delayed or missed.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| 1 | Histogram | Double | Development |
+
+### otelcol_sysman_sampler_missed_deadlines
+
+Number of `sampling_interval` deadlines missed for aggregated metrics. Unlike dropped samples (`hw.frequency.samples`), these samples were never queried.
+
+| Unit | Metric Type | Value Type | Monotonic | Stability |
+| ---- | ----------- | ---------- | --------- | --------- |
+| {deadline} | Sum | Int | true | Development |
