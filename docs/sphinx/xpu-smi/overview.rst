@@ -206,7 +206,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - Device identity fields (name, index, UUID, serial, driver/vbios version, PCI IDs)
    * - ``MEMORY``
      - ``m``
-     - Memory total/used/free, read/write bandwidth, bandwidth utilization, pages taken offline
+     - Memory total/used/free, read/write bandwidth, bandwidth utilization
    * - ``UTILIZATION``
      - ``u``
      - GPU, compute, render, media, copy engine utilization (%)
@@ -215,7 +215,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - GPU core, memory and composite temperatures, configured throttle/shutdown thresholds. Shortcut ``p`` also enables POWER.
    * - ``POWER``
      - ``p``
-     - Card- and GPU-domain power draw, energy counters, power limits (current, maximum, default, minimum). Shortcut ``p`` also enables TEMPERATURE.
+     - Card- and GPU-domain power draw, energy counters, power limits. Shortcut ``p`` also enables TEMPERATURE.
    * - ``CLOCK``
      - ``c``
      - Current and max graphics/media clock frequencies, throttle reason
@@ -224,7 +224,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - PCIe link gen/width (max and current), TX/RX throughput, replay counter
    * - ``ECC``
      - ``e``
-     - ECC mode (current and pending), corrected/uncorrected error counts, RAS error categories
+     - ECC mode, corrected/uncorrected error counts, RAS error categories
    * - ``EU_ARRAY``
      - ``x``
      - EU active/stall/idle percentages (Intel Xe only)
@@ -234,9 +234,6 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
    * - ``COMPUTE``
      - —
      - Scheduler mode
-   * - ``PERFORMANCE``
-     - —
-     - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
      - —
      - GPU clocks the frequency range can be set to
@@ -325,12 +322,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``power.max_limit``
      - W
      - Maximum power limit
-   * - ``power.limit.default``
-     - W
-     - Power limit the device ships with
-   * - ``power.limit.min``
-     - W
-     - Lowest power limit the device allows
    * - ``energy.consumed``
      - J
      - Cumulative card-domain energy counter; the energy counterpart of ``power.draw``
@@ -374,10 +365,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``memory.bandwidth.utilization``
      - %
      - Memory bandwidth utilization
-   * - ``memory.offline_pages``
-     - —
-     - Number of memory pages the driver has taken offline after memory errors (dynamic page
-       offlining); the same count ``stats`` shows as Offline Memory Pages
    * - ``clocks.current.graphics`` (alias: ``clocks.current.sm``)
      - MHz
      - Current graphics/SM clock
@@ -399,11 +386,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``clocks.throttle.reason``
      - —
      - Active clock throttle reason flags
-   * - ``clocks.event_reasons.<reason>``
-     - —
-     - Whether one throttle reason is active (``Active`` or ``Not Active``). One field per
-       reason: ``thermal_limit``, ``average_power_cap``, ``burst_power_cap``, ``current_limit``,
-       ``psu_alert``, ``sw_range``, ``hw_range``, ``voltage``, ``thermal_alert``, ``power_alert``
    * - ``pcie.link.gen.max``
      - —
      - Maximum PCIe generation
@@ -434,9 +416,6 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``ecc.mode.current``
      - —
      - ECC mode (enabled/disabled)
-   * - ``ecc.mode.pending``
-     - —
-     - ECC mode after the next reset (enabled/disabled)
    * - ``ecc.errors.corrected.aggregate.total``
      - —
      - Total corrected ECC errors

@@ -27,7 +27,6 @@
 #include "zes_api.h"
 #include <algorithm>
 #include <array>
-#include <bit>
 #include <cstdint>
 #include <optional>
 #include <ranges>
@@ -1524,33 +1523,6 @@ TEST_CASE("describeClockList: a list never contains a comma, so it cannot break 
 	CHECK(metrics::clock::describeClockList(std::vector<double>{1, 2, 3, 4}).find(',') == std::string::npos);
 }
 
-TEST_CASE("throttle reasons: each is one distinct flag with a distinct registry field")
-{
-	const auto &reasons = metrics::clock::THROTTLE_REASONS;
-	for (std::size_t i = 0; i < reasons.size(); ++i) {
-		CHECK_MESSAGE(std::popcount(static_cast<uint32_t>(reasons[i].flag)) == 1, reasons[i].metricName);
-		for (std::size_t j = i + 1; j < reasons.size(); ++j) {
-			CHECK(reasons[i].flag != reasons[j].flag);
-			CHECK(reasons[i].metricName != reasons[j].metricName);
-			CHECK(reasons[i].key != reasons[j].key);
-			CHECK(reasons[i].shortName != reasons[j].shortName);
-		}
-	}
-}
-
-TEST_CASE("throttle reasons: every one is in the registry as a Live PERFORMANCE field")
-{
-	for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
-		const auto field = findMetric(reason.metricName);
-		REQUIRE_MESSAGE(field.has_value(), reason.metricName);
-		CHECK(field->groups == MetricGroup::PERFORMANCE);
-		CHECK(field->source == MetricSource::Live);
-		CHECK(field->inputs == MetricInput::NONE);
-		CHECK_FALSE(field->description.empty());
-	}
-	CHECK(getMetricsByGroup(MetricGroup::PERFORMANCE).size() >= metrics::clock::THROTTLE_REASONS.size());
-}
-
 TEST_CASE("clocks.supported.graphics is a Static SUPPORTED_CLOCKS field in MHz")
 {
 	const auto field = findMetric("clocks.supported.graphics");
@@ -1560,70 +1532,22 @@ TEST_CASE("clocks.supported.graphics is a Static SUPPORTED_CLOCKS field in MHz")
 	CHECK(field->groups == MetricGroup::SUPPORTED_CLOCKS);
 }
 
-TEST_CASE("the PERFORMANCE and SUPPORTED_CLOCKS sections parse and select their fields")
+TEST_CASE("the SUPPORTED_CLOCKS section parses and selects its fields")
 {
-	CHECK(hasGroup(parseGroupMask("PERFORMANCE"), MetricGroup::PERFORMANCE));
 	CHECK(hasGroup(parseGroupMask("supported_clocks"), MetricGroup::SUPPORTED_CLOCKS));
 	CHECK_FALSE(getMetricsByGroup(MetricGroup::SUPPORTED_CLOCKS).empty());
-	// The new sections have no one-letter shortcut, so no letter selects them.
-	CHECK_FALSE(hasGroup(parseGroupMask("p"), MetricGroup::PERFORMANCE));
+	// The new section has no one-letter shortcut, so no letter selects it.
+	CHECK_FALSE(hasGroup(parseGroupMask("p"), MetricGroup::SUPPORTED_CLOCKS));
 }
 
-// -- power limit fields added for the full device report ---------------------------------
-
-TEST_CASE("power limit bounds: default, min and max are registered Static POWER fields in watts")
+TEST_CASE("fields no current device reports are not in the registry")
 {
-	for (const std::string_view name : {"power.limit.default", "power.limit.min", "power.max_limit"}) {
-		const auto field = findMetric(name);
-		REQUIRE_MESSAGE(field.has_value(), name);
-		CHECK_MESSAGE(field->unit == "W", name);
-		CHECK_MESSAGE(field->source == MetricSource::Static, name);
-		CHECK_MESSAGE(field->groups == MetricGroup::POWER, name);
-		CHECK_MESSAGE(field->inputs == MetricInput::NONE, name);
+	for (const std::string_view name : {"clocks.event_reasons.thermal_limit", "power.limit.default", "power.limit.min",
+										"ecc.mode.pending", "memory.offline_pages", "retired_pages.count"}) {
+		CHECK_FALSE_MESSAGE(findMetric(name).has_value(), name);
 	}
-}
-
-TEST_CASE_FIXTURE(ZeroDeviceFixture, "power limit bounds: a device with no power domain reports them unsupported")
-{
-	const MetricCache cache;
-	for (const std::string_view name : {"power.limit.default", "power.limit.min", "power.max_limit"}) {
-		const auto field = findMetric(name);
-		REQUIRE_MESSAGE(field.has_value(), name);
-		MetricValue out = "untouched";
-		CHECK_MESSAGE(field->getter(di, out, cache) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, name);
-		CHECK_MESSAGE(out == "untouched", name);
-	}
-}
-
-// -- ECC pending state and retired page fields added for the full device report ----------
-
-TEST_CASE("ecc.mode.pending is a Static ECC field")
-{
-	const auto field = findMetric("ecc.mode.pending");
-	REQUIRE(field.has_value());
-	CHECK(field->groups == MetricGroup::ECC);
-	CHECK(field->source == MetricSource::Static);
-}
-
-TEST_CASE("memory.offline_pages is a MEMORY field, and there is no separate page retirement group")
-{
-	const auto field = findMetric("memory.offline_pages");
-	REQUIRE(field.has_value());
-	CHECK(field->groups == MetricGroup::MEMORY);
-	CHECK(field->source == MetricSource::Live);
-	CHECK_FALSE(findMetric("retired_pages.count").has_value());
+	CHECK(parseGroupMask("performance") == MetricGroup::NONE);
 	CHECK(parseGroupMask("page_retirement") == MetricGroup::NONE);
-}
-
-TEST_CASE_FIXTURE(ZeroDeviceFixture,
-				  "memory.offline_pages: a device whose driver cannot take pages offline reports it unsupported")
-{
-	const MetricCache cache;
-	const auto field = findMetric("memory.offline_pages");
-	REQUIRE(field.has_value());
-	MetricValue out = "untouched";
-	CHECK(field->getter(di, out, cache) != ZE_RESULT_SUCCESS);
-	CHECK(out == "untouched");
 }
 
 // -- scheduler mode field added for the full device report --------------------------------

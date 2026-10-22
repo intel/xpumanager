@@ -70,7 +70,7 @@ struct StaticValue
 };
 
 /// Static properties of one device. A key that is absent does not apply to the device.
-struct QueryStatics
+struct QueryStaticProps
 {
 	std::vector<StaticValue> values;
 
@@ -151,13 +151,13 @@ void renderNode(const QueryNode &node, std::size_t depth, std::string &out);
  * @param[in] bdf          PCI address of the device.
  * @param[in] selection    Sections to show.
  * @param[in] metricValues Registry getter output by field name.
- * @param[in] statics      Static properties of the device.
+ * @param[in] staticProps      Static properties of the device.
  * @param[in] procs        Processes using the device.
  *
  * @return The device node: the PCI address as its value and the sections as children.
  */
 [[nodiscard]] QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection,
-										const MetricValues &metricValues, const QueryStatics &statics,
+										const MetricValues &metricValues, const QueryStaticProps &staticProps,
 										std::span<const psInfo> procs);
 
 /// A device in survivability mode: only its state and the way to recover it.

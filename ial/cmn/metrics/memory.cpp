@@ -146,28 +146,8 @@ constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 		return ZE_RESULT_SUCCESS;
 	}};
 
-constexpr auto OFFLINE_PAGES =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "memory.offline_pages",
-				.unit = "",
-				.description = "Number of GPU memory pages the driver has taken offline after memory errors",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::MEMORY,
-				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
-					auto *pages = d.dev->getPageOffline();
-					if (pages == nullptr) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					uint32_t count = 0;
-					auto const r = pages->getDeviceMemoryPageOfflineState(&count, nullptr);
-					if (r == ZE_RESULT_SUCCESS) {
-						out = xpum::compat::format("{}", count);
-					}
-					return r;
-				}};
-
-constexpr auto ALL = std::to_array<QueryMetric>(
-	{total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION, OFFLINE_PAGES});
+constexpr auto ALL =
+	std::to_array<QueryMetric>({total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION});
 
 } // namespace
 

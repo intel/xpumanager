@@ -2,8 +2,8 @@ Query
 =====
 
 Print a report of the main attributes of each GPU, as an indented ``Key : Value`` listing:
-identity, PCI link, clock throttle reasons, memory, utilization, ECC, retired pages,
-temperatures, power and clocks, and the processes using the device. Use :doc:`discovery`
+identity, PCI link, memory, utilization, ECC, temperatures, power and clocks, and the
+processes using the device. Use :doc:`discovery`
 for static detail such as compute resources and firmware components, and ``--query-gpu``
 or :doc:`dump` for any single metric. The report can be restricted to chosen sections, written as JSON,
 repeated at an interval, or saved to a file.
@@ -85,31 +85,28 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - Product name, index, serial number, UUID, VBIOS (GFX firmware) version, board part
        number, device state and the PCI address
    * - ``MEMORY``
-     - Memory total, used and free, memory utilization, and the number of memory pages the
-       driver has taken offline after memory errors
+     - Memory total, used and free, and memory utilization
    * - ``UTILIZATION``
      - GPU, memory, compute, render, media and copy engine utilization
    * - ``TEMPERATURE``
      - GPU core and memory temperatures and their configured shutdown and slowdown
        temperatures
    * - ``POWER``
-     - Power draw and the current, default, minimum and maximum power limit
+     - Power draw and the current power limit
    * - ``CLOCK``
      - Current graphics, memory and media clocks and the maximum graphics and media clocks
    * - ``PCI``
-     - PCI address fields and IDs, link generation and width (maximum and current), replays
-       and throughput
+     - PCI address fields and IDs, link generation and width (maximum and current), and
+       throughput
    * - ``ECC``
-     - ECC mode now and after the next reset, and aggregate error counts
+     - ECC mode and aggregate error counts
    * - ``EU_ARRAY``
      - Nothing of its own in this report; the GPU utilization row uses the EU array. Use
        ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array figures
    * - ``FAN``
-     - Fan speed
+     - Nothing in this report. Use ``--query-gpu fan.speed`` for the fan speed
    * - ``COMPUTE``
      - Scheduler mode
-   * - ``PERFORMANCE``
-     - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
      - The GPU core clocks the minimum and maximum of ``config --frequencyrange`` can be set
        to, summarised as ``low-high step N`` when evenly spaced. The memory clock cannot be
@@ -122,13 +119,13 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
 Sample Output
 -------------
 
-From an Intel Arc B580 run by a non-root user; ``...`` marks rows left out here.
+From an Intel Arc B580 run by a non-root user.
 
 .. code-block:: text
 
    ==============XPU-SMI LOG==============
 
-   Timestamp                                 : 2026-10-22T17:28:53Z
+   Timestamp                                 : 2026-10-22T23:12:55Z
    UMD Version                               : 1.17.39980
    KMD Version                               : N/A
    Level Zero Version                        : 1.33.1
@@ -155,14 +152,8 @@ From an Intel Arc B580 run by a non-root user; ``...`` marks rows left out here.
                Link Width
                    Max                       : N/A
                    Current                   : N/A
-           Replays Since Reset               : N/A
-           Tx Throughput                     : 84 kB/s
-           Rx Throughput                     : 1582 kB/s
-       Fan Speed                             : N/A
-       Clocks Event Reasons
-           Thermal Limit                     : Not Active
-           Average Power Cap                 : Not Active
-           ...
+           Tx Throughput                     : 90 kB/s
+           Rx Throughput                     : 1574 kB/s
        FB Memory Usage
            Total                             : 12216 MiB
            Used                              : 218.62 MiB
@@ -177,26 +168,20 @@ From an Intel Arc B580 run by a non-root user; ``...`` marks rows left out here.
            Copy                              : 0.00 %
        ECC Mode
            Current                           : Disabled
-           Pending                           : N/A
        ECC Errors
            Aggregate
                Correctable                   : N/A
                Uncorrectable                 : N/A
-       Retired Pages
-           Offline Pages                     : N/A
        Temperature
-           GPU Current Temp                  : 33.00 C
+           GPU Current Temp                  : 31.00 C
            GPU Shutdown Temp                 : 130 C
            GPU Slowdown Temp                 : 105 C
-           Memory Current Temp               : 52.00 C
+           Memory Current Temp               : 50.00 C
            Memory Shutdown Temp              : 100 C
            Memory Slowdown Temp              : 85 C
        GPU Power Readings
-           Average Power Draw                : 58.88 W
+           Average Power Draw                : 58.03 W
            Current Power Limit               : 380.00 W
-           Default Power Limit               : N/A
-           Min Power Limit                   : N/A
-           Max Power Limit                   : N/A
        Clocks
            Graphics                          : 400 MHz
            Memory                            : 9500 MHz
@@ -207,12 +192,13 @@ From an Intel Arc B580 run by a non-root user; ``...`` marks rows left out here.
        Processes
            None
 
+
 Reading the Report
 ------------------
 
 - A value the device, driver or platform cannot supply prints as ``N/A``. This includes
   values that need more privilege than the caller has, such as engine utilization without
-  ``CAP_PERFMON``, and the ECC state pending a reset.
+  ``CAP_PERFMON``.
 - Measured values (power draw, utilization, throughput, bandwidth) are averaged over a
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
@@ -226,8 +212,6 @@ Reading the Report
   AMC.
 - The slowdown and shutdown temperatures are the configured thresholds the
   :doc:`health` command compares against, not sensor readings.
-- Attributes that other vendors' GPUs have and Intel GPUs do not, such as persistence
-  mode, partitioning and accounting, are not part of the report.
 - On Windows the kernel-mode driver version reads ``N/A``.
 
 A device in survivability mode is listed with only its state and the recovery action

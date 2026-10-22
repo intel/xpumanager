@@ -8,7 +8,6 @@
 #include "debug.h"
 #include "driver_util.h"
 #include "frame_loop.h"
-#include "metrics/clock.h"
 #include "table_builder.h"
 #include "terminal.h"
 #include "utility/compat/format.h"
@@ -148,11 +147,13 @@ constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
 	return Spec{kind, depth, label, key, BUS_ID_FIELD};
 }
 
-// Rows follow the order and section names of the device report other GPU tools print, keeping
-// only attributes with an Intel equivalent. Static detail that discovery --dump already lists is
-// left out, as are values that need extra GSC or AMC round trips per device.
+// Identity first, then one section per subsystem. Static detail that discovery --dump already
+// lists is left out, as are values that need extra GSC or AMC round trips per device, and rows
+// that no current device, driver and kernel gives useful values for (throttle reasons, PCIe
+// replays, power limit range, pending ECC state, offline pages, fan speed).
 // clang-format off
-constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
+/// The device report, top to bottom. Each row names where its value comes from.
+constexpr auto REPORT_LAYOUT = std::to_array<Spec>({
 	fieldOf(0, "Product Name", "product_name", "name"),
 	fieldOf(0, "Serial Number", "serial_number", "serial"),
 	fieldOf(0, "GPU UUID", "gpu_uuid", "uuid"),
@@ -174,16 +175,8 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 			sectionOf(2, "Link Width", "link_width"),
 				linkFieldOf(3, "Max", "max", "pcie.link.width.max"),
 				linkFieldOf(3, "Current", "current", "pcie.link.width.current"),
-		fieldOf(1, "Replays Since Reset", "replays_since_reset", "pcie.replay.counter"),
 		fieldOf(1, "Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
 		fieldOf(1, "Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
-	fieldOf(0, "Fan Speed", "fan_speed", "fan.speed"),
-	sectionOf(0, "Clocks Event Reasons", "clocks_event_reasons"),
-});
-
-// The rows of Clocks Event Reasons come from THROTTLE_REASONS, between LAYOUT_HEAD and LAYOUT_TAIL.
-
-constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 	sectionOf(0, "FB Memory Usage", "fb_memory_usage"),
 		fieldOf(1, "Total", "total", "memory.total"),
 		fieldOf(1, "Used", "used", "memory.used"),
@@ -198,13 +191,10 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Copy", "copy", "utilization.copy"),
 	sectionOf(0, "ECC Mode", "ecc_mode"),
 		fieldOf(1, "Current", "current", "ecc.mode.current"),
-		fieldOf(1, "Pending", "pending", "ecc.mode.pending"),
 	sectionOf(0, "ECC Errors", "ecc_errors"),
 		sectionOf(1, "Aggregate", "aggregate"),
 			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
 			fieldOf(2, "Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
-	sectionOf(0, "Retired Pages", "retired_pages"),
-		fieldOf(1, "Offline Pages", "offline_pages", "memory.offline_pages"),
 	sectionOf(0, "Temperature", "temperature"),
 		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
 		fieldOf(1, "GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
@@ -215,9 +205,6 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 	sectionOf(0, "GPU Power Readings", "gpu_power_readings"),
 		fieldOf(1, "Average Power Draw", "average_power_draw", "power.draw"),
 		fieldOf(1, "Current Power Limit", "current_power_limit", "power.limit"),
-		fieldOf(1, "Default Power Limit", "default_power_limit", "power.limit.default"),
-		fieldOf(1, "Min Power Limit", "min_power_limit", "power.limit.min"),
-		fieldOf(1, "Max Power Limit", "max_power_limit", "power.max_limit"),
 	sectionOf(0, "Clocks", "clocks"),
 		fieldOf(1, "Graphics", "graphics", "clocks.current.graphics"),
 		fieldOf(1, "Memory", "memory", "clocks.current.memory"),
@@ -229,24 +216,6 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Graphics", "graphics", "clocks.supported.graphics"),
 });
 // clang-format on
-
-constexpr auto THROTTLE_ROWS = [] {
-	std::array<Spec, metrics::clock::THROTTLE_REASONS.size()> rows{};
-	std::ranges::transform(metrics::clock::THROTTLE_REASONS, rows.begin(),
-						   [](const auto &reason) { return fieldOf(1, reason.label, reason.key, reason.metricName); });
-	return rows;
-}();
-
-template <std::size_t... N> [[nodiscard]] constexpr auto joinRows(const std::array<Spec, N> &...parts)
-{
-	std::array<Spec, (N + ...)> rows{};
-	auto out = rows.begin();
-	((out = std::ranges::copy(parts, out).out), ...);
-	return rows;
-}
-
-/// The device report, top to bottom. Each row names where its value comes from.
-constexpr auto REPORT_LAYOUT = joinRows(LAYOUT_HEAD, THROTTLE_ROWS, LAYOUT_TAIL);
 
 /// Each row is at most one level deeper than the row before it, only a section is followed by a
 /// deeper row, and every section has at least one row under it.
@@ -284,7 +253,7 @@ struct BuildContext
 {
 	const QuerySelection &selection;
 	const MetricValues &values;
-	const QueryStatics &statics;
+	const QueryStaticProps &staticProps;
 };
 
 [[nodiscard]] QueryNode leafOf(std::string_view label, std::string_view key, std::optional<std::string> value,
@@ -365,10 +334,10 @@ void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<
 	}
 	case SpecKind::Static: {
 		const auto *known = staticSpecOf(spec.source);
-		if (known == nullptr || !shown(known->group, ctx.selection) || !ctx.statics.has(spec.source)) {
+		if (known == nullptr || !shown(known->group, ctx.selection) || !ctx.staticProps.has(spec.source)) {
 			return std::nullopt;
 		}
-		return leafOf(spec.label, spec.key, ctx.statics.get(spec.source));
+		return leafOf(spec.label, spec.key, ctx.staticProps.get(spec.source));
 	}
 	default: {
 		const auto *busId = registered(BUS_ID_FIELD);
@@ -451,12 +420,12 @@ void appendLine(std::string &out, std::size_t depth, std::string_view label, std
 // Public pieces
 // ---------------------------------------------------------------------------------------
 
-bool QueryStatics::has(std::string_view key) const
+bool QueryStaticProps::has(std::string_view key) const
 {
 	return std::ranges::any_of(values, [key](const StaticValue &entry) { return entry.key == key; });
 }
 
-std::optional<std::string> QueryStatics::get(std::string_view key) const
+std::optional<std::string> QueryStaticProps::get(std::string_view key) const
 {
 	const auto it = std::ranges::find(values, key, &StaticValue::key);
 	return it == values.end() ? std::nullopt : it->value;
@@ -683,14 +652,14 @@ QueryNode processesSection(std::span<const psInfo> procs)
 }
 
 QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection, const MetricValues &metricValues,
-						  const QueryStatics &statics, std::span<const psInfo> procs)
+						  const QueryStaticProps &staticProps, std::span<const psInfo> procs)
 {
 	QueryNode device;
 	device.label = "GPU " + std::string{bdf};
 	device.key = "pci_bus_id";
 	device.value = std::string{bdf};
 
-	const BuildContext ctx{selection, metricValues, statics};
+	const BuildContext ctx{selection, metricValues, staticProps};
 	buildRows(REPORT_LAYOUT, ctx, device.children);
 	if (selection.processes) {
 		device.children.push_back(processesSection(procs));
@@ -730,24 +699,24 @@ namespace {
  *
  * @return The properties that apply to the device, each with its value or nothing.
  */
-[[nodiscard]] QueryStatics gatherStatics(devInfo &dev, const QuerySelection &selection)
+[[nodiscard]] QueryStaticProps gatherStaticProps(devInfo &dev, const QuerySelection &selection)
 {
-	QueryStatics statics;
+	QueryStaticProps staticProps;
 	cmdDiscovery discovery;
 	for (const auto &spec : STATIC_TABLE) {
 		if (!shown(spec.group, selection) || (spec.amcOnly && !dev.dev->hasAmc())) {
 			continue;
 		}
 		if (spec.getter == nullptr) {
-			statics.values.push_back(
+			staticProps.values.push_back(
 				{spec.key, std::string{dev.dev->isInSurvMode() ? DEVICE_STATE_SURV_MODE : DEVICE_STATE_NORMAL}});
 			continue;
 		}
 		std::string line;
 		const ze_result_t result = (discovery.*spec.getter)(&dev, &line);
-		statics.values.push_back({spec.key, result == ZE_RESULT_SUCCESS ? std::optional{line} : std::nullopt});
+		staticProps.values.push_back({spec.key, result == ZE_RESULT_SUCCESS ? std::optional{line} : std::nullopt});
 	}
-	return statics;
+	return staticProps;
 }
 
 /// Run each field's getter for one device into @p values; a getter that fails reads as absent.
@@ -827,7 +796,7 @@ public:
 				 const QueryOptions &opts)
 		: args(cli), devices(std::move(found)), survivability(std::move(survivabilityFound)), options(opts),
 		  fields(selectedMetrics(opts.selection)), split(splitByWindow(fields)), inputs(metrics::inputsOf(fields)),
-		  caches(devices.size()), statics(devices.size()), firmwareValues(devices.size())
+		  caches(devices.size()), staticProps(devices.size()), firmwareValues(devices.size())
 	{}
 
 	[[nodiscard]] RenderedFrame renderFrame();
@@ -844,7 +813,7 @@ private:
 	FieldSplit split;
 	metrics::MetricInput inputs;
 	std::vector<metrics::MetricCache> caches;
-	std::vector<QueryStatics> statics;
+	std::vector<QueryStaticProps> staticProps;
 	/// Firmware fields of each device, read on the first frame only: they cannot change while the
 	/// device runs, and a read that fails would otherwise be retried, as slowly, on every frame.
 	std::vector<MetricValues> firmwareValues;
@@ -879,7 +848,7 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 	values.reserve(fields.size());
 	evaluate(split.instant, dev, cache, values);
 	if (first) {
-		statics[index] = gatherStatics(dev, options.selection);
+		staticProps[index] = gatherStaticProps(dev, options.selection);
 	}
 	std::vector<psInfo> procs;
 	if (options.selection.processes) {
@@ -899,7 +868,7 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 		metrics::populateMetricCacheEnd(dev, cache);
 	}
 	evaluate(split.windowed, dev, cache, values);
-	return buildDeviceNode(devPciAddr(dev), options.selection, values, statics[index], procs);
+	return buildDeviceNode(devPciAddr(dev), options.selection, values, staticProps[index], procs);
 }
 
 std::optional<std::string> QuerySession::headerValue(std::string_view fieldName)

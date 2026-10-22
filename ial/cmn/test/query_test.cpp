@@ -21,7 +21,6 @@
 std::string progName = "test";
 
 #include "cmd_query.h"
-#include "metrics/clock.h"
 #include "metrics_registry.h"
 #include <algorithm>
 #include <ranges>
@@ -122,7 +121,7 @@ struct FakeArgs
 struct MarkedInputs
 {
 	MetricValues metricValues;
-	QueryStatics statics;
+	QueryStaticProps staticProps;
 	std::vector<std::string> storage;
 
 	MarkedInputs()
@@ -132,7 +131,7 @@ struct MarkedInputs
 			metricValues[name] = "M:" + std::string{name};
 		}
 		for (const auto &known : staticKeys()) {
-			statics.values.push_back({known.key, "S:" + std::string{known.key}});
+			staticProps.values.push_back({known.key, "S:" + std::string{known.key}});
 		}
 	}
 };
@@ -434,7 +433,7 @@ TEST_SUITE("query layout")
 	{
 		const MarkedInputs inputs;
 		const auto device =
-			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.statics, {});
+			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.staticProps, {});
 		const auto text = rendered(device);
 		CHECK(countOf(text, ": S:") == staticKeys().size());
 		CHECK(countOf(text, ": M:") == referencedMetricNames().size());
@@ -449,55 +448,36 @@ TEST_SUITE("query layout")
 	{
 		const MarkedInputs inputs;
 		const auto device =
-			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.statics, {});
+			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.staticProps, {});
 		const auto labels = topLevelLabels(device);
-		const std::vector<std::string> expected{"Product Name",		"Serial Number",
-												"GPU UUID",			"Device Index",
-												"VBIOS Version",	"Board Part Number",
-												"Device State",		"PCI",
-												"Fan Speed",		"Clocks Event Reasons",
-												"FB Memory Usage",	"Scheduler Mode",
-												"Utilization",		"ECC Mode",
-												"ECC Errors",		"Retired Pages",
-												"Temperature",		"GPU Power Readings",
-												"Clocks",			"Max Clocks",
-												"Supported Clocks", "Processes"};
+		const std::vector<std::string> expected{
+			"Product Name",	   "Serial Number",		"GPU UUID",			  "Device Index",
+			"VBIOS Version",   "Board Part Number", "Device State",		  "PCI",
+			"FB Memory Usage", "Scheduler Mode",	"Utilization",		  "ECC Mode",
+			"ECC Errors",	   "Temperature",		"GPU Power Readings", "Clocks",
+			"Max Clocks",	   "Supported Clocks",	"Processes"};
 		CHECK(labels == expected);
-	}
-
-	TEST_CASE("the clocks event reasons section has one row per throttle reason, in table order")
-	{
-		const MarkedInputs inputs;
-		const auto device = buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.statics, {});
-		const auto it = std::ranges::find(device.children, "Clocks Event Reasons", &QueryNode::label);
-		REQUIRE(it != device.children.end());
-		REQUIRE(it->children.size() == metrics::clock::THROTTLE_REASONS.size());
-		for (std::size_t i = 0; i < it->children.size(); ++i) {
-			CHECK(it->children[i].label == metrics::clock::THROTTLE_REASONS[i].label);
-			CHECK(it->children[i].key == metrics::clock::THROTTLE_REASONS[i].key);
-			CHECK(it->children[i].value == "M:" + std::string{metrics::clock::THROTTLE_REASONS[i].metricName});
-		}
 	}
 
 	TEST_CASE("supported clocks are left out unless asked for")
 	{
 		const MarkedInputs inputs;
 		const auto byDefault =
-			rendered(buildDeviceNode("x", QuerySelection{}, inputs.metricValues, inputs.statics, {}));
+			rendered(buildDeviceNode("x", QuerySelection{}, inputs.metricValues, inputs.staticProps, {}));
 		CHECK(byDefault.find("Supported Clocks") == std::string::npos);
 		CHECK(byDefault.find("Max Clocks") != std::string::npos);
 		for (const char *sections : {"SUPPORTED_CLOCKS", "ALL", "clock,supported_clocks"}) {
 			const auto text =
-				rendered(buildDeviceNode("x", *parseSelection(sections), inputs.metricValues, inputs.statics, {}));
+				rendered(buildDeviceNode("x", *parseSelection(sections), inputs.metricValues, inputs.staticProps, {}));
 			CHECK_MESSAGE(text.find("Supported Clocks") != std::string::npos, sections);
 		}
 	}
 
-	TEST_CASE("rows other tools do not report, or that need extra GSC or AMC queries, are not in the report")
+	TEST_CASE("rows left out of the report, such as those that need extra GSC or AMC queries, are not in it")
 	{
 		const MarkedInputs inputs;
 		const auto text =
-			rendered(buildDeviceNode("x", *parseSelection("ALL"), inputs.metricValues, inputs.statics, {}));
+			rendered(buildDeviceNode("x", *parseSelection("ALL"), inputs.metricValues, inputs.staticProps, {}));
 		for (const char *gone : {"SKU Type",
 								 "Stepping",
 								 "Vendor Name",
@@ -541,8 +521,8 @@ TEST_SUITE("query layout")
 	{
 		const MarkedInputs inputs;
 		const auto device =
-			buildDeviceNode("0000:03:00.0", *parseSelection("MEMORY"), inputs.metricValues, inputs.statics, {});
-		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Utilization", "Retired Pages"});
+			buildDeviceNode("0000:03:00.0", *parseSelection("MEMORY"), inputs.metricValues, inputs.staticProps, {});
+		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Utilization"});
 		CHECK(rendered(device).find("M:utilization.gpu") == std::string::npos);
 	}
 
@@ -550,7 +530,7 @@ TEST_SUITE("query layout")
 	{
 		const MarkedInputs inputs;
 		const auto device =
-			buildDeviceNode("0000:03:00.0", *parseSelection("PIDS"), inputs.metricValues, inputs.statics, {});
+			buildDeviceNode("0000:03:00.0", *parseSelection("PIDS"), inputs.metricValues, inputs.staticProps, {});
 		CHECK(topLevelLabels(device) == std::vector<std::string>{"Processes"});
 	}
 
@@ -559,16 +539,16 @@ TEST_SUITE("query layout")
 		const MarkedInputs inputs;
 		for (const char *sections : {"MEMORY", "UTILIZATION"}) {
 			const auto device =
-				buildDeviceNode("0000:03:00.0", *parseSelection(sections), inputs.metricValues, inputs.statics, {});
+				buildDeviceNode("0000:03:00.0", *parseSelection(sections), inputs.metricValues, inputs.staticProps, {});
 			CHECK_MESSAGE(rendered(device).find("M:utilization.memory") != std::string::npos, sections);
 		}
 	}
 
 	TEST_CASE("a property that does not apply to the device is left out, one that failed reads N/A")
 	{
-		QueryStatics statics;
-		statics.values.push_back({"device_state", std::nullopt});
-		const auto device = buildDeviceNode("0000:03:00.0", *parseSelection("IDENTITY"), {}, statics, {});
+		QueryStaticProps staticProps;
+		staticProps.values.push_back({"device_state", std::nullopt});
+		const auto device = buildDeviceNode("0000:03:00.0", *parseSelection("IDENTITY"), {}, staticProps, {});
 		const auto text = rendered(device);
 		CHECK(valueOnLine(text, "Device State") == "N/A");
 		CHECK(text.find("Board Part Number") == std::string::npos);
@@ -608,9 +588,9 @@ TEST_SUITE("query layout")
 	{
 		MetricValues values;
 		values["vbios_version"] = "";
-		QueryStatics statics;
-		statics.values.push_back({"part_number", std::string{}});
-		const auto text = rendered(buildDeviceNode("x", *parseSelection("IDENTITY"), values, statics, {}));
+		QueryStaticProps staticProps;
+		staticProps.values.push_back({"part_number", std::string{}});
+		const auto text = rendered(buildDeviceNode("x", *parseSelection("IDENTITY"), values, staticProps, {}));
 		CHECK(valueOnLine(text, "VBIOS Version") == "N/A");
 		CHECK(valueOnLine(text, "Board Part Number") == "N/A");
 	}
@@ -648,12 +628,12 @@ TEST_CASE("a device that answers nothing renders every row as N/A and every valu
 	for (const auto name : referencedMetricNames()) {
 		values[name] = std::nullopt;
 	}
-	QueryStatics statics;
+	QueryStaticProps staticProps;
 	for (const auto &known : staticKeys()) {
-		statics.values.push_back({known.key, std::nullopt});
+		staticProps.values.push_back({known.key, std::nullopt});
 	}
 
-	const auto node = buildDeviceNode("0000:00:00.0", QuerySelection{}, values, statics, {});
+	const auto node = buildDeviceNode("0000:00:00.0", QuerySelection{}, values, staticProps, {});
 	std::string text;
 	for (const auto &child : node.children) {
 		renderNode(child, 1, text);

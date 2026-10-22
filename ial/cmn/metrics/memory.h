@@ -2,8 +2,7 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Memory metrics: total/used/free capacity, read/write bandwidth and the number of
- * pages taken offline.
+ * Memory metrics: total/used/free capacity and read/write bandwidth.
  */
 
 #pragma once

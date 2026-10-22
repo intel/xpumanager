@@ -85,18 +85,17 @@ enum class MetricGroup : uint32_t
 	NONE = 0,
 	IDENTITY = 1U << 0,			 /**< name, index, uuid, serial, driver_version, kernel_driver_version,
 									  vbios_version + PCI IDs */
-	MEMORY = 1U << 1,			 /**< memory.total/used/free/offline_pages, utilization.memory */
+	MEMORY = 1U << 1,			 /**< memory.total/used/free, utilization.memory */
 	UTILIZATION = 1U << 2,		 /**< utilization.gpu/compute/render/media/copy */
 	TEMPERATURE = 1U << 3,		 /**< temperature.gpu/memory */
 	POWER = 1U << 4,			 /**< power.draw, energy.consumed */
 	CLOCK = 1U << 5,			 /**< clocks.current.graphics/memory */
 	PCI = 1U << 6,				 /**< pci.*, pcie.link.*, pcie.tx/rx.throughput, pcie.replay */
-	ECC = 1U << 7,				 /**< ecc.mode.current, ecc.errors.corrected/uncorrected; analogous to dmon -s e */
+	ECC = 1U << 7,				 /**< ecc.mode.current, ecc.errors.corrected/uncorrected */
 	EU_ARRAY = 1U << 8,			 /**< eu.active/stall/idle (Intel Xe-only) */
 	FAN = 1U << 9,				 /**< fan.speed */
-	PERFORMANCE = 1U << 10,		 /**< clocks.event_reasons.*: why the GPU clock is held back */
-	SUPPORTED_CLOCKS = 1U << 11, /**< clocks.supported.*: clocks the frequency range can be set to */
-	COMPUTE = 1U << 12,			 /**< scheduler.*: how the device schedules compute work */
+	SUPPORTED_CLOCKS = 1U << 10, /**< clocks.supported.*: clocks the frequency range can be set to */
+	COMPUTE = 1U << 11,			 /**< scheduler.*: how the device schedules compute work */
 	ALL = ~0U,
 };
 
@@ -434,7 +433,6 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 	{"EU_ARRAY", "x", MetricGroup::EU_ARRAY},
 	{"FAN", "f", MetricGroup::FAN},
 	{"COMPUTE", "", MetricGroup::COMPUTE},
-	{"PERFORMANCE", "", MetricGroup::PERFORMANCE},
 	{"SUPPORTED_CLOCKS", "", MetricGroup::SUPPORTED_CLOCKS},
 	{"ALL", "", MetricGroup::ALL},
 });

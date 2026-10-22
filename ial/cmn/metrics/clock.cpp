@@ -262,44 +262,32 @@ ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
+	using Entry = std::pair<zes_freq_throttle_reason_flags_t, std::string_view>;
+	static constexpr auto table = std::to_array<Entry>({
+		{ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT, "Thermal"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_AVE_PWR_CAP, "Power"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_BURST_PWR_CAP, "PowerBurst"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_CURRENT_LIMIT, "Current"},
+		// Power supply assertion. On CRI this carries the power break event, which the
+		// driver derives from the RATL perf limit reason.
+		{ZES_FREQ_THROTTLE_REASON_FLAG_PSU_ALERT, "PsuAlert"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_SW_RANGE, "SW"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_HW_RANGE, "HW"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_VOLTAGE, "Voltage"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL, "ThermalAlert"},
+		{ZES_FREQ_THROTTLE_REASON_FLAG_POWER, "PowerAlert"},
+	});
 	std::string resultStr;
-	for (const auto &reason : THROTTLE_REASONS) {
-		if ((flags & reason.flag) != 0U) {
+	for (const auto &[bit, name] : table) {
+		if ((flags & bit) != 0U) {
 			if (!resultStr.empty()) {
 				resultStr += ',';
 			}
-			resultStr += reason.shortName;
+			resultStr += name;
 		}
 	}
 	out = resultStr.empty() ? "None" : resultStr;
 	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Reads whether one throttle reason is active.
- *
- * @tparam FLAG The reason to test.
- *
- * @param[in]  d   Device to query.
- * @param[out] out Set to "Active" or "Not Active". Unchanged on failure.
- *
- * @retval ZE_RESULT_SUCCESS                   The reasons were read.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
- * @retval Other                               Any error from the frequency HAL.
- */
-template <zes_freq_throttle_reason_flags_t FLAG>
-ze_result_t throttleFlagGetter(devInfo &d, MetricValue &out, const MetricCache &)
-{
-	auto *freq = d.dev->getFrequency();
-	if (freq == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	zes_freq_throttle_reason_flags_t flags{};
-	auto const result = freq->getThrottleReason(&flags);
-	if (result == ZE_RESULT_SUCCESS) {
-		out = (flags & FLAG) != 0U ? "Active" : "Not Active";
-	}
-	return result;
 }
 
 /**
@@ -334,7 +322,7 @@ constexpr auto MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.current.
 constexpr auto MAX_GRAPHICS_ALIASES = std::to_array<std::string_view>({"clocks.max.sm"});
 constexpr auto MAX_MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.max.video"});
 
-constexpr auto SCALAR_CLOCK_METRICS = std::to_array<QueryMetric>({
+constexpr auto CLOCK_METRICS = std::to_array<QueryMetric>({
 	{
 		.name = "clocks.current.graphics",
 		.aliases = GRAPHICS_ALIASES,
@@ -406,36 +394,6 @@ constexpr auto SCALAR_CLOCK_METRICS = std::to_array<QueryMetric>({
 		.getter = supportedGraphicsGetter,
 	},
 });
-
-/// The registry entry that reports whether the throttle reason at index @p I of THROTTLE_REASONS is active.
-template <std::size_t I> constexpr QueryMetric throttleFlagMetric()
-{
-	return QueryMetric{
-		.name = THROTTLE_REASONS[I].metricName,
-		.unit = "",
-		.description = THROTTLE_REASONS[I].description,
-		.source = MetricSource::Live,
-		.groups = MetricGroup::PERFORMANCE,
-		.getter = throttleFlagGetter<THROTTLE_REASONS[I].flag>,
-	};
-}
-
-template <std::size_t... I> constexpr auto throttleFlagMetrics(std::index_sequence<I...>)
-{
-	return std::array<QueryMetric, sizeof...(I)>{throttleFlagMetric<I>()...};
-}
-
-template <typename T, std::size_t A, std::size_t B>
-constexpr std::array<T, A + B> concatenated(const std::array<T, A> &first, const std::array<T, B> &second)
-{
-	std::array<T, A + B> all{};
-	std::ranges::copy(first, all.begin());
-	std::ranges::copy(second, all.begin() + A);
-	return all;
-}
-
-constexpr auto CLOCK_METRICS =
-	concatenated(SCALAR_CLOCK_METRICS, throttleFlagMetrics(std::make_index_sequence<THROTTLE_REASONS.size()>{}));
 
 } // namespace
 
