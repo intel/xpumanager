@@ -34,7 +34,7 @@ Options
    Metrics to collect. Accepts any of the following forms, or a comma-separated mix:
 
    - **Legacy numeric IDs**: ``0``, ``1``, ``0,1,2`` (see Metrics Reference below)
-   - **Group names**: ``POWER``, ``UTILIZATION``, ``TEMPERATURE``, ``MEMORY``, ``CLOCK``, ``PCI``, ``ECC``, ``EU_ARRAY``, ``FAN``, ``COMPUTE``, ``PERFORMANCE``, ``PAGE_RETIREMENT``, ``SUPPORTED_CLOCKS``, ``ALL``
+   - **Group names**: ``POWER``, ``UTILIZATION``, ``TEMPERATURE``, ``MEMORY``, ``CLOCK``, ``PCI``, ``ECC``, ``EU_ARRAY``, ``FAN``, ``COMPUTE``, ``PERFORMANCE``, ``SUPPORTED_CLOCKS``, ``ALL``
    - **Single-char shortcuts**: ``p`` (Power + Temperature), ``u`` (Utilization), ``m`` (Memory), ``c`` (Clock), ``t`` (PCI), ``e`` (ECC), ``x`` (EU_ARRAY), ``f`` (Fan)
    - **Multi-char combos**: ``pu`` (Power + Temperature + Utilization), ``pum`` (Power + Temperature + Utilization + Memory)
 

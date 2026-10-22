@@ -542,7 +542,7 @@ TEST_SUITE("query layout")
 		const MarkedInputs inputs;
 		const auto device =
 			buildDeviceNode("0000:03:00.0", *parseSelection("MEMORY"), inputs.metricValues, inputs.statics, {});
-		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Utilization"});
+		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Utilization", "Retired Pages"});
 		CHECK(rendered(device).find("M:utilization.gpu") == std::string::npos);
 	}
 

@@ -85,7 +85,7 @@ enum class MetricGroup : uint32_t
 	NONE = 0,
 	IDENTITY = 1U << 0,			 /**< name, index, uuid, serial, driver_version, kernel_driver_version,
 									  vbios_version + PCI IDs */
-	MEMORY = 1U << 1,			 /**< memory.total/used/free, utilization.memory */
+	MEMORY = 1U << 1,			 /**< memory.total/used/free/offline_pages, utilization.memory */
 	UTILIZATION = 1U << 2,		 /**< utilization.gpu/compute/render/media/copy */
 	TEMPERATURE = 1U << 3,		 /**< temperature.gpu/memory */
 	POWER = 1U << 4,			 /**< power.draw, energy.consumed */
@@ -96,8 +96,7 @@ enum class MetricGroup : uint32_t
 	FAN = 1U << 9,				 /**< fan.speed */
 	PERFORMANCE = 1U << 10,		 /**< clocks.event_reasons.*: why the GPU clock is held back */
 	SUPPORTED_CLOCKS = 1U << 11, /**< clocks.supported.*: the clocks the GPU can be set to */
-	PAGE_RETIREMENT = 1U << 12,	 /**< retired_pages.*: memory pages the driver has taken offline */
-	COMPUTE = 1U << 13,			 /**< scheduler.*: how the device schedules compute work */
+	COMPUTE = 1U << 12,			 /**< scheduler.*: how the device schedules compute work */
 	ALL = ~0U,
 };
 
@@ -436,7 +435,6 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 	{"FAN", "f", MetricGroup::FAN},
 	{"COMPUTE", "", MetricGroup::COMPUTE},
 	{"PERFORMANCE", "", MetricGroup::PERFORMANCE},
-	{"PAGE_RETIREMENT", "", MetricGroup::PAGE_RETIREMENT},
 	{"SUPPORTED_CLOCKS", "", MetricGroup::SUPPORTED_CLOCKS},
 	{"ALL", "", MetricGroup::ALL},
 });

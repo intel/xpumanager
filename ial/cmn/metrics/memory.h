@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  *
  * Memory metrics: total/used/free capacity, read/write bandwidth and the number of
- * retired pages.
+ * pages taken offline.
  */
 
 #pragma once

@@ -204,7 +204,7 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
 			fieldOf(2, "Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
 	sectionOf(0, "Retired Pages", "retired_pages"),
-		fieldOf(1, "Offline Pages", "offline_pages", "retired_pages.count"),
+		fieldOf(1, "Offline Pages", "offline_pages", "memory.offline_pages"),
 	sectionOf(0, "Temperature", "temperature"),
 		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
 		fieldOf(1, "GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),

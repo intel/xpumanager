@@ -85,7 +85,8 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - Product name, index, serial number, UUID, VBIOS (GFX firmware) version, board part
        number, device state and the PCI address
    * - ``MEMORY``
-     - Memory total, used and free, and memory utilization
+     - Memory total, used and free, memory utilization, and the number of memory pages the
+       driver has taken offline after memory errors
    * - ``UTILIZATION``
      - GPU, memory, compute, render, media and copy engine utilization
    * - ``TEMPERATURE``
@@ -109,8 +110,6 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - Scheduler mode
    * - ``PERFORMANCE``
      - Whether each clock throttle reason is active
-   * - ``PAGE_RETIREMENT``
-     - Number of memory pages the driver has taken offline
    * - ``SUPPORTED_CLOCKS``
      - The clocks the GPU can be set to, summarised as ``low-high step N`` when evenly
        spaced. Printed only when named

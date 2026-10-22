@@ -1605,20 +1605,21 @@ TEST_CASE("ecc.mode.pending is a Static ECC field")
 	CHECK(field->source == MetricSource::Static);
 }
 
-TEST_CASE("retired_pages.count is the only PAGE_RETIREMENT field")
+TEST_CASE("memory.offline_pages is a MEMORY field, and there is no separate page retirement group")
 {
-	const auto pages = getMetricsByGroup(MetricGroup::PAGE_RETIREMENT);
-	REQUIRE(pages.size() == 1);
-	CHECK(pages[0]->name == "retired_pages.count");
-	CHECK(pages[0]->source == MetricSource::Live);
-	CHECK(hasGroup(parseGroupMask("page_retirement"), MetricGroup::PAGE_RETIREMENT));
+	const auto field = findMetric("memory.offline_pages");
+	REQUIRE(field.has_value());
+	CHECK(field->groups == MetricGroup::MEMORY);
+	CHECK(field->source == MetricSource::Live);
+	CHECK_FALSE(findMetric("retired_pages.count").has_value());
+	CHECK(parseGroupMask("page_retirement") == MetricGroup::NONE);
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture,
-				  "retired_pages.count: a device whose driver cannot take pages offline reports it unsupported")
+				  "memory.offline_pages: a device whose driver cannot take pages offline reports it unsupported")
 {
 	const MetricCache cache;
-	const auto field = findMetric("retired_pages.count");
+	const auto field = findMetric("memory.offline_pages");
 	REQUIRE(field.has_value());
 	MetricValue out = "untouched";
 	CHECK(field->getter(di, out, cache) != ZE_RESULT_SUCCESS);

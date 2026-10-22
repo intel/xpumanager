@@ -206,7 +206,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - Device identity fields (name, index, UUID, serial, driver/vbios version, PCI IDs)
    * - ``MEMORY``
      - ``m``
-     - Memory total/used/free, read/write bandwidth, bandwidth utilization
+     - Memory total/used/free, read/write bandwidth, bandwidth utilization, pages taken offline
    * - ``UTILIZATION``
      - ``u``
      - GPU, compute, render, media, copy engine utilization (%)
@@ -237,9 +237,6 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
    * - ``PERFORMANCE``
      - —
      - Whether each clock throttle reason is active
-   * - ``PAGE_RETIREMENT``
-     - —
-     - Number of memory pages the driver has taken offline
    * - ``SUPPORTED_CLOCKS``
      - —
      - Clocks the GPU can be set to
@@ -377,9 +374,10 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``memory.bandwidth.utilization``
      - %
      - Memory bandwidth utilization
-   * - ``retired_pages.count``
+   * - ``memory.offline_pages``
      - —
-     - Number of memory pages the driver has taken offline
+     - Number of memory pages the driver has taken offline after memory errors (dynamic page
+       offlining); the same count ``stats`` shows as Offline Memory Pages
    * - ``clocks.current.graphics`` (alias: ``clocks.current.sm``)
      - MHz
      - Current graphics/SM clock

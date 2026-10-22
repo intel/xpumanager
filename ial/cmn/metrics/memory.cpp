@@ -146,13 +146,13 @@ constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 		return ZE_RESULT_SUCCESS;
 	}};
 
-constexpr auto RETIRED_PAGES =
+constexpr auto OFFLINE_PAGES =
 	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "retired_pages.count",
+				.name = "memory.offline_pages",
 				.unit = "",
-				.description = "Number of GPU memory pages the driver has taken offline",
+				.description = "Number of GPU memory pages the driver has taken offline after memory errors",
 				.source = MetricSource::Live,
-				.groups = MetricGroup::PAGE_RETIREMENT,
+				.groups = MetricGroup::MEMORY,
 				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
 					auto *pages = d.dev->getPageOffline();
 					if (pages == nullptr) {
@@ -167,7 +167,7 @@ constexpr auto RETIRED_PAGES =
 				}};
 
 constexpr auto ALL = std::to_array<QueryMetric>(
-	{total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION, RETIRED_PAGES});
+	{total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION, OFFLINE_PAGES});
 
 } // namespace
 
