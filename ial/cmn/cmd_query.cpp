@@ -101,184 +101,179 @@ enum class SpecKind
 	BdfDevice,
 };
 
-/** Describes one row or section of the device report. */
+/**
+ * Describes one row or section of the device report.
+ *
+ * The layout is a flat list in report order. The rows that follow a section one level deeper,
+ * up to the next row at the section's depth or shallower, are its children.
+ */
 struct Spec
 {
-	SpecKind kind;
+	SpecKind kind = SpecKind::Section;
+	std::size_t depth = 0;
 	std::string_view label;
 	std::string_view key;
-	std::string_view source; ///< Registry field name, or static property key.
-	std::vector<Spec> children;
+	std::string_view source;		///< Registry field name, or static property key.
 	bool negativeIsUnknown = false; ///< A negative reading is the driver's way of saying "unknown".
 };
 
 constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
 
-[[nodiscard]] Spec sectionOf(std::string_view label, std::string_view key, std::vector<Spec> children)
+[[nodiscard]] constexpr Spec sectionOf(std::size_t depth, std::string_view label, std::string_view key)
 {
-	return Spec{SpecKind::Section, label, key, {}, std::move(children)};
+	return Spec{SpecKind::Section, depth, label, key, {}};
 }
 
-[[nodiscard]] Spec fieldOf(std::string_view label, std::string_view key, std::string_view name)
+[[nodiscard]] constexpr Spec fieldOf(std::size_t depth, std::string_view label, std::string_view key,
+									 std::string_view name)
 {
-	return Spec{SpecKind::Field, label, key, name, {}};
+	return Spec{SpecKind::Field, depth, label, key, name};
 }
 
 /// A field whose driver reports -1 when it does not know the value.
-[[nodiscard]] Spec linkFieldOf(std::string_view label, std::string_view key, std::string_view name)
+[[nodiscard]] constexpr Spec linkFieldOf(std::size_t depth, std::string_view label, std::string_view key,
+										 std::string_view name)
 {
-	Spec spec = fieldOf(label, key, name);
-	spec.negativeIsUnknown = true;
-	return spec;
+	return Spec{SpecKind::Field, depth, label, key, name, true};
 }
 
-[[nodiscard]] Spec staticOf(std::string_view label, std::string_view key, std::string_view staticKey)
+[[nodiscard]] constexpr Spec staticOf(std::size_t depth, std::string_view label, std::string_view key,
+									  std::string_view staticKey)
 {
-	return Spec{SpecKind::Static, label, key, staticKey, {}};
+	return Spec{SpecKind::Static, depth, label, key, staticKey};
 }
 
-[[nodiscard]] Spec pciPartOf(SpecKind kind, std::string_view label, std::string_view key)
+[[nodiscard]] constexpr Spec pciPartOf(SpecKind kind, std::size_t depth, std::string_view label, std::string_view key)
 {
-	return Spec{kind, label, key, BUS_ID_FIELD, {}};
+	return Spec{kind, depth, label, key, BUS_ID_FIELD};
+}
+
+// Rows follow the order and section names of the device report other GPU tools print, keeping
+// only attributes with an Intel equivalent. Static detail that discovery --dump already lists is
+// left out, as are values that need extra GSC or AMC round trips per device.
+// clang-format off
+constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
+	fieldOf(0, "Product Name", "product_name", "name"),
+	fieldOf(0, "Serial Number", "serial_number", "serial"),
+	fieldOf(0, "GPU UUID", "gpu_uuid", "uuid"),
+	fieldOf(0, "Device Index", "device_index", "index"),
+	fieldOf(0, "VBIOS Version", "vbios_version", "vbios_version"),
+	staticOf(0, "Board Part Number", "board_part_number", "part_number"),
+	staticOf(0, "Device State", "device_state", "device_state"),
+	sectionOf(0, "PCI", "pci"),
+		pciPartOf(SpecKind::BdfBus, 1, "Bus", "bus"),
+		pciPartOf(SpecKind::BdfDevice, 1, "Device", "device"),
+		pciPartOf(SpecKind::BdfDomain, 1, "Domain", "domain"),
+		fieldOf(1, "Device Id", "device_id", "pci.device_id"),
+		fieldOf(1, "Bus Id", "bus_id", BUS_ID_FIELD),
+		fieldOf(1, "Sub System Id", "sub_system_id", "pci.sub_device_id"),
+		sectionOf(1, "GPU Link Info", "gpu_link_info"),
+			sectionOf(2, "PCIe Generation", "pcie_generation"),
+				linkFieldOf(3, "Max", "max", "pcie.link.gen.max"),
+				linkFieldOf(3, "Current", "current", "pcie.link.gen.current"),
+			sectionOf(2, "Link Width", "link_width"),
+				linkFieldOf(3, "Max", "max", "pcie.link.width.max"),
+				linkFieldOf(3, "Current", "current", "pcie.link.width.current"),
+		fieldOf(1, "Replays Since Reset", "replays_since_reset", "pcie.replay.counter"),
+		fieldOf(1, "Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
+		fieldOf(1, "Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
+	fieldOf(0, "Fan Speed", "fan_speed", "fan.speed"),
+	sectionOf(0, "Clocks Event Reasons", "clocks_event_reasons"),
+});
+
+// The rows of Clocks Event Reasons come from THROTTLE_REASONS, between LAYOUT_HEAD and LAYOUT_TAIL.
+
+constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
+	sectionOf(0, "FB Memory Usage", "fb_memory_usage"),
+		fieldOf(1, "Total", "total", "memory.total"),
+		fieldOf(1, "Used", "used", "memory.used"),
+		fieldOf(1, "Free", "free", "memory.free"),
+	fieldOf(0, "Scheduler Mode", "scheduler_mode", "scheduler.mode"),
+	sectionOf(0, "Utilization", "utilization"),
+		fieldOf(1, "GPU", "gpu", "utilization.gpu"),
+		fieldOf(1, "Memory", "memory", "utilization.memory"),
+		fieldOf(1, "Compute", "compute", "utilization.compute"),
+		fieldOf(1, "Render", "render", "utilization.render"),
+		fieldOf(1, "Media", "media", "utilization.media"),
+		fieldOf(1, "Copy", "copy", "utilization.copy"),
+	sectionOf(0, "ECC Mode", "ecc_mode"),
+		fieldOf(1, "Current", "current", "ecc.mode.current"),
+		fieldOf(1, "Pending", "pending", "ecc.mode.pending"),
+	sectionOf(0, "ECC Errors", "ecc_errors"),
+		sectionOf(1, "Aggregate", "aggregate"),
+			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
+			fieldOf(2, "Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
+	sectionOf(0, "Retired Pages", "retired_pages"),
+		fieldOf(1, "Offline Pages", "offline_pages", "retired_pages.count"),
+	sectionOf(0, "Temperature", "temperature"),
+		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
+		fieldOf(1, "GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
+		fieldOf(1, "GPU Slowdown Temp", "gpu_slowdown_temp", "temperature.gpu.threshold.throttle"),
+		fieldOf(1, "Memory Current Temp", "memory_current_temp", "temperature.memory"),
+		fieldOf(1, "Memory Shutdown Temp", "memory_shutdown_temp", "temperature.memory.threshold.shutdown"),
+		fieldOf(1, "Memory Slowdown Temp", "memory_slowdown_temp", "temperature.memory.threshold.throttle"),
+	sectionOf(0, "GPU Power Readings", "gpu_power_readings"),
+		fieldOf(1, "Average Power Draw", "average_power_draw", "power.draw"),
+		fieldOf(1, "Current Power Limit", "current_power_limit", "power.limit"),
+		fieldOf(1, "Default Power Limit", "default_power_limit", "power.limit.default"),
+		fieldOf(1, "Min Power Limit", "min_power_limit", "power.limit.min"),
+		fieldOf(1, "Max Power Limit", "max_power_limit", "power.max_limit"),
+	sectionOf(0, "Clocks", "clocks"),
+		fieldOf(1, "Graphics", "graphics", "clocks.current.graphics"),
+		fieldOf(1, "Memory", "memory", "clocks.current.memory"),
+		fieldOf(1, "Media", "media", "clocks.current.media"),
+	sectionOf(0, "Max Clocks", "max_clocks"),
+		fieldOf(1, "Graphics", "graphics", "clocks.max.graphics"),
+		fieldOf(1, "Media", "media", "clocks.max.media"),
+	sectionOf(0, "Supported Clocks", "supported_clocks"),
+		fieldOf(1, "Graphics", "graphics", "clocks.supported.graphics"),
+});
+// clang-format on
+
+constexpr auto THROTTLE_ROWS = [] {
+	std::array<Spec, metrics::clock::THROTTLE_REASONS.size()> rows{};
+	std::ranges::transform(metrics::clock::THROTTLE_REASONS, rows.begin(),
+						   [](const auto &reason) { return fieldOf(1, reason.label, reason.key, reason.metricName); });
+	return rows;
+}();
+
+template <std::size_t... N> [[nodiscard]] constexpr auto joinRows(const std::array<Spec, N> &...parts)
+{
+	std::array<Spec, (N + ...)> rows{};
+	auto out = rows.begin();
+	((out = std::ranges::copy(parts, out).out), ...);
+	return rows;
 }
 
 /// The device report, top to bottom. Each row names where its value comes from.
-[[nodiscard]] const std::vector<Spec> &reportLayout()
-{
-	// Rows follow the order and section names of the device report other GPU tools print, keeping
-	// only attributes with an Intel equivalent. Static detail that discovery --dump already lists is
-	// left out, as are values that need extra GSC or AMC round trips per device.
-	static const std::vector<Spec> LAYOUT = [] {
-		std::vector<Spec> rows;
-		rows.push_back(fieldOf("Product Name", "product_name", "name"));
-		rows.push_back(fieldOf("Serial Number", "serial_number", "serial"));
-		rows.push_back(fieldOf("GPU UUID", "gpu_uuid", "uuid"));
-		rows.push_back(fieldOf("Device Index", "device_index", "index"));
-		rows.push_back(fieldOf("VBIOS Version", "vbios_version", "vbios_version"));
-		rows.push_back(staticOf("Board Part Number", "board_part_number", "part_number"));
-		rows.push_back(staticOf("Device State", "device_state", "device_state"));
-		rows.push_back(
-			sectionOf("PCI", "pci",
-					  {
-						  pciPartOf(SpecKind::BdfBus, "Bus", "bus"),
-						  pciPartOf(SpecKind::BdfDevice, "Device", "device"),
-						  pciPartOf(SpecKind::BdfDomain, "Domain", "domain"),
-						  fieldOf("Device Id", "device_id", "pci.device_id"),
-						  fieldOf("Bus Id", "bus_id", BUS_ID_FIELD),
-						  fieldOf("Sub System Id", "sub_system_id", "pci.sub_device_id"),
-						  sectionOf("GPU Link Info", "gpu_link_info",
-									{
-										sectionOf("PCIe Generation", "pcie_generation",
-												  {
-													  linkFieldOf("Max", "max", "pcie.link.gen.max"),
-													  linkFieldOf("Current", "current", "pcie.link.gen.current"),
-												  }),
-										sectionOf("Link Width", "link_width",
-												  {
-													  linkFieldOf("Max", "max", "pcie.link.width.max"),
-													  linkFieldOf("Current", "current", "pcie.link.width.current"),
-												  }),
-									}),
-						  fieldOf("Replays Since Reset", "replays_since_reset", "pcie.replay.counter"),
-						  fieldOf("Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
-						  fieldOf("Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
-					  }));
-		rows.push_back(fieldOf("Fan Speed", "fan_speed", "fan.speed"));
-		{
-			std::vector<Spec> reasons;
-			for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
-				reasons.push_back(fieldOf(reason.label, reason.key, reason.metricName));
-			}
-			rows.push_back(sectionOf("Clocks Event Reasons", "clocks_event_reasons", std::move(reasons)));
-		}
-		rows.push_back(sectionOf("FB Memory Usage", "fb_memory_usage",
-								 {
-									 fieldOf("Total", "total", "memory.total"),
-									 fieldOf("Used", "used", "memory.used"),
-									 fieldOf("Free", "free", "memory.free"),
-								 }));
-		rows.push_back(fieldOf("Scheduler Mode", "scheduler_mode", "scheduler.mode"));
-		rows.push_back(sectionOf("Utilization", "utilization",
-								 {
-									 fieldOf("GPU", "gpu", "utilization.gpu"),
-									 fieldOf("Memory", "memory", "utilization.memory"),
-									 fieldOf("Compute", "compute", "utilization.compute"),
-									 fieldOf("Render", "render", "utilization.render"),
-									 fieldOf("Media", "media", "utilization.media"),
-									 fieldOf("Copy", "copy", "utilization.copy"),
-								 }));
-		rows.push_back(sectionOf("ECC Mode", "ecc_mode",
-								 {
-									 fieldOf("Current", "current", "ecc.mode.current"),
-									 fieldOf("Pending", "pending", "ecc.mode.pending"),
-								 }));
-		rows.push_back(sectionOf(
-			"ECC Errors", "ecc_errors",
-			{
-				sectionOf("Aggregate", "aggregate",
-						  {
-							  fieldOf("Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
-							  fieldOf("Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
-						  }),
-			}));
-		rows.push_back(sectionOf("Retired Pages", "retired_pages",
-								 {
-									 fieldOf("Offline Pages", "offline_pages", "retired_pages.count"),
-								 }));
-		rows.push_back(sectionOf(
-			"Temperature", "temperature",
-			{
-				fieldOf("GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
-				fieldOf("GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
-				fieldOf("GPU Slowdown Temp", "gpu_slowdown_temp", "temperature.gpu.threshold.throttle"),
-				fieldOf("Memory Current Temp", "memory_current_temp", "temperature.memory"),
-				fieldOf("Memory Shutdown Temp", "memory_shutdown_temp", "temperature.memory.threshold.shutdown"),
-				fieldOf("Memory Slowdown Temp", "memory_slowdown_temp", "temperature.memory.threshold.throttle"),
-			}));
-		rows.push_back(sectionOf("GPU Power Readings", "gpu_power_readings",
-								 {
-									 fieldOf("Average Power Draw", "average_power_draw", "power.draw"),
-									 fieldOf("Current Power Limit", "current_power_limit", "power.limit"),
-									 fieldOf("Default Power Limit", "default_power_limit", "power.limit.default"),
-									 fieldOf("Min Power Limit", "min_power_limit", "power.limit.min"),
-									 fieldOf("Max Power Limit", "max_power_limit", "power.max_limit"),
-								 }));
-		rows.push_back(sectionOf("Clocks", "clocks",
-								 {
-									 fieldOf("Graphics", "graphics", "clocks.current.graphics"),
-									 fieldOf("Memory", "memory", "clocks.current.memory"),
-									 fieldOf("Media", "media", "clocks.current.media"),
-								 }));
-		rows.push_back(sectionOf("Max Clocks", "max_clocks",
-								 {
-									 fieldOf("Graphics", "graphics", "clocks.max.graphics"),
-									 fieldOf("Media", "media", "clocks.max.media"),
-								 }));
-		rows.push_back(sectionOf("Supported Clocks", "supported_clocks",
-								 {
-									 fieldOf("Graphics", "graphics", "clocks.supported.graphics"),
-								 }));
-		return rows;
-	}();
-	return LAYOUT;
-}
+constexpr auto REPORT_LAYOUT = joinRows(LAYOUT_HEAD, THROTTLE_ROWS, LAYOUT_TAIL);
 
-void collectFieldNames(const std::vector<Spec> &rows, std::vector<std::string_view> &names)
+/// Each row is at most one level deeper than the row before it, only a section is followed by a
+/// deeper row, and every section has at least one row under it.
+[[nodiscard]] constexpr bool wellFormed(std::span<const Spec> rows)
 {
-	for (const auto &row : rows) {
-		switch (row.kind) {
-		case SpecKind::Section:
-			collectFieldNames(row.children, names);
-			break;
-		case SpecKind::Static:
-			break;
-		default:
-			if (std::ranges::find(names, row.source) == names.end()) {
-				names.push_back(row.source);
-			}
-			break;
+	if (rows.empty() || rows.front().depth != 0 || rows.back().kind == SpecKind::Section) {
+		return false;
+	}
+	for (std::size_t i = 1; i < rows.size(); ++i) {
+		const Spec &prev = rows[i - 1];
+		const bool nested = prev.kind == SpecKind::Section;
+		if (nested ? rows[i].depth != prev.depth + 1 : rows[i].depth > prev.depth) {
+			return false;
 		}
 	}
+	return true;
+}
+static_assert(wellFormed(REPORT_LAYOUT));
+
+/// Number of rows from @p rows.front() through its last descendant.
+[[nodiscard]] constexpr std::size_t extentOf(std::span<const Spec> rows) noexcept
+{
+	std::size_t n = 1;
+	while (n < rows.size() && rows[n].depth > rows.front().depth) {
+		++n;
+	}
+	return n;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -335,19 +330,23 @@ struct BuildContext
 	}
 }
 
-/// Build the node for one spec row, or nothing when the selection hides it or it has nothing to show.
-[[nodiscard]] std::optional<QueryNode> buildRow(const Spec &spec, const BuildContext &ctx)
+void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<QueryNode> &out);
+
+/**
+ * @brief Build the node for one spec row, or nothing when the selection hides it or it has nothing to show.
+ *
+ * @param[in] rows The row followed by its descendants, see extentOf().
+ * @param[in] ctx  Selection and collected values.
+ */
+[[nodiscard]] std::optional<QueryNode> buildRow(std::span<const Spec> rows, const BuildContext &ctx)
 {
+	const Spec &spec = rows.front();
 	switch (spec.kind) {
 	case SpecKind::Section: {
 		QueryNode section;
 		section.label = spec.label;
 		section.key = spec.key;
-		for (const auto &child : spec.children) {
-			if (auto node = buildRow(child, ctx)) {
-				section.children.push_back(std::move(*node));
-			}
-		}
+		buildRows(rows.subspan(1), ctx, section.children);
 		if (section.children.empty()) {
 			return std::nullopt;
 		}
@@ -378,6 +377,18 @@ struct BuildContext
 		}
 		return leafOf(spec.label, spec.key, pciPartText(spec.kind, valueOf(ctx.values, BUS_ID_FIELD)));
 	}
+	}
+}
+
+/// Build the rows of @p rows that share its first row's depth, each with its descendants, into @p out.
+void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<QueryNode> &out)
+{
+	while (!rows.empty()) {
+		const std::size_t extent = extentOf(rows);
+		if (auto node = buildRow(rows.first(extent), ctx)) {
+			out.push_back(std::move(*node));
+		}
+		rows = rows.subspan(extent);
 	}
 }
 
@@ -522,7 +533,12 @@ std::span<const std::string_view> referencedMetricNames()
 {
 	static const std::vector<std::string_view> NAMES = [] {
 		std::vector<std::string_view> names;
-		collectFieldNames(reportLayout(), names);
+		for (const auto &row : REPORT_LAYOUT) {
+			const bool readsField = row.kind != SpecKind::Section && row.kind != SpecKind::Static;
+			if (readsField && std::ranges::find(names, row.source) == names.end()) {
+				names.push_back(row.source);
+			}
+		}
 		return names;
 	}();
 	return NAMES;
@@ -675,11 +691,7 @@ QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection,
 	device.value = std::string{bdf};
 
 	const BuildContext ctx{selection, metricValues, statics};
-	for (const auto &row : reportLayout()) {
-		if (auto node = buildRow(row, ctx)) {
-			device.children.push_back(std::move(*node));
-		}
-	}
+	buildRows(REPORT_LAYOUT, ctx, device.children);
 	if (selection.processes) {
 		device.children.push_back(processesSection(procs));
 	}
