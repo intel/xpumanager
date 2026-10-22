@@ -17,6 +17,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <future>
 #include <metric.h>
 #include <optional>
 #include <span>
@@ -237,6 +238,12 @@ struct MetricCache
 	bool powerAvail = false; /**< true when power HAL is present */
 	/** EU active/stall/idle — populated once per tick by populateMetricCacheEnd */
 	EuMetricsData euSample{};
+	/**
+	 * EU sample that @ref populateMetricCacheBegin started, so that its fixed monitor window
+	 * runs alongside the sampling window instead of after it. Collected and cleared by
+	 * @ref populateMetricCacheEnd, which samples synchronously when there is none.
+	 */
+	std::shared_future<std::optional<EuMetricsData>> euPending;
 	bool euAvail = false; /**< true when getEuActiveStallIdle succeeded */
 	bool populated = false;
 	std::vector<fdinfo::ProcessSnapshot>

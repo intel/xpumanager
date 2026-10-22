@@ -22,6 +22,7 @@
 #include "ze_api.h"
 #include <enginegroup.h>
 #include <functional>
+#include <future>
 #include <iterator>
 #include <memory.h>
 #include <metric.h>
@@ -87,6 +88,28 @@ EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
 	return engines;
 }
 
+/**
+ * @brief Reads EU active/stall/idle for one device.
+ *
+ * Opens an OA metric streamer and blocks for its fixed monitor window. Takes what it needs by
+ * value, so it can run on another thread for longer than the caller's devInfo lives.
+ *
+ * @retval sample  The first sub-device's figures.
+ * @retval nullopt The device has no metric support or the HAL call failed.
+ */
+[[nodiscard]] static std::optional<EuMetricsData> sampleEu(metric *m, ze_device_handle_t device,
+														   ze_driver_handle_t driver)
+{
+	if (m == nullptr || device == nullptr) {
+		return std::nullopt;
+	}
+	std::vector<EuMetricsData> euVec;
+	if (m->getEuActiveStallIdle(device, driver, euVec) != ZE_RESULT_SUCCESS || euVec.empty()) {
+		return std::nullopt;
+	}
+	return euVec[0];
+}
+
 MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs)
 {
 	MetricCache cache;
@@ -129,6 +152,11 @@ MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs)
 	}
 	if (hasInput(inputs, MetricInput::FDINFO)) {
 		cache.fdinfoSnap = fdinfo::capture(devPciAddr(dev));
+	}
+	if (hasInput(inputs, MetricInput::EU)) {
+		cache.euPending =
+			std::async(std::launch::async, sampleEu, dev.dev->getMetric(), dev.deviceHdl, dev.dev->getDriverHandle())
+				.share();
 	}
 	return cache;
 }
@@ -200,16 +228,15 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	cache.euAvail = false;
 	cache.euSample = {};
 	if (hasInput(inputs, MetricInput::EU)) {
-		metric *m = dev.dev->getMetric();
-		if (m != nullptr && dev.deviceHdl != nullptr) {
-			std::vector<EuMetricsData> euVec;
-			if (m->getEuActiveStallIdle(dev.deviceHdl, dev.dev->getDriverHandle(), euVec) == ZE_RESULT_SUCCESS &&
-				!euVec.empty()) {
-				cache.euSample = euVec[0];
-				cache.euAvail = true;
-			}
+		const auto eu = cache.euPending.valid()
+							? cache.euPending.get()
+							: sampleEu(dev.dev->getMetric(), dev.deviceHdl, dev.dev->getDriverHandle());
+		if (eu) {
+			cache.euSample = *eu;
+			cache.euAvail = true;
 		}
 	}
+	cache.euPending = {};
 
 	cache.fdinfoCompute = std::nullopt;
 	cache.fdinfoRender = std::nullopt;
