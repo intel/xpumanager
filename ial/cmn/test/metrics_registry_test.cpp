@@ -1685,3 +1685,47 @@ TEST_CASE("a field that reads the firmware reads no window data, and VBIOS and s
 	CHECK(std::ranges::find(firmwareFields, "vbios_version") != firmwareFields.end());
 	CHECK(std::ranges::find(firmwareFields, "serial") != firmwareFields.end());
 }
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "PCIe throughput reads an idle link as zero, and moved counters under a frozen timestamp as no value")
+{
+	const auto read = [this](std::string_view name, const MetricCache &cache) -> std::optional<std::string> {
+		const auto field = findMetric(name);
+		REQUIRE(field.has_value());
+		MetricValue out;
+		return field->getter(di, out, cache) == ZE_RESULT_SUCCESS ? std::optional{out} : std::nullopt;
+	};
+	MetricCache cache;
+	cache.pcieAvail = true;
+	cache.pcieBandwidthAvail = true;
+	cache.pcieBefore = {.tx = 5000, .rx = 7000, .timeUs = 1000};
+
+	SUBCASE("idle: neither the counters nor the timestamp moved")
+	{
+		cache.pcieAfter = cache.pcieBefore;
+		for (const auto name :
+			 {"pcie.tx.throughput", "pcie.rx.throughput", "pcie.tx.throughput.kbs", "pcie.rx.throughput.kbs"}) {
+			CHECK_MESSAGE(read(name, cache) == std::optional<std::string>{"0"}, name);
+		}
+	}
+	SUBCASE("counters moved under an unchanged timestamp")
+	{
+		cache.pcieAfter = {.tx = 6000, .rx = 7000, .timeUs = 1000};
+		CHECK_FALSE(read("pcie.tx.throughput", cache).has_value());
+		CHECK_FALSE(read("pcie.tx.throughput.kbs", cache).has_value());
+		CHECK(read("pcie.rx.throughput.kbs", cache) == std::optional<std::string>{"0"});
+	}
+	SUBCASE("a normal window: 1000 bytes over 1000 us")
+	{
+		cache.pcieAfter = {.tx = 6000, .rx = 7000, .timeUs = 2000};
+		CHECK(read("pcie.tx.throughput", cache) == std::optional<std::string>{"1"});
+		CHECK(read("pcie.tx.throughput.kbs", cache) == std::optional<std::string>{"1000"});
+		CHECK(read("pcie.rx.throughput.kbs", cache) == std::optional<std::string>{"0"});
+	}
+	SUBCASE("counters not read at both ends")
+	{
+		cache.pcieAvail = false;
+		cache.pcieAfter = cache.pcieBefore;
+		CHECK_FALSE(read("pcie.tx.throughput.kbs", cache).has_value());
+	}
+}

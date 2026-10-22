@@ -198,7 +198,9 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 			// Reset replay count so a stale value is never visible alongside pcieAvail=false.
 			cache.pcieReplay = 0;
 		}
-		cache.pcieAvail = cache.pcieAvail && pcieEndOk && (cache.pcieAfter.timeUs > cache.pcieBefore.timeUs);
+		// An idle link may leave the timestamp where it was; the getters read that as zero
+		// throughput. Only a timestamp that went backwards makes the window unusable.
+		cache.pcieAvail = cache.pcieAvail && pcieEndOk && (cache.pcieAfter.timeUs >= cache.pcieBefore.timeUs);
 	} else {
 		cache.pcieAvail = false;
 		cache.pcieReplay = 0;

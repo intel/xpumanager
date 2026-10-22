@@ -22,6 +22,43 @@ namespace metrics::pci {
 
 namespace {
 
+/**
+ * @brief Reads one PCIe byte counter's throughput over the sampling window.
+ *
+ * A driver can leave both the counters and their timestamp unchanged while the link is idle;
+ * that reads as zero rather than as no value. Counters that moved under an unchanged
+ * timestamp give no rate.
+ *
+ * @tparam COUNTER   The byte counter, PcieSnapshot::tx or PcieSnapshot::rx.
+ * @tparam PER_SECOND Bytes per second divided by this is the unit: 1000000 for MB/s, 1000 for kB/s.
+ *
+ * @retval ZE_RESULT_SUCCESS   @p out holds the throughput, MB/s as a decimal, kB/s as a whole number.
+ * @retval ZE_RESULT_NOT_READY The counters were not read at both ends of the window, or moved
+ *                             under an unchanged timestamp.
+ */
+template <uint64_t PcieSnapshot::*COUNTER, uint64_t PER_SECOND>
+ze_result_t throughputGetter(devInfo & /*d*/, MetricValue &out, const MetricCache &cache)
+{
+	if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
+		return ZE_RESULT_NOT_READY;
+	}
+	const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
+	const uint64_t bytes = cache.pcieAfter.*COUNTER - cache.pcieBefore.*COUNTER;
+	if (dt == 0) {
+		if (bytes != 0) {
+			return ZE_RESULT_NOT_READY;
+		}
+		out = "0";
+		return ZE_RESULT_SUCCESS;
+	}
+	if constexpr (PER_SECOND == 1000000ULL) {
+		out = xpum::compat::format("{}", static_cast<double>(bytes) / static_cast<double>(dt));
+	} else {
+		out = xpum::compat::format("{}", 1000000ULL * bytes / dt / PER_SECOND);
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
 constexpr auto LINK_GEN_MAX =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "pcie.link.gen.max",
@@ -102,41 +139,23 @@ constexpr auto LINK_WIDTH_CURRENT =
 					return r;
 				}};
 
-constexpr auto TX_THROUGHPUT =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "pcie.tx.throughput",
-				.unit = "MB/s",
-				.description = "PCIe transmit throughput",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::PCI,
-				.inputs = MetricInput::PCIE,
-				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
-						return ZE_RESULT_NOT_READY;
-					}
-					const auto dt = static_cast<double>(cache.pcieAfter.timeUs - cache.pcieBefore.timeUs);
-					const auto tx = static_cast<double>(cache.pcieAfter.tx - cache.pcieBefore.tx);
-					out = xpum::compat::format("{}", tx / dt);
-					return ZE_RESULT_SUCCESS;
-				}};
+constexpr auto TX_THROUGHPUT = QueryMetric{// NOLINT(readability-identifier-naming)
+										   .name = "pcie.tx.throughput",
+										   .unit = "MB/s",
+										   .description = "PCIe transmit throughput",
+										   .source = MetricSource::Live,
+										   .groups = MetricGroup::PCI,
+										   .inputs = MetricInput::PCIE,
+										   .getter = throughputGetter<&PcieSnapshot::tx, 1000000ULL>};
 
-constexpr auto RX_THROUGHPUT =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "pcie.rx.throughput",
-				.unit = "MB/s",
-				.description = "PCIe receive throughput",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::PCI,
-				.inputs = MetricInput::PCIE,
-				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
-						return ZE_RESULT_NOT_READY;
-					}
-					const auto dt = static_cast<double>(cache.pcieAfter.timeUs - cache.pcieBefore.timeUs);
-					const auto rx = static_cast<double>(cache.pcieAfter.rx - cache.pcieBefore.rx);
-					out = xpum::compat::format("{}", rx / dt);
-					return ZE_RESULT_SUCCESS;
-				}};
+constexpr auto RX_THROUGHPUT = QueryMetric{// NOLINT(readability-identifier-naming)
+										   .name = "pcie.rx.throughput",
+										   .unit = "MB/s",
+										   .description = "PCIe receive throughput",
+										   .source = MetricSource::Live,
+										   .groups = MetricGroup::PCI,
+										   .inputs = MetricInput::PCIE,
+										   .getter = throughputGetter<&PcieSnapshot::rx, 1000000ULL>};
 
 constexpr auto REPLAY_COUNTER =
 	QueryMetric{// NOLINT(readability-identifier-naming)
@@ -154,41 +173,23 @@ constexpr auto REPLAY_COUNTER =
 					return ZE_RESULT_SUCCESS;
 				}};
 
-constexpr auto RX_THROUGHPUT_KBS =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "pcie.rx.throughput.kbs",
-				.unit = "kB/s",
-				.description = "PCIe receive throughput (kB/s)",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::PCI,
-				.inputs = MetricInput::PCIE,
-				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
-						return ZE_RESULT_NOT_READY;
-					}
-					const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
-					const uint64_t rx = cache.pcieAfter.rx - cache.pcieBefore.rx;
-					out = xpum::compat::format("{}", 1000000ULL * rx / dt / 1000ULL);
-					return ZE_RESULT_SUCCESS;
-				}};
+constexpr auto RX_THROUGHPUT_KBS = QueryMetric{// NOLINT(readability-identifier-naming)
+											   .name = "pcie.rx.throughput.kbs",
+											   .unit = "kB/s",
+											   .description = "PCIe receive throughput (kB/s)",
+											   .source = MetricSource::Live,
+											   .groups = MetricGroup::PCI,
+											   .inputs = MetricInput::PCIE,
+											   .getter = throughputGetter<&PcieSnapshot::rx, 1000ULL>};
 
-constexpr auto TX_THROUGHPUT_KBS =
-	QueryMetric{// NOLINT(readability-identifier-naming)
-				.name = "pcie.tx.throughput.kbs",
-				.unit = "kB/s",
-				.description = "PCIe transmit throughput (kB/s)",
-				.source = MetricSource::Live,
-				.groups = MetricGroup::PCI,
-				.inputs = MetricInput::PCIE,
-				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
-						return ZE_RESULT_NOT_READY;
-					}
-					const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
-					const uint64_t tx = cache.pcieAfter.tx - cache.pcieBefore.tx;
-					out = xpum::compat::format("{}", 1000000ULL * tx / dt / 1000ULL);
-					return ZE_RESULT_SUCCESS;
-				}};
+constexpr auto TX_THROUGHPUT_KBS = QueryMetric{// NOLINT(readability-identifier-naming)
+											   .name = "pcie.tx.throughput.kbs",
+											   .unit = "kB/s",
+											   .description = "PCIe transmit throughput (kB/s)",
+											   .source = MetricSource::Live,
+											   .groups = MetricGroup::PCI,
+											   .inputs = MetricInput::PCIE,
+											   .getter = throughputGetter<&PcieSnapshot::tx, 1000ULL>};
 
 constexpr auto ALL = std::to_array<QueryMetric>({
 	LINK_GEN_MAX,
