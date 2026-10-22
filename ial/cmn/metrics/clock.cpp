@@ -399,8 +399,8 @@ constexpr auto SCALAR_CLOCK_METRICS = std::to_array<QueryMetric>({
 	{
 		.name = "clocks.supported.graphics",
 		.unit = "MHz",
-		.description = "GPU core clocks the device can be set to: 'low-high step N' when evenly spaced, "
-					   "otherwise a ';' separated list",
+		.description = "GPU core clocks the frequency range can be set to (config --frequencyrange): "
+					   "'low-high step N' when evenly spaced, otherwise a ';' separated list",
 		.source = MetricSource::Static,
 		.groups = MetricGroup::SUPPORTED_CLOCKS,
 		.getter = supportedGraphicsGetter,

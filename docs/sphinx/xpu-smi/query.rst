@@ -73,7 +73,7 @@ wherever it sits in the report, so ``--display PCI`` prints the PCI address fiel
 PCI part of the report, and memory utilization appears under both ``MEMORY`` and
 ``UTILIZATION``. A section or heading with nothing to show is left out. Without
 ``--display`` every section is printed except ``SUPPORTED_CLOCKS``, which must be named
-(or ``ALL`` given) because it lists every clock the GPU can be set to.
+(or ``ALL`` given) because it lists every clock the frequency range can be set to.
 
 .. list-table::
    :widths: 22 78
@@ -111,8 +111,9 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - ``PERFORMANCE``
      - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
-     - The clocks the GPU can be set to, summarised as ``low-high step N`` when evenly
-       spaced. Printed only when named
+     - The GPU core clocks the minimum and maximum of ``config --frequencyrange`` can be set
+       to, summarised as ``low-high step N`` when evenly spaced. The memory clock cannot be
+       set, so it has no list. Printed only when named
    * - ``PIDS``
      - Processes using the device
    * - ``ALL``

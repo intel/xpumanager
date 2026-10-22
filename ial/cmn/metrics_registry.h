@@ -95,7 +95,7 @@ enum class MetricGroup : uint32_t
 	EU_ARRAY = 1U << 8,			 /**< eu.active/stall/idle (Intel Xe-only) */
 	FAN = 1U << 9,				 /**< fan.speed */
 	PERFORMANCE = 1U << 10,		 /**< clocks.event_reasons.*: why the GPU clock is held back */
-	SUPPORTED_CLOCKS = 1U << 11, /**< clocks.supported.*: the clocks the GPU can be set to */
+	SUPPORTED_CLOCKS = 1U << 11, /**< clocks.supported.*: clocks the frequency range can be set to */
 	COMPUTE = 1U << 12,			 /**< scheduler.*: how the device schedules compute work */
 	ALL = ~0U,
 };

@@ -239,7 +239,7 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
      - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
      - —
-     - Clocks the GPU can be set to
+     - GPU clocks the frequency range can be set to
    * - ``ALL``
      - —
      - All metrics from all groups
@@ -392,8 +392,10 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - Max media clock
    * - ``clocks.supported.graphics``
      - MHz
-     - Graphics clocks the device can be set to: ``low-high step N`` when evenly
-       spaced, otherwise a ``;`` separated list
+     - GPU core clocks the minimum and maximum of ``config --frequencyrange`` can be set
+       to: ``low-high step N`` when evenly spaced, otherwise a ``;`` separated list. The GPU
+       cannot be pinned to one of them, and there is no list for the memory clock, which
+       cannot be set
    * - ``clocks.throttle.reason``
      - —
      - Active clock throttle reason flags
