@@ -98,6 +98,16 @@ using ScreenSize = std::function<std::optional<TerminalSize>()>;
 	};
 }
 
+/// What an in-place update writes to replace the line that starts on 1-based @p row and takes @p rows rows.
+[[nodiscard]] std::string rewrite(std::size_t row, std::string_view text, std::size_t rows = 1)
+{
+	std::string out;
+	for (std::size_t r = 0; r < rows; ++r) {
+		out += "\033[" + std::to_string(row + r) + ";1H\033[2K";
+	}
+	return out + "\033[" + std::to_string(row) + ";1H" + std::string{text};
+}
+
 FrameLoopOptions inPlaceOptions(int count)
 {
 	return {.interval = SHORT_INTERVAL, .count = count, .tty = true, .redraw = Redraw::ChangedLines};
@@ -275,7 +285,7 @@ TEST_CASE("a later frame rewrites only the lines that changed")
 	CHECK(rc == 0);
 	CHECK(countOf(out, CLEAR_FRAME) == 1);
 	const auto update = out.substr(out.find("\033[2;1H"));
-	CHECK(update.starts_with("\033[2;1HX\033[K"));
+	CHECK(update.starts_with(rewrite(2, "X")));
 	CHECK(update.find('A') == std::string::npos);
 	CHECK(update.find('C') == std::string::npos);
 	CHECK(update.find("\033[1;1H") == std::string::npos);
@@ -290,7 +300,7 @@ TEST_CASE("an unchanged frame rewrites nothing")
 	const int rc = runFrameLoop(playing({"A\nB\nC\n"}), options);
 
 	CHECK(rc == 0);
-	CHECK(countOf(capture.text(), "\033[K") == 0);
+	CHECK(countOf(capture.text(), "\033[2K") == 0);
 	CHECK(countOf(capture.text(), "A\nB\nC\n") == 1);
 }
 
@@ -302,7 +312,7 @@ TEST_CASE("a longer frame writes its new rows and a shorter one erases the rows 
 		options.screenSize = fixedScreen(50, 120);
 		const int rc = runFrameLoop(playing({"A\nB\n", "A\nB\nnew\n"}), options);
 		CHECK(rc == 0);
-		CHECK(capture.text().find("\033[3;1Hnew\033[K") != std::string::npos);
+		CHECK(capture.text().find(rewrite(3, "new")) != std::string::npos);
 	}
 	{
 		PrintCapture capture;
@@ -408,16 +418,89 @@ TEST_CASE("a frame too tall for the window is printed once whole, and the loop k
 	CHECK(out.find('\033') == std::string::npos);
 }
 
-TEST_CASE("a line that wraps counts as too tall, because it shifts the rows below it")
+TEST_CASE("a line that wraps is kept live, and the lines below it are found on their real rows")
 {
 	PrintCapture capture;
 	auto options = inPlaceOptions(2);
 	options.screenSize = fixedScreen(50, 40);
-	const int rc = runFrameLoop(playing({std::string(100, 'x') + "\nB\n"}), options);
+	const std::string wide(100, 'x'); // three rows at 40 columns
+	const int rc = runFrameLoop(playing({wide + "\nB\nC\n", wide + "\nB\nZ\n"}), options);
+	const std::string out = capture.text();
 
 	CHECK(rc == 0);
-	CHECK(countOf(capture.text(), NOTICE) == 1);
+	CHECK(countOf(out, NOTICE) == 0);
+	CHECK(countOf(out, CLEAR_FRAME) == 1);
+	const auto update = out.substr(out.rfind(wide) + wide.size());
+	CHECK(update.find(rewrite(5, "Z")) != std::string::npos);
+	CHECK(update.find("\033[4;1H") == std::string::npos);
+}
+
+TEST_CASE("a changed line that wraps onto a different number of rows rewrites every line below it")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 40);
+	const int rc = runFrameLoop(playing({"A\nshort\nB\nC\n", "A\n" + std::string(50, 'y') + "\nB\nC\n"}), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	const auto update = out.substr(out.find("\033[2;1H"));
+	CHECK(update.find(rewrite(4, "B")) != std::string::npos);
+	CHECK(update.find(rewrite(5, "C")) != std::string::npos);
+	CHECK(update.find("\033[6;1H\033[J") != std::string::npos);
+	CHECK(update.find("\033[1;1H") == std::string::npos);
+}
+
+TEST_CASE("a rewritten line clears every row it takes before it is written, so nothing follows its last column")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 40);
+	const int rc = runFrameLoop(playing({std::string(80, 'a') + "\n", std::string(80, 'b') + "\n"}), options);
+	const std::string out = capture.text();
+
+	CHECK(rc == 0);
+	const auto update = out.substr(out.find("\033[1;1H"));
+	CHECK(update.starts_with(rewrite(1, std::string(80, 'b'), 2) + "\033[3;1H"));
+}
+
+TEST_CASE("shorter non-ASCII text that fills the row in bytes still clears the old text")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 9);
+	// "\u00e9\u00e9\u00e9" is 6 bytes but 3 cells; "abc" keeps the line 9 bytes, so it fills the row in bytes only.
+	const int rc = runFrameLoop(playing({"abcdefghi\nB\n", "abc\u00e9\u00e9\u00e9\nB\n"}), options);
+
+	CHECK(rc == 0);
+	CHECK(capture.text().find(rewrite(1, "abc\u00e9\u00e9\u00e9")) != std::string::npos);
+}
+
+TEST_CASE("a long line whose width only the terminal knows is printed once, with the reason")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 40);
+	std::string wide;
+	for (int i = 0; i < 20; ++i) {
+		wide += "\u00e9t\u00e9"; // 5 bytes, 3 characters: 100 bytes, 60 characters
+	}
+	const int rc = runFrameLoop(playing({wide + "\nB\n"}), options);
+
+	CHECK(rc == 0);
+	CHECK(countOf(capture.text(), "only the terminal knows") == 1);
 	CHECK(capture.text().find(ENTER_ALTERNATE_SCREEN) == std::string::npos);
+}
+
+TEST_CASE("a non-ASCII line that fits in bytes is one row and stays live")
+{
+	PrintCapture capture;
+	auto options = inPlaceOptions(2);
+	options.screenSize = fixedScreen(50, 40);
+	const int rc = runFrameLoop(playing({"\u00e9t\u00e9\nB\n", "\u00e9t\u00e9\nZ\n"}), options);
+
+	CHECK(rc == 0);
+	CHECK(capture.text().find(rewrite(2, "Z")) != std::string::npos);
 }
 
 TEST_CASE("a window that grows enough starts live updates, with the whole frame drawn at once")
@@ -496,15 +579,30 @@ TEST_CASE("rowsNeeded: one row per line, and a long line wraps")
 	CHECK(rowsNeeded(std::string(500, 'x') + "\n", 0) == 1);
 }
 
-TEST_CASE("fitsScreen: a row must be left free, and no line may wrap")
+TEST_CASE("fitsScreen: a row must be left free, counting the rows a long line wraps onto")
 {
 	const TerminalSize screen{.rows = 4, .columns = 80};
 	CHECK(fitsScreen(frameOfLines(3), screen));
 	CHECK_FALSE(fitsScreen(frameOfLines(4), screen));
 	CHECK_FALSE(fitsScreen(frameOfLines(5), screen));
-	CHECK_FALSE(fitsScreen(std::string(81, 'x') + "\n", TerminalSize{.rows = 50, .columns = 80}));
-	CHECK(fitsScreen(std::string(80, 'x') + "\n", TerminalSize{.rows = 50, .columns = 80}));
+	CHECK(fitsScreen(std::string(81, 'x') + "\n", screen));
+	CHECK(fitsScreen(std::string(80, 'x') + "\nB\n", screen));
+	CHECK_FALSE(fitsScreen(std::string(161, 'x') + "\nB\n", screen));
+	CHECK_FALSE(fitsScreen(std::string(81, '\t') + "\n", TerminalSize{.rows = 50, .columns = 80}));
 	CHECK(fitsScreen(frameOfLines(1000), std::nullopt));
+}
+
+TEST_CASE("lineRows: printable ASCII wraps exactly, other text only when it fits in bytes")
+{
+	using Rows = std::vector<std::size_t>;
+	CHECK(lineRows("", 80) == Rows{});
+	CHECK(lineRows("a\n\nb", 80) == Rows{1, 1, 1});
+	CHECK(lineRows(std::string(80, 'x') + "\n" + std::string(81, 'x') + "\n", 80) == Rows{1, 2});
+	CHECK(lineRows(std::string(161, 'x'), 80) == Rows{3});
+	CHECK(lineRows("\u00e9t\u00e9", 5) == Rows{1});
+	CHECK_FALSE(lineRows("\u00e9t\u00e9", 4));
+	CHECK_FALSE(lineRows("a\tb", 2));
+	CHECK(lineRows(std::string(500, '\t'), 0) == Rows{1});
 }
 
 // ---------------------------------------------------------------------------------------

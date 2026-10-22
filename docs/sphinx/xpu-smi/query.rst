@@ -45,10 +45,10 @@ Options
 
    Print the report again every ``<seconds>`` seconds until interrupted with Ctrl+C. On a
    terminal the whole report is drawn once and then only the lines whose values changed are
-   rewritten, so unchanged data stays on screen. This needs every line of the report to fit
-   in the window. If it does not, the report is printed once and a notice explains why, and
-   nothing more is printed until the window is made large enough, at which point live
-   updates start. Making the window smaller again prints the report once more. Use
+   rewritten, so unchanged data stays on screen. A line wider than the window wraps onto the
+   rows below it. This needs the whole report, wrapped lines included, to fit in the window.
+   If it does not, the report is printed once and a notice explains why, and nothing more is
+   printed until the window is made large enough, at which point live updates start. Making the window smaller again prints the report once more. Use
    ``--display`` to select fewer sections if you want live updates in a smaller window.
    When output goes to a file or a pipe, each report is appended in full.
 

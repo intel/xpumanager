@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <vector>
 
 /** How a frame replaces the previous one on a terminal. */
 enum class Redraw
@@ -50,9 +51,12 @@ using FrameRenderer = std::function<RenderedFrame()>;
 /// Rows a frame takes up once printed in a terminal @p columns wide; a line wider than that wraps.
 [[nodiscard]] std::size_t rowsNeeded(std::string_view frame, std::size_t columns);
 
-/// Whether every line of @p frame can sit on its own row of @p screen, with a row to spare. A line
-/// that wraps shifts every row below it, so lines could no longer be rewritten by row number.
-/// True when the size is unknown.
+/// Screen rows each line of @p frame takes up in a terminal @p columns wide; nullopt when a line
+/// wider than that holds characters other than printable ASCII, whose wrapping only the terminal knows.
+[[nodiscard]] std::optional<std::vector<std::size_t>> lineRows(std::string_view frame, std::size_t columns);
+
+/// Whether @p frame, wrapped lines included, fits @p screen with a row to spare and wraps where
+/// lineRows() can tell. True when the size is unknown.
 [[nodiscard]] bool fitsScreen(std::string_view frame, const std::optional<TerminalSize> &screen);
 
 /// Renders frames until a stop event or the frame limit; see the definition for the contract.
