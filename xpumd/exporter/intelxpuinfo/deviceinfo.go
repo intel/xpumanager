@@ -242,6 +242,13 @@ func (s *deviceInfoServer) sendEvents(stream pb.DeviceInfo_WatchDeviceEventsServ
 }
 
 func (s *deviceInfoServer) broadcastEvents(ld plog.Logs) {
+	s.eventLock.Lock()
+	noClients := len(s.eventClients) == 0
+	s.eventLock.Unlock()
+	if noClients {
+		return
+	}
+
 	events := translateEvents(ld, s.logger)
 	if len(events) == 0 {
 		return
