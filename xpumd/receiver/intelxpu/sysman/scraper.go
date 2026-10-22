@@ -7,6 +7,7 @@ package sysman
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -19,13 +20,14 @@ import (
 )
 
 type sysmanMetricsScraper struct {
-	settings scraper.Settings
-	cfg      *Config
-	wg       sync.WaitGroup
-	mb       *metadata.MetricsBuilder
-	devices  *deviceRegistry
-	logger   *zap.SugaredLogger
-	stop     context.CancelFunc
+	settings  scraper.Settings
+	cfg       *Config
+	wg        sync.WaitGroup
+	mb        *metadata.MetricsBuilder
+	telemetry *metadata.TelemetryBuilder
+	devices   *deviceRegistry
+	logger    *zap.SugaredLogger
+	stop      context.CancelFunc
 }
 
 func newSysmanMetricsScraper(_ context.Context, settings scraper.Settings, cfg *Config, devices *deviceRegistry) (*sysmanMetricsScraper, error) {
@@ -39,12 +41,18 @@ func newSysmanMetricsScraper(_ context.Context, settings scraper.Settings, cfg *
 		)
 	}
 
+	telemetry, err := metadata.NewTelemetryBuilder(settings.TelemetrySettings)
+	if err != nil {
+		return nil, fmt.Errorf("creating telemetry builder: %w", err)
+	}
+
 	return &sysmanMetricsScraper{
-		settings: settings,
-		cfg:      cfg,
-		mb:       metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
-		devices:  devices,
-		logger:   logger,
+		settings:  settings,
+		cfg:       cfg,
+		mb:        metadata.NewMetricsBuilder(cfg.MetricsBuilderConfig, settings),
+		telemetry: telemetry,
+		devices:   devices,
+		logger:    logger,
 	}, nil
 }
 
@@ -63,6 +71,7 @@ func (s *sysmanMetricsScraper) shutdown(ctx context.Context) error {
 		s.stop()
 	}
 	s.wg.Wait()
+	s.telemetry.Shutdown()
 	return s.logger.Sync()
 }
 
@@ -70,10 +79,18 @@ func (s *sysmanMetricsScraper) shutdown(ctx context.Context) error {
 func (s *sysmanMetricsScraper) runSampler(ctx context.Context) {
 	ticker := time.NewTicker(s.cfg.SamplingInterval)
 	defer ticker.Stop()
+	last := time.Now()
 	for {
 		select {
-		case <-ticker.C:
+		case t := <-ticker.C:
+			si := s.cfg.SamplingInterval
+			if missed := int64((t.Sub(last)+si/2)/si) - 1; missed > 0 {
+				s.telemetry.SysmanSamplerMissedDeadlines.Add(ctx, missed)
+			}
+			last = t
+
 			s.devices.pollAggregatedMetrics()
+			s.telemetry.SysmanSamplerIntervalUsage.Record(ctx, float64(time.Since(t))/float64(si))
 		case <-ctx.Done():
 			return
 		}

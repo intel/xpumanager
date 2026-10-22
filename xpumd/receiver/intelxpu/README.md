@@ -170,3 +170,7 @@ to the kernel tracing filesystem (`/sys/kernel/tracing`).
    the driver scoped event extensions.
 5. Collection is enabled once at startup. If enabling fails or a read fails later on,
    the records of that info log are not collected for the lifetime of daemon.
+
+## Internal Telemetry
+
+See the [metrics documentation](sysman/documentation.md#internal-telemetry) for the emitted metrics.
