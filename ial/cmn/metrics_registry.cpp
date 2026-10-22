@@ -328,6 +328,14 @@ MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs, const fdi
 	auto *mem = dev.dev->getMemory();
 	auto *p = dev.dev->getPCI();
 
+	// Keep the device out of standby before the first telemetry read; ~standby() puts the
+	// previous mode back on exit. Only the first call per device changes anything.
+	if (inputs != MetricInput::NONE) {
+		if (auto *sb = dev.dev->getStandby(); sb != nullptr) {
+			sb->preventStandby();
+		}
+	}
+
 	if (hasInput(inputs, MetricInput::ENGINE) && eg != nullptr &&
 		eg->getAllEngineActivity(cache.engineSamplesBefore) != ZE_RESULT_SUCCESS) {
 		// Nothing for the end-of-window snapshot to pair against, so every utilization

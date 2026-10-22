@@ -6,15 +6,34 @@
 
 #include "standby.h"
 
+namespace {
+
+// Name of a standby promotion mode for debug output
+const char *promoModeName(zes_standby_promo_mode_t mode)
+{
+	switch (mode) {
+	case ZES_STANDBY_PROMO_MODE_DEFAULT:
+		return "default";
+	case ZES_STANDBY_PROMO_MODE_NEVER:
+		return "never";
+	default:
+		return "unknown";
+	}
+}
+
+} // namespace
+
 /**
  * @brief Destructor for the standby class
  *
  * This destructor performs cleanup operations for the standby management
- * object, releasing allocated memory for standby domain handles and ensuring
- * proper resource deallocation when the standby object is destroyed.
+ * object, restoring any standby mode that preventStandby() overrode, releasing allocated
+ * memory for standby domain handles and ensuring proper resource deallocation
+ * when the standby object is destroyed.
  */
 standby::~standby()
 {
+	restoreMode();
 	if (standbyHandles) {
 		delete[] standbyHandles;
 		standbyHandles = nullptr;
@@ -171,13 +190,20 @@ ze_result_t standby::setMode(zes_standby_promo_mode_t mode)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// An explicitly requested mode must outlive this process, so each domain that takes it
+	// is dropped from restoreMode(); a domain left untouched by a mid-loop failure is still restored.
 	for (uint32_t i = 0; i < standbyCount; ++i) {
 		result = zesStandbySetMode(standbyHandles[i], mode);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to set standby mode. 0x{:X} ({})\n", result, l0_error_to_string(result));
 			return result;
 		}
+		if (i < savedModes.size()) {
+			savedModes[i] = ZES_STANDBY_PROMO_MODE_NEVER;
+		}
 	}
+
+	restorePending = false;
 	return result;
 }
 
@@ -195,6 +221,80 @@ ze_result_t standby::init(zes_device_handle_t device)
 {
 	TRACING();
 	return enumStandbyDomains(device);
+}
+
+/**
+ * @brief Keeps every standby domain awake for the rest of this process
+ *
+ * Sets the standby promotion mode of every domain to ZES_STANDBY_PROMO_MODE_NEVER
+ * so the device stays out of standby while telemetry is sampled. The previous mode
+ * of each domain is saved so restoreMode() can put it back on exit. Only the first
+ * call has any effect; later calls return immediately.
+ *
+ * Setting the mode may fail (e.g. insufficient permissions); such domains are left as
+ * they are and the failure is only logged.
+ */
+void standby::preventStandby()
+{
+	if (preventApplied) {
+		return;
+	}
+	preventApplied = true;
+
+	// A domain whose mode can't be read, is already NEVER, or can't be changed is left as
+	// NEVER in savedModes so restoreMode() skips it.
+	savedModes.assign(standbyCount, ZES_STANDBY_PROMO_MODE_NEVER);
+	for (uint32_t i = 0; i < standbyCount; ++i) {
+		ze_result_t getResult = zesStandbyGetMode(standbyHandles[i], &savedModes[i]);
+		if (getResult != ZE_RESULT_SUCCESS) {
+			DBG("Failed to get standby mode for domain {}. 0x{:X} ({})\n", i, getResult, l0_error_to_string(getResult));
+			savedModes[i] = ZES_STANDBY_PROMO_MODE_NEVER;
+			continue;
+		}
+		if (savedModes[i] == ZES_STANDBY_PROMO_MODE_NEVER) {
+			DBG("Standby mode for domain {} is already never before telemetry sampling; leaving it.\n", i);
+			continue;
+		}
+
+		ze_result_t setResult = zesStandbySetMode(standbyHandles[i], ZES_STANDBY_PROMO_MODE_NEVER);
+		if (setResult != ZE_RESULT_SUCCESS) {
+			DBG("Failed to set standby mode to never for domain {}. 0x{:X} ({})\n", i, setResult,
+				l0_error_to_string(setResult));
+			savedModes[i] = ZES_STANDBY_PROMO_MODE_NEVER;
+			continue;
+		}
+		DBG("Set standby mode for domain {} from {} to never before telemetry sampling.\n", i,
+			promoModeName(savedModes[i]));
+		restorePending = true;
+	}
+}
+
+/**
+ * @brief Restores the standby modes that preventStandby() overrode
+ *
+ * Puts every standby domain whose mode preventStandby() changed back to the mode
+ * it had before. Does nothing if preventStandby() changed no domain, or if
+ * setMode() has since applied an explicitly requested mode.
+ */
+void standby::restoreMode()
+{
+	if (!restorePending) {
+		return;
+	}
+	restorePending = false;
+
+	for (uint32_t i = 0; i < standbyCount && i < savedModes.size(); ++i) {
+		if (savedModes[i] == ZES_STANDBY_PROMO_MODE_NEVER) {
+			continue;
+		}
+		ze_result_t result = zesStandbySetMode(standbyHandles[i], savedModes[i]);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("Failed to restore standby mode for domain {} to {}. 0x{:X} ({})\n", i, promoModeName(savedModes[i]),
+				result, l0_error_to_string(result));
+			continue;
+		}
+		DBG("Restored standby mode for domain {} from never to {}.\n", i, promoModeName(savedModes[i]));
+	}
 }
 
 /**

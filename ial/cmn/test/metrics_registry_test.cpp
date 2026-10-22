@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -789,6 +790,48 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory bandwidth getters: report N/A when 
 	CHECK(wr->getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "N/A");
 	CHECK(util->getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture,
+				  "memory.bandwidth.utilization getter: read+write sum overflowing uint64 is handled")
+{
+	// Neither counter goes backwards, but read + write after the window exceeds 2^64. Summing
+	// before taking the delta would produce a huge negative figure.
+	constexpr auto nearMax = std::numeric_limits<uint64_t>::max() - 999; // 2^64 - 1000
+	MetricValue out;
+	MetricCache c;
+	c.memAvail = true;
+	c.memBefore = {.read = nearMax, .write = 0, .ts = 1'000'000};
+	c.memAfter = {.read = nearMax + 500, .write = 1242, .ts = 2'000'000};
+	// 1742 bytes in one second against a 1 MB/s peak is 0.1742%.
+	c.memMaxBandwidth = 1'000'000;
+	CHECK(findMetric("memory.bandwidth.utilization").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "0.17");
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory bandwidth getters: a counter that goes backwards reports N/A")
+{
+	MetricValue out;
+	MetricCache c;
+	c.memAvail = true;
+	c.memMaxBandwidth = 1'000'000;
+	c.memBefore = {.read = 10'000, .write = 1'000, .ts = 1'000'000};
+	// Read rolled over or reset; write advanced normally.
+	c.memAfter = {.read = 100, .write = 2'024, .ts = 2'000'000};
+
+	CHECK(findMetric("memory.read.bandwidth").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+	CHECK(findMetric("memory.bandwidth.utilization").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+	// 1024 bytes in one second is 1 kB/s; the write counter is unaffected by the read rollover.
+	CHECK(findMetric("memory.write.bandwidth").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "1");
+
+	c.memAfter = {.read = 11'024, .write = 500, .ts = 2'000'000};
+	CHECK(findMetric("memory.write.bandwidth").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+	CHECK(findMetric("memory.bandwidth.utilization").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "N/A");
 }
 
