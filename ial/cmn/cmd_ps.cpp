@@ -61,9 +61,9 @@ void cmdPs::help(HELP helpType)
 		helpCmd(TITLE, "Type:     Engine type (Compute/Graphic/Media/Copy/Mixed) derived from active engine contexts"));
 	helpList.push_back(helpCmd(TITLE, "DeviceID: Device ID"));
 	helpList.push_back(helpCmd(TITLE, "SHR:      The size of shared device memory mapped into this process (may not "
-									  "necessarily be resident on the device at the time of reading) (kB)"));
-	helpList.push_back(helpCmd(TITLE, "MEM:      Device memory size in bytes allocated by this process (may not "
-									  "necessarily be resident on the device at the time of reading) (kB)"));
+									  "necessarily be resident on the device at the time of reading) (KiB)"));
+	helpList.push_back(helpCmd(TITLE, "MEM:      Device memory size allocated by this process (may not "
+									  "necessarily be resident on the device at the time of reading) (KiB)"));
 	helpList.push_back(helpCmd(TITLE, "Cmp%:     Compute engine utilisation % (from fdinfo; no root required)"));
 	helpList.push_back(helpCmd(TITLE, "Rnd%:     Render engine utilisation % (from fdinfo; no root required)"));
 	helpList.push_back(helpCmd(TITLE, "Med%:     Media engine utilisation % (from fdinfo; no root required)"));
@@ -114,8 +114,8 @@ void PsTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 		.addColumn("Command", COL_COMMAND)
 		.addColumn("Type", COL_TYPE)
 		.addColumn("DeviceID", COL_DEVICE)
-		.addColumn("SHR", COL_MEMORY)
-		.addColumn("MEM", COL_MEMORY)
+		.addColumn("SHR (KiB)", COL_MEMORY)
+		.addColumn("MEM (KiB)", COL_MEMORY)
 		.addColumn("Cmp%", COL_ENGINE_PCT)
 		.addColumn("Rnd%", COL_ENGINE_PCT)
 		.addColumn("Med%", COL_ENGINE_PCT)
