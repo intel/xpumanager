@@ -141,6 +141,12 @@ func (r *crashlogReceiver) run(ctx context.Context) {
 				return
 			}
 			r.logger.Warnw("watcher error", "error", err)
+			// Events were lost, rescan to pick up any missed files
+			if errors.Is(err, fsnotify.ErrEventOverflow) {
+				if err := r.scanDirectory(ctx); err != nil {
+					r.logger.Errorw("directory rescan failed", "directory", r.config.Directory, "error", err)
+				}
+			}
 		}
 	}
 }
