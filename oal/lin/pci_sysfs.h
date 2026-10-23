@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "pci_class.h"
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -89,3 +90,18 @@ getPciSubsystemDeviceId(std::string_view bdf, const std::filesystem::path &pciDe
  */
 [[nodiscard]] std::error_code resetPciFunction(std::string_view bdf,
 											   const std::filesystem::path &pciBusRoot = "/sys/bus/pci");
+
+/**
+ * @brief Reads the PCI class code of a device from sysfs
+ *
+ * The kernel prints the class attribute as "0x" and six hex digits, base class first, e.g.
+ * "0x030000" for a VGA compatible display controller. @p bdf is validated as a canonical
+ * address before being used as a path component.
+ *
+ * @param [in] bdf        PCI BDF address of the device, in canonical DDDD:BB:DD.F form
+ * @param [in] pciDevRoot sysfs PCI device directory; getPciClassCode(bdf) reads live sysfs
+ * @return The class code, or std::nullopt when @p bdf is not a well-formed BDF or its class
+ *         attribute is missing or malformed
+ */
+[[nodiscard]] std::optional<PciClassCode> getPciClassCode(std::string_view bdf,
+														  const std::filesystem::path &pciDevRoot);

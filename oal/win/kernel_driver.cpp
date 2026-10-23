@@ -11,8 +11,11 @@
 #include <cfgmgr32.h>
 #include <setupapi.h>
 #include <array>
+#include <optional>
 #include <string>
+#include <string_view>
 #include "os.h"
+#include "pci_class.h"
 #include "utility/compat/format.h"
 #include "utility/logger/logger.h"
 #include "utility/scope_exit.h"
@@ -155,4 +158,64 @@ std::string getKernelDriverVersion(const std::string &bdf)
 
 	DBG("No PCI devnode matched {}\n", bdf);
 	return {};
+}
+
+/**
+ * @brief Reads the class code of a PCI function from its devnode.
+ *
+ * Windows has no direct class code property, but every PCI devnode lists compatible IDs
+ * that end in it, e.g. "PCI\\VEN_8086&DEV_E20B&REV_00&CC_030000".
+ *
+ * @param[in] bdf  PCI address of the function, e.g. "0000:04:00.0".
+ *
+ * @retval code    The class code from the first compatible ID that carries all six digits.
+ * @retval nullopt No devnode matched @p bdf, or none of its compatible IDs carries a class code.
+ */
+std::optional<PciClassCode> getPciClassCode(std::string_view bdf)
+{
+	HDEVINFO devInfo = SetupDiGetClassDevsW(nullptr, L"PCI", nullptr, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+	if (devInfo == INVALID_HANDLE_VALUE) {
+		DBG("SetupDiGetClassDevs failed: {}\n", GetLastError());
+		return std::nullopt;
+	}
+	ScopeExit cleanup{[devInfo]() { SetupDiDestroyDeviceInfoList(devInfo); }};
+
+	SP_DEVINFO_DATA devData{};
+	devData.cbSize = sizeof(SP_DEVINFO_DATA);
+	for (DWORD i = 0; SetupDiEnumDeviceInfo(devInfo, i, &devData) != 0; i++) {
+		if (devnodeBdf(devData.DevInst) != bdf) {
+			continue;
+		}
+		ULONG size = 0;
+		// First call sizes the buffer; CR_BUFFER_SMALL is the documented success path.
+		if (CM_Get_DevNode_Registry_PropertyW(devData.DevInst, CM_DRP_COMPATIBLEIDS, nullptr, nullptr, &size, 0) !=
+				CR_BUFFER_SMALL ||
+			size == 0) {
+			return std::nullopt;
+		}
+		std::wstring ids(size / sizeof(wchar_t), L'\0');
+		if (CM_Get_DevNode_Registry_PropertyW(devData.DevInst, CM_DRP_COMPATIBLEIDS, nullptr, ids.data(), &size, 0) !=
+			CR_SUCCESS) {
+			return std::nullopt;
+		}
+		// A list of NUL-separated IDs; the class code follows "CC_" in some of them.
+		constexpr std::wstring_view marker = L"CC_";
+		constexpr std::size_t classDigits = 6;
+		for (std::size_t at = ids.find(marker); at != std::wstring::npos; at = ids.find(marker, at + 1)) {
+			std::string digits;
+			for (std::size_t j = at + marker.size(); j < ids.size() && digits.size() < classDigits; ++j) {
+				const wchar_t c = ids[j];
+				if (c > L'\x7F') {
+					break;
+				}
+				digits.push_back(static_cast<char>(c));
+			}
+			if (const auto code = parsePciClassCode(digits)) {
+				return code;
+			}
+		}
+		return std::nullopt;
+	}
+	DBG("No PCI devnode matched {}\n", bdf);
+	return std::nullopt;
 }

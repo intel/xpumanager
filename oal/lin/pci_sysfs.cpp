@@ -188,3 +188,27 @@ std::error_code resetPciFunction(std::string_view bdf, const std::filesystem::pa
 	}
 	return reset;
 }
+
+std::optional<PciClassCode> getPciClassCode(std::string_view bdf, const std::filesystem::path &pciDevRoot)
+{
+	if (!isValidBdf(bdf)) {
+		return std::nullopt;
+	}
+	std::ifstream file(pciDevRoot / bdf / "class");
+	std::string line;
+	if (!std::getline(file, line)) {
+		return std::nullopt;
+	}
+	constexpr std::string_view hexPrefix = "0x";
+	std::string_view digits = line;
+	if (!digits.starts_with(hexPrefix)) {
+		return std::nullopt;
+	}
+	digits.remove_prefix(hexPrefix.size());
+	return parsePciClassCode(digits);
+}
+
+std::optional<PciClassCode> getPciClassCode(std::string_view bdf)
+{
+	return getPciClassCode(bdf, "/sys/bus/pci/devices");
+}

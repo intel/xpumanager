@@ -2,9 +2,9 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for getPciSubsystemDeviceId(), isIntelDisplayDevice(), isRootComplexIntegrated() and
- * resetPciFunction(). Each test builds a fake sysfs PCI device tree under a scratch directory, so no
- * GPU is required.
+ * Unit tests for getPciSubsystemDeviceId(), isIntelDisplayDevice(), isRootComplexIntegrated(),
+ * resetPciFunction() and getPciClassCode(). Each test builds a fake sysfs PCI device tree under a scratch directory, so
+ * no GPU is required.
  */
 
 // Empty in clang-tidy passes run without -Dwith_tests, where doctest is not on the include path.
@@ -85,6 +85,18 @@ public:
 	{
 		fs::create_directories(root / dir);
 		std::ofstream(root / dir / name) << contents;
+	}
+
+	/**
+	 * @brief Writes <root>/<dir>/class the way the kernel exposes it
+	 *
+	 * @param [in] dir      Device directory name, normally a BDF
+	 * @param [in] contents Attribute contents, trailing newline included as sysfs writes it
+	 */
+	void setClass(const std::string &dir, const std::string &contents) const
+	{
+		fs::create_directories(root / dir);
+		std::ofstream(root / dir / "class") << contents;
 	}
 };
 
@@ -308,6 +320,36 @@ TEST_CASE("resetPciFunction: not supported without a reset attribute, invalid fo
 		CAPTURE(bdf);
 		CHECK(resetPciFunction(bdf, sysfs.root) == std::errc::invalid_argument);
 	}
+}
+
+TEST_CASE("getPciClassCode: splits the class the kernel prints into its three bytes")
+{
+	const FakePciDevices devices("class_ok");
+	devices.setClass(BDF, "0x120000\n");
+	CHECK(getPciClassCode(BDF, devices.root) == PciClassCode{.baseClass = 0x12, .subClass = 0x00, .progIf = 0x00});
+	devices.setClass(BDF, "0x038001\n");
+	CHECK(getPciClassCode(BDF, devices.root) == PciClassCode{.baseClass = 0x03, .subClass = 0x80, .progIf = 0x01});
+}
+
+TEST_CASE("getPciClassCode: nullopt when the attribute is missing or malformed, or the BDF is")
+{
+	const FakePciDevices devices("class_bad");
+	CHECK_FALSE(getPciClassCode(BDF, devices.root).has_value());
+	for (const char *contents : {"030000\n", "0x0300\n", "0x03000000\n", "0xgg0000\n", "\n"}) {
+		devices.setClass(BDF, contents);
+		CHECK_MESSAGE(!getPciClassCode(BDF, devices.root).has_value(), contents);
+	}
+	devices.setClass(BDF, "0x030000\n");
+	CHECK_FALSE(getPciClassCode("../" + std::string{BDF}, devices.root).has_value());
+}
+
+TEST_CASE("parsePciClassCode: six hex digits, base class first")
+{
+	CHECK(parsePciClassCode("030000") == PciClassCode{.baseClass = 0x03, .subClass = 0x00, .progIf = 0x00});
+	CHECK(parsePciClassCode("FFFFFF") == PciClassCode{.baseClass = 0xFF, .subClass = 0xFF, .progIf = 0xFF});
+	CHECK_FALSE(parsePciClassCode("0300").has_value());
+	CHECK_FALSE(parsePciClassCode("03000z").has_value());
+	CHECK_FALSE(parsePciClassCode("").has_value());
 }
 
 #endif // __has_include(<doctest/doctest.h>)
