@@ -5,10 +5,17 @@
  */
 
 #include "ras.h"
+#include <mutex>
 #include <string_view>
 #include <vector>
 
 namespace {
+
+// On CRI, a process that reads the RAS state of two devices at the same time gets a failure for
+// one of them, while each device on its own reads fine. RAS reads take milliseconds, so they are
+// made one at a time across all devices rather than per device.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+std::mutex rasReadMutex;
 
 /**
  * @brief Logs a failed RAS read.
@@ -154,6 +161,7 @@ ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
  */
 ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 {
+	const std::lock_guard<std::mutex> lock(rasReadMutex);
 	ze_result_t result = zesRasGetState(rasHandle, 0, state);
 	if (result != ZE_RESULT_SUCCESS) {
 		logRasReadFailure("Failed to get RAS state", result);
@@ -342,6 +350,7 @@ ze_result_t ras::clearErrors()
  */
 ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> &rasErrStates)
 {
+	const std::lock_guard<std::mutex> lock(rasReadMutex);
 	TRACING();
 
 	rasErrStates.clear();
