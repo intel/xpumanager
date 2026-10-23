@@ -82,11 +82,12 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - Section
      - Report content
    * - ``IDENTITY``
-     - Product name and brand, index, DRM minor number, serial number, UUID, VBIOS (GFX
-       firmware) version, board part number, device state, whether the device is a physical or
+     - Product name and brand, stepping, index, DRM minor number, serial number, UUID, GFX
+       firmware version, board part number, device state, whether the device is a physical or
        an SR-IOV virtual function, the recovery action it needs, and the PCI address
    * - ``MEMORY``
-     - Memory total, used and free, and memory utilization
+     - Memory total, used and free, memory type, number of channels and bus width, and memory
+       utilization
    * - ``UTILIZATION``
      - GPU, memory, compute, render, media and copy engine utilization
    * - ``TEMPERATURE``
@@ -109,7 +110,7 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - ``FAN``
      - Nothing in this report. Use ``--query-gpu fan.speed`` for the fan speed
    * - ``COMPUTE``
-     - Scheduler mode
+     - Scheduler mode, and the number of tiles, slices, sub-slices per slice and EUs
    * - ``PERFORMANCE``
      - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
@@ -130,7 +131,7 @@ From an Intel Arc B580 run by a non-root user.
 
    ==============XPU-SMI LOG==============
 
-   Timestamp                                 : 2026-10-23T11:41:27Z
+   Timestamp                                 : 2026-10-23T14:50:00Z
    UMD Version                               : 1.17.39980
    KMD Version                               : N/A
    Level Zero Version                        : 1.33.1
@@ -139,11 +140,12 @@ From an Intel Arc B580 run by a non-root user.
    GPU 0000:03:00.0
        Product Name                          : Intel(R) Arc(TM) B580 Graphics
        Product Brand                         : Intel(R) Corporation
+       Stepping                              : A0
        Serial Number                         : unknown
        GPU UUID                              : 00000000-0000-0003-0000-0000e20b8086
        Device Index                          : 0
        Minor Number                          : 0
-       VBIOS Version                         : N/A
+       GFX Firmware Version                  : N/A
        Platform Info
            Slot Number                       : N/A
        Device State                          : normal
@@ -166,8 +168,8 @@ From an Intel Arc B580 run by a non-root user.
                Link Width
                    Max                       : N/A
                    Current                   : N/A
-           Tx Throughput                     : 103 kB/s
-           Rx Throughput                     : 1600 kB/s
+           Tx Throughput                     : 102 kB/s
+           Rx Throughput                     : 1623 kB/s
        Clocks Event Reasons
            Thermal Limit                     : Not Active
            Average Power Cap                 : Not Active
@@ -183,7 +185,16 @@ From an Intel Arc B580 run by a non-root user.
            Total                             : 12216 MiB
            Used                              : 218.62 MiB
            Free                              : 11997.38 MiB
+       Memory Info
+           Memory Type                       : GDDR6
+           Number of Memory Channels         : 6
+           Memory Bus Width                  : 192
        Scheduler Mode                        : timeslice
+       Compute Resources
+           Number of Tiles                   : 1
+           Number of Slices                  : 5
+           Number of Sub-slices per Slice    : 4
+           Number of EUs                     : 160
        Utilization
            GPU                               : 0.00 %
            Memory                            : 1.79 %
@@ -205,14 +216,14 @@ From an Intel Arc B580 run by a non-root user.
                Programming Errors            : N/A
                Driver Errors                 : N/A
        Temperature
-           GPU Current Temp                  : 31.00 C
+           GPU Current Temp                  : 30.00 C
            GPU Shutdown Temp                 : 130 C
            GPU Slowdown Temp                 : 105 C
-           Memory Current Temp               : 50.00 C
+           Memory Current Temp               : 48.00 C
            Memory Shutdown Temp              : 100 C
            Memory Slowdown Temp              : 85 C
        GPU Power Readings
-           Average Power Draw                : 115.63 W
+           Average Power Draw                : 59.34 W
            Current Power Limit               : 380.00 W
        Clocks
            Graphics                          : 400 MHz
@@ -232,7 +243,8 @@ Reading the Report
 
 - A value the device, driver or platform cannot supply prints as ``N/A``. This includes
   values that need more privilege than the caller has, such as engine utilization without
-  ``CAP_PERFMON`` and the ECC error counts as a non-root user.
+  ``CAP_PERFMON`` and the ECC error counts as a non-root user. The report prints no
+  diagnostic for such a value; set ``XPU_SMI_LOG_LEVEL=DBG`` to see why one is missing.
 - Measured values (power draw, utilization, throughput, bandwidth) are averaged over a
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
@@ -245,10 +257,10 @@ Reading the Report
   firmware names, and reads ``N/A`` on systems whose firmware names none.
 - GPU Recovery Action says what the driver reports the device needs: ``None``, ``Reset`` (for
   example a wedged device), or ``Reset to repair``.
-- As root, the VBIOS version is read from the GSC firmware interface, which takes about
+- As root, the GFX firmware version is read from the GSC firmware interface, which takes about
   200 ms per device on some platforms. Devices are read in parallel, and the read overlaps
-  the measurement window. On a device with an AMC the board part number is read from the
-  AMC.
+  the measurement window. On a device with an AMC the serial number and the board part number
+  are read from the AMC, one after the other.
 - The slowdown and shutdown temperatures are the configured thresholds the
   :doc:`health` command compares against, not sensor readings.
 - On Windows the kernel-mode driver version reads ``N/A``.

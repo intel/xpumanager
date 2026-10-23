@@ -453,11 +453,12 @@ TEST_SUITE("query layout")
 		const auto labels = topLevelLabels(device);
 		const std::vector<std::string> expected{"Product Name",
 												"Product Brand",
+												"Stepping",
 												"Serial Number",
 												"GPU UUID",
 												"Device Index",
 												"Minor Number",
-												"VBIOS Version",
+												"GFX Firmware Version",
 												"Board Part Number",
 												"Platform Info",
 												"Device State",
@@ -466,7 +467,9 @@ TEST_SUITE("query layout")
 												"PCI",
 												"Clocks Event Reasons",
 												"FB Memory Usage",
+												"Memory Info",
 												"Scheduler Mode",
+												"Compute Resources",
 												"Utilization",
 												"ECC Mode",
 												"ECC Errors",
@@ -515,7 +518,6 @@ TEST_SUITE("query layout")
 		const auto text =
 			rendered(buildDeviceNode("x", *parseSelection("ALL"), inputs.metricValues, inputs.staticProps, {}));
 		for (const char *gone : {"SKU Type",
-								 "Stepping",
 								 "Vendor Name",
 								 "DRM Device",
 								 "Kernel Version",
@@ -524,13 +526,11 @@ TEST_SUITE("query layout")
 								 "AMC Firmware Version",
 								 "PSCBIN",
 								 "OPROM",
-								 "Number of EUs",
 								 "PCI Slot",
 								 "Max Bandwidth",
 								 "Link Status",
 								 "Fan Mode",
 								 "Standby Mode",
-								 "Memory Type",
 								 "Memory Health",
 								 "EU Array",
 								 "Pending Action",
@@ -558,7 +558,7 @@ TEST_SUITE("query layout")
 		const MarkedInputs inputs;
 		const auto device =
 			buildDeviceNode("0000:03:00.0", *parseSelection("MEMORY"), inputs.metricValues, inputs.staticProps, {});
-		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Utilization"});
+		CHECK(topLevelLabels(device) == std::vector<std::string>{"FB Memory Usage", "Memory Info", "Utilization"});
 		CHECK(rendered(device).find("M:utilization.gpu") == std::string::npos);
 	}
 
@@ -627,7 +627,7 @@ TEST_SUITE("query layout")
 		QueryStaticProps staticProps;
 		staticProps.values.push_back({"part_number", std::string{}});
 		const auto text = rendered(buildDeviceNode("x", *parseSelection("IDENTITY"), values, staticProps, {}));
-		CHECK(valueOnLine(text, "VBIOS Version") == "N/A");
+		CHECK(valueOnLine(text, "GFX Firmware Version") == "N/A");
 		CHECK(valueOnLine(text, "Board Part Number") == "N/A");
 	}
 

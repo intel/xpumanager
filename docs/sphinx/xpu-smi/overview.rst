@@ -280,7 +280,7 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
        driver declares no version
    * - ``vbios_version``
      - —
-     - VBIOS version string
+     - GFX firmware version (shown as GFX Firmware Version in the query report)
    * - ``pci.bus_id``
      - —
      - PCI BDF address
