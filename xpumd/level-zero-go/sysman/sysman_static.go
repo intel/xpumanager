@@ -449,16 +449,18 @@ func (z *Device) EnumOverclockDomains() ([]*Overclock, error) {
 func (z *Device) FabricPortGetMultiPortThroughput(ports []*FabricPort) ([]FabricPortThroughput, error) {
 	handles := wrappersToHandles[FabricPort](ports)
 	count := uint32(len(handles))
-	throughputs := make([]*FabricPortThroughput, count)
+	throughputs := make([]FabricPortThroughput, count)
+	// The underlying zesFabricPortGetMultiPortThroughput passes ptrs to the C
+	// code as pointer-to-pointer. Thus, all elements of the slice must be pinned.
+	ptrs := make([]*FabricPortThroughput, count)
+	var pinner runtime.Pinner
+	defer pinner.Unpin()
 	for i := range throughputs {
-		throughputs[i] = &FabricPortThroughput{}
+		pinner.Pin(&throughputs[i])
+		ptrs[i] = &throughputs[i]
 	}
-	ret := zesFabricPortGetMultiPortThroughput(z.handle, count, handles, throughputs)
-	retThroughput := make([]FabricPortThroughput, count)
-	for i, t := range throughputs {
-		retThroughput[i] = *t
-	}
-	return retThroughput, ret.ToError()
+	ret := zesFabricPortGetMultiPortThroughput(z.handle, count, handles, ptrs)
+	return throughputs, ret.ToError()
 }
 
 // GetDomainProperties wraps the zesOverclockGetDomainProperties function:
