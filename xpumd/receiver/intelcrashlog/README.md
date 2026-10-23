@@ -10,6 +10,9 @@ See the [Crash Log Framework project](https://github.com/intel/crashlog) for mor
 > [!CAUTION]
 > Crashlog files must be created atomically (e.g. by writing to a temporary
 > file and then renaming it) to avoid the receiver processing an incomplete
+> file. The temporary file must be outside the watched directory or have a
+> name that does not match any of the `globs` (e.g. `crash.bin.tmp` with the
+> `*.bin` glob). Otherwise, the receiver also emits the incomplete temporary
 > file.
 
 ## Configuration
@@ -38,6 +41,14 @@ receivers:
 | `max_file_size` | int | `1048576` (1 MiB) | Maximum crashlog file size in bytes, must be positive. Larger files are skipped |
 | `min_file_size` | int | `1` | Minimum crashlog file size in bytes, must not be negative or greater than `max_file_size`. Smaller files are skipped. The default skips empty files |
 | `add_attributes` | map[string]string | `{}` | Static key/value attributes added to every emitted log record |
+
+> [!CAUTION]
+> The receiver does not persist the list of processed files across daemon
+> restarts. With the default `ignore_older_than: 0s`, crashlog files created
+> while the receiver is not running (e.g. during a restart or upgrade) are
+> never emitted. A non-zero value can create duplicates: it collects also older
+> files, but files that were already emitted before a restart within that
+> window are re-emitted.
 
 ## Log Record Format
 
