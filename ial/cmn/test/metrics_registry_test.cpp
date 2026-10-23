@@ -25,6 +25,7 @@
 #include "metrics/power.h"
 #include "ze_api.h"
 #include "zes_api.h"
+#include <bit>
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -1542,12 +1543,50 @@ TEST_CASE("the SUPPORTED_CLOCKS section parses and selects its fields")
 
 TEST_CASE("fields no current device reports are not in the registry")
 {
-	for (const std::string_view name : {"clocks.event_reasons.thermal_limit", "power.limit.default", "power.limit.min",
-										"ecc.mode.pending", "memory.offline_pages", "retired_pages.count"}) {
+	for (const std::string_view name : {"power.limit.default", "power.limit.min", "ecc.mode.pending",
+										"memory.offline_pages", "retired_pages.count"}) {
 		CHECK_FALSE_MESSAGE(findMetric(name).has_value(), name);
 	}
-	CHECK(parseGroupMask("performance") == MetricGroup::NONE);
 	CHECK(parseGroupMask("page_retirement") == MetricGroup::NONE);
+}
+
+TEST_CASE("throttle reasons: each is one distinct flag with a distinct registry field")
+{
+	const auto &reasons = metrics::clock::THROTTLE_REASONS;
+	for (std::size_t i = 0; i < reasons.size(); ++i) {
+		CHECK_MESSAGE(std::popcount(static_cast<uint32_t>(reasons[i].flag)) == 1, reasons[i].metricName);
+		for (std::size_t j = i + 1; j < reasons.size(); ++j) {
+			CHECK(reasons[i].flag != reasons[j].flag);
+			CHECK(reasons[i].metricName != reasons[j].metricName);
+			CHECK(reasons[i].key != reasons[j].key);
+			CHECK(reasons[i].shortName != reasons[j].shortName);
+		}
+	}
+}
+
+TEST_CASE("throttle reasons: every one is in the registry as a Live PERFORMANCE field")
+{
+	for (const auto &reason : metrics::clock::THROTTLE_REASONS) {
+		const auto field = findMetric(reason.metricName);
+		REQUIRE_MESSAGE(field.has_value(), reason.metricName);
+		CHECK(field->groups == MetricGroup::PERFORMANCE);
+		CHECK(field->source == MetricSource::Live);
+		CHECK(field->inputs == MetricInput::NONE);
+		CHECK_FALSE(field->description.empty());
+	}
+	CHECK(getMetricsByGroup(MetricGroup::PERFORMANCE).size() >= metrics::clock::THROTTLE_REASONS.size());
+	CHECK(hasGroup(parseGroupMask("PERFORMANCE"), MetricGroup::PERFORMANCE));
+	CHECK_FALSE(hasGroup(parseGroupMask("p"), MetricGroup::PERFORMANCE));
+}
+
+TEST_CASE("clocks.requested.graphics is a Live CLOCK field in MHz")
+{
+	const auto field = findMetric("clocks.requested.graphics");
+	REQUIRE(field.has_value());
+	CHECK(field->unit == "MHz");
+	CHECK(field->source == MetricSource::Live);
+	CHECK(field->groups == MetricGroup::CLOCK);
+	CHECK(field->inputs == MetricInput::NONE);
 }
 
 // -- scheduler mode field added for the full device report --------------------------------

@@ -21,6 +21,7 @@
 std::string progName = "test";
 
 #include "cmd_query.h"
+#include "metrics/clock.h"
 #include "metrics_registry.h"
 #include <algorithm>
 #include <ranges>
@@ -450,13 +451,46 @@ TEST_SUITE("query layout")
 		const auto device =
 			buildDeviceNode("0000:03:00.0", *parseSelection("ALL"), inputs.metricValues, inputs.staticProps, {});
 		const auto labels = topLevelLabels(device);
-		const std::vector<std::string> expected{
-			"Product Name",	   "Serial Number",		"GPU UUID",			  "Device Index",
-			"VBIOS Version",   "Board Part Number", "Device State",		  "PCI",
-			"FB Memory Usage", "Scheduler Mode",	"Utilization",		  "ECC Mode",
-			"ECC Errors",	   "Temperature",		"GPU Power Readings", "Clocks",
-			"Max Clocks",	   "Supported Clocks",	"Processes"};
+		const std::vector<std::string> expected{"Product Name",
+												"Product Brand",
+												"Serial Number",
+												"GPU UUID",
+												"Device Index",
+												"Minor Number",
+												"VBIOS Version",
+												"Board Part Number",
+												"Device State",
+												"GPU Virtualization Mode",
+												"PCI",
+												"Clocks Event Reasons",
+												"FB Memory Usage",
+												"Scheduler Mode",
+												"Utilization",
+												"ECC Mode",
+												"ECC Errors",
+												"Temperature",
+												"GPU Power Readings",
+												"Clocks",
+												"Applications Clocks",
+												"Max Clocks",
+												"Supported Clocks",
+												"Processes"};
 		CHECK(labels == expected);
+	}
+
+	TEST_CASE("the clocks event reasons section has one row per throttle reason, in table order")
+	{
+		const MarkedInputs inputs;
+		const auto device =
+			buildDeviceNode("0000:03:00.0", QuerySelection{}, inputs.metricValues, inputs.staticProps, {});
+		const auto it = std::ranges::find(device.children, "Clocks Event Reasons", &QueryNode::label);
+		REQUIRE(it != device.children.end());
+		REQUIRE(it->children.size() == metrics::clock::THROTTLE_REASONS.size());
+		for (std::size_t i = 0; i < it->children.size(); ++i) {
+			CHECK(it->children[i].label == metrics::clock::THROTTLE_REASONS[i].label);
+			CHECK(it->children[i].key == metrics::clock::THROTTLE_REASONS[i].key);
+			CHECK(it->children[i].value == "M:" + std::string{metrics::clock::THROTTLE_REASONS[i].metricName});
+		}
 	}
 
 	TEST_CASE("supported clocks are left out unless asked for")

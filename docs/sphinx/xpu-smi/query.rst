@@ -2,8 +2,8 @@ Query
 =====
 
 Print a report of the main attributes of each GPU, as an indented ``Key : Value`` listing:
-identity, PCI link, memory, utilization, ECC, temperatures, power and clocks, and the
-processes using the device. Use :doc:`discovery`
+identity, PCI link, clock throttle reasons, memory, utilization, ECC, temperatures, power and
+clocks, and the processes using the device. Use :doc:`discovery`
 for static detail such as compute resources and firmware components, and ``--query-gpu``
 or :doc:`dump` for any single metric. The report can be restricted to chosen sections, written as JSON,
 repeated at an interval, or saved to a file.
@@ -82,8 +82,9 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - Section
      - Report content
    * - ``IDENTITY``
-     - Product name, index, serial number, UUID, VBIOS (GFX firmware) version, board part
-       number, device state and the PCI address
+     - Product name and brand, index, DRM minor number, serial number, UUID, VBIOS (GFX
+       firmware) version, board part number, device state, whether the device is a physical or
+       an SR-IOV virtual function, and the PCI address
    * - ``MEMORY``
      - Memory total, used and free, and memory utilization
    * - ``UTILIZATION``
@@ -94,12 +95,14 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - ``POWER``
      - Power draw and the current power limit
    * - ``CLOCK``
-     - Current graphics, memory and media clocks and the maximum graphics and media clocks
+     - Current graphics, memory and media clocks, the graphics clock the driver requested
+       (Applications Clocks), and the maximum graphics and media clocks
    * - ``PCI``
      - PCI address fields and IDs, link generation and width (maximum and current), and
        throughput
    * - ``ECC``
-     - ECC mode and aggregate error counts
+     - ECC mode and aggregate error counts, in total and by RAS category: cache and
+       non-compute errors, resets, programming errors and driver errors
    * - ``EU_ARRAY``
      - Nothing of its own in this report; the GPU utilization row uses the EU array. Use
        ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array figures
@@ -107,6 +110,8 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - Nothing in this report. Use ``--query-gpu fan.speed`` for the fan speed
    * - ``COMPUTE``
      - Scheduler mode
+   * - ``PERFORMANCE``
+     - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
      - The GPU core clocks the minimum and maximum of ``config --frequencyrange`` can be set
        to, summarised as ``low-high step N`` when evenly spaced. The memory clock cannot be
@@ -125,7 +130,7 @@ From an Intel Arc B580 run by a non-root user.
 
    ==============XPU-SMI LOG==============
 
-   Timestamp                                 : 2026-10-22T23:12:55Z
+   Timestamp                                 : 2026-10-23T11:23:13Z
    UMD Version                               : 1.17.39980
    KMD Version                               : N/A
    Level Zero Version                        : 1.33.1
@@ -133,11 +138,15 @@ From an Intel Arc B580 run by a non-root user.
    Attached GPUs                             : 1
    GPU 0000:03:00.0
        Product Name                          : Intel(R) Arc(TM) B580 Graphics
+       Product Brand                         : Intel(R) Corporation
        Serial Number                         : unknown
        GPU UUID                              : 00000000-0000-0003-0000-0000e20b8086
        Device Index                          : 0
+       Minor Number                          : 0
        VBIOS Version                         : N/A
        Device State                          : normal
+       GPU Virtualization Mode
+           Virtualization Mode               : physical
        PCI
            Bus                               : 0x03
            Device                            : 0x00
@@ -152,8 +161,19 @@ From an Intel Arc B580 run by a non-root user.
                Link Width
                    Max                       : N/A
                    Current                   : N/A
-           Tx Throughput                     : 90 kB/s
-           Rx Throughput                     : 1574 kB/s
+           Tx Throughput                     : 22 kB/s
+           Rx Throughput                     : 29 kB/s
+       Clocks Event Reasons
+           Thermal Limit                     : Not Active
+           Average Power Cap                 : Not Active
+           Burst Power Cap                   : Not Active
+           Current Limit                     : Not Active
+           PSU Alert                         : Not Active
+           SW Range                          : Not Active
+           HW Range                          : Not Active
+           Voltage                           : Not Active
+           Thermal Alert                     : Not Active
+           Power Alert                       : Not Active
        FB Memory Usage
            Total                             : 12216 MiB
            Used                              : 218.62 MiB
@@ -172,6 +192,13 @@ From an Intel Arc B580 run by a non-root user.
            Aggregate
                Correctable                   : N/A
                Uncorrectable                 : N/A
+               Cache Correctable             : N/A
+               Cache Uncorrectable           : N/A
+               Non-Compute Correctable       : N/A
+               Non-Compute Uncorrectable     : N/A
+               Resets                        : N/A
+               Programming Errors            : N/A
+               Driver Errors                 : N/A
        Temperature
            GPU Current Temp                  : 31.00 C
            GPU Shutdown Temp                 : 130 C
@@ -180,12 +207,14 @@ From an Intel Arc B580 run by a non-root user.
            Memory Shutdown Temp              : 100 C
            Memory Slowdown Temp              : 85 C
        GPU Power Readings
-           Average Power Draw                : 58.03 W
+           Average Power Draw                : 58.38 W
            Current Power Limit               : 380.00 W
        Clocks
            Graphics                          : 400 MHz
            Memory                            : 9500 MHz
-           Media                             : 1200 MHz
+           Media                             : 0 MHz
+       Applications Clocks
+           Graphics                          : 400 MHz
        Max Clocks
            Graphics                          : 2850 MHz
            Media                             : 1500 MHz
@@ -198,14 +227,16 @@ Reading the Report
 
 - A value the device, driver or platform cannot supply prints as ``N/A``. This includes
   values that need more privilege than the caller has, such as engine utilization without
-  ``CAP_PERFMON``.
+  ``CAP_PERFMON`` and the ECC error counts as a non-root user.
 - Measured values (power draw, utilization, throughput, bandwidth) are averaged over a
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
 - GPU utilization comes from the EU array when the hardware metrics stream is available,
-  which adds about 100 ms after the measurement window, and otherwise from the busiest
-  engine.
+  and otherwise from the busiest engine.
+- Applications Clocks shows the graphics clock the driver last requested, which the GPU runs
+  at unless a throttle reason holds it back. Minor Number is the number of the device's DRM
+  card node, and reads ``N/A`` on Windows.
 - As root, the VBIOS version is read from the GSC firmware interface, which takes about
   200 ms per device on some platforms. Devices are read in parallel, and the read overlaps
   the measurement window. On a device with an AMC the board part number is read from the

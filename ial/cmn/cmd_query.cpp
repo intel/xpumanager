@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "driver_util.h"
 #include "frame_loop.h"
+#include "metrics/clock.h"
 #include "table_builder.h"
 #include "terminal.h"
 #include "utility/compat/format.h"
@@ -38,19 +39,57 @@ using metrics::MetricGroup;
 // Static properties
 // ---------------------------------------------------------------------------------------
 
+/// Works a static property out from the device itself; nothing when the device cannot tell.
+using ComputedStatic = std::optional<std::string> (*)(devInfo &dev);
+
+[[nodiscard]] std::optional<std::string> deviceStateOf(devInfo &dev)
+{
+	return std::string{dev.dev->isInSurvMode() ? DEVICE_STATE_SURV_MODE : DEVICE_STATE_NORMAL};
+}
+
+/// The number of the device's DRM card node, e.g. 1 for /dev/dri/card1.
+[[nodiscard]] std::optional<std::string> minorNumberOf(devInfo &dev)
+{
+	constexpr std::string_view cardPrefix = "card";
+	const std::string path = dev.dev->getDrmDevPath();
+	const auto at = path.rfind(cardPrefix);
+	if (at == std::string::npos) {
+		return std::nullopt;
+	}
+	const std::string_view number = std::string_view{path}.substr(at + cardPrefix.size());
+	if (number.empty() || !std::ranges::all_of(number, [](char c) { return c >= '0' && c <= '9'; })) {
+		return std::nullopt;
+	}
+	return std::string{number};
+}
+
+/// Whether the device is a physical function or an SR-IOV virtual function, as discovery says it.
+[[nodiscard]] std::optional<std::string> virtualizationModeOf(devInfo &dev)
+{
+	auto *p = dev.dev->getPCI();
+	if (p == nullptr) {
+		return std::nullopt;
+	}
+	return std::string{p->getFuncType() == DEVICE_FUNCTION_TYPE_VIRTUAL ? "virtual" : "physical"};
+}
+
 /** One static property: where its text comes from and which section shows it. */
 struct StaticSpec
 {
 	std::string_view key;
 	MetricGroup group;
-	discoverySubCmdFunc getter; ///< nullptr for a property computed from the device itself.
+	discoverySubCmdFunc getter; ///< Discovery getter that reads it, or nullptr when @c compute does.
+	ComputedStatic compute;		///< Works it out from the device, or nullptr when @c getter reads it.
 	bool amcOnly;				///< Only devices with an AMC have it.
 };
 
 // clang-format off
 constexpr auto STATIC_TABLE = std::to_array<StaticSpec>({
-	{"device_state", MetricGroup::IDENTITY, nullptr,                     false},
-	{"part_number",  MetricGroup::IDENTITY, &cmdDiscovery::partNumber,   true},
+	{"product_brand",       MetricGroup::IDENTITY, &cmdDiscovery::vendorName, nullptr,               false},
+	{"minor_number",        MetricGroup::IDENTITY, nullptr,                   &minorNumberOf,        false},
+	{"device_state",        MetricGroup::IDENTITY, nullptr,                   &deviceStateOf,        false},
+	{"part_number",         MetricGroup::IDENTITY, &cmdDiscovery::partNumber, nullptr,               true},
+	{"virtualization_mode", MetricGroup::IDENTITY, nullptr,                   &virtualizationModeOf, false},
 });
 // clang-format on
 
@@ -147,20 +186,22 @@ constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
 	return Spec{kind, depth, label, key, BUS_ID_FIELD};
 }
 
-// Identity first, then one section per subsystem. Static detail that discovery --dump already
-// lists is left out, as are values that need extra GSC or AMC round trips per device, and rows
-// that no current device, driver and kernel gives useful values for (throttle reasons, PCIe
-// replays, power limit range, pending ECC state, offline pages, fan speed).
+// Identity first, then one section per subsystem. Values that need extra GSC or AMC round trips
+// per device are left out, as are rows that no current device, driver and kernel gives useful
+// values for (PCIe replays, power limit range, pending ECC state, offline pages, fan speed).
 // clang-format off
-/// The device report, top to bottom. Each row names where its value comes from.
-constexpr auto REPORT_LAYOUT = std::to_array<Spec>({
+constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 	fieldOf(0, "Product Name", "product_name", "name"),
+	staticOf(0, "Product Brand", "product_brand", "product_brand"),
 	fieldOf(0, "Serial Number", "serial_number", "serial"),
 	fieldOf(0, "GPU UUID", "gpu_uuid", "uuid"),
 	fieldOf(0, "Device Index", "device_index", "index"),
+	staticOf(0, "Minor Number", "minor_number", "minor_number"),
 	fieldOf(0, "VBIOS Version", "vbios_version", "vbios_version"),
 	staticOf(0, "Board Part Number", "board_part_number", "part_number"),
 	staticOf(0, "Device State", "device_state", "device_state"),
+	sectionOf(0, "GPU Virtualization Mode", "gpu_virtualization_mode"),
+		staticOf(1, "Virtualization Mode", "virtualization_mode", "virtualization_mode"),
 	sectionOf(0, "PCI", "pci"),
 		pciPartOf(SpecKind::BdfBus, 1, "Bus", "bus"),
 		pciPartOf(SpecKind::BdfDevice, 1, "Device", "device"),
@@ -177,6 +218,12 @@ constexpr auto REPORT_LAYOUT = std::to_array<Spec>({
 				linkFieldOf(3, "Current", "current", "pcie.link.width.current"),
 		fieldOf(1, "Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
 		fieldOf(1, "Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
+	sectionOf(0, "Clocks Event Reasons", "clocks_event_reasons"),
+});
+
+// The rows of Clocks Event Reasons come from THROTTLE_REASONS, between LAYOUT_HEAD and LAYOUT_TAIL.
+
+constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 	sectionOf(0, "FB Memory Usage", "fb_memory_usage"),
 		fieldOf(1, "Total", "total", "memory.total"),
 		fieldOf(1, "Used", "used", "memory.used"),
@@ -195,6 +242,13 @@ constexpr auto REPORT_LAYOUT = std::to_array<Spec>({
 		sectionOf(1, "Aggregate", "aggregate"),
 			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
 			fieldOf(2, "Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
+			fieldOf(2, "Cache Correctable", "cache_correctable", "ras.cache.errors.correctable"),
+			fieldOf(2, "Cache Uncorrectable", "cache_uncorrectable", "ras.cache.errors.uncorrectable"),
+			fieldOf(2, "Non-Compute Correctable", "non_compute_correctable", "ras.non_compute.errors.correctable"),
+			fieldOf(2, "Non-Compute Uncorrectable", "non_compute_uncorrectable", "ras.non_compute.errors.uncorrectable"),
+			fieldOf(2, "Resets", "resets", "ras.reset"),
+			fieldOf(2, "Programming Errors", "programming_errors", "ras.programming.errors"),
+			fieldOf(2, "Driver Errors", "driver_errors", "ras.driver.errors"),
 	sectionOf(0, "Temperature", "temperature"),
 		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
 		fieldOf(1, "GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
@@ -209,6 +263,8 @@ constexpr auto REPORT_LAYOUT = std::to_array<Spec>({
 		fieldOf(1, "Graphics", "graphics", "clocks.current.graphics"),
 		fieldOf(1, "Memory", "memory", "clocks.current.memory"),
 		fieldOf(1, "Media", "media", "clocks.current.media"),
+	sectionOf(0, "Applications Clocks", "applications_clocks"),
+		fieldOf(1, "Graphics", "graphics", "clocks.requested.graphics"),
 	sectionOf(0, "Max Clocks", "max_clocks"),
 		fieldOf(1, "Graphics", "graphics", "clocks.max.graphics"),
 		fieldOf(1, "Media", "media", "clocks.max.media"),
@@ -216,6 +272,24 @@ constexpr auto REPORT_LAYOUT = std::to_array<Spec>({
 		fieldOf(1, "Graphics", "graphics", "clocks.supported.graphics"),
 });
 // clang-format on
+
+constexpr auto THROTTLE_ROWS = [] {
+	std::array<Spec, metrics::clock::THROTTLE_REASONS.size()> rows{};
+	std::ranges::transform(metrics::clock::THROTTLE_REASONS, rows.begin(),
+						   [](const auto &reason) { return fieldOf(1, reason.label, reason.key, reason.metricName); });
+	return rows;
+}();
+
+template <std::size_t... N> [[nodiscard]] constexpr auto joinRows(const std::array<Spec, N> &...parts)
+{
+	std::array<Spec, (N + ...)> rows{};
+	auto out = rows.begin();
+	((out = std::ranges::copy(parts, out).out), ...);
+	return rows;
+}
+
+/// The device report, top to bottom. Each row names where its value comes from.
+constexpr auto REPORT_LAYOUT = joinRows(LAYOUT_HEAD, THROTTLE_ROWS, LAYOUT_TAIL);
 
 /// Each row is at most one level deeper than the row before it, only a section is followed by a
 /// deeper row, and every section has at least one row under it.
@@ -707,9 +781,8 @@ namespace {
 		if (!shown(spec.group, selection) || (spec.amcOnly && !dev.dev->hasAmc())) {
 			continue;
 		}
-		if (spec.getter == nullptr) {
-			staticProps.values.push_back(
-				{spec.key, std::string{dev.dev->isInSurvMode() ? DEVICE_STATE_SURV_MODE : DEVICE_STATE_NORMAL}});
+		if (spec.compute != nullptr) {
+			staticProps.values.push_back({spec.key, spec.compute(dev)});
 			continue;
 		}
 		std::string line;

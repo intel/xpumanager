@@ -234,6 +234,9 @@ metric category. Run ``xpu-smi --query-gpu`` with no argument to print the live 
    * - ``COMPUTE``
      - —
      - Scheduler mode
+   * - ``PERFORMANCE``
+     - —
+     - Whether each clock throttle reason is active
    * - ``SUPPORTED_CLOCKS``
      - —
      - GPU clocks the frequency range can be set to
@@ -383,9 +386,17 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
        to: ``low-high step N`` when evenly spaced, otherwise a ``;`` separated list. The GPU
        cannot be pinned to one of them, and there is no list for the memory clock, which
        cannot be set
+   * - ``clocks.requested.graphics``
+     - MHz
+     - GPU core clock the driver last requested from the hardware
    * - ``clocks.throttle.reason``
      - —
      - Active clock throttle reason flags
+   * - ``clocks.event_reasons.<reason>``
+     - —
+     - Whether one throttle reason is active (``Active`` or ``Not Active``). One field per
+       reason: ``thermal_limit``, ``average_power_cap``, ``burst_power_cap``, ``current_limit``,
+       ``psu_alert``, ``sw_range``, ``hw_range``, ``voltage``, ``thermal_alert``, ``power_alert``
    * - ``pcie.link.gen.max``
      - —
      - Maximum PCIe generation

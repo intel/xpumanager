@@ -94,8 +94,9 @@ enum class MetricGroup : uint32_t
 	ECC = 1U << 7,				 /**< ecc.mode.current, ecc.errors.corrected/uncorrected */
 	EU_ARRAY = 1U << 8,			 /**< eu.active/stall/idle (Intel Xe-only) */
 	FAN = 1U << 9,				 /**< fan.speed */
-	SUPPORTED_CLOCKS = 1U << 10, /**< clocks.supported.*: clocks the frequency range can be set to */
-	COMPUTE = 1U << 11,			 /**< scheduler.*: how the device schedules compute work */
+	PERFORMANCE = 1U << 10,		 /**< clocks.event_reasons.*: why the GPU clock is held back */
+	SUPPORTED_CLOCKS = 1U << 11, /**< clocks.supported.*: clocks the frequency range can be set to */
+	COMPUTE = 1U << 12,			 /**< scheduler.*: how the device schedules compute work */
 	ALL = ~0U,
 };
 
@@ -433,6 +434,7 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 	{"EU_ARRAY", "x", MetricGroup::EU_ARRAY},
 	{"FAN", "f", MetricGroup::FAN},
 	{"COMPUTE", "", MetricGroup::COMPUTE},
+	{"PERFORMANCE", "", MetricGroup::PERFORMANCE},
 	{"SUPPORTED_CLOCKS", "", MetricGroup::SUPPORTED_CLOCKS},
 	{"ALL", "", MetricGroup::ALL},
 });
