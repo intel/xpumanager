@@ -774,6 +774,32 @@ ze_result_t device::zesGetDevProps(zes_device_handle_t dev, zes_device_propertie
 }
 
 /**
+ * @brief Reads why, if at all, the device needs a reset to keep working.
+ *
+ * @param[out] reasons Set to the reasons the driver reports: none, wedged, or a repair that
+ *                     needs a reset. Unchanged on failure.
+ *
+ * @retval ZE_RESULT_SUCCESS               The reasons were read.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED   The device has no Sysman handle.
+ * @retval Other                           The error from zesDeviceGetState().
+ */
+ze_result_t device::getResetReasons(zes_reset_reason_flags_t &reasons)
+{
+	if (zesDevice == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	zes_device_state_t state{};
+	state.stype = ZES_STRUCTURE_TYPE_DEVICE_STATE;
+	const ze_result_t result = zesDeviceGetState(zesDevice, &state);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get device state: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+	reasons = state.reset;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Retrieves the current device health status.
  *
  * @param[out] pHealth Pointer to receive the current device health status.
