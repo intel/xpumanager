@@ -138,6 +138,18 @@ func (r *HealthRule) Validate() error {
 	if len(r.States) == 0 {
 		return fmt.Errorf("at least one state is required")
 	}
+	if r.ParentMetric == "" {
+		if len(r.ParentFilters) > 0 {
+			return fmt.Errorf("parent_filters requires parent_metric")
+		}
+		for _, state := range r.States {
+			for _, cond := range state.Conditions {
+				if len(cond.ParentFilters) > 0 {
+					return fmt.Errorf("condition parent_filters of state %q requires parent_metric", state.StateName)
+				}
+			}
+		}
+	}
 	return nil
 }
 

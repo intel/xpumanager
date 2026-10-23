@@ -78,7 +78,7 @@ processors:
 | `copy_attributes` | []string | [] | List of attributes to copy from `source_metric` to `status_metric` |
 | `add_attributes` | map[string]string | {} | Additional attributes to set on the `status_metric` |
 | `component_filters` | []AttributeFilter | [] | Filters to apply on the source metric |
-| `parent_filters` | []AttributeFilter | [] | Filters to apply on the parent metric |
+| `parent_filters` | []AttributeFilter | [] | Filters to apply on the parent metric. Requires `parent_metric` |
 | `aggregate` | AggregateRule | none | Aggregate the filtered `source_metric` data points before evaluating the states. If not set, each data point is evaluated separately |
 | `states` | []StateRule | *required* | Ordered list of state rules to evaluate. All rules are evaluated, and the last matching one will be active. Thus, the rules should be ordered by increasing severity |
 
@@ -135,7 +135,7 @@ states:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `value` | float64 | Value threshold. Condition matches if metric value >= threshold |
-| `parent_filters` | []AttributeFilter | Filter to apply on parent attributes |
+| `parent_filters` | []AttributeFilter | Filter to apply on parent attributes. Requires `parent_metric` |
 
 ### Example Configuration
 

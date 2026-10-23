@@ -7,6 +7,7 @@ processors:
     rules:
       - name: "invalid condition parent filter"
         source_metric: "hw.temperature"
+        parent_metric: "hw.gpu.info"
         states:
           - state_name: "warning"
             conditions:

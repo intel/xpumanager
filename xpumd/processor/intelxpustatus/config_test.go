@@ -89,9 +89,45 @@ func TestConfigValidate(t *testing.T) {
 				Name:          "gpu-health",
 				SourceMetric:  "hw.temperature",
 				States:        []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
+				ParentMetric:  "hw.gpu.info",
 				ParentFilters: common.AttributeFilterList{{Key: "hw.type"}},
 			},
 			expectErr: `filter values are required for key "hw.type"`,
+		},
+		{
+			name: "valid parent filters",
+			rule: HealthRule{
+				Name:          "gpu-health",
+				SourceMetric:  "hw.temperature",
+				ParentMetric:  "hw.gpu.info",
+				ParentFilters: common.AttributeFilterList{{Key: "hw.vendor", Values: []string{"Intel"}}},
+				States: []StateRule{{StateName: "warning", Conditions: []ConditionRule{
+					{Value: 95, ParentFilters: common.AttributeFilterList{{Key: "pci.device_id", Values: []string{"56c0"}}}},
+					{Value: 85},
+				}}},
+			},
+		},
+		{
+			name: "parent filters without parent metric",
+			rule: HealthRule{
+				Name:          "gpu-health",
+				SourceMetric:  "hw.temperature",
+				States:        []StateRule{{StateName: "warning", Conditions: []ConditionRule{{Value: 85}}}},
+				ParentFilters: common.AttributeFilterList{{Key: "hw.vendor", Values: []string{"Intel"}}},
+			},
+			expectErr: "parent_filters requires parent_metric",
+		},
+		{
+			name: "condition parent filters without parent metric",
+			rule: HealthRule{
+				Name:         "gpu-health",
+				SourceMetric: "hw.temperature",
+				States: []StateRule{{StateName: "warning", Conditions: []ConditionRule{
+					{Value: 95, ParentFilters: common.AttributeFilterList{{Key: "pci.device_id", Values: []string{"56c0"}}}},
+					{Value: 85},
+				}}},
+			},
+			expectErr: `condition parent_filters of state "warning" requires parent_metric`,
 		},
 		{
 			name: "valid aggregate",
