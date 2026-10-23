@@ -7,9 +7,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.2
 // - protoc             v7.35.0
-// source: exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto
+// source: exporter/intelxpuinfo/api/deviceinfo/v1alpha2/deviceinfo.proto
 
-package v1alpha1
+package v1alpha2
 
 import (
 	context "context"
@@ -24,8 +24,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	DeviceInfo_WatchDeviceHealth_FullMethodName = "/deviceinfo.v1alpha1.DeviceInfo/WatchDeviceHealth"
-	DeviceInfo_WatchDeviceEvents_FullMethodName = "/deviceinfo.v1alpha1.DeviceInfo/WatchDeviceEvents"
+	DeviceInfo_WatchDeviceHealth_FullMethodName = "/deviceinfo.v1alpha2.DeviceInfo/WatchDeviceHealth"
+	DeviceInfo_WatchDeviceEvents_FullMethodName = "/deviceinfo.v1alpha2.DeviceInfo/WatchDeviceEvents"
 )
 
 // DeviceInfoClient is the client API for DeviceInfo service.
@@ -161,7 +161,7 @@ type DeviceInfo_WatchDeviceEventsServer = grpc.ServerStreamingServer[DeviceEvent
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DeviceInfo_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "deviceinfo.v1alpha1.DeviceInfo",
+	ServiceName: "deviceinfo.v1alpha2.DeviceInfo",
 	HandlerType: (*DeviceInfoServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
@@ -176,5 +176,5 @@ var DeviceInfo_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto",
+	Metadata: "exporter/intelxpuinfo/api/deviceinfo/v1alpha2/deviceinfo.proto",
 }

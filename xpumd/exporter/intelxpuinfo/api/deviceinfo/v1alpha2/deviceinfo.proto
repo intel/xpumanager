@@ -5,8 +5,8 @@
 
 syntax = "proto3";
 
-package deviceinfo.v1alpha1;
-option go_package = "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1";
+package deviceinfo.v1alpha2;
+option go_package = "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha2";
 
 // DeviceInfo service provides info for XPU devices.
 service DeviceInfo {

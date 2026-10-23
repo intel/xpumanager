@@ -118,7 +118,7 @@ generate-mods:
 generate-proto: install-protoc
 	PATH=tools/bin/ protoc --go_out=. --go_opt=paths=source_relative \
 	                       --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-	                       exporter/intelxpuinfo/api/deviceinfo/v1alpha1/deviceinfo.proto
+	                       exporter/intelxpuinfo/api/deviceinfo/v1alpha2/deviceinfo.proto
 
 .PHONY: generate-dockerfile-args
 # Sync the compute-runtime backend build args from the Level-Zero Go example Dockerfile

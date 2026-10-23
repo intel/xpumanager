@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/intel/xpumanager/xpumd/common"
-	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha2"
 )
 
 // translateEvents converts OTel log records emitted by the sysman events

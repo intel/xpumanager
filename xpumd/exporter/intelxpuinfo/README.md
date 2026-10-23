@@ -3,7 +3,7 @@
 ## Overview
 
 The Intel XPU Info Exporter translates metrics and logs into device information
-that is exposed via a [`gRPC API`](api/deviceinfo/v1alpha1/).
+that is exposed via a [`gRPC API`](api/deviceinfo/v1alpha2/).
 
 ### Metrics pipeline
 
@@ -106,7 +106,7 @@ documentation for details.
 
 ## gRPC API
 
-See [`api/deviceinfo/v1alpha1/`](api/deviceinfo/v1alpha1/) for the API definitions.
+See [`api/deviceinfo/v1alpha2/`](api/deviceinfo/v1alpha2/) for the API definitions.
 
 There's a small command-line client [`xpuinfo-cli/`](xpuinfo-cli/) for verifying
 the exporter output during development and testing.

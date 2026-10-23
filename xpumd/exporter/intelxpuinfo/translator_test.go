@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/testing/protocmp"
 
 	"github.com/intel/xpumanager/xpumd/common"
-	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha2"
 )
 
 func TestParseFirmwares(t *testing.T) {

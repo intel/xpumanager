@@ -9,7 +9,7 @@ import (
 	"context"
 	"sync"
 
-	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha1"
+	pb "github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/api/deviceinfo/v1alpha2"
 	"github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/internal/metadata"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"

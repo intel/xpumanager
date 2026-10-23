@@ -22,7 +22,7 @@ Contents:
     by stopping conditions processing at first value with a matching parent filter
     * **Action required:** specify states' default threshold values as the last condition
 * Breaking changes (for the `intel_xpu_info` exporter gRPC API):
-  * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha1`
+  * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha2`
     * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
 * Metric workarounds:
   * Report also disabled power limits (part of [#184](https://github.com/intel/xpumanager/issues/184) fix)
