@@ -287,6 +287,15 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``pci.device_id``
      - —
      - PCI device ID
+   * - ``pci.base_class``
+     - —
+     - PCI base class code, in hex: ``0x03`` display controller, ``0x12`` processing accelerator
+   * - ``pci.sub_class``
+     - —
+     - PCI subclass code, in hex
+   * - ``recovery_action``
+     - —
+     - What the device needs to keep working: ``None``, ``Reset``, or ``Reset to repair``
    * - ``pci.sub_device_id``
      - —
      - PCI subsystem device ID (Linux only)

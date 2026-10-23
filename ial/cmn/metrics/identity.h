@@ -28,6 +28,25 @@
 
 namespace metrics::identity {
 
+/**
+ * @brief Says what the reset reasons the driver reports call for.
+ *
+ * @param[in] reasons Reset reason flags from the device state.
+ *
+ * @return "None" when no reset is needed, "Reset to repair" when a repair is waiting on one,
+ *         and "Reset" for any other reason, such as a wedged device.
+ */
+[[nodiscard]] inline std::string_view recoveryActionOf(zes_reset_reason_flags_t reasons) noexcept
+{
+	if (reasons == 0) {
+		return "None";
+	}
+	if ((reasons & ZES_RESET_REASON_FLAG_REPAIR) != 0U) {
+		return "Reset to repair";
+	}
+	return "Reset";
+}
+
 /** Width of a BDF address rendered as "dddd:bb:dd.f" (see pci::getBDFStr). */
 inline constexpr int BDF_DISPLAY_WIDTH = sizeof("0000:00:00.0") - 1;
 
@@ -231,6 +250,21 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 					out = xpum::compat::format("0x{:04X}", props.deviceId);
 				}
 				return r;
+			},
+		},
+		{
+			.name = "recovery_action",
+			.unit = "",
+			.description = "What the device needs to keep working: None, Reset, or Reset to repair",
+			.source = MetricSource::Live,
+			.groups = MetricGroup::IDENTITY,
+			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+				zes_reset_reason_flags_t reasons = 0;
+				if (auto const r = d.dev->getResetReasons(reasons); r != ZE_RESULT_SUCCESS) {
+					return r;
+				}
+				out = std::string{recoveryActionOf(reasons)};
+				return ZE_RESULT_SUCCESS;
 			},
 		},
 		{

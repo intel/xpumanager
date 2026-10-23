@@ -84,7 +84,7 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - ``IDENTITY``
      - Product name and brand, index, DRM minor number, serial number, UUID, VBIOS (GFX
        firmware) version, board part number, device state, whether the device is a physical or
-       an SR-IOV virtual function, and the PCI address
+       an SR-IOV virtual function, the recovery action it needs, and the PCI address
    * - ``MEMORY``
      - Memory total, used and free, and memory utilization
    * - ``UTILIZATION``
@@ -98,8 +98,8 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - Current graphics, memory and media clocks, the graphics clock the driver requested
        (Applications Clocks), and the maximum graphics and media clocks
    * - ``PCI``
-     - PCI address fields and IDs, link generation and width (maximum and current), and
-       throughput
+     - PCI address fields, class code and IDs, the physical slot, link generation and width
+       (maximum and current), and throughput
    * - ``ECC``
      - ECC mode and aggregate error counts, in total and by RAS category: cache and
        non-compute errors, resets, programming errors and driver errors
@@ -130,7 +130,7 @@ From an Intel Arc B580 run by a non-root user.
 
    ==============XPU-SMI LOG==============
 
-   Timestamp                                 : 2026-10-23T11:23:13Z
+   Timestamp                                 : 2026-10-23T11:41:27Z
    UMD Version                               : 1.17.39980
    KMD Version                               : N/A
    Level Zero Version                        : 1.33.1
@@ -144,13 +144,18 @@ From an Intel Arc B580 run by a non-root user.
        Device Index                          : 0
        Minor Number                          : 0
        VBIOS Version                         : N/A
+       Platform Info
+           Slot Number                       : N/A
        Device State                          : normal
        GPU Virtualization Mode
            Virtualization Mode               : physical
+       GPU Recovery Action                   : None
        PCI
            Bus                               : 0x03
            Device                            : 0x00
            Domain                            : 0x0000
+           Base Classcode                    : 0x03
+           Sub Classcode                     : 0x00
            Device Id                         : 0xE20B
            Bus Id                            : 0000:03:00.0
            Sub System Id                     : 0x1100
@@ -161,8 +166,8 @@ From an Intel Arc B580 run by a non-root user.
                Link Width
                    Max                       : N/A
                    Current                   : N/A
-           Tx Throughput                     : 22 kB/s
-           Rx Throughput                     : 29 kB/s
+           Tx Throughput                     : 103 kB/s
+           Rx Throughput                     : 1600 kB/s
        Clocks Event Reasons
            Thermal Limit                     : Not Active
            Average Power Cap                 : Not Active
@@ -207,12 +212,12 @@ From an Intel Arc B580 run by a non-root user.
            Memory Shutdown Temp              : 100 C
            Memory Slowdown Temp              : 85 C
        GPU Power Readings
-           Average Power Draw                : 58.38 W
+           Average Power Draw                : 115.63 W
            Current Power Limit               : 380.00 W
        Clocks
            Graphics                          : 400 MHz
            Memory                            : 9500 MHz
-           Media                             : 0 MHz
+           Media                             : 1200 MHz
        Applications Clocks
            Graphics                          : 400 MHz
        Max Clocks
@@ -236,7 +241,10 @@ Reading the Report
   and otherwise from the busiest engine.
 - Applications Clocks shows the graphics clock the driver last requested, which the GPU runs
   at unless a throttle reason holds it back. Minor Number is the number of the device's DRM
-  card node, and reads ``N/A`` on Windows.
+  card node, and reads ``N/A`` on Windows. Slot Number is the physical PCI slot the platform
+  firmware names, and reads ``N/A`` on systems whose firmware names none.
+- GPU Recovery Action says what the driver reports the device needs: ``None``, ``Reset`` (for
+  example a wedged device), or ``Reset to repair``.
 - As root, the VBIOS version is read from the GSC firmware interface, which takes about
   200 ms per device on some platforms. Devices are read in parallel, and the read overlaps
   the measurement window. On a device with an AMC the board part number is read from the

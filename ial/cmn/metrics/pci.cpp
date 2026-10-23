@@ -9,6 +9,7 @@
 #include "pci.h"
 #include "device.h"
 #include "metrics_registry.h"
+#include "pci_class.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include <cstdint>
@@ -191,7 +192,48 @@ constexpr auto TX_THROUGHPUT_KBS = QueryMetric{// NOLINT(readability-identifier-
 											   .inputs = MetricInput::PCIE,
 											   .getter = throughputGetter<&PcieSnapshot::tx, 1000ULL>};
 
+/**
+ * @brief Reads one byte of the device's PCI class code.
+ *
+ * @tparam BYTE PciClassCode::baseClass or PciClassCode::subClass.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p out holds the byte as "0x" and two hex digits.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No PCI HAL, or the OS does not report the class code.
+ */
+template <uint8_t PciClassCode::*BYTE> ze_result_t classCodeGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *p = d.dev->getPCI();
+	if (p == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	const auto code = getPciClassCode(p->getBDFStr());
+	if (!code) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = xpum::compat::format("0x{:02X}", (*code).*BYTE);
+	return ZE_RESULT_SUCCESS;
+}
+
+constexpr auto BASE_CLASS = QueryMetric{// NOLINT(readability-identifier-naming)
+										.name = "pci.base_class",
+										.unit = "",
+										.description = "PCI base class code, in hex: 0x03 display controller, "
+													   "0x12 processing accelerator",
+										.source = MetricSource::Static,
+										.groups = MetricGroup::PCI,
+										.getter = classCodeGetter<&PciClassCode::baseClass>};
+
+constexpr auto SUB_CLASS = QueryMetric{// NOLINT(readability-identifier-naming)
+									   .name = "pci.sub_class",
+									   .unit = "",
+									   .description = "PCI subclass code, in hex",
+									   .source = MetricSource::Static,
+									   .groups = MetricGroup::PCI,
+									   .getter = classCodeGetter<&PciClassCode::subClass>};
+
 constexpr auto ALL = std::to_array<QueryMetric>({
+	BASE_CLASS,
+	SUB_CLASS,
 	LINK_GEN_MAX,
 	LINK_WIDTH_MAX,
 	LINK_GEN_CURRENT,

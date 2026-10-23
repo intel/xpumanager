@@ -90,6 +90,7 @@ constexpr auto STATIC_TABLE = std::to_array<StaticSpec>({
 	{"device_state",        MetricGroup::IDENTITY, nullptr,                   &deviceStateOf,        false},
 	{"part_number",         MetricGroup::IDENTITY, &cmdDiscovery::partNumber, nullptr,               true},
 	{"virtualization_mode", MetricGroup::IDENTITY, nullptr,                   &virtualizationModeOf, false},
+	{"pci_slot",            MetricGroup::PCI,      &cmdDiscovery::pciSlot,    nullptr,               false},
 });
 // clang-format on
 
@@ -199,13 +200,18 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 	staticOf(0, "Minor Number", "minor_number", "minor_number"),
 	fieldOf(0, "VBIOS Version", "vbios_version", "vbios_version"),
 	staticOf(0, "Board Part Number", "board_part_number", "part_number"),
+	sectionOf(0, "Platform Info", "platform_info"),
+		staticOf(1, "Slot Number", "slot_number", "pci_slot"),
 	staticOf(0, "Device State", "device_state", "device_state"),
 	sectionOf(0, "GPU Virtualization Mode", "gpu_virtualization_mode"),
 		staticOf(1, "Virtualization Mode", "virtualization_mode", "virtualization_mode"),
+	fieldOf(0, "GPU Recovery Action", "gpu_recovery_action", "recovery_action"),
 	sectionOf(0, "PCI", "pci"),
 		pciPartOf(SpecKind::BdfBus, 1, "Bus", "bus"),
 		pciPartOf(SpecKind::BdfDevice, 1, "Device", "device"),
 		pciPartOf(SpecKind::BdfDomain, 1, "Domain", "domain"),
+		fieldOf(1, "Base Classcode", "base_classcode", "pci.base_class"),
+		fieldOf(1, "Sub Classcode", "sub_classcode", "pci.sub_class"),
 		fieldOf(1, "Device Id", "device_id", "pci.device_id"),
 		fieldOf(1, "Bus Id", "bus_id", BUS_ID_FIELD),
 		fieldOf(1, "Sub System Id", "sub_system_id", "pci.sub_device_id"),
@@ -748,7 +754,7 @@ QueryNode survivabilityNode(std::string_view bdf)
 	device.key = "pci_bus_id";
 	device.value = std::string{bdf};
 	device.children.push_back(leafOf("Device State", "device_state", std::string{DEVICE_STATE_SURV_MODE}));
-	device.children.push_back(leafOf("Recovery Action", "recovery_action", "Firmware update and GPU reset"));
+	device.children.push_back(leafOf("GPU Recovery Action", "gpu_recovery_action", "Firmware update and GPU reset"));
 	return device;
 }
 

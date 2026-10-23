@@ -1692,3 +1692,29 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 		CHECK_FALSE(read("pcie.tx.throughput.kbs", cache).has_value());
 	}
 }
+
+// -- class code and recovery action fields ------------------------------------------------
+
+TEST_CASE("pci.base_class and pci.sub_class are Static PCI fields")
+{
+	for (const std::string_view name : {"pci.base_class", "pci.sub_class"}) {
+		const auto field = findMetric(name);
+		REQUIRE_MESSAGE(field.has_value(), name);
+		CHECK_MESSAGE(field->source == MetricSource::Static, name);
+		CHECK_MESSAGE(field->groups == MetricGroup::PCI, name);
+		CHECK_MESSAGE(field->inputs == MetricInput::NONE, name);
+	}
+}
+
+TEST_CASE("recoveryActionOf: none, a repair, or any other reset reason")
+{
+	using metrics::identity::recoveryActionOf;
+	CHECK(recoveryActionOf(0) == "None");
+	CHECK(recoveryActionOf(ZES_RESET_REASON_FLAG_WEDGED) == "Reset");
+	CHECK(recoveryActionOf(ZES_RESET_REASON_FLAG_REPAIR) == "Reset to repair");
+	CHECK(recoveryActionOf(ZES_RESET_REASON_FLAG_WEDGED | ZES_RESET_REASON_FLAG_REPAIR) == "Reset to repair");
+	const auto field = findMetric("recovery_action");
+	REQUIRE(field.has_value());
+	CHECK(field->groups == MetricGroup::IDENTITY);
+	CHECK(field->source == MetricSource::Live);
+}
