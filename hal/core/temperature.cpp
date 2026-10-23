@@ -233,8 +233,12 @@ uint64_t temperature::getShutdownMemoryTemperature(uint32_t pciDeviceId)
 ze_result_t temperature::enumTemperatureDomains(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumTemperatureSensors(device, &temperatureCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || temperatureCount == 0) {
+	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to enumerate temperature domains. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+	if (temperatureCount == 0) {
+		DBG("The device exposes no temperature sensors.\n");
 		return result;
 	}
 
