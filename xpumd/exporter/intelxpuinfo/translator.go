@@ -295,13 +295,11 @@ func (t *metricsTranslator) updateDeviceHealthStatus(statuses healthStatuses, me
 			Reason:   reason,
 			Message:  sm.Message,
 		}
-	} else if sm.severityLevel != pb.SeverityLevel_SEVERITY_LEVEL_OK {
+	} else if sm.severityLevel > status.Severity {
 		// Pick the worst severity level if multiple statuses exist for the same domain
-		if sm.severityLevel > status.Severity {
-			statuses[key].Severity = sm.severityLevel
-			statuses[key].Reason = reason
-			statuses[key].Message = sm.Message
-		}
+		statuses[key].Severity = sm.severityLevel
+		statuses[key].Reason = reason
+		statuses[key].Message = sm.Message
 	}
 }
 

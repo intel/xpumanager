@@ -62,7 +62,7 @@ class PolicyRule:
     name: str
     event_types: set[EventType]
     action: ActionFn
-    min_severity: SeverityLevel = SeverityLevel.UNKNOWN
+    min_severity: SeverityLevel = SeverityLevel.OK
     domains: set[str] = field(default_factory=set)
     bdfs: set[str] = field(default_factory=set)
     cooldown_s: float = 0.0

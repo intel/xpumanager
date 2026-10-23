@@ -102,8 +102,8 @@ message HealthStatus {
 
 // Health status of a health domain.
 enum SeverityLevel {
-  SEVERITY_LEVEL_UNKNOWN = 0;
-  SEVERITY_LEVEL_OK = 1;
+  SEVERITY_LEVEL_OK = 0;
+  SEVERITY_LEVEL_UNKNOWN = 1;
   SEVERITY_LEVEL_WARNING = 2;
   SEVERITY_LEVEL_CRITICAL = 3;
   SEVERITY_LEVEL_FAILED = 4;

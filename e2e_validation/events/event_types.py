@@ -48,8 +48,8 @@ class EventType(enum.Enum):
 class SeverityLevel(enum.IntEnum):
     """Mirror of the proto SeverityLevel, usable without proto imports."""
 
-    UNKNOWN = 0
-    OK = 1
+    OK = 0
+    UNKNOWN = 1
     WARNING = 2
     CRITICAL = 3
     FAILED = 4

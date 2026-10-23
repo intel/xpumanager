@@ -246,6 +246,35 @@ func TestUpdateHealthStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "unknown overrides ok",
+			statusMappings: []HwStatusMapping{
+				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{
+					"ok":      makeStateMapping("ok", "ok"),
+					"unknown": makeStateMapping("unknown", "unknown"),
+				}),
+			},
+			setup: func(dps pmetric.NumberDataPointSlice) {
+				addStatusDP(dps, "gpu0", "ok", true)
+				addStatusDP(dps, "gpu0", "unknown", true)
+				addStatusDP(dps, "gpu1", "unknown", true)
+				addStatusDP(dps, "gpu1", "ok", true)
+			},
+			wantStatuses: map[string]healthStatuses{
+				"gpu0": {
+					{domain: "gpu.health"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_UNKNOWN,
+						Reason:   "unknown"},
+				},
+				"gpu1": {
+					{domain: "gpu.health"}: {
+						Name:     "gpu.health",
+						Severity: pb.SeverityLevel_SEVERITY_LEVEL_UNKNOWN,
+						Reason:   "unknown"},
+				},
+			},
+		},
+		{
 			name: "inactive states are ignored",
 			statusMappings: []HwStatusMapping{
 				makeStatusMapping("gpu.health", false, map[string]HwStateMapping{

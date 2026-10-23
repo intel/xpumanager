@@ -23,7 +23,8 @@ Contents:
     * **Action required:** specify states' default threshold values as the last condition
 * Breaking changes (for the `intel_xpu_info` exporter gRPC API):
   * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha2`
-    * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
+  * `SeverityLevel` enum values of `SEVERITY_LEVEL_OK` and `SEVERITY_LEVEL_UNKNOWN` swapped (`OK=0`, `UNKNOWN=1`), so that the numeric value increases with severity
+  * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
 * Metric workarounds:
   * Report also disabled power limits (part of [#184](https://github.com/intel/xpumanager/issues/184) fix)
 * Metric updates:

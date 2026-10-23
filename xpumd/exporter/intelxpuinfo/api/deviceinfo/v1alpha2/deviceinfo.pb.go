@@ -30,8 +30,8 @@ const (
 type SeverityLevel int32
 
 const (
-	SeverityLevel_SEVERITY_LEVEL_UNKNOWN  SeverityLevel = 0
-	SeverityLevel_SEVERITY_LEVEL_OK       SeverityLevel = 1
+	SeverityLevel_SEVERITY_LEVEL_OK       SeverityLevel = 0
+	SeverityLevel_SEVERITY_LEVEL_UNKNOWN  SeverityLevel = 1
 	SeverityLevel_SEVERITY_LEVEL_WARNING  SeverityLevel = 2
 	SeverityLevel_SEVERITY_LEVEL_CRITICAL SeverityLevel = 3
 	SeverityLevel_SEVERITY_LEVEL_FAILED   SeverityLevel = 4
@@ -40,15 +40,15 @@ const (
 // Enum value maps for SeverityLevel.
 var (
 	SeverityLevel_name = map[int32]string{
-		0: "SEVERITY_LEVEL_UNKNOWN",
-		1: "SEVERITY_LEVEL_OK",
+		0: "SEVERITY_LEVEL_OK",
+		1: "SEVERITY_LEVEL_UNKNOWN",
 		2: "SEVERITY_LEVEL_WARNING",
 		3: "SEVERITY_LEVEL_CRITICAL",
 		4: "SEVERITY_LEVEL_FAILED",
 	}
 	SeverityLevel_value = map[string]int32{
-		"SEVERITY_LEVEL_UNKNOWN":  0,
-		"SEVERITY_LEVEL_OK":       1,
+		"SEVERITY_LEVEL_OK":       0,
+		"SEVERITY_LEVEL_UNKNOWN":  1,
 		"SEVERITY_LEVEL_WARNING":  2,
 		"SEVERITY_LEVEL_CRITICAL": 3,
 		"SEVERITY_LEVEL_FAILED":   4,
@@ -770,7 +770,7 @@ func (x *HealthStatus) GetSeverity() SeverityLevel {
 	if x != nil {
 		return x.Severity
 	}
-	return SeverityLevel_SEVERITY_LEVEL_UNKNOWN
+	return SeverityLevel_SEVERITY_LEVEL_OK
 }
 
 func (x *HealthStatus) GetReason() string {
@@ -832,9 +832,9 @@ const file_exporter_intelxpuinfo_api_deviceinfo_v1alpha2_deviceinfo_proto_rawDes
 	"\bseverity\x18\x02 \x01(\x0e2\".deviceinfo.v1alpha2.SeverityLevelR\bseverity\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x18\n" +
 	"\amessage\x18\x04 \x01(\tR\amessage*\x96\x01\n" +
-	"\rSeverityLevel\x12\x1a\n" +
-	"\x16SEVERITY_LEVEL_UNKNOWN\x10\x00\x12\x15\n" +
-	"\x11SEVERITY_LEVEL_OK\x10\x01\x12\x1a\n" +
+	"\rSeverityLevel\x12\x15\n" +
+	"\x11SEVERITY_LEVEL_OK\x10\x00\x12\x1a\n" +
+	"\x16SEVERITY_LEVEL_UNKNOWN\x10\x01\x12\x1a\n" +
 	"\x16SEVERITY_LEVEL_WARNING\x10\x02\x12\x1b\n" +
 	"\x17SEVERITY_LEVEL_CRITICAL\x10\x03\x12\x19\n" +
 	"\x15SEVERITY_LEVEL_FAILED\x10\x04*\xf8\x01\n" +
