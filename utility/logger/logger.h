@@ -236,6 +236,29 @@ public:
 	}
 
 	/**
+	 * @brief Atomically replace only the diagnostic (ERR/INFO/DBG/TRACE) sink
+	 *
+	 * Unlike setSink(), PRINT output keeps its sink and the debug banner is not re-armed, so a wrapper
+	 * that still writes to the same destination can be installed and removed without either changing.
+	 *
+	 * @param s New diagnostic sink; nullptr resets to OStreamSink(cerr)
+	 */
+	void setLogSink(std::shared_ptr<Sink> s) noexcept
+	{
+		sink.store(s ? std::move(s) : std::make_shared<OStreamSink>(std::cerr));
+	}
+
+	/**
+	 * @brief Atomically replace only the PRINT sink, leaving the diagnostic sink alone
+	 *
+	 * @param s New PRINT sink; nullptr resets to OStreamSink(cout)
+	 */
+	void setPrintSink(std::shared_ptr<Sink> s) noexcept
+	{
+		printSink.store(s ? std::move(s) : std::make_shared<OStreamSink>(std::cout));
+	}
+
+	/**
 	 * @brief Installs @p text as the banner and re-arms it for the active sink.
 	 *
 	 * The banner is written once to the diagnostic sink, ahead of the first record

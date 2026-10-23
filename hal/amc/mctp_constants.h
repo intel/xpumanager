@@ -9,6 +9,8 @@
 
 #define MCTP_SUCCESS 0x00
 #define MCTP_FAILURE 0x01
+#define MCTP_CANCELLED 0x02 // local status: a receive was abandoned at the caller's request
+#define MCTP_TIMEOUT 0x03	// local status: no message began to arrive within the time given
 #define MCTP_HEADER_VERSION 0x01
 #define MCTP_HEADER_SIZE 0x09
 #define MCTP_HEADER_PEC_SIZE 0x01
@@ -38,6 +40,31 @@
 #define MCTP_EOM 1
 #define MCTP_PAK_SEQ 0
 #define MCTL_PLDM_RESPONSE_PAYLOAD_SIZE 128
+
+// DSP0236 transport header: header version, destination EID, source EID, SOM/EOM/Pkt Seq#/TO/Msg Tag
+#define MCTP_TRANSPORT_HDR_SIZE 4
+// DSP0236 baseline transmission unit: the packet payload size every MCTP endpoint must support.
+// Nothing in this stack negotiates a larger one, so every packet is sized against it.
+#define MCTP_BASELINE_TRANSMISSION_UNIT 64
+// DSP0236 null and broadcast EIDs
+#define MCTP_NULL_EID 0x00
+#define MCTP_BROADCAST_EID 0xFF
+// DSP0237 frame: destination slave address, command code, byte count, ..., PEC.
+// The byte count covers the source slave address through the last payload byte.
+#define MCTP_SMBUS_SRC_ADDR_SIZE 1
+#define MCTP_SMBUS_FRAME_OVERHEAD 4 // destination slave address + command code + byte count + PEC
+#define MCTP_SMBUS_MAX_BYTE_COUNT (MCTP_SMBUS_SRC_ADDR_SIZE + MCTP_TRANSPORT_HDR_SIZE + MCTP_BASELINE_TRANSMISSION_UNIT)
+// Number of bytes requested per I2C read; one AMC frame plus the padding the AMC returns around it
+#define MCTP_SMBUS_READ_SIZE 128
+// Upper bound on a reassembled message; a local resource limit, not a protocol value
+#define MCTP_MAX_ASSEMBLED_MSG_SIZE 8192
+// Poll interval for the next packet of a message already being received; local pacing, not a protocol value
+#define MCTP_ASSEMBLY_POLL_MS 10
+// Longest gap between two packets of one message before its reassembly is abandoned; a local bound
+#define MCTP_ASSEMBLY_GAP_TIMEOUT_MS 1000
+// Gap between the packets of one message. The AMC's I2C target holds a single received
+// frame and drops it if the next write starts before its I2C thread has drained it.
+#define MCTP_INTER_PACKET_DELAY_MS 2
 
 enum mctpControlCode
 {

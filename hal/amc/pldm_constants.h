@@ -40,6 +40,15 @@
 #define PLDM_MAX_RESPONSE_SIZE 128
 #define PLDM_CMD_RESP_PAYLOAD_SIZE 1
 
+// DSP0240 Table 6 timing for PLDM requests
+// PT2, wait for the start of a response: PT1max + 2*PT4max (300 ms) to PT3min - 2*PT4max (4.8 s).
+// 2.5 s keeps the PN1 retries inside PT3max (6 s) of the first try.
+#define PLDM_PT2_MS 2500
+// PN1, retries a requester is obligated to make: at least 2 (three tries in total)
+#define PLDM_PN1_RETRIES 2
+// PT3 max, instance ID expiration: all retries of a request happen within this time of the first try
+#define PLDM_PT3_MAX_MS 6000
+
 #define PLDM_SOM_BIT_ON 0x01
 #define PLDM_EOM_BIT_ON 0x01
 #define PLDM_SOM_BIT_OFF 0x00

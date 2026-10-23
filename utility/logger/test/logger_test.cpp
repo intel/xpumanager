@@ -26,7 +26,8 @@
 // INFO(fmt, ...) for log-level gating. We don't use doctest INFO in this file.
 #undef INFO
 
-#include "debug.h"
+// From the repository root like the headers above, so it resolves without hal/core on the include path
+#include "hal/core/debug.h"
 #include "utility/logger/async_sink.h"
 
 #include <atomic>
@@ -91,13 +92,22 @@ public:
 struct LoggerGuard
 {
 	std::shared_ptr<Sink> savedSink = Logger::instance().getSink();
+	std::shared_ptr<Sink> savedPrintSink = Logger::instance().getPrintSink();
 	LogLevel savedLevel = getDbgLvl();
 
+	LoggerGuard() = default;
 	~LoggerGuard()
 	{
-		Logger::instance().setSink(savedSink);
+		// Restored separately: setSink() would put the diagnostic sink in place of the PRINT one.
+		Logger::instance().setLogSink(savedSink);
+		Logger::instance().setPrintSink(savedPrintSink);
 		setDbgLvl(savedLevel);
 	}
+	// A copy would restore the saved state a second time
+	LoggerGuard(const LoggerGuard &) = delete;
+	LoggerGuard &operator=(const LoggerGuard &) = delete;
+	LoggerGuard(LoggerGuard &&) = delete;
+	LoggerGuard &operator=(LoggerGuard &&) = delete;
 };
 
 // ── OStreamSink ───────────────────────────────────────────────────────────────
@@ -217,6 +227,39 @@ TEST_CASE("Logger: getSink round-trips the same object")
 	auto cap = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(cap);
 	CHECK(Logger::instance().getSink() == cap);
+}
+
+TEST_CASE("Logger: setLogSink replaces only the diagnostic sink")
+{
+	LoggerGuard const guard;
+	auto printBefore = Logger::instance().getPrintSink();
+	auto cap = std::make_shared<CaptureSink>();
+	Logger::instance().setLogSink(cap);
+	CHECK(Logger::instance().getSink() == cap);
+	CHECK(Logger::instance().getPrintSink() == printBefore);
+}
+
+TEST_CASE("Logger: setPrintSink replaces only the PRINT sink")
+{
+	LoggerGuard const guard;
+	auto logBefore = Logger::instance().getSink();
+	auto cap = std::make_shared<CaptureSink>();
+	Logger::instance().setPrintSink(cap);
+	CHECK(Logger::instance().getPrintSink() == cap);
+	CHECK(Logger::instance().getSink() == logBefore);
+
+	PRINT("printed\n");
+	CHECK(cap->str().find("printed") != std::string::npos);
+}
+
+TEST_CASE("Logger: setLogSink(nullptr) and setPrintSink(nullptr) reset to non-null defaults")
+{
+	LoggerGuard const guard;
+	Logger::instance().setLogSink(nullptr);
+	Logger::instance().setPrintSink(nullptr);
+	CHECK(Logger::instance().getSink() != nullptr);
+	CHECK(Logger::instance().getPrintSink() != nullptr);
+	CHECK(Logger::instance().getSink() != Logger::instance().getPrintSink());
 }
 
 // ── Level gating ──────────────────────────────────────────────────────────────

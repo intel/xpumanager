@@ -10,6 +10,10 @@
 #include "common.h"
 #include "i2c_interface.h"
 #include "mctp_constants.h"
+#include "mctp_packet.h"
+#include <chrono>
+#include <functional>
+#include <vector>
 
 #pragma pack(push, 1)
 struct mctpSmbusI2cHdr
@@ -107,5 +111,13 @@ protected:
 	// mctp command construction API
 	uint8_t commandConstruction(mctpSmbusI2cHdr *i2cMctpHdr, uint8_t som, uint8_t eom, uint8_t pktSeq,
 								uint8_t bytecount, uint8_t integrityCheck);
+
+	// mctp message transfer API (DSP0236/DSP0237), splitting and reassembling packets as needed
+	mctpMsgInfo mctpRequestInfo() const;
+	static mctpMsgInfo mctpResponseInfo(const mctpMsgInfo &request);
+	uint8_t mctpSendMessage(const mctpMsgInfo &info, const std::vector<uint8_t> &msg);
+	uint8_t mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, std::chrono::milliseconds timeout,
+							   unsigned int pollIntervalMs = I2C_EVENT_WAIT_PERIOD_MS,
+							   const std::function<bool()> &abortRequested = nullptr);
 };
 #endif // __MCTP_H

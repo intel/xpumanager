@@ -4,6 +4,7 @@
  *
  */
 
+#include "amc_update_interrupt.h"
 #include "pldm.h"
 
 /**
@@ -153,6 +154,9 @@ int pldm::fwupd(const char *pkgFilePath, uint16_t compIdFilter, bool forceUpdate
 
 	mCompIdFilter = compIdFilter;
 	mForceUpdate = forceUpdate;
+
+	// Turns Ctrl+C / SIGTERM into a CancelUpdate for as long as the update runs
+	AmcUpdateInterruptGuard interruptGuard;
 
 	if (fwUpdInitialize(pkgFilePath) != PLDM_SUCCESS) {
 		ERR("Firmware update failed\n");

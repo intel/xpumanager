@@ -9,6 +9,7 @@ amc_sources = files(
   'mctp_control_resp.cpp',
   'mctp_init.cpp',
   'mctp_protocol.cpp',
+  'mctp_packet.cpp',
   'pldm_discovery.cpp',
   'pldm_discovery_resp.cpp',
   'pldm_fwpackage.cpp',
@@ -20,6 +21,7 @@ amc_sources = files(
   'pldm_amc_gpu_reset.cpp',
   'oem_vrsync.cpp',
   'amclib.cpp',
+  'amc_update_interrupt.cpp',
   'pldm_fru.cpp',
   'pldm_fru_helper.cpp',
   'pldm_fru_resp.cpp',
@@ -49,3 +51,7 @@ amc_dep = declare_dependency(
   link_with : amc_lib,
   include_directories : amc_inc
 )
+
+if get_option('with_tests')
+  subdir('test')
+endif

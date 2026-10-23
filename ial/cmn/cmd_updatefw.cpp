@@ -7,6 +7,10 @@
 #include "cmd_updatefw.h"
 #include <fs_lock.h>
 #include <debug.h>
+#include <os.h>
+#include <terminal.h>
+#include "utility/logger/ostream_sink.h"
+#include "utility/logger/sink_base.h"
 #include <assert.h>
 #include <CLI/CLI.hpp>
 #include <thread>
@@ -18,6 +22,145 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+
+/**
+ * @brief Sink that writes console records above the firmware update progress bars
+ *
+ * The bars redraw relative to the cursor, so a line printed below them would be overwritten by the
+ * next bar update. Each record is handed to the wrapped console sink, which keeps its own stream,
+ * through progressPrintAbove().
+ */
+class ProgressAwareSink final : public Sink
+{
+	std::shared_ptr<Sink> mBackend;
+
+public:
+	/**
+	 * @brief Wrap a console sink
+	 * @param backend Sink that writes the records, to its own stream
+	 */
+	explicit ProgressAwareSink(std::shared_ptr<Sink> backend) : mBackend(std::move(backend)) {}
+
+	/**
+	 * @brief Write one record above the progress bars
+	 * @param level Level of the record
+	 * @param loc Source location of the record
+	 * @param prefix Level prefix, such as "[Error] "
+	 * @param msg Formatted message
+	 */
+	void log(LogLevel level, std::source_location loc, std::string_view prefix, std::string_view msg) noexcept override
+	{
+		// OStreamSink ends a record with a line break unless it has one, or contains '\r' (an in-place update)
+		const bool endsLine = msg.empty() || msg.back() == '\n' || msg.find('\r') == std::string_view::npos;
+		try {
+			progressPrintAbove([&] { mBackend->log(level, loc, prefix, msg); }, endsLine);
+		} catch (...) {
+		}
+	}
+
+	/**
+	 * @brief Unused: log() is overridden and hands records to the backend directly
+	 */
+	void emit(const LogRecord &) override {}
+
+	/**
+	 * @brief Unused: the backend flushes its own stream
+	 */
+	void sync() override {}
+};
+
+/**
+ * @brief Keeps console output from being drawn over by the progress bars while it is alive
+ *
+ * The diagnostic sink (stderr) and the PRINT sink (stdout) are wrapped and restored separately, so
+ * each keeps writing to its own stream. Only takes effect when the bars are on a terminal, and only
+ * for console sinks; a log file sink is left alone.
+ */
+class ProgressConsoleGuard
+{
+	std::shared_ptr<Sink> mPreviousLog;
+	std::shared_ptr<Sink> mPreviousPrint;
+
+public:
+	/**
+	 * @brief Wrap the console sinks, when stdout is a terminal
+	 *
+	 * The previous sinks are kept for the destructor to restore.
+	 */
+	ProgressConsoleGuard()
+	{
+		if (!stdoutIsTerminal()) {
+			return;
+		}
+		Logger &logger = Logger::instance();
+		std::shared_ptr<Sink> log = logger.getSink();
+		if (std::dynamic_pointer_cast<OStreamSink>(log)) {
+			mPreviousLog = log;
+			logger.setLogSink(std::make_shared<ProgressAwareSink>(log));
+		}
+		std::shared_ptr<Sink> print = logger.getPrintSink();
+		if (std::dynamic_pointer_cast<OStreamSink>(print)) {
+			mPreviousPrint = print;
+			logger.setPrintSink(std::make_shared<ProgressAwareSink>(print));
+		}
+	}
+	/**
+	 * @brief End the progress bar block and put the previous sinks back
+	 */
+	~ProgressConsoleGuard()
+	{
+		progressEnd();
+		if (mPreviousLog) {
+			Logger::instance().setLogSink(mPreviousLog);
+		}
+		if (mPreviousPrint) {
+			Logger::instance().setPrintSink(mPreviousPrint);
+		}
+	}
+	ProgressConsoleGuard(const ProgressConsoleGuard &) = delete;
+	ProgressConsoleGuard &operator=(const ProgressConsoleGuard &) = delete;
+	ProgressConsoleGuard(ProgressConsoleGuard &&) = delete;
+	ProgressConsoleGuard &operator=(ProgressConsoleGuard &&) = delete;
+};
+
+// Outcome of one update pass on one device, listed in the summary printed at the end of run()
+struct deviceUpdateResult
+{
+	uint32_t deviceIndex;
+	std::string bdf;
+	int amcIndex;	  // -1 when the device has no AMC
+	const char *what; // what the pass flashed, as shown in the summary
+	bool showAmcCard; // the pass went through the AMC, so its card number is worth showing
+	bool success;
+};
+
+/**
+ * @brief Print which devices were updated and which were not
+ *
+ * Several devices are updated in parallel and their errors interleave on the console, so the
+ * outcome is listed per device once every update has finished. The AMC card number matches the
+ * "card N" used by the AMC error messages.
+ *
+ * @param results One entry per device and update pass
+ */
+static void printUpdateSummary(const std::vector<deviceUpdateResult> &results)
+{
+	size_t failed = 0;
+	for (const auto &r : results) {
+		if (!r.success) {
+			failed++;
+		}
+	}
+
+	PRINT("Firmware update summary: {} of {} succeeded\n", results.size() - failed, results.size());
+	for (const auto &r : results) {
+		std::string amcCard;
+		if (r.showAmcCard && r.amcIndex >= 0) {
+			amcCard = ", AMC card " + std::to_string(r.amcIndex);
+		}
+		PRINT("  Device {} ({}{}) {}: {}\n", r.deviceIndex, r.bdf, amcCard, r.what, r.success ? "Success" : "Failed");
+	}
+}
 
 static const char *validFwTypes[] = {"GFX", "GFX_DATA", "FDO", "AMC", "OP_CODE", "OP_DATA", "COMPOSITE"};
 
@@ -124,6 +267,8 @@ int cmdUpdateFW::run(arg_struct *args)
 	// Components of a composite package flashed across both update passes and all devices
 	std::atomic<uint32_t> componentsApplied{0};
 	std::vector<std::thread> workers;
+	// Filled by the workers, one slot each, so they need no lock
+	std::vector<deviceUpdateResult> results;
 
 	CLI::App sub{"Update GPU firmware", "updatefw"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
@@ -221,50 +366,58 @@ int cmdUpdateFW::run(arg_struct *args)
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
-	// Print a newline for every thread that we will be creating. Also count the total number of threads
-	// as this will come in handy later.
+	// Count the total number of threads as this will come in handy later, and lay out the result of every
+	// update before any worker starts, so the vector is never resized while the workers write to it.
+	const bool isAmcType = STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0;
+	const std::string passName = isComposite ? "GPU components" : fwInfo.firmwareType;
+	std::vector<devInfo *> workerDevices;
 	for (auto &device : deviceList) {
 		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->hasAmc()) ||
 			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
-			PRINT("\n");
 			totalThreads++;
+			workerDevices.push_back(&device);
+			results.push_back({device.index, device.dev->getPCI()->getBDFStr(), device.dev->getAmcIndex(),
+							   passName.c_str(), isAmcType, false});
 		}
 	}
+
+	// Log output goes above the progress bars from here until run() returns
+	ProgressConsoleGuard progressConsole;
+	progressBegin(static_cast<int>(totalThreads));
 
 	// Parallelize per-device firmware updates
 	workers.reserve(totalThreads);
 
-	for (auto &device : deviceList) {
-		if ((STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0 && device.dev->hasAmc()) ||
-			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
-			workers.emplace_back([&, fwInfo, totalThreads, devPtr = &device]() {
-				// Make a thread‑local copy of firmwareInfo to avoid data races
-				firmwareInfo localInfo = fwInfo;
-				localInfo.dev = devPtr->dev;
-				localInfo.deviceIndex = devPtr->index;
-				localInfo.amcIndex = devPtr->dev->getAmcIndex();
-				localInfo.totalThreads = totalThreads;
-				localInfo.curThread = curThread.fetch_add(1, std::memory_order_relaxed);
-				// This pass only covers what is reachable per device; the AMC of a composite package
-				// is shared between the GPUs of a card and is flashed by the pass below.
-				localInfo.scope = isComposite ? COMPOSITE_SCOPE_GPU : COMPOSITE_SCOPE_NONE;
+	for (size_t w = 0; w < workerDevices.size(); w++) {
+		deviceUpdateResult *outcome = &results[w];
+		workers.emplace_back([&, fwInfo, totalThreads, devPtr = workerDevices[w], outcome]() {
+			// Make a thread‑local copy of firmwareInfo to avoid data races
+			firmwareInfo localInfo = fwInfo;
+			localInfo.dev = devPtr->dev;
+			localInfo.deviceIndex = devPtr->index;
+			localInfo.amcIndex = devPtr->dev->getAmcIndex();
+			localInfo.totalThreads = totalThreads;
+			localInfo.curThread = curThread.fetch_add(1, std::memory_order_relaxed);
+			// This pass only covers what is reachable per device; the AMC of a composite package
+			// is shared between the GPUs of a card and is flashed by the pass below.
+			localInfo.scope = isComposite ? COMPOSITE_SCOPE_GPU : COMPOSITE_SCOPE_NONE;
 
-				firmware *fw = devPtr->dev->getFirmware();
-				if (fw == nullptr) {
-					ERR("Error: Firmware pointer not found (device {}).\n", devPtr->index);
-					ze_result_t expected = ZE_RESULT_SUCCESS;
-					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
-					return;
-				}
-				if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
-					ERR("Error: Failed to update firmware for device {}.\n", devPtr->index);
-					ze_result_t expected = ZE_RESULT_SUCCESS;
-					firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
-					return;
-				}
-				componentsApplied.fetch_add(localInfo.componentsApplied, std::memory_order_relaxed);
-			});
-		}
+			firmware *fw = devPtr->dev->getFirmware();
+			if (fw == nullptr) {
+				ERR("Error: Firmware pointer not found (device {}).\n", devPtr->index);
+				ze_result_t expected = ZE_RESULT_SUCCESS;
+				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+				return;
+			}
+			if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
+				ERR("Error: Failed to update firmware for device {}.\n", devPtr->index);
+				ze_result_t expected = ZE_RESULT_SUCCESS;
+				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
+				return;
+			}
+			outcome->success = true;
+			componentsApplied.fetch_add(localInfo.componentsApplied, std::memory_order_relaxed);
+		});
 	}
 
 	for (auto &t : workers) {
@@ -299,9 +452,7 @@ int cmdUpdateFW::run(arg_struct *args)
 		}
 
 		amcLines = amcDevices.size();
-		for (size_t i = 0; i < amcLines; i++) {
-			PRINT("\n");
-		}
+		progressBegin(static_cast<int>(amcLines));
 
 		for (size_t i = 0; i < amcDevices.size(); i++) {
 			firmwareInfo localInfo = fwInfo;
@@ -314,12 +465,17 @@ int cmdUpdateFW::run(arg_struct *args)
 
 			firmware *fw = amcDevices[i]->dev->getFirmware();
 			if (fw == nullptr) {
+				results.push_back({amcDevices[i]->index, amcDevices[i]->dev->getPCI()->getBDFStr(),
+								   amcDevices[i]->dev->getAmcIndex(), "AMC components", true, false});
 				ERR("Error: Firmware pointer not found (device {}).\n", amcDevices[i]->index);
 				ze_result_t expected = ZE_RESULT_SUCCESS;
 				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 				continue;
 			}
-			if (fw->updateFW(&localInfo) != ZE_RESULT_SUCCESS) {
+			const bool success = fw->updateFW(&localInfo) == ZE_RESULT_SUCCESS;
+			results.push_back({amcDevices[i]->index, amcDevices[i]->dev->getPCI()->getBDFStr(),
+							   amcDevices[i]->dev->getAmcIndex(), "AMC components", true, success});
+			if (!success) {
 				ERR("Error: Failed to update AMC firmware for device {}.\n", amcDevices[i]->index);
 				ze_result_t expected = ZE_RESULT_SUCCESS;
 				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
@@ -329,12 +485,18 @@ int cmdUpdateFW::run(arg_struct *args)
 		}
 	}
 
-	if (firstError != ZE_RESULT_SUCCESS) {
-		return firstError.load();
-	}
-
+	progressEnd();
 	if (totalThreads > 0 || amcLines > 0) {
 		PRINT("\n"); // Move the cursor to the next line after the last progress bar
+	}
+
+	// With more than one update their errors interleave, so say per device how each one ended.
+	if (results.size() > 1) {
+		printUpdateSummary(results);
+	}
+
+	if (firstError != ZE_RESULT_SUCCESS) {
+		return firstError.load();
 	}
 
 	// Each pass skips the components it does not own, so a pass that flashed nothing is not an

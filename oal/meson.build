@@ -9,6 +9,7 @@ oal_deps = [thread_dep, levelzero_dep, bdf_dep, igsc_dep, compat_dep]
 
 if is_windows
   oal_sources = files(
+    'progress.cpp',
     'win/dllmain.cpp',
     'win/dynload.cpp',
     'win/fs_lock.cpp',
@@ -29,6 +30,7 @@ if is_windows
   oal_deps += windows_deps
 elif is_linux
   oal_sources = files(
+    'progress.cpp',
     'lin/crashlog_lin.cpp',
     'lin/dynload.cpp',
     'lin/crashlog_lin_exec.cpp',

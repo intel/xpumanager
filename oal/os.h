@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -56,6 +57,9 @@ std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress, const char *label = nullptr);
+void progressBegin(int lines);
+void progressEnd();
+void progressPrintAbove(const std::function<void()> &write, bool endsLine = true);
 inline std::mutex progressPrintMutex;
 
 #ifdef _WIN32

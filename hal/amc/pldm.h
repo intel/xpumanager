@@ -18,6 +18,7 @@
 #include "pldm_amc_gpu_reset.h"
 #include <i2c_interface.h>
 #include <atomic>
+#include <chrono>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -155,9 +156,7 @@ private:
 	i2cdataPldmInfo *mI2cPldmRead, *mI2cPldmWrite;
 	std::mutex *progMutex;
 
-	uint8_t mFwuCmdLen = 0;
 	uint8_t instanceID;
-	bool mI2cMultiResp;
 	int mCardNum;
 
 	// pldm Firmware Update datastructures
@@ -167,7 +166,22 @@ private:
 	uint8_t mFwuCurrentState = 0;
 	bool mForceUpdate; // The current update was requested as forced (downgrade-capable)
 	uint8_t mLastFwuCompletionCode;
-	uint16_t mCompIdFilter; // Only transfer the component with this ComponentIdentifier, 0 for all of them
+	uint16_t mCompIdFilter;				// Only transfer the component with this ComponentIdentifier, 0 for all of them
+	std::vector<uint8_t> mFwuTxPayload; // PLDM payload (after the PLDM header) of the next UA request
+	std::vector<uint8_t> mFwuRxPayload; // PLDM payload (after the PLDM header) of the last message received
+	mctpMsgInfo mFwuRxInfo = {};		// MCTP header fields of that message, used to respond to FD requests
+	uint8_t mPassCompTransferFlag = TRANSFERFLAG_STARTANDEND; // TransferFlag of the next PassComponentTable
+	uint16_t mFwuEstTimeBeforeReqFwDataSec = 0; // EstimatedTimeBeforeSendingRequestFirmwareData, in seconds
+	// The last TransferComplete / VerifyComplete / ApplyComplete answered, kept across components so a
+	// retry of it is answered again wherever it arrives (see fwUpdReplayIfRetry())
+	struct fwuAnsweredRequest
+	{
+		bool valid;
+		uint8_t cmd;
+		uint8_t instanceId;
+		uint8_t completionCode;
+		std::chrono::steady_clock::time_point time;
+	} mFwuLastAnswered = {};
 
 	// PLDM FRU datastructures
 	struct fruGetTableRequest mFruTableRequest = {};
@@ -215,6 +229,7 @@ private:
 	uint8_t pldmHdrConstruction(struct pldmHdr *pldmHdr, uint8_t instanceID, uint8_t cmdType, uint8_t cmd,
 								uint8_t async, uint8_t reqresp);
 	[[nodiscard]] bool isResponseTo(uint8_t cmdType, uint8_t cmd, uint8_t id) const;
+	static std::vector<uint8_t> pldmBuildMessage(const struct pldmHdr &hdr, const uint8_t *payload, size_t len);
 
 	//============== pldm Discovery ================
 	// pldm Discovery Command
@@ -243,8 +258,20 @@ private:
 	uint8_t fwUpdInitialize(const char *pkgFilePath);
 	bool fwUpdSkipComp(uint8_t comp) const;
 	uint16_t fwUpdCompCount() const;
-	uint8_t fwUpdCmd(uint8_t cmd, uint8_t size);
-	uint8_t pldmFwUpdFillPayload(uint8_t cmd, uint8_t size);
+	uint8_t fwUpdCmd(uint8_t cmd);
+	uint8_t fwUpdNextInstanceId();
+	uint8_t pldmFwUpdFillPayload(uint8_t cmd);
+	uint8_t fwUpdStoreRxMessage(const std::vector<uint8_t> &msg, const mctpMsgInfo &info);
+	uint8_t fwUpdSendResponse(uint8_t completionCode, const std::vector<uint8_t> &data);
+	void fwUpdRememberAnswer(uint8_t completionCode);
+	bool fwUpdReplayIfRetry();
+	void fwUpdAnswerRequestWhileCancelling();
+	uint8_t fwUpdSendCancel(uint8_t cmd);
+	uint8_t fwUpdCancel();
+	uint8_t fwUpdCancelComponent();
+	uint8_t fwUpdComponent(uint8_t comp);
+	uint8_t fwUpdWaitForReadyXfer();
+	uint8_t fwUpdUpdateComponentResp();
 
 	// pldm FwUpdate Command Helper
 	uint8_t fwReqUpdate();
@@ -254,17 +281,26 @@ private:
 	// pldm FwUpdate Response
 	uint8_t fwUpdateResp(uint8_t cmd, uint8_t id);
 	uint8_t pldmFwUpdateRespPayload(uint8_t cmd, uint8_t id);
-	uint8_t pldmFwGetParamPayload(uint8_t cmd, uint8_t id);
 
 	// pldm GetFirmwareParameters (DSP0267 section 11.2)
 	uint8_t getFirmwareParameters();
 	uint8_t parseFwParamResponse();
 
 	// Cached results from GetFirmwareParameters
-	std::vector<uint8_t> mFwParamRawData; // accumulated multi-packet PLDM payload
+	std::vector<uint8_t> mFwParamRawData; // PLDM payload of the GetFirmwareParameters response
 	std::string mFwParamActiveVersion;	  // ActiveComponentImageSetVersionString
 	bool mFwParamsInitialized;
-	uint8_t readFromFD();
+	struct fwuStageState;
+	fwuTransferResult readFromFD();
+	void fwUpdReportStageTimeout(const fwuStageState &st);
+	bool fwUpdSendGetStatus(fwuStageState &st);
+	bool fwUpdPollStatus(fwuStageState &st, std::chrono::steady_clock::time_point now);
+	std::optional<fwuTransferResult> fwUpdHandleStatusResponse(fwuStageState &st, const std::vector<uint8_t> &msg,
+															   const mctpMsgInfo &info);
+	std::optional<fwuTransferResult> fwUpdHandleFdRequest(fwuStageState &st, const std::vector<uint8_t> &msg,
+														  const mctpMsgInfo &info);
+	std::optional<fwuTransferResult> fwUpdServeFirmwareData();
+	std::optional<fwuTransferResult> fwUpdHandleStageResult(fwuStageState &st, uint8_t cmd);
 	uint8_t writeToAMCCompXfer(uint32_t offset, uint32_t lenToSend, uint8_t completioncode);
 	uint8_t respondtoamc(uint8_t completioncode);
 
@@ -334,8 +370,8 @@ private:
 public:
 	pldm(const std::string &devpath, int cardnum)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
-		  mI2cMultiResp(false), mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS),
-		  mCompIdFilter(0), mFruTableInitialized(false), mFwParamsInitialized(false)
+		  mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS), mCompIdFilter(0),
+		  mFruTableInitialized(false), mFwParamsInitialized(false)
 	{
 		pldminit();
 	}

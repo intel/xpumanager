@@ -6,6 +6,7 @@
 
 #include <os.h>
 #include "process_platform.h"
+#include "progress_block.h"
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -23,6 +24,7 @@
 #include <iostream>
 #include <pwd.h>
 #include <spawn.h>
+#include <sys/ioctl.h>
 #include <sys/utsname.h>
 #include <system_error>
 #include <sys/wait.h>
@@ -901,6 +903,7 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress,
 {
 	TRACING();
 	std::lock_guard<std::mutex> lock(progressPrintMutex);
+	progressRemember(devIndex, lineNum, totalThreads, progress, label);
 
 	// Use std::osyncstream for thread-safe output (C++20)
 	std::osyncstream syncOut(std::cout);
@@ -915,18 +918,35 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress,
 	// Erase the line before redrawing: a sequence of images flashed on one line restarts the bar
 	// at 0%, and without this the bars drawn for the previous image would stay on screen.
 	syncOut << "\033[2K";
-	syncOut << "Firmware progress for device " << devIndex;
-	if (label != nullptr) {
-		syncOut << " [" << label << "]";
-	}
-	syncOut << ": ";
-	for (int j = 0; j < (int)progress; ++j) {
-		syncOut << "#";
-	}
-	syncOut << " " << progress << "%";
+	syncOut << progressLineText(devIndex, progress, label);
 	// Restore cursor position
 	syncOut << "\033[u";
 	syncOut.flush();
+}
+
+/**
+ * @brief Move the cursor to the first of the `lines` lines above it and blank them and what follows
+ *
+ * @param lines Number of lines of the progress bar block
+ */
+void progressClearBlock(int lines)
+{
+	std::cout << "\033[" << lines << "A\r\033[J";
+	std::cout.flush();
+}
+
+/**
+ * @brief Width of the terminal stdout writes to
+ *
+ * @return int Columns, or 0 when stdout is not a terminal
+ */
+int progressTerminalColumns()
+{
+	struct winsize ws = {};
+	if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0) {
+		return ws.ws_col;
+	}
+	return 0;
 }
 
 /**

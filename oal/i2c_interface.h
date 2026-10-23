@@ -20,8 +20,8 @@ typedef void *HANDLE;
 // This is AMC device I2C address
 #define AMC_I2C_ADDR 0x40
 #define I2C_EVENT_WAIT_PERIOD_MS 100
-#define MCTP_RESPONSE_DELAY_MS 200
-#define FWU_TRANSFER_DELAY_MS 70
+#define MCTP_RESPONSE_DELAY_MS 50
+#define FWU_TRANSFER_DELAY_MS 100
 
 class I2CInterface
 {

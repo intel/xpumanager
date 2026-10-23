@@ -5,13 +5,13 @@
  */
 
 #include <os.h>
+#include "progress_block.h"
 #include <debug.h>
 #include <malloc.h>
 #include <stdlib.h>
 #include <sstream>
 #include <vector>
 #include <iostream>
-#include <syncstream>
 
 // Define the variables without LIBXPUM_API to avoid DLL linkage issues
 char *optarg = nullptr; // global argument pointer
@@ -374,9 +374,7 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress,
 {
 	TRACING();
 	std::lock_guard<std::mutex> lock(progressPrintMutex);
-
-	// Use std::osyncstream for thread-safe output (C++20)
-	std::osyncstream sync_out(std::cout);
+	progressRemember(devIndex, lineNum, totalThreads, progress, label);
 
 	// Windows console handling
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -398,23 +396,56 @@ void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress,
 			DWORD cleared = 0;
 			FillConsoleOutputCharacterA(hConsole, ' ', (DWORD)csbi.dwSize.X, pos, &cleared);
 
-			// Clear the line and print progress
-			sync_out << "\rFirmware progress for device " << devIndex;
-			if (label != nullptr) {
-				sync_out << " [" << label << "]";
-			}
-			sync_out << ": ";
-			for (int j = 0; j < (int)progress; ++j) {
-				sync_out << "#";
-			}
-			sync_out << " " << progress << "%";
+			// Print progress, and get it onto the console while the cursor is still on the target row
+			// (progressPrintMutex serializes all progress output)
+			std::cout << "\r" << progressLineText(devIndex, progress, label);
+			std::cout.flush();
 
 			// Restore cursor to original position
 			pos = {csbi.dwCursorPosition.X, csbi.dwCursorPosition.Y};
 			SetConsoleCursorPosition(hConsole, pos);
 		}
 	}
-	sync_out.flush();
+}
+
+/**
+ * @brief Move the cursor to the first of the `lines` lines above it and blank them and what follows
+ *
+ * @param lines Number of lines of the progress bar block
+ */
+void progressClearBlock(int lines)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	if (hConsole == INVALID_HANDLE_VALUE || !GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+		return;
+	}
+	SHORT top = static_cast<SHORT>(csbi.dwCursorPosition.Y - lines);
+	if (top < 0) {
+		top = 0;
+	}
+	COORD pos = {0, top};
+	DWORD cleared = 0;
+	FillConsoleOutputCharacterA(hConsole, ' ', (DWORD)csbi.dwSize.X * (DWORD)(csbi.dwCursorPosition.Y - top + 1), pos,
+								&cleared);
+	SetConsoleCursorPosition(hConsole, pos);
+}
+
+/**
+ * @brief Width of the console stdout writes to
+ *
+ * The console wraps at the width of its screen buffer, so that is the width a line must fit.
+ *
+ * @return int Columns, or 0 when stdout is not a console
+ */
+int progressTerminalColumns()
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	if (hConsole != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hConsole, &csbi) && csbi.dwSize.X > 0) {
+		return csbi.dwSize.X;
+	}
+	return 0;
 }
 
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)

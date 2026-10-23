@@ -9,6 +9,7 @@
 #include <os.h>
 #include <thread>
 #include <chrono>
+#include <algorithm>
 #include <atomic>
 #include <mutex>
 #include <memory>
@@ -375,30 +376,21 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	});
 	// Create a thread to monitor firmware flash progress
 	std::thread progressThread([amc, amcIndex, fwInfo, &flashCompleted, &stopProgress]() {
-		int progress = 0;
-		while (!stopProgress.load() && progress < 100) {
-			progress = amc->amcFirmwareProgress(amcIndex);
+		// The transfer reaching 100% is not the end of the update: verify, apply and activation follow and
+		// can still fail. So the bar stops at 99% while the flash runs; its final state is drawn once both
+		// threads have finished.
+		while (!stopProgress.load() && !flashCompleted.load()) {
+			int progress = amc->amcFirmwareProgress(amcIndex);
 
 			if (progress < 0) {
 				ERR("Failed to get firmware progress for card {}\n", amcIndex);
 				break;
 			}
 
-			if (progress > 100)
-				progress = 100; // Cap at 100%
-
-			SETPROGRESS(fwInfo->deviceIndex, fwInfo->curThread, fwInfo->totalThreads, progress);
-
-			// Exit early if flash completed
-			if (flashCompleted.load()) {
-				SETPROGRESS(fwInfo->deviceIndex, fwInfo->curThread, fwInfo->totalThreads, 100);
-				break;
-			}
+			SETPROGRESS(fwInfo->deviceIndex, fwInfo->curThread, fwInfo->totalThreads, std::min(progress, 99));
 
 			// Add small delay to prevent excessive polling
-			if (progress < 100) {
-				MSLEEP(100);
-			}
+			MSLEEP(100);
 		}
 		DBG("Firmware progress monitoring completed for device {}\n", amcIndex);
 	});
@@ -412,6 +404,12 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 	stopProgress.store(true);
 	if (progressThread.joinable()) {
 		progressThread.join();
+	}
+
+	// Drawn here rather than by the progress thread, which may stop before seeing the flash end. A failed
+	// flash keeps the progress it had reached.
+	if (flashSuccess.load()) {
+		SETPROGRESS(fwInfo->deviceIndex, fwInfo->curThread, fwInfo->totalThreads, 100);
 	}
 
 	// Return appropriate result based on flash operation success
