@@ -149,7 +149,7 @@ Architecture: amd64\n\
 Version: ${METEE_VERSION}\n\
 Homepage: https://github.com/intel/metee\n\
 Description: Intel(R) ME TEE Library (statically linked to libigsc)\n\
-\n" >> /out/var/lib/dpkg/status
+" >> /out/var/lib/dpkg/status
 
 
 # --- Alias for source build builder stage ---
@@ -367,7 +367,7 @@ Version: ${VERSION}+git.${COMPUTE_RUNTIME_COMMIT}\n\
 Homepage: https://github.com/intel/compute-runtime\n\
 Description: Intel(R) Graphics Compute Runtime for oneAPI Level Zero\n\
  Built from the pinned compute-runtime revision, not from the released package.\n\
-\n" > /backend/var/lib/dpkg/status
+" > /backend/var/lib/dpkg/status
 
 
 # --- The backend selected with BACKEND ---
