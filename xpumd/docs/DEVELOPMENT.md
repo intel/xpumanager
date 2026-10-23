@@ -8,6 +8,7 @@
 - [Testing container image](#testing-container-image)
   - [SELinux and Podman](#selinux-and-podman)
   - [Testing container image with stub driver](#testing-container-image-with-stub-driver)
+- [Investigating image contents](#investigating-image-contents)
 - [Extracting sources from container image](#extracting-sources-from-container-image)
 - [Testing in single-node cluster](#testing-in-single-node-cluster)
   - [Load container image](#load-container-image)
@@ -189,6 +190,24 @@ docker run -it --rm --user 0 \
 > When using the stub loader, no `/dev/dri` device mapping or GPU-specific
 > Linux capabilities are required.
 
+## Investigating image contents
+
+[Trivy](https://github.com/aquasecurity/trivy#readme) tool can be used
+to check what versions of the driver stack components are on a given
+image:
+
+```bash
+IMG=ghcr.io/intel/xpumanager/xpumd:v2.3.0
+trivy image --quiet --scanners ''  --list-all-pkgs --pkg-types os --format json $IMG |\
+jq -r '.Results[].Packages[] | "\(.Name)\t\(.Version)\(if .Release then "-\(.Release)" else "" end)"'
+```
+
+(As an alternative to installing trivy, you can run its container:
+`docker run --rm aquasec/trivy image ...`.)
+
+To see what Go dependencies are built into XPUMD binary, replace `os`
+argument in above command with `library` (and pipe output to `|sort -u`).
+
 ## Extracting sources from container image
 
 For (L)GPL compliance, the container image includes source packages in the
@@ -359,3 +378,6 @@ directly downloaded (driver) DEB and ZIP files against hard-coded
 checksums.  If DEB / ZIP file versions are changed, build will error
 out after outputting the new checksums (so they can be updated after
 validation).
+
+One can also build XPUMD with locally downloaded driver packages
+following [these instructions](../debs/README.md).
