@@ -10,6 +10,10 @@
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 
+if [ -z "$XPUMD_VERSION" ]; then
+	XPUMD_VERSION=$(git -C "$SCRIPT_DIR/.." describe --tags --dirty --always | tr / -)
+fi
+
 # checksum file for L0 loader DEB packages
 if [ "$BACKEND" = "src" ]; then
 	CHECKSUMS=checksums-loader-src.txt
@@ -75,6 +79,7 @@ if [ -n "${GOMODCACHE}" ] && [ -d "${GOMODCACHE}" ]; then
 fi
 
 docker run --rm \
+    --env "XPUMD_VERSION=$XPUMD_VERSION" \
     --user "${USER}" \
     --cap-drop ALL \
     "${GOMODCACHE_MOUNT[@]}" \

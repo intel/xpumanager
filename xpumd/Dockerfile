@@ -215,6 +215,7 @@ RUN if [ -n "$TOOLS" ]; then \
 # Build xpumd / xpuinfo-cli + stub driver & install them
 # Use '--build-arg BUILD_TARGET=build-cover' to get coverage-instrumented binaries
 ARG BUILD_TARGET=build
+ARG XPUMD_VERSION=latest
 RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=src=.,target=.,rw \

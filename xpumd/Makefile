@@ -115,12 +115,14 @@ race:
 .PHONY: docker-build
 # Build the xpumd container image
 docker-build:
-	docker build --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
+	docker build --build-arg XPUMD_VERSION=$(XPUMD_VERSION) \
+	  --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: docker-build-cover
 # Build image with coverage-instrumented binaries
 docker-build-cover:
-	docker build --build-arg BACKEND=$(BACKEND) --build-arg BUILD_TARGET=build-cover \
+	docker build --build-arg XPUMD_VERSION=$(XPUMD_VERSION) \
+	  --build-arg BACKEND=$(BACKEND) --build-arg BUILD_TARGET=build-cover \
 	  -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate

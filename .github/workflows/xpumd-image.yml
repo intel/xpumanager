@@ -64,7 +64,7 @@ jobs:
 
         echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpumd:${tag}" >> $GITHUB_ENV
         echo "CHART_VERSION=${chart_version}" >> $GITHUB_ENV
-        echo "CHART_APP_VERSION=${tag}" >> $GITHUB_ENV
+        echo "XPUMD_VERSION=${tag}" >> $GITHUB_ENV
 
     - name: Set up Docker Buildx
       if: vars.NO_SETUP_BUILDX_BUILD_AND_PUSH != 'true'
@@ -92,6 +92,7 @@ jobs:
         cache-to: type=gha,mode=max
         # Where the GPU backend comes from, "deb" (a released package) by default.
         build-args: |
+          XPUMD_VERSION=${{ env.XPUMD_VERSION }}
           BACKEND=${{ vars.XPUMD_BACKEND || 'deb' }}
           http_proxy=${{ vars.HTTP_PROXY }}
           https_proxy=${{ vars.HTTPS_PROXY }}
@@ -157,7 +158,7 @@ jobs:
     - name: Package Helm chart
       if: github.event_name == 'push'
       run: |
-        helm package ./xpumd/charts/xpumd/ --version ${{ env.CHART_VERSION }} --app-version ${{ env.CHART_APP_VERSION }}
+        helm package ./xpumd/charts/xpumd/ --version ${{ env.CHART_VERSION }} --app-version ${{ env.XPUMD_VERSION }}
 
     - name: Push Helm chart
       if: github.event_name == 'push'

@@ -76,7 +76,11 @@ fi
 TAG="$(echo "$COMMIT" | tr / -)-$L0_VERSION"
 IMAGE="$REGISTRY/xpumd:$TAG"
 
-echo "Building XPUMD image:"
+if [ -z "$XPUMD_VERSION" ]; then
+	XPUMD_VERSION=$(git describe --tags --dirty --always | tr / -)
+fi
+
+echo "Building XPUMD ($XPUMD_VERSION) image:"
 echo "$IMAGE"
 
 echo
@@ -84,6 +88,7 @@ set -ex
 # Real Docker requires explicit passing of proxy variables, Podman wrapper does not.
 # shellcheck disable=SC2154
 docker build -t "$IMAGE" \
+  --build-arg "XPUMD_VERSION=$XPUMD_VERSION" \
   --build-arg BACKEND="local" \
   --build-arg FILES_DIR="debs/$DEB_DIR" \
   --build-arg https_proxy="$https_proxy" \
