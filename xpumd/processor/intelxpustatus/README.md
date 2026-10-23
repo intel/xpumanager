@@ -110,8 +110,10 @@ aggregate:
 | `group_by` | []string | Attributes of the `source_metric` to group the data points by. Data points are also implicitly grouped by their parent (`parent_ref_attribute`) |
 
 Each group produces one set of status data points, with the latest timestamp
-of the group. Of the `copy_attributes`, only those that are identical within
-the group are copied, others are set to an empty value.
+of the group. The `group_by` attributes and the `parent_ref_attribute` are
+implicitly copied to the status data points. Of the `copy_attributes`, only
+those that are identical within the group are copied, others are set to an
+empty value.
 
 #### StateRule
 

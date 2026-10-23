@@ -1067,6 +1067,79 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 			},
 		},
 		{
+			name: "aggregation implicitly copies group_by and parent attributes",
+			rule: HealthRule{
+				SourceMetric: "hw.power",
+				Aggregate: &AggregateRule{
+					Function: AggregateFunctionSum,
+					GroupBy:  []string{"com.intel.subdevice_id"},
+				},
+				CopyAttributes: []string{"hw.type"},
+				States: []StateRule{
+					{
+						StateName: "ok",
+					},
+				},
+			},
+			sourceMetric: "hw.power",
+			sourceDataPoints: []dataPoint{
+				{
+					value: 10,
+					attributes: map[string]any{
+						"hw.parent":              "gpu0",
+						"hw.type":                "gpu",
+						"com.intel.subdevice_id": "0",
+					},
+				},
+				{
+					value: 20,
+					attributes: map[string]any{
+						"hw.parent":              "gpu0",
+						"hw.type":                "gpu",
+						"com.intel.subdevice_id": "1",
+					},
+				},
+				{
+					value: 30,
+					attributes: map[string]any{
+						"hw.parent":              "gpu1",
+						"hw.type":                "gpu",
+						"com.intel.subdevice_id": "0",
+					},
+				},
+			},
+			expectMetric: "hw.status",
+			expectDataPoints: []dataPoint{
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.parent":              "gpu0",
+						"hw.type":                "gpu",
+						"com.intel.subdevice_id": "0",
+						"hw.state":               "ok",
+					},
+				},
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.parent":              "gpu0",
+						"hw.type":                "gpu",
+						"com.intel.subdevice_id": "1",
+						"hw.state":               "ok",
+					},
+				},
+				{
+					value: 1,
+					attributes: map[string]any{
+						"hw.parent":              "gpu1",
+						"hw.type":                "gpu",
+						"com.intel.subdevice_id": "0",
+						"hw.state":               "ok",
+					},
+				},
+			},
+		},
+		{
 			name: "aggregation distinguishes non-string, empty and missing group_by values",
 			rule: HealthRule{
 				SourceMetric: "hw.power",
@@ -1156,11 +1229,8 @@ func TestRuleProcessorUpdateMetrics(t *testing.T) {
 				parentAttrsMap[parentID] = parentAttrs
 			}
 
-			rp := &ruleProcessor{
-				HealthRule:  &tt.rule,
-				logger:      zap.NewNop().Sugar(),
-				parentAttrs: parentAttrsMap,
-			}
+			rp := newRuleProcessor(zap.NewNop().Sugar(), &tt.rule)
+			rp.parentAttrs = parentAttrsMap
 
 			sm := pmetric.NewScopeMetrics()
 			sourceMetric := sm.Metrics().AppendEmpty()

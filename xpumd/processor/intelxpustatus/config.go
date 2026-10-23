@@ -71,7 +71,9 @@ type AggregateRule struct {
 	// Function to apply to the data points.
 	Function AggregateFunction `mapstructure:"function"`
 	// Source metric attributes to group the data points by. Data points are
-	// also implicitly grouped by their parent (ParentRefAttribute).
+	// also implicitly grouped by their parent (ParentRefAttribute). These
+	// attributes are implicitly copied to the StatusMetric, in addition to
+	// HealthRule.CopyAttributes.
 	GroupBy []string `mapstructure:"group_by"`
 }
 

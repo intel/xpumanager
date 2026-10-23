@@ -44,13 +44,21 @@ type ruleProcessor struct {
 	*HealthRule
 	logger      *zap.SugaredLogger
 	parentAttrs map[string]pcommon.Map
+	// Attributes to copy from the source data points to the status metric
+	copyAttrKeys []string
 }
 
 func newRuleProcessor(logger *zap.SugaredLogger, rule *HealthRule) *ruleProcessor {
+	copyAttrKeys := rule.CopyAttributes
+	if rule.Aggregate != nil {
+		// Copy also the attributes identifying the aggregation group.
+		copyAttrKeys = slices.Compact(slices.Sorted(slices.Values(slices.Concat(rule.CopyAttributes, rule.Aggregate.GroupBy, []string{rule.ParentRefAttribute}))))
+	}
 	return &ruleProcessor{
-		HealthRule:  rule,
-		logger:      logger,
-		parentAttrs: make(map[string]pcommon.Map),
+		HealthRule:   rule,
+		logger:       logger,
+		parentAttrs:  make(map[string]pcommon.Map),
+		copyAttrKeys: copyAttrKeys,
 	}
 }
 
@@ -147,7 +155,7 @@ func (p *ruleProcessor) updateMetrics(sm pmetric.ScopeMetrics) {
 		// Create health status metric
 		statusAttrs := pcommon.NewMap()
 		// Copy relevant attributes (semconv) from the source metric
-		for _, attrKey := range p.CopyAttributes {
+		for _, attrKey := range p.copyAttrKeys {
 			if attrVal, ok := sourceAttrs.Get(attrKey); ok {
 				attrVal.CopyTo(statusAttrs.PutEmpty(attrKey))
 			}
@@ -213,7 +221,6 @@ func (p *ruleProcessor) filterDataPoints(sourceDps pmetric.NumberDataPointSlice)
 // aggregate combines data points with identical parent and Aggregate.GroupBy
 // attribute values into one new data point (per group).
 func (p *ruleProcessor) aggregate(dps []numberDataPoint) []numberDataPoint {
-	groupAttrKeys := slices.Concat(p.CopyAttributes, p.Aggregate.GroupBy, []string{p.ParentRefAttribute})
 	groups := make([]numberDataPoint, 0, len(dps))
 	index := make(map[string]int)
 	for _, dp := range dps {
@@ -221,7 +228,7 @@ func (p *ruleProcessor) aggregate(dps []numberDataPoint) []numberDataPoint {
 		i, exists := index[key]
 		if !exists {
 			g := numberDataPoint{attrs: pcommon.NewMap(), value: dp.value, timestamp: dp.timestamp}
-			for _, attrKey := range groupAttrKeys {
+			for _, attrKey := range p.copyAttrKeys {
 				if attrVal, ok := dp.attrs.Get(attrKey); ok {
 					attrVal.CopyTo(g.attrs.PutEmpty(attrKey))
 				}
