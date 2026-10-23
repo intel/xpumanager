@@ -1785,12 +1785,11 @@ func TestDiagnosticsGetTests(t *testing.T) {
 }
 
 func TestDiagnosticsRunTests(t *testing.T) {
-	testComponentGetterError(t, getDiagnostic, func(d *Diagnostics) ([]DiagResult, error) { return d.RunTests(0, 0) }, th.WithConfig(driverConfigComponentErrs))
-	testComponentGetterSuccess(t, getDiagnostic,
-		func(d *Diagnostics) ([]DiagResult, error) { return d.RunTests(0, 0) },
-		func(t *testing.T, results []DiagResult) {
-			require.Len(t, results, 1)
-			assert.Equal(t, DIAG_RESULT_NO_ERRORS, results[0], "results[0]")
-		},
-	)
+	runAll := func(d *Diagnostics) (DiagResult, error) {
+		return d.RunTests(DIAG_FIRST_TEST_INDEX, DIAG_FIRST_TEST_INDEX+9)
+	}
+	testComponentGetterError(t, getDiagnostic, runAll, th.WithConfig(driverConfigComponentErrs))
+	testComponentGetterSuccess(t, getDiagnostic, runAll, th.CheckValue(DIAG_RESULT_NO_ERRORS))
+	testComponentGetterSuccess(t, getDiagnostic, runAll, th.CheckValue(DIAG_RESULT_REBOOT_FOR_REPAIR),
+		th.WithCompIdx(1), th.WithName("SuccessRebootForRepair"))
 }

@@ -572,12 +572,10 @@ func (z *Diagnostics) GetTests() ([]DiagTest, error) {
 
 // RunTests wraps the zesDiagnosticsRunTests function:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/apis/diagnostics.html#zesdiagnosticsruntests
-func (z *Diagnostics) RunTests(startIdx, endIdx uint32) ([]DiagResult, error) {
-	count := endIdx - startIdx + 1
-	results := make([]DiagResult, count)
-	ret := zesDiagnosticsRunTests(z.handle, startIdx, endIdx, results)
-	return results, ret.ToError()
-
+func (z *Diagnostics) RunTests(startIdx, endIdx uint32) (DiagResult, error) {
+	var result DiagResult
+	ret := zesDiagnosticsRunTests(z.handle, startIdx, endIdx, &result)
+	return result, ret.ToError()
 }
 
 // EnumEngineGroups wraps the zesDeviceEnumEngineGroups function:

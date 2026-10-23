@@ -324,11 +324,11 @@ func zesDiagnosticsGetTests(HDiagnostics diagHandle, PCount *uint32, PTests []Di
 }
 
 // zesDiagnosticsRunTests function as declared in level-zero/zes_api.h:2498
-func zesDiagnosticsRunTests(HDiagnostics diagHandle, StartIndex uint32, EndIndex uint32, PResult []DiagResult) core.Result {
+func zesDiagnosticsRunTests(HDiagnostics diagHandle, StartIndex uint32, EndIndex uint32, PResult *DiagResult) core.Result {
 	cHDiagnostics, _ := *(*C.zes_diag_handle_t)(unsafe.Pointer(&HDiagnostics)), cgoAllocsUnknown
 	cStartIndex, _ := (C.uint32_t)(StartIndex), cgoAllocsUnknown
 	cEndIndex, _ := (C.uint32_t)(EndIndex), cgoAllocsUnknown
-	cPResult, _ := (*C.zes_diag_result_t)(unsafe.Pointer((*sliceHeader)(unsafe.Pointer(&PResult)).Data)), cgoAllocsUnknown
+	cPResult, _ := (*C.zes_diag_result_t)(unsafe.Pointer(PResult)), cgoAllocsUnknown
 	__ret := C.zesDiagnosticsRunTests(cHDiagnostics, cStartIndex, cEndIndex, cPResult)
 	__v := (core.Result)(__ret)
 	return __v

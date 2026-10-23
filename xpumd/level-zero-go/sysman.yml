@@ -86,7 +86,6 @@ TRANSLATOR:
       - {target: "^zesDeviceProcessesGetState$", tips: [ref, ref, arr]}
       - {target: "^zesDevicePciGetBars$", tips: [ref, ref, arr]}
       - {target: "^zesDiagnosticsGetTests$", tips: [ref, ref, arr]}
-      - {target: "^zesDiagnosticsRunTests$", tips: [ref, ref, ref, arr]}
       - {target: "^zesDriverEventListen(Ex)?", tips: [ref, ref, ref, arr, ref, arr]}
       - {target: "^zesFabricPortGetMultiPortThroughput$", tips: [ref, ref, arr, ref]}
       - {target: "^zesFrequencyGetAvailableClocks$", tips: [ref, ref, arr]}
