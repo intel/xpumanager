@@ -5,7 +5,30 @@
  */
 
 #include "ras.h"
+#include <string_view>
 #include <vector>
+
+namespace {
+
+/**
+ * @brief Logs a failed RAS read.
+ *
+ * A device or driver without RAS support answers UNSUPPORTED_FEATURE, which callers report
+ * as no value; that is logged at debug level, anything else as an error.
+ *
+ * @param[in] what   What could not be read, e.g. "Failed to get RAS state".
+ * @param[in] result The Level Zero result.
+ */
+void logRasReadFailure(std::string_view what, ze_result_t result)
+{
+	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		DBG("{}. 0x{:X} ({})\n", what, static_cast<uint32_t>(result), l0_error_to_string(result));
+	} else {
+		ERR("{}. 0x{:X} ({})\n", what, static_cast<uint32_t>(result), l0_error_to_string(result));
+	}
+}
+
+} // namespace
 
 /**
  * @brief Destructor for the RAS (Reliability, Availability, Serviceability) class
@@ -133,7 +156,7 @@ ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 {
 	ze_result_t result = zesRasGetState(rasHandle, 0, state);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS state. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		logRasReadFailure("Failed to get RAS state", result);
 		return result;
 	}
 
@@ -346,7 +369,7 @@ ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vect
 		uint32_t categoryCount = 0;
 		result = zesRasGetSupportedCategoriesExp(rasHandles[i], &categoryCount, nullptr);
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get supported RAS categories count. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			logRasReadFailure("Failed to get supported RAS categories count", result);
 			return result;
 		}
 		DBG("RAS handle supports {} categories.\n", categoryCount);
@@ -358,7 +381,7 @@ ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vect
 		std::vector<zes_ras_error_category_exp_t> categories(categoryCount);
 		result = zesRasGetSupportedCategoriesExp(rasHandles[i], &categoryCount, categories.data());
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get supported RAS categories. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			logRasReadFailure("Failed to get supported RAS categories", result);
 			return result;
 		}
 
@@ -371,7 +394,7 @@ ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vect
 
 		result = zesRasGetStateExp2(rasHandles[i], categoryCount, categories.data(), states.data());
 		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get RAS state. 0x{:X} ({})\n", result, l0_error_to_string(result));
+			logRasReadFailure("Failed to get RAS state", result);
 			return result;
 		}
 
