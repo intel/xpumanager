@@ -349,7 +349,12 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 		}
 	};
 	if (opts.interval.count() <= 0) {
-		const auto [status, text] = render();
+		RenderedFrame frame;
+		{
+			const QuietLogs quiet{opts.quietRender};
+			frame = render();
+		}
+		const auto &[status, text] = frame;
 		if (status != ZE_RESULT_SUCCESS) {
 			return reportFrameError(status);
 		}
@@ -374,7 +379,7 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 			const auto deadline = std::chrono::steady_clock::now() + opts.interval;
 			RenderedFrame frame;
 			{
-				const QuietLogs quiet{screen.active() || waitingForRoom};
+				const QuietLogs quiet{opts.quietRender || screen.active() || waitingForRoom};
 				frame = render();
 			}
 			if (frame.status != ZE_RESULT_SUCCESS) {

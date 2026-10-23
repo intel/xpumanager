@@ -918,17 +918,20 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 
 	// Work that does not depend on the window runs while it elapses. As root on some platforms
 	// each firmware read takes most of the window, so they run on threads of their own.
+	// On a card with an AMC the serial number and the board part number are both read from the
+	// AMC, which does not serialize requests, so the static properties follow the firmware fields
+	// in the same task rather than run beside them.
 	std::future<MetricValues> firmwareRead;
 	if (first) {
-		firmwareRead = std::async(std::launch::async, readFirmwareFields, std::span{split.firmware}, std::ref(dev),
-								  std::cref(cache));
+		firmwareRead = std::async(std::launch::async, [this, index, &dev, &cache] {
+			MetricValues read = readFirmwareFields(split.firmware, dev, cache);
+			staticProps[index] = gatherStaticProps(dev, options.selection);
+			return read;
+		});
 	}
 	MetricValues values;
 	values.reserve(fields.size());
 	evaluate(split.instant, dev, cache, values);
-	if (first) {
-		staticProps[index] = gatherStaticProps(dev, options.selection);
-	}
 	std::vector<psInfo> procs;
 	if (options.selection.processes) {
 		if (const auto result = cmdPs::getProcessList(&dev, procs); isFatalPsError(result)) {
@@ -1250,6 +1253,9 @@ int cmdQuery::run(arg_struct *args)
 						  .count = opts.count,
 						  .tty = stdoutIsTerminal() && !opts.file,
 						  .redraw = Redraw::ChangedLines};
+	// A value the device cannot supply already reads N/A in the report, so the error behind it
+	// would only repeat that, once per device.
+	loop.quietRender = true;
 	if (opts.file) {
 		file.open(*opts.file, std::ios::out | std::ios::trunc);
 		if (!file.is_open()) {

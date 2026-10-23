@@ -37,6 +37,9 @@ struct FrameLoopOptions
 	/// sinks, stay out of it. Empty prints the frames. Escape sequences always go to PRINT, so set
 	/// it only without tty.
 	std::function<void(std::string_view)> write{};
+	/// Hold back diagnostics while a frame renders, for a renderer that reports what it could not
+	/// read in the frame itself. Debug output is never held back.
+	bool quietRender = false;
 };
 
 /** One rendered frame, or the reason none could be rendered. */

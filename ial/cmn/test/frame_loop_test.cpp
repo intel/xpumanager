@@ -185,6 +185,39 @@ TEST_CASE("with a writer the frames go only to it, and diagnostics stay on the p
 	}
 }
 
+TEST_CASE("quietRender holds back diagnostics while a frame renders, but never debug output")
+{
+	for (const auto interval : {std::chrono::milliseconds{0}, SHORT_INTERVAL}) {
+		PrintCapture capture;
+		FrameLoopOptions options{.interval = interval, .count = 2, .tty = false};
+		options.quietRender = true;
+		const int rc = runFrameLoop(
+			[] {
+				ERR("noise\n");
+				return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"};
+			},
+			options);
+		CHECK(rc == 0);
+		CHECK(capture.text().find("noise") == std::string::npos);
+		CHECK(capture.text().find("frame") != std::string::npos);
+	}
+	const LogLevel saved = getDbgLvl();
+	setDbgLvl(LogLevel::DBG);
+	{
+		PrintCapture capture;
+		FrameLoopOptions options{.interval = std::chrono::milliseconds{0}, .tty = false};
+		options.quietRender = true;
+		std::ignore = runFrameLoop(
+			[] {
+				ERR("noise\n");
+				return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"};
+			},
+			options);
+		CHECK(capture.text().find("noise") != std::string::npos);
+	}
+	setDbgLvl(saved);
+}
+
 TEST_CASE("a renderer failure ends the loop with that code and a message")
 {
 	PrintCapture capture;
