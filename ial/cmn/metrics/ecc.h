@@ -20,7 +20,7 @@
 namespace metrics::ecc {
 
 /** @brief Per-error-set-type RAS states, as returned by ras::getErrorsPerTileRasExp(). */
-using RasStates = std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>>;
+using RasStates = decltype(RasRead::states);
 
 /** @brief The RAS error sets a counter reads. */
 enum class RasTypes : uint8_t

@@ -130,9 +130,9 @@ template <zes_ras_error_category_exp_t CAT> bool isRasCategory(zes_ras_error_cat
  *
  * @tparam TYPES  Error set types to include.
  * @tparam FILTER Categories to include.
- * @param[in]  d      Device to query.
- * @param[out] out    On success, set to the decimal sum. Unchanged on failure.
- * @param      unused Unused metric cache parameter.
+ * @param[in]  d     Device to query.
+ * @param[out] out   On success, set to the decimal sum. Unchanged on failure.
+ * @param[in]  cache Holds the RAS states once read, so the other ECC fields reuse them.
  *
  * @retval ZE_RESULT_SUCCESS                   The sum was written to @p out.
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The device exposes no RAS error sets, or none of them
@@ -140,17 +140,21 @@ template <zes_ras_error_category_exp_t CAT> bool isRasCategory(zes_ras_error_cat
  * @retval Other                               Any other error returned while reading the RAS states.
  */
 template <RasTypes TYPES, RasCategoryFilter FILTER>
-ze_result_t rasErrorGetter(devInfo &d, MetricValue &out, const MetricCache & /*unused*/)
+ze_result_t rasErrorGetter(devInfo &d, MetricValue &out, const MetricCache &cache)
 {
-	auto *rasHal = d.dev->getRAS();
-	if (rasHal == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	if (!cache.rasRead) {
+		auto *rasHal = d.dev->getRAS();
+		if (rasHal == nullptr) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+		RasRead read;
+		read.status = rasHal->getErrorsPerTileRasExp(read.states);
+		cache.rasRead = std::move(read);
 	}
-	RasStates states;
-	if (const auto res = rasHal->getErrorsPerTileRasExp(states); res != ZE_RESULT_SUCCESS) {
-		return res;
+	if (cache.rasRead->status != ZE_RESULT_SUCCESS) {
+		return cache.rasRead->status;
 	}
-	const auto sum = sumRasErrors(states, TYPES, FILTER);
+	const auto sum = sumRasErrors(cache.rasRead->states, TYPES, FILTER);
 	if (!sum) {
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}

@@ -17,9 +17,11 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <future>
 #include <metric.h>
 #include <optional>
+#include <ras.h>
 #include <span>
 #include <string>
 #include <string_view>
@@ -204,12 +206,24 @@ struct EngineCache
 	UtilSample copy{};	  /**< ZES_ENGINE_GROUP_COPY_ALL */
 };
 
+/** One read of a device's experimental RAS states, shared by every ECC field of a sample. */
+struct RasRead
+{
+	ze_result_t status{};
+	std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> states;
+};
+
 struct MetricCache
 {
 	mutable std::optional<std::string> serialNumber;
 	/** When a cached "unknown" serial number is queried again; it can be transient, e.g. while
 	 *  another process holds the AMC. */
 	mutable std::chrono::steady_clock::time_point serialRetryAt{};
+	/**
+	 * The RAS states, read on first use. Each ECC field sums a different part of them, and a
+	 * read is slow on some runtimes and serialized across devices, so it is done once per sample.
+	 */
+	mutable std::optional<RasRead> rasRead;
 	/**
 	 * Which raw sampling this cache was built with; see @ref MetricInput. Set once by
 	 * @ref populateMetricCacheBegin (or @ref populateMetricCacheContinuous) and read back by

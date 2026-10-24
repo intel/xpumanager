@@ -617,6 +617,23 @@ TEST_CASE("sumRasErrors: a reported category with no errors sums to 0, not nullo
 	CHECK(sumRasErrors(states, RasTypes::CORRECTABLE, isHardwareRasCategory) == uint64_t{0});
 }
 
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "ECC fields reuse the RAS states already read for the sample")
+{
+	MetricCache c;
+	c.rasRead = RasRead{ZE_RESULT_SUCCESS,
+						{{ZES_RAS_ERROR_TYPE_CORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 2, 0}}},
+						 {ZES_RAS_ERROR_TYPE_UNCORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 3, 0}}}}};
+	// The device has no RAS HAL, so a value can only come from the states in the cache.
+	MetricValue out;
+	REQUIRE(findMetric("ecc.errors.aggregate.total").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "5");
+	REQUIRE(findMetric("ras.cache.errors.uncorrectable").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "3");
+
+	c.rasRead = RasRead{ZE_RESULT_ERROR_NOT_AVAILABLE, {}};
+	CHECK(findMetric("ras.reset").value().getter(di, out, c) == ZE_RESULT_ERROR_NOT_AVAILABLE);
+}
+
 TEST_CASE("eccModeName: the Sysman state wins over the device ECC flag")
 {
 	CHECK(eccModeName(ZES_DEVICE_ECC_STATE_ENABLED, false) == "Enabled");
