@@ -9,6 +9,7 @@
 
 #include "sysman.h"
 #include <map>
+#include <mutex>
 #include <vector>
 
 /**
@@ -29,6 +30,23 @@ class LIBXPUM_API ras : public sysman
 private:
 	uint32_t rasCount;
 	zes_ras_handle_t *rasHandles;
+	// Enumerated on first use: on some runtimes the first enumeration in a process takes more
+	// than a second, and most commands never read RAS.
+	zes_device_handle_t zesDevice = nullptr;
+	bool enumerated = false;
+	/// Guards the enumeration state above. A copy gets a mutex of its own, so ras stays copyable
+	/// as its device is; devices are only copied while the driver builds its list, before any
+	/// thread reads RAS.
+	struct EnumLock
+	{
+		std::mutex mutex;
+		EnumLock() = default;
+		EnumLock(const EnumLock &) noexcept {}
+		EnumLock &operator=(const EnumLock &) noexcept { return *this; }
+	};
+	EnumLock enumLock;
+
+	void ensureEnumerated();
 
 public:
 	ras() : rasCount(0), rasHandles(nullptr) {}

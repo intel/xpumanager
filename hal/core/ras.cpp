@@ -65,8 +65,12 @@ ras::~ras()
 ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 {
 	ze_result_t result = zesDeviceEnumRasErrorSets(device, &rasCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS || rasCount == 0) {
-		ERR("Failed to enumerate RAS error sets. 0x{:X} ({})\n", result, l0_error_to_string(result));
+	if (result != ZE_RESULT_SUCCESS) {
+		logRasReadFailure("Failed to enumerate RAS error sets", result);
+		return result;
+	}
+	if (rasCount == 0) {
+		DBG("The device exposes no RAS error sets.\n");
 		return result;
 	}
 
@@ -245,6 +249,7 @@ ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t
 	countersPerTile.clear();
 	*totalCounter = 0;
 
+	ensureEnumerated();
 	for (uint32_t i = 0; i < rasCount; ++i) {
 		result = getProperties(rasHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
@@ -286,6 +291,7 @@ ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t
 ze_result_t ras::clearErrors()
 {
 	TRACING();
+	ensureEnumerated();
 
 	if (rasHandles == nullptr || rasCount == 0) {
 		ERR("No RAS handles available to clear errors.\n");
@@ -352,6 +358,7 @@ ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vect
 {
 	const std::lock_guard<std::mutex> lock(rasReadMutex);
 	TRACING();
+	ensureEnumerated();
 
 	rasErrStates.clear();
 
@@ -429,7 +436,27 @@ ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vect
 ze_result_t ras::init(zes_device_handle_t device)
 {
 	TRACING();
-	return enumRasErrorSets(device);
+	zesDevice = device;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Enumerates the device's RAS error sets the first time they are needed.
+ *
+ * A failed enumeration is logged by enumRasErrorSets() and leaves the device without error
+ * sets, as a failure in init() did; it is not retried. So does a device init() never ran on.
+ */
+void ras::ensureEnumerated()
+{
+	const std::lock_guard lock{enumLock.mutex};
+	if (enumerated) {
+		return;
+	}
+	enumerated = true;
+	// A device object that init() never ran on has no handle to enumerate with.
+	if (zesDevice == nullptr || enumRasErrorSets(zesDevice) != ZE_RESULT_SUCCESS) {
+		rasCount = 0;
+	}
 }
 
 /**
@@ -449,6 +476,7 @@ ze_result_t ras::zesRun(UNUSED zes_device_handle_t device)
 	zes_ras_config_t config = {};
 	zes_ras_state_t state = {};
 
+	ensureEnumerated();
 	for (uint32_t i = 0; i < rasCount; ++i) {
 		result = getProperties(rasHandles[i], &properties);
 		if (result != ZE_RESULT_SUCCESS) {
