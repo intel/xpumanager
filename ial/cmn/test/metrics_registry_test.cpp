@@ -1124,10 +1124,10 @@ TEST_CASE("inputsOf: only EU fields request the OA metric streamer")
 		REQUIRE(fields.size() == 1);
 		CHECK(hasInput(inputsOf(fields), MetricInput::EU));
 	}
-	// utilization.gpu prefers EU active% and falls back to engine/fdinfo, so it needs all three.
+	// utilization.gpu is the busiest engine, from sysman or fdinfo; it never opens the streamer.
 	const auto gpuUtil = resolveQuery("utilization.gpu");
 	REQUIRE(gpuUtil.size() == 1);
-	CHECK(hasInput(inputsOf(gpuUtil), MetricInput::EU));
+	CHECK_FALSE(hasInput(inputsOf(gpuUtil), MetricInput::EU));
 	CHECK(hasInput(inputsOf(gpuUtil), MetricInput::ENGINE));
 	CHECK(hasInput(inputsOf(gpuUtil), MetricInput::FDINFO));
 

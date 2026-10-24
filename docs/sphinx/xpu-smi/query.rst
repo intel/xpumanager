@@ -105,8 +105,8 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - ECC mode and aggregate error counts, in total and by RAS category: cache and
        non-compute errors, resets, programming errors and driver errors
    * - ``EU_ARRAY``
-     - Nothing of its own in this report; the GPU utilization row uses the EU array. Use
-       ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array figures
+     - Nothing in this report. Use ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array
+       figures
    * - ``FAN``
      - Nothing in this report. Use ``--query-gpu fan.speed`` for the fan speed
    * - ``COMPUTE``
@@ -249,8 +249,9 @@ Reading the Report
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
-- GPU utilization comes from the EU array when the hardware metrics stream is available,
-  and otherwise from the busiest engine.
+- GPU utilization is the busiest engine's share of the window. An engine counts as busy for all
+  the time it has work scheduled, so it can read higher than ``eu.active`` under the same
+  workload.
 - Applications Clocks shows the graphics clock the driver last requested, which the GPU runs
   at unless a throttle reason holds it back. Minor Number is the number of the device's DRM
   card node, and reads ``N/A`` on Windows. Slot Number is the physical PCI slot the platform

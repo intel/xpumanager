@@ -695,6 +695,12 @@ TEST_CASE("selecting nothing but processes reads no registry field")
 	CHECK(selectedMetrics(*parseSelection("PIDS")).empty());
 }
 
+TEST_CASE("the report never samples the EU array")
+{
+	CHECK_FALSE(
+		metrics::hasInput(metrics::inputsOf(selectedMetrics(*parseSelection("ALL"))), metrics::MetricInput::EU));
+}
+
 TEST_CASE("selecting one section reads only that section's fields")
 {
 	const auto fields = selectedMetrics(*parseSelection("TEMPERATURE"));

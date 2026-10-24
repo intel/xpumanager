@@ -5,10 +5,10 @@
  * Utilization metrics: overall GPU, engine groups (compute/render/media/copy) and memory
  * utilization %.
  *
- * utilization.gpu reports EU active% (shader execution unit active time) when
- * CAP_PERFMON is available, falls back to the busiest sysman engine when EU counters
- * are unavailable, and further falls back to fdinfo compute-engine scheduling time
- * when sysman counters require elevated privilege.
+ * utilization.gpu reports the busiest sysman engine, and falls back to the busiest engine
+ * class by fdinfo scheduling time when sysman counters require elevated privilege. It does
+ * not read EU active%: that needs an OA metric streamer per device, whose open and close can
+ * take seconds each. eu.active reports that figure on request.
  *
  * utilization.compute, .render, and .copy carry aliases for the legacy xpum-style
  * .single and .group suffixes; .media uses sub-engine forms (.decode.single,
@@ -63,43 +63,34 @@ constexpr auto COPY_ALIASES = std::to_array<std::string_view>({
 
 constexpr auto GPU_ALIASES = std::to_array<std::string_view>({"sm", "utilization.shader"});
 
-constexpr auto GPU = QueryMetric{
-	// NOLINT(readability-identifier-naming)
-	.name = "utilization.gpu",
-	.aliases = GPU_ALIASES,
-	.unit = "%",
-	.description = "Shader (EU) execution unit active time as a fraction of elapsed time.  Falls back "
-				   "to the busiest engine class when EU metrics are unavailable: from fdinfo where the "
-				   "platform supports it, otherwise from the sysman engine counters.  Per tile or "
-				   "device, device-level is the tile average for multi-tile GPUs.",
-	.source = MetricSource::Live,
-	.groups = MetricGroup::UTILIZATION,
-	.inputs = MetricInput::EU | MetricInput::ENGINE | MetricInput::FDINFO,
-	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-		// Primary: EU active% (0-1000 per-mille → divide by 10 for %).
-		// Measures fraction of EU execution slots actively executing instructions,
-		// unaffected by copy/media engine activity that inflates ZES_ENGINE_GROUP_ALL.
-		if (cache.euAvail) {
-			out = xpum::compat::format("{:.2f}", static_cast<double>(cache.euSample.euActive) / EU_PERMILLE_SCALE);
-			return ZE_RESULT_SUCCESS;
-		}
-		// Secondary: busiest sysman engine (needs CAP_PERFMON).
-		// Not ZES_ENGINE_GROUP_ALL: that group averages every engine on the device,
-		// so a single saturated engine on a 9-engine GPU reads as 11%.
-		if (const auto r = formatUtil(cache.engines.gpu, out); r == ZE_RESULT_SUCCESS) {
-			return r;
-		}
-		// Tertiary: the busiest engine class by fdinfo scheduling time - the same "busiest
-		// engine" figure as the sysman tier, which is unavailable wherever the platform does not
-		// allow the sysman engine counters. It measures engine-scheduled time rather than
-		// shader execution, so it reads higher than EU active% under the same workload.
-		if (const auto busiest =
-				busiestEngineClass(cache.fdinfoCompute, cache.fdinfoRender, cache.fdinfoMedia, cache.fdinfoCopy)) {
-			out = xpum::compat::format("{:.2f}", static_cast<double>(*busiest));
-			return ZE_RESULT_SUCCESS;
-		}
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}};
+constexpr auto GPU =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "utilization.gpu",
+				.aliases = GPU_ALIASES,
+				.unit = "%",
+				.description = "Busiest engine's active time as a fraction of elapsed time: from the sysman engine "
+							   "counters, otherwise from fdinfo engine scheduling time.  Use eu.active for shader (EU) "
+							   "execution unit active time.",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::UTILIZATION,
+				.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
+				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
+					// Primary: busiest sysman engine (needs CAP_PERFMON).
+					// Not ZES_ENGINE_GROUP_ALL: that group averages every engine on the device,
+					// so a single saturated engine on a 9-engine GPU reads as 11%.
+					if (const auto r = formatUtil(cache.engines.gpu, out); r == ZE_RESULT_SUCCESS) {
+						return r;
+					}
+					// Fallback: the busiest engine class by fdinfo scheduling time - the same "busiest
+					// engine" figure as the sysman tier, which is unavailable wherever the platform does not
+					// allow the sysman engine counters.
+					if (const auto busiest = busiestEngineClass(cache.fdinfoCompute, cache.fdinfoRender,
+																cache.fdinfoMedia, cache.fdinfoCopy)) {
+						out = xpum::compat::format("{:.2f}", static_cast<double>(*busiest));
+						return ZE_RESULT_SUCCESS;
+					}
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+				}};
 
 constexpr auto COMPUTE =
 	QueryMetric{// NOLINT(readability-identifier-naming)
