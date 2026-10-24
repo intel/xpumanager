@@ -196,6 +196,8 @@ ze_result_t driver::zesInitialize()
 ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cognitive-complexity)
 {
 	TRACING(); // NOLINT(misc-const-correctness)
+	// Every device's pci::init() looks its MEI node up; one listing serves them all.
+	const MeiDeviceListScope meiDevices;
 
 	// Keep EU metrics disabled for explicit user override or on affected kernels
 	// before Level Zero initialization.

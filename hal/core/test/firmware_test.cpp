@@ -38,6 +38,7 @@ struct MockState
 	std::vector<std::string> names;				// firmware names Sysman lists, in enumeration order
 	std::string meiPath = MEI_DEVICE_PATH;		// GSC MEI node that IGSC finds for the GPU, empty for none
 	bool meiListed = false;						// the IGSC iterator has returned meiPath
+	int meiListings = 0;						// IGSC device iterations started
 	int gscVersionResult = IGSC_SUCCESS;		// result of IGSC's GFX firmware version query over meiPath
 	int gscQueries = 0;							// IGSC sessions opened to query the GSC
 	int flashCalls = 0;							// calls of zesFirmwareFlash
@@ -193,6 +194,7 @@ extern "C" ze_result_t __wrap_zesDevicePciGetProperties(zes_device_handle_t, zes
 extern "C" int __wrap_igsc_device_iterator_create(igsc_device_iterator **iter)
 {
 	mock.meiListed = false;
+	++mock.meiListings;
 	*iter = reinterpret_cast<igsc_device_iterator *>(&iteratorStorage);
 	return IGSC_SUCCESS;
 }
@@ -371,4 +373,24 @@ TEST_CASE("An update of firmware the device exposes still goes on to read the im
 	CHECK(errors == std::string("[Error] Firmware image '") + MISSING_IMAGE + "' is empty or unreadable.\n");
 	CHECK(mock.flashCalls == 0);
 	CHECK(mock.gscQueries == 0);
+}
+
+TEST_CASE("pci::init calls inside a MeiDeviceListScope share one MEI device listing")
+{
+	mock = {};
+	const auto deviceHandle = reinterpret_cast<zes_device_handle_t>(&deviceStorage);
+	{
+		const MeiDeviceListScope scope;
+		device first;
+		device second;
+		REQUIRE(first.getPCI()->init(deviceHandle) == ZE_RESULT_SUCCESS);
+		REQUIRE(second.getPCI()->init(deviceHandle) == ZE_RESULT_SUCCESS);
+		CHECK(mock.meiListings == 1);
+		CHECK(first.getPCI()->getMeiDevicePath() == MEI_DEVICE_PATH);
+		CHECK(second.getPCI()->getMeiDevicePath() == MEI_DEVICE_PATH);
+	}
+	// Outside a scope, e.g. a device read again after a reset, the MEI devices are listed afresh.
+	device later;
+	REQUIRE(later.getPCI()->init(deviceHandle) == ZE_RESULT_SUCCESS);
+	CHECK(mock.meiListings == 2);
 }

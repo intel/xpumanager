@@ -7,6 +7,8 @@
 #include "pci.h"
 #include <assert.h>
 #include <gscupd.h>
+#include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,71 @@
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
+
+namespace {
+
+// IGSC lists every MEI device of the system, about 300 ms with eight cards, and pci::init runs
+// once per device. While a MeiDeviceListScope lives, the lookups share one list.
+std::mutex meiListMutex;
+int meiListScopes = 0;
+std::optional<std::vector<pci_addr_mei_device>> sharedMeiList;
+
+[[nodiscard]] bool sameAddress(const zes_pci_address_t &a, const zes_pci_address_t &b)
+{
+	return a.domain == b.domain && a.bus == b.bus && a.device == b.device && a.function == b.function;
+}
+
+/**
+ * @brief Finds the MEI device of the GPU at @p address
+ *
+ * Lists the MEI devices through IGSC, or reuses the list taken earlier in the current
+ * MeiDeviceListScope.
+ *
+ * @param[in] address PCI address of the GPU
+ *
+ * @retval path    The MEI device path, e.g. /dev/mei0
+ * @retval nullopt No MEI device belongs to the GPU
+ */
+[[nodiscard]] std::optional<std::string> findMeiDevicePath(const zes_pci_address_t &address)
+{
+	const std::lock_guard lock{meiListMutex};
+	std::vector<pci_addr_mei_device> fresh;
+	if (meiListScopes == 0 || !sharedMeiList) {
+		fresh = gscupd{}.getPCIAddrAndMeiDevices();
+		if (meiListScopes > 0) {
+			sharedMeiList = std::move(fresh);
+		}
+	}
+	const auto &devices = meiListScopes > 0 ? *sharedMeiList : fresh;
+	for (const auto &dv : devices) {
+		if (sameAddress(dv.pciProps.address, address)) {
+			return dv.meiDevicePath;
+		}
+	}
+	return std::nullopt;
+}
+
+} // namespace
+
+/**
+ * @brief Starts sharing one list of the system's MEI devices among pci::init() calls.
+ */
+MeiDeviceListScope::MeiDeviceListScope()
+{
+	const std::lock_guard lock{meiListMutex};
+	++meiListScopes;
+}
+
+/**
+ * @brief Ends the sharing; once the last scope ends, the list is dropped.
+ */
+MeiDeviceListScope::~MeiDeviceListScope()
+{
+	const std::lock_guard lock{meiListMutex};
+	if (--meiListScopes == 0) {
+		sharedMeiList.reset();
+	}
+}
 
 /**
  * @brief Gets PCI properties for a device
@@ -403,14 +470,9 @@ void pci::adoptAddress(const zes_pci_address_t &address)
 	snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", address.domain, address.bus, address.device,
 			 address.function);
 
-	gscupd gsc;
-	for (const auto &dv : gsc.getPCIAddrAndMeiDevices()) {
-		if (dv.pciProps.address.domain == address.domain && dv.pciProps.address.bus == address.bus &&
-			dv.pciProps.address.device == address.device && dv.pciProps.address.function == address.function) {
-			DBG("Found matching device: {}\n", dv.meiDevicePath.c_str());
-			deviceProperties.meiDevicePath = dv.meiDevicePath;
-			break;
-		}
+	if (auto path = findMeiDevicePath(address)) {
+		DBG("Found matching device: {}\n", path->c_str());
+		deviceProperties.meiDevicePath = std::move(*path);
 	}
 }
 

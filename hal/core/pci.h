@@ -43,6 +43,24 @@ struct MemoryBarQuery
 	std::optional<MemoryBar> bar; ///< Set when status is ZE_RESULT_SUCCESS
 };
 
+/**
+ * @brief Lets the pci::init() calls made while it lives share one list of the system's MEI devices.
+ *
+ * IGSC lists every MEI device of the system, about 300 ms with eight cards, and pci::init() runs
+ * once per device. Outside a scope every lookup lists them afresh, so a device read again later,
+ * e.g. after a reset that may renumber its MEI node, gets a current list. Scopes may nest.
+ */
+class LIBXPUM_API MeiDeviceListScope
+{
+public:
+	MeiDeviceListScope();
+	~MeiDeviceListScope();
+	MeiDeviceListScope(const MeiDeviceListScope &) = delete;
+	MeiDeviceListScope &operator=(const MeiDeviceListScope &) = delete;
+	MeiDeviceListScope(MeiDeviceListScope &&) = delete;
+	MeiDeviceListScope &operator=(MeiDeviceListScope &&) = delete;
+};
+
 class LIBXPUM_API pci : public sysman
 {
 private:
