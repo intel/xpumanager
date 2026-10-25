@@ -34,3 +34,11 @@ engine_context_probe_exe = executable(
   build_by_default: true,
   install: false,
 )
+
+# LD_PRELOAD shim whose zesInit never returns; used by tests/watchdog_timeout.yaml.
+hang_preload_lib = shared_module(
+  'hang_preload',
+  'hang_preload.cpp',
+  build_by_default: true,
+  install: false,
+)

@@ -1,0 +1,80 @@
+# Copyright (C) 2026 Intel Corporation
+# SPDX-License-Identifier: MIT
+#
+# --timeout hang watchdog. The hang cases preload libhang_preload.so, whose zesInit never
+# returns, so xpu-smi blocks in driver init exactly as it does on a hung driver. The outer
+# timeout(1) is only a backstop: --preserve-status makes it report 143 (or 137 after -k), never
+# its own 124, so a 124 can only come from the watchdog.
+
+test_suite:
+  name: "Hang watchdog (--timeout)"
+  description: "xpu-smi ends a run that makes no progress with exit code 124"
+
+  settings:
+    binary: "xpu-smi"
+    timeout: 60
+    max_retries: 0
+    continue_on_failure: true
+
+  tests:
+
+    - name: "watchdog_driver_init_hang_times_out"
+      description: "A hang in zesInit ends with exit 124 after the timeout, naming the phase"
+      command: "--timeout 2 discovery"
+      script: |
+        SHIM="${HANG_PRELOAD:-./builddir/validation/scripts/libhang_preload.so}"
+        if [ ! -f "$SHIM" ]; then echo "FAIL: hang shim not found at $SHIM"; exit 1; fi
+        START=$(date +%s%N)
+        LD_PRELOAD="$SHIM" timeout --preserve-status -k 5 20 {command} > /tmp/xpuval_wd.out 2>&1
+        RC=$?
+        ELAPSED_MS=$(( ($(date +%s%N) - START) / 1000000 ))
+        cat /tmp/xpuval_wd.out
+        rm -f /tmp/xpuval_wd.out
+        echo "rc=$RC elapsed_ms=$ELAPSED_MS"
+        [ "$RC" -eq 124 ] || { echo "FAIL: expected exit 124"; exit 1; }
+        [ "$ELAPSED_MS" -ge 1900 ] && [ "$ELAPSED_MS" -lt 5000 ] || { echo "FAIL: not ~2 s"; exit 1; }
+      expect:
+        return_code: 0
+        stdout_contains:
+          - "[Warning] xpu-smi: no progress for 1 s in phase 'driver init' while running 'discovery'; aborting in 1 s"
+          - "[Error] xpu-smi: no progress for 2 s in phase 'driver init' while running 'discovery'; aborting (exit 124)."
+          - "  thread "
+      tags: ["watchdog", "timeout", "regression"]
+
+    - name: "watchdog_loop_hang_times_out"
+      description: "--loop is covered too: the same hang under --loop ends with exit 124"
+      command: "--timeout 2 --loop 1"
+      script: |
+        SHIM="${HANG_PRELOAD:-./builddir/validation/scripts/libhang_preload.so}"
+        if [ ! -f "$SHIM" ]; then echo "FAIL: hang shim not found at $SHIM"; exit 1; fi
+        LD_PRELOAD="$SHIM" timeout --preserve-status -k 5 20 {command} > /dev/null 2>&1
+        RC=$?
+        echo "rc=$RC"
+        [ "$RC" -eq 124 ] || { echo "FAIL: expected exit 124"; exit 1; }
+      expect:
+        return_code: 0
+      tags: ["watchdog", "timeout", "regression"]
+
+    - name: "watchdog_disabled"
+      command: "--timeout 0 discovery"
+      expect:
+        return_code: 0
+        stderr_not_contains:
+          - "no progress"
+      tags: ["watchdog", "timeout"]
+
+    - name: "watchdog_joined_value_after_subcommand"
+      command: "discovery --timeout=30"
+      expect:
+        return_code: 0
+        stderr_not_contains:
+          - "no progress"
+      tags: ["watchdog", "timeout"]
+
+    - name: "watchdog_invalid_value"
+      command: "--timeout abc discovery"
+      expect:
+        return_code: 2
+        stderr_contains:
+          - "--timeout expects whole seconds between 0 and 86400, got 'abc'"
+      tags: ["watchdog", "timeout", "error"]
