@@ -69,4 +69,31 @@ private:
  */
 void leaveAlternateScreenForExit() noexcept;
 
+/**
+ * @brief Records that the caller entered or left the alternate screen with its own output.
+ *
+ * For screens not drawn through AlternateScreen, so leaveAlternateScreenForExit() still restores
+ * the normal screen.
+ *
+ * @param[in] active  true after entering the alternate screen, false after leaving it.
+ */
+void noteAlternateScreen(bool active) noexcept;
+
+/**
+ * @brief Records that stdin is in, or has left, the unbuffered no-echo mode of GETCH().
+ * @param[in] active  true after leaving canonical mode, false after restoring it.
+ */
+void noteRawInput(bool active) noexcept;
+
+/**
+ * @brief Turns line input and echo back on if GETCH() left them off, without allocating or locking.
+ *
+ * For the watchdog's expiry path, which ends the process while another thread may be waiting in
+ * GETCH(). A process in the background of its terminal leaves the mode alone, since changing it
+ * would stop the process with SIGTTOU.
+ *
+ * On Windows: does nothing.
+ */
+void restoreInputModeForExit() noexcept;
+
 #endif // OAL_TERMINAL_H

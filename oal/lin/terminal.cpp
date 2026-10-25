@@ -8,6 +8,7 @@
 #include "watchdog_os.h"
 #include <atomic>
 #include <cstdio>
+#include <termios.h>
 #include <unistd.h>
 
 /**
@@ -40,9 +41,11 @@ namespace {
 
 // Read on the watchdog thread, so an atomic rather than a member of the guard.
 std::atomic<bool> alternateScreenActive{false}; // NOLINT(*-avoid-non-const-global-variables)
+std::atomic<bool> rawInputActive{false};		// NOLINT(*-avoid-non-const-global-variables)
 
 constexpr const char *ENTER_ALTERNATE_SCREEN = "\033[?1049h";
-constexpr const char *LEAVE_ALTERNATE_SCREEN = "\033[?1049l";
+// Also shows the cursor, which a screen drawn in place hides.
+constexpr const char *LEAVE_ALTERNATE_SCREEN = "\033[?25h\033[?1049l";
 
 } // namespace
 
@@ -78,4 +81,40 @@ void leaveAlternateScreenForExit() noexcept
 	if (alternateScreenActive.exchange(false)) {
 		writeStdoutRaw(LEAVE_ALTERNATE_SCREEN);
 	}
+}
+
+/**
+ * @brief Records whether the alternate screen is showing, for leaveAlternateScreenForExit().
+ * @param[in] active  true after entering the alternate screen, false after leaving it.
+ */
+void noteAlternateScreen(bool active) noexcept { alternateScreenActive.store(active); }
+
+/**
+ * @brief Records whether getch() has stdin in non-canonical, no-echo mode.
+ * @param[in] active  true after leaving canonical mode, false after restoring it.
+ */
+void noteRawInput(bool active) noexcept { rawInputActive.store(active); }
+
+/**
+ * @brief Restores canonical input and echo on stdin if getch() left them off.
+ *
+ * Only tcgetattr, tcgetpgrp and tcsetattr, which are async-signal-safe.
+ */
+void restoreInputModeForExit() noexcept
+{
+	if (!rawInputActive.exchange(false)) {
+		return;
+	}
+	// Only the controlling terminal can stop a background process; for any other terminal
+	// tcgetpgrp fails and the mode is restored.
+	const pid_t foreground = ::tcgetpgrp(STDIN_FILENO);
+	if (foreground >= 0 && foreground != ::getpgrp()) {
+		return;
+	}
+	termios mode{};
+	if (::tcgetattr(STDIN_FILENO, &mode) != 0) {
+		return;
+	}
+	mode.c_lflag |= ICANON | ECHO;
+	::tcsetattr(STDIN_FILENO, TCSANOW, &mode);
 }

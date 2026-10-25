@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "lin.h"
+#include "terminal.h"
 #include "pci_database.h"
 #include "dmi_reader.h"
 #include "bdf.h"
@@ -166,6 +167,8 @@ char getch()
 	old.c_lflag &= ~ECHO;
 	old.c_cc[VMIN] = 1;
 	old.c_cc[VTIME] = 0;
+	// Noted before the change, so a watchdog exit at any point after it restores the mode.
+	noteRawInput(true);
 	if (tcsetattr(STDIN_FILENO, TCSANOW, &old) < 0)
 		perror("tcsetattr ICANON");
 	if (read(STDIN_FILENO, &buf, 1) < 0)
@@ -174,6 +177,7 @@ char getch()
 	old.c_lflag |= ECHO;
 	if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old) < 0)
 		perror("tcsetattr ~ICANON");
+	noteRawInput(false);
 	return buf;
 }
 

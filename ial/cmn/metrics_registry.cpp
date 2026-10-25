@@ -41,6 +41,7 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+#include "utility/watchdog/watchdog.h"
 
 namespace {
 
@@ -284,7 +285,7 @@ MetricCache populateMetricCache(devInfo &dev, std::chrono::milliseconds window, 
 	const auto deadline = std::chrono::steady_clock::now() + window;
 	MetricCache cache = populateMetricCacheBegin(dev, inputs);
 	if (inputs != MetricInput::NONE) {
-		std::this_thread::sleep_until(deadline);
+		xpum::watchdog::sleepUntil(deadline);
 	}
 	populateMetricCacheEnd(dev, cache);
 	return cache;

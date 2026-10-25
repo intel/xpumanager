@@ -28,6 +28,7 @@
 #include <memory>
 #include <ranges>
 #include "terminal.h"
+#include "utility/watchdog/watchdog.h"
 #include <string>
 #include <string_view>
 #include <system_error>

@@ -13,10 +13,12 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdio>
+#include <cstdlib>
 #include <fcntl.h>
 #include <mutex>
 #include <string>
 #include <sys/mman.h>
+#include <termios.h>
 #include <thread>
 #include <unistd.h>
 
@@ -170,7 +172,7 @@ TEST_CASE("leaveAlternateScreenForExit restores the screen once")
 		leaveAlternateScreenForExit();
 		leaveAlternateScreenForExit();
 	}
-	CHECK(out.text() == "\033[?1049h\033[?1049l");
+	CHECK(out.text() == "\033[?1049h\033[?25h\033[?1049l");
 }
 
 TEST_CASE("a disabled guard writes nothing")
@@ -181,4 +183,62 @@ TEST_CASE("a disabled guard writes nothing")
 		leaveAlternateScreenForExit();
 	}
 	CHECK(out.text().empty());
+}
+
+TEST_CASE("a screen entered with the caller's own output is restored once it is noted")
+{
+	Capture out{STDOUT_FILENO};
+	noteAlternateScreen(true);
+	leaveAlternateScreenForExit();
+	leaveAlternateScreenForExit();
+	noteAlternateScreen(true);
+	noteAlternateScreen(false);
+	leaveAlternateScreenForExit();
+	CHECK(out.text() == "\033[?25h\033[?1049l");
+}
+
+TEST_CASE("restoreInputModeForExit turns line input and echo back on only after getch changed them")
+{
+	const int master = ::posix_openpt(O_RDWR | O_NOCTTY | O_CLOEXEC);
+	REQUIRE(master >= 0);
+	REQUIRE(::grantpt(master) == 0);
+	REQUIRE(::unlockpt(master) == 0);
+	const int terminal = ::open(::ptsname(master), O_RDWR | O_NOCTTY | O_CLOEXEC);
+	REQUIRE(terminal >= 0);
+	const int savedIn = ::dup(STDIN_FILENO);
+	REQUIRE(savedIn >= 0);
+	REQUIRE(::dup2(terminal, STDIN_FILENO) == STDIN_FILENO);
+
+	const auto setRaw = [] {
+		termios mode{};
+		REQUIRE(::tcgetattr(STDIN_FILENO, &mode) == 0);
+		mode.c_lflag &= ~static_cast<tcflag_t>(ICANON | ECHO);
+		REQUIRE(::tcsetattr(STDIN_FILENO, TCSANOW, &mode) == 0);
+	};
+	const auto lineInputAndEcho = [] {
+		termios mode{};
+		REQUIRE(::tcgetattr(STDIN_FILENO, &mode) == 0);
+		return (mode.c_lflag & (ICANON | ECHO)) == (ICANON | ECHO);
+	};
+
+	setRaw();
+	restoreInputModeForExit();
+	const bool untouchedWhenNotNoted = !lineInputAndEcho();
+
+	noteRawInput(true);
+	restoreInputModeForExit();
+	const bool restored = lineInputAndEcho();
+
+	setRaw();
+	restoreInputModeForExit();
+	const bool onlyOnce = !lineInputAndEcho();
+
+	::dup2(savedIn, STDIN_FILENO);
+	::close(savedIn);
+	::close(terminal);
+	::close(master);
+
+	CHECK(untouchedWhenNotNoted);
+	CHECK(restored);
+	CHECK(onlyOnce);
 }

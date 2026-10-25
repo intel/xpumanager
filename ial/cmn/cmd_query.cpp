@@ -15,6 +15,7 @@
 #include "terminal.h"
 #include "utility/compat/format.h"
 #include "utility/logger/logger.h"
+#include "utility/watchdog/watchdog.h"
 #include <CLI/CLI.hpp>
 #include <algorithm>
 #include <array>
@@ -1164,7 +1165,7 @@ QueryNode QuerySession::sampleDevice(std::size_t index, const FrameFdinfo &frame
 	values.insert(firmwareValues[index].values.begin(), firmwareValues[index].values.end());
 	failures.insert(firmwareValues[index].failures.begin(), firmwareValues[index].failures.end());
 	if (windowed && first) {
-		std::this_thread::sleep_until(windowEnd);
+		xpum::watchdog::sleepUntil(windowEnd);
 		metrics::populateMetricCacheEnd(dev, cache, &frameFdinfo.windowEnd.get());
 	}
 	evaluate(split.windowed, dev, cache, values, failures);
@@ -1202,7 +1203,7 @@ RenderedFrame QuerySession::renderFrame()
 		if (firstFrame) {
 			const auto windowEnd = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
 			const auto captureAtWindowEnd = [this, windowEnd] {
-				std::this_thread::sleep_until(windowEnd);
+				xpum::watchdog::sleepUntil(windowEnd);
 				return metrics::captureFdinfo(inputs);
 			};
 			frameFdinfo.windowEnd = std::async(std::launch::async, captureAtWindowEnd).share();

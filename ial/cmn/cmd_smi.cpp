@@ -24,6 +24,7 @@
 #include <string_view>
 #include <thread>
 #include <vector>
+#include "utility/watchdog/watchdog.h"
 
 // Version fallbacks (XPUM_VERSION_MAJOR/MINOR are set via -D compiler flags)
 #ifndef XPUM_VERSION_MAJOR
@@ -773,7 +774,7 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 				sample.procs.clear();
 			}
 
-			std::this_thread::sleep_until(windowEnd);
+			xpum::watchdog::sleepUntil(windowEnd);
 			computeFromBaseline(sample.stats, baseline, &di);
 			return sample;
 		}));
@@ -784,7 +785,7 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 
 	fdinfo::DeviceSnapshots fdAfter;
 	if (captureFdinfo) {
-		std::this_thread::sleep_until(fdWindowEnd);
+		xpum::watchdog::sleepUntil(fdWindowEnd);
 		fdAfter = fdinfo::captureAll();
 	}
 

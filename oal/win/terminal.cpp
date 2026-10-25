@@ -66,7 +66,8 @@ namespace {
 std::atomic<bool> alternateScreenActive{false}; // NOLINT(*-avoid-non-const-global-variables)
 
 constexpr const char *ENTER_ALTERNATE_SCREEN = "\033[?1049h";
-constexpr const char *LEAVE_ALTERNATE_SCREEN = "\033[?1049l";
+// Also shows the cursor, which a screen drawn in place hides.
+constexpr const char *LEAVE_ALTERNATE_SCREEN = "\033[?25h\033[?1049l";
 
 } // namespace
 
@@ -103,3 +104,19 @@ void leaveAlternateScreenForExit() noexcept
 		writeStdoutRaw(LEAVE_ALTERNATE_SCREEN);
 	}
 }
+
+/**
+ * @brief Records whether the alternate screen is showing, for leaveAlternateScreenForExit().
+ * @param[in] active  true after entering the alternate screen, false after leaving it.
+ */
+void noteAlternateScreen(bool active) noexcept { alternateScreenActive.store(active); }
+
+/**
+ * @brief Does nothing on Windows, where restoreInputModeForExit() has nothing to restore.
+ */
+void noteRawInput(bool /*active*/) noexcept {}
+
+/**
+ * @brief Does nothing on Windows.
+ */
+void restoreInputModeForExit() noexcept {}

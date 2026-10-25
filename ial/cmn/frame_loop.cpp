@@ -5,6 +5,7 @@
 
 #include "frame_loop.h"
 #include "debug.h"
+#include "utility/watchdog/watchdog.h"
 #include <algorithm>
 #include <atomic>
 #include <csignal>
@@ -166,6 +167,7 @@ public:
 			if (!onAlternateScreen) {
 				out += "\033[?1049h\033[?25l"; // enter the alternate screen, hide the cursor
 				onAlternateScreen = true;
+				noteAlternateScreen(true); // so the watchdog restores the normal screen if it fires
 			}
 			out += "\033[H\033[J"; // cursor home + erase to end
 			out += frame;
@@ -216,6 +218,7 @@ public:
 		if (onAlternateScreen) {
 			PRINT("\033[?25h\033[?1049l\r");
 			onAlternateScreen = false;
+			noteAlternateScreen(false);
 		}
 	}
 
@@ -372,10 +375,12 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 	{
 		const StopSignalScope stopSignals;
 		if (opts.tty && !inPlace) {
-			PRINT("\033[?1049h"); // enter alternate screen buffer
+			PRINT("\033[?1049h");	   // enter alternate screen buffer
+			noteAlternateScreen(true); // so the watchdog restores the normal screen if it fires
 		}
 
 		while (!stopRequested.load(std::memory_order_relaxed) && (opts.count <= 0 || iterations < opts.count)) {
+			xpum::watchdog::keepalive();
 			// Start the deadline before rendering so the interval includes the time the
 			// renderer spends sampling.
 			const auto deadline = std::chrono::steady_clock::now() + opts.interval;
@@ -429,12 +434,13 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 			while (!stopRequested.load(std::memory_order_relaxed) && std::chrono::steady_clock::now() < deadline) {
 				const auto remaining =
 					std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now());
-				std::this_thread::sleep_for(std::min(remaining, POLL_SLICE));
+				xpum::watchdog::sleepFor(std::min(remaining, POLL_SLICE));
 			}
 		}
 
 		if (opts.tty && !inPlace) {
 			PRINT("\033[?1049l"); // restore normal screen buffer before any diagnostic output
+			noteAlternateScreen(false);
 		}
 		screen.leave();
 	}

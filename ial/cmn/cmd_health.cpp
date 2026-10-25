@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <thread>
 #include <inttypes.h>
+#include "utility/watchdog/watchdog.h"
 
 namespace {
 /**
@@ -466,7 +467,7 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 			zes_power_energy_counter_t snap2 = {};
 			res = pwr->getEnergyCounter(powerHandles[i], &snap1);
 			if (res == ZE_RESULT_SUCCESS) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(POWER_MONITOR_INTERNAL_PERIOD));
+				xpum::watchdog::sleepFor(std::chrono::milliseconds(POWER_MONITOR_INTERNAL_PERIOD));
 				res = pwr->getEnergyCounter(powerHandles[i], &snap2);
 				if (res == ZE_RESULT_SUCCESS && snap2.timestamp != snap1.timestamp) {
 					uint64_t value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);

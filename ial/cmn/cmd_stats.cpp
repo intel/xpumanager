@@ -30,6 +30,7 @@
 #include <string_view>
 #include "utility/compat/format.h"
 #include <thread>
+#include "utility/watchdog/watchdog.h"
 
 /**
  * @brief Structure pairing an experimental RAS error category enum with its display name
@@ -1471,7 +1472,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 							   dev->getDriverHandle(), std::ref(metrics.euMetrics));
 		}
 
-		std::this_thread::sleep_for(sampleInterval);
+		xpum::watchdog::sleepFor(sampleInterval);
 
 		auto sampleEngineType = [&](zes_engine_group_t engineType, std::vector<EngineInstanceTracker> &trackers) {
 			if (engineGroup == nullptr || trackers.empty()) {

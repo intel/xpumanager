@@ -81,9 +81,11 @@ void onWatchdogExpiry(const xpum::watchdog::Expiry &expiry) noexcept
 {
 	std::array<char, 512> buf{};
 	const bool fatal = expiry.kind == xpum::watchdog::ExpiryKind::Timeout;
-	// The message must land on the normal screen, where it survives the exit.
+	// The message must land on the normal screen, where it survives the exit, and the shell
+	// must get back line input and echo if an interactive dump was waiting for a key.
 	if (fatal) {
 		leaveAlternateScreenForExit();
+		restoreInputModeForExit();
 	}
 	writeStderrRaw(xpum::watchdog::formatMessage(expiry, commandLabel(), buf));
 	if (fatal) {

@@ -20,6 +20,7 @@
 #include <nlohmann/json.hpp>
 #include <ctime>
 #include <array>
+#include "utility/watchdog/watchdog.h"
 
 static std::unordered_map<amcSubCmdType, amcSubCmdStruct> amcCmds = {
 	{AMC_HELP, {}},
@@ -327,6 +328,8 @@ ze_result_t cmdAmc::getDeviceIndex(amclib *amc, const std::string &val, int numC
 /// Prompt the user to confirm a reset. Returns true if confirmed, false if cancelled.
 static bool confirmReset(int deviceId)
 {
+	// Waiting for the user is not a hang.
+	const auto prompt = xpum::watchdog::suspend("confirmation prompt");
 	if (deviceId < 0) {
 		PRINT("\nWARNING: This operation will reset ALL GPU devices via AMC\n");
 	} else {

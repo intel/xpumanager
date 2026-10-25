@@ -28,6 +28,7 @@
 #include <thread>
 #include <type_traits>
 #include <vector>
+#include "utility/watchdog/watchdog.h"
 
 namespace metrics {
 
@@ -756,7 +757,7 @@ void runMetrics(Output &output, std::span<const QueryMetric *> fields, std::span
 		for (std::size_t i = 0; i < devices.size(); ++i) {
 			caches[i] = populateMetricCacheBegin(devices[i], inputs, &fdBefore);
 		}
-		std::this_thread::sleep_until(deadline);
+		xpum::watchdog::sleepUntil(deadline);
 		const fdinfo::DeviceSnapshots fdAfter = captureFdinfo(inputs);
 		for (std::size_t i = 0; i < devices.size(); ++i) {
 			populateMetricCacheEnd(devices[i], caches[i], &fdAfter);

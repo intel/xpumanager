@@ -34,6 +34,7 @@
 #include <variant>
 #include <utility>
 #include <vector>
+#include "utility/watchdog/watchdog.h"
 
 namespace {
 
@@ -757,7 +758,8 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 
 	while (!quitToken.stop_requested()) {
-		std::this_thread::sleep_for(loopInterval);
+		xpum::watchdog::keepalive();
+		xpum::watchdog::sleepFor(loopInterval);
 
 		const fdinfo::DeviceSnapshots fdNow = metrics::captureFdinfo(inputs);
 		for (std::size_t i = 0; i < numDevices; ++i) {
@@ -849,7 +851,7 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs, &fdBefore);
 	}
-	std::this_thread::sleep_until(firstSampleDeadline);
+	xpum::watchdog::sleepUntil(firstSampleDeadline);
 	const fdinfo::DeviceSnapshots fdAfter = metrics::captureFdinfo(inputs);
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		metrics::populateMetricCacheEnd(deviceList[i], caches[i], &fdAfter);
@@ -862,10 +864,11 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	}
 
 	if (!quitToken.stop_requested() && iter != 0) {
-		std::this_thread::sleep_for(timing.interval);
+		xpum::watchdog::sleepFor(timing.interval);
 	}
 
 	while (!quitToken.stop_requested()) {
+		xpum::watchdog::keepalive();
 		const auto cycleStartTime = std::chrono::steady_clock::now();
 
 		const fdinfo::DeviceSnapshots fdNow = metrics::captureFdinfo(inputs);
@@ -879,7 +882,7 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - cycleStartTime);
 		const auto remainingSleep = timing.interval - collectionTimeMs;
 		if (remainingSleep.count() > 0) {
-			std::this_thread::sleep_for(remainingSleep);
+			xpum::watchdog::sleepFor(remainingSleep);
 		}
 
 		if (iter > 0 && --iter == 0) {
@@ -1083,7 +1086,7 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 		for (std::size_t i = 0; i < numDevices; ++i) {
 			caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs, &fdBefore);
 		}
-		std::this_thread::sleep_until(sampleDeadline);
+		xpum::watchdog::sleepUntil(sampleDeadline);
 		const fdinfo::DeviceSnapshots fdAfter = metrics::captureFdinfo(inputs);
 		for (std::size_t i = 0; i < numDevices; ++i) {
 			metrics::populateMetricCacheEnd(deviceList[i], caches[i], &fdAfter);

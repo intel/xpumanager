@@ -21,6 +21,7 @@
 #include <span>
 #include <thread>
 #include <utility>
+#include "utility/watchdog/watchdog.h"
 
 static std::unordered_map<psCmdType, psCmdStruct> psCmds = {
 	{psCmdType::PS_HELP, {}},
@@ -628,7 +629,7 @@ int cmdPs::run(arg_struct *args)
 		const ProcessFacts processFacts{devPciAddrs(psCmds[psCmdType::PS_DEVICE].enabled ? allDevices : deviceList)};
 
 		// ── Phase 2: measurement window ──────────────────────────────────────────
-		std::this_thread::sleep_for(PS_SAMPLE_WINDOW);
+		xpum::watchdog::sleepFor(PS_SAMPLE_WINDOW);
 		const fdinfo::DeviceSnapshots fdAfterAll = fdinfo::captureAll();
 
 		// ── Phase 3a: collect processes, apply fdinfo deltas (sequential) ────────
