@@ -8,7 +8,8 @@ management for Intel(R) Arc Pro Series GPUs.
 Global Options
 --------------
 
-These options are available at the top level (without a subcommand):
+These options are available at the top level (without a subcommand), except
+``--timeout``, which applies to every command and may appear anywhere on the command line:
 
 .. option:: -h, --help
 
@@ -59,6 +60,22 @@ These options are available at the top level (without a subcommand):
 
       Redirect output to a file instead of stdout.
 
+.. option:: --timeout=<sec>, --timeout <sec>
+
+   Abort if ``xpu-smi`` makes no progress for ``<sec>`` seconds (default: ``30``), for
+   example because a driver call does not return. ``0`` turns the timeout off; the maximum
+   is ``86400``. Time spent waiting between samples (``--loop``, ``dump -i``, ``stats``)
+   does not count, so long-running loops are not affected.
+
+   After half the timeout without progress, a warning on stderr names the phase that is
+   stuck (for example ``driver init``) and how many seconds remain. On timeout, ``xpu-smi``
+   restores the terminal, prints the phase and one line per thread to stderr, and exits
+   with code ``124``.
+
+   The timeout is suspended while firmware is being written (``updatefw``): a flash can take
+   several minutes, and interrupting one can leave the card unusable. It starts again,
+   with the full timeout, once flashing ends.
+
 Synopsis
 --------
 
@@ -71,6 +88,7 @@ Synopsis
    xpu-smi --list-gpus
    xpu-smi --query-gpu=<fields> [--id <n>] [--loop[=<sec>]|--loop-ms=<ms>] [--count=<n>] [--format=csv[,...]]
    xpu-smi <command> [command-options]
+   xpu-smi [--timeout=<sec>] ...
 
 Default Output
 --------------

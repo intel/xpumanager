@@ -53,6 +53,7 @@ ial_cmn_deps = [
   table_dep,
   bdf_dep,
   compat_dep,
+  watchdog_dep,
 ]
 if is_linux
   ial_cmn_deps += [pciaccess_dep]

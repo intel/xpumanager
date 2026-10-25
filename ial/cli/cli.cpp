@@ -22,8 +22,12 @@
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
 #include <debug.h>
+#include <terminal.h>
 #include <process_exit.h>
+#include <watchdog_os.h>
 #include <version_report.h>
+#include <algorithm>
+#include <array>
 #include <cctype>
 #include <cstdio>
 #include <iostream>
@@ -36,9 +40,59 @@
 #include "utility/compat/format.h"
 #include "utility/logger/filestream_sink.h"
 #include "utility/logger/logger.h"
-#include <string>
-#include <vector>
+#include "utility/watchdog/timeout_option.h"
+#include "utility/watchdog/watchdog.h"
 std::string progName = "xpu-smi";
+
+namespace {
+
+// Filled once in main() before the watchdog thread starts, read only by the expiry handler, which
+// must not allocate.
+constinit std::array<char, 64> commandLabelText{};
+constinit std::size_t commandLabelSize = 0;
+
+/**
+ * @brief Returns the command name the watchdog messages name, without allocating.
+ *
+ * @retval The label set by setCommandLabel(), empty before it is set.
+ */
+[[nodiscard]] std::string_view commandLabel() noexcept { return {commandLabelText.data(), commandLabelSize}; }
+
+/**
+ * @brief Stores the command name for the watchdog messages, cut to fit the fixed buffer.
+ *
+ * @param[in] label  Command name, such as "discovery".
+ */
+void setCommandLabel(std::string_view label) noexcept
+{
+	commandLabelSize = std::min(label.size(), commandLabelText.size());
+	std::copy_n(label.data(), commandLabelSize, commandLabelText.data());
+}
+
+/**
+ * @brief Reports a watchdog expiry on stderr and, on a timeout, ends the process with exit code 124.
+ *
+ * Runs on the watchdog thread while the main thread may be stuck holding the heap, stdio or
+ * logger locks, so it only formats into a stack buffer and writes raw.
+ *
+ * @param[in] expiry  The pretimeout warning or the timeout.
+ */
+void onWatchdogExpiry(const xpum::watchdog::Expiry &expiry) noexcept
+{
+	std::array<char, 512> buf{};
+	const bool fatal = expiry.kind == xpum::watchdog::ExpiryKind::Timeout;
+	// The message must land on the normal screen, where it survives the exit.
+	if (fatal) {
+		leaveAlternateScreenForExit();
+	}
+	writeStderrRaw(xpum::watchdog::formatMessage(expiry, commandLabel(), buf));
+	if (fatal) {
+		writeThreadReport();
+		exitNow(xpum::watchdog::TIMEOUT_EXIT_CODE);
+	}
+}
+
+} // namespace
 
 /**
  * @brief Prints all available subcommands with short help text
@@ -115,6 +169,7 @@ std::optional<int> requireDriver(arg_struct *arg, DriverMode mode, bool recovera
 	if (mode == DriverMode::None) {
 		return std::nullopt;
 	}
+	const auto phase = xpum::watchdog::enter("driver init");
 
 	const LogLevel dbglvl = getDbgLvl();
 	if (dbglvl < LogLevel::DBG) {
@@ -172,6 +227,25 @@ using ArgvView = std::span<char *const>;
 int main(int argc, char *argv[])
 {
 	TRACING();
+	// Before anything that can reach the driver, so a hang in driver init is covered too.
+	xpum::watchdog::TimeoutOption timeoutOption =
+		xpum::watchdog::extractTimeoutOption(ArgvView{argv, static_cast<std::size_t>(argc)});
+	if (timeoutOption.error) {
+		ERR("{}\n", *timeoutOption.error);
+		ERR("Run with --help for more information.\n");
+		return 2;
+	}
+	std::vector<char *> argvStorage;
+	argvStorage.reserve(timeoutOption.remaining.size() + 1);
+	for (std::string &argument : timeoutOption.remaining) {
+		argvStorage.push_back(argument.data());
+	}
+	argvStorage.push_back(nullptr);
+	argc = static_cast<int>(timeoutOption.remaining.size());
+	argv = argvStorage.data();
+	setCommandLabel(argc > 1 ? std::string_view{argv[1]} : std::string_view{"default view"});
+	const xpum::watchdog::Watchdog watchdog{timeoutOption.timeout, onWatchdogExpiry};
+
 	const ArgvView args{argv, static_cast<std::size_t>(argc)};
 	arg_struct arg;
 	if (auto sv = getEnv("XPU_SMI_LOG_LEVEL")) {
@@ -215,6 +289,7 @@ int main(int argc, char *argv[])
 	// but we need a hook to configure the sink after parsing.
 	// For now, we'll configure it in the commands themselves if they need it.
 
+	const auto phase = xpum::watchdog::enter("command");
 	const int exitCode = runCli(parser, &arg, currentOS);
 	if (boundedCallsAbandoned()) {
 		exitWithoutTeardown(exitCode);
