@@ -9,6 +9,7 @@ subdir('bdf')
 subdir('table')
 subdir('units')
 subdir('circuit_breaker')
+subdir('watchdog')
 
 if get_option('with_tests')
     subdir('test')
