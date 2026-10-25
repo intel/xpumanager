@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include <sys/stat.h>
+#include "utility/watchdog/watchdog.h"
 
 /**
  * @brief Sink that writes console records above the firmware update progress bars
@@ -381,6 +382,10 @@ int cmdUpdateFW::run(arg_struct *args)
 		}
 	}
 
+	// Killing a flash mid-write can leave the card unusable, and a flash can legitimately take
+	// minutes, so the watchdog is suspended. Held to the end of run() so it also covers the AMC
+	// pass below.
+	const auto flashing = xpum::watchdog::suspend("firmware update");
 	// Log output goes above the progress bars from here until run() returns
 	ProgressConsoleGuard progressConsole;
 	progressBegin(static_cast<int>(totalThreads));
