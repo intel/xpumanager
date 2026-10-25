@@ -24,6 +24,7 @@ if is_windows
     'win/proc_fdinfo.cpp',
     'win/process_platform.cpp',
     'win/terminal.cpp',
+    'win/watchdog_os.cpp',
     'win/thread.cpp',
     'win/win.cpp',
   )
@@ -55,6 +56,7 @@ elif is_linux
     'lin/topology.cpp',
     'lin/pch_prod_state.cpp',
     'lin/vram_debugfs.cpp',
+    'lin/watchdog_os.cpp',
   )
   oal_inc_dirs += [include_directories('lin')]
   oal_deps += [cpp.find_library('dl', required: false)]

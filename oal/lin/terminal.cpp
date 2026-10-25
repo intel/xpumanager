@@ -5,6 +5,9 @@
 
 #include "terminal.h"
 #include <sys/ioctl.h>
+#include "watchdog_os.h"
+#include <atomic>
+#include <cstdio>
 #include <unistd.h>
 
 /**
@@ -31,4 +34,48 @@ std::optional<TerminalSize> stdoutSize()
 		return std::nullopt;
 	}
 	return TerminalSize{.rows = window.ws_row, .columns = window.ws_col};
+}
+
+namespace {
+
+// Read on the watchdog thread, so an atomic rather than a member of the guard.
+std::atomic<bool> alternateScreenActive{false}; // NOLINT(*-avoid-non-const-global-variables)
+
+constexpr const char *ENTER_ALTERNATE_SCREEN = "\033[?1049h";
+constexpr const char *LEAVE_ALTERNATE_SCREEN = "\033[?1049l";
+
+} // namespace
+
+/**
+ * @brief Enters the alternate screen buffer when @p enable is true.
+ * @param[in] enable  Usually stdoutIsTerminal().
+ */
+AlternateScreen::AlternateScreen(bool enable) : enabled(enable)
+{
+	if (enabled) {
+		std::fputs(ENTER_ALTERNATE_SCREEN, stdout);
+		std::fflush(stdout);
+		alternateScreenActive.store(true);
+	}
+}
+
+/**
+ * @brief Restores the normal screen buffer if the constructor entered the alternate one.
+ */
+AlternateScreen::~AlternateScreen()
+{
+	if (enabled && alternateScreenActive.exchange(false)) {
+		std::fputs(LEAVE_ALTERNATE_SCREEN, stdout);
+		std::fflush(stdout);
+	}
+}
+
+/**
+ * @brief Restores the normal screen with a raw write, if the alternate screen is showing.
+ */
+void leaveAlternateScreenForExit() noexcept
+{
+	if (alternateScreenActive.exchange(false)) {
+		writeStdoutRaw(LEAVE_ALTERNATE_SCREEN);
+	}
 }

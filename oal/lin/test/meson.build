@@ -50,9 +50,9 @@ if get_option('with_tests')
   # test needs no OAL link.
   terminal_test = executable(
     'terminal_test',
-    ['terminal_test.cpp', '../terminal.cpp'],
+    ['terminal_test.cpp', '../terminal.cpp', '../watchdog_os.cpp'],
     include_directories: [global_inc, include_directories('..'), include_directories('../..')],
-    dependencies: [doctest_dep],
+    dependencies: [doctest_dep, thread_dep],
     link_args: is_linux ? ['-pie'] : [],
     build_by_default: true,
   )
@@ -148,6 +148,19 @@ if get_option('with_tests')
   )
 
   test('fs_lock_test', fs_lock_test)
+
+  # Watchdog OS actions (raw writes, thread report) and the alternate-screen guard. Compiles
+  # the sources directly so the test needs no OAL link.
+  watchdog_os_test = executable(
+    'watchdog_os_test',
+    ['watchdog_os_test.cpp', '../watchdog_os.cpp', '../terminal.cpp'],
+    include_directories: [global_inc, include_directories('..'), include_directories('../..')],
+    dependencies: [doctest_dep, thread_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+  )
+
+  test('watchdog_os_test', watchdog_os_test)
 
   message('Unit tests enabled for OAL diagnostics')
 else
