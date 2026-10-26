@@ -1702,6 +1702,20 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 		CHECK(read("pcie.tx.throughput.kbs", cache) == std::optional<std::string>{"1000"});
 		CHECK(read("pcie.rx.throughput.kbs", cache) == std::optional<std::string>{"0"});
 	}
+	SUBCASE("a byte count whose rate times 10^6 exceeds 64 bits")
+	{
+		// 2 * 10^13 bytes over 1 s: 2 * 10^19 would wrap 64 bits if formed first.
+		cache.pcieAfter = {.tx = 5000 + 20'000'000'000'000ULL, .rx = 7000, .timeUs = 1000 + 1'000'000};
+		CHECK(read("pcie.tx.throughput.kbs", cache) == std::optional<std::string>{"20000000000"});
+	}
+	SUBCASE("counters or timestamp that went backwards give no rate")
+	{
+		cache.pcieAfter = {.tx = 4000, .rx = 7000, .timeUs = 2000};
+		CHECK_FALSE(read("pcie.tx.throughput", cache).has_value());
+		CHECK_FALSE(read("pcie.tx.throughput.kbs", cache).has_value());
+		cache.pcieAfter = {.tx = 6000, .rx = 7000, .timeUs = 500};
+		CHECK_FALSE(read("pcie.tx.throughput.kbs", cache).has_value());
+	}
 	SUBCASE("counters not read at both ends")
 	{
 		cache.pcieAvail = false;

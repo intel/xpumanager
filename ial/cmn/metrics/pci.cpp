@@ -34,13 +34,17 @@ namespace {
  * @tparam PER_SECOND Bytes per second divided by this is the unit: 1000000 for MB/s, 1000 for kB/s.
  *
  * @retval ZE_RESULT_SUCCESS   @p out holds the throughput, MB/s as a decimal, kB/s as a whole number.
- * @retval ZE_RESULT_NOT_READY The counters were not read at both ends of the window, or moved
- *                             under an unchanged timestamp.
+ * @retval ZE_RESULT_NOT_READY The counters were not read at both ends of the window, moved under
+ *                             an unchanged timestamp, or went backwards (e.g. reset).
  */
 template <uint64_t PcieSnapshot::*COUNTER, uint64_t PER_SECOND>
 ze_result_t throughputGetter(devInfo & /*d*/, MetricValue &out, const MetricCache &cache)
 {
 	if (!cache.pcieAvail || !cache.pcieBandwidthAvail) {
+		return ZE_RESULT_NOT_READY;
+	}
+	// Unsigned differences of values that went backwards would read as enormous rates.
+	if (cache.pcieAfter.timeUs < cache.pcieBefore.timeUs || cache.pcieAfter.*COUNTER < cache.pcieBefore.*COUNTER) {
 		return ZE_RESULT_NOT_READY;
 	}
 	const uint64_t dt = cache.pcieAfter.timeUs - cache.pcieBefore.timeUs;
@@ -55,7 +59,10 @@ ze_result_t throughputGetter(devInfo & /*d*/, MetricValue &out, const MetricCach
 	if constexpr (PER_SECOND == 1000000ULL) {
 		out = xpum::compat::format("{}", static_cast<double>(bytes) / static_cast<double>(dt));
 	} else {
-		out = xpum::compat::format("{}", 1000000ULL * bytes / dt / PER_SECOND);
+		// Bytes per second without forming bytes * 10^6, which overflows past ~18 TB.
+		constexpr uint64_t usPerSecond = 1000000ULL;
+		const uint64_t perSecond = bytes / dt * usPerSecond + bytes % dt * usPerSecond / dt;
+		out = xpum::compat::format("{}", perSecond / PER_SECOND);
 	}
 	return ZE_RESULT_SUCCESS;
 }
