@@ -2,8 +2,9 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for getPciSubsystemDeviceId(). Each test builds a fake sysfs PCI
- * device tree under a scratch directory, so no GPU is required.
+ * Unit tests for getPciSubsystemDeviceId(), isIntelDisplayDevice(), isRootComplexIntegrated() and
+ * resetPciFunction(). Each test builds a fake sysfs PCI device tree under a scratch directory, so no
+ * GPU is required.
  */
 
 // Empty in clang-tidy passes run without -Dwith_tests, where doctest is not on the include path.
@@ -17,8 +18,10 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <span>
 #include <string>
 #include <system_error>
+#include <vector>
 #include <unistd.h>
 
 namespace fs = std::filesystem;
@@ -68,8 +71,20 @@ public:
 	 */
 	void setSubsystemDevice(const std::string &dir, const std::string &contents) const
 	{
+		setAttribute(dir, "subsystem_device", contents);
+	}
+
+	/**
+	 * @brief Writes <root>/<dir>/<name>
+	 *
+	 * @param [in] dir      Device directory name, normally a BDF
+	 * @param [in] name     Attribute name, e.g. "vendor"
+	 * @param [in] contents Attribute contents, trailing newline included as sysfs writes it
+	 */
+	void setAttribute(const std::string &dir, const std::string &name, const std::string &contents) const
+	{
 		fs::create_directories(root / dir);
-		std::ofstream(root / dir / "subsystem_device") << contents;
+		std::ofstream(root / dir / name) << contents;
 	}
 };
 
@@ -118,6 +133,180 @@ TEST_CASE("getPciSubsystemDeviceId: a malformed BDF cannot reach files outside i
 	for (const char *bdf : {"", "..", "03:00.0", "03:00.0/.."}) {
 		CAPTURE(bdf);
 		CHECK_FALSE(getPciSubsystemDeviceId(bdf, sysfs.root).has_value());
+	}
+}
+
+TEST_CASE("isIntelDisplayDevice: an Intel display-class device")
+{
+	const FakePciDevices sysfs("gpu");
+	sysfs.setAttribute(BDF, "vendor", "0x8086\n");
+	sysfs.setAttribute(BDF, "class", "0x030000\n");
+	CHECK(isIntelDisplayDevice(BDF, sysfs.root));
+	sysfs.setAttribute(BDF, "class", "0x038000\n"); // display controller, "other" subclass
+	CHECK(isIntelDisplayDevice(BDF, sysfs.root));
+}
+
+TEST_CASE("isIntelDisplayDevice: another vendor, another class, or missing attributes")
+{
+	const FakePciDevices sysfs("notgpu");
+	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root));
+	sysfs.setAttribute(BDF, "vendor", "0x8086\n");
+	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root)); // no class
+	sysfs.setAttribute(BDF, "class", "0x020000\n");		// network controller
+	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root));
+	sysfs.setAttribute(BDF, "vendor", "0x10de\n");
+	sysfs.setAttribute(BDF, "class", "0x030000\n");
+	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root));
+	CHECK_FALSE(isIntelDisplayDevice("../" + std::string{BDF}, sysfs.root));
+}
+
+namespace {
+
+constexpr std::uint8_t PCIE_ENDPOINT = 0x0;
+constexpr std::uint8_t PCIE_RC_INTEGRATED_ENDPOINT = 0x9;
+
+/// A 256-byte config space whose capability list is a PM capability followed by a PCIe one of @p type.
+[[nodiscard]] std::vector<std::uint8_t> configWithPcieType(std::uint8_t type)
+{
+	std::vector<std::uint8_t> config(256);
+	config[0x06] = 0x10; // status: capability list present
+	config[0x34] = 0x40; // capability pointer
+	config[0x40] = 0x01; // PM capability ...
+	config[0x41] = 0x70; // ... next at 0x70
+	config[0x70] = 0x10; // PCI Express capability, last in the list
+	config[0x72] = static_cast<std::uint8_t>(type << 4);
+	return config;
+}
+
+/// Lays out <root>/devices/<parents...>/<bdf> with <root>/bus/<bdf> linking to it, as sysfs does.
+void addDevice(const FakePciDevices &sysfs, const std::string &parents, const std::string &bdf,
+			   const std::vector<std::uint8_t> &config)
+{
+	const fs::path real = sysfs.root / "devices" / parents / bdf;
+	fs::create_directories(real);
+	fs::create_directories(sysfs.root / "bus");
+	fs::create_directory_symlink(fs::relative(real, sysfs.root / "bus"), sysfs.root / "bus" / bdf);
+	std::ofstream(real / "config", std::ios::binary)
+		.write(reinterpret_cast<const char *>(config.data()), static_cast<std::streamsize>(config.size()));
+}
+
+} // namespace
+
+TEST_CASE("pcieDeviceType: reads the Device/Port Type from the PCI Express capability")
+{
+	CHECK(pcieDeviceType(configWithPcieType(PCIE_RC_INTEGRATED_ENDPOINT)) == PCIE_RC_INTEGRATED_ENDPOINT);
+	CHECK(pcieDeviceType(configWithPcieType(PCIE_ENDPOINT)) == PCIE_ENDPOINT);
+}
+
+TEST_CASE("pcieDeviceType: nullopt when the capability cannot be found")
+{
+	auto config = configWithPcieType(PCIE_ENDPOINT);
+	// What an unprivileged reader gets: the first 64 bytes only.
+	CHECK_FALSE(pcieDeviceType(std::span{config}.first(64)).has_value());
+	CHECK_FALSE(pcieDeviceType({}).has_value());
+
+	auto noList = config;
+	noList[0x06] = 0;
+	CHECK_FALSE(pcieDeviceType(noList).has_value());
+
+	auto looping = config;
+	looping[0x41] = 0x40; // PM capability points at itself, PCIe never reached
+	CHECK_FALSE(pcieDeviceType(looping).has_value());
+}
+
+TEST_CASE("isRootComplexIntegrated: the PCIe device type decides, wherever the device sits")
+{
+	const FakePciDevices sysfs("pcietype");
+	addDevice(sysfs, "pci0000:00", "0000:00:02.0", configWithPcieType(PCIE_RC_INTEGRATED_ENDPOINT));
+	// A discrete GPU a VM places directly on its root bus is still an endpoint.
+	addDevice(sysfs, "pci0000:00", "0000:00:05.0", configWithPcieType(PCIE_ENDPOINT));
+	addDevice(sysfs, "pci0000:00/0000:00:01.0", "0000:03:00.0", configWithPcieType(PCIE_ENDPOINT));
+	const fs::path bus = sysfs.root / "bus";
+
+	CHECK(isRootComplexIntegrated("0000:00:02.0", bus));
+	CHECK_FALSE(isRootComplexIntegrated("0000:00:05.0", bus));
+	CHECK_FALSE(isRootComplexIntegrated("0000:03:00.0", bus));
+}
+
+TEST_CASE("isRootComplexIntegrated: without config space access, topology decides")
+{
+	const FakePciDevices sysfs("topology");
+	const std::vector<std::uint8_t> unprivileged = [] {
+		auto config = configWithPcieType(PCIE_ENDPOINT);
+		config.resize(64);
+		return config;
+	}();
+	addDevice(sysfs, "pci0000:00", "0000:00:02.0", unprivileged);
+	addDevice(sysfs, "pci0000:00/0000:00:01.0", "0000:03:00.0", unprivileged);
+	const fs::path bus = sysfs.root / "bus";
+
+	CHECK(isRootComplexIntegrated("0000:00:02.0", bus));
+	CHECK_FALSE(isRootComplexIntegrated("0000:03:00.0", bus));
+	CHECK_FALSE(isRootComplexIntegrated("0000:04:00.0", bus)); // not on the bus
+	CHECK_FALSE(isRootComplexIntegrated("../0000:00:02.0", bus));
+}
+
+namespace {
+
+/// The first line of @p path, or "" when it cannot be read.
+[[nodiscard]] std::string firstLine(const fs::path &path)
+{
+	std::string line;
+	std::getline(std::ifstream(path), line);
+	return line;
+}
+
+} // namespace
+
+TEST_CASE("resetPciFunction: unbinds the driver, resets the function, binds the driver again")
+{
+	const FakePciDevices sysfs("reset");
+	const fs::path device = sysfs.root / "devices" / BDF;
+	const fs::path driver = sysfs.root / "drivers" / "xe";
+	fs::create_directories(device);
+	fs::create_directories(driver);
+	for (const char *attribute : {"unbind", "bind"}) {
+		std::ofstream(driver / attribute) << "";
+	}
+	std::ofstream(device / "reset") << "";
+	fs::create_directory_symlink("../../drivers/xe", device / "driver");
+
+	CHECK_FALSE(resetPciFunction(BDF, sysfs.root));
+	CHECK(firstLine(driver / "unbind") == BDF);
+	CHECK(firstLine(device / "reset") == "1");
+	CHECK(firstLine(driver / "bind") == BDF);
+}
+
+TEST_CASE("resetPciFunction: a device without a driver is only reset")
+{
+	const FakePciDevices sysfs("unbound");
+	const fs::path device = sysfs.root / "devices" / BDF;
+	fs::create_directories(device);
+	std::ofstream(device / "reset") << "";
+	CHECK_FALSE(resetPciFunction(BDF, sysfs.root));
+	CHECK(firstLine(device / "reset") == "1");
+}
+
+TEST_CASE("resetPciFunction: a failed unbind leaves the device untouched")
+{
+	const FakePciDevices sysfs("unbindfail");
+	const fs::path device = sysfs.root / "devices" / BDF;
+	fs::create_directories(device);
+	fs::create_directories(sysfs.root / "drivers" / "xe"); // no unbind attribute to write
+	std::ofstream(device / "reset") << "";
+	fs::create_directory_symlink("../../drivers/xe", device / "driver");
+	CHECK(resetPciFunction(BDF, sysfs.root) == std::errc::no_such_file_or_directory);
+	CHECK(firstLine(device / "reset").empty());
+}
+
+TEST_CASE("resetPciFunction: not supported without a reset attribute, invalid for a malformed BDF")
+{
+	const FakePciDevices sysfs("noreset");
+	fs::create_directories(sysfs.root / "devices" / BDF);
+	CHECK(resetPciFunction(BDF, sysfs.root) == std::errc::not_supported);
+	for (const char *bdf : {"", "..", "03:00.0", "0000:03:00.0/.."}) {
+		CAPTURE(bdf);
+		CHECK(resetPciFunction(bdf, sysfs.root) == std::errc::invalid_argument);
 	}
 }
 

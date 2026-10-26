@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <windows.h>
 #include <process.h>
 #include <conio.h>
@@ -139,6 +140,13 @@ struct option
 #define GETKERNELDRIVERVERSION(bdf) getKernelDriverVersion(bdf)
 std::string getKernelDriverVersion(const std::string &bdf);
 #define GETPCISLOTLABEL(bdf) (UNUSED_VAR(bdf), std::string(""))
+// PCI sysfs recovery is Linux-only: no device is recognised, so nothing is reset.
+[[nodiscard]] constexpr bool isIntelDisplayDevice(UNUSED std::string_view bdf) noexcept { return false; }
+[[nodiscard]] constexpr bool isRootComplexIntegrated(UNUSED std::string_view bdf) noexcept { return false; }
+[[nodiscard]] inline std::error_code resetPciFunction(UNUSED std::string_view bdf)
+{
+	return std::make_error_code(std::errc::not_supported);
+}
 static constexpr std::string FINDRESOURCEFILE(UNUSED const std::string &relativePath) { return std::string{}; }
 static inline int coldResetViaSysfs(UNUSED const std::string &gpuBdf) { return -1; }
 static inline std::vector<uint32_t> getGpuProcessesByBdf(UNUSED const std::string &gpuBdf) { return {}; }
