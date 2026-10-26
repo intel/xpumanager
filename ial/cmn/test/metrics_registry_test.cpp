@@ -617,6 +617,22 @@ TEST_CASE("sumRasErrors: a reported category with no errors sums to 0, not nullo
 	CHECK(sumRasErrors(states, RasTypes::CORRECTABLE, isHardwareRasCategory) == uint64_t{0});
 }
 
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "throttle fields reuse the reasons already read for the sample")
+{
+	MetricCache c;
+	c.throttleRead = ThrottleRead{ZE_RESULT_SUCCESS, ZES_FREQ_THROTTLE_REASON_FLAG_THERMAL_LIMIT};
+	MetricValue out;
+	REQUIRE(findMetric("clocks.event_reasons.thermal_limit").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "Active");
+	REQUIRE(findMetric("clocks.event_reasons.average_power_cap").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "Not Active");
+	REQUIRE(findMetric("clocks.throttle.reason").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "Thermal");
+
+	c.throttleRead = ThrottleRead{ZE_RESULT_ERROR_NOT_AVAILABLE, 0};
+	CHECK(findMetric("clocks.event_reasons.thermal_limit").value().getter(di, out, c) == ZE_RESULT_ERROR_NOT_AVAILABLE);
+}
+
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "ECC fields reuse the RAS states already read for the sample")
 {
 	MetricCache c;

@@ -213,6 +213,13 @@ struct RasRead
 	std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> states;
 };
 
+/** One read of a device's frequency throttle reasons, shared by every throttle field of a sample. */
+struct ThrottleRead
+{
+	ze_result_t status{};
+	zes_freq_throttle_reason_flags_t flags{};
+};
+
 struct MetricCache
 {
 	mutable std::optional<std::string> serialNumber;
@@ -224,6 +231,8 @@ struct MetricCache
 	 * read is slow on some runtimes and serialized across devices, so it is done once per sample.
 	 */
 	mutable std::optional<RasRead> rasRead;
+	/** The throttle reasons, read on first use; every throttle field tests the same flags. */
+	mutable std::optional<ThrottleRead> throttleRead;
 	/**
 	 * Which raw sampling this cache was built with; see @ref MetricInput. Set once by
 	 * @ref populateMetricCacheBegin (or @ref populateMetricCacheContinuous) and read back by

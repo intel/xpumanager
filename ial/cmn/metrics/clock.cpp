@@ -229,6 +229,27 @@ ze_result_t mediaMaxFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
 }
 
 /**
+ * @brief The device's throttle reasons for this sample, read from the HAL on first use.
+ *
+ * @param[in] d     Device to query.
+ * @param[in] cache Holds the reasons once read, so the other throttle fields reuse them.
+ *
+ * @retval read The flags and the result of reading them; ZE_RESULT_ERROR_UNSUPPORTED_FEATURE
+ *              when the device has no frequency HAL.
+ */
+const ThrottleRead &throttleReasonsOf(devInfo &d, const MetricCache &cache)
+{
+	if (!cache.throttleRead) {
+		ThrottleRead read{ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, 0};
+		if (auto *freq = d.dev->getFrequency(); freq != nullptr) {
+			read.status = freq->getThrottleReason(&read.flags);
+		}
+		cache.throttleRead = read;
+	}
+	return *cache.throttleRead;
+}
+
+/**
  * @brief Reads the current GPU frequency throttle reason flags.
  *
  * Queries the frequency HAL for active throttle reason flags and maps each set bit
@@ -241,7 +262,7 @@ ze_result_t mediaMaxFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
  * @param[out] out    On success, set to a comma-separated list of active throttle
  *                    reason names, or @c "None" if no throttle is active.
  *                    Unchanged on failure.
- * @param      unused Unused metric cache parameter.
+ * @param[in]  cache  Shares one read of the reasons with the other throttle fields.
  *
  * @retval ZE_RESULT_SUCCESS               The throttle reason was read and written to @p out.
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
@@ -251,14 +272,9 @@ ze_result_t mediaMaxFreqGetter(devInfo &d, MetricValue &out, const MetricCache &
  * @throws None — all HAL calls return @c ze_result_t error codes; no exceptions
  *                are thrown by this function.
  */
-ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache &)
+ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache &cache)
 {
-	auto *freq = d.dev->getFrequency();
-	if (freq == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	zes_freq_throttle_reason_flags_t flags{};
-	auto const result = freq->getThrottleReason(&flags);
+	const auto [result, flags] = throttleReasonsOf(d, cache);
 	if (result != ZE_RESULT_SUCCESS) {
 		return result;
 	}
@@ -280,22 +296,18 @@ ze_result_t throttleReasonGetter(devInfo &d, MetricValue &out, const MetricCache
  *
  * @tparam FLAG The reason to test.
  *
- * @param[in]  d   Device to query.
- * @param[out] out Set to "Active" or "Not Active". Unchanged on failure.
+ * @param[in]  d     Device to query.
+ * @param[out] out   Set to "Active" or "Not Active". Unchanged on failure.
+ * @param[in]  cache Shares one read of the reasons with the other throttle fields.
  *
  * @retval ZE_RESULT_SUCCESS                   The reasons were read.
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The frequency HAL sub-object is @c nullptr.
  * @retval Other                               Any error from the frequency HAL.
  */
 template <zes_freq_throttle_reason_flags_t FLAG>
-ze_result_t throttleFlagGetter(devInfo &d, MetricValue &out, const MetricCache &)
+ze_result_t throttleFlagGetter(devInfo &d, MetricValue &out, const MetricCache &cache)
 {
-	auto *freq = d.dev->getFrequency();
-	if (freq == nullptr) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-	}
-	zes_freq_throttle_reason_flags_t flags{};
-	auto const result = freq->getThrottleReason(&flags);
+	const auto [result, flags] = throttleReasonsOf(d, cache);
 	if (result == ZE_RESULT_SUCCESS) {
 		out = (flags & FLAG) != 0U ? "Active" : "Not Active";
 	}

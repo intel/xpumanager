@@ -924,8 +924,9 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 	const bool windowed = inputs != metrics::MetricInput::NONE;
 	const bool first = firstFrame;
 
-	// A cache without a window is kept from frame to frame; the RAS counts must still be new.
+	// A cache without a window is kept from frame to frame; what it read on first use must still be new.
 	cache.rasRead.reset();
+	cache.throttleRead.reset();
 	auto windowEnd = std::chrono::steady_clock::time_point{};
 	if (windowed) {
 		if (first) {
