@@ -1142,6 +1142,22 @@ void appendOptions(std::vector<helpCmd> &helpList)
 	}
 }
 
+/**
+ * @brief The help text of an option, from the same table `query --help` prints.
+ *
+ * @param[in] option The option as the table names it, without its argument, e.g. "--display".
+ *
+ * @retval text The option's help text; empty for an option the table does not list.
+ */
+[[nodiscard]] std::string optionHelp(std::string_view option)
+{
+	const auto it = std::ranges::find_if(OPTIONS, [option](const auto &entry) {
+		const std::string_view name = entry.first;
+		return name == option || (name.starts_with(option) && name[option.size()] == ' ');
+	});
+	return it == OPTIONS.end() ? std::string{} : std::string{it->second};
+}
+
 } // namespace
 
 void cmdQuery::help(HELP helpType)
@@ -1189,17 +1205,15 @@ std::variant<QueryOptions, int> cmdQuery::parseOptions(arg_struct *args)
 	int loopMilliseconds = 0;
 
 	CLI::App sub{"Print a report of the main attributes of each GPU", "query"};
-	sub.set_help_flag("-h,--help", "Print this help message and exit");
-	sub.add_flag("-j,--json", opts.json, "Print the report as JSON");
-	sub.add_option("-d,--device,--id", opts.deviceSpec,
-				   "Device index or PCI BDF address, comma-separated (default: all)");
-	sub.add_option("--display", display, "Comma-separated sections to print (default: all)");
-	sub.add_option("--loop", loopSeconds, "Print the report every <sec> seconds")
+	sub.set_help_flag("-h,--help", optionHelp("-h,--help"));
+	sub.add_flag("-j,--json", opts.json, optionHelp("-j,--json"));
+	sub.add_option("-d,--device,--id", opts.deviceSpec, optionHelp("-d,--device,--id"));
+	sub.add_option("--display", display, optionHelp("--display"));
+	sub.add_option("--loop", loopSeconds, optionHelp("--loop"))->check(CLI::Range(1, std::numeric_limits<int>::max()));
+	sub.add_option("--loop-ms", loopMilliseconds, optionHelp("--loop-ms"))
 		->check(CLI::Range(1, std::numeric_limits<int>::max()));
-	sub.add_option("--loop-ms", loopMilliseconds, "Print the report every <ms> milliseconds")
-		->check(CLI::Range(1, std::numeric_limits<int>::max()));
-	sub.add_option("--count", opts.count, "Number of reports")->check(CLI::Range(1, std::numeric_limits<int>::max()));
-	sub.add_option("-f,--file", opts.file, "Write the report to a file instead of stdout");
+	sub.add_option("--count", opts.count, optionHelp("--count"))->check(CLI::Range(1, std::numeric_limits<int>::max()));
+	sub.add_option("-f,--file", opts.file, optionHelp("-f,--file"));
 
 	try {
 		sub.parse(args->argc - 1, args->argv + 1);
