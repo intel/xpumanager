@@ -20,7 +20,7 @@
 // Forward-declare shared utilities defined in cli.cpp.
 void printSubCommands(const std::vector<std::unique_ptr<cmds>> &cmdList);
 std::vector<function_entry> defaultCommandTable();
-[[nodiscard]] std::optional<int> requireDriver(arg_struct *arg, DriverMode mode);
+[[nodiscard]] std::optional<int> requireDriver(arg_struct *arg, DriverMode mode, bool recoverable = false);
 
 template <typename T> std::unique_ptr<cmds> createInstance() { return std::make_unique<T>(); }
 
@@ -109,7 +109,9 @@ template <CliParser P> int runCli(P &parser, arg_struct *args, OSTYPE currentOS)
 
 	if (auto match = dispatchMap.find(subcmd); match != dispatchMap.end()) {
 		cmds &cmd = *match->second;
-		if (auto rc = requireDriver(args, cmd.requiredDriver(subcommandArgs(*args))); rc.has_value()) {
+		const auto cmdArgs = subcommandArgs(*args);
+		if (auto rc = requireDriver(args, cmd.requiredDriver(cmdArgs), cmd.recoversWithoutDriver(cmdArgs));
+			rc.has_value()) {
 			return *rc;
 		}
 		// A known subcommand ran but failed: rc 1 (runtime/command error).

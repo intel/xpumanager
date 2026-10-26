@@ -98,13 +98,14 @@ void setPrintLvl(arg_struct *arg, LogLevel lvl)
  * still work when Level Zero is absent or fails to initialize. Driver output is
  * suppressed during init unless the log level is DBG or higher.
  *
- * @param[in,out] arg   Argument structure owning the driver instance.
- * @param[in]     mode  How much of Level Zero to initialize.
+ * @param[in,out] arg          Argument structure owning the driver instance.
+ * @param[in]     mode         How much of Level Zero to initialize.
+ * @param[in]     recoverable  A failure is not fatal: the command reaches devices without the driver.
  *
- * @retval std::nullopt  @p mode is DriverMode::None, or init succeeded.
+ * @retval std::nullopt  @p mode is DriverMode::None, init succeeded, or it failed for a @p recoverable command.
  * @retval -1            Init failed; the exit code main() should return.
  */
-std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
+std::optional<int> requireDriver(arg_struct *arg, DriverMode mode, bool recoverable)
 {
 	if (mode == DriverMode::None) {
 		return std::nullopt;
@@ -118,6 +119,10 @@ std::optional<int> requireDriver(arg_struct *arg, DriverMode mode)
 	setPrintLvl(arg, dbglvl);
 
 	if (result != ZE_RESULT_SUCCESS) {
+		if (recoverable) {
+			INFO("Level Zero initialization failed; continuing with the device found on the PCI bus.\n");
+			return std::nullopt;
+		}
 		PRINT("Sysman driver initialization failed.\n");
 		return -1;
 	}

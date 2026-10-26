@@ -94,6 +94,8 @@ public:
 	virtual void help(HELP helpType = FULL_HELP) = 0;
 	virtual int run(arg_struct *args) = 0;
 	[[nodiscard]] DriverMode requiredDriver(std::span<char *const> cmdArgs) const;
+	/// Whether run() can still act when the driver fails to initialize. Default: no.
+	[[nodiscard]] virtual bool recoversWithoutDriver(std::span<char *const> cmdArgs) const;
 
 protected:
 	[[nodiscard]] virtual DriverMode driverMode(std::span<char *const> cmdArgs) const;

@@ -67,3 +67,16 @@ DriverMode cmds::requiredDriver(std::span<char *const> cmdArgs) const
  * @retval DriverMode::Full  Default for every command that queries devices.
  */
 DriverMode cmds::driverMode(UNUSED std::span<char *const> cmdArgs) const { return DriverMode::Full; }
+
+/**
+ * @brief Reports whether run() can still act on @p cmdArgs when the driver fails to initialize.
+ *
+ * A command that returns true reaches its devices some other way, e.g. through
+ * PCI sysfs with driver::findDeviceForRecovery(), so a node whose GPUs Level
+ * Zero cannot bring up can still be recovered.
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval false  Default: a driver init failure ends the command.
+ */
+bool cmds::recoversWithoutDriver(UNUSED std::span<char *const> cmdArgs) const { return false; }

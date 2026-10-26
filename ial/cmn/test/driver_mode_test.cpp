@@ -106,4 +106,14 @@ TEST_SUITE("cmds::requiredDriver")
 		CHECK(config.requiredDriver(Argv{"-d", "0", "--resetfrequencyrange"}.view()) == DriverMode::Full);
 		CHECK(config.requiredDriver(Argv{"-d", "0000:03:00.0", "--coldreset"}.view()) == DriverMode::Full);
 	}
+
+	TEST_CASE("only resets run on when the driver fails to initialize")
+	{
+		const cmdConfig config;
+		CHECK(config.recoversWithoutDriver(Argv{"-d", "0000:03:00.0", "--reset"}.view()));
+		CHECK(config.recoversWithoutDriver(Argv{"-d", "0000:03:00.0", "--coldreset"}.view()));
+		CHECK_FALSE(config.recoversWithoutDriver(Argv{"-d", "0"}.view()));
+		CHECK_FALSE(config.recoversWithoutDriver(Argv{"-d", "0", "--resetfrequencyrange"}.view()));
+		CHECK_FALSE(cmdDiscovery{}.recoversWithoutDriver(Argv{"-d", "0000:03:00.0"}.view()));
+	}
 }

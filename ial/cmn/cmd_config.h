@@ -128,6 +128,7 @@ public:
 	ze_result_t getSelectedFanId(int32_t &fanId);
 	ze_result_t coldResetDevice(devInfo *d);
 	int run(arg_struct *args);
+	[[nodiscard]] bool recoversWithoutDriver(std::span<char *const> cmdArgs) const override;
 
 protected:
 	[[nodiscard]] DriverMode driverMode(std::span<char *const> cmdArgs) const override;

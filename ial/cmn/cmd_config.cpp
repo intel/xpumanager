@@ -2375,6 +2375,25 @@ DriverMode cmdConfig::driverMode(std::span<char *const> cmdArgs) const
 }
 
 /**
+ * @brief Resets reach the device through PCI sysfs, so they run even when Level Zero finds no usable GPU.
+ *
+ * A wedged GPU is not reported by Level Zero, alone or next to working ones;
+ * --reset and --coldreset then resolve its BDF with findDeviceForRecovery().
+ * Like driverMode(), this matches the plain flags only: a spelling CLI11 also
+ * accepts, such as --reset=true, keeps a driver failure fatal (fails closed).
+ *
+ * @param[in] cmdArgs  argv tokens after the subcommand name.
+ *
+ * @retval true   @p cmdArgs contains --reset or --coldreset.
+ * @retval false  Otherwise.
+ */
+bool cmdConfig::recoversWithoutDriver(std::span<char *const> cmdArgs) const
+{
+	return std::ranges::any_of(cmdArgs,
+							   [](std::string_view token) { return token == "--reset" || token == "--coldreset"; });
+}
+
+/**
  * @brief Executes the config run.
  *
  * @return int Returns 0 on success.
@@ -2523,11 +2542,29 @@ int cmdConfig::run(arg_struct *args)
 		}
 	}
 
-	result = args->sm.findDevice(configCmds[configCmdType::CONFIGDEVICE].val.c_str(), &deviceList);
+	// Resets are recoveries: they reach a device Level Zero does not report, such as a wedged one, through sysfs.
+	const char *deviceSpec = configCmds[configCmdType::CONFIGDEVICE].val.c_str();
+	const bool recovery = configCmds[configCmdType::RESET].enabled || configCmds[configCmdType::COLDRESET].enabled;
+	result = recovery ? args->sm.findDeviceForRecovery(deviceSpec, &deviceList)
+					  : args->sm.findDevice(deviceSpec, &deviceList);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Error: Device handle not found for device ID '{}'.\n",
 			configCmds[configCmdType::CONFIGDEVICE].val.c_str());
 		return result;
+	}
+
+	// A device found through PCI alone has no sysman modules, so only the resets can act on it.
+	if (const auto pciOnly = std::ranges::find_if(deviceList, [](const devInfo &d) { return d.dev->isPciOnly(); });
+		pciOnly != deviceList.end()) {
+		for (const auto &[type, cmd] : configCmds) {
+			if (cmd.enabled && cmd.func != nullptr && type != configCmdType::RESET &&
+				type != configCmdType::COLDRESET) {
+				ERR("{} needs a working Level Zero driver; {} is reached through PCI alone, so only --reset and "
+					"--coldreset can act on it.\n",
+					configCmdName(type), pciOnly->dev->getBDFStr());
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+		}
 	}
 
 	if (configCmds[configCmdType::RESET].enabled) {
