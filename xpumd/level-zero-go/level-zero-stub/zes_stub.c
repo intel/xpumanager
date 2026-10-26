@@ -186,7 +186,7 @@ ze_result_t zesDriverGet(uint32_t *pCount, zes_driver_handle_t *phDrivers)
 	uint32_t n = g_sysman_state.system.drivers_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phDrivers) {
+	if (!phDrivers || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -211,7 +211,7 @@ ze_result_t zesDriverGetExtensionProperties(zes_driver_handle_t hDriver, uint32_
 	uint32_t total = drv->extension_properties_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!pExtensionProperties) {
+	if (!pExtensionProperties || *pCount == 0) {
 		*pCount = total;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -275,7 +275,7 @@ ze_result_t zesDeviceGet(zes_driver_handle_t hDriver, uint32_t *pCount, zes_devi
 	uint32_t total = drv->devices_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phDevices) {
+	if (!phDevices || *pCount == 0) {
 		*pCount = total;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -446,19 +446,18 @@ ze_result_t zesDeviceProcessesGetState(zes_device_handle_t hDevice, uint32_t *pC
 	uint32_t n = dev->processes_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!pProcesses) {
+	if (!pProcesses || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
-	if (*pCount < n) {
-		for (uint32_t i = 0; i < *pCount; i++)
-			pProcesses[i] = dev->processes[i];
-		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_SIZE);
-	}
-	for (uint32_t i = 0; i < n; i++)
+	// From the spec: return ZE_RESULT_ERROR_INVALID_SIZE if count is less than the number of processes
+	ze_result_t ret = (*pCount < n) ? ZE_RESULT_ERROR_INVALID_SIZE : ZE_RESULT_SUCCESS;
+	uint32_t copy = (*pCount < n) ? *pCount : n;
+	for (uint32_t i = 0; i < copy; i++)
 		pProcesses[i] = dev->processes[i];
+	// Report the total even for a short buffer, like the real driver does
 	*pCount = n;
-	return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
+	return sysman_unlock_and_return(ret);
 }
 
 // ------------------------------------------------------------------
@@ -540,7 +539,7 @@ ze_result_t zesDevicePciGetBars(zes_device_handle_t hDevice, uint32_t *pCount, z
 	uint32_t n = dev->pci.bars_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!pProperties) {
+	if (!pProperties || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -697,7 +696,7 @@ ze_result_t zesDeviceEnumOverclockDomains(zes_device_handle_t hDevice, uint32_t 
 	uint32_t n = dev->overclock->domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phDomainHandle) {
+	if (!phDomainHandle || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -919,7 +918,7 @@ ze_result_t zesDeviceEnumDiagnosticTestSuites(zes_device_handle_t hDevice, uint3
 	uint32_t n = dev->diagnostics_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phDiagnostics) {
+	if (!phDiagnostics || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -967,7 +966,7 @@ ze_result_t zesDiagnosticsGetTests(zes_diag_handle_t hDiagnostics, uint32_t *pCo
 	uint32_t n = dg->tests_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!pTests) {
+	if (!pTests || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1109,7 +1108,7 @@ ze_result_t zesDeviceEnumEngineGroups(zes_device_handle_t hDevice, uint32_t *pCo
 	uint32_t n = dev->engine_groups_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phEngine) {
+	if (!phEngine || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1180,7 +1179,7 @@ ze_result_t zesEngineGetActivityExt(zes_engine_handle_t hEngine, uint32_t *pCoun
 	uint32_t n = eng->activity_ext_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!pStats) {
+	if (!pStats || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1353,7 +1352,7 @@ ze_result_t zesDeviceEnumFabricPorts(zes_device_handle_t hDevice, uint32_t *pCou
 	uint32_t n = dev->fabric_ports_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phPort) {
+	if (!phPort || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1547,7 +1546,7 @@ ze_result_t zesDeviceEnumFans(zes_device_handle_t hDevice, uint32_t *pCount, zes
 	uint32_t n = dev->fans_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phFan) {
+	if (!phFan || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1679,7 +1678,7 @@ ze_result_t zesDeviceEnumFirmwares(zes_device_handle_t hDevice, uint32_t *pCount
 	uint32_t n = dev->firmwares_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phFirmware) {
+	if (!phFirmware || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1789,7 +1788,7 @@ ze_result_t zesDeviceEnumFrequencyDomains(zes_device_handle_t hDevice, uint32_t 
 	uint32_t n = dev->frequency_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phFrequency) {
+	if (!phFrequency || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1837,7 +1836,7 @@ ze_result_t zesFrequencyGetAvailableClocks(zes_freq_handle_t hFrequency, uint32_
 	uint32_t n = fr->available_clocks_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phFrequency) {
+	if (!phFrequency || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -1937,7 +1936,7 @@ ze_result_t zesDeviceEnumLeds(zes_device_handle_t hDevice, uint32_t *pCount, zes
 	uint32_t n = dev->leds_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phLed) {
+	if (!phLed || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2039,7 +2038,7 @@ ze_result_t zesDeviceEnumMemoryModules(zes_device_handle_t hDevice, uint32_t *pC
 	uint32_t n = dev->memory_modules_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phMemory) {
+	if (!phMemory || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2141,7 +2140,7 @@ ze_result_t zesDeviceEnumPerformanceFactorDomains(zes_device_handle_t hDevice, u
 	uint32_t n = dev->performance_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phPerf) {
+	if (!phPerf || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2223,7 +2222,7 @@ ze_result_t zesDeviceEnumPowerDomains(zes_device_handle_t hDevice, uint32_t *pCo
 	uint32_t n = dev->power_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phPower) {
+	if (!phPower || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2297,7 +2296,7 @@ ze_result_t zesPowerGetLimitsExt(zes_pwr_handle_t hPower, uint32_t *pCount, zes_
 	uint32_t n = pw->limits_ext_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!pSustained) {
+	if (!pSustained || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2426,7 +2425,7 @@ ze_result_t zesDeviceEnumPsus(zes_device_handle_t hDevice, uint32_t *pCount, zes
 	uint32_t n = dev->psus_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phPsu) {
+	if (!phPsu || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2500,7 +2499,7 @@ ze_result_t zesDeviceEnumRasErrorSets(zes_device_handle_t hDevice, uint32_t *pCo
 	uint32_t n = dev->ras_error_sets_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phRas) {
+	if (!phRas || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2608,7 +2607,7 @@ ze_result_t zesRasGetStateExp(zes_ras_handle_t hRas, uint32_t *pCount, zes_ras_s
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
 
 	uint32_t n = ras->state_exp_count;
-	if (!pStates) {
+	if (!pStates || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2656,7 +2655,7 @@ ze_result_t zesDeviceEnumSchedulers(zes_device_handle_t hDevice, uint32_t *pCoun
 	uint32_t n = dev->schedulers_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phScheduler) {
+	if (!phScheduler || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2823,7 +2822,7 @@ ze_result_t zesDeviceEnumStandbyDomains(zes_device_handle_t hDevice, uint32_t *p
 	uint32_t n = dev->standby_domains_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phStandby) {
+	if (!phStandby || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -2906,7 +2905,7 @@ ze_result_t zesDeviceEnumTemperatureSensors(zes_device_handle_t hDevice, uint32_
 	uint32_t n = dev->temperature_sensors_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phTemperature) {
+	if (!phTemperature || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
@@ -3011,7 +3010,7 @@ ze_result_t zesIntelDriverEnumInfoLogsExp(zes_driver_handle_t hDriver, uint32_t 
 	uint32_t n = drv->info_logs_count;
 	if (!pCount)
 		return sysman_unlock_and_return(ZE_RESULT_ERROR_INVALID_NULL_POINTER);
-	if (!phInfoLogs) {
+	if (!phInfoLogs || *pCount == 0) {
 		*pCount = n;
 		return sysman_unlock_and_return(ZE_RESULT_SUCCESS);
 	}
