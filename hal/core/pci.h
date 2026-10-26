@@ -30,6 +30,7 @@ struct PciDowngradeState
 class LIBXPUM_API pci : public sysman
 {
 private:
+	void adoptAddress(const zes_pci_address_t &address);
 	pci_addr_mei_device deviceProperties;
 	PciDowngradeState downgradeState;
 	// init() leaves these untouched when zesDevicePciGetProperties() fails, and callers
@@ -50,6 +51,7 @@ public:
 	pci() : deviceProperties{}, downgradeState{} { deviceProperties.fwStatus = "unknown"; }
 	~pci() {}
 	ze_result_t init(zes_device_handle_t device);
+	void initFromAddress(const zes_pci_address_t &address);
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);
 	ze_result_t getBars(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device, zes_pci_link_status_t &pciLinkStatus);

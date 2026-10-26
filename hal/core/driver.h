@@ -9,8 +9,10 @@
 
 #include <optional>
 #include <set>
+#include <span>
 #include <string>
 #include <string_view>
+#include <memory>
 #include <vector>
 #include "cperlog.h"
 #include "device.h"
@@ -58,12 +60,26 @@ private:
 	zes_device_handle_t *totalZesDevices;
 	devGroup *devs;
 	survivabilityDevices svZesDevs;
+	// Devices Level Zero does not report, created on demand by findDeviceForRecovery().
+	std::vector<std::unique_ptr<device>> pciOnlyDevs;
+	[[nodiscard]] device *pciOnlyDevice(const std::string &bdf);
+	// The reported device groups; empty until init() has built them, even when it failed partway.
+	[[nodiscard]] std::span<devGroup> reportedGroups() const
+	{
+		return devs == nullptr ? std::span<devGroup>{} : std::span<devGroup>{devs, driverCount};
+	}
 
 public:
 	driver()
 		: initialized(false), driverCount(0), totalZesDevicesCount(0), zeDrivers(nullptr), zesDrivers(nullptr),
 		  totalZesDevices(nullptr), devs(nullptr), svZesDevs{}
 	{}
+	// Owns raw driver and device arrays, and the DLL export would otherwise instantiate copies
+	// of pciOnlyDevs, which holds unique_ptr.
+	driver(const driver &) = delete;
+	driver &operator=(const driver &) = delete;
+	driver(driver &&) = delete;
+	driver &operator=(driver &&) = delete;
 	~driver();
 	void setPrintLvl(LogLevel lvl);
 	LogLevel getPrintLvl();
@@ -85,6 +101,7 @@ public:
 	[[nodiscard]] std::optional<LoaderComponent> getLoaderComponent();
 	ze_result_t findDevice(const char *bdf, std::vector<devInfo> *dev);
 	void findSurvDevice(const char *bdf, std::vector<devInfo> *survDev);
+	ze_result_t findDeviceForRecovery(const char *bdf, std::vector<devInfo> *devList);
 	ze_result_t getLogs(std::string fileName);
 
 	// Crash log management, delegated to the OS layer (Intel Crash Log CLI on

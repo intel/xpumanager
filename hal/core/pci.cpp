@@ -359,42 +359,59 @@ devFuncType pci::getFuncType()
  */
 ze_result_t pci::init(zes_device_handle_t device)
 {
-	deviceProperties.meiDevicePath.clear();
-	deviceProperties.fwStatus = "unknown";
-	fwStatusQueried = false;
-
 	ze_result_t result;
 	result = getProperties(device, &deviceProperties.pciProps);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to get PCI properties: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		return result;
 	}
+	adoptAddress(deviceProperties.pciProps.address);
+	return result;
+}
 
-	domain = deviceProperties.pciProps.address.domain;
-	bus = deviceProperties.pciProps.address.bus;
-	dev = deviceProperties.pciProps.address.device;
-	func = deviceProperties.pciProps.address.function;
-	snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", deviceProperties.pciProps.address.domain,
-			 deviceProperties.pciProps.address.bus, deviceProperties.pciProps.address.device,
-			 deviceProperties.pciProps.address.function);
+/**
+ * @brief Initializes the PCI module from an address alone, for a device sysman does not report.
+ *
+ * Only the address, the BDF string and the MEI device path are known; every
+ * other PCI property stays zero.
+ *
+ * @param[in] address  PCI address of the device.
+ */
+void pci::initFromAddress(const zes_pci_address_t &address)
+{
+	TRACING();
+	deviceProperties.pciProps = {};
+	deviceProperties.pciProps.address = address;
+	adoptAddress(address);
+}
+
+/**
+ * @brief Records @p address and finds the device's MEI path among the GSC devices igsc reports.
+ *
+ * @param[in] address  PCI address of the device.
+ */
+void pci::adoptAddress(const zes_pci_address_t &address)
+{
+	deviceProperties.meiDevicePath.clear();
+	deviceProperties.fwStatus = "unknown";
+	fwStatusQueried = false;
+
+	domain = address.domain;
+	bus = address.bus;
+	dev = address.device;
+	func = address.function;
+	snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", address.domain, address.bus, address.device,
+			 address.function);
 
 	gscupd gsc;
-	std::vector<pci_addr_mei_device> devicesVec = gsc.getPCIAddrAndMeiDevices();
-
-	for (const auto &dv : devicesVec) {
-		if (dv.pciProps.address.domain == deviceProperties.pciProps.address.domain &&
-			dv.pciProps.address.bus == deviceProperties.pciProps.address.bus &&
-			dv.pciProps.address.device == deviceProperties.pciProps.address.device &&
-			dv.pciProps.address.function == deviceProperties.pciProps.address.function) {
+	for (const auto &dv : gsc.getPCIAddrAndMeiDevices()) {
+		if (dv.pciProps.address.domain == address.domain && dv.pciProps.address.bus == address.bus &&
+			dv.pciProps.address.device == address.device && dv.pciProps.address.function == address.function) {
 			DBG("Found matching device: {}\n", dv.meiDevicePath.c_str());
-
-			// Found a matching device so copy the meiDevicePath
 			deviceProperties.meiDevicePath = dv.meiDevicePath;
 			break;
 		}
 	}
-
-	return result;
 }
 
 /**

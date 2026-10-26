@@ -12,6 +12,7 @@
 #include <loader/ze_loader.h>
 #include <os.h>
 #include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
@@ -24,6 +25,30 @@
 #include <vector>
 #include <ze_api.h>
 #include "utility/compat/format.h"
+#include "utility/bdf/bdf.h"
+
+namespace {
+
+/// The PCI address spelled by a canonical BDF ("dddd:bb:dd.f").
+[[nodiscard]] std::optional<zes_pci_address_t> addressOf(std::string_view bdf)
+{
+	if (!isValidBdf(bdf)) {
+		return std::nullopt;
+	}
+	bool parsed = true;
+	const auto field = [bdf, &parsed](std::size_t pos, std::size_t len) {
+		uint32_t value = 0;
+		const char *last = bdf.data() + pos + len;
+		const auto [end, ec] = std::from_chars(bdf.data() + pos, last, value, 16);
+		parsed = parsed && ec == std::errc{} && end == last;
+		return value;
+	};
+	const zes_pci_address_t address{
+		.domain = field(0, 4), .bus = field(5, 2), .device = field(8, 2), .function = field(11, 1)};
+	return parsed ? std::optional{address} : std::nullopt;
+}
+
+} // namespace
 
 /**
  * @brief Sets the print/debug level for the driver and synchronizes across modules
@@ -796,7 +821,7 @@ ze_result_t driver::findOneToken(std::string_view token, std::vector<devInfo> *d
 	// Empty token means "all devices" — caller passed nullptr or "".
 	if (token.empty()) {
 		uint32_t deviceIndex = 0;
-		for (devGroup &dg : std::span{devs, driverCount}) {
+		for (devGroup &dg : reportedGroups()) {
 			for (device &dev : dg.dev) {
 				DBG("No BDF provided, adding all devices.\n");
 				dev.addInfo(devList, deviceIndex++);
@@ -804,7 +829,7 @@ ze_result_t driver::findOneToken(std::string_view token, std::vector<devInfo> *d
 		}
 	} else {
 		uint32_t deviceIndex = 0;
-		for (devGroup &dg : std::span{devs, driverCount}) {
+		for (devGroup &dg : reportedGroups()) {
 			for (device &dev : dg.dev) {
 				if (dev.isBDF(bdfStr.c_str())) {
 					dev.addInfo(devList, deviceIndex);
@@ -880,8 +905,8 @@ void driver::findSurvDevice(const char *bdf, std::vector<devInfo> *survDevList)
 {
 	// Surv device indices continue sequentially after all normal devices
 	uint32_t deviceIndex = 0;
-	for (uint32_t i = 0; i < driverCount; i++) {
-		deviceIndex += devs[i].totalDevicesCount;
+	for (const devGroup &dg : reportedGroups()) {
+		deviceIndex += dg.totalDevicesCount;
 	}
 
 	const std::string_view bdfView{bdf ? bdf : ""};
@@ -902,4 +927,101 @@ void driver::findSurvDevice(const char *bdf, std::vector<devInfo> *survDevList)
 		}
 		deviceIndex++;
 	}
+}
+
+/**
+ * @brief findDevice() for recovery: a BDF that Level Zero does not report still resolves.
+ *
+ * When the driver found no usable GPU, or not the one named, an Intel display
+ * device at that BDF on the PCI bus resolves to a device that has no Level Zero
+ * handles (see device::pciOnlyInit()); PCI reset and cold reset work on it.
+ * Works whether or not init() succeeded, including when it failed partway. A
+ * device index still needs Level Zero, which is what numbers the devices; a
+ * PCI-only device is numbered after the reported and survivability devices.
+ *
+ * @param[in]  bdf      Comma-separated BDFs or device indices; empty means all reported devices.
+ * @param[out] devList  Receives the matching devices.
+ *
+ * @retval ZE_RESULT_SUCCESS                At least one token matched (or @p bdf is empty).
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT No token matched; each miss has been logged.
+ */
+ze_result_t driver::findDeviceForRecovery(const char *bdf, std::vector<devInfo> *devList)
+{
+	TRACING();
+	const std::string_view spec{bdf != nullptr ? bdf : ""};
+	if (spec.empty()) {
+		return findDevice(bdf, devList);
+	}
+
+	// Number PCI-only devices after the reported and survivability ones, so no two share an index.
+	uint32_t firstPciOnlyIndex = svZesDevs.survDevCount;
+	for (const devGroup &dg : reportedGroups()) {
+		firstPciOnlyIndex += static_cast<uint32_t>(dg.dev.size());
+	}
+
+	const auto sizeBefore = devList->size();
+	for (const auto part : spec | std::views::split(',')) {
+		std::string token{part.begin(), part.end()};
+		if (token.empty()) {
+			continue;
+		}
+		if (!isValidBdf(token)) {
+			if (findOneToken(token, devList) != ZE_RESULT_SUCCESS && !initialized) {
+				ERR("Without a working Level Zero driver, address the device by PCI BDF (e.g. 0000:03:00.0).\n");
+			}
+			continue;
+		}
+		std::ranges::transform(token, token.begin(),
+							   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+		bool reported = false;
+		uint32_t index = 0;
+		for (devGroup &dg : reportedGroups()) {
+			for (device &dev : dg.dev) {
+				if (!reported && dev.isBDF(token.c_str())) {
+					dev.addInfo(devList, index);
+					reported = true;
+				}
+				index++;
+			}
+		}
+		if (reported) {
+			continue;
+		}
+		if (device *dev = pciOnlyDevice(token)) {
+			const auto position =
+				std::ranges::find(pciOnlyDevs, dev, &std::unique_ptr<device>::get) - pciOnlyDevs.begin();
+			DBG("{} is not reported by Level Zero; using it through PCI alone.\n", token);
+			dev->addInfo(devList, firstPciOnlyIndex + static_cast<uint32_t>(position));
+			continue;
+		}
+		ERR("Device not found: '{}' is not an Intel GPU on the PCI bus.\n", token);
+	}
+	xpum::detail::deduplicateByIndex(*devList);
+	return devList->size() == sizeBefore ? ZE_RESULT_ERROR_INVALID_ARGUMENT : ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief The device at @p bdf without Level Zero, created the first time it is asked for.
+ *
+ * @param[in] bdf  Canonical lower-case BDF.
+ *
+ * @retval device   An Intel display device sits at @p bdf.
+ * @retval nullptr  Nothing, or something else, sits there.
+ */
+device *driver::pciOnlyDevice(const std::string &bdf)
+{
+	TRACING();
+	for (const auto &dev : pciOnlyDevs) {
+		if (dev->isBDF(bdf.c_str())) {
+			return dev.get();
+		}
+	}
+	const auto address = addressOf(bdf);
+	if (!address || !isIntelDisplayDevice(bdf)) {
+		return nullptr;
+	}
+	auto &dev = pciOnlyDevs.emplace_back(std::make_unique<device>());
+	dev->pciOnlyInit(*address);
+	return dev.get();
 }

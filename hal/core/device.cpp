@@ -588,6 +588,36 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
 }
 
 /**
+ * @brief Resets a device that Level Zero does not report, through the PCI reset sysfs attribute.
+ *
+ * The recovery the xe driver documents for a wedged device: the kernel resets the
+ * function and the driver re-probes it.
+ *
+ * @retval ZE_RESULT_SUCCESS                    The kernel accepted the reset.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  No method can reset this function alone.
+ * @retval ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS  The reset attribute is root-only.
+ * @retval ZE_RESULT_ERROR_UNKNOWN              The kernel refused the reset.
+ */
+ze_result_t device::resetThroughPci()
+{
+	TRACING();
+	const std::string bdf = pciInstance.getBDFStr();
+	const std::error_code ec = resetPciFunction(bdf);
+	if (!ec) {
+		DBG("PCI function reset of {} accepted.\n", bdf);
+		return ZE_RESULT_SUCCESS;
+	}
+	ERR("PCI function reset of {} failed: {}\n", bdf, ec.message());
+	if (ec == std::errc::not_supported) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	if (ec == std::errc::permission_denied || ec == std::errc::operation_not_permitted) {
+		return ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS;
+	}
+	return ZE_RESULT_ERROR_UNKNOWN;
+}
+
+/**
  * @brief Resets a Level Zero device.
  *
  * This function resets a Level Zero device.
@@ -598,6 +628,9 @@ ze_result_t device::getCacheProps(ze_device_handle_t dev, ze_device_cache_proper
  */
 ze_result_t device::resetDevice(zes_device_handle_t dev)
 {
+	if (isPciOnly()) {
+		return resetThroughPci();
+	}
 	ze_result_t result = zesDeviceReset(dev, true);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to reset device: 0x{:X} ({})\n", result, l0_error_to_string(result));
@@ -909,6 +942,29 @@ ze_result_t device::init(ze_driver_handle_t zeD, zes_driver_handle_t zesD, ze_de
 		return ZE_RESULT_ERROR_INVALID_ENUMERATION;
 	}
 	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Initializes a device that Level Zero does not report, from its PCI address alone.
+ *
+ * For recovery when the driver finds no usable GPU, or not this one: there is
+ * no core or sysman handle, so only operations that need neither work - PCI
+ * function reset and cold reset through sysfs.
+ *
+ * @param[in] address  PCI address of the device.
+ */
+void device::pciOnlyInit(const zes_pci_address_t &address)
+{
+	TRACING();
+	pciOnly = true;
+	pciInstance.initFromAddress(address);
+	// Commands that refuse an iGPU must still see one: resetting it takes the host display down.
+	igpu = isRootComplexIntegrated(pciInstance.getBDFStr());
+	amc = -1;
+	const std::string drmPath = GETDRMPATH(pciInstance.getBDFStr());
+	if (!drmPath.empty()) {
+		STRCPY_S(drmDevPath, sizeof(drmDevPath), drmPath.c_str());
+	}
 }
 
 /**
