@@ -20,6 +20,10 @@ import (
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
 
+func init() {
+	registerSubsystem("device", enumDeviceMetrics)
+}
+
 type deviceRegistry struct {
 	drivers []*driver
 }
@@ -55,9 +59,11 @@ type pciState struct {
 	stats         *l0sysman.PciStats
 }
 
-// pciConstMetrics holds device PCI metric values that are determined once and do not change afterwards.
+// pciConstMetrics holds the device PCI properties the PCI metrics depend on,
+// determined once at init and not changing afterwards.
 type pciConstMetrics struct {
-	maxBandwidth int64 // zero = not available
+	maxBandwidth          int64 // zero = not available
+	haveBandwidthCounters bool
 }
 
 type eccState struct {
@@ -256,42 +262,22 @@ func (d *device) init() error {
 		if pci.MaxSpeed.Width > 0 {
 			d.attributes.PciLanes = fmt.Sprintf("%d", pci.MaxSpeed.Width)
 		}
+		d.constMetrics.haveBandwidthCounters = pci.HaveBandwidthCounters.IsTrue()
+		if !d.constMetrics.haveBandwidthCounters {
+			d.logger.Infow("Device PciGetProperties(): PCI BW counters not available", "attributes", d.attributes)
+		}
 		if pci.MaxSpeed.MaxBandwidth > 0 {
-			d.constMetrics = pciConstMetrics{maxBandwidth: pci.MaxSpeed.MaxBandwidth}
+			d.constMetrics.maxBandwidth = pci.MaxSpeed.MaxBandwidth
 		} else {
 			d.logger.Infow("Device PciGetProperties(): PCI max BW not available", "attributes", d.attributes)
 		}
-		if pci.HaveBandwidthCounters.IsTrue() {
-			if stats, err := d.PciGetStats(); err == nil {
-				d.state.pci.stats = &stats
-			} else {
-				d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
-			}
-		} else {
-			d.logger.Infow("Device PciGetProperties(): PCI BW counters not available", "attributes", d.attributes)
-		}
-	}
-
-	// Check device + PCI state availability
-	if _, err := d.GetState(); err != nil {
-		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "attributes", d.attributes)
-		d.state.devStateDisabled = true
-	}
-	if _, err := d.PciGetState(); err != nil {
-		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "attributes", d.attributes)
-		d.state.pci.stateDisabled = true
-	}
-	// Check availability of the (optional) device health extension
-	if _, err := d.GetHealthStatusExt(); err != nil {
-		d.logger.Infow("Device GetHealthStatusExt() failed: complete device health status not available", zap.Error(err), "attributes", d.attributes)
-		d.state.health.disabled = true
 	}
 
 	// TODO: report types & sizes of device PCI BARs?
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zesdevicepcigetbars
 
 	// After this, enumerations do enough logging for timing info to be available at adequate granularity
-	d.logger.Debugw("Device init() state + PCI props done", "name", d.attributes.HwName, "BDF", d.attributes.PciBDF)
+	d.logger.Debugw("Device init() PCI props done", "name", d.attributes.HwName, "BDF", d.attributes.PciBDF)
 
 	// Enumerate device firmwares into versions attribute
 	fwInfos := []string{}
@@ -375,8 +361,6 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	if !d.state.initialized {
 		return
 	}
-	d.scrapeEccState(mb, ts)
-
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.HwID,
 		d.attributes.HwName,
@@ -395,6 +379,49 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		d.attributes.HwGpuEccSupport,
 	)
 
+	for _, s := range d.scrapers {
+		s.scrape(mb, ts)
+	}
+}
+
+// deviceMetrics is the scraper of the device-level metrics.
+type deviceMetrics struct {
+	dev *device
+}
+
+// enumDeviceMetrics checks the availability of the device-level metrics.
+func enumDeviceMetrics(d *device) []instanceScraper {
+	if d.constMetrics.haveBandwidthCounters {
+		if stats, err := d.PciGetStats(); err == nil {
+			d.state.pci.stats = &stats
+		} else {
+			d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
+		}
+	}
+
+	// Check device + PCI state availability
+	if _, err := d.GetState(); err != nil {
+		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "attributes", d.attributes)
+		d.state.devStateDisabled = true
+	}
+	if _, err := d.PciGetState(); err != nil {
+		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "attributes", d.attributes)
+		d.state.pci.stateDisabled = true
+	}
+
+	// Check availability of the (optional) device health extension
+	if _, err := d.GetHealthStatusExt(); err != nil {
+		d.logger.Infow("Device GetHealthStatusExt() failed: complete device health status not available", zap.Error(err), "attributes", d.attributes)
+		d.state.health.disabled = true
+	}
+
+	return []instanceScraper{&deviceMetrics{dev: d}}
+}
+
+func (m *deviceMetrics) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+	d := m.dev
+	d.scrapeEccState(mb, ts)
+
 	status := &stateAggregator{}
 	d.scrapeDevState(mb, ts, status)
 	d.scrapeHealthStatus(mb, ts, status)
@@ -403,11 +430,9 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	d.scrapePciState(mb, ts)
 	d.scrapePciStats(mb, ts)
-
-	for _, s := range d.scrapers {
-		s.scrape(mb, ts)
-	}
 }
+
+func (m *deviceMetrics) pollAggregatedMetrics() {}
 
 // scrapeEccState reports the device memory ECC state(s). States are reported
 // only if the ECC state is configurable, or if it has changed.
