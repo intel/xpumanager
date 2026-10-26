@@ -1297,7 +1297,8 @@ int cmdQuery::run(arg_struct *args)
 			ERR("Failed to open file '{}'\n", *opts.file);
 			return static_cast<int>(ZE_RESULT_ERROR_UNKNOWN);
 		}
-		loop.write = [&file](std::string_view text) { file << text << std::flush; };
+		// A write that fails (e.g. a full disk) ends the loop instead of sampling on to the end.
+		loop.write = [&file](std::string_view text) { return static_cast<bool>(file << text << std::flush); };
 	}
 
 	query::QuerySession session{args, std::move(devices), std::move(survivability), opts};

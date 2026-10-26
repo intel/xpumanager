@@ -35,8 +35,9 @@ struct FrameLoopOptions
 	std::function<std::optional<TerminalSize>()> screenSize = stdoutSize;
 	/// Receives the text of each frame instead of PRINT, so that diagnostics, which go to PRINT's
 	/// sinks, stay out of it. Empty prints the frames. Escape sequences always go to PRINT, so set
-	/// it only without tty.
-	std::function<void(std::string_view)> write{};
+	/// it only without tty. Returns false when the text could not be written, which ends the loop
+	/// at once: the writer's owner reports why.
+	std::function<bool(std::string_view)> write{};
 	/// Hold back diagnostics while a frame renders, for a renderer that reports what it could not
 	/// read in the frame itself. Debug output is never held back.
 	bool quietRender = false;

@@ -170,7 +170,10 @@ TEST_CASE("with a writer the frames go only to it, and diagnostics stay on the p
 		PrintCapture capture;
 		std::string written;
 		FrameLoopOptions options{.interval = interval, .count = 2, .tty = false};
-		options.write = [&written](std::string_view text) { written += text; };
+		options.write = [&written](std::string_view text) {
+			written += text;
+			return true;
+		};
 		const int rc = runFrameLoop(
 			[] {
 				ERR("noise\n");
@@ -182,6 +185,26 @@ TEST_CASE("with a writer the frames go only to it, and diagnostics stay on the p
 		CHECK(written == (interval.count() == 0 ? "frame\n" : "frame\nframe\n"));
 		CHECK(capture.text().find("frame") == std::string::npos);
 		CHECK(capture.text().find("noise") != std::string::npos);
+	}
+}
+
+TEST_CASE("a frame the writer cannot write ends the loop at once, without a device error")
+{
+	for (const auto interval : {std::chrono::milliseconds{0}, SHORT_INTERVAL}) {
+		PrintCapture capture;
+		int rendered = 0;
+		FrameLoopOptions options{.interval = interval, .count = 5, .tty = false};
+		options.write = [](std::string_view) { return false; };
+		const int rc = runFrameLoop(
+			[&rendered] {
+				++rendered;
+				return RenderedFrame{ZE_RESULT_SUCCESS, "frame\n"};
+			},
+			options);
+
+		CHECK(rc == static_cast<int>(ZE_RESULT_ERROR_UNKNOWN));
+		CHECK(rendered == 1);
+		CHECK(capture.text().find("Device error") == std::string::npos);
 	}
 }
 

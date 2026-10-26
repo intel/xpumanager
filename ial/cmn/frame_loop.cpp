@@ -337,17 +337,19 @@ bool fitsScreen(std::string_view frame, const std::optional<TerminalSize> &scree
  *
  * @retval 0                           Every rendered frame was printed.
  * @retval ZE_RESULT_ERROR_DEVICE_LOST The renderer found no GPU devices.
+ * @retval ZE_RESULT_ERROR_UNKNOWN     The writer failed to write a frame; nothing is printed about it.
  * @retval ZE_RESULT_ERROR_*           The failure the renderer reported.
  */
 int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 {
-	const auto emit = [&opts](std::string_view text) {
+	const auto emit = [&opts](std::string_view text) -> bool {
 		if (opts.write) {
-			opts.write(text);
-		} else {
-			PRINT("{}", text);
+			return opts.write(text);
 		}
+		PRINT("{}", text);
+		return true;
 	};
+	constexpr int writeFailed = static_cast<int>(ZE_RESULT_ERROR_UNKNOWN);
 	if (opts.interval.count() <= 0) {
 		RenderedFrame frame;
 		{
@@ -358,8 +360,7 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 		if (status != ZE_RESULT_SUCCESS) {
 			return reportFrameError(status);
 		}
-		emit(text);
-		return 0;
+		return emit(text) ? 0 : writeFailed;
 	}
 
 	const bool inPlace = opts.tty && opts.redraw == Redraw::ChangedLines;
@@ -367,6 +368,7 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 	bool waitingForRoom = false; // the report was printed once because the window is too small for it
 	int iterations = 0;
 	ze_result_t loopResult = ZE_RESULT_SUCCESS;
+	bool writeOk = true;
 	{
 		const StopSignalScope stopSignals;
 		if (opts.tty && !inPlace) {
@@ -394,7 +396,7 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 					// Show it whole once, so nothing is hidden, then stay quiet rather than append it
 					// every interval. Live updates start when the window is big enough.
 					screen.leave();
-					emit(frame.text);
+					writeOk = emit(frame.text);
 					const std::size_t columns = size ? size->columns : 0;
 					if (lineRows(frame.text, columns)) {
 						INFO("The report needs {} rows and the terminal has {}, so it cannot be kept up to "
@@ -414,7 +416,10 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 				if (opts.tty) {
 					PRINT("\033[H\033[J"); // cursor home + erase to end, clearing stale rows
 				}
-				emit(frame.text);
+				writeOk = emit(frame.text);
+			}
+			if (!writeOk) {
+				break;
 			}
 			++iterations;
 			if (opts.count > 0 && iterations >= opts.count) {
@@ -434,5 +439,8 @@ int runFrameLoop(const FrameRenderer &render, const FrameLoopOptions &opts)
 		screen.leave();
 	}
 
+	if (!writeOk) {
+		return writeFailed;
+	}
 	return loopResult == ZE_RESULT_SUCCESS ? 0 : reportFrameError(loopResult);
 }
