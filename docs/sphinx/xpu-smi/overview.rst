@@ -504,6 +504,10 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``vf.enabled``
      - —
      - SR-IOV virtual functions enabled on the physical function
+   * - ``memory.offline_pages``
+     - —
+     - Device memory pages the driver has taken offline after errors (retired pages); ``N/A``
+       where the driver has no page-offline support
    * - ``memory.repair_status``
      - —
      - Whether the device has had a repair performed, such as remapping faulty memory:

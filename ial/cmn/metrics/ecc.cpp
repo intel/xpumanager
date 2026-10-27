@@ -260,6 +260,25 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS>>,
 	},
 	{
+		.name = "memory.offline_pages",
+		.unit = "",
+		.description = "Device memory pages the driver has taken offline after errors (retired pages)",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::ECC,
+		.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+			auto *pages = d.dev->getPageOffline();
+			if (pages == nullptr) {
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+			uint32_t count = 0;
+			if (auto const r = pages->getDeviceMemoryPageOfflineState(&count, nullptr); r != ZE_RESULT_SUCCESS) {
+				return r;
+			}
+			out = xpum::compat::format("{}", count);
+			return ZE_RESULT_SUCCESS;
+		},
+	},
+	{
 		.name = "memory.repair_status",
 		.unit = "",
 		.description = "Whether the device has had a repair performed, such as remapping faulty memory: "

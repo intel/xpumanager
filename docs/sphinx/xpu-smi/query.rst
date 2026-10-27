@@ -259,8 +259,9 @@ Reading the Report
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
 - GPU IP Version is the graphics IP version the driver reports, in hex. It identifies the
   architecture: newer devices have higher values.
-- Memory Repair says whether the device has had a repair performed, such as remapping faulty
-  memory. It is left out where the driver does not track repairs.
+- Offline Pages counts the device memory pages the driver has retired after errors, on drivers
+  with page-offline support. Memory Repair says whether the device has had a repair performed,
+  such as remapping faulty memory. It is left out where the driver does not track repairs.
 - PCI: Host Max is the link capability of the root port the device is under, the CPU end of the
   path; a switch in between can limit the link further. PCIe Errors are the device's AER
   counters since it was enumerated, and Atomic Caps Inbound and Atomic Requests come from its

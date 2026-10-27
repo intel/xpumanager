@@ -360,6 +360,7 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 			optionalFieldOf(2, "Resets", "resets", "ras.reset"),
 			optionalFieldOf(2, "Programming Errors", "programming_errors", "ras.programming.errors"),
 			optionalFieldOf(2, "Driver Errors", "driver_errors", "ras.driver.errors"),
+		optionalFieldOf(1, "Offline Pages", "offline_pages", "memory.offline_pages"),
 		optionalFieldOf(1, "Memory Repair", "memory_repair", "memory.repair_status"),
 	sectionOf(0, "Temperature", "temperature"),
 		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
