@@ -30,6 +30,9 @@ inline constexpr std::size_t INDENT_WIDTH = 4;
 inline constexpr std::string_view NOT_AVAILABLE = "N/A";
 inline constexpr std::string_view LOG_BANNER = "==============XPU-SMI LOG==============";
 
+/// The result of each getter that produced no value, by field name.
+using MetricFailures = std::unordered_map<std::string_view, ze_result_t>;
+
 /** What reading a row's value can need beyond what any caller has. */
 enum class Requirement : uint8_t
 {
@@ -41,6 +44,16 @@ enum class Requirement : uint8_t
 
 /// What the caller lacks for a requirement, as "requires ...", or nothing when it is met.
 using AccessCheck = std::function<std::optional<std::string>(Requirement)>;
+
+/// What a report says about values it does not have.
+struct RowNotes
+{
+	AccessCheck missing;					  ///< Names what the caller lacks; empty never does
+	const MetricFailures *failures = nullptr; ///< Why each getter failed, for verbose
+	/// Print every row, and say for each absent value why it is absent ("Not Supported",
+	/// "Not Available", ...) instead of N/A.
+	bool verbose = false;
+};
 
 /**
  * One node of the report tree.
@@ -61,6 +74,8 @@ struct QueryNode
 	/// Why there is no value, when the caller lacks what reading it needs, e.g. "requires
 	/// CAP_SYS_ADMIN". Printed after N/A in the text report; empty otherwise.
 	std::string absentReason;
+	/// Printed instead of N/A for an absent value in a verbose report, e.g. "Not Supported".
+	std::string absentText;
 	/// Left out of the text report when it has no value; JSON still has the key, as null. For rows
 	/// that only some devices or drivers supply, which would otherwise read N/A everywhere else.
 	bool hideWhenAbsent = false;
@@ -176,14 +191,13 @@ void renderNode(const QueryNode &node, std::size_t depth, std::string &out);
  * @param[in] metricValues Registry getter output by field name.
  * @param[in] staticProps      Static properties of the device.
  * @param[in] procs        Processes using the device.
- * @param[in] missing      Says what the caller lacks for a row's requirement, or nothing when it is
- *                         met; empty never explains a missing value.
+ * @param[in] notes        What to say about absent values, see RowNotes.
  *
  * @return The device node: the PCI address as its value and the sections as children.
  */
 [[nodiscard]] QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection,
 										const MetricValues &metricValues, const QueryStaticProps &staticProps,
-										std::span<const psInfo> procs, const AccessCheck &missing = {});
+										std::span<const psInfo> procs, const RowNotes &notes = {});
 
 /// A device in survivability mode: only its state and the way to recover it.
 [[nodiscard]] QueryNode survivabilityNode(std::string_view bdf);
@@ -196,6 +210,7 @@ struct QueryOptions
 	query::QuerySelection selection{};
 	std::string deviceSpec; ///< Empty selects every device.
 	bool json = false;
+	bool verbose = false;			   ///< Print every row, saying why each absent value is absent.
 	std::chrono::milliseconds loop{0}; ///< Time between frames; 0 renders one frame.
 	int count = 0;					   ///< Frame limit; 0 is unlimited.
 	std::optional<std::string> file;

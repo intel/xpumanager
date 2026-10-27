@@ -710,7 +710,8 @@ TEST_CASE("a value the caller lacks the access for says what is missing, even on
 		}
 		return std::nullopt;
 	};
-	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("PCI"), values, {}, {}, missing);
+	const auto node =
+		buildDeviceNode("0000:00:00.0", *parseSelection("PCI"), values, {}, {}, RowNotes{.missing = missing});
 	std::string text;
 	for (const auto &child : node.children) {
 		renderNode(child, 1, text);
@@ -722,6 +723,27 @@ TEST_CASE("a value the caller lacks the access for says what is missing, even on
 	QueryReport report;
 	report.gpus = {node};
 	CHECK(toJson(report)["gpus"][0]["pci"]["atomic_caps_inbound"].is_null());
+}
+
+TEST_CASE("a verbose report prints every row, and Not Supported only where the driver says so")
+{
+	MetricValues values;
+	for (const auto name : referencedMetricNames()) {
+		values[name] = std::nullopt;
+	}
+	const MetricFailures failures{{"ras.memory.errors.correctable", ZE_RESULT_ERROR_UNSUPPORTED_FEATURE},
+								  {"ras.memory.errors.uncorrectable", ZE_RESULT_ERROR_NOT_AVAILABLE}};
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("ECC"), values, {}, {},
+									  RowNotes{.missing = {}, .failures = &failures, .verbose = true});
+	std::string text;
+	for (const auto &child : node.children) {
+		renderNode(child, 1, text);
+	}
+	CHECK(text.find("Memory Correctable            : Not Supported") != std::string::npos);
+	// Not available, or no failure recorded: the cause is not known, so it stays N/A.
+	CHECK(text.find("Memory Uncorrectable          : N/A") != std::string::npos);
+	// A row hidden without --verbose is printed.
+	CHECK(text.find("Cache Correctable             : N/A") != std::string::npos);
 }
 
 TEST_CASE("a category row the device does not report is left out of the text but kept in the JSON")

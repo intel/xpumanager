@@ -30,6 +30,11 @@ Options
 
    Print the report as JSON instead of text. See `JSON Output`_.
 
+.. option:: --verbose
+
+   Print every row, including those a device does not report, which are otherwise left out.
+   A value the driver or OS says the device does not support reads ``Not Supported``.
+
 .. option:: -d <deviceIds>, --device <deviceIds>, --id <deviceIds>
 
    Device IDs or PCI BDF addresses to report on. Multiple IDs can be separated by a comma.
@@ -302,7 +307,9 @@ Reading the Report
 - On Windows the kernel-mode driver version reads ``N/A``.
 - Rows only some devices or drivers supply, such as the RAS categories under ECC Errors, are
   left out of the text report on a device without them, so it does not fill with ``N/A``. The
-  JSON output keeps every key, as ``null``.
+  JSON output keeps every key, as ``null``. ``--verbose`` prints them all, and ``Not Supported``
+  for a value the driver or OS says the device does not support; a value missing for another or
+  an unknown reason stays ``N/A``.
 
 A device in survivability mode is listed with only its state and the recovery action
 (``Firmware update and GPU reset``).

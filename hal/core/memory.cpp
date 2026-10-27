@@ -305,7 +305,7 @@ ze_result_t memory::getMemorySize(uint64_t *size)
  *
  * @retval ZE_RESULT_SUCCESS                   @p reserved was written.
  * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p reserved is null.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  A module reports no installed size.
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE        A module reports no installed size.
  * @retval Other                                The error from reading a module's properties or state.
  */
 ze_result_t memory::getMemoryReserved(uint64_t *reserved)
@@ -329,7 +329,7 @@ ze_result_t memory::getMemoryReserved(uint64_t *reserved)
 			return result;
 		}
 		if (properties.physicalSize == 0) {
-			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			return ZE_RESULT_ERROR_NOT_AVAILABLE;
 		}
 		*reserved += properties.physicalSize > state.size ? properties.physicalSize - state.size : 0;
 	}

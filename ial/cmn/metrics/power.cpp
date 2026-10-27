@@ -161,7 +161,7 @@ template <zes_power_level_t LEVEL> ze_result_t levelLimitW(devInfo &d, MetricVal
 	}
 	std::vector<PowerLimitExt> limits;
 	if (pw->getLimitsExt(limits) != ZE_RESULT_SUCCESS) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
 	const auto it =
 		std::ranges::find_if(limits, [](const PowerLimitExt &l) { return l.level == LEVEL && l.limitMw != 0; });

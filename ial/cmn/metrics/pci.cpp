@@ -176,8 +176,12 @@ constexpr auto REPLAY_COUNTER =
 				.groups = MetricGroup::PCI,
 				.inputs = MetricInput::PCIE,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (!cache.pcieAvail || !cache.pcieReplayAvail) {
+					if (!cache.pcieAvail) {
 						return ZE_RESULT_NOT_READY;
+					}
+					// The driver says the device has no replay counter.
+					if (!cache.pcieReplayAvail) {
+						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 					}
 					out = xpum::compat::format("{}", cache.pcieReplay);
 					return ZE_RESULT_SUCCESS;
@@ -253,7 +257,7 @@ constexpr auto SUB_CLASS = QueryMetric{// NOLINT(readability-identifier-naming)
  * @tparam PART PcieLinkMax::generation or PcieLinkMax::width.
  *
  * @retval ZE_RESULT_SUCCESS                   @p out holds the value.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No PCI HAL, no root port above the device, or the OS
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE       No PCI HAL, no root port above the device, or the OS
  *                                             does not report it (Windows).
  */
 template <std::optional<int> PcieLinkMax::*PART>
@@ -262,7 +266,7 @@ ze_result_t hostMaxGetter(devInfo &d, MetricValue &out, const MetricCache &)
 	const auto bdf = bdfOf(d);
 	const auto value = bdf ? getRootPortMaxLink(*bdf).*PART : std::nullopt;
 	if (!value) {
-		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
 	out = xpum::compat::format("{}", *value);
 	return ZE_RESULT_SUCCESS;
@@ -446,9 +450,10 @@ constexpr auto RESIZABLE_BAR = QueryMetric{
 		if (!bar) {
 			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 		}
-		// An unprivileged runtime cannot read the capability and reports it as unsupported.
+		// An unprivileged runtime cannot read the capability and reports it as unsupported, so
+		// "unsupported" is not known to be true.
 		if (!bar->resizableSupported) {
-			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			return ZE_RESULT_ERROR_NOT_AVAILABLE;
 		}
 		out = bar->resizableEnabled ? "Enabled" : "Disabled";
 		return ZE_RESULT_SUCCESS;

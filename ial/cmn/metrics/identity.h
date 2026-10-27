@@ -270,7 +270,7 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 				}
 				// A runtime without the extension leaves the version at 0.
 				if (ip.ipVersion == 0) {
-					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+					return ZE_RESULT_ERROR_NOT_AVAILABLE;
 				}
 				out = xpum::compat::format("0x{:08X}", ip.ipVersion);
 				return ZE_RESULT_SUCCESS;

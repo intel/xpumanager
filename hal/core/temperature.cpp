@@ -419,25 +419,28 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
  *
  * @retval ZE_RESULT_SUCCESS                    @p maxTemp was written.
  * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p maxTemp is null.
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  No sensor of @p type reports a maximum.
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE       Sensors of @p type exist but report no maximum.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  The device has no sensor of @p type.
  */
 ze_result_t temperature::getMaxTemp(zes_temp_sensors_t type, double *maxTemp)
 {
 	if (maxTemp == nullptr) {
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
+	bool sensorFound = false;
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		zes_temp_properties_t properties = {};
 		if (getProperties(temperatureHandles[i], &properties) != ZE_RESULT_SUCCESS || properties.type != type) {
 			continue;
 		}
+		sensorFound = true;
 		// A driver that does not know the maximum reports a negative value.
 		if (properties.maxTemperature > 0.0) {
 			*maxTemp = properties.maxTemperature;
 			return ZE_RESULT_SUCCESS;
 		}
 	}
-	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	return sensorFound ? ZE_RESULT_ERROR_NOT_AVAILABLE : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**

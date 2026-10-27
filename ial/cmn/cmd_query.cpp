@@ -449,8 +449,23 @@ struct BuildContext
 	const QuerySelection &selection;
 	const MetricValues &values;
 	const QueryStaticProps &staticProps;
-	const AccessCheck &missing;
+	const RowNotes &notes;
 };
+
+/**
+ * @brief What a verbose report prints for a value its getter could not produce.
+ *
+ * Only a definite answer replaces N/A: a value whose cause is unknown stays N/A.
+ *
+ * @param[in] result The getter's result.
+ *
+ * @retval "Not Supported" The driver or OS says the device does not support the value.
+ * @retval empty           Anything else; N/A is printed.
+ */
+[[nodiscard]] std::string absentTextOf(ze_result_t result)
+{
+	return result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE ? "Not Supported" : std::string{};
+}
 
 [[nodiscard]] QueryNode leafOf(std::string_view label, std::string_view key, std::optional<std::string> value,
 							   std::string_view unit = {})
@@ -527,9 +542,19 @@ void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<
 			value.reset();
 		}
 		auto node = leafOf(spec.label, spec.key, std::move(value), field->unit);
-		node.hideWhenAbsent = spec.hideWhenAbsent;
-		if (!node.value && spec.needs != Requirement::None && ctx.missing) {
-			node.absentReason = ctx.missing(spec.needs).value_or(std::string{});
+		node.hideWhenAbsent = spec.hideWhenAbsent && !ctx.notes.verbose;
+		if (!node.value && spec.needs != Requirement::None && ctx.notes.missing) {
+			node.absentReason = ctx.notes.missing(spec.needs).value_or(std::string{});
+		}
+		if (!node.value && node.absentReason.empty() && ctx.notes.verbose) {
+			// A getter that succeeded with a value the driver uses for "unknown" has no failure.
+			ze_result_t result = ZE_RESULT_SUCCESS;
+			if (ctx.notes.failures != nullptr) {
+				if (const auto it = ctx.notes.failures->find(spec.source); it != ctx.notes.failures->end()) {
+					result = it->second;
+				}
+			}
+			node.absentText = absentTextOf(result);
 		}
 		return node;
 	}
@@ -598,8 +623,10 @@ void appendLine(std::string &out, std::size_t depth, std::string_view label, std
 [[nodiscard]] std::string valueText(const QueryNode &node)
 {
 	if (!node.value) {
-		return node.absentReason.empty() ? std::string{NOT_AVAILABLE}
-										 : std::string{NOT_AVAILABLE} + " (" + node.absentReason + ")";
+		if (!node.absentReason.empty()) {
+			return std::string{NOT_AVAILABLE} + " (" + node.absentReason + ")";
+		}
+		return node.absentText.empty() ? std::string{NOT_AVAILABLE} : node.absentText;
 	}
 	return node.unit.empty() ? *node.value : twoDecimals(*node.value) + ' ' + std::string{node.unit};
 }
@@ -865,15 +892,14 @@ QueryNode processesSection(std::span<const psInfo> procs)
 }
 
 QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection, const MetricValues &metricValues,
-						  const QueryStaticProps &staticProps, std::span<const psInfo> procs,
-						  const AccessCheck &missing)
+						  const QueryStaticProps &staticProps, std::span<const psInfo> procs, const RowNotes &notes)
 {
 	QueryNode device;
 	device.label = "GPU " + std::string{bdf};
 	device.key = "pci_bus_id";
 	device.value = std::string{bdf};
 
-	const BuildContext ctx{selection, metricValues, staticProps, missing};
+	const BuildContext ctx{selection, metricValues, staticProps, notes};
 	buildRows(REPORT_LAYOUT, ctx, device.children);
 	if (selection.processes) {
 		device.children.push_back(processesSection(procs));
@@ -932,13 +958,18 @@ namespace {
 	return staticProps;
 }
 
-/// Run each field's getter for one device into @p values; a getter that fails reads as absent.
+/// Run each field's getter for one device into @p values; a getter that fails reads as absent,
+/// with its result in @p failures.
 void evaluate(std::span<const metrics::QueryMetric *const> fields, devInfo &dev, const metrics::MetricCache &cache,
-			  MetricValues &values)
+			  MetricValues &values, MetricFailures &failures)
 {
 	for (const auto *field : fields) {
 		metrics::MetricValue out;
-		values[field->name] = field->getter(dev, out, cache) == ZE_RESULT_SUCCESS ? std::optional{out} : std::nullopt;
+		const ze_result_t result = field->getter(dev, out, cache);
+		values[field->name] = result == ZE_RESULT_SUCCESS ? std::optional{out} : std::nullopt;
+		if (result != ZE_RESULT_SUCCESS) {
+			failures[field->name] = result;
+		}
 	}
 }
 
@@ -971,22 +1002,34 @@ struct FieldSplit
  * Each of these reads is a separate firmware request that can take hundreds of milliseconds,
  * so reading them one after another could outlast the sampling window.
  */
-[[nodiscard]] MetricValues readFirmwareFields(std::span<const metrics::QueryMetric *const> fields, devInfo &dev,
-											  const metrics::MetricCache &cache)
+/** Firmware fields read for one device, and why those that failed did. */
+struct FirmwareReads
 {
-	std::vector<std::future<std::optional<std::string>>> reads;
+	MetricValues values;
+	MetricFailures failures;
+};
+
+[[nodiscard]] FirmwareReads readFirmwareFields(std::span<const metrics::QueryMetric *const> fields, devInfo &dev,
+											   const metrics::MetricCache &cache)
+{
+	std::vector<std::future<std::pair<ze_result_t, metrics::MetricValue>>> reads;
 	reads.reserve(fields.size());
 	for (const auto *field : fields) {
-		reads.push_back(std::async(std::launch::async, [field, &dev, &cache]() -> std::optional<std::string> {
+		reads.push_back(std::async(std::launch::async, [field, &dev, &cache] {
 			metrics::MetricValue out;
-			return field->getter(dev, out, cache) == ZE_RESULT_SUCCESS ? std::optional{out} : std::nullopt;
+			const ze_result_t result = field->getter(dev, out, cache);
+			return std::pair{result, std::move(out)};
 		}));
 	}
-	MetricValues values;
+	FirmwareReads read;
 	for (std::size_t i = 0; i < fields.size(); ++i) {
-		values[fields[i]->name] = reads[i].get();
+		auto [result, out] = reads[i].get();
+		read.values[fields[i]->name] = result == ZE_RESULT_SUCCESS ? std::optional{std::move(out)} : std::nullopt;
+		if (result != ZE_RESULT_SUCCESS) {
+			read.failures[fields[i]->name] = result;
+		}
 	}
-	return values;
+	return read;
 }
 
 [[nodiscard]] std::string nowIso8601()
@@ -1029,7 +1072,7 @@ private:
 	std::vector<QueryStaticProps> staticProps;
 	/// Firmware fields of each device, read on the first frame only: they cannot change while the
 	/// device runs, and a read that fails would otherwise be retried, as slowly, on every frame.
-	std::vector<MetricValues> firmwareValues;
+	std::vector<FirmwareReads> firmwareValues;
 	bool firstFrame = true;
 };
 
@@ -1058,17 +1101,18 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 	// On a card with an AMC the serial number and the board part number are both read from the
 	// AMC, which does not serialize requests, so the static properties follow the firmware fields
 	// in the same task rather than run beside them.
-	std::future<MetricValues> firmwareRead;
+	std::future<FirmwareReads> firmwareRead;
 	if (first) {
 		firmwareRead = std::async(std::launch::async, [this, index, &dev, &cache] {
-			MetricValues read = readFirmwareFields(split.firmware, dev, cache);
+			FirmwareReads read = readFirmwareFields(split.firmware, dev, cache);
 			staticProps[index] = gatherStaticProps(dev, options.selection);
 			return read;
 		});
 	}
 	MetricValues values;
+	MetricFailures failures;
 	values.reserve(fields.size());
-	evaluate(split.instant, dev, cache, values);
+	evaluate(split.instant, dev, cache, values, failures);
 	std::vector<psInfo> procs;
 	if (options.selection.processes) {
 		if (const auto result = cmdPs::getProcessList(&dev, procs); isFatalPsError(result)) {
@@ -1081,16 +1125,19 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 	if (first) {
 		firmwareValues[index] = firmwareRead.get();
 	}
-	values.insert(firmwareValues[index].begin(), firmwareValues[index].end());
+	values.insert(firmwareValues[index].values.begin(), firmwareValues[index].values.end());
+	failures.insert(firmwareValues[index].failures.begin(), firmwareValues[index].failures.end());
 	if (windowed && first) {
 		std::this_thread::sleep_until(windowEnd);
 		metrics::populateMetricCacheEnd(dev, cache);
 	}
-	evaluate(split.windowed, dev, cache, values);
+	evaluate(split.windowed, dev, cache, values, failures);
 	auto *pci = dev.dev->getPCI();
 	const std::string meiPath = pci != nullptr ? pci->getMeiDevicePath() : std::string{};
-	return buildDeviceNode(devPciAddr(dev), options.selection, values, staticProps[index], procs,
-						   [&meiPath](Requirement requirement) { return missingAccess(requirement, meiPath); });
+	const RowNotes notes{.missing = [&meiPath](Requirement requirement) { return missingAccess(requirement, meiPath); },
+						 .failures = &failures,
+						 .verbose = options.verbose};
+	return buildDeviceNode(devPciAddr(dev), options.selection, values, staticProps[index], procs, notes);
 }
 
 std::optional<std::string> QuerySession::headerValue(std::string_view fieldName)
@@ -1222,6 +1269,7 @@ struct SelectedDevices
 constexpr auto OPTIONS = std::to_array<std::pair<std::string_view, std::string_view>>({
 	{"-h,--help",               "Print this help message and exit"},
 	{"-j,--json",               "Print the report as JSON"},
+	{"--verbose",               "Print every row, and Not Supported where the device does not support a value"},
 	{"-d,--device,--id <spec>", "Device index or PCI BDF address, comma-separated (default: all)"},
 	{"--display <sections>",    "Comma-separated sections to print (default: all but SUPPORTED_CLOCKS):"},
 	{"--loop <sec>",            "Print the report every <sec> seconds"},
@@ -1326,6 +1374,7 @@ std::variant<QueryOptions, int> cmdQuery::parseOptions(arg_struct *args)
 	CLI::App sub{"Print a report of the main attributes of each GPU", "query"};
 	sub.set_help_flag("-h,--help", optionHelp("-h,--help"));
 	sub.add_flag("-j,--json", opts.json, optionHelp("-j,--json"));
+	sub.add_flag("--verbose", opts.verbose, optionHelp("--verbose"));
 	sub.add_option("-d,--device,--id", opts.deviceSpec, optionHelp("-d,--device,--id"));
 	sub.add_option("--display", display, optionHelp("--display"));
 	sub.add_option("--loop", loopSeconds, optionHelp("--loop"))->check(CLI::Range(1, std::numeric_limits<int>::max()));
