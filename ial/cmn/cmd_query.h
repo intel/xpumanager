@@ -171,6 +171,10 @@ struct StaticKey
 };
 [[nodiscard]] std::span<const StaticKey> staticKeys();
 
+/// JSON key of every value row of the device report, as dotted paths in report order, e.g.
+/// "pci.gpu_link_info.pcie_generation.max". Section headings are not included.
+[[nodiscard]] std::span<const std::string> reportKeyPaths();
+
 /// Render one node and its descendants as text lines appended to @p out.
 void renderNode(const QueryNode &node, std::size_t depth, std::string &out);
 [[nodiscard]] std::string renderText(const QueryReport &report);

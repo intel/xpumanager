@@ -24,6 +24,9 @@ std::string progName = "test";
 #include "metrics/clock.h"
 #include "metrics_registry.h"
 #include <algorithm>
+#include <iterator>
+#include <fstream>
+#include <cstdlib>
 #include <ranges>
 #include <sstream>
 #include <string_view>
@@ -427,6 +430,23 @@ TEST_SUITE("query layout")
 		}
 		for (std::size_t i = 0; i < names.size(); ++i) {
 			CHECK_MESSAGE(std::ranges::count(names, names[i]) == 1, names[i]);
+		}
+	}
+
+	TEST_CASE("every value row of the report is described in the query documentation")
+	{
+		// Set by meson; a run outside it has no documentation to check against.
+		const char *docsPath = std::getenv("QUERY_DOCS");
+		if (docsPath == nullptr) {
+			MESSAGE("QUERY_DOCS is not set; skipping the documentation check");
+			return;
+		}
+		std::ifstream file(docsPath);
+		REQUIRE_MESSAGE(file.is_open(), docsPath);
+		const std::string docs{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+		REQUIRE_FALSE(reportKeyPaths().empty());
+		for (const auto &path : reportKeyPaths()) {
+			CHECK_MESSAGE(docs.find("``" + path + "``") != std::string::npos, path);
 		}
 	}
 

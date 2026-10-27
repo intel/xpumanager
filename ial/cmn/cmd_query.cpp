@@ -86,20 +86,20 @@ struct StaticSpec
 
 // clang-format off
 constexpr auto STATIC_TABLE = std::to_array<StaticSpec>({
-	{"product_brand",       MetricGroup::IDENTITY, &cmdDiscovery::vendorName, nullptr,               false},
-	{"minor_number",        MetricGroup::IDENTITY, nullptr,                   &minorNumberOf,        false},
-	{"device_state",        MetricGroup::IDENTITY, nullptr,                   &deviceStateOf,        false},
-	{"part_number",         MetricGroup::IDENTITY, &cmdDiscovery::partNumber, nullptr,               true},
-	{"virtualization_mode", MetricGroup::IDENTITY, nullptr,                   &virtualizationModeOf, false},
-	{"pci_slot",            MetricGroup::PCI,      &cmdDiscovery::pciSlot,    nullptr,               false},
-	{"stepping",            MetricGroup::IDENTITY, &cmdDiscovery::stepping,   nullptr,               false},
-	{"number_of_tiles",     MetricGroup::COMPUTE,  &cmdDiscovery::numberOfTiles, nullptr,            false},
-	{"number_of_slices",    MetricGroup::COMPUTE,  &cmdDiscovery::numberOfSlices, nullptr,           false},
-	{"sub_slices_per_slice", MetricGroup::COMPUTE, &cmdDiscovery::numberOfSubslicesPerSlice, nullptr, false},
-	{"number_of_eus",       MetricGroup::COMPUTE,  &cmdDiscovery::eus,        nullptr,               false},
-	{"memory_type",         MetricGroup::MEMORY,   &cmdDiscovery::memoryType, nullptr,               false},
-	{"memory_channels",     MetricGroup::MEMORY,   &cmdDiscovery::memoryChannels, nullptr,           false},
-	{"memory_bus_width",    MetricGroup::MEMORY,   &cmdDiscovery::memoryBusWidth, nullptr,           false},
+	{"product_brand",        MetricGroup::IDENTITY, &cmdDiscovery::vendorName,                nullptr,               false},
+	{"minor_number",         MetricGroup::IDENTITY, nullptr,                                  &minorNumberOf,        false},
+	{"device_state",         MetricGroup::IDENTITY, nullptr,                                  &deviceStateOf,        false},
+	{"part_number",          MetricGroup::IDENTITY, &cmdDiscovery::partNumber,                nullptr,               true},
+	{"virtualization_mode",  MetricGroup::IDENTITY, nullptr,                                  &virtualizationModeOf, false},
+	{"pci_slot",             MetricGroup::PCI,      &cmdDiscovery::pciSlot,                   nullptr,               false},
+	{"stepping",             MetricGroup::IDENTITY, &cmdDiscovery::stepping,                  nullptr,               false},
+	{"number_of_tiles",      MetricGroup::COMPUTE,  &cmdDiscovery::numberOfTiles,             nullptr,               false},
+	{"number_of_slices",     MetricGroup::COMPUTE,  &cmdDiscovery::numberOfSlices,            nullptr,               false},
+	{"sub_slices_per_slice", MetricGroup::COMPUTE,  &cmdDiscovery::numberOfSubslicesPerSlice, nullptr,               false},
+	{"number_of_eus",        MetricGroup::COMPUTE,  &cmdDiscovery::eus,                       nullptr,               false},
+	{"memory_type",          MetricGroup::MEMORY,   &cmdDiscovery::memoryType,                nullptr,               false},
+	{"memory_channels",      MetricGroup::MEMORY,   &cmdDiscovery::memoryChannels,            nullptr,               false},
+	{"memory_bus_width",     MetricGroup::MEMORY,   &cmdDiscovery::memoryBusWidth,            nullptr,               false},
 });
 // clang-format on
 
@@ -763,6 +763,28 @@ std::vector<const metrics::QueryMetric *> selectedMetrics(const QuerySelection &
 		}
 	}
 	return selected;
+}
+
+std::span<const std::string> reportKeyPaths()
+{
+	static const std::vector<std::string> PATHS = [] {
+		std::vector<std::string> paths;
+		std::vector<std::string_view> parents;
+		for (const auto &row : REPORT_LAYOUT) {
+			parents.resize(row.depth);
+			if (row.kind == SpecKind::Section) {
+				parents.push_back(row.key);
+				continue;
+			}
+			std::string path;
+			for (const auto parent : parents) {
+				path.append(parent).push_back('.');
+			}
+			paths.push_back(path.append(row.key));
+		}
+		return paths;
+	}();
+	return PATHS;
 }
 
 std::span<const StaticKey> staticKeys()

@@ -72,7 +72,9 @@ query_test = executable(
   install: false,
 )
 
-test('query_test', query_test)
+test('query_test', query_test,
+  env: {'QUERY_DOCS': meson.project_source_root() / 'docs' / 'sphinx' / 'xpu-smi' / 'query.rst'},
+)
 
 discovery_test = executable(
   'discovery_test',
