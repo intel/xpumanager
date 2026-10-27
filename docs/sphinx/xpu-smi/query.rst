@@ -142,6 +142,7 @@ From an Intel Arc B580 run by a non-root user.
        Product Name                          : Intel(R) Arc(TM) B580 Graphics
        Product Brand                         : Intel(R) Corporation
        Stepping                              : A0
+       GPU IP Version                        : 0x05004000
        Serial Number                         : unknown
        GPU UUID                              : 00000000-0000-0003-0000-0000e20b8086
        Device Index                          : 0
@@ -255,6 +256,10 @@ Reading the Report
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
+- GPU IP Version is the graphics IP version the driver reports, in hex. It identifies the
+  architecture: newer devices have higher values.
+- Memory Repair says whether the device has had a repair performed, such as remapping faulty
+  memory. It is left out where the driver does not track repairs.
 - PCI: Host Max is the link capability of the root port the device is under, the CPU end of the
   path; a switch in between can limit the link further. PCIe Errors are the device's AER
   counters since it was enumerated, and Atomic Caps Inbound and Atomic Requests come from its

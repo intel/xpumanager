@@ -800,6 +800,31 @@ ze_result_t device::getResetReasons(zes_reset_reason_flags_t &reasons)
 }
 
 /**
+ * @brief Reports whether the device has had a repair performed, e.g. memory remapping.
+ *
+ * @param[out] status ZES_REPAIR_STATUS_UNSUPPORTED, _NOT_PERFORMED or _PERFORMED.
+ *
+ * @retval ZE_RESULT_SUCCESS             @p status was written.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED The device has no Sysman handle.
+ * @retval Other                         The error from zesDeviceGetState.
+ */
+ze_result_t device::getRepairStatus(zes_repair_status_t &status)
+{
+	if (zesDevice == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	zes_device_state_t state{};
+	state.stype = ZES_STRUCTURE_TYPE_DEVICE_STATE;
+	const ze_result_t result = zesDeviceGetState(zesDevice, &state);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get device state: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		return result;
+	}
+	status = state.repaired;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Retrieves the current device health status.
  *
  * @param[out] pHealth Pointer to receive the current device health status.

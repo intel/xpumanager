@@ -284,6 +284,9 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``pci.bus_id``
      - —
      - PCI BDF address
+   * - ``ip_version``
+     - —
+     - Graphics IP version, in hex; identifies the architecture and stepping
    * - ``pci.device_id``
      - —
      - PCI device ID
@@ -492,6 +495,10 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``ecc.errors.aggregate.total``
      - —
      - Total ECC errors (corrected + uncorrected)
+   * - ``memory.repair_status``
+     - —
+     - Whether the device has had a repair performed, such as remapping faulty memory:
+       ``Performed`` or ``Not Performed``; ``N/A`` where the driver does not track repairs
    * - ``ras.reset``
      - —
      - RAS reset error counter

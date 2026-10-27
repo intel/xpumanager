@@ -454,6 +454,7 @@ TEST_SUITE("query layout")
 		const std::vector<std::string> expected{"Product Name",
 												"Product Brand",
 												"Stepping",
+												"GPU IP Version",
 												"Serial Number",
 												"GPU UUID",
 												"Device Index",

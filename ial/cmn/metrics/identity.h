@@ -253,6 +253,30 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			},
 		},
 		{
+			.name = "ip_version",
+			.unit = "",
+			.description = "Graphics IP version, in hex (ze_device_ip_version_ext_t): identifies the architecture "
+						   "and stepping; newer devices have higher values",
+			.source = MetricSource::Static,
+			.groups = MetricGroup::IDENTITY,
+			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+				ze_device_ip_version_ext_t ip{};
+				ip.stype = ZE_STRUCTURE_TYPE_DEVICE_IP_VERSION_EXT;
+				ze_device_properties_t props{};
+				props.stype = ZE_STRUCTURE_TYPE_DEVICE_PROPERTIES;
+				props.pNext = &ip;
+				if (auto const r = d.dev->getDevProps(d.deviceHdl, &props); r != ZE_RESULT_SUCCESS) {
+					return r;
+				}
+				// A runtime without the extension leaves the version at 0.
+				if (ip.ipVersion == 0) {
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+				}
+				out = xpum::compat::format("0x{:08X}", ip.ipVersion);
+				return ZE_RESULT_SUCCESS;
+			},
+		},
+		{
 			.name = "recovery_action",
 			.unit = "",
 			.description = "What the device needs to keep working: None, Reset, or Reset to repair",

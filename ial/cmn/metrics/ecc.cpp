@@ -259,6 +259,25 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.groups = MetricGroup::ECC,
 		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS>>,
 	},
+	{
+		.name = "memory.repair_status",
+		.unit = "",
+		.description = "Whether the device has had a repair performed, such as remapping faulty memory: "
+					   "Performed or Not Performed",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::ECC,
+		.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+			zes_repair_status_t status = ZES_REPAIR_STATUS_UNSUPPORTED;
+			if (auto const r = d.dev->getRepairStatus(status); r != ZE_RESULT_SUCCESS) {
+				return r;
+			}
+			if (status == ZES_REPAIR_STATUS_UNSUPPORTED) {
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+			out = status == ZES_REPAIR_STATUS_PERFORMED ? "Performed" : "Not Performed";
+			return ZE_RESULT_SUCCESS;
+		},
+	},
 	// The categories the xe kernel's netlink RAS interface reports, as on CRI.
 	{
 		.name = "ras.memory.errors.correctable",
