@@ -5,6 +5,7 @@
  */
 
 #include "temperature.h"
+#include <algorithm>
 #include "temperature_ext.h"
 #include "debug.h"
 #include <cmath>
@@ -202,7 +203,29 @@ uint64_t temperature::getThrottleCoreTemperature(uint32_t pciDeviceId)
  */
 uint64_t temperature::getShutdownCoreTemperature(uint32_t pciDeviceId)
 {
-	return thresholds->getShutdownCoreTemperature(pciDeviceId, defaultCoreShutdownThreshold);
+	return thresholds->getShutdownCoreTemperature(
+		pciDeviceId, cappedByDriverMax(defaultCoreShutdownThreshold, ZES_TEMP_SENSORS_GPU));
+}
+
+/**
+ * @brief A default threshold, lowered to the maximum the driver reports for the sensor type.
+ *
+ * The defaults are generic, and a driver can know its device stops sooner: CRI reports 125 C,
+ * below the 130 C GPU default. A threshold configured for the device is not affected.
+ *
+ * @param[in] defaultValue The xpu-smi default, in Celsius.
+ * @param[in] type         The sensor type the threshold is for.
+ *
+ * @retval threshold The smaller of @p defaultValue and the driver's maximum, or @p defaultValue
+ *                   when the driver reports no maximum.
+ */
+uint64_t temperature::cappedByDriverMax(uint64_t defaultValue, zes_temp_sensors_t type)
+{
+	double driverMax = 0.0;
+	if (getMaxTemp(type, &driverMax) != ZE_RESULT_SUCCESS) {
+		return defaultValue;
+	}
+	return std::min(defaultValue, static_cast<uint64_t>(driverMax));
 }
 
 /**
@@ -217,7 +240,8 @@ uint64_t temperature::getShutdownCoreTemperature(uint32_t pciDeviceId)
  */
 uint64_t temperature::getShutdownMemoryTemperature(uint32_t pciDeviceId)
 {
-	return thresholds->getShutdownMemoryTemperature(pciDeviceId, defaultMemoryShutdownThreshold);
+	return thresholds->getShutdownMemoryTemperature(
+		pciDeviceId, cappedByDriverMax(defaultMemoryShutdownThreshold, ZES_TEMP_SENSORS_MEMORY));
 }
 
 /**

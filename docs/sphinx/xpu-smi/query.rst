@@ -295,8 +295,10 @@ Reading the Report
   the measurement window. On a device with an AMC the serial number and the board part number
   are read from the AMC, one after the other.
 - The slowdown and shutdown temperatures are the configured thresholds the
-  :doc:`health` command compares against, not sensor readings. The max operating temperatures
-  are what the driver reports for each sensor, on devices that report one.
+  :doc:`health` command compares against, not sensor readings. Without a threshold configured
+  for the device, the default shutdown temperature is lowered to the driver's maximum for that
+  sensor, as on CRI (125 C). The max operating temperatures are what the driver reports for each
+  sensor, on devices that report one.
 - On Windows the kernel-mode driver version reads ``N/A``.
 - Rows only some devices or drivers supply, such as the RAS categories under ECC Errors, are
   left out of the text report on a device without them, so it does not fill with ``N/A``. The

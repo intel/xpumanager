@@ -95,6 +95,7 @@ public:
 	uint64_t getThrottleCoreTemperature(uint32_t pciDeviceId);
 	uint64_t getShutdownCoreTemperature(uint32_t pciDeviceId);
 	uint64_t getShutdownMemoryTemperature(uint32_t pciDeviceId);
+	[[nodiscard]] uint64_t cappedByDriverMax(uint64_t defaultValue, zes_temp_sensors_t type);
 
 	// Helper functions for JSON threshold loading
 	static uint32_t parseDeviceId(const std::string &hexKey);
