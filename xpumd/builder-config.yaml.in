@@ -38,6 +38,8 @@ processors:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v@OTEL_VERSION@
 
 extensions:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v@OTEL_VERSION@
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/bearertokenauthextension v@OTEL_VERSION@
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v@OTEL_VERSION@
   - gomod: github.com/intel/xpumanager/xpumd/extension/inteldevicewatch v0.0.0
     path: ./extension/inteldevicewatch

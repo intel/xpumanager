@@ -32,8 +32,10 @@ Contents:
 * Config updates:
   * Metrics aggregation support for `intel_xpu_status` processor rules
   * Temperature and power warning threshold rules synced with `xpu-smi`
-* New `health_check` extension, enabled by default in the example config and in the Helm chart,
-  for checking the collector status over HTTP (port 13133)
+* New extensions included:
+  * `health_check` extension, enabled by default in the example config and in the Helm chart,
+     for checking the collector status over HTTP (port 13133)
+  * `basicauth` and `bearertokenauth` extensions for authenticating the OTLP exporters and the Prometheus exporter endpoint
 * Helm chart:
   * Readiness probe for the xpumd container (`readinessProbe`), using the `health_check` extension
   * Liveness probe (`livenessProbe`), disabled by default

@@ -201,6 +201,24 @@ down the collector so that the devices are re-enumerated on restart.
 See the [`intel_device_watch` extension documentation](extension/inteldevicewatch/README.md)
 for detailed configuration and usage instructions.
 
+### Authentication
+
+The XPUM daemon includes the following authentication extensions from the
+OpenTelemetry collector contrib distribution:
+
+* [`basicauth`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/basicauthextension):
+  HTTP Basic authentication
+* [`bearertokenauth`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension/bearertokenauthextension):
+  Bearer token authentication, with optional token file reloading
+
+Both can be used as client authenticators for the OTLP exporters (`otlp`, `otlphttp`),
+and as server authenticators for the Prometheus exporter (`prometheus`) metrics endpoint.
+The device info exporter (`intel_xpu_info`) only serves gRPC over a local Unix
+domain socket and does not support authentication.
+
+TLS (including mTLS) is supported without extensions via the `tls` settings of
+the exporters.
+
 
 ## Development
 
