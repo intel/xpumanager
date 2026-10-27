@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "driver_util.h"
 #include "frame_loop.h"
+#include "privilege.h"
 #include "metrics/clock.h"
 #include "table_builder.h"
 #include "terminal.h"
@@ -134,6 +135,37 @@ constexpr auto STATIC_TABLE = std::to_array<StaticSpec>({
 	return value;
 }
 
+/**
+ * @brief Says what the caller lacks to read a value with @p requirement.
+ *
+ * @param[in] requirement What the value needs.
+ * @param[in] meiPath     The device's MEI node, for Requirement::MeiDevice; empty when it has none.
+ *
+ * @retval reason  "requires ..." naming what is missing.
+ * @retval nullopt The requirement is met, or there is none.
+ */
+[[nodiscard]] std::optional<std::string> missingAccess(Requirement requirement, const std::string &meiPath)
+{
+	switch (requirement) {
+	case Requirement::SysAdmin:
+	case Requirement::Perfmon: {
+		const auto cap = requirement == Requirement::SysAdmin ? Capability::SysAdmin : Capability::Perfmon;
+		if (hasCapability(cap)) {
+			return std::nullopt;
+		}
+		return "requires " + std::string{capabilityName(cap)};
+	}
+	case Requirement::MeiDevice:
+		if (meiPath.empty() || canReadWrite(meiPath)) {
+			return std::nullopt;
+		}
+		return "requires read-write access to " + meiPath;
+	case Requirement::None:
+		break;
+	}
+	return std::nullopt;
+}
+
 // ---------------------------------------------------------------------------------------
 // The report layout
 // ---------------------------------------------------------------------------------------
@@ -160,10 +192,19 @@ struct Spec
 	std::size_t depth = 0;
 	std::string_view label;
 	std::string_view key;
-	std::string_view source;		///< Registry field name, or static property key.
-	bool negativeIsUnknown = false; ///< A negative reading is the driver's way of saying "unknown".
-	bool hideWhenAbsent = false;	///< See QueryNode::hideWhenAbsent.
-	bool zeroIsUnknown = false;		///< A reading of 0 is the driver's way of saying "unknown".
+	std::string_view source;			   ///< Registry field name, or static property key.
+	bool negativeIsUnknown = false;		   ///< A negative reading is the driver's way of saying "unknown".
+	bool hideWhenAbsent = false;		   ///< See QueryNode::hideWhenAbsent.
+	bool zeroIsUnknown = false;			   ///< A reading of 0 is the driver's way of saying "unknown".
+	Requirement needs = Requirement::None; ///< What a caller must have to read the value.
+
+	/// The same row, noting that its value needs @p requirement.
+	[[nodiscard]] constexpr Spec needing(Requirement requirement) const noexcept
+	{
+		Spec copy = *this;
+		copy.needs = requirement;
+		return copy;
+	}
 };
 
 constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
@@ -223,7 +264,7 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 	fieldOf(0, "GPU UUID", "gpu_uuid", "uuid"),
 	fieldOf(0, "Device Index", "device_index", "index"),
 	staticOf(0, "Minor Number", "minor_number", "minor_number"),
-	fieldOf(0, "GFX Firmware Version", "gfx_firmware_version", "vbios_version"),
+	fieldOf(0, "GFX Firmware Version", "gfx_firmware_version", "vbios_version").needing(Requirement::MeiDevice),
 	staticOf(0, "Board Part Number", "board_part_number", "part_number"),
 	sectionOf(0, "Platform Info", "platform_info"),
 		staticOf(1, "Slot Number", "slot_number", "pci_slot"),
@@ -242,12 +283,12 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 		fieldOf(1, "Sub System Id", "sub_system_id", "pci.sub_device_id"),
 		sectionOf(1, "GPU Link Info", "gpu_link_info"),
 			sectionOf(2, "PCIe Generation", "pcie_generation"),
-				linkFieldOf(3, "Max", "max", "pcie.link.gen.max"),
-				linkFieldOf(3, "Current", "current", "pcie.link.gen.current"),
+				linkFieldOf(3, "Max", "max", "pcie.link.gen.max").needing(Requirement::SysAdmin),
+				linkFieldOf(3, "Current", "current", "pcie.link.gen.current").needing(Requirement::SysAdmin),
 				optionalFieldOf(3, "Host Max", "host_max", "pcie.link.gen.host_max"),
 			sectionOf(2, "Link Width", "link_width"),
-				linkFieldOf(3, "Max", "max", "pcie.link.width.max"),
-				linkFieldOf(3, "Current", "current", "pcie.link.width.current"),
+				linkFieldOf(3, "Max", "max", "pcie.link.width.max").needing(Requirement::SysAdmin),
+				linkFieldOf(3, "Current", "current", "pcie.link.width.current").needing(Requirement::SysAdmin),
 				optionalFieldOf(3, "Host Max", "host_max", "pcie.link.width.host_max"),
 		sectionOf(1, "PCIe Errors", "pcie_errors"),
 			optionalFieldOf(2, "Correctable", "correctable", "pcie.errors.correctable"),
@@ -257,8 +298,8 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 			optionalFieldOf(2, "Replay Timer Timeouts", "replay_timer_timeouts", "pcie.errors.replay_timeouts"),
 		fieldOf(1, "Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
 		fieldOf(1, "Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
-		optionalFieldOf(1, "Atomic Caps Inbound", "atomic_caps_inbound", "pcie.atomic.completer"),
-		optionalFieldOf(1, "Atomic Requests", "atomic_requests", "pcie.atomic.requests"),
+		optionalFieldOf(1, "Atomic Caps Inbound", "atomic_caps_inbound", "pcie.atomic.completer").needing(Requirement::SysAdmin),
+		optionalFieldOf(1, "Atomic Requests", "atomic_requests", "pcie.atomic.requests").needing(Requirement::SysAdmin),
 	sectionOf(0, "Clocks Event Reasons", "clocks_event_reasons"),
 });
 
@@ -272,7 +313,7 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Free", "free", "memory.free"),
 	sectionOf(0, "BAR Memory", "bar_memory"),
 		fieldOf(1, "Total", "total", "pci.bar.memory.size"),
-		optionalFieldOf(1, "Resizable BAR", "resizable_bar", "pci.bar.resizable"),
+		optionalFieldOf(1, "Resizable BAR", "resizable_bar", "pci.bar.resizable").needing(Requirement::SysAdmin),
 	sectionOf(0, "Memory Info", "memory_info"),
 		staticOf(1, "Memory Type", "memory_type", "memory_type"),
 		staticOf(1, "Number of Memory Channels", "number_of_memory_channels", "memory_channels"),
@@ -284,12 +325,12 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		staticOf(1, "Number of Sub-slices per Slice", "number_of_sub_slices_per_slice", "sub_slices_per_slice"),
 		staticOf(1, "Number of EUs", "number_of_eus", "number_of_eus"),
 	sectionOf(0, "Utilization", "utilization"),
-		fieldOf(1, "GPU", "gpu", "utilization.gpu"),
+		fieldOf(1, "GPU", "gpu", "utilization.gpu").needing(Requirement::Perfmon),
 		fieldOf(1, "Memory", "memory", "utilization.memory"),
-		fieldOf(1, "Compute", "compute", "utilization.compute"),
-		fieldOf(1, "Render", "render", "utilization.render"),
-		fieldOf(1, "Media", "media", "utilization.media"),
-		fieldOf(1, "Copy", "copy", "utilization.copy"),
+		fieldOf(1, "Compute", "compute", "utilization.compute").needing(Requirement::Perfmon),
+		fieldOf(1, "Render", "render", "utilization.render").needing(Requirement::Perfmon),
+		fieldOf(1, "Media", "media", "utilization.media").needing(Requirement::Perfmon),
+		fieldOf(1, "Copy", "copy", "utilization.copy").needing(Requirement::Perfmon),
 	sectionOf(0, "ECC Mode", "ecc_mode"),
 		fieldOf(1, "Current", "current", "ecc.mode.current"),
 	sectionOf(0, "ECC Errors", "ecc_errors"),
@@ -400,6 +441,7 @@ struct BuildContext
 	const QuerySelection &selection;
 	const MetricValues &values;
 	const QueryStaticProps &staticProps;
+	const AccessCheck &missing;
 };
 
 [[nodiscard]] QueryNode leafOf(std::string_view label, std::string_view key, std::optional<std::string> value,
@@ -478,6 +520,9 @@ void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<
 		}
 		auto node = leafOf(spec.label, spec.key, std::move(value), field->unit);
 		node.hideWhenAbsent = spec.hideWhenAbsent;
+		if (!node.value && spec.needs != Requirement::None && ctx.missing) {
+			node.absentReason = ctx.missing(spec.needs).value_or(std::string{});
+		}
 		return node;
 	}
 	case SpecKind::Static: {
@@ -545,7 +590,8 @@ void appendLine(std::string &out, std::size_t depth, std::string_view label, std
 [[nodiscard]] std::string valueText(const QueryNode &node)
 {
 	if (!node.value) {
-		return std::string{NOT_AVAILABLE};
+		return node.absentReason.empty() ? std::string{NOT_AVAILABLE}
+										 : std::string{NOT_AVAILABLE} + " (" + node.absentReason + ")";
 	}
 	return node.unit.empty() ? *node.value : twoDecimals(*node.value) + ' ' + std::string{node.unit};
 }
@@ -687,7 +733,7 @@ std::span<const StaticKey> staticKeys()
 bool QueryNode::shownInText() const noexcept
 {
 	if (isLeaf()) {
-		return value || !hideWhenAbsent;
+		return value || !hideWhenAbsent || !absentReason.empty();
 	}
 	return isList || value || std::ranges::any_of(children, &QueryNode::shownInText);
 }
@@ -811,14 +857,15 @@ QueryNode processesSection(std::span<const psInfo> procs)
 }
 
 QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection, const MetricValues &metricValues,
-						  const QueryStaticProps &staticProps, std::span<const psInfo> procs)
+						  const QueryStaticProps &staticProps, std::span<const psInfo> procs,
+						  const AccessCheck &missing)
 {
 	QueryNode device;
 	device.label = "GPU " + std::string{bdf};
 	device.key = "pci_bus_id";
 	device.value = std::string{bdf};
 
-	const BuildContext ctx{selection, metricValues, staticProps};
+	const BuildContext ctx{selection, metricValues, staticProps, missing};
 	buildRows(REPORT_LAYOUT, ctx, device.children);
 	if (selection.processes) {
 		device.children.push_back(processesSection(procs));
@@ -1032,7 +1079,10 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 		metrics::populateMetricCacheEnd(dev, cache);
 	}
 	evaluate(split.windowed, dev, cache, values);
-	return buildDeviceNode(devPciAddr(dev), options.selection, values, staticProps[index], procs);
+	auto *pci = dev.dev->getPCI();
+	const std::string meiPath = pci != nullptr ? pci->getMeiDevicePath() : std::string{};
+	return buildDeviceNode(devPciAddr(dev), options.selection, values, staticProps[index], procs,
+						   [&meiPath](Requirement requirement) { return missingAccess(requirement, meiPath); });
 }
 
 std::optional<std::string> QuerySession::headerValue(std::string_view fieldName)

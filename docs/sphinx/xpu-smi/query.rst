@@ -146,7 +146,7 @@ From an Intel Arc B580 run by a non-root user.
        GPU UUID                              : 00000000-0000-0003-0000-0000e20b8086
        Device Index                          : 0
        Minor Number                          : 0
-       GFX Firmware Version                  : N/A
+       GFX Firmware Version                  : N/A (requires read-write access to /dev/mei1)
        Platform Info
            Slot Number                       : N/A
        Device State                          : normal
@@ -164,12 +164,12 @@ From an Intel Arc B580 run by a non-root user.
            Sub System Id                     : 0x1100
            GPU Link Info
                PCIe Generation
-                   Max                       : N/A
-                   Current                   : N/A
+                   Max                       : N/A (requires CAP_SYS_ADMIN)
+                   Current                   : N/A (requires CAP_SYS_ADMIN)
                    Host Max                  : 5
                Link Width
-                   Max                       : N/A
-                   Current                   : N/A
+                   Max                       : N/A (requires CAP_SYS_ADMIN)
+                   Current                   : N/A (requires CAP_SYS_ADMIN)
                    Host Max                  : 16
            Tx Throughput                     : 102 kB/s
            Rx Throughput                     : 1623 kB/s
@@ -243,10 +243,14 @@ From an Intel Arc B580 run by a non-root user.
 Reading the Report
 ------------------
 
-- A value the device, driver or platform cannot supply prints as ``N/A``. This includes
-  values that need more privilege than the caller has, such as engine utilization without
-  ``CAP_PERFMON`` and the ECC error counts as a non-root user. The report prints no
-  diagnostic for such a value; set ``XPU_SMI_LOG_LEVEL=DBG`` to see why one is missing.
+- A value the device, driver or platform cannot supply prints as ``N/A``. Where the value needs
+  something the caller lacks, the text report says what, for example
+  ``N/A (requires CAP_SYS_ADMIN)``: ``CAP_SYS_ADMIN`` for the PCIe link generation and width,
+  the atomic capabilities and Resizable BAR, which come from PCI configuration space;
+  ``CAP_PERFMON`` for engine utilization; read-write access to the device's ``/dev/mei*`` node
+  for the GFX firmware version. The ECC error counts also read ``N/A`` as a non-root user. The
+  report prints no diagnostic for such a value; set ``XPU_SMI_LOG_LEVEL=DBG`` to see why one is
+  missing.
 - Measured values (power draw, utilization, throughput, bandwidth) are averaged over a
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.

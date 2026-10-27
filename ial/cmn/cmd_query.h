@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
@@ -28,6 +29,18 @@ inline constexpr std::size_t KEY_COLUMN = 42;
 inline constexpr std::size_t INDENT_WIDTH = 4;
 inline constexpr std::string_view NOT_AVAILABLE = "N/A";
 inline constexpr std::string_view LOG_BANNER = "==============XPU-SMI LOG==============";
+
+/** What reading a row's value can need beyond what any caller has. */
+enum class Requirement : uint8_t
+{
+	None,
+	SysAdmin,  ///< CAP_SYS_ADMIN: PCI configuration space past its first 64 bytes
+	Perfmon,   ///< CAP_PERFMON: the engine busyness counters
+	MeiDevice, ///< Read-write access to the device's MEI node, for the GSC firmware
+};
+
+/// What the caller lacks for a requirement, as "requires ...", or nothing when it is met.
+using AccessCheck = std::function<std::optional<std::string>(Requirement)>;
 
 /**
  * One node of the report tree.
@@ -45,6 +58,9 @@ struct QueryNode
 	std::string_view unit;			  ///< Appended after the value in text output only; empty for none.
 	std::vector<QueryNode> children;
 	bool isList = false; ///< Children are repeated records; an empty list prints "None".
+	/// Why there is no value, when the caller lacks what reading it needs, e.g. "requires
+	/// CAP_SYS_ADMIN". Printed after N/A in the text report; empty otherwise.
+	std::string absentReason;
 	/// Left out of the text report when it has no value; JSON still has the key, as null. For rows
 	/// that only some devices or drivers supply, which would otherwise read N/A everywhere else.
 	bool hideWhenAbsent = false;
@@ -160,12 +176,14 @@ void renderNode(const QueryNode &node, std::size_t depth, std::string &out);
  * @param[in] metricValues Registry getter output by field name.
  * @param[in] staticProps      Static properties of the device.
  * @param[in] procs        Processes using the device.
+ * @param[in] missing      Says what the caller lacks for a row's requirement, or nothing when it is
+ *                         met; empty never explains a missing value.
  *
  * @return The device node: the PCI address as its value and the sections as children.
  */
 [[nodiscard]] QueryNode buildDeviceNode(std::string_view bdf, const QuerySelection &selection,
 										const MetricValues &metricValues, const QueryStaticProps &staticProps,
-										std::span<const psInfo> procs);
+										std::span<const psInfo> procs, const AccessCheck &missing = {});
 
 /// A device in survivability mode: only its state and the way to recover it.
 [[nodiscard]] QueryNode survivabilityNode(std::string_view bdf);

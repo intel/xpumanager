@@ -697,6 +697,32 @@ TEST_CASE("a device that answers nothing renders every row as N/A and every valu
 	CHECK(nulls > referencedMetricNames().size());
 }
 
+TEST_CASE("a value the caller lacks the access for says what is missing, even on a row otherwise left out")
+{
+	MetricValues values;
+	for (const auto name : referencedMetricNames()) {
+		values[name] = std::nullopt;
+	}
+	const AccessCheck missing = [](Requirement requirement) -> std::optional<std::string> {
+		if (requirement == Requirement::SysAdmin) {
+			return "requires CAP_SYS_ADMIN";
+		}
+		return std::nullopt;
+	};
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("PCI"), values, {}, {}, missing);
+	std::string text;
+	for (const auto &child : node.children) {
+		renderNode(child, 1, text);
+	}
+	CHECK(text.find("Max                       : N/A (requires CAP_SYS_ADMIN)") != std::string::npos);
+	CHECK(text.find("Atomic Caps Inbound               : N/A (requires CAP_SYS_ADMIN)") != std::string::npos);
+	// A row with no requirement is still left out, and the reason is text only.
+	CHECK(text.find("Replay Number Rollovers") == std::string::npos);
+	QueryReport report;
+	report.gpus = {node};
+	CHECK(toJson(report)["gpus"][0]["pci"]["atomic_caps_inbound"].is_null());
+}
+
 TEST_CASE("a category row the device does not report is left out of the text but kept in the JSON")
 {
 	MetricValues values;
