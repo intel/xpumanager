@@ -432,6 +432,33 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``pcie.link.width.current``
      - —
      - Current PCIe link width
+   * - ``pcie.link.gen.host_max``
+     - —
+     - Maximum PCIe generation of the root port the device is under (Linux); a switch in between can limit the link further
+   * - ``pcie.link.width.host_max``
+     - —
+     - Maximum PCIe link width of the root port the device is under (Linux)
+   * - ``pcie.errors.correctable``
+     - —
+     - PCIe correctable errors since the device was enumerated (AER, Linux)
+   * - ``pcie.errors.non_fatal``
+     - —
+     - PCIe uncorrectable non-fatal errors since enumeration (AER, Linux)
+   * - ``pcie.errors.fatal``
+     - —
+     - PCIe uncorrectable fatal errors since enumeration (AER, Linux)
+   * - ``pcie.errors.replay_rollovers``
+     - —
+     - PCIe REPLAY_NUM rollovers since enumeration (AER, Linux)
+   * - ``pcie.errors.replay_timeouts``
+     - —
+     - PCIe replay timer timeouts since enumeration (AER, Linux)
+   * - ``pcie.atomic.completer``
+     - —
+     - PCIe AtomicOp requests the device completes, e.g. ``FETCHADD_32 SWAP_32 CAS_32``; needs root on Linux
+   * - ``pcie.atomic.requests``
+     - —
+     - Whether the device may send PCIe AtomicOp requests: ``Enabled`` or ``Disabled``; needs root on Linux
    * - ``pcie.tx.throughput``
      - MB/s
      - PCIe transmit throughput

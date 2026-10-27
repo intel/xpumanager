@@ -212,3 +212,168 @@ std::optional<PciClassCode> getPciClassCode(std::string_view bdf)
 {
 	return getPciClassCode(bdf, "/sys/bus/pci/devices");
 }
+
+namespace {
+
+constexpr std::string_view LIVE_PCI_DEVICES = "/sys/bus/pci/devices";
+
+/** First line of a sysfs attribute, or nothing when it cannot be read. */
+[[nodiscard]] std::optional<std::string> readLine(const std::filesystem::path &path)
+{
+	std::ifstream file(path);
+	std::string line;
+	if (!std::getline(file, line)) {
+		return std::nullopt;
+	}
+	return line;
+}
+
+/** The PCIe generation of a sysfs link speed such as "32.0 GT/s PCIe". */
+[[nodiscard]] std::optional<int> generationOfSpeed(std::string_view speed) noexcept
+{
+	constexpr std::array<std::pair<std::string_view, int>, 7> speeds{{
+		{"2.5 GT/s", 1},
+		{"5.0 GT/s", 2},
+		{"8.0 GT/s", 3},
+		{"16.0 GT/s", 4},
+		{"32.0 GT/s", 5},
+		{"64.0 GT/s", 6},
+		{"128.0 GT/s", 7},
+	}};
+	for (const auto &[text, generation] : speeds) {
+		if (speed.starts_with(text)) {
+			return generation;
+		}
+	}
+	return std::nullopt;
+}
+
+[[nodiscard]] std::optional<int> parseInt(std::string_view text) noexcept
+{
+	int value = 0;
+	const char *const last = text.data() + text.size();
+	const auto [end, ec] = std::from_chars(text.data(), last, value);
+	if (ec != std::errc{} || end != last) {
+		return std::nullopt;
+	}
+	return value;
+}
+
+/** The value of "<name> <count>" in an AER counter attribute, which lists one counter per line. */
+[[nodiscard]] std::optional<uint64_t> aerCount(const std::filesystem::path &path, std::string_view name)
+{
+	std::ifstream file(path);
+	std::string line;
+	while (std::getline(file, line)) {
+		const std::string_view text = line;
+		if (text.size() > name.size() && text.starts_with(name) && text[name.size()] == ' ') {
+			const std::string_view digits = text.substr(name.size() + 1);
+			uint64_t value = 0;
+			const char *const last = digits.data() + digits.size();
+			const auto [end, ec] = std::from_chars(digits.data(), last, value);
+			if (ec == std::errc{} && end == last) {
+				return value;
+			}
+			return std::nullopt;
+		}
+	}
+	return std::nullopt;
+}
+
+} // namespace
+
+PcieLinkMax getRootPortMaxLink(std::string_view bdf, const std::filesystem::path &pciDevRoot)
+{
+	if (!isValidBdf(bdf)) {
+		return {};
+	}
+	std::error_code ec;
+	auto port = std::filesystem::canonical(pciDevRoot / bdf, ec);
+	if (ec) {
+		return {};
+	}
+	// Up the device tree: the root port is the last PCI function before the host bridge's
+	// "pciDDDD:BB" directory.
+	for (auto parent = port.parent_path(); isValidBdf(parent.filename().string()); parent = parent.parent_path()) {
+		port = parent;
+	}
+	if (port.filename() == bdf) {
+		return {}; // The function is itself on the root bus, with no port above it.
+	}
+	PcieLinkMax link;
+	if (const auto speed = readLine(port / "max_link_speed")) {
+		link.generation = generationOfSpeed(*speed);
+	}
+	if (const auto width = readLine(port / "max_link_width")) {
+		link.width = parseInt(*width);
+	}
+	return link;
+}
+
+PcieLinkMax getRootPortMaxLink(std::string_view bdf) { return getRootPortMaxLink(bdf, LIVE_PCI_DEVICES); }
+
+std::optional<PcieAerCounts> getPcieAerCounts(std::string_view bdf, const std::filesystem::path &pciDevRoot)
+{
+	if (!isValidBdf(bdf)) {
+		return std::nullopt;
+	}
+	const auto dir = pciDevRoot / bdf;
+	const auto correctable = aerCount(dir / "aer_dev_correctable", "TOTAL_ERR_COR");
+	const auto nonFatal = aerCount(dir / "aer_dev_nonfatal", "TOTAL_ERR_NONFATAL");
+	const auto fatal = aerCount(dir / "aer_dev_fatal", "TOTAL_ERR_FATAL");
+	if (!correctable || !nonFatal || !fatal) {
+		return std::nullopt;
+	}
+	return PcieAerCounts{.correctable = *correctable,
+						 .nonFatal = *nonFatal,
+						 .fatal = *fatal,
+						 .replayRollover = aerCount(dir / "aer_dev_correctable", "Rollover").value_or(0),
+						 .replayTimeout = aerCount(dir / "aer_dev_correctable", "Timeout").value_or(0)};
+}
+
+std::optional<PcieAerCounts> getPcieAerCounts(std::string_view bdf) { return getPcieAerCounts(bdf, LIVE_PCI_DEVICES); }
+
+std::optional<PcieAtomicOps> getPcieAtomicOps(std::string_view bdf, const std::filesystem::path &pciDevRoot)
+{
+	if (!isValidBdf(bdf)) {
+		return std::nullopt;
+	}
+	// Without CAP_SYS_ADMIN the kernel returns only the first 64 bytes, where no PCI Express
+	// capability can be.
+	constexpr std::size_t configSize = 256;
+	std::array<unsigned char, configSize> config{};
+	std::ifstream file(pciDevRoot / bdf / "config", std::ios::binary);
+	file.read(reinterpret_cast<char *>(config.data()), configSize); // NOLINT: byte buffer for read()
+	if (file.gcount() != static_cast<std::streamsize>(configSize)) {
+		return std::nullopt;
+	}
+	const auto byteAt = [&config](std::size_t at) -> uint32_t { return config.at(at); };
+	const auto dwordAt = [&byteAt](std::size_t at) -> uint32_t {
+		return byteAt(at) | byteAt(at + 1) << 8 | byteAt(at + 2) << 16 | byteAt(at + 3) << 24;
+	};
+	constexpr std::size_t statusRegister = 0x06;
+	constexpr uint32_t capabilitiesListBit = 0x10;
+	constexpr std::size_t capabilitiesPointer = 0x34;
+	constexpr uint32_t pciExpressCapabilityId = 0x10;
+	constexpr std::size_t deviceCapabilities2 = 0x24;
+	constexpr std::size_t deviceControl2 = 0x28;
+	constexpr int maxCapabilities = 48; // a loop in a corrupt list cannot run forever
+	if ((byteAt(statusRegister) & capabilitiesListBit) == 0) {
+		return std::nullopt;
+	}
+	std::size_t at = byteAt(capabilitiesPointer) & ~0x3U;
+	for (int i = 0; i < maxCapabilities && at >= 0x40 && at + deviceControl2 + 4 <= configSize; ++i) {
+		if (byteAt(at) == pciExpressCapabilityId) {
+			const uint32_t caps2 = dwordAt(at + deviceCapabilities2);
+			const uint32_t control2 = dwordAt(at + deviceControl2);
+			return PcieAtomicOps{.completer32 = (caps2 & (1U << 7)) != 0,
+								 .completer64 = (caps2 & (1U << 8)) != 0,
+								 .completer128Cas = (caps2 & (1U << 9)) != 0,
+								 .requesterEnabled = (control2 & (1U << 6)) != 0};
+		}
+		at = byteAt(at + 1) & ~0x3U;
+	}
+	return std::nullopt;
+}
+
+std::optional<PcieAtomicOps> getPcieAtomicOps(std::string_view bdf) { return getPcieAtomicOps(bdf, LIVE_PCI_DEVICES); }

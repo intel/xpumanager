@@ -15,6 +15,7 @@ if is_windows
     'win/http_client.cpp',
     'win/i2c_interface.cpp',
     'win/kernel_driver.cpp',
+    'win/pci_link.cpp',
     'win/module_info.cpp',
     'win/path_lookup_win.cpp',
     'win/proc_fdinfo.cpp',

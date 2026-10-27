@@ -166,9 +166,11 @@ From an Intel Arc B580 run by a non-root user.
                PCIe Generation
                    Max                       : N/A
                    Current                   : N/A
+                   Host Max                  : 5
                Link Width
                    Max                       : N/A
                    Current                   : N/A
+                   Host Max                  : 16
            Tx Throughput                     : 102 kB/s
            Rx Throughput                     : 1623 kB/s
        Clocks Event Reasons
@@ -247,6 +249,11 @@ Reading the Report
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
+- PCI: Host Max is the link capability of the root port the device is under, the CPU end of the
+  path; a switch in between can limit the link further. PCIe Errors are the device's AER
+  counters since it was enumerated, and Atomic Caps Inbound and Atomic Requests come from its
+  PCI Express capability, which needs root. All of these are Linux only, and left out where the
+  device or OS does not report them.
 - GPU Power Readings: Average Power Draw is the card's draw over the window, Instantaneous Power
   Draw the driver's reading at one moment, and GPU Domain Power Draw the GPU domain's share.
   Current Power Limit is the sustained limit, or the burst or peak limit on a device without

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "pci_class.h"
+#include "pci_link.h"
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -105,3 +106,32 @@ getPciSubsystemDeviceId(std::string_view bdf, const std::filesystem::path &pciDe
  */
 [[nodiscard]] std::optional<PciClassCode> getPciClassCode(std::string_view bdf,
 														  const std::filesystem::path &pciDevRoot);
+
+/**
+ * @brief getRootPortMaxLink() against a given sysfs tree
+ *
+ * @param [in] bdf        PCI BDF address of the function, in canonical DDDD:BB:DD.F form
+ * @param [in] pciDevRoot sysfs PCI device directory, whose entries link to the device tree
+ * @return The root port's max_link_speed (as a generation) and max_link_width
+ */
+[[nodiscard]] PcieLinkMax getRootPortMaxLink(std::string_view bdf, const std::filesystem::path &pciDevRoot);
+
+/**
+ * @brief getPcieAerCounts() against a given sysfs tree
+ *
+ * @param [in] bdf        PCI BDF address of the function, in canonical DDDD:BB:DD.F form
+ * @param [in] pciDevRoot sysfs PCI device directory
+ * @return The aer_dev_correctable, aer_dev_nonfatal and aer_dev_fatal counts, or std::nullopt
+ */
+[[nodiscard]] std::optional<PcieAerCounts> getPcieAerCounts(std::string_view bdf,
+															const std::filesystem::path &pciDevRoot);
+
+/**
+ * @brief getPcieAtomicOps() against a given sysfs tree
+ *
+ * @param [in] bdf        PCI BDF address of the function, in canonical DDDD:BB:DD.F form
+ * @param [in] pciDevRoot sysfs PCI device directory
+ * @return The AtomicOp bits of the PCI Express capability in the config attribute, or std::nullopt
+ */
+[[nodiscard]] std::optional<PcieAtomicOps> getPcieAtomicOps(std::string_view bdf,
+															const std::filesystem::path &pciDevRoot);

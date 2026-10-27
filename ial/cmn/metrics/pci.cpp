@@ -10,6 +10,7 @@
 #include "device.h"
 #include "metrics_registry.h"
 #include "pci_class.h"
+#include "pci_link.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include <cstdint>
@@ -17,6 +18,7 @@
 #include <array>
 #include "utility/compat/format.h"
 #include <span>
+#include <optional>
 #include <string>
 
 namespace metrics::pci {
@@ -238,18 +240,179 @@ constexpr auto SUB_CLASS = QueryMetric{// NOLINT(readability-identifier-naming)
 									   .groups = MetricGroup::PCI,
 									   .getter = classCodeGetter<&PciClassCode::subClass>};
 
+/// The BDF of the device, or nothing without a PCI HAL.
+[[nodiscard]] std::optional<std::string> bdfOf(devInfo &d)
+{
+	auto *p = d.dev->getPCI();
+	return p == nullptr ? std::nullopt : std::optional<std::string>{p->getBDFStr()};
+}
+
+/**
+ * @brief Reads one part of the root port's link capability.
+ *
+ * @tparam PART PcieLinkMax::generation or PcieLinkMax::width.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p out holds the value.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No PCI HAL, no root port above the device, or the OS
+ *                                             does not report it (Windows).
+ */
+template <std::optional<int> PcieLinkMax::*PART>
+ze_result_t hostMaxGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	const auto bdf = bdfOf(d);
+	const auto value = bdf ? getRootPortMaxLink(*bdf).*PART : std::nullopt;
+	if (!value) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = xpum::compat::format("{}", *value);
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads one AER error counter of the device.
+ *
+ * @tparam COUNT The counter, e.g. PcieAerCounts::correctable.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p out holds the count.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No PCI HAL, the device has no AER counters, or the
+ *                                             OS does not report them (Windows).
+ */
+template <uint64_t PcieAerCounts::*COUNT> ze_result_t aerGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	const auto bdf = bdfOf(d);
+	const auto counts = bdf ? getPcieAerCounts(*bdf) : std::nullopt;
+	if (!counts) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	out = xpum::compat::format("{}", (*counts).*COUNT);
+	return ZE_RESULT_SUCCESS;
+}
+
+/// The AtomicOp support of the device, or nothing when its configuration space cannot be read.
+[[nodiscard]] std::optional<PcieAtomicOps> atomicOpsOf(devInfo &d)
+{
+	const auto bdf = bdfOf(d);
+	return bdf ? getPcieAtomicOps(*bdf) : std::nullopt;
+}
+
+constexpr auto LINK_GEN_HOST_MAX =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.link.gen.host_max",
+				.unit = "",
+				.description = "Maximum PCIe generation of the root port the device is under (Linux); a switch in "
+							   "between can limit the link further",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::PCI,
+				.getter = hostMaxGetter<&PcieLinkMax::generation>};
+
+constexpr auto LINK_WIDTH_HOST_MAX =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.link.width.host_max",
+				.unit = "",
+				.description = "Maximum PCIe link width of the root port the device is under (Linux)",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::PCI,
+				.getter = hostMaxGetter<&PcieLinkMax::width>};
+
+constexpr auto AER_CORRECTABLE =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.errors.correctable",
+				.unit = "",
+				.description = "PCIe correctable errors the device reported since it was enumerated (AER, Linux)",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::PCI,
+				.getter = aerGetter<&PcieAerCounts::correctable>};
+
+constexpr auto AER_NON_FATAL =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.errors.non_fatal",
+				.unit = "",
+				.description = "PCIe uncorrectable non-fatal errors since enumeration (AER, Linux)",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::PCI,
+				.getter = aerGetter<&PcieAerCounts::nonFatal>};
+
+constexpr auto AER_FATAL = QueryMetric{// NOLINT(readability-identifier-naming)
+									   .name = "pcie.errors.fatal",
+									   .unit = "",
+									   .description = "PCIe uncorrectable fatal errors since enumeration (AER, Linux)",
+									   .source = MetricSource::Live,
+									   .groups = MetricGroup::PCI,
+									   .getter = aerGetter<&PcieAerCounts::fatal>};
+
+constexpr auto AER_REPLAY_ROLLOVER =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.errors.replay_rollovers",
+				.unit = "",
+				.description = "PCIe REPLAY_NUM rollovers since enumeration, a correctable link error (AER, Linux)",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::PCI,
+				.getter = aerGetter<&PcieAerCounts::replayRollover>};
+
+constexpr auto AER_REPLAY_TIMEOUT =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.errors.replay_timeouts",
+				.unit = "",
+				.description = "PCIe replay timer timeouts since enumeration, a correctable link error (AER, Linux)",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::PCI,
+				.getter = aerGetter<&PcieAerCounts::replayTimeout>};
+
+constexpr auto ATOMIC_CAPS =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.atomic.completer",
+				.unit = "",
+				.description = "PCIe AtomicOp requests the device completes (Device Capabilities 2), e.g. "
+							   "\"FETCHADD_32 SWAP_32 CAS_32\"; reading it needs root on Linux",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::PCI,
+				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+					const auto ops = atomicOpsOf(d);
+					if (!ops) {
+						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+					}
+					std::string text;
+					const auto add = [&text](std::string_view word) {
+						if (!text.empty()) {
+							text += ' ';
+						}
+						text += word;
+					};
+					if (ops->completer32) {
+						add("FETCHADD_32 SWAP_32 CAS_32");
+					}
+					if (ops->completer64) {
+						add("FETCHADD_64 SWAP_64 CAS_64");
+					}
+					if (ops->completer128Cas) {
+						add("CAS_128");
+					}
+					out = text.empty() ? "None" : text;
+					return ZE_RESULT_SUCCESS;
+				}};
+
+constexpr auto ATOMIC_REQUESTS =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pcie.atomic.requests",
+				.unit = "",
+				.description = "Whether the device may send PCIe AtomicOp requests (Device Control 2): Enabled or "
+							   "Disabled; reading it needs root on Linux",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::PCI,
+				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+					const auto ops = atomicOpsOf(d);
+					if (!ops) {
+						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+					}
+					out = ops->requesterEnabled ? "Enabled" : "Disabled";
+					return ZE_RESULT_SUCCESS;
+				}};
+
 constexpr auto ALL = std::to_array<QueryMetric>({
-	BASE_CLASS,
-	SUB_CLASS,
-	LINK_GEN_MAX,
-	LINK_WIDTH_MAX,
-	LINK_GEN_CURRENT,
-	LINK_WIDTH_CURRENT,
-	TX_THROUGHPUT,
-	RX_THROUGHPUT,
-	REPLAY_COUNTER,
-	RX_THROUGHPUT_KBS,
-	TX_THROUGHPUT_KBS,
+	BASE_CLASS,			SUB_CLASS,			 LINK_GEN_MAX,		  LINK_WIDTH_MAX,  LINK_GEN_CURRENT,
+	LINK_WIDTH_CURRENT, TX_THROUGHPUT,		 RX_THROUGHPUT,		  REPLAY_COUNTER,  RX_THROUGHPUT_KBS,
+	TX_THROUGHPUT_KBS,	LINK_GEN_HOST_MAX,	 LINK_WIDTH_HOST_MAX, AER_CORRECTABLE, AER_NON_FATAL,
+	AER_FATAL,			AER_REPLAY_ROLLOVER, AER_REPLAY_TIMEOUT,  ATOMIC_CAPS,	   ATOMIC_REQUESTS,
 });
 
 } // namespace

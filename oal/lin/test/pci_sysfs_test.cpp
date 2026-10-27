@@ -15,6 +15,7 @@
 
 #include "pci_sysfs.h"
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -350,6 +351,92 @@ TEST_CASE("parsePciClassCode: six hex digits, base class first")
 	CHECK_FALSE(parsePciClassCode("0300").has_value());
 	CHECK_FALSE(parsePciClassCode("03000z").has_value());
 	CHECK_FALSE(parsePciClassCode("").has_value());
+}
+
+namespace {
+
+/**
+ * @brief Lays out the B580-like path pci0000:00/00:01.0 (root port)/01:00.0/02:01.0/<BDF> under
+ *        <root>/devices, with <root>/bus/<function> links to each function as the kernel does
+ *
+ * @param [in] sysfs The scratch tree.
+ * @return The bus directory to pass as pciDevRoot.
+ */
+fs::path layOutPath(const FakePciDevices &sysfs)
+{
+	const auto rootPort = sysfs.root / "devices" / "pci0000:00" / "0000:00:01.0";
+	const auto device = rootPort / "0000:01:00.0" / "0000:02:01.0" / BDF;
+	fs::create_directories(device);
+	fs::create_directories(sysfs.root / "bus");
+	for (auto dir = device; dir != rootPort.parent_path(); dir = dir.parent_path()) {
+		fs::create_directory_symlink(dir, sysfs.root / "bus" / dir.filename());
+	}
+	std::ofstream(rootPort / "max_link_speed") << "32.0 GT/s PCIe\n";
+	std::ofstream(rootPort / "max_link_width") << "16\n";
+	std::ofstream(rootPort / "0000:01:00.0" / "max_link_speed") << "16.0 GT/s PCIe\n";
+	return sysfs.root / "bus";
+}
+
+} // namespace
+
+TEST_CASE("getRootPortMaxLink: reads the root port above any switch, as a generation")
+{
+	const FakePciDevices sysfs("root_port");
+	const auto bus = layOutPath(sysfs);
+	const auto link = getRootPortMaxLink(BDF, bus);
+	CHECK(link.generation == 5);
+	CHECK(link.width == 16);
+	// The root port itself has none above it.
+	const auto own = getRootPortMaxLink("0000:00:01.0", bus);
+	CHECK_FALSE(own.generation.has_value());
+	CHECK_FALSE(getRootPortMaxLink("../x", bus).generation.has_value());
+}
+
+TEST_CASE("getPcieAerCounts: reads totals and the replay counters, nullopt without AER")
+{
+	const FakePciDevices sysfs("aer");
+	const auto bus = layOutPath(sysfs);
+	CHECK_FALSE(getPcieAerCounts(BDF, bus).has_value());
+	const auto dir = bus / BDF;
+	std::ofstream(dir / "aer_dev_correctable")
+		<< "RxErr 0\nBadTLP 1\nBadDLLP 2\nRollover 3\nTimeout 4\nNonFatalErr 0\nTOTAL_ERR_COR 10\n";
+	std::ofstream(dir / "aer_dev_nonfatal") << "Undefined 0\nDLP 0\nTOTAL_ERR_NONFATAL 5\n";
+	std::ofstream(dir / "aer_dev_fatal") << "Undefined 0\nTOTAL_ERR_FATAL 0\n";
+	const auto counts = getPcieAerCounts(BDF, bus);
+	REQUIRE(counts.has_value());
+	CHECK(counts->correctable == 10);
+	CHECK(counts->nonFatal == 5);
+	CHECK(counts->fatal == 0);
+	CHECK(counts->replayRollover == 3);
+	CHECK(counts->replayTimeout == 4);
+}
+
+TEST_CASE("getPcieAtomicOps: decodes Device Capabilities 2 and Control 2, nullopt on a short read")
+{
+	const FakePciDevices sysfs("atomic");
+	const auto bus = layOutPath(sysfs);
+	std::array<unsigned char, 256> config{};
+	config[0x06] = 0x10; // capabilities list present
+	config[0x34] = 0x40; // first capability
+	config[0x40] = 0x01; // power management, next at 0x50
+	config[0x41] = 0x50;
+	config[0x50] = 0x10;			// PCI Express
+	config[0x50 + 0x24 + 0] = 0x80; // DevCap2 bit 7: 32-bit completer
+	config[0x50 + 0x24 + 1] = 0x01; // DevCap2 bit 8: 64-bit completer
+	config[0x50 + 0x28 + 0] = 0x40; // DevCtl2 bit 6: requester enable
+	std::ofstream(bus / BDF / "config", std::ios::binary)
+		.write(reinterpret_cast<const char *>(config.data()), config.size()); // NOLINT: byte buffer
+	const auto ops = getPcieAtomicOps(BDF, bus);
+	REQUIRE(ops.has_value());
+	CHECK(ops->completer32);
+	CHECK(ops->completer64);
+	CHECK_FALSE(ops->completer128Cas);
+	CHECK(ops->requesterEnabled);
+
+	// What an unprivileged read returns: only the first 64 bytes.
+	std::ofstream(bus / BDF / "config", std::ios::binary | std::ios::trunc)
+		.write(reinterpret_cast<const char *>(config.data()), 64); // NOLINT: byte buffer
+	CHECK_FALSE(getPcieAtomicOps(BDF, bus).has_value());
 }
 
 #endif // __has_include(<doctest/doctest.h>)
