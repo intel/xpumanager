@@ -153,6 +153,7 @@ From an Intel Arc B580 run by a non-root user.
        Device State                          : normal
        GPU Virtualization Mode
            Virtualization Mode               : physical
+           Enabled VFs                       : 0
        GPU Recovery Action                   : None
        PCI
            Bus                               : 0x03

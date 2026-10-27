@@ -277,6 +277,25 @@ inline std::span<const QueryMetric> getIdentityMetrics() noexcept
 			},
 		},
 		{
+			.name = "vf.enabled",
+			.unit = "",
+			.description = "SR-IOV virtual functions enabled on the physical function",
+			.source = MetricSource::Live,
+			.groups = MetricGroup::IDENTITY,
+			.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+				auto *v = d.dev->getVF();
+				if (v == nullptr || d.zesDeviceHdl == nullptr) {
+					return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+				}
+				uint32_t count = 0;
+				if (auto const r = v->countEnabledVFs(d.zesDeviceHdl, count); r != ZE_RESULT_SUCCESS) {
+					return r;
+				}
+				out = xpum::compat::format("{}", count);
+				return ZE_RESULT_SUCCESS;
+			},
+		},
+		{
 			.name = "recovery_action",
 			.unit = "",
 			.description = "What the device needs to keep working: None, Reset, or Reset to repair",

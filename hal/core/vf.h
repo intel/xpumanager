@@ -20,6 +20,7 @@ public:
 	vf() : vfEnabledCount(0), vfEnabledHandles(nullptr) {}
 	~vf();
 	ze_result_t enumEnabledVF(zes_device_handle_t device);
+	[[nodiscard]] ze_result_t countEnabledVFs(zes_device_handle_t device, uint32_t &count);
 	ze_result_t getVFCapabilities(zes_vf_handle_t vfHandle, zes_vf_exp2_capabilities_t *outCaps = nullptr);
 	ze_result_t getVFMemoryUtilization(zes_vf_handle_t vfHandle, zes_vf_util_mem_exp2_t *outMem = nullptr);
 	ze_result_t getVFEngineUtilization(zes_vf_handle_t vfHandle, zes_vf_util_engine_exp2_t *outEngine = nullptr);

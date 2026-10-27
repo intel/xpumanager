@@ -90,6 +90,26 @@ ze_result_t vf::enumEnabledVF(zes_device_handle_t device)
 }
 
 /**
+ * @brief Counts the SR-IOV virtual functions enabled on a device now.
+ *
+ * @param[in]  device Sysman handle of the physical function.
+ * @param[out] count  Receives the number of enabled VFs.
+ *
+ * @retval ZE_RESULT_SUCCESS @p count was written.
+ * @retval Other             The error from zesDeviceEnumEnabledVFExp, e.g. on a VF or a device
+ *                           without SR-IOV support.
+ */
+ze_result_t vf::countEnabledVFs(zes_device_handle_t device, uint32_t &count)
+{
+	count = 0;
+	const ze_result_t result = zesDeviceEnumEnabledVFExp(device, &count, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("No enabled VF count. 0x{:X} ({})\n", result, l0_error_to_string(result));
+	}
+	return result;
+}
+
+/**
  * @brief Gets capabilities and configuration information for a Virtual Function
  *
  * This function retrieves comprehensive capability information for a specific VF,

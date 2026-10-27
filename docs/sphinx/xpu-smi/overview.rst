@@ -495,6 +495,9 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``ecc.errors.aggregate.total``
      - —
      - Total ECC errors (corrected + uncorrected)
+   * - ``vf.enabled``
+     - —
+     - SR-IOV virtual functions enabled on the physical function
    * - ``memory.repair_status``
      - —
      - Whether the device has had a repair performed, such as remapping faulty memory:

@@ -272,6 +272,7 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 	staticOf(0, "Device State", "device_state", "device_state"),
 	sectionOf(0, "GPU Virtualization Mode", "gpu_virtualization_mode"),
 		staticOf(1, "Virtualization Mode", "virtualization_mode", "virtualization_mode"),
+		optionalFieldOf(1, "Enabled VFs", "enabled_vfs", "vf.enabled"),
 	fieldOf(0, "GPU Recovery Action", "gpu_recovery_action", "recovery_action"),
 	sectionOf(0, "PCI", "pci"),
 		pciPartOf(SpecKind::BdfBus, 1, "Bus", "bus"),
