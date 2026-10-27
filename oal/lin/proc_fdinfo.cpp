@@ -353,8 +353,12 @@ ProcUtil toProcUtil(const EngineUtilMap &engineUtils)
 			maybeMax(pu.render, pct);
 		} else if (name == "bcs" || name == "copy") {
 			maybeMax(pu.copy, pct);
-		} else if (name == "vcs" || name == "vecs" || name == "video" || name == "video-enhance") {
+		} else if (name == "vcs" || name == "video") {
 			maybeMax(pu.media, pct);
+			maybeMax(pu.video, pct);
+		} else if (name == "vecs" || name == "video-enhance") {
+			maybeMax(pu.media, pct);
+			maybeMax(pu.videoEnhance, pct);
 		}
 	}
 
@@ -380,6 +384,12 @@ ProcUtil aggregateDeviceUtil(const std::vector<ProcessSnapshot> &before, const s
 		if (pu.copy) {
 			agg.copy = std::make_optional(agg.copy.value_or(0.0F) + *pu.copy);
 		}
+		if (pu.video) {
+			agg.video = std::make_optional(agg.video.value_or(0.0F) + *pu.video);
+		}
+		if (pu.videoEnhance) {
+			agg.videoEnhance = std::make_optional(agg.videoEnhance.value_or(0.0F) + *pu.videoEnhance);
+		}
 	}
 
 	const auto clamp100 = [](std::optional<float> v) -> std::optional<float> {
@@ -389,6 +399,8 @@ ProcUtil aggregateDeviceUtil(const std::vector<ProcessSnapshot> &before, const s
 	agg.render = clamp100(agg.render);
 	agg.media = clamp100(agg.media);
 	agg.copy = clamp100(agg.copy);
+	agg.video = clamp100(agg.video);
+	agg.videoEnhance = clamp100(agg.videoEnhance);
 	return agg;
 }
 

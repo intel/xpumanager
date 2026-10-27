@@ -372,6 +372,13 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``utilization.media``
      - %
      - Media engine utilization
+   * - ``utilization.video``
+     - %
+     - Busiest video decode/encode engine; one engine class does both on Linux, so they are not
+       reported apart
+   * - ``utilization.video_enhancement``
+     - %
+     - Busiest video enhancement engine (scaling, color conversion)
    * - ``utilization.copy``
      - %
      - Copy engine utilization

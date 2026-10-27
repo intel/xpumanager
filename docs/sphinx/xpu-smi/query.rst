@@ -209,6 +209,8 @@ From an Intel Arc B580 run by a non-root user.
            Compute                           : 0.00 %
            Render                            : 0.00 %
            Media                             : 0.00 %
+           Video                             : 0.00 %
+           Video Enhancement                 : 0.00 %
            Copy                              : 0.00 %
        ECC Mode
            Current                           : Disabled
@@ -275,6 +277,10 @@ Reading the Report
   Resizable BAR says whether it was resized; the driver reads that from PCI configuration space.
 - FB Memory Usage: Reserved is memory the driver keeps back (installed size minus Total). Used
   counts it, so Total is Used plus Free. A memory clock the driver reports as 0 reads ``N/A``.
+- Utilization comes from the Sysman engine counters, or from the per-process engine times in
+  fdinfo where those are unavailable; never from the EU array, whose metric stream is slow to
+  open. Video and Video Enhancement split Media into its decode/encode engines (which Linux
+  reports as one) and its enhancement engines, on devices that have them.
 - GPU utilization is the busiest engine's share of the window. An engine counts as busy for all
   the time it has work scheduled, so it can read higher than ``eu.active`` under the same
   workload.

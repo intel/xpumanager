@@ -379,6 +379,8 @@ TEST_CASE("getMetricsByGroup UTILIZATION returns only canonical names, no aliase
 		std::string_view{"utilization.compute"},
 		std::string_view{"utilization.render"},
 		std::string_view{"utilization.media"},
+		std::string_view{"utilization.video"},
+		std::string_view{"utilization.video_enhancement"},
 		std::string_view{"utilization.copy"},
 		std::string_view{"utilization.memory"},
 		std::string_view{"eu.active"},

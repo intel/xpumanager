@@ -200,10 +200,12 @@ struct EngineCache
 	 * (XPUM-1483).
 	 */
 	UtilSample gpu{};
-	UtilSample compute{}; /**< ZES_ENGINE_GROUP_COMPUTE_ALL, as the driver aggregates it */
-	UtilSample render{};  /**< ZES_ENGINE_GROUP_RENDER_ALL */
-	UtilSample media{};	  /**< ZES_ENGINE_GROUP_MEDIA_ALL */
-	UtilSample copy{};	  /**< ZES_ENGINE_GROUP_COPY_ALL */
+	UtilSample compute{};	   /**< ZES_ENGINE_GROUP_COMPUTE_ALL, as the driver aggregates it */
+	UtilSample render{};	   /**< ZES_ENGINE_GROUP_RENDER_ALL */
+	UtilSample media{};		   /**< ZES_ENGINE_GROUP_MEDIA_ALL */
+	UtilSample copy{};		   /**< ZES_ENGINE_GROUP_COPY_ALL */
+	UtilSample video{};		   /**< The busiest single decode, encode or codec engine */
+	UtilSample videoEnhance{}; /**< The busiest single video enhancement engine */
 };
 
 /** One read of a device's experimental RAS states, shared by every ECC field of a sample. */
@@ -273,6 +275,8 @@ struct MetricCache
 	std::optional<float> fdinfoCompute; ///< device-level compute util from fdinfo (available without root)
 	std::optional<float> fdinfoRender;
 	std::optional<float> fdinfoMedia;
+	std::optional<float> fdinfoVideo;		 ///< decode/encode engines from fdinfo
+	std::optional<float> fdinfoVideoEnhance; ///< video enhancement engines from fdinfo
 	std::optional<float> fdinfoCopy;
 };
 

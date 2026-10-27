@@ -155,6 +155,47 @@ constexpr auto MEDIA = QueryMetric{
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}};
 
+/**
+ * @brief Reads one media sub-figure: from the Sysman engine counters, otherwise from fdinfo.
+ *
+ * @tparam ENGINES The EngineCache figure, e.g. EngineCache::video.
+ * @tparam FDINFO  The fdinfo figure, e.g. MetricCache::fdinfoVideo.
+ */
+template <UtilSample EngineCache::*ENGINES, std::optional<float> MetricCache::*FDINFO>
+ze_result_t mediaPartGetter(devInfo & /*d*/, MetricValue &out, const MetricCache &cache)
+{
+	if (const auto r = formatUtil(cache.engines.*ENGINES, out); r == ZE_RESULT_SUCCESS) {
+		return r;
+	}
+	if (const auto &fd = cache.*FDINFO) {
+		out = xpum::compat::format("{:.2f}", static_cast<double>(*fd));
+		return ZE_RESULT_SUCCESS;
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+constexpr auto VIDEO = QueryMetric{
+	// NOLINT(readability-identifier-naming)
+	.name = "utilization.video",
+	.unit = "%",
+	.description = "Busiest video decode/encode engine: active time as a fraction of elapsed time. One engine class "
+				   "does both on Linux, so they are not reported apart",
+	.source = MetricSource::Live,
+	.groups = MetricGroup::UTILIZATION,
+	.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
+	.getter = mediaPartGetter<&EngineCache::video, &MetricCache::fdinfoVideo>};
+
+constexpr auto VIDEO_ENHANCEMENT = QueryMetric{
+	// NOLINT(readability-identifier-naming)
+	.name = "utilization.video_enhancement",
+	.unit = "%",
+	.description = "Busiest video enhancement engine (scaling, color conversion): active time as a fraction of "
+				   "elapsed time",
+	.source = MetricSource::Live,
+	.groups = MetricGroup::UTILIZATION,
+	.inputs = MetricInput::ENGINE | MetricInput::FDINFO,
+	.getter = mediaPartGetter<&EngineCache::videoEnhance, &MetricCache::fdinfoVideoEnhance>};
+
 constexpr auto COPY =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "utilization.copy",
@@ -197,7 +238,8 @@ constexpr auto MEM_UTIL =
 					return r;
 				}};
 
-constexpr auto ALL = std::to_array<QueryMetric>({GPU, COMPUTE, RENDER, MEDIA, COPY, MEM_UTIL});
+constexpr auto ALL =
+	std::to_array<QueryMetric>({GPU, COMPUTE, RENDER, MEDIA, VIDEO, VIDEO_ENHANCEMENT, COPY, MEM_UTIL});
 
 } // namespace
 

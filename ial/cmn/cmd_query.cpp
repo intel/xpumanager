@@ -332,6 +332,8 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Compute", "compute", "utilization.compute").needing(Requirement::Perfmon),
 		fieldOf(1, "Render", "render", "utilization.render").needing(Requirement::Perfmon),
 		fieldOf(1, "Media", "media", "utilization.media").needing(Requirement::Perfmon),
+		optionalFieldOf(1, "Video", "video", "utilization.video").needing(Requirement::Perfmon),
+		optionalFieldOf(1, "Video Enhancement", "video_enhancement", "utilization.video_enhancement").needing(Requirement::Perfmon),
 		fieldOf(1, "Copy", "copy", "utilization.copy").needing(Requirement::Perfmon),
 	sectionOf(0, "ECC Mode", "ecc_mode"),
 		fieldOf(1, "Current", "current", "ecc.mode.current"),

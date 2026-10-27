@@ -124,3 +124,17 @@ TEST_CASE("engineCountsPerClass: nothing for another device, or without a /proc"
 	CHECK(fdinfo::engineCountsPerClass(BDF, "/nonexistent/proc").empty());
 	CHECK(fdinfo::engineCountsPerClass("", proc.path.string()).empty());
 }
+
+TEST_CASE("toProcUtil: video and video-enhance engines feed media and their own figures")
+{
+	const fdinfo::EngineUtilMap utils{{"vcs", 30.0F}, {"vecs", 70.0F}, {"ccs", 5.0F}};
+	const auto pu = fdinfo::toProcUtil(utils);
+	CHECK(pu.media == 70.0F);
+	CHECK(pu.video == 30.0F);
+	CHECK(pu.videoEnhance == 70.0F);
+	CHECK(pu.compute == 5.0F);
+
+	const auto onlyDecode = fdinfo::toProcUtil({{"video", 12.0F}});
+	CHECK(onlyDecode.video == 12.0F);
+	CHECK_FALSE(onlyDecode.videoEnhance.has_value());
+}

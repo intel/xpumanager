@@ -32,10 +32,12 @@
 // nullopt means no data is available for that engine type.
 struct ProcUtil
 {
-	std::optional<float> compute; ///< Compute Command Streamer  (ccs / compute)
-	std::optional<float> copy;	  ///< Blitter / DMA             (bcs / copy)
-	std::optional<float> render;  ///< Render Command Streamer   (rcs / render)
-	std::optional<float> media;	  ///< Video engines             (vcs / vecs / video)
+	std::optional<float> compute;	   ///< Compute Command Streamer  (ccs / compute)
+	std::optional<float> copy;		   ///< Blitter / DMA             (bcs / copy)
+	std::optional<float> render;	   ///< Render Command Streamer   (rcs / render)
+	std::optional<float> media;		   ///< Video engines             (vcs / vecs / video)
+	std::optional<float> video;		   ///< Decode/encode engines     (vcs / video)
+	std::optional<float> videoEnhance; ///< Video enhancement engines (vecs / video-enhance)
 	// EU metrics — populated via L0 ZET proportional attribution (root / CAP_PERFMON only)
 	std::optional<float> euActive; ///< EU active %  (shaders executing)
 	std::optional<float> euStall;  ///< EU stall %   (shaders blocked — memory / barrier / etc.)

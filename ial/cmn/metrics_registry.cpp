@@ -70,6 +70,11 @@ static constexpr auto ENGINE_MAP = std::to_array<EngineEntry>({
 	{&EngineCache::render, ZES_ENGINE_GROUP_RENDER_ALL},
 	{&EngineCache::media, ZES_ENGINE_GROUP_MEDIA_ALL},
 	{&EngineCache::copy, ZES_ENGINE_GROUP_COPY_ALL},
+	// One video engine class does both decode and encode on Linux, so they share one figure.
+	{&EngineCache::video, ZES_ENGINE_GROUP_MEDIA_DECODE_SINGLE},
+	{&EngineCache::video, ZES_ENGINE_GROUP_MEDIA_ENCODE_SINGLE},
+	{&EngineCache::video, ZES_ENGINE_GROUP_MEDIA_CODEC_SINGLE},
+	{&EngineCache::videoEnhance, ZES_ENGINE_GROUP_MEDIA_ENHANCEMENT_SINGLE},
 });
 
 EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
@@ -82,7 +87,9 @@ EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
 	for (const auto &entry : ENGINE_MAP) {
 		const auto perTile = enginegroup::computeGroupUtilPerTile(before, after, entry.group);
 		if (const auto util = enginegroup::deviceUtilFromTiles(perTile)) {
-			engines.*entry.slot = {.percent = *util, .valid = true};
+			auto &slot = engines.*entry.slot;
+			// Several groups can feed one figure; it is the busiest of them.
+			slot = {.percent = slot.valid ? std::max(slot.percent, *util) : *util, .valid = true};
 		}
 	}
 	return engines;
@@ -243,6 +250,8 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 	cache.fdinfoCompute = std::nullopt;
 	cache.fdinfoRender = std::nullopt;
 	cache.fdinfoMedia = std::nullopt;
+	cache.fdinfoVideo = std::nullopt;
+	cache.fdinfoVideoEnhance = std::nullopt;
 	cache.fdinfoCopy = std::nullopt;
 	if (hasInput(inputs, MetricInput::FDINFO)) {
 		auto fdAfter = fdinfo::capture(devPciAddr(dev));
@@ -251,6 +260,8 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache)
 		cache.fdinfoCompute = devUtil.compute;
 		cache.fdinfoRender = devUtil.render;
 		cache.fdinfoMedia = devUtil.media;
+		cache.fdinfoVideo = devUtil.video;
+		cache.fdinfoVideoEnhance = devUtil.videoEnhance;
 		cache.fdinfoCopy = devUtil.copy;
 	}
 	cache.populated = true;
