@@ -28,6 +28,21 @@ struct PciDowngradeState
 	zes_device_action_t pendingAction;
 };
 
+/** The device's largest memory BAR, through which the host reaches its local memory. */
+struct MemoryBar
+{
+	uint64_t size = 0;				 ///< Bytes
+	bool resizableSupported = false; ///< The device supports Resizable BAR
+	bool resizableEnabled = false;	 ///< Resizable BAR is enabled for this BAR
+};
+
+/** The result of pci::getMemoryBar(). */
+struct MemoryBarQuery
+{
+	ze_result_t status{};
+	std::optional<MemoryBar> bar; ///< Set when status is ZE_RESULT_SUCCESS
+};
+
 class LIBXPUM_API pci : public sysman
 {
 private:
@@ -57,6 +72,7 @@ public:
 	void initFromAddress(const zes_pci_address_t &address);
 	ze_result_t getProperties(zes_device_handle_t device, zes_pci_properties_t *pciProperties);
 	ze_result_t getBars(zes_device_handle_t device);
+	[[nodiscard]] MemoryBarQuery getMemoryBar(zes_device_handle_t device);
 	ze_result_t getState(zes_device_handle_t device, zes_pci_link_status_t &pciLinkStatus);
 	ze_result_t getCurrentLinkSpeed(zes_device_handle_t device, zes_pci_speed_t &speed);
 	ze_result_t getStats(zes_device_handle_t device, zes_pci_stats_t *pciStats);

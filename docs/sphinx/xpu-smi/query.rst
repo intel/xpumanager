@@ -189,6 +189,8 @@ From an Intel Arc B580 run by a non-root user.
            Reserved                          : 0 MiB
            Used                              : 218.62 MiB
            Free                              : 11997.38 MiB
+       BAR Memory
+           Total                             : 16384 MiB
        Memory Info
            Memory Type                       : GDDR6
            Number of Memory Channels         : 6
@@ -258,6 +260,8 @@ Reading the Report
   Draw the driver's reading at one moment, and GPU Domain Power Draw the GPU domain's share.
   Current Power Limit is the sustained limit, or the burst or peak limit on a device without
   one; the burst and peak limits are listed on devices that report them.
+- BAR Memory is the device's largest memory BAR, through which the host reaches device memory.
+  Resizable BAR says whether it was resized; the driver reads that from PCI configuration space.
 - FB Memory Usage: Reserved is memory the driver keeps back (installed size minus Total). Used
   counts it, so Total is Used plus Free. A memory clock the driver reports as 0 reads ``N/A``.
 - GPU utilization is the busiest engine's share of the window. An engine counts as busy for all

@@ -449,6 +449,50 @@ std::string pci::getFWStatus()
 }
 
 /**
+ * @brief Finds the device's largest memory BAR and whether Resizable BAR is on for it.
+ *
+ * @param[in] device Sysman device handle.
+ *
+ * @retval {SUCCESS, bar}                         The largest memory BAR.
+ * @retval {ZE_RESULT_ERROR_UNSUPPORTED_FEATURE}  The device reports no memory BAR.
+ * @retval {Other}                                The error from zesDevicePciGetBars.
+ */
+MemoryBarQuery pci::getMemoryBar(zes_device_handle_t device)
+{
+	uint32_t barCount = 0;
+	ze_result_t result = zesDevicePciGetBars(device, &barCount, nullptr);
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get PCI BAR count: 0x{:X} ({})\n", static_cast<uint32_t>(result), l0_error_to_string(result));
+		return {result, std::nullopt};
+	}
+	std::vector<zes_pci_bar_properties_1_2_t> resizable(barCount);
+	std::vector<zes_pci_bar_properties_t> bars(barCount);
+	for (uint32_t i = 0; i < barCount; ++i) {
+		resizable[i].stype = ZES_STRUCTURE_TYPE_PCI_BAR_PROPERTIES_1_2;
+		bars[i].stype = ZES_STRUCTURE_TYPE_PCI_BAR_PROPERTIES;
+		bars[i].pNext = &resizable[i];
+	}
+	result = zesDevicePciGetBars(device, &barCount, bars.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		DBG("Failed to get PCI BAR properties: 0x{:X} ({})\n", static_cast<uint32_t>(result),
+			l0_error_to_string(result));
+		return {result, std::nullopt};
+	}
+	std::optional<MemoryBar> largest;
+	for (uint32_t i = 0; i < barCount; ++i) {
+		if (bars[i].type == ZES_PCI_BAR_TYPE_MEM && (!largest || bars[i].size > largest->size)) {
+			largest = MemoryBar{.size = bars[i].size,
+								.resizableSupported = resizable[i].resizableBarSupported != 0,
+								.resizableEnabled = resizable[i].resizableBarEnabled != 0};
+		}
+	}
+	if (!largest) {
+		return {ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, std::nullopt};
+	}
+	return {ZE_RESULT_SUCCESS, largest};
+}
+
+/**
  * @brief Reports the GFX firmware version read directly from the device's GSC.
  *
  * Same string as the Level Zero GFX firmware version, without enumerating every firmware

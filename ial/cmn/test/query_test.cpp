@@ -467,6 +467,7 @@ TEST_SUITE("query layout")
 												"PCI",
 												"Clocks Event Reasons",
 												"FB Memory Usage",
+												"BAR Memory",
 												"Memory Info",
 												"Scheduler Mode",
 												"Compute Resources",

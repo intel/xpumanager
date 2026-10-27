@@ -408,11 +408,57 @@ constexpr auto ATOMIC_REQUESTS =
 					return ZE_RESULT_SUCCESS;
 				}};
 
+/// The device's largest memory BAR, or nothing when it has none or the driver does not say.
+[[nodiscard]] std::optional<MemoryBar> memoryBarOf(devInfo &d)
+{
+	auto *p = d.dev->getPCI();
+	return p == nullptr ? std::nullopt : p->getMemoryBar(d.zesDeviceHdl).bar;
+}
+
+constexpr auto MEMORY_BAR_SIZE =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "pci.bar.memory.size",
+				.unit = "MiB",
+				.description = "Size of the device's largest memory BAR, the window through which the host reaches its "
+							   "local memory",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::PCI,
+				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+					const auto bar = memoryBarOf(d);
+					if (!bar) {
+						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+					}
+					out = xpum::compat::format("{}", static_cast<double>(bar->size) / (1024.0 * 1024.0));
+					return ZE_RESULT_SUCCESS;
+				}};
+
+constexpr auto RESIZABLE_BAR = QueryMetric{
+	// NOLINT(readability-identifier-naming)
+	.name = "pci.bar.resizable",
+	.unit = "",
+	.description = "Resizable BAR on the largest memory BAR: Enabled or Disabled. N/A where the device does "
+				   "not support it or support cannot be read: the runtime reads it from extended configuration "
+				   "space, which needs root",
+	.source = MetricSource::Static,
+	.groups = MetricGroup::PCI,
+	.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+		const auto bar = memoryBarOf(d);
+		if (!bar) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+		// An unprivileged runtime cannot read the capability and reports it as unsupported.
+		if (!bar->resizableSupported) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+		out = bar->resizableEnabled ? "Enabled" : "Disabled";
+		return ZE_RESULT_SUCCESS;
+	}};
+
 constexpr auto ALL = std::to_array<QueryMetric>({
-	BASE_CLASS,			SUB_CLASS,			 LINK_GEN_MAX,		  LINK_WIDTH_MAX,  LINK_GEN_CURRENT,
-	LINK_WIDTH_CURRENT, TX_THROUGHPUT,		 RX_THROUGHPUT,		  REPLAY_COUNTER,  RX_THROUGHPUT_KBS,
-	TX_THROUGHPUT_KBS,	LINK_GEN_HOST_MAX,	 LINK_WIDTH_HOST_MAX, AER_CORRECTABLE, AER_NON_FATAL,
-	AER_FATAL,			AER_REPLAY_ROLLOVER, AER_REPLAY_TIMEOUT,  ATOMIC_CAPS,	   ATOMIC_REQUESTS,
+	BASE_CLASS,			 SUB_CLASS,		  LINK_GEN_MAX,	   LINK_WIDTH_MAX,	  LINK_GEN_CURRENT,	   LINK_WIDTH_CURRENT,
+	TX_THROUGHPUT,		 RX_THROUGHPUT,	  REPLAY_COUNTER,  RX_THROUGHPUT_KBS, TX_THROUGHPUT_KBS,   LINK_GEN_HOST_MAX,
+	LINK_WIDTH_HOST_MAX, AER_CORRECTABLE, AER_NON_FATAL,   AER_FATAL,		  AER_REPLAY_ROLLOVER, AER_REPLAY_TIMEOUT,
+	ATOMIC_CAPS,		 ATOMIC_REQUESTS, MEMORY_BAR_SIZE, RESIZABLE_BAR,
 });
 
 } // namespace

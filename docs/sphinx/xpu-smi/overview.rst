@@ -432,6 +432,12 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``pcie.link.width.current``
      - —
      - Current PCIe link width
+   * - ``pci.bar.memory.size``
+     - MiB
+     - Size of the device's largest memory BAR, the window through which the host reaches its local memory
+   * - ``pci.bar.resizable``
+     - —
+     - Resizable BAR on that BAR: ``Enabled`` or ``Disabled``; reading it needs ``CAP_SYS_ADMIN``
    * - ``pcie.link.gen.host_max``
      - —
      - Maximum PCIe generation of the root port the device is under (Linux); a switch in between can limit the link further
