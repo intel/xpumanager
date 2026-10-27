@@ -344,6 +344,15 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``power.limit``
      - W
      - Current power limit
+   * - ``power.limit.default``
+     - W
+     - Default power limit from device properties
+   * - ``power.limit.min``
+     - W
+     - Lowest power limit that can be set, from device properties
+   * - ``power.draw.memory.instant``
+     - W
+     - Memory-domain power draw at this moment, on devices with a memory power domain
    * - ``power.limit.burst``
      - W
      - Burst power limit (PL2), on devices that report one
@@ -407,6 +416,15 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``memory.bandwidth.utilization``
      - %
      - Memory bandwidth utilization
+   * - ``clocks.throttle_time``
+     - us
+     - Time the GPU clock has been held back by any throttle reason; the Linux runtime does not count it
+   * - ``performance.factor.compute``
+     - —
+     - Performance factor (0-100) of the compute engines; 50 is balanced
+   * - ``performance.factor.media``
+     - —
+     - Performance factor (0-100) of the media engines; 50 is balanced
    * - ``clocks.current.graphics`` (alias: ``clocks.current.sm``)
      - MHz
      - Current graphics/SM clock
@@ -511,6 +529,9 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``vf.enabled``
      - —
      - SR-IOV virtual functions enabled on the physical function
+   * - ``ecc.mode.pending``
+     - —
+     - ECC state after the next reset: ``Enabled`` or ``Disabled``
    * - ``memory.offline_pages``
      - —
      - Device memory pages the driver has taken offline after errors (retired pages); ``N/A``

@@ -35,6 +35,7 @@ public:
 	ze_result_t setRange(double minFreq, double maxFreq);
 	ze_result_t getState(zes_freq_handle_t frequencyHandle, zes_freq_state_t *state);
 	ze_result_t getThrottleTime(zes_freq_handle_t frequencyHandle);
+	[[nodiscard]] ze_result_t getGpuThrottleTime(uint64_t &throttledUs);
 	ze_result_t getThrottleReason(zes_freq_throttle_reason_flags_t *throttleReasons);
 	ze_result_t setFrequencyRange(double minFreq, double maxFreq, int32_t subdeviceId = -1);
 	ze_result_t setFrequencyRangeForAll(double minFreq, double maxFreq);

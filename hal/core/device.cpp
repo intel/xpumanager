@@ -825,6 +825,47 @@ ze_result_t device::getRepairStatus(zes_repair_status_t &status)
 }
 
 /**
+ * @brief Reads the performance factor of the device-level domain covering @p engines.
+ *
+ * The factor (0-100) says how the hardware trades frequency between engine types; 50 is balanced.
+ *
+ * @param[in]  engines The engine type, e.g. ZES_ENGINE_TYPE_FLAG_COMPUTE.
+ * @param[out] factor  Receives the factor.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p factor was written.
+ * @retval ZE_RESULT_ERROR_UNINITIALIZED       The device has no Sysman handle.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No performance factor domain covers @p engines.
+ * @retval Other                               The error from the performance factor calls.
+ */
+ze_result_t device::getPerformanceFactor(zes_engine_type_flags_t engines, double &factor)
+{
+	if (zesDevice == nullptr) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+	uint32_t count = 0;
+	ze_result_t result = zesDeviceEnumPerformanceFactorDomains(zesDevice, &count, nullptr);
+	if (result != ZE_RESULT_SUCCESS || count == 0) {
+		DBG("No performance factor domains. 0x{:X} ({})\n", static_cast<uint32_t>(result), l0_error_to_string(result));
+		return result != ZE_RESULT_SUCCESS ? result : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	std::vector<zes_perf_handle_t> domains(count);
+	result = zesDeviceEnumPerformanceFactorDomains(zesDevice, &count, domains.data());
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	for (auto *domain : domains) {
+		zes_perf_properties_t properties{};
+		properties.stype = ZES_STRUCTURE_TYPE_PERF_PROPERTIES;
+		if (zesPerformanceFactorGetProperties(domain, &properties) != ZE_RESULT_SUCCESS || properties.onSubdevice ||
+			(properties.engines & engines) == 0) {
+			continue;
+		}
+		return zesPerformanceFactorGetConfig(domain, &factor);
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Retrieves the current device health status.
  *
  * @param[out] pHealth Pointer to receive the current device health status.

@@ -78,6 +78,7 @@ public:
 	ze_result_t getPowerLimits(zes_pwr_handle_t powerHandle);
 	ze_result_t getEnergy(uint64_t *power, uint64_t *timeStamp, bool forGPU);
 	[[nodiscard]] ze_result_t getInstantPower(uint32_t *milliwatts, bool forGPU);
+	[[nodiscard]] ze_result_t getMemoryInstantPower(uint32_t *milliwatts);
 
 	/// Spelled-out name of a Level Zero power domain, e.g. "Card". Never null; "Unknown" for
 	/// domains this build does not name.

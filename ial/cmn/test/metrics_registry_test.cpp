@@ -1578,9 +1578,9 @@ TEST_CASE("the SUPPORTED_CLOCKS section parses and selects its fields")
 
 TEST_CASE("fields no current device reports are not in the registry")
 {
-	// memory.offline_pages is back: the query report leaves it out where the driver lacks it.
-	for (const std::string_view name :
-		 {"power.limit.default", "power.limit.min", "ecc.mode.pending", "retired_pages.count"}) {
+	// memory.offline_pages, power.limit.default, power.limit.min and ecc.mode.pending are back: the
+	// query report leaves them out where the driver lacks them, and --verbose says Not Supported.
+	for (const std::string_view name : {"retired_pages.count"}) {
 		CHECK_FALSE_MESSAGE(findMetric(name).has_value(), name);
 	}
 	CHECK(parseGroupMask("page_retirement") == MetricGroup::NONE);

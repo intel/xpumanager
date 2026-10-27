@@ -301,13 +301,20 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 		fieldOf(1, "Tx Throughput", "tx_throughput", "pcie.tx.throughput.kbs"),
 		fieldOf(1, "Rx Throughput", "rx_throughput", "pcie.rx.throughput.kbs"),
 		optionalFieldOf(1, "Atomic Caps Inbound", "atomic_caps_inbound", "pcie.atomic.completer").needing(Requirement::SysAdmin),
+		optionalFieldOf(1, "Replays Since Reset", "replays_since_reset", "pcie.replay.counter"),
 		optionalFieldOf(1, "Atomic Requests", "atomic_requests", "pcie.atomic.requests").needing(Requirement::SysAdmin),
+	optionalFieldOf(0, "Fan Speed", "fan_speed", "fan.speed"),
+	sectionOf(0, "Performance Factor", "performance_factor"),
+		optionalFieldOf(1, "Compute", "compute", "performance.factor.compute"),
+		optionalFieldOf(1, "Media", "media", "performance.factor.media"),
 	sectionOf(0, "Clocks Event Reasons", "clocks_event_reasons"),
 });
 
 // The rows of Clocks Event Reasons come from THROTTLE_REASONS, between LAYOUT_HEAD and LAYOUT_TAIL.
 
 constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
+	sectionOf(0, "Clocks Event Reasons Counters", "clocks_event_reasons_counters"),
+		optionalFieldOf(1, "Throttled Time", "throttled_time", "clocks.throttle_time"),
 	sectionOf(0, "FB Memory Usage", "fb_memory_usage"),
 		fieldOf(1, "Total", "total", "memory.total"),
 		fieldOf(1, "Reserved", "reserved", "memory.reserved"),
@@ -337,6 +344,7 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Copy", "copy", "utilization.copy").needing(Requirement::Perfmon),
 	sectionOf(0, "ECC Mode", "ecc_mode"),
 		fieldOf(1, "Current", "current", "ecc.mode.current"),
+		optionalFieldOf(1, "Pending", "pending", "ecc.mode.pending"),
 	sectionOf(0, "ECC Errors", "ecc_errors"),
 		sectionOf(1, "Aggregate", "aggregate"),
 			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
@@ -380,6 +388,10 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Current Power Limit", "current_power_limit", "power.limit"),
 		optionalFieldOf(1, "Burst Power Limit", "burst_power_limit", "power.limit.burst"),
 		optionalFieldOf(1, "Peak Power Limit", "peak_power_limit", "power.limit.peak"),
+		optionalFieldOf(1, "Default Power Limit", "default_power_limit", "power.limit.default"),
+		optionalFieldOf(1, "Min Power Limit", "min_power_limit", "power.limit.min"),
+		optionalFieldOf(1, "Max Power Limit", "max_power_limit", "power.max_limit"),
+		optionalFieldOf(1, "Memory Power Draw", "memory_power_draw", "power.draw.memory.instant"),
 	sectionOf(0, "Clocks", "clocks"),
 		fieldOf(1, "Graphics", "graphics", "clocks.current.graphics"),
 		zeroUnknownFieldOf(1, "Memory", "memory", "clocks.current.memory"),

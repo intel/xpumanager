@@ -114,11 +114,12 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - Nothing in this report. Use ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array
        figures
    * - ``FAN``
-     - Nothing in this report. Use ``--query-gpu fan.speed`` for the fan speed
+     - The fan speed, on devices with fans
    * - ``COMPUTE``
      - Scheduler mode, and the number of tiles, slices, sub-slices per slice and EUs
    * - ``PERFORMANCE``
-     - Whether each clock throttle reason is active
+     - Whether each clock throttle reason is active, the time throttled, and the performance
+       factors, where the driver reports them
    * - ``SUPPORTED_CLOCKS``
      - The GPU core clocks the minimum and maximum of ``config --frequencyrange`` can be set
        to, summarised as ``low-high step N`` when evenly spaced. The memory clock cannot be
@@ -236,6 +237,7 @@ From an Intel Arc B580 run by a non-root user.
            GPU Domain Power Draw             : 0.06 W
            Current Power Limit               : 380.00 W
            Peak Power Limit                  : 380.00 W
+           Memory Power Draw                 : 8.38 W
        Clocks
            Graphics                          : 400 MHz
            Memory                            : 9500 MHz
@@ -274,6 +276,10 @@ Reading the Report
   counters since it was enumerated, and Atomic Caps Inbound and Atomic Requests come from its
   PCI Express capability, which needs root. All of these are Linux only, and left out where the
   device or OS does not report them.
+- Fan Speed, the Performance Factors, Throttled Time, PCIe Replays Since Reset, ECC Mode >
+  Pending, the default, minimum and maximum power limits and Memory Power Draw come from Level
+  Zero calls that many drivers do not implement; CRI's driver supplies none of them. They are
+  printed where the driver supplies a value, and with ``--verbose`` otherwise.
 - GPU Power Readings: Average Power Draw is the card's draw over the window, Instantaneous Power
   Draw the driver's reading at one moment, and GPU Domain Power Draw the GPU domain's share.
   Current Power Limit is the sustained limit, or the burst or peak limit on a device without

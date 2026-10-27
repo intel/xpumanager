@@ -315,6 +315,45 @@ ze_result_t throttleFlagGetter(devInfo &d, MetricValue &out, const MetricCache &
 }
 
 /**
+ * @brief Reads how long the GPU clock has been throttled, for any reason, in microseconds.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p out holds the time.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No frequency HAL, or the runtime does not count it.
+ */
+ze_result_t throttleTimeGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *freq = d.dev->getFrequency();
+	if (freq == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	uint64_t throttledUs = 0;
+	const auto r = freq->getGpuThrottleTime(throttledUs);
+	if (r == ZE_RESULT_SUCCESS) {
+		out = xpum::compat::format("{}", throttledUs);
+	}
+	return r;
+}
+
+/**
+ * @brief Reads the performance factor of the domain covering one engine type.
+ *
+ * @tparam ENGINES The engine type, e.g. ZES_ENGINE_TYPE_FLAG_COMPUTE.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p out holds the factor, 0-100.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No domain covers @p ENGINES (all on xe).
+ */
+template <zes_engine_type_flags_t ENGINES>
+ze_result_t performanceFactorGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	double factor = 0.0;
+	const auto r = d.dev->getPerformanceFactor(ENGINES, factor);
+	if (r == ZE_RESULT_SUCCESS) {
+		out = xpum::compat::format("{:.0f}", factor);
+	}
+	return r;
+}
+
+/**
  * @brief Reads the GPU core clock the driver last requested from the hardware.
  *
  * @param[in]  d   Device to query; a multi-tile device reports its first tile.
@@ -377,6 +416,32 @@ constexpr auto MAX_GRAPHICS_ALIASES = std::to_array<std::string_view>({"clocks.m
 constexpr auto MAX_MEDIA_ALIASES = std::to_array<std::string_view>({"clocks.max.video"});
 
 constexpr auto SCALAR_CLOCK_METRICS = std::to_array<QueryMetric>({
+	{
+		.name = "clocks.throttle_time",
+		.unit = "us",
+		.description = "Time the GPU clock has been held back by any throttle reason, accumulated by the "
+					   "driver; the Linux runtime does not count it",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::PERFORMANCE,
+		.getter = throttleTimeGetter,
+	},
+	{
+		.name = "performance.factor.compute",
+		.unit = "",
+		.description = "Performance factor (0-100) of the compute engines: how the hardware trades frequency "
+					   "toward them; 50 is balanced",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::PERFORMANCE,
+		.getter = performanceFactorGetter<ZES_ENGINE_TYPE_FLAG_COMPUTE>,
+	},
+	{
+		.name = "performance.factor.media",
+		.unit = "",
+		.description = "Performance factor (0-100) of the media engines; 50 is balanced",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::PERFORMANCE,
+		.getter = performanceFactorGetter<ZES_ENGINE_TYPE_FLAG_MEDIA>,
+	},
 	{
 		.name = "clocks.current.graphics",
 		.aliases = GRAPHICS_ALIASES,

@@ -260,6 +260,35 @@ constexpr auto ECC_METRICS = std::to_array<QueryMetric>({
 		.getter = rasErrorGetter<RasTypes::BOTH, isRasCategory<ZES_RAS_ERROR_CATEGORY_EXP_NON_COMPUTE_ERRORS>>,
 	},
 	{
+		.name = "ecc.mode.pending",
+		.unit = "",
+		.description = "ECC state after the next reset: Enabled or Disabled",
+		.source = MetricSource::Live,
+		.groups = MetricGroup::ECC,
+		.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+			auto *ecc = d.dev->getECC();
+			if (ecc == nullptr) {
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+			zes_device_ecc_properties_t props{};
+			props.stype = ZES_STRUCTURE_TYPE_DEVICE_ECC_PROPERTIES;
+			if (auto const r = ecc->getState(d.zesDeviceHdl, &props); r != ZE_RESULT_SUCCESS) {
+				return r;
+			}
+			switch (props.pendingState) {
+			case ZES_DEVICE_ECC_STATE_ENABLED:
+				out = "Enabled";
+				return ZE_RESULT_SUCCESS;
+			case ZES_DEVICE_ECC_STATE_DISABLED:
+				out = "Disabled";
+				return ZE_RESULT_SUCCESS;
+			default:
+				// The driver says it has no pending state, as on CRI, where ECC is not configurable.
+				return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+			}
+		},
+	},
+	{
 		.name = "memory.offline_pages",
 		.unit = "",
 		.description = "Device memory pages the driver has taken offline after errors (retired pages)",

@@ -470,6 +470,36 @@ ze_result_t frequency::getThrottleTime(zes_freq_handle_t frequencyHandle)
 }
 
 /**
+ * @brief Reads how long the GPU clock has been held back by any throttle reason.
+ *
+ * @param[out] throttledUs Receives the accumulated throttled time in microseconds.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p throttledUs was written.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The device has no GPU frequency domain, or the
+ *                                             runtime does not count throttled time (Linux).
+ * @retval Other                               The error from zesFrequencyGetThrottleTime.
+ */
+ze_result_t frequency::getGpuThrottleTime(uint64_t &throttledUs)
+{
+	for (uint32_t i = 0; i < frequencyCount; ++i) {
+		zes_freq_properties_t properties = {};
+		if (getProperties(frequencyHandles[i], &properties) != ZE_RESULT_SUCCESS ||
+			properties.type != ZES_FREQ_DOMAIN_GPU || properties.onSubdevice) {
+			continue;
+		}
+		zes_freq_throttle_time_t throttleTime = {};
+		const ze_result_t result = zesFrequencyGetThrottleTime(frequencyHandles[i], &throttleTime);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("No throttle time. 0x{:X} ({})\n", static_cast<uint32_t>(result), l0_error_to_string(result));
+			return result;
+		}
+		throttledUs = throttleTime.throttleTime;
+		return ZE_RESULT_SUCCESS;
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Gets the current throttle reasons for GPU frequency domains
  *
  * This function retrieves a bitmask indicating the active throttle reasons

@@ -546,6 +546,35 @@ ze_result_t power::getInstantPower(uint32_t *milliwatts, bool forGPU)
 }
 
 /**
+ * @brief Reads the instantaneous power of the memory power domain.
+ *
+ * @param[out] milliwatts Receives the instantaneous power in milliwatts.
+ *
+ * @retval ZE_RESULT_SUCCESS                    @p milliwatts was written.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p milliwatts is null.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  The device has no memory power domain, or the
+ *                                              runtime or loader cannot report instantaneous power.
+ * @retval Other                                The error from reading the domain.
+ */
+ze_result_t power::getMemoryInstantPower(uint32_t *milliwatts)
+{
+	if (milliwatts == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t properties{};
+		zes_power_ext_properties_t extProps{};
+		if (const auto result = getProperties(powerHandles[i], &properties, &extProps); result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		if (extProps.domain == ZES_POWER_DOMAIN_MEMORY && !properties.onSubdevice) {
+			return powerGetInstantUsage(powerHandles[i], milliwatts);
+		}
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Gets energy counters for each tile/subdevice
  *
  * This function enumerates all power domains and returns energy counter data

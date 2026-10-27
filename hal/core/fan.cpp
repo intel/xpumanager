@@ -444,7 +444,8 @@ ze_result_t fan::getSpeedPercent(int32_t &pct)
 		return result;
 	}
 	if (fanCount == 0 || fanHandles == nullptr) {
-		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+		// No fan domains: a passively cooled card has no fan to report.
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
 	int64_t totalPct = 0;
