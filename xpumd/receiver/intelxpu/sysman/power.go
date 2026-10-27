@@ -218,7 +218,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			msg += ": no suitable power limits"
 		}
 		power.logger.Infow(msg, "all", len(limits), "reported", count,
-			"disabled", disabled, "wrong unit", wrongUnit, "attributes", power.attributes)
+			"disabled", disabled, "wrongUnit", wrongUnit, "attributes", power.attributes)
 	}
 }
 
