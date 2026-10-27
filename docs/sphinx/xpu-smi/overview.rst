@@ -469,6 +469,42 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``ras.non_compute.errors.total``
      - —
      - RAS non-compute error counter (correctable + uncorrectable)
+   * - ``ras.memory.errors.correctable``
+     - —
+     - RAS correctable device memory error counter (xe netlink RAS category)
+   * - ``ras.memory.errors.uncorrectable``
+     - —
+     - RAS uncorrectable device memory error counter (xe netlink RAS category)
+   * - ``ras.pcie.errors.correctable``
+     - —
+     - RAS correctable PCIe subsystem error counter (xe netlink RAS category)
+   * - ``ras.pcie.errors.uncorrectable``
+     - —
+     - RAS uncorrectable PCIe subsystem error counter (xe netlink RAS category)
+   * - ``ras.soc_internal.errors.correctable``
+     - —
+     - RAS correctable SoC internal error counter (xe netlink RAS category)
+   * - ``ras.soc_internal.errors.uncorrectable``
+     - —
+     - RAS uncorrectable SoC internal error counter (xe netlink RAS category)
+   * - ``ras.compute.errors.correctable``
+     - —
+     - RAS correctable compute engine error counter (xe netlink RAS category)
+   * - ``ras.compute.errors.uncorrectable``
+     - —
+     - RAS uncorrectable compute engine error counter (xe netlink RAS category)
+   * - ``ras.fabric.errors.correctable``
+     - —
+     - RAS correctable fabric interconnect error counter (xe netlink RAS category)
+   * - ``ras.fabric.errors.uncorrectable``
+     - —
+     - RAS uncorrectable fabric interconnect error counter (xe netlink RAS category)
+   * - ``ras.scale.errors.correctable``
+     - —
+     - RAS correctable scale fabric error counter (xe netlink RAS category)
+   * - ``ras.scale.errors.uncorrectable``
+     - —
+     - RAS uncorrectable scale fabric error counter (xe netlink RAS category)
    * - ``eu.active``
      - %
      - EU array active percentage (Intel Xe only)

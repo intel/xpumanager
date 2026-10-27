@@ -681,13 +681,46 @@ TEST_CASE("a device that answers nothing renders every row as N/A and every valu
 			CHECK_MESSAGE(line.ends_with(": N/A"), line);
 		}
 	}
-	CHECK(leaves > referencedMetricNames().size());
+	CHECK(leaves > 0);
 
 	QueryReport report;
 	report.gpus = {node};
 	CHECK_NOTHROW((void)renderText(report));
 	const auto json = toJson(report).dump(4);
 	CHECK(json.find("\"N/A\"") == std::string::npos);
+	// Rows the text leaves out when absent are still in the JSON, as null.
+	std::size_t nulls = 0;
+	for (auto at = json.find(": null"); at != std::string::npos; at = json.find(": null", at + 1)) {
+		++nulls;
+	}
+	CHECK(nulls > referencedMetricNames().size());
+}
+
+TEST_CASE("a category row the device does not report is left out of the text but kept in the JSON")
+{
+	MetricValues values;
+	for (const auto name : referencedMetricNames()) {
+		values[name] = std::nullopt;
+	}
+	values["ras.memory.errors.uncorrectable"] = "62";
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("ECC"), values, {}, {});
+	std::string text;
+	for (const auto &child : node.children) {
+		renderNode(child, 1, text);
+	}
+	CHECK(text.find("Memory Uncorrectable") != std::string::npos);
+	CHECK(text.find("Memory Correctable") == std::string::npos);
+	CHECK(text.find("Cache Correctable") == std::string::npos);
+	// The totals are always printed.
+	CHECK(text.find("Correctable                   : N/A") != std::string::npos);
+
+	QueryReport report;
+	report.gpus = {node};
+	const auto json = toJson(report);
+	const auto &aggregate = json["gpus"][0]["ecc_errors"]["aggregate"];
+	CHECK(aggregate["memory_uncorrectable"] == "62");
+	CHECK(aggregate.contains("memory_correctable"));
+	CHECK(aggregate["memory_correctable"].is_null());
 }
 
 TEST_CASE("selecting nothing but processes reads no registry field")

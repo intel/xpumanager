@@ -102,8 +102,9 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
      - PCI address fields, class code and IDs, the physical slot, link generation and width
        (maximum and current), and throughput
    * - ``ECC``
-     - ECC mode and aggregate error counts, in total and by RAS category: cache and
-       non-compute errors, resets, programming errors and driver errors
+     - ECC mode and aggregate error counts, in total and by RAS category: memory, PCIe, SoC
+       internal, compute, fabric and scale errors (xe), or cache and non-compute errors, resets,
+       programming errors and driver errors (i915)
    * - ``EU_ARRAY``
      - Nothing in this report. Use ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array
        figures
@@ -208,13 +209,6 @@ From an Intel Arc B580 run by a non-root user.
            Aggregate
                Correctable                   : N/A
                Uncorrectable                 : N/A
-               Cache Correctable             : N/A
-               Cache Uncorrectable           : N/A
-               Non-Compute Correctable       : N/A
-               Non-Compute Uncorrectable     : N/A
-               Resets                        : N/A
-               Programming Errors            : N/A
-               Driver Errors                 : N/A
        Temperature
            GPU Current Temp                  : 30.00 C
            GPU Shutdown Temp                 : 130 C
@@ -265,6 +259,9 @@ Reading the Report
 - The slowdown and shutdown temperatures are the configured thresholds the
   :doc:`health` command compares against, not sensor readings.
 - On Windows the kernel-mode driver version reads ``N/A``.
+- Rows only some devices or drivers supply, such as the RAS categories under ECC Errors, are
+  left out of the text report on a device without them, so it does not fill with ``N/A``. The
+  JSON output keeps every key, as ``null``.
 
 A device in survivability mode is listed with only its state and the recovery action
 (``Firmware update and GPU reset``).

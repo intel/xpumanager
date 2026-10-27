@@ -162,6 +162,8 @@ struct Spec
 	std::string_view key;
 	std::string_view source;		///< Registry field name, or static property key.
 	bool negativeIsUnknown = false; ///< A negative reading is the driver's way of saying "unknown".
+	bool hideWhenAbsent = false;	///< See QueryNode::hideWhenAbsent.
+	bool zeroIsUnknown = false;		///< A reading of 0 is the driver's way of saying "unknown".
 };
 
 constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
@@ -182,6 +184,13 @@ constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
 										 std::string_view name)
 {
 	return Spec{SpecKind::Field, depth, label, key, name, true};
+}
+
+/// A field only some devices or drivers supply: the text report leaves it out where it has no value.
+[[nodiscard]] constexpr Spec optionalFieldOf(std::size_t depth, std::string_view label, std::string_view key,
+											 std::string_view name)
+{
+	return Spec{SpecKind::Field, depth, label, key, name, false, true};
 }
 
 [[nodiscard]] constexpr Spec staticOf(std::size_t depth, std::string_view label, std::string_view key,
@@ -266,13 +275,27 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		sectionOf(1, "Aggregate", "aggregate"),
 			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
 			fieldOf(2, "Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
-			fieldOf(2, "Cache Correctable", "cache_correctable", "ras.cache.errors.correctable"),
-			fieldOf(2, "Cache Uncorrectable", "cache_uncorrectable", "ras.cache.errors.uncorrectable"),
-			fieldOf(2, "Non-Compute Correctable", "non_compute_correctable", "ras.non_compute.errors.correctable"),
-			fieldOf(2, "Non-Compute Uncorrectable", "non_compute_uncorrectable", "ras.non_compute.errors.uncorrectable"),
-			fieldOf(2, "Resets", "resets", "ras.reset"),
-			fieldOf(2, "Programming Errors", "programming_errors", "ras.programming.errors"),
-			fieldOf(2, "Driver Errors", "driver_errors", "ras.driver.errors"),
+			// Each driver reports its own set of categories (the netlink ones on xe, the others on
+			// i915), so only those the device reports are printed.
+			optionalFieldOf(2, "Memory Correctable", "memory_correctable", "ras.memory.errors.correctable"),
+			optionalFieldOf(2, "Memory Uncorrectable", "memory_uncorrectable", "ras.memory.errors.uncorrectable"),
+			optionalFieldOf(2, "PCIe Correctable", "pcie_correctable", "ras.pcie.errors.correctable"),
+			optionalFieldOf(2, "PCIe Uncorrectable", "pcie_uncorrectable", "ras.pcie.errors.uncorrectable"),
+			optionalFieldOf(2, "SoC Internal Correctable", "soc_internal_correctable", "ras.soc_internal.errors.correctable"),
+			optionalFieldOf(2, "SoC Internal Uncorrectable", "soc_internal_uncorrectable", "ras.soc_internal.errors.uncorrectable"),
+			optionalFieldOf(2, "Compute Correctable", "compute_correctable", "ras.compute.errors.correctable"),
+			optionalFieldOf(2, "Compute Uncorrectable", "compute_uncorrectable", "ras.compute.errors.uncorrectable"),
+			optionalFieldOf(2, "Fabric Correctable", "fabric_correctable", "ras.fabric.errors.correctable"),
+			optionalFieldOf(2, "Fabric Uncorrectable", "fabric_uncorrectable", "ras.fabric.errors.uncorrectable"),
+			optionalFieldOf(2, "Scale Correctable", "scale_correctable", "ras.scale.errors.correctable"),
+			optionalFieldOf(2, "Scale Uncorrectable", "scale_uncorrectable", "ras.scale.errors.uncorrectable"),
+			optionalFieldOf(2, "Cache Correctable", "cache_correctable", "ras.cache.errors.correctable"),
+			optionalFieldOf(2, "Cache Uncorrectable", "cache_uncorrectable", "ras.cache.errors.uncorrectable"),
+			optionalFieldOf(2, "Non-Compute Correctable", "non_compute_correctable", "ras.non_compute.errors.correctable"),
+			optionalFieldOf(2, "Non-Compute Uncorrectable", "non_compute_uncorrectable", "ras.non_compute.errors.uncorrectable"),
+			optionalFieldOf(2, "Resets", "resets", "ras.reset"),
+			optionalFieldOf(2, "Programming Errors", "programming_errors", "ras.programming.errors"),
+			optionalFieldOf(2, "Driver Errors", "driver_errors", "ras.driver.errors"),
 	sectionOf(0, "Temperature", "temperature"),
 		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
 		fieldOf(1, "GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
@@ -425,10 +448,12 @@ void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<
 			return std::nullopt;
 		}
 		auto value = valueOf(ctx.values, spec.source);
-		if (spec.negativeIsUnknown && value && value->starts_with('-')) {
+		if ((spec.negativeIsUnknown && value && value->starts_with('-')) || (spec.zeroIsUnknown && value == "0")) {
 			value.reset();
 		}
-		return leafOf(spec.label, spec.key, std::move(value), field->unit);
+		auto node = leafOf(spec.label, spec.key, std::move(value), field->unit);
+		node.hideWhenAbsent = spec.hideWhenAbsent;
+		return node;
 	}
 	case SpecKind::Static: {
 		const auto *known = staticSpecOf(spec.source);
@@ -634,8 +659,19 @@ std::span<const StaticKey> staticKeys()
 	return KEYS;
 }
 
+bool QueryNode::shownInText() const noexcept
+{
+	if (isLeaf()) {
+		return value || !hideWhenAbsent;
+	}
+	return isList || value || std::ranges::any_of(children, &QueryNode::shownInText);
+}
+
 void renderNode(const QueryNode &node, std::size_t depth, std::string &out)
 {
+	if (!node.shownInText()) {
+		return;
+	}
 	if (node.isLeaf() || node.value) {
 		appendLine(out, depth, node.label, valueText(node));
 	} else {
