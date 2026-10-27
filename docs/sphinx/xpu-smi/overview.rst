@@ -317,6 +317,12 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``temperature.gpu.threshold.shutdown``
      - C
      - Configured GPU core temperature at which the device shuts down
+   * - ``temperature.gpu.max``
+     - C
+     - Highest temperature the driver says the GPU sensor can operate at
+   * - ``temperature.memory.max``
+     - C
+     - Highest temperature the driver says the memory sensor can operate at
    * - ``temperature.memory.threshold.throttle``
      - C
      - Configured memory temperature at which the clock is throttled

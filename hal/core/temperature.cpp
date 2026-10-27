@@ -386,6 +386,37 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 }
 
 /**
+ * @brief The highest temperature the driver says a sensor type can operate at.
+ *
+ * Takes the first sensor of @p type that reports one.
+ *
+ * @param[in]  type    The sensor type, e.g. ZES_TEMP_SENSORS_GPU.
+ * @param[out] maxTemp Receives the maximum in Celsius.
+ *
+ * @retval ZE_RESULT_SUCCESS                    @p maxTemp was written.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p maxTemp is null.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  No sensor of @p type reports a maximum.
+ */
+ze_result_t temperature::getMaxTemp(zes_temp_sensors_t type, double *maxTemp)
+{
+	if (maxTemp == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	for (uint32_t i = 0; i < temperatureCount; ++i) {
+		zes_temp_properties_t properties = {};
+		if (getProperties(temperatureHandles[i], &properties) != ZE_RESULT_SUCCESS || properties.type != type) {
+			continue;
+		}
+		// A driver that does not know the maximum reports a negative value.
+		if (properties.maxTemperature > 0.0) {
+			*maxTemp = properties.maxTemperature;
+			return ZE_RESULT_SUCCESS;
+		}
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
  * @brief Gets temperature for a specific sensor type per tile/subdevice
  *
  * This function enumerates all temperature sensors and returns the current

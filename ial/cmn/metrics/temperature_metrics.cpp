@@ -130,8 +130,46 @@ constexpr auto memShutdown = // NOLINT(readability-identifier-naming)
 				.groups = MetricGroup::TEMPERATURE,
 				.getter = thresholdGetter<&::temperature::getMemoryThreshold, true>};
 
-constexpr auto ALL =
-	std::to_array<QueryMetric>({gpu, mem, composite, gpuThrottle, gpuShutdown, memThrottle, memShutdown});
+/**
+ * @brief Reads the maximum operating temperature of one sensor type.
+ *
+ * @tparam TYPE The sensor type.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p out holds the maximum in Celsius.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE No temperature HAL, or no sensor of @p TYPE reports one.
+ */
+template <zes_temp_sensors_t TYPE> ze_result_t maxTempGetter(devInfo &d, MetricValue &out, const MetricCache &)
+{
+	auto *t = d.dev->getTemperature();
+	if (t == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	auto val = 0.0;
+	const auto r = t->getMaxTemp(TYPE, &val);
+	if (r == ZE_RESULT_SUCCESS) {
+		out = xpum::compat::format("{:.0f}", val);
+	}
+	return r;
+}
+
+constexpr auto gpuMax = // NOLINT(readability-identifier-naming)
+	QueryMetric{.name = "temperature.gpu.max",
+				.unit = "C",
+				.description = "Highest temperature the driver says the GPU sensor can operate at",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::TEMPERATURE,
+				.getter = maxTempGetter<ZES_TEMP_SENSORS_GPU>};
+
+constexpr auto memMax = // NOLINT(readability-identifier-naming)
+	QueryMetric{.name = "temperature.memory.max",
+				.unit = "C",
+				.description = "Highest temperature the driver says the memory sensor can operate at",
+				.source = MetricSource::Static,
+				.groups = MetricGroup::TEMPERATURE,
+				.getter = maxTempGetter<ZES_TEMP_SENSORS_MEMORY>};
+
+constexpr auto ALL = std::to_array<QueryMetric>(
+	{gpu, mem, composite, gpuThrottle, gpuShutdown, memThrottle, memShutdown, gpuMax, memMax});
 
 } // namespace
 
