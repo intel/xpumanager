@@ -282,7 +282,7 @@ Drivers:
             LimitsExt:
               - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
                 Source: 0  # ZES_POWER_SOURCE_ANY
-                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                LimitUnit: 1  # ZES_LIMIT_UNIT_CURRENT
                 Enabled: false
                 Interval: 1000
                 Limit: 200000

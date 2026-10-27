@@ -268,7 +268,8 @@ Drivers:
               Timestamp: 1000000
             ReturnValues:
               zesPowerGetLimitsExt: 0x70010001
-          # Only a disabled limit, thus no power limit metric to report.
+          # Only a limit with non-Watt unit, thus no power limit metric to report
+          # (XPUMD accepts enabled=false limits as valid ones, due to SYSM-485).
           - Properties:
               OnSubdevice: false
               SubdeviceId: 0
@@ -284,7 +285,7 @@ Drivers:
             LimitsExt:
               - Level: 1  # ZES_POWER_LEVEL_SUSTAINED
                 Source: 0  # ZES_POWER_SOURCE_ANY
-                LimitUnit: 2  # ZES_LIMIT_UNIT_POWER
+                LimitUnit: 1  # ZES_LIMIT_UNIT_CURRENT
                 Enabled: false
                 Interval: 1000
                 Limit: 200000

@@ -34,9 +34,10 @@ type power struct {
 
 // powerState holds the dynamic runtime state of the power instance.
 type powerState struct {
-	hasLimits bool
-	counter   *l0sysman.PowerEnergyCounter
+	limits  int // -1 before known, 0 disables (further) queries
+	counter *l0sysman.PowerEnergyCounter
 }
+
 type powerAttributes struct {
 	HwID             string `json:"hw.id"`
 	HwName           string `json:"hw.name"`
@@ -96,14 +97,14 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 			SubdeviceID:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: powerState{
-			hasLimits: true,
-			counter:   &counter,
+			limits:  -1,
+			counter: &counter,
 		},
 	}
 
 	if _, err = pwr.GetLimitsExt(); err != nil {
 		device.logger.Infow("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "attributes", p.attributes)
-		p.state.hasLimits = false
+		p.state.limits = 0
 	}
 
 	return p, nil
@@ -168,23 +169,31 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			"intervalSeconds", float64(tdiff)/1e6, "attributes", power.attributes)
 	}
 
-	// log only once
-	if !power.state.hasLimits {
+	// nothing further to report
+	if power.state.limits == 0 {
 		return
 	}
 
-	// TODO: find HW supporting this / test it
+	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/power.html
 	limits, err := power.GetLimitsExt()
 	if err != nil {
 		power.logger.Errorw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attributes)
-		power.state.hasLimits = false
+		power.state.limits = 0
 		return
 	}
 
 	count := 0
+	disabled := 0
+	wrongUnit := 0
 	for _, limit := range limits {
-		if !limit.Enabled.IsTrue() || limit.LimitUnit != l0sysman.LIMIT_UNIT_POWER {
-			// only enabled power limits are relevant for power usage
+		// report only power limits that are relevant in relation to reported power usage
+		if !limit.Enabled.IsTrue() {
+			disabled++
+			// TODO: Sysman unconditionally reports all limits as disabled (SYSM-485)
+			// continue
+		}
+		if limit.LimitUnit != l0sysman.LIMIT_UNIT_POWER {
+			wrongUnit++
 			continue
 		}
 		mb.RecordHwPowerLimitDataPoint(
@@ -201,9 +210,15 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		count++
 	}
 
-	if count == 0 {
-		power.logger.Infow("Power GetLimitsExt(): no suitable power limits", "all", len(limits), "attributes", power.attributes)
-		power.state.hasLimits = false
+	if count != power.state.limits {
+		power.state.limits = count
+		msg := "Power GetLimitsExt()"
+		if count == 0 {
+			// further queries disabled
+			msg += ": no suitable power limits"
+		}
+		power.logger.Infow(msg, "all", len(limits), "reported", count,
+			"disabled", disabled, "wrong unit", wrongUnit, "attributes", power.attributes)
 	}
 }
 

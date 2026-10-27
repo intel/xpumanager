@@ -24,6 +24,8 @@ Contents:
 * Breaking changes (for the `intel_xpu_info` exporter gRPC API):
   * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha1`
     * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
+* Metric workarounds:
+  * Report also disabled power limits (part of [#184](https://github.com/intel/xpumanager/issues/184) fix)
 * Metric updates:
   * Fan metrics support
   * Log output includes all relevant metric (differentiation) attributes
