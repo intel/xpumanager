@@ -32,6 +32,9 @@ Contents:
   * Temperature and power warning threshold rules synced with `xpu-smi`
 * New `health_check` extension, enabled by default in the example config and in the Helm chart,
   for checking the collector status over HTTP (port 13133)
+* Helm chart:
+  * Readiness probe for the xpumd container (`readinessProbe`), using the `health_check` extension
+  * Liveness probe (`livenessProbe`), disabled by default
 
 
 ## XPUM 2.3.0

@@ -238,12 +238,14 @@ And add following option to chart install:
 | infoLogs.enabled | bool | `false` | Collect the GPU info logs, i.e. the CPER records that the GPU driver exposes via the kernel tracing filesystem. Mounts the tracing filesystem of the node writable to the container, which the daemon needs root privileges to configure (the default, see `securityContextOverride`) |
 | infoLogs.tracefsPath | string | `"/sys/kernel/tracing"` | Host path of the kernel tracing filesystem, mounted (writable) to the container when the info logs are enabled |
 | initContainers | list | `[]` | Init containers to run |
+| livenessProbe | object | `{}` | [Liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) of the xpumd container. NOTE: requires the `health_check` extension to be enabled in `config.service.extensions` |
 | nameOverride | string | `""` | Override the chart name |
 | nodeSelector | object | `{}` | Node selector for pod placement |
 | podAnnotations | object | `{}` | Annotations to add to the pod |
 | podSecurityContextOverride | object | `{}` | [Pod security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod). NOTE: security settings control to what GPU metrics container has access to |
 | prometheus.monitor | bool | `false` | Add Prometheus service monitor for XPUMD, requires Prometheus to be installed. overrides `service.create` |
 | prometheus.release | string | `"prometheus-stack"` | Helm release name for Helm ('kube-prometheus') chart that installed Prometheus. (May be) needed for Prometheus to detect daemon serviceMonitor |
+| readinessProbe | object | `{"httpGet":{"path":"/","port":"health"},"periodSeconds":5}` | [Readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) of the xpumd container. NOTE: requires the `health_check` extension to be enabled in `config.service.extensions` |
 | resourcesOverride | object | `{}` | [Resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) of the container. NOTE: overrides `gpuAccess` setting |
 | securityContextOverride | object | `{}` | [Container security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container). NOTE: security settings control to what GPU metrics container has access to |
 | service.create | bool | `false` | Create service |

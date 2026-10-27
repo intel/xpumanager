@@ -85,6 +85,14 @@ spec:
         - name: health
           containerPort: 13133
           protocol: TCP
+        {{- with .Values.readinessProbe }}
+        readinessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .Values.livenessProbe }}
+        livenessProbe:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         resources:
           {{- if .Values.resourcesOverride }}
           {{- toYaml .Values.resourcesOverride | nindent 10 }}

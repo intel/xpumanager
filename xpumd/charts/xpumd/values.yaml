@@ -53,6 +53,18 @@ podSecurityContextOverride: {}
 # NOTE: security settings control to what GPU metrics container has access to
 securityContextOverride: {}
 
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe; skipProperties: true
+# -- [Readiness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) of the xpumd container. NOTE: requires the `health_check` extension to be enabled in `config.service.extensions`
+readinessProbe:
+  httpGet:
+    path: /
+    port: health
+  periodSeconds: 5
+
+# @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.Probe; skipProperties: true
+# -- [Liveness probe](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) of the xpumd container. NOTE: requires the `health_check` extension to be enabled in `config.service.extensions`
+livenessProbe: {}
+
 # @schema $ref: $k8s/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/initContainers
 # -- Init containers to run
 initContainers: []
