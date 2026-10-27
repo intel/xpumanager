@@ -87,6 +87,27 @@ constexpr auto FREE = QueryMetric{
 		return ZE_RESULT_SUCCESS;
 	}};
 
+constexpr auto RESERVED =
+	QueryMetric{// NOLINT(readability-identifier-naming)
+				.name = "memory.reserved",
+				.unit = "MiB",
+				.description = "GPU memory the driver keeps back: installed size minus memory.total. Included in "
+							   "memory.used",
+				.source = MetricSource::Live,
+				.groups = MetricGroup::MEMORY,
+				.getter = [](devInfo &d, MetricValue &out, const MetricCache &) -> ze_result_t {
+					auto *mem = d.dev->getMemory();
+					if (mem == nullptr) {
+						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+					}
+					uint64_t bytes = 0;
+					const auto r = mem->getMemoryReserved(&bytes);
+					if (r == ZE_RESULT_SUCCESS) {
+						out = xpum::compat::format("{}", static_cast<double>(bytes) / (1024.0 * 1024.0));
+					}
+					return r;
+				}};
+
 constexpr auto READ_BANDWIDTH =
 	QueryMetric{// NOLINT(readability-identifier-naming)
 				.name = "memory.read.bandwidth",
@@ -147,7 +168,7 @@ constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 	}};
 
 constexpr auto ALL =
-	std::to_array<QueryMetric>({total, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION});
+	std::to_array<QueryMetric>({total, RESERVED, used, FREE, READ_BANDWIDTH, WRITE_BANDWIDTH, BANDWIDTH_UTILIZATION});
 
 } // namespace
 

@@ -299,6 +299,44 @@ ze_result_t memory::getMemorySize(uint64_t *size)
 }
 
 /**
+ * @brief Memory the driver keeps back: installed size minus the size it lets applications use
+ *
+ * @param[out] reserved Receives the reserved memory in bytes, summed over all modules.
+ *
+ * @retval ZE_RESULT_SUCCESS                   @p reserved was written.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p reserved is null.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  A module reports no installed size.
+ * @retval Other                                The error from reading a module's properties or state.
+ */
+ze_result_t memory::getMemoryReserved(uint64_t *reserved)
+{
+	if (reserved == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	*reserved = 0;
+	if (memoryModules.empty()) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	for (std::size_t i = 0; i < memoryModules.size(); i++) {
+		zes_mem_properties_t properties = {};
+		zes_mem_state_t state = {};
+		ze_result_t result = getProperties(memoryModules[i], &properties);
+		if (result == ZE_RESULT_SUCCESS) {
+			result = getState(memoryModules[i], &state);
+		}
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to read memory module {}. 0x{:X} ({})\n", i, result, l0_error_to_string(result));
+			return result;
+		}
+		if (properties.physicalSize == 0) {
+			return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+		}
+		*reserved += properties.physicalSize > state.size ? properties.physicalSize - state.size : 0;
+	}
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
  * @brief Determines overall memory health status across all modules
  *
  * This function evaluates the health status of all memory modules and returns

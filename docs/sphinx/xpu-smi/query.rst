@@ -184,6 +184,7 @@ From an Intel Arc B580 run by a non-root user.
            Power Alert                       : Not Active
        FB Memory Usage
            Total                             : 12216 MiB
+           Reserved                          : 0 MiB
            Used                              : 218.62 MiB
            Free                              : 11997.38 MiB
        Memory Info
@@ -243,6 +244,8 @@ Reading the Report
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
+- FB Memory Usage: Reserved is memory the driver keeps back (installed size minus Total). Used
+  counts it, so Total is Used plus Free. A memory clock the driver reports as 0 reads ``N/A``.
 - GPU utilization is the busiest engine's share of the window. An engine counts as busy for all
   the time it has work scheduled, so it can read higher than ``eu.active`` under the same
   workload.
@@ -287,6 +290,7 @@ in the unit shown in the text report, and ``processes`` is an array.
                "product_name": "Intel(R) Arc(TM) B580 Graphics",
                "fb_memory_usage": {
                    "total": "12216",
+                   "reserved": "0",
                    "used": "218.62109375",
                    "free": "11997.37890625"
                },

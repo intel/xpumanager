@@ -193,6 +193,13 @@ constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
 	return Spec{SpecKind::Field, depth, label, key, name, false, true};
 }
 
+/// A field whose driver reports 0 when it does not know the value, e.g. the memory clock on CRI.
+[[nodiscard]] constexpr Spec zeroUnknownFieldOf(std::size_t depth, std::string_view label, std::string_view key,
+												std::string_view name)
+{
+	return Spec{SpecKind::Field, depth, label, key, name, false, false, true};
+}
+
 [[nodiscard]] constexpr Spec staticOf(std::size_t depth, std::string_view label, std::string_view key,
 									  std::string_view staticKey)
 {
@@ -250,6 +257,7 @@ constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 	sectionOf(0, "FB Memory Usage", "fb_memory_usage"),
 		fieldOf(1, "Total", "total", "memory.total"),
+		fieldOf(1, "Reserved", "reserved", "memory.reserved"),
 		fieldOf(1, "Used", "used", "memory.used"),
 		fieldOf(1, "Free", "free", "memory.free"),
 	sectionOf(0, "Memory Info", "memory_info"),
@@ -308,7 +316,7 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		fieldOf(1, "Current Power Limit", "current_power_limit", "power.limit"),
 	sectionOf(0, "Clocks", "clocks"),
 		fieldOf(1, "Graphics", "graphics", "clocks.current.graphics"),
-		fieldOf(1, "Memory", "memory", "clocks.current.memory"),
+		zeroUnknownFieldOf(1, "Memory", "memory", "clocks.current.memory"),
 		fieldOf(1, "Media", "media", "clocks.current.media"),
 	sectionOf(0, "Applications Clocks", "applications_clocks"),
 		fieldOf(1, "Graphics", "graphics", "clocks.requested.graphics"),

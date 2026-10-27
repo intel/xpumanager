@@ -362,6 +362,10 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
    * - ``memory.total``
      - MiB
      - Total memory
+   * - ``memory.reserved``
+     - MiB
+     - Memory the driver keeps back: installed size minus ``memory.total``; included in
+       ``memory.used``
    * - ``memory.used``
      - MiB
      - Used memory
