@@ -6,6 +6,8 @@
 
 #include "power.h"
 #include "device.h"
+#include "dynload.h"
+#include <bit>
 #include <map>
 #include <memory>
 
@@ -469,6 +471,78 @@ ze_result_t power::getEnergy(uint64_t *pwr, uint64_t *timeStamp, bool forGPU)
 	}
 
 	return result;
+}
+
+namespace {
+
+/**
+ * @brief Calls zesPowerGetUsage for the instantaneous power of @p handle.
+ *
+ * zesPowerGetUsage is a recent Level Zero entry point, so it is looked up at run time: a binary
+ * built against new headers still starts with an older loader, where the call is unsupported.
+ *
+ * @param[in]  handle     Power domain handle.
+ * @param[out] milliwatts Receives the instantaneous power.
+ *
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The loader has no zesPowerGetUsage.
+ * @retval Other                               The result of zesPowerGetUsage.
+ */
+ze_result_t powerGetInstantUsage(zes_pwr_handle_t handle, uint32_t *milliwatts)
+{
+	using Pfn = ze_result_t (*)(zes_pwr_handle_t, uint32_t *, uint32_t *);
+	static_assert(sizeof(void *) == sizeof(Pfn), "function-pointer size must match data-pointer size");
+	static const Pfn fn = []() noexcept -> Pfn {
+		void *raw = resolveL0Sym("zesPowerGetUsage");
+		return raw != nullptr ? std::bit_cast<Pfn>(raw) : nullptr;
+	}();
+	if (fn == nullptr) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	// The average is optional by the specification, but the BMG and CRI implementations write it
+	// unconditionally, so a null pointer crashes them. On BMG it also costs a 100 ms sample.
+	uint32_t averageMilliwatts = 0;
+	return fn(handle, milliwatts, &averageMilliwatts);
+}
+
+} // namespace
+
+/**
+ * @brief Reads the instantaneous power of the card or the GPU domain.
+ *
+ * Picks the domain as getEnergy() does: the requested one, or a lone package handle for either.
+ *
+ * @param[out] milliwatts Receives the instantaneous power in milliwatts.
+ * @param[in]  forGPU     The GPU domain when true, the card domain when false.
+ *
+ * @retval ZE_RESULT_SUCCESS                    @p milliwatts was written.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p milliwatts is null.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  No matching domain, or the runtime or loader cannot
+ *                                              report instantaneous power.
+ * @retval Other                                The error from reading the domain.
+ */
+ze_result_t power::getInstantPower(uint32_t *milliwatts, bool forGPU)
+{
+	if (milliwatts == nullptr) {
+		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
+	}
+	const zes_power_domain_t domain = forGPU ? ZES_POWER_DOMAIN_GPU : ZES_POWER_DOMAIN_CARD;
+	for (uint32_t i = 0; i < powerCount; ++i) {
+		zes_power_properties_t properties{};
+		zes_power_ext_properties_t extProps{};
+		if (const auto result = getProperties(powerHandles[i], &properties, &extProps); result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+		if (extProps.domain != domain && (powerCount != 1 || extProps.domain != ZES_POWER_DOMAIN_PACKAGE)) {
+			continue;
+		}
+		const auto result = powerGetInstantUsage(powerHandles[i], milliwatts);
+		if (result != ZE_RESULT_SUCCESS) {
+			DBG("No instantaneous power for the {} power domain. 0x{:X} ({})\n", power::domainName(extProps.domain),
+				static_cast<uint32_t>(result), l0_error_to_string(result));
+		}
+		return result;
+	}
+	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 }
 
 /**

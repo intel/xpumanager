@@ -219,7 +219,10 @@ From an Intel Arc B580 run by a non-root user.
            Memory Slowdown Temp              : 85 C
        GPU Power Readings
            Average Power Draw                : 59.34 W
+           Instantaneous Power Draw          : 68.62 W
+           GPU Domain Power Draw             : 0.06 W
            Current Power Limit               : 380.00 W
+           Peak Power Limit                  : 380.00 W
        Clocks
            Graphics                          : 400 MHz
            Memory                            : 9500 MHz
@@ -244,6 +247,10 @@ Reading the Report
   200 ms window that the first report waits for. In a loop each later report averages over
   the time since the previous one.
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
+- GPU Power Readings: Average Power Draw is the card's draw over the window, Instantaneous Power
+  Draw the driver's reading at one moment, and GPU Domain Power Draw the GPU domain's share.
+  Current Power Limit is the sustained limit, or the burst or peak limit on a device without
+  one; the burst and peak limits are listed on devices that report them.
 - FB Memory Usage: Reserved is memory the driver keeps back (installed size minus Total). Used
   counts it, so Total is Used plus Free. A memory clock the driver reports as 0 reads ``N/A``.
 - GPU utilization is the busiest engine's share of the window. An engine counts as busy for all

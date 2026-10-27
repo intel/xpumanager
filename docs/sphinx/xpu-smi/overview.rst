@@ -328,9 +328,19 @@ Multi-char combos expand character-by-character (e.g. ``pu`` = POWER + TEMPERATU
      - GPU-domain power draw, averaged over the sampling interval: compute engines only,
        excluding memory and other card subsystems. ``N/A`` on devices that expose no GPU
        power domain
+   * - ``power.draw.instant``
+     - W
+     - Card-domain power draw at this moment, as the driver reports it; needs a runtime and loader
+       that support it, and root on CRI
    * - ``power.limit``
      - W
      - Current power limit
+   * - ``power.limit.burst``
+     - W
+     - Burst power limit (PL2), on devices that report one
+   * - ``power.limit.peak``
+     - W
+     - Peak power limit (PL4), on devices that report one
    * - ``power.max_limit``
      - W
      - Maximum power limit
