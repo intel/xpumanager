@@ -324,10 +324,14 @@ struct MetricCache
  * @param inputs  Which raw sampling to perform; see @ref MetricInput. Stamped onto the returned
  *               cache's @ref MetricCache::inputs, so the paired @ref populateMetricCacheEnd
  *               call always samples the same set — it cannot be passed a different one.
+ * @param fdinfoNow  Snapshot of every device taken now with @ref captureFdinfo, shared by all the
+ *               devices of one sample so /proc is walked once rather than once per device;
+ *               @c nullptr makes this call take its own.
  * @return       A partially-populated MetricCache containing only before-samples.
  *               @c populated is @c false until @ref populateMetricCacheEnd is called.
  */
-[[nodiscard]] MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs = MetricInput::ALL);
+[[nodiscard]] MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs = MetricInput::ALL,
+												   const fdinfo::DeviceSnapshots *fdinfoNow = nullptr);
 
 /**
  * Take the "after" half of a delta sample and mark the cache as ready.
@@ -341,12 +345,13 @@ struct MetricCache
  *               is no separate @c inputs parameter here to fall out of sync with it.
  *               On return, all after-sample fields are written and
  *               @c cache.populated is set to @c true.
+ * @param fdinfoNow  As for @ref populateMetricCacheBegin, taken at the end of the window.
  * @note         All availability flags are recomputed from scratch on each call. Flags for
  *               sampling @c cache.inputs excludes stay @c false, so those metrics render @c N/A.
  *               @c powerAvail requires both @c populateMetricCacheBegin and this call
  *               to have produced valid, advancing timestamps.
  */
-void populateMetricCacheEnd(devInfo &dev, MetricCache &cache);
+void populateMetricCacheEnd(devInfo &dev, MetricCache &cache, const fdinfo::DeviceSnapshots *fdinfoNow = nullptr);
 
 /**
  * Persistent-delta variant for continuous / dmon-loop mode.
@@ -360,13 +365,28 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache);
  *              cache the same way @ref populateMetricCacheBegin does, so should match the value
  *              used to build @p prev — otherwise the promoted before-slots this tick asks
  *              @ref populateMetricCacheEnd for were never actually sampled last tick.
+ * @param fdinfoNow  As for @ref populateMetricCacheBegin.
  * @return      A fully-populated MetricCache representing the interval
  *              [prev's after-sample timestamp, now].
  * @pre         @p prev must have been produced by a prior call that set
  *              @c prev.populated == true.
  */
 [[nodiscard]] MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev,
-														MetricInput inputs = MetricInput::ALL);
+														MetricInput inputs = MetricInput::ALL,
+														const fdinfo::DeviceSnapshots *fdinfoNow = nullptr);
+
+/**
+ * @brief One fdinfo snapshot of every device, for a sample that covers several devices
+ *
+ * Each fdinfo snapshot reads every process's open fds, so devices sampled together share one
+ * per time point: pass it as @c fdinfoNow to @ref populateMetricCacheBegin,
+ * @ref populateMetricCacheEnd and @ref populateMetricCacheContinuous.
+ *
+ * @param[in] inputs  What the sample reads; see @ref inputsOf.
+ * @retval snapshots  @p inputs includes @c MetricInput::FDINFO
+ * @retval empty      it does not, so /proc is not walked
+ */
+[[nodiscard]] fdinfo::DeviceSnapshots captureFdinfo(MetricInput inputs);
 
 // ── MetricValue ───────────────────────────────────────────────────────────────
 
@@ -733,12 +753,14 @@ void runMetrics(Output &output, std::span<const QueryMetric *> fields, std::span
 	std::vector<MetricCache> caches(devices.size());
 	if (inputs != MetricInput::NONE) {
 		const auto deadline = std::chrono::steady_clock::now() + detail::SAMPLE_WINDOW;
+		const fdinfo::DeviceSnapshots fdBefore = captureFdinfo(inputs);
 		for (std::size_t i = 0; i < devices.size(); ++i) {
-			caches[i] = populateMetricCacheBegin(devices[i], inputs);
+			caches[i] = populateMetricCacheBegin(devices[i], inputs, &fdBefore);
 		}
 		std::this_thread::sleep_until(deadline);
+		const fdinfo::DeviceSnapshots fdAfter = captureFdinfo(inputs);
 		for (std::size_t i = 0; i < devices.size(); ++i) {
-			populateMetricCacheEnd(devices[i], caches[i]);
+			populateMetricCacheEnd(devices[i], caches[i], &fdAfter);
 		}
 	}
 

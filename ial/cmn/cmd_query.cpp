@@ -1079,6 +1079,18 @@ struct FirmwareReads
  * frames measure over the time since the previous frame and reuse the static properties,
  * so a loop does not pay the slow firmware queries again.
  */
+/**
+ * @brief fdinfo snapshots one frame shares across its devices
+ *
+ * Each snapshot reads every process's open fds, so the devices of a frame share one per time
+ * point instead of taking their own.
+ */
+struct FrameFdinfo
+{
+	fdinfo::DeviceSnapshots start;						   ///< taken when the frame starts
+	std::shared_future<fdinfo::DeviceSnapshots> windowEnd; ///< first frame only: at the end of its window
+};
+
 class QuerySession
 {
 public:
@@ -1092,7 +1104,7 @@ public:
 	[[nodiscard]] RenderedFrame renderFrame();
 
 private:
-	[[nodiscard]] QueryNode sampleDevice(std::size_t index);
+	[[nodiscard]] QueryNode sampleDevice(std::size_t index, const FrameFdinfo &frameFdinfo);
 	[[nodiscard]] std::optional<std::string> headerValue(std::string_view fieldName);
 
 	arg_struct *args;
@@ -1110,7 +1122,7 @@ private:
 	bool firstFrame = true;
 };
 
-QueryNode QuerySession::sampleDevice(std::size_t index)
+QueryNode QuerySession::sampleDevice(std::size_t index, const FrameFdinfo &frameFdinfo)
 {
 	devInfo &dev = devices[index];
 	metrics::MetricCache &cache = caches[index];
@@ -1123,10 +1135,10 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 	auto windowEnd = std::chrono::steady_clock::time_point{};
 	if (windowed) {
 		if (first) {
-			cache = metrics::populateMetricCacheBegin(dev, inputs);
+			cache = metrics::populateMetricCacheBegin(dev, inputs, &frameFdinfo.start);
 			windowEnd = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
 		} else {
-			cache = metrics::populateMetricCacheContinuous(dev, cache, inputs);
+			cache = metrics::populateMetricCacheContinuous(dev, cache, inputs, &frameFdinfo.start);
 		}
 	}
 
@@ -1163,7 +1175,7 @@ QueryNode QuerySession::sampleDevice(std::size_t index)
 	failures.insert(firmwareValues[index].failures.begin(), firmwareValues[index].failures.end());
 	if (windowed && first) {
 		std::this_thread::sleep_until(windowEnd);
-		metrics::populateMetricCacheEnd(dev, cache);
+		metrics::populateMetricCacheEnd(dev, cache, &frameFdinfo.windowEnd.get());
 	}
 	evaluate(split.windowed, dev, cache, values, failures);
 	auto *pci = dev.dev->getPCI();
@@ -1194,10 +1206,24 @@ RenderedFrame QuerySession::renderFrame()
 	QueryReport report;
 	report.timestamp = nowIso8601();
 
+	FrameFdinfo frameFdinfo{.start = {}, .windowEnd = {}};
+	if (inputs != metrics::MetricInput::NONE) {
+		frameFdinfo.start = metrics::captureFdinfo(inputs);
+		if (firstFrame) {
+			const auto windowEnd = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
+			const auto captureAtWindowEnd = [this, windowEnd] {
+				std::this_thread::sleep_until(windowEnd);
+				return metrics::captureFdinfo(inputs);
+			};
+			frameFdinfo.windowEnd = std::async(std::launch::async, captureAtWindowEnd).share();
+		}
+	}
+
 	std::vector<std::future<QueryNode>> tasks;
 	tasks.reserve(devices.size());
 	for (std::size_t i = 0; i < devices.size(); ++i) {
-		tasks.push_back(std::async(std::launch::async, [this, i] { return sampleDevice(i); }));
+		tasks.push_back(
+			std::async(std::launch::async, [this, i, &frameFdinfo] { return sampleDevice(i, frameFdinfo); }));
 	}
 	for (auto &task : tasks) {
 		report.gpus.push_back(task.get());

@@ -764,8 +764,9 @@ ze_result_t runQueryLoopMode(DumpOutput out, std::span<const metrics::QueryMetri
 	while (!quitToken.stop_requested()) {
 		std::this_thread::sleep_for(loopInterval);
 
+		const fdinfo::DeviceSnapshots fdNow = metrics::captureFdinfo(inputs);
 		for (std::size_t i = 0; i < numDevices; ++i) {
-			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i], inputs);
+			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i], inputs, &fdNow);
 		}
 
 		metrics::runMetricsWithCaches(out, fields, std::span<devInfo>(deviceList),
@@ -849,12 +850,14 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 
 	const auto firstSampleDeadline = startTime + timing.interval;
+	const fdinfo::DeviceSnapshots fdBefore = metrics::captureFdinfo(inputs);
 	for (std::size_t i = 0; i < numDevices; ++i) {
-		caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs);
+		caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs, &fdBefore);
 	}
 	std::this_thread::sleep_until(firstSampleDeadline);
+	const fdinfo::DeviceSnapshots fdAfter = metrics::captureFdinfo(inputs);
 	for (std::size_t i = 0; i < numDevices; ++i) {
-		metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
+		metrics::populateMetricCacheEnd(deviceList[i], caches[i], &fdAfter);
 	}
 
 	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>{fields}, std::span<devInfo>(deviceList),
@@ -870,8 +873,9 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	while (!quitToken.stop_requested()) {
 		const auto cycleStartTime = std::chrono::steady_clock::now();
 
+		const fdinfo::DeviceSnapshots fdNow = metrics::captureFdinfo(inputs);
 		for (std::size_t i = 0; i < numDevices; ++i) {
-			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i], inputs);
+			caches[i] = metrics::populateMetricCacheContinuous(deviceList[i], caches[i], inputs, &fdNow);
 		}
 		metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>{fields},
 									  std::span<devInfo>(deviceList), std::span<const metrics::MetricCache>{caches});
@@ -1079,12 +1083,15 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 	const metrics::MetricInput inputs = metrics::inputsOf(fields);
 	if (inputs != metrics::MetricInput::NONE) {
 		const auto sampleDeadline = std::chrono::steady_clock::now() + metrics::detail::SAMPLE_WINDOW;
+		// One fdinfo snapshot per time point serves every device: each reads every process's fds.
+		const fdinfo::DeviceSnapshots fdBefore = metrics::captureFdinfo(inputs);
 		for (std::size_t i = 0; i < numDevices; ++i) {
-			caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs);
+			caches[i] = metrics::populateMetricCacheBegin(deviceList[i], inputs, &fdBefore);
 		}
 		std::this_thread::sleep_until(sampleDeadline);
+		const fdinfo::DeviceSnapshots fdAfter = metrics::captureFdinfo(inputs);
 		for (std::size_t i = 0; i < numDevices; ++i) {
-			metrics::populateMetricCacheEnd(deviceList[i], caches[i]);
+			metrics::populateMetricCacheEnd(deviceList[i], caches[i], &fdAfter);
 		}
 	}
 	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>(fields), std::span<devInfo>(deviceList),

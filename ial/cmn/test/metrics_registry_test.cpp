@@ -11,6 +11,7 @@
 #undef INFO
 #endif
 
+#include "cmds.h"
 #include "metrics_registry.h"
 #include "metrics/temperature_metrics.h"
 #include "metrics/utilization.h"
@@ -331,6 +332,56 @@ TEST_CASE("PCI group contains all pci.cpp metrics plus identity metrics tagged P
 		CHECK_MESSAGE(std::ranges::any_of(byPci, [name](const auto *m) { return m->name == name; }), name,
 					  " missing from PCI group");
 	}
+}
+
+#ifdef __linux__
+// fdinfo exists on Linux only: the Windows stubs of snapshotsFor() and aggregateDeviceUtil()
+// report nothing, so these expectations hold on Linux alone.
+
+// One process on the fixture's device whose ccs engine was busy @p busy of @p total cycles.
+static fdinfo::DeviceSnapshots sharedSnapshot(const std::string &pci, uint64_t wallNs, uint64_t busy, uint64_t total)
+{
+	fdinfo::ProcessSnapshot snap;
+	snap.pid = 4242;
+	snap.wallNs = wallNs;
+	snap.engines["ccs"] = fdinfo::EngineCounters{.cycles = busy, .totalCycles = total, .capacity = 0};
+	return fdinfo::DeviceSnapshots{{pci, {snap}}};
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheBegin/End take fdinfo from the shared snapshots")
+{
+	const std::string pci = devPciAddr(di);
+	const auto before = sharedSnapshot(pci, 1'000, 100, 1'000);
+	const auto after = sharedSnapshot(pci, 2'000, 600, 2'000);
+
+	auto cache = populateMetricCacheBegin(di, MetricInput::FDINFO, &before);
+	REQUIRE(cache.fdinfoSnap.size() == 1);
+	CHECK(cache.fdinfoSnap[0].pid == 4242);
+
+	populateMetricCacheEnd(di, cache, &after);
+	REQUIRE(cache.fdinfoCompute.has_value());
+	CHECK(*cache.fdinfoCompute == doctest::Approx(50.0F)); // 500 of 1000 cycles
+	CHECK(cache.fdinfoSnap[0].engines.at("ccs").cycles == 600);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous takes the new end from the shared snapshot")
+{
+	const std::string pci = devPciAddr(di);
+	const auto first = sharedSnapshot(pci, 1'000, 0, 1'000);
+	const auto second = sharedSnapshot(pci, 2'000, 250, 2'000);
+
+	auto prev = populateMetricCacheBegin(di, MetricInput::FDINFO, &first);
+	populateMetricCacheEnd(di, prev, &first);
+	const auto next = populateMetricCacheContinuous(di, prev, MetricInput::FDINFO, &second);
+	REQUIRE(next.fdinfoCompute.has_value());
+	CHECK(*next.fdinfoCompute == doctest::Approx(25.0F)); // 250 of 1000 cycles
+}
+#endif
+
+TEST_CASE("captureFdinfo walks /proc only for fields that read fdinfo")
+{
+	CHECK(captureFdinfo(MetricInput::POWER | MetricInput::ENGINE).empty());
+	CHECK(captureFdinfo(MetricInput::NONE).empty());
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "pci.sub_device_id getter: UNSUPPORTED when the device has no PCI address")
