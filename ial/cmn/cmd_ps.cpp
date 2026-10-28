@@ -614,12 +614,10 @@ int cmdPs::run(arg_struct *args)
 	auto jsonObj = std::make_unique<nlohmann::ordered_json>();
 
 	if (!deviceList.empty()) {
-		// ── Phase 1: take fdinfo before-snapshots ────────────────────────────────
-		std::vector<std::vector<fdinfo::ProcessSnapshot>> fdBefore;
-		fdBefore.reserve(deviceList.size());
-		for (const auto &dev : deviceList) {
-			fdBefore.push_back(fdinfo::capture(devPciAddr(dev)));
-		}
+		// ── Phase 1: take the fdinfo before-snapshot ─────────────────────────────
+		// One /proc walk serves every device: each walk reads every process's fds, so a
+		// walk per device would repeat that for each GPU.
+		const fdinfo::DeviceSnapshots fdBefore = fdinfo::captureAll();
 
 		// Idle runtime contexts are told apart by the other GPUs a process holds, so
 		// count every GPU listed, not only the ones --device selected.
@@ -631,10 +629,10 @@ int cmdPs::run(arg_struct *args)
 
 		// ── Phase 2: measurement window ──────────────────────────────────────────
 		std::this_thread::sleep_for(PS_SAMPLE_WINDOW);
+		const fdinfo::DeviceSnapshots fdAfterAll = fdinfo::captureAll();
 
-		// ── Phase 3a: collect processes + fdinfo after (fast; sequential) ─────────
-		// fdAfter is local to each iteration — it is consumed here and not needed
-		// in Phase 3c, so only startIdx/count/utilMap are carried forward.
+		// ── Phase 3a: collect processes, apply fdinfo deltas (sequential) ────────
+		// Only startIdx/count/utilMap are carried forward to Phase 3c.
 		struct DevData
 		{
 			std::size_t startIdx;
@@ -655,12 +653,14 @@ int cmdPs::run(arg_struct *args)
 				firstError = devResult;
 			}
 
-			const auto fdAfter = fdinfo::capture(devPciAddr(dev));
+			const std::string pci = devPciAddr(dev);
+			const auto &fdBeforeDev = fdinfo::snapshotsFor(fdBefore, pci);
+			const auto &fdAfter = fdinfo::snapshotsFor(fdAfterAll, pci);
 			if (!psCmds[psCmdType::PS_ALL].enabled) {
-				dropIdleRuntimeContexts(psInfoList, startIdx, fdBefore[i], fdAfter, selfMemKiB, processFacts);
+				dropIdleRuntimeContexts(psInfoList, startIdx, fdBeforeDev, fdAfter, selfMemKiB, processFacts);
 			}
 			const std::size_t count = psInfoList.size() - startIdx;
-			auto utilMap = fdinfo::delta(fdBefore[i], fdAfter);
+			auto utilMap = fdinfo::delta(fdBeforeDev, fdAfter);
 
 			// Store per-process engine utilisation and fill missing engines bitmask.
 			std::span<psInfo> devProcs = std::span{psInfoList}.subspan(startIdx, count);

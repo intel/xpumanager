@@ -149,6 +149,7 @@ struct SmiDeviceSample
 {
 	SmiDeviceStats stats;
 	std::vector<psInfo> procs;
+	std::optional<uint64_t> selfMemKiB; ///< this process's own memory on the device, if listed
 };
 
 } // namespace
@@ -328,10 +329,8 @@ void cmdSmi::collectPowerTdp(SmiDeviceStats &stats, devInfo *di)
  *
  * @param[out] baseline  Readings taken at the start of the sample window.
  * @param[in]  di        Device to sample.
- * @param[in]  showAll   --all: the process list keeps idle runtime contexts, so it does
- *                       not need fdinfo; it is then captured only as the util source.
  */
-void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di, bool showAll)
+void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
 {
 	TRACING();
 	device *dev = di->dev;
@@ -348,17 +347,10 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di, bool showAll)
 	// Engine activity baseline: from fdinfo where the platform does not allow the sysman
 	// engine counters (sysmanEngineCountersAllowed), otherwise from every engine group, so
 	// utilization can be taken from the busiest engine rather than from the device-wide
-	// average (see computeFromBaseline).
-	baseline.useFdinfo = !sysmanEngineCountersAllowed();
-
-	// Each capture scans all of /proc, so take fdinfo only when something reads it: the
-	// util above, or the process list telling processes working on this device from idle
-	// runtime contexts (cmdPs::dropIdleRuntimeContexts), which --all turns off.
-	baseline.captureFdinfo = baseline.useFdinfo || !showAll;
-	if (baseline.captureFdinfo) {
-		baseline.fdinfoSnap = fdinfo::capture(devPciAddr(*di));
-	}
-	if (baseline.useFdinfo) {
+	// average (see computeFromBaseline). collectAndRender() takes the fdinfo snapshots
+	// once for all devices.
+	if (!sysmanEngineCountersAllowed()) {
+		baseline.useFdinfo = true;
 		return;
 	}
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
@@ -371,17 +363,27 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di, bool showAll)
 }
 
 /**
+ * @brief Sets GPU utilization from fdinfo engine utilization: the busiest engine class
+ *
+ * @param[out] stats  gpuUtilPercent and utilValid are set when @p util has any engine class.
+ * @param[in]  util   Device-wide fdinfo utilization, from fdinfo::aggregateDeviceUtil().
+ */
+void cmdSmi::applyFdinfoUtil(SmiDeviceStats &stats, const ProcUtil &util)
+{
+	if (const auto busiest = metrics::busiestEngineClass(util.compute, util.render, util.media, util.copy)) {
+		stats.gpuUtilPercent = static_cast<double>(*busiest);
+		stats.utilValid = true;
+	}
+}
+
+/**
  * @brief Compute power (W) and GPU utilization (%) from baseline vs. current readings
  *
  * @param[out] stats        Receives power and utilization, with their valid flags.
  * @param[in]  baseline     Readings captureBaseline() took at the start of the window.
- * @param[in]  fdinfoAfter  fdinfo snapshot of the device at the end of the window; the
- *                          util source when baseline.useFdinfo is set.  Taken by the
- *                          caller so the process list can reuse it.
  * @param[in]  di           Device being sampled.
  */
-void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline,
-								 const std::vector<fdinfo::ProcessSnapshot> &fdinfoAfter, devInfo *di)
+void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline, devInfo *di)
 {
 	TRACING();
 	device *dev = di->dev;
@@ -419,12 +421,7 @@ void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &basel
 	// ZES_ENGINE_GROUP_ALL cannot be used here: it averages the busyness of every engine on
 	// the device, so a compute-only workload saturating one of nine engines reads as 11%.
 	if (baseline.useFdinfo) {
-		const auto util = fdinfo::aggregateDeviceUtil(baseline.fdinfoSnap, fdinfoAfter);
-		if (const auto busiest = metrics::busiestEngineClass(util.compute, util.render, util.media, util.copy)) {
-			stats.gpuUtilPercent = static_cast<double>(*busiest);
-			stats.utilValid = true;
-		}
-		return;
+		return; // applyFdinfoUtil() fills it from the shared fdinfo snapshots
 	}
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
 	if (engGroup != nullptr && !baseline.engineActivity.empty()) {
@@ -745,14 +742,26 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 	// Each device takes its baseline first and does its window-independent queries (static
 	// properties, process list) while its window runs, so with many processes those queries
 	// no longer add to the window, and with many GPUs devices no longer add to each other.
+	// fdinfo is the exception: one /proc walk per time point serves every device, because each
+	// walk reads every process's fds, and per-device walks repeat that per GPU. It is the util
+	// source where sysman engine counters aren't allowed, and tells processes working on a
+	// device from idle runtime contexts unless --all keeps them all; not taken when neither.
+	const bool useFdinfo = !sysmanEngineCountersAllowed();
+	const bool captureFdinfo = useFdinfo || !showAll;
 	const ProcessFacts processFacts{devPciAddrs(deviceList)};
+	fdinfo::DeviceSnapshots fdBefore;
+	if (captureFdinfo) {
+		fdBefore = fdinfo::captureAll();
+	}
+	const auto fdWindowEnd = std::chrono::steady_clock::now() + SMI_SAMPLE_WINDOW;
+
 	std::vector<std::future<SmiDeviceSample>> samples;
 	samples.reserve(deviceList.size());
 	for (auto &di : deviceList) {
-		samples.push_back(std::async(std::launch::async, [&di, &processFacts, showAll = showAll] {
+		samples.push_back(std::async(std::launch::async, [&di] {
 			SmiDeviceSample sample;
 			SmiBaseline baseline;
-			captureBaseline(baseline, &di, showAll);
+			captureBaseline(baseline, &di);
 			const auto windowEnd = std::chrono::steady_clock::now() + SMI_SAMPLE_WINDOW;
 
 			collectStaticProps(sample.stats, &di);
@@ -760,19 +769,12 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 			collectTemperature(sample.stats, &di);
 			collectMemory(sample.stats, &di);
 			collectPowerTdp(sample.stats, &di);
-			std::optional<uint64_t> selfMemKiB;
-			if (cmdPs::getProcessList(&di, sample.procs, &selfMemKiB) != ZE_RESULT_SUCCESS) {
+			if (cmdPs::getProcessList(&di, sample.procs, &sample.selfMemKiB) != ZE_RESULT_SUCCESS) {
 				sample.procs.clear();
 			}
 
 			std::this_thread::sleep_until(windowEnd);
-			const auto fdinfoAfter =
-				baseline.captureFdinfo ? fdinfo::capture(devPciAddr(di)) : std::vector<fdinfo::ProcessSnapshot>{};
-			computeFromBaseline(sample.stats, baseline, fdinfoAfter, &di);
-			if (!showAll) {
-				cmdPs::dropIdleRuntimeContexts(sample.procs, 0, baseline.fdinfoSnap, fdinfoAfter, selfMemKiB,
-											   processFacts);
-			}
+			computeFromBaseline(sample.stats, baseline, &di);
 			return sample;
 		}));
 	}
@@ -780,12 +782,29 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 	// ── 3. Get Level Zero version, while the devices sample ─────────────
 	const std::string lzVersion = args->sm.getLoaderVersion().value_or("");
 
+	fdinfo::DeviceSnapshots fdAfter;
+	if (captureFdinfo) {
+		std::this_thread::sleep_until(fdWindowEnd);
+		fdAfter = fdinfo::captureAll();
+	}
+
 	std::vector<SmiDeviceStats> devStats;
 	std::vector<std::vector<psInfo>> procsPerDevice;
 	devStats.reserve(deviceList.size());
 	procsPerDevice.reserve(deviceList.size());
-	for (auto &future : samples) {
-		auto [stats, procs] = future.get();
+	for (std::size_t i = 0; i < samples.size(); ++i) {
+		auto [stats, procs, selfMemKiB] = samples[i].get();
+		if (captureFdinfo) {
+			const std::string pci = devPciAddr(deviceList[i]);
+			const auto &before = fdinfo::snapshotsFor(fdBefore, pci);
+			const auto &after = fdinfo::snapshotsFor(fdAfter, pci);
+			if (useFdinfo) {
+				applyFdinfoUtil(stats, fdinfo::aggregateDeviceUtil(before, after));
+			}
+			if (!showAll) {
+				cmdPs::dropIdleRuntimeContexts(procs, 0, before, after, selfMemKiB, processFacts);
+			}
+		}
 		devStats.push_back(std::move(stats));
 		procsPerDevice.push_back(std::move(procs));
 	}

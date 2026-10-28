@@ -29,12 +29,9 @@ struct SmiBaseline
 	// engine util: one busyness counter reading per engine group the device exposes
 	std::vector<EngineActivitySample> engineActivity;
 
-	// fdinfo engine counters: the engine util source where sysman counters aren't allowed
-	// (useFdinfo), and how the process list tells processes working on the device from
-	// idle runtime contexts unless --all keeps them all; not taken when neither needs them
-	std::vector<fdinfo::ProcessSnapshot> fdinfoSnap;
+	// engine util from fdinfo instead, where sysman engine counters aren't allowed; the
+	// snapshots are taken once for all devices by collectAndRender()
 	bool useFdinfo = false;
-	bool captureFdinfo = false;
 };
 
 /**
@@ -101,6 +98,7 @@ public:
 	[[nodiscard]] static std::vector<std::string> wrapDeviceName(std::string_view deviceName, size_t width);
 	[[nodiscard]] static TableBuilder buildGpuTable(const std::vector<SmiDeviceStats> &devStats,
 													const std::string &lzVersion);
+	static void applyFdinfoUtil(SmiDeviceStats &stats, const ProcUtil &util);
 
 private:
 	static void collectStaticProps(SmiDeviceStats &stats, devInfo *dev);
@@ -108,9 +106,8 @@ private:
 	static void collectTemperature(SmiDeviceStats &stats, devInfo *dev);
 	static void collectMemory(SmiDeviceStats &stats, devInfo *dev);
 	static void collectPowerTdp(SmiDeviceStats &stats, devInfo *dev);
-	static void captureBaseline(SmiBaseline &baseline, devInfo *dev, bool showAll);
-	static void computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline,
-									const std::vector<fdinfo::ProcessSnapshot> &fdinfoAfter, devInfo *dev);
+	static void captureBaseline(SmiBaseline &baseline, devInfo *dev);
+	static void computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline, devInfo *dev);
 
 	[[nodiscard]] static TableBuilder buildProcessTable(const std::vector<devInfo> &deviceList,
 														const std::vector<std::vector<psInfo>> &procsPerDevice);

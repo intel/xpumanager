@@ -237,3 +237,24 @@ TEST_SUITE("cmd_smi name slot")
 		}
 	}
 }
+
+TEST_SUITE("cmd_smi utilization")
+{
+	TEST_CASE("applyFdinfoUtil takes the busiest engine class")
+	{
+		SmiDeviceStats stats{};
+		ProcUtil util{};
+		util.compute = 30.0F;
+		util.copy = 80.0F;
+		cmdSmi::applyFdinfoUtil(stats, util);
+		CHECK(stats.utilValid);
+		CHECK(stats.gpuUtilPercent == doctest::Approx(80.0));
+	}
+
+	TEST_CASE("applyFdinfoUtil leaves utilization invalid without fdinfo data")
+	{
+		SmiDeviceStats stats{};
+		cmdSmi::applyFdinfoUtil(stats, ProcUtil{});
+		CHECK_FALSE(stats.utilValid);
+	}
+}
