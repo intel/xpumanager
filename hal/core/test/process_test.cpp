@@ -8,10 +8,12 @@
 #undef INFO // doctest's INFO clashes with debug.h
 
 #include "process_platform.h"
+#include "sysprocess.h"
 
 #include <filesystem>
 #include <fstream>
 #include <cstdlib>
+#include <functional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -418,4 +420,113 @@ TEST_CASE("vramFromFdinfo: multi-GPU process attributed independently per device
 	CHECK(seenGpu0.count(2) == 0);
 	CHECK(seenGpu1.count(2) == 1);
 	CHECK(seenGpu1.count(1) == 0);
+}
+
+// Behaves like the runtime's processesGetState for a list of n processes: a buffer smaller
+// than n gets INVALID_SIZE with as many entries as fit; the count is always set to n, unless
+// keepCountOnShortBuffer, which the API also allows: then only a count-only query reports n.
+struct FakeQuery
+{
+	uint32_t n = 0;
+	int calls = 0;
+	ze_result_t error = ZE_RESULT_SUCCESS;		// returned instead, when not SUCCESS
+	ze_result_t countError = ZE_RESULT_SUCCESS; // returned by count-only queries instead
+	bool keepCountOnShortBuffer = false;
+	std::function<void(FakeQuery &)> beforeEachCall; // e.g. grow n
+
+	ze_result_t operator()(uint32_t *count, zes_process_state_t *states)
+	{
+		++calls;
+		if (beforeEachCall) {
+			beforeEachCall(*this);
+		}
+		if (error != ZE_RESULT_SUCCESS) {
+			return error;
+		}
+		if (*count == 0 && countError != ZE_RESULT_SUCCESS) {
+			return countError;
+		}
+		const ze_result_t result = (*count > 0 && *count < n) ? ZE_RESULT_ERROR_INVALID_SIZE : ZE_RESULT_SUCCESS;
+		if (result == ZE_RESULT_ERROR_INVALID_SIZE && keepCountOnShortBuffer) {
+			for (uint32_t i = 0; i < *count; ++i) {
+				states[i].processId = 1000 + i;
+			}
+			return result;
+		}
+		if (states != nullptr) {
+			for (uint32_t i = 0; i < std::min(*count, n); ++i) {
+				states[i].processId = 1000 + i;
+			}
+		}
+		*count = n;
+		return result;
+	}
+};
+
+TEST_CASE("fetchProcessStates: a list that fits takes one query")
+{
+	FakeQuery fake{.n = 3, .beforeEachCall = {}};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_SUCCESS);
+	REQUIRE(states.size() == 3);
+	CHECK(states[2].processId == 1002);
+	CHECK(states[0].stype == ZES_STRUCTURE_TYPE_PROCESS_STATE);
+	CHECK(fake.calls == 1);
+}
+
+TEST_CASE("fetchProcessStates: no processes takes one query")
+{
+	FakeQuery fake{.n = 0, .beforeEachCall = {}};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_SUCCESS);
+	CHECK(states.empty());
+	CHECK(fake.calls == 1);
+}
+
+TEST_CASE("fetchProcessStates: a list larger than the hint is fetched on the second query")
+{
+	FakeQuery fake{.n = 100, .beforeEachCall = {}};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_SUCCESS);
+	REQUIRE(states.size() == 100);
+	CHECK(states[99].processId == 1099);
+	CHECK(fake.calls == 2);
+}
+
+TEST_CASE("fetchProcessStates: a list that keeps growing gives up after the fixed attempts")
+{
+	FakeQuery fake{.n = 100, .beforeEachCall = [](FakeQuery &f) { f.n += 100; }};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_ERROR_INVALID_SIZE);
+	CHECK(states.empty());
+	CHECK(fake.calls == 3);
+}
+
+TEST_CASE("fetchProcessStates: a query error is returned as is")
+{
+	FakeQuery fake{.n = 3, .error = ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, .beforeEachCall = {}};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(states.empty());
+	CHECK(fake.calls == 1);
+}
+
+TEST_CASE("fetchProcessStates: a short buffer that leaves the count as it was gets a count-only query")
+{
+	FakeQuery fake{.n = 100, .keepCountOnShortBuffer = true, .beforeEachCall = {}};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_SUCCESS);
+	REQUIRE(states.size() == 100);
+	CHECK(states[99].processId == 1099);
+	CHECK(fake.calls == 3); // short data query, count-only query, data query
+}
+
+TEST_CASE("fetchProcessStates: a failing count-only query is returned as is")
+{
+	FakeQuery fake{
+		.n = 100, .countError = ZE_RESULT_ERROR_UNKNOWN, .keepCountOnShortBuffer = true, .beforeEachCall = {}};
+	const auto [status, states] = fetchProcessStates(std::ref(fake), 64);
+	CHECK(status == ZE_RESULT_ERROR_UNKNOWN);
+	CHECK(states.empty());
+	CHECK(fake.calls == 2);
 }

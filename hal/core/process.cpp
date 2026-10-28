@@ -13,10 +13,48 @@
 #include <unordered_set>
 #include <vector>
 
+// clang-format off
+constexpr uint32_t PROCESS_CAPACITY_HINT     = 64;
+constexpr uint32_t PROCESS_CAPACITY_HEADROOM = 16; // room for processes starting between retries
+constexpr int      PROCESS_QUERY_ATTEMPTS    = 3;
+// clang-format on
+
+ProcessFetch fetchProcessStates(const ProcessStateQuery &query, uint32_t capacityHint)
+{
+	zes_process_state_t blank{};
+	blank.stype = ZES_STRUCTURE_TYPE_PROCESS_STATE;
+
+	uint32_t capacity = std::max<uint32_t>(capacityHint, 1);
+	for (int attempt = 0; attempt < PROCESS_QUERY_ATTEMPTS; ++attempt) {
+		std::vector<zes_process_state_t> states(capacity, blank);
+		uint32_t count = capacity;
+		const ze_result_t result = query(&count, states.data());
+		if (result == ZE_RESULT_SUCCESS) {
+			states.resize(count);
+			return {result, std::move(states)};
+		}
+		if (result != ZE_RESULT_ERROR_INVALID_SIZE) {
+			return {result, {}};
+		}
+		// The API does not promise to report the needed size on a short buffer, only on a
+		// count-only query; ask for it when the count did not grow.
+		if (count <= capacity) {
+			count = 0;
+			const ze_result_t recount = query(&count, nullptr);
+			if (recount != ZE_RESULT_SUCCESS) {
+				return {recount, {}};
+			}
+		}
+		capacity = count + PROCESS_CAPACITY_HEADROOM;
+	}
+	return {ZE_RESULT_ERROR_INVALID_SIZE, {}};
+}
+
 /**
  * @brief Queries all processes currently using @p device.
  *
- * Calls zesDeviceProcessesGetState() to enumerate active processes, then narrows
+ * Calls zesDeviceProcessesGetState() to enumerate active processes, in one query
+ * when the list fits in PROCESS_CAPACITY_HINT entries, then narrows
  * the result to processes that are genuinely clients of this device.
  * applyFdinfoCorrections() first rewrites each entry from the OS's own
  * per-process accounting, where the platform keeps one, and drops processes it
@@ -32,47 +70,22 @@
  */
 ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_process_state_t> *processList)
 {
-	uint32_t processCount = 0;
-	ze_result_t result = zesDeviceProcessesGetState(device, &processCount, nullptr);
-	if (result != ZE_RESULT_SUCCESS) {
-		// UNSUPPORTED_FEATURE is expected on the sysman-only path (no compute context).
-		if (result != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
-			ERR("Failed to get process count: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		} else {
-			DBG("Failed to get process count: 0x{:X} ({})\n", result, l0_error_to_string(result));
-		}
-		return result;
-	}
-
-	// Retry when a new process starts between the count query and the data
-	// fetch: the driver returns INVALID_SIZE and updates processCount to the
-	// new required size, so we can resize and try again immediately.
-	constexpr int maxRetries = 3;
-	for (int attempt = 0; attempt < maxRetries; ++attempt) {
-		processList->assign(processCount, [] {
-			zes_process_state_t ps{};
-			ps.stype = ZES_STRUCTURE_TYPE_PROCESS_STATE;
-			return ps;
-		}());
-		result = zesDeviceProcessesGetState(device, &processCount, processList->data());
-		if (result != ZE_RESULT_ERROR_INVALID_SIZE) {
-			break;
-		}
-		processCount = 0;
-		const ze_result_t recount = zesDeviceProcessesGetState(device, &processCount, nullptr);
-		if (recount != ZE_RESULT_SUCCESS) {
-			result = recount;
-			break;
-		}
-	}
+	auto [result, states] = fetchProcessStates(
+		[device](uint32_t *count, zes_process_state_t *s) { return zesDeviceProcessesGetState(device, count, s); },
+		PROCESS_CAPACITY_HINT);
 	if (result != ZE_RESULT_SUCCESS) {
 		if (result == ZE_RESULT_ERROR_INVALID_SIZE) {
-			DBG("Process list changed faster than {} retries could keep up; skipping this cycle\n", maxRetries);
+			DBG("Process list changed faster than {} retries could keep up; skipping this cycle\n",
+				PROCESS_QUERY_ATTEMPTS);
+		} else if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+			// Expected on the sysman-only path (no compute context).
+			DBG("Failed to get process states: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		} else {
 			ERR("Failed to get process states: 0x{:X} ({})\n", result, l0_error_to_string(result));
 		}
 		return result;
 	}
+	*processList = std::move(states);
 
 	// PIDs whose engines mask applyFdinfoCorrections replaced with verified activity.
 	// Stays empty where it could not run, which is what the filter below keys off.
@@ -149,8 +162,7 @@ ze_result_t process::getState(zes_device_handle_t device, std::vector<zes_proces
 		return true;
 	});
 
-	processCount = static_cast<uint32_t>(processList->size());
-	DBG("  - Device has {} processes\n", processCount);
+	DBG("  - Device has {} processes\n", processList->size());
 	for (const auto &ps : *processList) {
 		DBG("    - Process ID: {}\n", ps.processId);
 		DBG("    - Name: {}\n", GETPROCESSNAME(ps.processId).c_str());
