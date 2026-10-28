@@ -67,15 +67,19 @@ static std::string normaliseEngine(std::string_view raw)
 	return name;
 }
 
-// Parse one /proc/<pid>/fdinfo/<fd> file.
-// Returns an empty map if the file is not a DRM entry for expectedPci.
-static std::unordered_map<std::string, EngineCounters>
-parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-parameters)
-			const std::string &expectedPci)
+// One DRM client as one fdinfo file describes it.
+struct DrmClient
+{
+	std::string pdev;
+	std::unordered_map<std::string, EngineCounters> engines;
+};
+
+// Parse one /proc/<pid>/fdinfo/<fd> file; nullopt when it is not a DRM client.
+static std::optional<DrmClient> parseDrmFdinfo(const std::string &path)
 {
 	std::ifstream fin{path};
 	if (!fin) {
-		return {};
+		return std::nullopt;
 	}
 
 	static constexpr std::string_view drivKey = "drm-driver";
@@ -126,20 +130,31 @@ parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-paramet
 		}
 	}
 
-	if (!isDrm || pdev != expectedPci) {
+	if (!isDrm) {
+		return std::nullopt;
+	}
+	return DrmClient{std::move(pdev), std::move(engines)};
+}
+
+// Parse one /proc/<pid>/fdinfo/<fd> file.
+// Returns an empty map if the file is not a DRM entry for expectedPci.
+static std::unordered_map<std::string, EngineCounters>
+parseFdinfo(const std::string &path, // NOLINT(bugprone-easily-swappable-parameters)
+			const std::string &expectedPci)
+{
+	auto client = parseDrmFdinfo(path);
+	if (!client || client->pdev != expectedPci) {
 		return {};
 	}
-	return engines;
+	return std::move(client->engines);
 }
 
 /* Public API */
 
-/* Scan all open file descriptors of @p pid for DRM fds belonging to @p pciAddr
- * and merge their engine counters into a ProcessSnapshot.
- * Returns the snapshot if at least one matching fd was found, else nullopt. */
-static std::optional<ProcessSnapshot>
-captureOnePid(uint32_t pid, const std::string &pciAddr, // NOLINT(bugprone-easily-swappable-parameters)
-			  const std::string &procRoot, uint64_t wallNs)
+/* Scan all open file descriptors of @p pid once and add a snapshot to @p out for each
+ * device it is a DRM client of, merging the engine counters of that device's fds.
+ * A device whose fds carry no engine counters gets no snapshot. */
+static void captureOnePidAll(uint32_t pid, const std::string &procRoot, uint64_t wallNs, DeviceSnapshots &out)
 {
 	namespace fs = std::filesystem;
 
@@ -150,13 +165,10 @@ captureOnePid(uint32_t pid, const std::string &pciAddr, // NOLINT(bugprone-easil
 	std::error_code ec;
 	fs::directory_iterator fds{fdDir, ec};
 	if (ec) {
-		return std::nullopt;
+		return;
 	}
 
-	ProcessSnapshot snap;
-	snap.pid = pid;
-	snap.wallNs = wallNs;
-
+	std::unordered_map<std::string, ProcessSnapshot> perDevice;
 	for (const auto &fdEnt : fds) {
 		const fs::path target = fs::read_symlink(fdEnt.path(), ec);
 		if (ec) {
@@ -168,12 +180,18 @@ captureOnePid(uint32_t pid, const std::string &pciAddr, // NOLINT(bugprone-easil
 		}
 
 		const fs::path fdinfoPath = fdinfoDir / fdEnt.path().filename();
-		auto info = parseFdinfo(fdinfoPath.string(), pciAddr);
-		if (info.empty()) {
+		auto client = parseDrmFdinfo(fdinfoPath.string());
+		if (!client || client->engines.empty()) {
 			continue;
 		}
 
-		for (auto &[eng, cnt] : info) {
+		auto [it, inserted] = perDevice.try_emplace(client->pdev);
+		ProcessSnapshot &snap = it->second;
+		if (inserted) {
+			snap.pid = pid;
+			snap.wallNs = wallNs;
+		}
+		for (auto &[eng, cnt] : client->engines) {
 			auto &dst = snap.engines[eng];
 			dst.cycles += cnt.cycles;
 			dst.totalCycles = std::max(dst.totalCycles, cnt.totalCycles);
@@ -181,19 +199,16 @@ captureOnePid(uint32_t pid, const std::string &pciAddr, // NOLINT(bugprone-easil
 		}
 	}
 
-	return snap.engines.empty() ? std::nullopt : std::make_optional(std::move(snap));
+	for (auto &[pdev, snap] : perDevice) {
+		out[pdev].push_back(std::move(snap));
+	}
 }
 
-std::vector<ProcessSnapshot> capture(const std::string &pciAddr, // NOLINT(bugprone-easily-swappable-parameters)
-									 const std::string &procRoot)
+DeviceSnapshots captureAll(const std::string &procRoot)
 {
-	if (pciAddr.empty()) {
-		return {};
-	}
-
 	namespace fs = std::filesystem;
 	const uint64_t wallNs = monotonicNs();
-	std::vector<ProcessSnapshot> result;
+	DeviceSnapshots result;
 
 	const auto isNumericPid = [](std::string_view s) noexcept {
 		return !s.empty() && s[0] >= '1' && std::ranges::all_of(s, [](char c) { return c >= '0' && c <= '9'; });
@@ -213,12 +228,29 @@ std::vector<ProcessSnapshot> capture(const std::string &pciAddr, // NOLINT(bugpr
 			continue;
 		}
 
-		if (auto snap = captureOnePid(pid, pciAddr, procRoot, wallNs)) {
-			result.push_back(std::move(*snap));
-		}
+		captureOnePidAll(pid, procRoot, wallNs, result);
 	}
 
 	return result;
+}
+
+std::vector<ProcessSnapshot> capture(const std::string &pciAddr, // NOLINT(bugprone-easily-swappable-parameters)
+									 const std::string &procRoot)
+{
+	if (pciAddr.empty()) {
+		return {};
+	}
+
+	auto all = captureAll(procRoot);
+	const auto it = all.find(pciAddr);
+	return it == all.end() ? std::vector<ProcessSnapshot>{} : std::move(it->second);
+}
+
+const std::vector<ProcessSnapshot> &snapshotsFor(const DeviceSnapshots &all, std::string_view pciAddr)
+{
+	static const std::vector<ProcessSnapshot> none;
+	const auto it = all.find(std::string{pciAddr});
+	return it == all.end() ? none : it->second;
 }
 
 PidUtilMap delta(const std::vector<ProcessSnapshot> &before, // NOLINT(bugprone-easily-swappable-parameters)

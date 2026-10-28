@@ -16,6 +16,12 @@
  *   auto utils  = fdinfo::delta(before, after);          // pid -> eng -> %
  *   proc.util   = fdinfo::toProcUtil(utils[proc.pid]);
  *
+ * Several devices: one walk per time point serves all of them.
+ *   auto before = fdinfo::captureAll();
+ *   std::this_thread::sleep_for(interval);
+ *   auto after  = fdinfo::captureAll();
+ *   auto utils  = fdinfo::delta(fdinfo::snapshotsFor(before, bdf), fdinfo::snapshotsFor(after, bdf));
+ *
  * On non-Linux platforms all functions are stubs that return empty / zero values.
  */
 
@@ -69,10 +75,36 @@ using EngineUtilMap = std::unordered_map<std::string, float>;
 /// Per-process engine utilisation map: pid → EngineUtilMap
 using PidUtilMap = std::unordered_map<uint32_t, EngineUtilMap>;
 
+/// Snapshots of every DRM client in the system, keyed by the drm-pdev PCI address.
+using DeviceSnapshots = std::unordered_map<std::string, std::vector<ProcessSnapshot>>;
+
 /// Snapshot engine counters for every process whose fdinfo matches @p pciAddr.
 /// @p procRoot defaults to "/proc"; override in tests to point at a fixture directory.
 /// Returns empty vector on non-Linux platforms.
 std::vector<ProcessSnapshot> capture(const std::string &pciAddr, const std::string &procRoot = "/proc");
+
+/**
+ * @brief Snapshots the engine counters of every DRM client of every device in one /proc walk
+ *
+ * One walk serves any number of devices: callers sampling several GPUs take one snapshot
+ * per time point and look each device up with snapshotsFor(), instead of calling capture()
+ * per device, which reads every process's fds again for each GPU.
+ *
+ * @param[in] procRoot Defaults to "/proc"; override in tests to point at a fixture directory.
+ * @retval map   drm-pdev PCI address -> one snapshot per process with a client of that device
+ * @retval empty no DRM client has engine counters, /proc is unreadable, or the platform has no fdinfo
+ */
+[[nodiscard]] DeviceSnapshots captureAll(const std::string &procRoot = "/proc");
+
+/**
+ * @brief The snapshots captureAll() took for one device
+ *
+ * @param[in] all     Result of captureAll().
+ * @param[in] pciAddr PCI address of the device, e.g. "0000:03:00.0".
+ * @retval vector       that device's snapshots, owned by @p all
+ * @retval empty vector the device had no DRM client with engine counters
+ */
+[[nodiscard]] const std::vector<ProcessSnapshot> &snapshotsFor(const DeviceSnapshots &all, std::string_view pciAddr);
 
 /// Compute per-process, per-engine utilisation % from two snapshots.
 /// Returns: pid → (engine_name → 0-100 %)

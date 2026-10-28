@@ -6,6 +6,8 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 #include "proc_fdinfo.h"
+#include <algorithm>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -66,7 +68,37 @@ void addPidClient(const fs::path &procRoot, const std::string &pid, const std::s
 	  << engineLines;
 }
 
+// A non-DRM fd: capture must skip it without reading its fdinfo.
+void addPidFile(const fs::path &procRoot, const std::string &pid, const std::string &fd)
+{
+	const fs::path base = procRoot / pid;
+	fs::create_directories(base / "fd");
+	fs::create_directories(base / "fdinfo");
+	fs::create_symlink("/dev/null", base / "fd" / fd);
+	std::ofstream f(base / "fdinfo" / fd);
+	f << "pos:\t0\n";
+}
+
 constexpr const char *BDF = "0000:03:00.0";
+constexpr const char *BDF2 = "0000:83:00.0";
+
+// PIDs of the snapshots, in ascending order.
+std::vector<uint32_t> pidsOf(const std::vector<fdinfo::ProcessSnapshot> &snaps)
+{
+	std::vector<uint32_t> pids;
+	for (const auto &s : snaps) {
+		pids.push_back(s.pid);
+	}
+	std::ranges::sort(pids);
+	return pids;
+}
+
+const fdinfo::ProcessSnapshot &snapOf(const std::vector<fdinfo::ProcessSnapshot> &snaps, uint32_t pid)
+{
+	const auto it = std::ranges::find(snaps, pid, &fdinfo::ProcessSnapshot::pid);
+	REQUIRE(it != snaps.end());
+	return *it;
+}
 
 } // namespace
 
@@ -97,6 +129,81 @@ TEST_CASE("capture: i915 drm-engine-<eng> is busy time with no total-cycles deno
 	const auto &rcs = snaps[0].engines.at("rcs");
 	CHECK(rcs.cycles == 123456);
 	CHECK(rcs.totalCycles == 0); // the wall-clock sentinel delta() relies on
+}
+
+TEST_CASE("captureAll: one walk groups clients by device")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "100", "5", "xe", BDF, "drm-cycles-ccs:\t10\ndrm-total-cycles-ccs:\t100\n");
+	addPidClient(proc.path, "200", "5", "xe", BDF2, "drm-cycles-bcs:\t20\ndrm-total-cycles-bcs:\t200\n");
+	addPidClient(proc.path, "300", "5", "xe", BDF, "drm-cycles-ccs:\t30\ndrm-total-cycles-ccs:\t300\n");
+	addPidClient(proc.path, "300", "6", "xe", BDF2, "drm-cycles-rcs:\t40\ndrm-total-cycles-rcs:\t400\n");
+
+	const auto all = fdinfo::captureAll(proc.path.string());
+	CHECK(all.size() == 2);
+	CHECK(pidsOf(fdinfo::snapshotsFor(all, BDF)) == std::vector<uint32_t>{100, 300});
+	CHECK(pidsOf(fdinfo::snapshotsFor(all, BDF2)) == std::vector<uint32_t>{200, 300});
+
+	// Each device sees only the engines of its own fd of the shared process.
+	const auto &onFirst = snapOf(fdinfo::snapshotsFor(all, BDF), 300);
+	CHECK(onFirst.engines.size() == 1);
+	CHECK(onFirst.engines.at("ccs").cycles == 30);
+	const auto &onSecond = snapOf(fdinfo::snapshotsFor(all, BDF2), 300);
+	CHECK(onSecond.engines.size() == 1);
+	CHECK(onSecond.engines.at("rcs").cycles == 40);
+}
+
+TEST_CASE("captureAll: fds of one process on one device are merged")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "100", "5", "xe", BDF, "drm-cycles-ccs:\t100\ndrm-total-cycles-ccs:\t900\n");
+	addPidClient(proc.path, "100", "6", "xe", BDF, "drm-cycles-ccs:\t50\ndrm-total-cycles-ccs:\t1000\n");
+
+	const auto all = fdinfo::captureAll(proc.path.string());
+	const auto &snaps = fdinfo::snapshotsFor(all, BDF);
+	REQUIRE(snaps.size() == 1);
+	const auto &ccs = snaps[0].engines.at("ccs");
+	CHECK(ccs.cycles == 150);
+	CHECK(ccs.totalCycles == 1000);
+}
+
+TEST_CASE("captureAll: non-DRM fds and clients without engine keys are skipped")
+{
+	const TempDir proc;
+	addPidFile(proc.path, "100", "3");
+	addPidClient(proc.path, "200", "5", "xe", BDF, "drm-total-vram0:\t65536 KiB\n");
+	CHECK(fdinfo::captureAll(proc.path.string()).empty());
+	CHECK(fdinfo::captureAll("/nonexistent/proc").empty());
+}
+
+TEST_CASE("capture: same snapshots as captureAll for that device")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "100", "5", "xe", BDF, "drm-cycles-ccs:\t10\ndrm-total-cycles-ccs:\t100\n");
+	addPidClient(proc.path, "200", "5", "xe", BDF2, "drm-cycles-bcs:\t20\ndrm-total-cycles-bcs:\t200\n");
+	addPidClient(proc.path, "300", "5", "xe", BDF, "drm-cycles-vcs:\t30\ndrm-total-cycles-vcs:\t300\n");
+
+	const auto one = fdinfo::capture(BDF, proc.path.string());
+	const auto all = fdinfo::captureAll(proc.path.string());
+	const auto &fromAll = fdinfo::snapshotsFor(all, BDF);
+	REQUIRE(pidsOf(one) == pidsOf(fromAll));
+	for (const auto &snap : one) {
+		const auto &other = snapOf(fromAll, snap.pid);
+		REQUIRE(snap.engines.size() == other.engines.size());
+		for (const auto &[eng, cnt] : snap.engines) {
+			CHECK(other.engines.at(eng).cycles == cnt.cycles);
+			CHECK(other.engines.at(eng).totalCycles == cnt.totalCycles);
+		}
+	}
+}
+
+TEST_CASE("snapshotsFor: a device without clients gives an empty vector")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "100", "5", "xe", BDF, "drm-cycles-ccs:\t10\ndrm-total-cycles-ccs:\t100\n");
+	const auto all = fdinfo::captureAll(proc.path.string());
+	CHECK(fdinfo::snapshotsFor(all, BDF2).empty());
+	CHECK(fdinfo::snapshotsFor({}, BDF).empty());
 }
 
 TEST_CASE("engineCountsPerClass: capacity gives the count, a class without it has one engine")

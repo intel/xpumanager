@@ -13,6 +13,29 @@ namespace fdinfo {
 
 std::vector<ProcessSnapshot> capture(const std::string & /*pciAddr*/, const std::string & /*procRoot*/) { return {}; }
 
+/**
+ * @brief Stub: Windows has no fdinfo, so no device has DRM clients.
+ *
+ * @param[in] procRoot  Unused.
+ *
+ * @retval empty  Always.
+ */
+DeviceSnapshots captureAll(const std::string & /*procRoot*/) { return {}; }
+
+/**
+ * @brief Stub: captureAll() never reports a device on Windows.
+ *
+ * @param[in] all      Unused.
+ * @param[in] pciAddr  Unused.
+ *
+ * @retval empty vector  Always.
+ */
+const std::vector<ProcessSnapshot> &snapshotsFor(const DeviceSnapshots & /*all*/, std::string_view /*pciAddr*/)
+{
+	static const std::vector<ProcessSnapshot> none;
+	return none;
+}
+
 PidUtilMap delta(const std::vector<ProcessSnapshot> & /*before*/, const std::vector<ProcessSnapshot> & /*after*/)
 {
 	return {};
