@@ -24,6 +24,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/metric/metricdata/metricdatatest"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+	"golang.org/x/sys/unix"
 
 	"github.com/intel/xpumanager/xpumd/receiver/intelcrashlog/internal/metadatatest"
 )
@@ -57,6 +58,31 @@ func assertDropped(t *testing.T, tel *componenttest.Telemetry, reason string, wa
 	metadatatest.AssertEqualCrashlogsDropped(t, tel, []metricdata.DataPoint[int64]{
 		{Attributes: attribute.NewSet(attributeKeyReason.String(reason)), Value: want},
 	}, metricdatatest.IgnoreTimestamp())
+}
+
+func assertNotDropped(t *testing.T, tel *componenttest.Telemetry) {
+	t.Helper()
+	_, err := tel.GetMetric("otelcol_crashlogs_dropped")
+	assert.ErrorContains(t, err, "not found")
+}
+
+// runWithFakeWatcher runs the receiver loop with a hand-crafted watcher to get control over the channels.
+func runWithFakeWatcher(t *testing.T, rcvr *crashlogReceiver) (*fsnotify.Watcher, <-chan struct{}) {
+	t.Helper()
+	watcher := &fsnotify.Watcher{Events: make(chan fsnotify.Event), Errors: make(chan error)}
+	rcvr.watcher = watcher
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		rcvr.run(ctx)
+		close(done)
+	}()
+	t.Cleanup(func() {
+		cancel()
+		<-done
+	})
+	return watcher, done
 }
 
 func startReceiver(t *testing.T, cfg *Config, nextConsumer consumer.Logs) {
@@ -216,6 +242,16 @@ func TestReceiverSkippedPaths(t *testing.T) {
 	subdir := filepath.Join(dir, "subdir.bin")
 	require.NoError(t, os.Mkdir(subdir, 0o700))
 
+	fifo := filepath.Join(dir, "fifo.bin")
+	require.NoError(t, unix.Mkfifo(fifo, 0o600))
+
+	outside := filepath.Join(t.TempDir(), "outside.bin")
+	require.NoError(t, os.WriteFile(outside, []byte{0xde, 0xad}, 0o600))
+	symlink := filepath.Join(dir, "symlink.bin")
+	require.NoError(t, os.Symlink(outside, symlink))
+	dirSymlink := filepath.Join(dir, "dirsymlink.bin")
+	require.NoError(t, os.Symlink(subdir, dirSymlink))
+
 	tests := []struct {
 		name string
 		glob string
@@ -224,18 +260,24 @@ func TestReceiverSkippedPaths(t *testing.T) {
 		{name: "name does not match glob", glob: "*.bin", path: filepath.Join(dir, "crash.txt")},
 		// The glob is rejected by Config.Validate, so this can only happen through a receiver constructed without validation
 		{name: "malformed glob", glob: "[a-", path: regular},
-		{name: "stat failure", glob: "*.bin", path: filepath.Join(dir, "vanished.bin")},
-		{name: "non-regular file", glob: "*.bin", path: subdir},
+		{name: "vanished file", glob: "*.bin", path: filepath.Join(dir, "vanished.bin")},
+		{name: "directory", glob: "*.bin", path: subdir},
+		// Opening must not block waiting for a writer
+		{name: "fifo", glob: "*.bin", path: fifo},
+		{name: "symlink to file", glob: "*.bin", path: symlink},
+		{name: "symlink to directory", glob: "*.bin", path: dirSymlink},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			sink := &consumertest.LogsSink{}
-			rcvr := createReceiver(t, &Config{Directory: dir, Globs: []string{tt.glob}}, sink)
+			rcvr, tel := createReceiverWithTelemetry(t, &Config{Directory: dir, Globs: []string{tt.glob}}, sink)
 
 			rcvr.handlePath(context.Background(), tt.path)
 
 			assert.Zero(t, sink.LogRecordCount())
+			assert.Empty(t, rcvr.processedFiles)
+			assertNotDropped(t, tel)
 		})
 	}
 }
@@ -316,6 +358,87 @@ func TestReceiverMinFileSize(t *testing.T) {
 	assert.Equal(t, 1, sink.LogRecordCount())
 }
 
+func TestReceiverOpenError(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o000))
+
+	sink := &consumertest.LogsSink{}
+	rcvr, tel := createReceiverWithTelemetry(t, &Config{Directory: dir, Globs: []string{"*.bin"}}, sink)
+
+	rcvr.handlePath(context.Background(), path)
+
+	assert.Zero(t, sink.LogRecordCount())
+	assert.NotContains(t, rcvr.processedFiles, path)
+	assertDropped(t, tel, reasonFileError, 1)
+}
+
+func TestReceiverReadError(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "crash.bin")
+	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
+	// Reading from a write-only file fails
+	f, err := os.OpenFile(path, os.O_WRONLY, 0)
+	require.NoError(t, err)
+	defer f.Close() //nolint:errcheck
+	info, err := f.Stat()
+	require.NoError(t, err)
+
+	sink := &consumertest.LogsSink{}
+	rcvr, tel := createReceiverWithTelemetry(t, &Config{Directory: dir, Globs: []string{"*.bin"}}, sink)
+
+	rcvr.emitFile(context.Background(), path, f, info)
+
+	assert.Zero(t, sink.LogRecordCount())
+	assert.NotContains(t, rcvr.processedFiles, path)
+	assertDropped(t, tel, reasonFileError, 1)
+}
+
+func TestReceiverRemovedFileIsReprocessed(t *testing.T) {
+	for _, op := range []fsnotify.Op{fsnotify.Remove, fsnotify.Rename} {
+		t.Run(op.String(), func(t *testing.T) {
+			dir := t.TempDir()
+			sink := &consumertest.LogsSink{}
+			rcvr := createReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin"}}, sink)
+			watcher, _ := runWithFakeWatcher(t, rcvr)
+
+			path := filepath.Join(dir, "crash.bin")
+			require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe}, 0o600))
+			watcher.Events <- fsnotify.Event{Name: path, Op: fsnotify.Create}
+			waitForLogs(t, sink, 1)
+
+			// A new file appearing under the name of a removed one is emitted again
+			watcher.Events <- fsnotify.Event{Name: path, Op: op}
+			watcher.Events <- fsnotify.Event{Name: path, Op: fsnotify.Create}
+			waitForLogs(t, sink, 2)
+		})
+	}
+}
+
+func TestReceiverEventOverflow(t *testing.T) {
+	dir := t.TempDir()
+	core, logs := observer.New(zap.WarnLevel)
+	sink := &consumertest.LogsSink{}
+	rcvr := createReceiver(t, &Config{Directory: dir, Globs: []string{"*.bin"}}, sink)
+	rcvr.logger = zap.New(core).Sugar()
+	watcher, _ := runWithFakeWatcher(t, rcvr)
+
+	// Ensure that the initial scan has completed
+	watcher.Events <- fsnotify.Event{}
+
+	// A rescan picks up files whose events were lost
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "crash.bin"), []byte{0xca, 0xfe}, 0o600))
+	watcher.Errors <- fsnotify.ErrEventOverflow
+	waitForLogs(t, sink, 1)
+
+	// A failing rescan is logged
+	require.NoError(t, os.RemoveAll(dir))
+	watcher.Errors <- fsnotify.ErrEventOverflow
+	require.Eventually(t, func() bool {
+		return logs.FilterMessage("directory rescan failed").Len() == 1
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
 func TestReceiverConsumerError(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "crash.bin")
@@ -350,15 +473,7 @@ func TestClosingReceiverWatcherChannels(t *testing.T) {
 			core, logs := observer.New(zap.WarnLevel)
 			rcvr := createReceiver(t, &Config{Directory: t.TempDir(), Globs: []string{"*.bin"}}, &consumertest.LogsSink{})
 			rcvr.logger = zap.New(core).Sugar()
-			// Override receiver watcher with a hand-crafted one to get control over the channels
-			watcher := &fsnotify.Watcher{Events: make(chan fsnotify.Event), Errors: make(chan error)}
-			rcvr.watcher = watcher
-
-			done := make(chan struct{})
-			go func() {
-				rcvr.run(context.Background())
-				close(done)
-			}()
+			watcher, done := runWithFakeWatcher(t, rcvr)
 
 			// Watcher errors are logged, not fatal
 			watcher.Errors <- errors.New("queue overflow")
