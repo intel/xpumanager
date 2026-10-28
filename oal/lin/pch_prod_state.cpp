@@ -27,6 +27,7 @@ constexpr GUID MKHI_GUID = {
 constexpr int TEE_RETRY_DELAY_MS = 50;
 // Firmware may take up to 120 ms to answer GET_PCH_INFO.
 constexpr uint32_t TEE_READ_TIMEOUT_MS = 120U;
+constexpr uint32_t TEE_WRITE_TIMEOUT_MS = 120U;
 constexpr int TEE_RETRY_COUNT = 3;
 
 } // namespace
@@ -81,7 +82,7 @@ constexpr int TEE_RETRY_COUNT = 3;
 	std::ranges::copy(reqBytes, buf.begin());
 
 	size_t writeLen = 0;
-	status = TeeWrite(&cl, buf.data(), reqSize, &writeLen, 0);
+	status = TeeWrite(&cl, buf.data(), reqSize, &writeLen, TEE_WRITE_TIMEOUT_MS);
 	if (status != TEE_SUCCESS || writeLen != reqSize) {
 		TeeDisconnect(&cl);
 		return {};
