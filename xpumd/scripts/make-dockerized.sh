@@ -58,6 +58,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -f ./*.deb && rm -rf /var/lib/apt/lists/*
 EOF
 
+SRC_DIR="$(realpath "${SCRIPT_DIR}/../..")"
+
 if [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
     USER="$(id -u):$(id -g)"
 else
@@ -74,9 +76,10 @@ fi
 
 docker run --rm \
     --user "${USER}" \
+    --cap-drop ALL \
     "${GOMODCACHE_MOUNT[@]}" \
     -e HOME=/go \
-    -v "${SCRIPT_DIR}/../..:/go/src" \
+    -v "${SRC_DIR}:/go/src" \
     -w /go/src \
     "${IMAGE_TAG}" \
     /bin/sh -c "make -C xpumd $*"
