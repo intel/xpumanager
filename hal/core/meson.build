@@ -193,6 +193,38 @@ if get_option('with_tests')
     test('gscupd_tests', gscupd_test)
     message('GSC firmware update unit tests enabled')
 
+    firmware_test = executable(
+      'firmware_test',
+      files('test/firmware_test.cpp'),
+      include_directories: [
+        global_inc,
+        hal_core_inc,
+        oal_inc_dirs,
+        include_directories('../fwupd'),
+        include_directories('../amc'),
+      ],
+      link_with: libxpum_static,
+      dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],
+      link_args: [
+        '-pie',
+        '-Wl,--wrap=zesDeviceEnumFirmwares',
+        '-Wl,--wrap=zesFirmwareGetProperties',
+        '-Wl,--wrap=zesFirmwareFlash',
+        '-Wl,--wrap=zesDevicePciGetProperties',
+        '-Wl,--wrap=igsc_device_iterator_create',
+        '-Wl,--wrap=igsc_device_iterator_next',
+        '-Wl,--wrap=igsc_device_iterator_destroy',
+        '-Wl,--wrap=igsc_device_init_by_device',
+        '-Wl,--wrap=igsc_device_fw_version',
+        '-Wl,--wrap=igsc_get_last_firmware_status',
+        '-Wl,--wrap=igsc_device_close',
+      ],
+      build_by_default: true,
+      install: false,
+    )
+    test('firmware_tests', firmware_test)
+    message('Firmware unit tests enabled')
+
     process_test = executable(
       'process_test',
       files('test/process_test.cpp'),

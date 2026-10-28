@@ -419,7 +419,7 @@ void pci::adoptAddress(const zes_pci_address_t &address)
  *
  * The query opens an IGSC session and asks the GSC firmware for its version, which costs
  * ~200 ms per device as root on some platforms; doing it on first use rather than in init()
- * means only callers that show either value pay for it. /dev/mei* is root-only, so
+ * means only callers that need either value pay for it. /dev/mei* is root-only, so
  * unprivileged callers fail fast.
  */
 void pci::queryGfxFirmware()

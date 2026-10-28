@@ -81,6 +81,19 @@ Options
       read, the image is flashed and the device decides. ``--force`` does not
       override these rules.
 
+   .. note::
+
+      ``GFX``, ``GFX_DATA``, ``OP_CODE`` and ``OP_DATA`` images are flashed
+      through Level Zero Sysman, which reaches the firmware through the shared
+      ``igsc`` library (igsc 1.1.0 or newer). Without a usable ``igsc``, Sysman
+      exposes none of this firmware and ``xpu-smi discovery`` shows an empty
+      *GFX Firmware Version*. An update of one of these types then stops before
+      anything is flashed, with an error that names the type and the device,
+      for example ``Level Zero Sysman exposes no GFX firmware on device 0.``,
+      followed by a reminder to install ``igsc``. A ``COMPOSITE`` update skips
+      the package's ``GFX_CODE`` and ``GFX_DATA`` components on such a device;
+      run it with ``XPU_SMI_LOG_LEVEL=DBG`` to see why each one was skipped.
+
 .. option:: -f <path>, --file <path>
 
    Path to the firmware image file on the local filesystem. With
