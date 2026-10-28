@@ -43,6 +43,12 @@ func createReceiverWithTelemetry(t *testing.T, cfg *Config, nextConsumer consume
 	t.Cleanup(func() { require.NoError(t, tel.Shutdown(context.Background())) })
 	rcvr, err := newReceiver(metadatatest.NewSettings(tel), cfg, nextConsumer)
 	require.NoError(t, err)
+
+	// Start() normally opens the directory
+	if dir, err := os.Open(filepath.Clean(cfg.Directory)); err == nil {
+		rcvr.dir = dir
+		t.Cleanup(func() { _ = dir.Close() })
+	}
 	return rcvr, tel
 }
 
@@ -264,8 +270,11 @@ func TestReceiverMaxFileSize(t *testing.T) {
 	rcvr.handlePath(context.Background(), path)
 	// Grow past the limit after stat
 	rcvr.config.MaxFileSize = 2
+	f, err := os.Open(path)
+	require.NoError(t, err)
+	defer f.Close() //nolint:errcheck
 	require.NoError(t, os.WriteFile(path, []byte{0xca, 0xfe, 0xba}, 0o600))
-	rcvr.emitFile(context.Background(), path, info)
+	rcvr.emitFile(context.Background(), path, f, info)
 
 	assert.Zero(t, sink.LogRecordCount())
 	assert.NotContains(t, rcvr.processedFiles, path)
@@ -291,8 +300,11 @@ func TestReceiverMinFileSize(t *testing.T) {
 	rcvr.handlePath(context.Background(), path)
 	// Shrink below the limit after stat
 	rcvr.config.MinFileSize = 1
+	f, err := os.Open(path)
+	require.NoError(t, err)
+	defer f.Close() //nolint:errcheck
 	require.NoError(t, os.WriteFile(path, []byte{}, 0o600))
-	rcvr.emitFile(context.Background(), path, info)
+	rcvr.emitFile(context.Background(), path, f, info)
 
 	assert.Zero(t, sink.LogRecordCount())
 	assert.NotContains(t, rcvr.processedFiles, path)

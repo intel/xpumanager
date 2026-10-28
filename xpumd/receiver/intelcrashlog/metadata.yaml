@@ -15,7 +15,7 @@ attributes:
     enum:
       - too_large
       - too_small
-      - read_error
+      - file_error
       - internal_consumer_error
 
 telemetry:

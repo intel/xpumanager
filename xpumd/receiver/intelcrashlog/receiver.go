@@ -25,6 +25,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/zap"
+	"golang.org/x/sys/unix"
 
 	"github.com/intel/xpumanager/xpumd/receiver/intelcrashlog/internal/metadata"
 )
@@ -38,7 +39,7 @@ const attributeKeyReason = attribute.Key("reason")
 const (
 	reasonTooLarge              = "too_large"
 	reasonTooSmall              = "too_small"
-	reasonReadError             = "read_error"
+	reasonFileError             = "file_error"
 	reasonInternalConsumerError = "internal_consumer_error"
 )
 
@@ -56,6 +57,8 @@ type crashlogReceiver struct {
 	processedFiles  map[string]bool
 	ignoreOlderThan time.Time
 
+	// handle to the watched directory
+	dir     *os.File
 	watcher *fsnotify.Watcher
 	cancel  context.CancelFunc
 	wg      sync.WaitGroup
@@ -87,6 +90,14 @@ func (r *crashlogReceiver) Start(_ context.Context, _ component.Host) error {
 		return fmt.Errorf("failed to watch directory %q: %w", r.config.Directory, err)
 	}
 
+	// NOTE: clean the path like fsnotify does so that both refer to the same dir
+	dir, err := os.OpenFile(filepath.Clean(r.config.Directory), os.O_RDONLY|unix.O_DIRECTORY, 0)
+	if err != nil {
+		_ = watcher.Close()
+		return fmt.Errorf("failed to open directory %q: %w", r.config.Directory, err)
+	}
+
+	r.dir = dir
 	r.watcher = watcher
 	r.ignoreOlderThan = time.Now().Add(-r.config.IgnoreOlderThan)
 
@@ -95,7 +106,10 @@ func (r *crashlogReceiver) Start(_ context.Context, _ component.Host) error {
 	r.cancel = cancel
 
 	r.wg.Go(func() {
-		defer func() { _ = watcher.Close() }()
+		defer func() {
+			_ = watcher.Close()
+			_ = dir.Close()
+		}()
 		r.run(ctx)
 	})
 
@@ -190,9 +204,27 @@ func (r *crashlogReceiver) handlePath(ctx context.Context, path string) {
 		return
 	}
 
-	info, err := os.Lstat(path)
+	// Open relative to the watched directory. Use fd (across stat and read) to avoid TOCTOU issues.
+	fd, err := unix.Openat(int(r.dir.Fd()), filepath.Base(path), unix.O_RDONLY|unix.O_NOFOLLOW|unix.O_NONBLOCK|unix.O_CLOEXEC, 0)
+	if errors.Is(err, unix.ELOOP) {
+		r.logger.Debugw("skipping symlink", "path", path)
+		return
+	}
+	if err != nil {
+		r.logger.Errorw("failed to open file", "path", path, "error", err)
+		// A vanished file is not a dropped crashlog
+		if !errors.Is(err, unix.ENOENT) {
+			r.recordDropped(ctx, reasonFileError)
+		}
+		return
+	}
+	f := os.NewFile(uintptr(fd), path)
+	defer func() { _ = f.Close() }()
+
+	info, err := f.Stat()
 	if err != nil {
 		r.logger.Errorw("failed to stat file", "path", path, "error", err)
+		r.recordDropped(ctx, reasonFileError)
 		return
 	}
 	if !info.Mode().IsRegular() {
@@ -221,12 +253,12 @@ func (r *crashlogReceiver) handlePath(ctx context.Context, path string) {
 		return
 	}
 
-	r.emitFile(ctx, path, info)
+	r.emitFile(ctx, path, f, info)
 }
 
-// emitFile reads the crashlog file and emits a log record.
-func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.FileInfo) {
-	data, err := r.readFile(path, info.Size())
+// emitFile reads the opened crashlog file and emits a log record.
+func (r *crashlogReceiver) emitFile(ctx context.Context, path string, f *os.File, info os.FileInfo) {
+	data, err := r.readFile(f, info.Size())
 	if err != nil {
 		r.logger.Errorw("failed to read crashlog", "path", path, "error", err)
 		switch {
@@ -235,7 +267,7 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 		case errors.Is(err, errFileTooSmall):
 			r.recordDropped(ctx, reasonTooSmall)
 		default:
-			r.recordDropped(ctx, reasonReadError)
+			r.recordDropped(ctx, reasonFileError)
 		}
 		return
 	}
@@ -271,13 +303,7 @@ func (r *crashlogReceiver) emitFile(ctx context.Context, path string, info os.Fi
 }
 
 // readFile reads the contents of a file directly into a pcommon.ByteSlice (avoiding a copy of the data on emit).
-func (r *crashlogReceiver) readFile(path string, size int64) (pcommon.ByteSlice, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return pcommon.ByteSlice{}, err
-	}
-	defer f.Close() //nolint: errcheck // read-only
-
+func (r *crashlogReceiver) readFile(f *os.File, size int64) (pcommon.ByteSlice, error) {
 	data := pcommon.NewByteSlice()
 	data.EnsureCapacity(int(size))
 

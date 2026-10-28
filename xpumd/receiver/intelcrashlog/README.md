@@ -15,6 +15,9 @@ See the [Crash Log Framework project](https://github.com/intel/crashlog) for mor
 > `*.bin` glob). Otherwise, the receiver also emits the incomplete temporary
 > file.
 
+Only regular files are processed. Symlinks are not followed and other
+non-regular files (directories, FIFOs, devices, ...) are skipped.
+
 ## Configuration
 
 ### Example Configuration
