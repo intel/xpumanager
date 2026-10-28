@@ -76,15 +76,15 @@ struct QueryNode
 	std::string absentReason;
 	/// Printed instead of N/A for an absent value in a verbose report, e.g. "Not Supported".
 	std::string absentText;
-	/// Left out of the text report when it has no value; JSON still has the key, as null. For rows
-	/// that only some devices or drivers supply, which would otherwise read N/A everywhere else.
+	/// Left out of the report, text and JSON alike, when it has no value. For rows that only some
+	/// devices or drivers supply, which would otherwise read N/A everywhere else.
 	bool hideWhenAbsent = false;
 
 	[[nodiscard]] bool isLeaf() const noexcept { return children.empty() && !isList; }
 
-	/// Whether the text report prints the node: not a hidden row without a value, nor a section
-	/// all of whose rows are left out.
-	[[nodiscard]] bool shownInText() const noexcept;
+	/// Whether the report has the node, in text and JSON: not a hidden row without a value, nor a
+	/// section all of whose rows are left out.
+	[[nodiscard]] bool shown() const noexcept;
 };
 
 /// Sections printed without --display: everything except the supported clocks, which list every

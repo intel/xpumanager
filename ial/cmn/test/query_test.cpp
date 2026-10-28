@@ -60,6 +60,15 @@ struct FakeArgs
 	}
 };
 
+[[nodiscard]] std::size_t nullCount(const std::string &json)
+{
+	std::size_t nulls = 0;
+	for (auto at = json.find(": null"); at != std::string::npos; at = json.find(": null", at + 1)) {
+		++nulls;
+	}
+	return nulls;
+}
+
 [[nodiscard]] std::vector<std::string> linesOf(const std::string &text)
 {
 	std::vector<std::string> lines;
@@ -711,14 +720,52 @@ TEST_CASE("a device that answers nothing renders every row as N/A and every valu
 	QueryReport report;
 	report.gpus = {node};
 	CHECK_NOTHROW((void)renderText(report));
-	const auto json = toJson(report).dump(4);
-	CHECK(json.find("\"N/A\"") == std::string::npos);
-	// Rows the text leaves out when absent are still in the JSON, as null.
-	std::size_t nulls = 0;
-	for (auto at = json.find(": null"); at != std::string::npos; at = json.find(": null", at + 1)) {
-		++nulls;
+	const auto json = toJson(report);
+	CHECK(json.dump(4).find("\"N/A\"") == std::string::npos);
+	// JSON has exactly the rows the text prints: one null per N/A row.
+	const auto deviceJson = nlohmann::ordered_json{{"gpu", json["gpus"][0]}}.dump(4);
+	CHECK(nullCount(deviceJson) == leaves);
+}
+
+TEST_CASE("--verbose puts the rows a device does not report back into the text and the JSON alike")
+{
+	MetricValues values;
+	for (const auto name : referencedMetricNames()) {
+		values[name] = std::nullopt;
 	}
-	CHECK(nulls > referencedMetricNames().size());
+	const auto build = [&](bool verbose) {
+		return buildDeviceNode("0000:00:00.0", QuerySelection{}, values, {}, {},
+							   RowNotes{.missing = {}, .failures = nullptr, .verbose = verbose});
+	};
+	const auto terse = build(false);
+	const auto verbose = build(true);
+	const auto rowsAndNulls = [](const QueryNode &node) {
+		std::string text;
+		for (const auto &child : node.children) {
+			renderNode(child, 1, text);
+		}
+		std::size_t rows = 0;
+		for (const auto &line : linesOf(text)) {
+			rows += line.find(": ") != std::string::npos ? 1 : 0;
+		}
+		QueryReport report;
+		report.gpus = {node};
+		const auto deviceJson = nlohmann::ordered_json{{"gpu", toJson(report)["gpus"][0]}}.dump(4);
+		return std::pair{rows, nullCount(deviceJson)};
+	};
+	const auto jsonOf = [](const QueryNode &node) {
+		QueryReport report;
+		report.gpus = {node};
+		return toJson(report)["gpus"][0];
+	};
+	const auto [terseRows, terseNulls] = rowsAndNulls(terse);
+	const auto [verboseRows, verboseNulls] = rowsAndNulls(verbose);
+	CHECK(terseNulls == terseRows);
+	CHECK(verboseNulls == verboseRows);
+	CHECK(verboseRows > terseRows);
+	// The ECC categories CRI does not report are the case that prompted this.
+	CHECK_FALSE(jsonOf(terse)["ecc_errors"]["aggregate"].contains("cache_correctable"));
+	CHECK(jsonOf(verbose)["ecc_errors"]["aggregate"].contains("cache_correctable"));
 }
 
 TEST_CASE("a value the caller lacks the access for says what is missing, even on a row otherwise left out")
@@ -769,7 +816,7 @@ TEST_CASE("a verbose report prints every row, and Not Supported only where the d
 	CHECK(text.find("Cache Correctable             : N/A") != std::string::npos);
 }
 
-TEST_CASE("a category row the device does not report is left out of the text but kept in the JSON")
+TEST_CASE("a category row the device does not report is left out of the text and the JSON alike")
 {
 	MetricValues values;
 	for (const auto name : referencedMetricNames()) {
@@ -792,8 +839,9 @@ TEST_CASE("a category row the device does not report is left out of the text but
 	const auto json = toJson(report);
 	const auto &aggregate = json["gpus"][0]["ecc_errors"]["aggregate"];
 	CHECK(aggregate["memory_uncorrectable"] == "62");
-	CHECK(aggregate.contains("memory_correctable"));
-	CHECK(aggregate["memory_correctable"].is_null());
+	CHECK_FALSE(aggregate.contains("memory_correctable"));
+	CHECK_FALSE(aggregate.contains("cache_correctable"));
+	CHECK(aggregate["correctable"].is_null());
 }
 
 TEST_CASE("selecting nothing but processes reads no registry field")

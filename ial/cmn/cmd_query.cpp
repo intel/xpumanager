@@ -799,17 +799,17 @@ std::span<const StaticKey> staticKeys()
 	return KEYS;
 }
 
-bool QueryNode::shownInText() const noexcept
+bool QueryNode::shown() const noexcept
 {
 	if (isLeaf()) {
 		return value || !hideWhenAbsent || !absentReason.empty();
 	}
-	return isList || value || std::ranges::any_of(children, &QueryNode::shownInText);
+	return isList || value || std::ranges::any_of(children, &QueryNode::shown);
 }
 
 void renderNode(const QueryNode &node, std::size_t depth, std::string &out)
 {
-	if (!node.shownInText()) {
+	if (!node.shown()) {
 		return;
 	}
 	if (node.isLeaf() || node.value) {
@@ -862,7 +862,7 @@ nlohmann::ordered_json nodeToJson(const QueryNode &node)
 		for (const auto &record : node.children) {
 			nlohmann::ordered_json object;
 			object[record.key] = valueJson(record.value);
-			for (const auto &field : record.children) {
+			for (const auto &field : record.children | std::views::filter(&QueryNode::shown)) {
 				object[field.key] = nodeToJson(field);
 			}
 			records.push_back(std::move(object));
@@ -873,7 +873,7 @@ nlohmann::ordered_json nodeToJson(const QueryNode &node)
 		return valueJson(node.value);
 	}
 	nlohmann::ordered_json object;
-	for (const auto &child : node.children) {
+	for (const auto &child : node.children | std::views::filter(&QueryNode::shown)) {
 		object[child.key] = nodeToJson(child);
 	}
 	return object;
@@ -891,7 +891,7 @@ nlohmann::ordered_json toJson(const QueryReport &report)
 	for (const auto &gpu : report.gpus) {
 		nlohmann::ordered_json object;
 		object[gpu.key] = valueJson(gpu.value);
-		for (const auto &child : gpu.children) {
+		for (const auto &child : gpu.children | std::views::filter(&QueryNode::shown)) {
 			object[child.key] = nodeToJson(child);
 		}
 		gpus.push_back(std::move(object));

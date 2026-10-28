@@ -32,7 +32,8 @@ Options
 
 .. option:: --verbose
 
-   Print every row, including those a device does not report, which are otherwise left out.
+   Print every row, including those a device does not report, which are otherwise left out
+   of the text and the JSON.
    A value the driver or OS says the device does not support reads ``Not Supported``.
 
 .. option:: -d <deviceIds>, --device <deviceIds>, --id <deviceIds>
@@ -927,7 +928,7 @@ Measured over the sampling window. Engine utilization needs ``CAP_PERFMON``; wit
 ECC
 ~~~
 
-Error counts come from the driver's RAS counters and need root. A category the device does not report is left out of the text report (``null`` in JSON); ``--verbose`` prints it.
+Error counts come from the driver's RAS counters and need root. A category the device does not report is left out, of the text and the JSON alike; ``--verbose`` prints it.
 
 .. list-table::
    :header-rows: 1
@@ -1465,8 +1466,8 @@ Reading the Report
   sensor, on devices that report one.
 - On Windows the kernel-mode driver version reads ``N/A``.
 - Rows only some devices or drivers supply, such as the RAS categories under ECC Errors, are
-  left out of the text report on a device without them, so it does not fill with ``N/A``. The
-  JSON output keeps every key, as ``null``. ``--verbose`` prints them all, and ``Not Supported``
+  left out on a device without them, so it does not fill with ``N/A``; the JSON output leaves
+  out the same rows. ``--verbose`` prints them all, and ``Not Supported``
   for a value the driver or OS says the device does not support; a value missing for another or
   an unknown reason stays ``N/A``.
 
@@ -1477,8 +1478,10 @@ JSON Output
 -----------
 
 ``--json`` prints one object. Its keys are the lower-case, underscore-separated form of the
-labels in the text report. A value that is not available is ``null``, numbers are strings
-in the unit shown in the text report, and ``processes`` is an array.
+labels in the text report, and it has the same rows: a row the text leaves out is not a key,
+and ``--verbose`` adds them to both. A value that is not available, printed ``N/A`` in the
+text, is ``null``. Numbers are strings in the unit shown in the text report, and ``processes``
+is an array.
 
 .. code-block:: text
 
