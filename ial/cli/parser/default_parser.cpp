@@ -51,6 +51,7 @@ struct PreArgs
 	std::string countStr;
 	std::string logFilePath;
 	bool loopInMs = false;
+	bool showAll = false; // --all: keep idle runtime contexts in the default view's process table
 };
 
 // Declarative flag specification for pre-extraction.
@@ -112,7 +113,7 @@ bool tryExtractFlag(const FlagSpec &spec, std::string_view a, int &i, int argc, 
 // Pre-extraction is needed for:
 //   - --loop-ms: multi-char short flag that CLI11 rejects
 //   - --query-gpu: optional-value flag (bare --query-gpu + -d POWER is valid)
-//   - top-level flags that share names with subcommand flags (--id, --display, etc.)
+//   - top-level flags that share names with subcommand flags (--id, --display, --all, etc.)
 //
 // Only long-form options are supported in v2.0 (short aliases removed except -f).
 std::pair<PreArgs, std::vector<std::string>> extractPreArgs(arg_struct *args)
@@ -177,6 +178,11 @@ std::pair<PreArgs, std::vector<std::string>> extractPreArgs(arg_struct *args)
 			if (i + 1 < args->argc && args->argv[i + 1][0] != '-') {
 				pre.queryGpu = args->argv[++i];
 			}
+			continue;
+		}
+		// After a subcommand name, --all belongs to that subcommand (ps --all).
+		if (a == "--all" && std::ranges::none_of(argvVec, [](const std::string &s) { return !s.starts_with('-'); })) {
+			pre.showAll = true;
 			continue;
 		}
 		if (std::ranges::any_of(flagSpecs, [&](const FlagSpec &spec) {
@@ -283,14 +289,16 @@ QueryFormat buildQueryFormat(const PreArgs &pre, const std::string &formatStr)
  * @param count  Maximum frames to produce; 0 = unlimited.  Ignored when
  *               @p loopMs is zero.
  * @param tty    True when stdout is an interactive terminal with ANSI support.
+ * @param showAll  Keep idle runtime contexts in the process table (--all).
  *
  * @retval 0                          Success.
  * @retval ZE_RESULT_ERROR_DEVICE_LOST No GPU devices found.
  * @retval ZE_RESULT_ERROR_*          Propagated from cmdSmi.
  */
-int runSmiWithLoop(arg_struct *args, int loopMs, int count, bool tty = true)
+int runSmiWithLoop(arg_struct *args, int loopMs, int count, bool tty = true, bool showAll = false)
 {
 	cmdSmi smi;
+	smi.showAll = showAll;
 	if (loopMs <= 0) {
 		return smi.run(args);
 	}
@@ -339,6 +347,8 @@ void DefaultParser::printExtraOptions()
 	PRINT("  --loop[=<sec>]              Repeat query every <sec> seconds (default: 1)\n");
 	PRINT("  --loop-ms=<ms>              Repeat query every <ms> milliseconds\n");
 	PRINT("  --count=<n>                 Number of loop iterations (default: infinite)\n");
+	PRINT("  --all                       Also list idle runtime contexts a multi-GPU process holds on\n");
+	PRINT("                              GPUs it is not using (default view only)\n");
 	PRINT("  --format=csv[,noheader][,nounits]  Output format for --query-gpu\n");
 	PRINT("  -f,--file=<path>            Log output to file instead of stdout\n");
 	PRINT("  -v,--version                Build provenance and runtime versions\n");
@@ -477,7 +487,7 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 		}
 		const auto fmt = buildQueryFormat(pre, formatStr);
 		const int loopMs = (fmt.count > 0 && fmt.loopMs <= 0) ? 1000 : fmt.loopMs;
-		return runSmiWithLoop(args, loopMs, fmt.count, stdoutIsTerminal() && pre.logFilePath.empty());
+		return runSmiWithLoop(args, loopMs, fmt.count, stdoutIsTerminal() && pre.logFilePath.empty(), pre.showAll);
 	}
 	return std::nullopt;
 }

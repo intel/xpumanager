@@ -14,6 +14,7 @@
 #include <span>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 extern std::string progName;
@@ -118,6 +119,23 @@ inline std::string devPciAddr(const devInfo &dev)
 		return {};
 	}
 	return dev.dev->getBDFStr();
+}
+
+/**
+ * @brief PCI addresses of a list of devices.
+ *
+ * @param[in] devList  Devices to collect addresses from.
+ * @return devPciAddr() of every device in @p devList, skipping devices that have none.
+ */
+inline std::unordered_set<std::string> devPciAddrs(const std::vector<devInfo> &devList)
+{
+	std::unordered_set<std::string> addrs;
+	for (const auto &dev : devList) {
+		if (auto addr = devPciAddr(dev); !addr.empty()) {
+			addrs.insert(std::move(addr));
+		}
+	}
+	return addrs;
 }
 
 #endif

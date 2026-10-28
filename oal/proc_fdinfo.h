@@ -26,6 +26,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // Per-process GPU utilisation across the four engine categories.
@@ -51,6 +52,7 @@ struct EngineCounters
 	uint64_t cycles = 0;	  ///< busy cycles (xe) or busy ns (i915)
 	uint64_t totalCycles = 0; ///< total GPU cycles (xe); 0 → use wall-clock (i915)
 	uint32_t capacity = 0;	  ///< drm-engine-capacity-<eng>; 0 when not reported, meaning one engine
+	bool hasBusy = false;	  ///< a busy counter was reported, so cycles == 0 means idle, not unknown
 };
 
 // All engine counters for one process on one device at one point in time.
@@ -126,6 +128,25 @@ struct EngineKey
 ///
 /// Use this to fill psInfo::engines for processes where L0 reports engines == 0.
 [[nodiscard]] uint64_t enginesFromSnapshot(const ProcessSnapshot &snap);
+
+/// Per PID, whether the process ran work on the device between two snapshots of it.
+/// PIDs whose activity cannot be told from the counters are left out.
+/// A rise covering no more than @p minBusyFraction of the window is treated as noise.
+[[nodiscard]] std::unordered_map<uint32_t, bool> ranWorkBetween(const std::vector<ProcessSnapshot> &before,
+																const std::vector<ProcessSnapshot> &after,
+																double minBusyFraction = 0.0);
+
+/// Per PID, total busy ns the process has run on the device, summed over engines.
+/// PIDs whose busy time cannot be converted to ns are left out.
+[[nodiscard]] std::unordered_map<uint32_t, uint64_t> lifetimeBusyNs(const std::vector<ProcessSnapshot> &before,
+																	const std::vector<ProcessSnapshot> &after);
+
+/// How long @p pid has been running, in ns; nullopt when /proc cannot tell.
+[[nodiscard]] std::optional<uint64_t> processAgeNs(uint32_t pid, const std::string &procRoot = "/proc");
+
+/// Number of distinct GPUs out of @p gpuPciAddrs (drm-pdev values) a process holds a DRM client on.
+[[nodiscard]] uint32_t drmDeviceCount(uint32_t pid, const std::unordered_set<std::string> &gpuPciAddrs,
+									  const std::string &procRoot = "/proc");
 
 /// Compute device-level engine utilization from two snapshots by summing per-process
 /// utilization across all active PIDs, capping each engine type at 100%.

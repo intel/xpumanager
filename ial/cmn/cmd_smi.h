@@ -29,9 +29,12 @@ struct SmiBaseline
 	// engine util: one busyness counter reading per engine group the device exposes
 	std::vector<EngineActivitySample> engineActivity;
 
-	// engine util from fdinfo instead, where sysman engine counters aren't allowed
+	// fdinfo engine counters: the engine util source where sysman counters aren't allowed
+	// (useFdinfo), and how the process list tells processes working on the device from
+	// idle runtime contexts unless --all keeps them all; not taken when neither needs them
 	std::vector<fdinfo::ProcessSnapshot> fdinfoSnap;
 	bool useFdinfo = false;
+	bool captureFdinfo = false;
 };
 
 /**
@@ -88,6 +91,10 @@ public:
 	int run(arg_struct *args);
 	std::pair<ze_result_t, std::string> collectAndRender(arg_struct *args);
 
+	/// --all: keep the idle runtime contexts a multi-GPU process holds on GPUs it is not
+	/// using in the process table, as "ps --all" does.
+	bool showAll = false;
+
 	// Pure helpers for the GPU table and its Name slot. Public so the layout can be unit
 	// tested without a GPU: they read nothing but their arguments.
 	[[nodiscard]] static std::string shortDeviceName(std::string_view deviceName);
@@ -101,8 +108,9 @@ private:
 	static void collectTemperature(SmiDeviceStats &stats, devInfo *dev);
 	static void collectMemory(SmiDeviceStats &stats, devInfo *dev);
 	static void collectPowerTdp(SmiDeviceStats &stats, devInfo *dev);
-	static void captureBaseline(SmiBaseline &baseline, devInfo *dev);
-	static void computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline, devInfo *dev);
+	static void captureBaseline(SmiBaseline &baseline, devInfo *dev, bool showAll);
+	static void computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline,
+									const std::vector<fdinfo::ProcessSnapshot> &fdinfoAfter, devInfo *dev);
 
 	[[nodiscard]] static TableBuilder buildProcessTable(const std::vector<devInfo> &deviceList,
 														const std::vector<std::vector<psInfo>> &procsPerDevice);

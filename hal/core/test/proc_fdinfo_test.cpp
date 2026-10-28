@@ -9,7 +9,12 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
 #include <string>
+#include <unordered_set>
+#include <unistd.h>
+#include <utility>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -123,6 +128,203 @@ TEST_CASE("engineCountsPerClass: nothing for another device, or without a /proc"
 	CHECK(fdinfo::engineCountsPerClass(BDF, proc.path.string()).empty());
 	CHECK(fdinfo::engineCountsPerClass(BDF, "/nonexistent/proc").empty());
 	CHECK(fdinfo::engineCountsPerClass("", proc.path.string()).empty());
+}
+
+namespace {
+
+fdinfo::ProcessSnapshot snapOf(uint32_t pid, uint64_t wallNs,
+							   std::initializer_list<std::pair<const char *, uint64_t>> busy)
+{
+	fdinfo::ProcessSnapshot s;
+	s.pid = pid;
+	s.wallNs = wallNs;
+	for (const auto &[eng, cycles] : busy) {
+		s.engines[eng].cycles = cycles;
+		s.engines[eng].hasBusy = true;
+	}
+	return s;
+}
+
+} // namespace
+
+TEST_CASE("ranWorkBetween: setup-only counters that do not move are not work")
+{
+	// Counters from mem_bench_int's fdinfo on an idle GPU: non-zero, but flat.
+	const std::vector before{snapOf(1183, 100, {{"ccs", 7859}, {"bcs", 34913}, {"vcs", 0}})};
+	const std::vector after{snapOf(1183, 200, {{"ccs", 7859}, {"bcs", 34913}, {"vcs", 0}})};
+	const auto ran = fdinfo::ranWorkBetween(before, after);
+	REQUIRE(ran.contains(1183));
+	CHECK_FALSE(ran.at(1183));
+}
+
+TEST_CASE("ranWorkBetween: any rising engine counts, including one first seen at the end")
+{
+	const std::vector before{snapOf(1, 100, {{"ccs", 10}}), snapOf(2, 100, {{"ccs", 10}})};
+	const std::vector after{snapOf(1, 200, {{"ccs", 10}, {"bcs", 5}}), snapOf(2, 200, {{"ccs", 11}})};
+	const auto ran = fdinfo::ranWorkBetween(before, after);
+	CHECK(ran.at(1));
+	CHECK(ran.at(2));
+}
+
+TEST_CASE("ranWorkBetween: a falling counter, and a PID in only one snapshot, are left out")
+{
+	// PID 1's summed counter falls, as when it closes one of its DRM clients.
+	const std::vector before{snapOf(1, 100, {{"ccs", 50}}), snapOf(2, 100, {{"ccs", 1}})};
+	const std::vector after{snapOf(1, 200, {{"ccs", 3}}), snapOf(3, 200, {{"ccs", 9}})};
+	const auto ran = fdinfo::ranWorkBetween(before, after);
+	CHECK_FALSE(ran.contains(1));
+	CHECK_FALSE(ran.contains(2));
+	CHECK_FALSE(ran.contains(3));
+}
+
+TEST_CASE("ranWorkBetween: a vanished engine leaves activity unknown unless another engine rose")
+{
+	const std::vector before{snapOf(1, 100, {{"ccs", 10}, {"bcs", 5}}), snapOf(2, 100, {{"ccs", 10}, {"bcs", 5}})};
+	const std::vector after{snapOf(1, 200, {{"ccs", 10}}), snapOf(2, 200, {{"ccs", 11}})};
+	const auto ran = fdinfo::ranWorkBetween(before, after);
+	CHECK_FALSE(ran.contains(1));
+	CHECK(ran.at(2));
+}
+
+TEST_CASE("ranWorkBetween: a PID with no busy counter in both snapshots is left out")
+{
+	// Engine keys from capacity / total-cycles lines alone carry no activity data.
+	fdinfo::ProcessSnapshot noBusy;
+	noBusy.pid = 1;
+	noBusy.wallNs = 100;
+	noBusy.engines["ccs"].capacity = 4;
+	noBusy.engines["ccs"].totalCycles = 1000;
+	auto noBusyAfter = noBusy;
+	noBusyAfter.wallNs = 200;
+	noBusyAfter.engines["ccs"].totalCycles = 2000;
+
+	const std::vector before{noBusy, snapOf(2, 100, {{"ccs", 10}})};
+	const std::vector after{noBusyAfter, snapOf(2, 200, {{"bcs", 0}})};
+	const auto ran = fdinfo::ranWorkBetween(before, after);
+	CHECK_FALSE(ran.contains(1));
+	CHECK_FALSE(ran.contains(2)); // busy counters on different engines: nothing to compare
+}
+
+TEST_CASE("ranWorkBetween: parsed fdinfo without busy counters is left out")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "1183", "3", "xe", BDF, "drm-total-cycles-ccs:\t1000\ndrm-engine-capacity-ccs:\t4\n");
+	const auto before = fdinfo::capture(BDF, proc.path.string());
+	const auto after = fdinfo::capture(BDF, proc.path.string());
+	REQUIRE(before.size() == 1);
+	CHECK(fdinfo::ranWorkBetween(before, after).empty());
+}
+
+TEST_CASE("ranWorkBetween: a rise within the busy floor is noise, above it work")
+{
+	// i915: busy ns over a 200 ms window.  1 ms is 0.5%, 4 ms is 2%.
+	const std::vector before{snapOf(1, 0, {{"ccs", 100}}), snapOf(2, 0, {{"ccs", 100}})};
+	const std::vector after{snapOf(1, 200'000'000, {{"ccs", 1'000'100}}), snapOf(2, 200'000'000, {{"ccs", 4'000'100}})};
+	const auto ran = fdinfo::ranWorkBetween(before, after, 0.01);
+	CHECK_FALSE(ran.at(1));
+	CHECK(ran.at(2));
+	CHECK(fdinfo::ranWorkBetween(before, after).at(1)); // no floor: any rise is work
+}
+
+TEST_CASE("ranWorkBetween: xe background busy time on a shared GPU is below the floor")
+{
+	// mem_bench_int's client on a 0x674f vLLM keeps busy: ~0.05% of the window.
+	auto xeSnap = [](uint64_t wallNs, uint64_t bcs, uint64_t total) {
+		auto s = snapOf(1, wallNs, {{"bcs", bcs}});
+		s.engines["bcs"].totalCycles = total;
+		return s;
+	};
+	const auto ran =
+		fdinfo::ranWorkBetween({xeSnap(0, 32429, 437966541695)}, {xeSnap(245'000'000, 34824, 437971279008)}, 0.01);
+	CHECK_FALSE(ran.at(1));
+}
+
+TEST_CASE("ranWorkBetween: a rise whose window length is unknown counts as work")
+{
+	// xe counters (totalCycles set) whose timestamp did not advance.
+	auto before = snapOf(1, 0, {{"ccs", 10}});
+	before.engines["ccs"].totalCycles = 5000;
+	auto after = snapOf(1, 200'000'000, {{"ccs", 11}});
+	after.engines["ccs"].totalCycles = 5000;
+	CHECK(fdinfo::ranWorkBetween({before}, {after}, 0.01).at(1));
+}
+
+TEST_CASE("processAgeNs: start time from /proc/<pid>/stat against /proc/uptime")
+{
+	const TempDir proc;
+	const auto ticks = static_cast<uint64_t>(sysconf(_SC_CLK_TCK));
+	std::ofstream(proc.path / "uptime") << "1000.50 1.00\n";
+	fs::create_directories(proc.path / "42");
+	// A command name with spaces and a ')' must not shift the fields.
+	std::ofstream stat(proc.path / "42" / "stat");
+	stat << "42 (my (odd) proc) S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 " << 990 * ticks << " 0 0\n";
+	stat.close();
+	const auto age = fdinfo::processAgeNs(42, proc.path.string());
+	REQUIRE(age.has_value());
+	CHECK(*age == 10'500'000'000ULL);
+	CHECK_FALSE(fdinfo::processAgeNs(43, proc.path.string()).has_value());
+}
+
+TEST_CASE("lifetimeBusyNs: i915 busy counters are ns, summed over engines")
+{
+	const std::vector before{snapOf(1, 100, {{"ccs", 7859}, {"bcs", 34913}})};
+	const std::vector after{snapOf(1, 200, {{"ccs", 7859}, {"bcs", 34913}})};
+	const auto busy = fdinfo::lifetimeBusyNs(before, after);
+	REQUIRE(busy.contains(1));
+	CHECK(busy.at(1) == 7859 + 34913);
+}
+
+TEST_CASE("lifetimeBusyNs: xe ticks convert at the rate drm-total-cycles advances")
+{
+	// 100 ms window during which the 19.2 MHz GPU timestamp advanced 1.92M ticks.
+	auto xeSnap = [](uint64_t wallNs, uint64_t totalCycles) {
+		auto s = snapOf(1, wallNs, {{"ccs", 19'200}}); // 1 ms of busy time
+		s.engines["ccs"].totalCycles = totalCycles;
+		return s;
+	};
+	const std::vector before{xeSnap(0, 5'000'000)};
+	const std::vector after{xeSnap(100'000'000, 6'920'000)};
+	const auto busy = fdinfo::lifetimeBusyNs(before, after);
+	REQUIRE(busy.contains(1));
+	CHECK(busy.at(1) == 1'000'000);
+}
+
+TEST_CASE("lifetimeBusyNs: unknown when the xe timestamp does not advance, or the PID is in one snapshot")
+{
+	auto before = snapOf(1, 100, {{"ccs", 19'200}});
+	before.engines["ccs"].totalCycles = 5'000'000;
+	auto after = before;
+	after.wallNs = 200;
+	const auto busy = fdinfo::lifetimeBusyNs({before, snapOf(2, 100, {{"ccs", 1}})}, {after});
+	CHECK(busy.empty());
+}
+
+TEST_CASE("drmDeviceCount: counts distinct drm-pdev values, not fds")
+{
+	const TempDir proc;
+	addPidClient(proc.path, "1183", "3", "xe", "0000:41:00.0", "drm-cycles-ccs:\t7859\n");
+	addPidClient(proc.path, "1183", "4", "xe", "0000:1a:00.0", "drm-cycles-ccs:\t646314451\n");
+	addPidClient(proc.path, "1183", "5", "xe", "0000:45:00.0", "drm-cycles-ccs:\t132\n");
+	addPidClient(proc.path, "1183", "6", "xe", "0000:1a:00.0", "drm-cycles-ccs:\t0\n"); // second fd, same GPU
+	const std::unordered_set<std::string> gpus{"0000:41:00.0", "0000:1a:00.0", "0000:45:00.0"};
+	CHECK(fdinfo::drmDeviceCount(1183, gpus, proc.path.string()) == 3);
+}
+
+TEST_CASE("drmDeviceCount: only the given GPUs count")
+{
+	// One listed dGPU, plus an iGPU and another vendor's GPU it is not given.
+	const TempDir proc;
+	addPidClient(proc.path, "1183", "3", "xe", "0000:03:00.0", "drm-cycles-ccs:\t0\n");
+	addPidClient(proc.path, "1183", "4", "i915", "0000:00:02.0", "drm-engine-render:\t0 ns\n");
+	addPidClient(proc.path, "1183", "5", "amdgpu", "0000:65:00.0", "");
+	CHECK(fdinfo::drmDeviceCount(1183, {"0000:03:00.0"}, proc.path.string()) == 1);
+	CHECK(fdinfo::drmDeviceCount(1183, {}, proc.path.string()) == 0);
+}
+
+TEST_CASE("drmDeviceCount: zero when the process cannot be read")
+{
+	const TempDir proc;
+	CHECK(fdinfo::drmDeviceCount(1183, {"0000:03:00.0"}, proc.path.string()) == 0);
 }
 
 TEST_CASE("toProcUtil: video and video-enhance engines feed media and their own figures")

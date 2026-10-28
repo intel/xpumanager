@@ -7,6 +7,7 @@
 #include "cmd_ps.h"
 #include "debug.h"
 #include "proc_fdinfo.h"
+#include "process_platform.h"
 #include <CLI/CLI.hpp>
 #include "table_builder.h"
 #include <assert.h>
@@ -19,11 +20,13 @@
 #include <optional>
 #include <span>
 #include <thread>
+#include <utility>
 
 static std::unordered_map<psCmdType, psCmdStruct> psCmds = {
 	{psCmdType::PS_HELP, {}},
 	{psCmdType::PS_JSON, {}},
 	{psCmdType::PS_DEVICE, {}},
+	{psCmdType::PS_ALL, {}},
 };
 
 // Measurement window for fdinfo engine-utilisation deltas.
@@ -74,6 +77,9 @@ void cmdPs::help(HELP helpType)
 	helpList.push_back(helpCmd(TITLE, "Options:"));
 	helpList.push_back(helpCmd(HEADING, "-h,--help                   Print this help message and exit"));
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
+	helpList.push_back(helpCmd(HEADING,
+							   "-a,--all                    Also list idle runtime contexts a multi-GPU process "
+							   "holds on GPUs it is not using"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address"));
 
@@ -228,13 +234,163 @@ void cmdPs::buildPsInfoList(std::vector<psInfo> &psInfoList, const std::vector<z
 }
 
 /**
+ * @brief Creates an empty cache of per-PID /proc facts.
+ *
+ * @param[in] gpuPciAddrs  PCI addresses of every GPU xpu-smi lists, not only the ones
+ *                         selected, since the runtime sets up all of them.
+ * @param[in] procRoot     Defaults to "/proc"; override in tests.
+ */
+ProcessFacts::ProcessFacts(std::unordered_set<std::string> gpuPciAddrs, std::string procRoot)
+	: gpuPciAddrs_{std::move(gpuPciAddrs)}, procRoot_{std::move(procRoot)}
+{}
+
+/**
+ * @brief Looks @p pid up in @p cache, calling @p read only on the first lookup.
+ *
+ * The read runs outside the lock, so smi's device tasks do not wait on each other's
+ * /proc reads; two tasks asking for a new PID at once may both read, with one result kept.
+ *
+ * @param[in,out] cache  One of the per-fact maps.
+ * @param[in]     pid    Process to look up.
+ * @param[in]     read   Reads the fact from /proc for @p pid.
+ * @return The cached or freshly read fact.
+ */
+template <typename T, typename Read>
+T ProcessFacts::cached(std::unordered_map<uint32_t, T> &cache, uint32_t pid, Read read) const
+{
+	{
+		const std::lock_guard lock{mutex_};
+		if (const auto it = cache.find(pid); it != cache.end()) {
+			return it->second;
+		}
+	}
+	T value = read(pid);
+	const std::lock_guard lock{mutex_};
+	return cache.try_emplace(pid, std::move(value)).first->second;
+}
+
+/**
+ * @brief fdinfo::drmDeviceCount() for @p pid, walking its fds only on the first call.
+ *
+ * @param[in] pid  Process to look up.
+ * @return Number of the listed GPUs the process holds a DRM client on.
+ */
+uint32_t ProcessFacts::drmDeviceCount(uint32_t pid) const
+{
+	return cached(drmDeviceCounts_, pid,
+				  [this](uint32_t p) { return fdinfo::drmDeviceCount(p, gpuPciAddrs_, procRoot_); });
+}
+
+/**
+ * @brief fdinfo::processAgeNs() for @p pid, read only on the first call.
+ *
+ * @param[in] pid  Process to look up.
+ * @return How long the process has been running, in ns; nullopt when /proc cannot tell.
+ */
+std::optional<uint64_t> ProcessFacts::ageNs(uint32_t pid) const
+{
+	return cached(agesNs_, pid, [this](uint32_t p) { return fdinfo::processAgeNs(p, procRoot_); });
+}
+
+/**
+ * @brief Removes the runtime contexts a multi-GPU process holds on GPUs it is not using.
+ *
+ * The compute runtime opens every GPU it can see and, while setting each one up,
+ * reserves about 20 MiB there and submits a few small jobs.  Those jobs leave the
+ * fdinfo busy counters non-zero for good, so the "never ran work here" filter in
+ * applyFdinfoCorrections() keeps the process listed on every GPU.  An entry is
+ * dropped only when all of these hold:
+ *  - fdinfo saw the process on this device both before and after the window and
+ *    no engine was busy for more than IDLE_CONTEXT_MAX_BUSY_FRACTION of it.  A
+ *    share rather than any rise, because next to another busy client xe charges
+ *    an idle context a little busy time;
+ *  - its busy time on this device since it opened it is no more than
+ *    IDLE_CONTEXT_MAX_BUSY_FRACTION of its age: no activity over a short window
+ *    does not by itself mean a workload is idle, and a share rather than a fixed
+ *    amount, because that background charge grows with the process's age;
+ *  - it holds no more than IDLE_CONTEXT_MAX_FACTOR times @p runtimeContextKiB of
+ *    device memory here: xpu-smi's own runtime context on this device is the
+ *    reference, so the limit follows the GPU, driver and runtime instead of being
+ *    fixed.  Without a reference nothing is hidden;
+ *  - it holds DRM clients on at least two of the GPUs @p processFacts counts.
+ * The last condition keeps idle clients of a single-GPU system listed, which
+ * process::getState() deliberately does.  Clients on devices xpu-smi does not
+ * list, such as an iGPU or another vendor's GPU a desktop process also holds,
+ * do not count towards it.  A process fdinfo cannot see is kept.
+ *
+ * A process that opened the device during the window is kept as well, so a job
+ * starting while ps samples shows on every GPU in that run and only where it
+ * works in the next.  With no before snapshot its setup on every GPU falls inside
+ * the window and cannot be told from work; it has not started its real work on
+ * any GPU yet either, so filtering it would hide it everywhere.
+ *
+ * @param[in,out] psInfoList  Entries from index @p first onward all belong to one device.
+ * @param[in]     first       Index of that device's first entry.
+ * @param[in]     before      fdinfo snapshot of the device at the start of the window.
+ * @param[in]     after       fdinfo snapshot of the device at its end.
+ * @param[in]     runtimeContextKiB  xpu-smi's own device memory on this device, from
+ *                                   getProcessList(); nullopt or 0 when not reported.
+ * @param[in]     processFacts  GPUs each process holds, out of every GPU xpu-smi lists, and
+ *                              its age; shared by all devices' calls so /proc is read once
+ *                              per PID.
+ */
+void cmdPs::dropIdleRuntimeContexts(std::vector<psInfo> &psInfoList, std::size_t first,
+									const std::vector<fdinfo::ProcessSnapshot> &before,
+									const std::vector<fdinfo::ProcessSnapshot> &after,
+									std::optional<uint64_t> runtimeContextKiB, const ProcessFacts &processFacts)
+{
+	if (runtimeContextKiB.value_or(0) == 0) {
+		DBG("  - idle runtime contexts kept: no reference size for this device\n");
+		return;
+	}
+	const uint64_t maxKiB = IDLE_CONTEXT_MAX_FACTOR * *runtimeContextKiB;
+	const auto ranWork = fdinfo::ranWorkBetween(before, after, IDLE_CONTEXT_MAX_BUSY_FRACTION);
+	const auto busyNs = fdinfo::lifetimeBusyNs(before, after);
+	const auto idleContext = [&](const psInfo &p) {
+		if (p.memSize > maxKiB) {
+			return false; // holds more than an idle context: not worth logging
+		}
+		const auto it = ranWork.find(p.processId);
+		if (it == ranWork.end() || it->second) {
+			DBG("  - PID {} kept on device {}: {}\n", p.processId, p.devId,
+				it == ranWork.end() ? "activity unknown" : "ran work during the window");
+			return false;
+		}
+		const auto bit = busyNs.find(p.processId);
+		const auto age = processFacts.ageNs(p.processId);
+		if (bit == busyNs.end() || age.value_or(0) == 0 ||
+			static_cast<double>(bit->second) > IDLE_CONTEXT_MAX_BUSY_FRACTION * static_cast<double>(*age)) {
+			DBG("  - PID {} kept on device {}: lifetime busy {} ns over age {} ns\n", p.processId, p.devId,
+				bit == busyNs.end() ? std::string{"unknown"} : std::to_string(bit->second),
+				age ? std::to_string(*age) : std::string{"unknown"});
+			return false;
+		}
+		if (const uint32_t gpus = processFacts.drmDeviceCount(p.processId); gpus < 2) {
+			DBG("  - PID {} kept on device {}: holds {} listed GPU(s)\n", p.processId, p.devId, gpus);
+			return false;
+		}
+		DBG("  - PID {} hidden on device {}: idle runtime context ({} KiB)\n", p.processId, p.devId, p.memSize);
+		return true;
+	};
+	psInfoList.erase(
+		std::remove_if(psInfoList.begin() + static_cast<std::ptrdiff_t>(first), psInfoList.end(), idleContext),
+		psInfoList.end());
+}
+
+/**
  * @brief Gets the process information status for the given device.
  *
  * @param dev       Device to query.
  * @param psInfoList Destination list; entries are appended.
+ * @param selfMemKiB If non-null, receives xpu-smi's own VRAM on this device in KiB, read
+ *                   from /proc/self/fdinfo: the size of its own runtime context, which
+ *                   dropIdleRuntimeContexts() uses as its reference.  Not taken from the
+ *                   process list, which drops xpu-smi as a process that ran no work
+ *                   here.  Left untouched when fdinfo shows no VRAM (iGPU, Windows).
  * @return ZE_RESULT_SUCCESS if process information was retrieved successfully.
  */
-ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInfoList)
+ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInfoList,
+								  std::optional<uint64_t> *selfMemKiB)
 {
 	TRACING();
 	ze_result_t result = ZE_RESULT_SUCCESS;
@@ -247,6 +403,13 @@ ze_result_t cmdPs::getProcessList(const devInfo *dev, std::vector<psInfo> &psInf
 	}
 	result = ps->getState(dev->zesDeviceHdl, &processList);
 	buildPsInfoList(psInfoList, processList, dev->index, getCurrentProcessId());
+	if (selfMemKiB != nullptr) {
+		const auto self = vramFromFdinfo(getCurrentProcessId(), deviceNodesForBdf(devPciAddr(*dev)));
+		DBG("  - xpu-smi's own runtime context on device {}: {} KiB\n", dev->index, self.localBytes / 1024);
+		if (self.localBytes > 0) {
+			*selfMemKiB = self.localBytes / 1024;
+		}
+	}
 	return result;
 }
 
@@ -424,6 +587,8 @@ int cmdPs::run(arg_struct *args)
 	CLI::App sub{"List running GPU processes", "ps"};
 	sub.set_help_flag("-h,--help", "Print this help message and exit");
 	sub.add_flag("-j,--json", psCmds[psCmdType::PS_JSON].enabled, "Print result in JSON format");
+	sub.add_flag("-a,--all", psCmds[psCmdType::PS_ALL].enabled,
+				 "Also list idle runtime contexts a multi-GPU process holds on GPUs it is not using");
 	sub.add_option("-d,--device,--id", psCmds[psCmdType::PS_DEVICE].val,
 				   "Device index or BDF address, comma-separated for multiple (e.g. 0,1)")
 		->each([&](const std::string &) { psCmds[psCmdType::PS_DEVICE].enabled = true; });
@@ -456,6 +621,14 @@ int cmdPs::run(arg_struct *args)
 			fdBefore.push_back(fdinfo::capture(devPciAddr(dev)));
 		}
 
+		// Idle runtime contexts are told apart by the other GPUs a process holds, so
+		// count every GPU listed, not only the ones --device selected.
+		std::vector<devInfo> allDevices;
+		if (psCmds[psCmdType::PS_DEVICE].enabled && args->sm.findDevice("", &allDevices) != ZE_RESULT_SUCCESS) {
+			allDevices.clear();
+		}
+		const ProcessFacts processFacts{devPciAddrs(psCmds[psCmdType::PS_DEVICE].enabled ? allDevices : deviceList)};
+
 		// ── Phase 2: measurement window ──────────────────────────────────────────
 		std::this_thread::sleep_for(PS_SAMPLE_WINDOW);
 
@@ -476,13 +649,17 @@ int cmdPs::run(arg_struct *args)
 			const auto &dev = deviceList[i];
 
 			const std::size_t startIdx = psInfoList.size();
-			const auto devResult = getProcessList(&dev, psInfoList);
+			std::optional<uint64_t> selfMemKiB;
+			const auto devResult = getProcessList(&dev, psInfoList, &selfMemKiB);
 			if (isFatalPsError(devResult) && firstError == ZE_RESULT_SUCCESS) {
 				firstError = devResult;
 			}
-			const std::size_t count = psInfoList.size() - startIdx;
 
 			const auto fdAfter = fdinfo::capture(devPciAddr(dev));
+			if (!psCmds[psCmdType::PS_ALL].enabled) {
+				dropIdleRuntimeContexts(psInfoList, startIdx, fdBefore[i], fdAfter, selfMemKiB, processFacts);
+			}
+			const std::size_t count = psInfoList.size() - startIdx;
 			auto utilMap = fdinfo::delta(fdBefore[i], fdAfter);
 
 			// Store per-process engine utilisation and fill missing engines bitmask.

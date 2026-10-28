@@ -22,6 +22,11 @@ These options are available at the top level (without a subcommand):
 
    Print one line per GPU (index, name, UUID) and exit.
 
+.. option:: --all
+
+   In the default output, also list the idle runtime contexts a multi-GPU process holds
+   on GPUs it is not using, as ``xpu-smi ps --all`` does. Can be combined with ``--loop``.
+
 .. option:: --query-gpu=<fields>
 
    Single-shot or looping per-field query. ``<fields>`` is a comma-separated list of
@@ -60,6 +65,7 @@ Synopsis
 .. code-block:: text
 
    xpu-smi [Options]
+   xpu-smi [--all] [--loop[=<sec>]|--loop-ms=<ms>] [--count=<n>]
    xpu-smi -v
    xpu-smi -h
    xpu-smi --list-gpus

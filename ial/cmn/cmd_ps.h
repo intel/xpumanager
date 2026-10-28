@@ -13,9 +13,13 @@
 #include <metric.h>
 #include <os.h>
 #include <cstdint>
+#include <mutex>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
+#include <unordered_map>
+#include <unordered_set>
 
 class PsTextPrinter : public TextPrinter
 {
@@ -30,9 +34,30 @@ enum psCmdType
 	PS_HELP,
 	PS_JSON,
 	PS_DEVICE,
+	PS_ALL,
 };
 
 struct psInfo;
+
+/// Per-PID facts dropIdleRuntimeContexts() reads from /proc, read once per run and shared
+/// by every device's call.  Safe to share across smi's per-device tasks.
+class ProcessFacts
+{
+public:
+	explicit ProcessFacts(std::unordered_set<std::string> gpuPciAddrs, std::string procRoot = "/proc");
+	[[nodiscard]] uint32_t drmDeviceCount(uint32_t pid) const;
+	[[nodiscard]] std::optional<uint64_t> ageNs(uint32_t pid) const;
+
+private:
+	template <typename T, typename Read>
+	T cached(std::unordered_map<uint32_t, T> &cache, uint32_t pid, Read read) const;
+
+	std::unordered_set<std::string> gpuPciAddrs_;
+	std::string procRoot_;
+	mutable std::mutex mutex_;
+	mutable std::unordered_map<uint32_t, uint32_t> drmDeviceCounts_;
+	mutable std::unordered_map<uint32_t, std::optional<uint64_t>> agesNs_;
+};
 
 class cmdPs : public cmds
 {
@@ -42,10 +67,29 @@ public:
 	~cmdPs(){};
 	void help(HELP helpType = FULL_HELP);
 	int run(arg_struct *args);
-	static ze_result_t getProcessList(const devInfo *dev, std::vector<psInfo> &psInfoList);
+	static ze_result_t getProcessList(const devInfo *dev, std::vector<psInfo> &psInfoList,
+									  std::optional<uint64_t> *selfMemKiB = nullptr);
 	static void buildPsInfoList(std::vector<psInfo> &psInfoList, const std::vector<zes_process_state_t> &processList,
 								uint32_t devIndex, uint32_t selfPid);
+	static void dropIdleRuntimeContexts(std::vector<psInfo> &psInfoList, std::size_t first,
+										const std::vector<fdinfo::ProcessSnapshot> &before,
+										const std::vector<fdinfo::ProcessSnapshot> &after,
+										std::optional<uint64_t> runtimeContextKiB, const ProcessFacts &processFacts);
 };
+
+/// Most device memory an idle runtime context holds on a GPU, as a multiple of what
+/// xpu-smi's own runtime context holds there.  The reference is measured per device on
+/// every run, so it follows new GPUs, drivers and runtimes.  The runtime reserves about
+/// 20 MiB on every GPU it initialises (measured on 0x674f); peers in a tensor-parallel
+/// job hold up to about twice that on each other's GPUs.
+inline constexpr uint64_t IDLE_CONTEXT_MAX_FACTOR = 3;
+
+/// Most an idle runtime context keeps a GPU's engines busy, as a share of time: during
+/// the sampling window, and over the process's life (busy time over its age).  Next to
+/// another busy client, xe charges an idle context about 0.05% (measured on 0x674f
+/// beside vLLM), and setup leaves about 2 ms; a light workload that did not submit
+/// during the short window still shows its earlier work as a higher lifetime share.
+inline constexpr double IDLE_CONTEXT_MAX_BUSY_FRACTION = 0.01;
 
 using psSubCmdFunc = ze_result_t (cmdPs::*)(devInfo *d, nlohmann::ordered_json *jsonObj);
 

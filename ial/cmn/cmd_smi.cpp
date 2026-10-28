@@ -325,8 +325,13 @@ void cmdSmi::collectPowerTdp(SmiDeviceStats &stats, devInfo *di)
 
 /**
  * @brief Capture baseline energy counters and engine activity snapshots for delta calculation
+ *
+ * @param[out] baseline  Readings taken at the start of the sample window.
+ * @param[in]  di        Device to sample.
+ * @param[in]  showAll   --all: the process list keeps idle runtime contexts, so it does
+ *                       not need fdinfo; it is then captured only as the util source.
  */
-void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
+void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di, bool showAll)
 {
 	TRACING();
 	device *dev = di->dev;
@@ -344,9 +349,16 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
 	// engine counters (sysmanEngineCountersAllowed), otherwise from every engine group, so
 	// utilization can be taken from the busiest engine rather than from the device-wide
 	// average (see computeFromBaseline).
-	if (!sysmanEngineCountersAllowed()) {
+	baseline.useFdinfo = !sysmanEngineCountersAllowed();
+
+	// Each capture scans all of /proc, so take fdinfo only when something reads it: the
+	// util above, or the process list telling processes working on this device from idle
+	// runtime contexts (cmdPs::dropIdleRuntimeContexts), which --all turns off.
+	baseline.captureFdinfo = baseline.useFdinfo || !showAll;
+	if (baseline.captureFdinfo) {
 		baseline.fdinfoSnap = fdinfo::capture(devPciAddr(*di));
-		baseline.useFdinfo = true;
+	}
+	if (baseline.useFdinfo) {
 		return;
 	}
 	auto *engGroup = reinterpret_cast<enginegroup *>(dev->getEngineGroup());
@@ -360,8 +372,16 @@ void cmdSmi::captureBaseline(SmiBaseline &baseline, devInfo *di)
 
 /**
  * @brief Compute power (W) and GPU utilization (%) from baseline vs. current readings
+ *
+ * @param[out] stats        Receives power and utilization, with their valid flags.
+ * @param[in]  baseline     Readings captureBaseline() took at the start of the window.
+ * @param[in]  fdinfoAfter  fdinfo snapshot of the device at the end of the window; the
+ *                          util source when baseline.useFdinfo is set.  Taken by the
+ *                          caller so the process list can reuse it.
+ * @param[in]  di           Device being sampled.
  */
-void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline, devInfo *di)
+void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &baseline,
+								 const std::vector<fdinfo::ProcessSnapshot> &fdinfoAfter, devInfo *di)
 {
 	TRACING();
 	device *dev = di->dev;
@@ -399,7 +419,7 @@ void cmdSmi::computeFromBaseline(SmiDeviceStats &stats, const SmiBaseline &basel
 	// ZES_ENGINE_GROUP_ALL cannot be used here: it averages the busyness of every engine on
 	// the device, so a compute-only workload saturating one of nine engines reads as 11%.
 	if (baseline.useFdinfo) {
-		const auto util = fdinfo::aggregateDeviceUtil(baseline.fdinfoSnap, fdinfo::capture(devPciAddr(*di)));
+		const auto util = fdinfo::aggregateDeviceUtil(baseline.fdinfoSnap, fdinfoAfter);
 		if (const auto busiest = metrics::busiestEngineClass(util.compute, util.render, util.media, util.copy)) {
 			stats.gpuUtilPercent = static_cast<double>(*busiest);
 			stats.utilValid = true;
@@ -698,8 +718,9 @@ void cmdSmi::help(HELP helpType)
  * Enumerates all available GPU devices, then samples each one on its own
  * task: static properties, temperature, memory, power, utilization (via a
  * 200 ms delta window, SMI_SAMPLE_WINDOW) and its process list, with the
- * window-independent queries running inside the window. Formats the result
- * as a printable table string in device order.
+ * window-independent queries running inside the window. Unless showAll is
+ * set, idle runtime contexts are dropped from the process list, as "ps" does.
+ * Formats the result as a printable table string in device order.
  *
  * @param args  CLI arguments used for device enumeration and formatting.
  *
@@ -724,13 +745,14 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 	// Each device takes its baseline first and does its window-independent queries (static
 	// properties, process list) while its window runs, so with many processes those queries
 	// no longer add to the window, and with many GPUs devices no longer add to each other.
+	const ProcessFacts processFacts{devPciAddrs(deviceList)};
 	std::vector<std::future<SmiDeviceSample>> samples;
 	samples.reserve(deviceList.size());
 	for (auto &di : deviceList) {
-		samples.push_back(std::async(std::launch::async, [&di] {
+		samples.push_back(std::async(std::launch::async, [&di, &processFacts, showAll = showAll] {
 			SmiDeviceSample sample;
 			SmiBaseline baseline;
-			captureBaseline(baseline, &di);
+			captureBaseline(baseline, &di, showAll);
 			const auto windowEnd = std::chrono::steady_clock::now() + SMI_SAMPLE_WINDOW;
 
 			collectStaticProps(sample.stats, &di);
@@ -738,12 +760,19 @@ std::pair<ze_result_t, std::string> cmdSmi::collectAndRender(arg_struct *args)
 			collectTemperature(sample.stats, &di);
 			collectMemory(sample.stats, &di);
 			collectPowerTdp(sample.stats, &di);
-			if (cmdPs::getProcessList(&di, sample.procs) != ZE_RESULT_SUCCESS) {
+			std::optional<uint64_t> selfMemKiB;
+			if (cmdPs::getProcessList(&di, sample.procs, &selfMemKiB) != ZE_RESULT_SUCCESS) {
 				sample.procs.clear();
 			}
 
 			std::this_thread::sleep_until(windowEnd);
-			computeFromBaseline(sample.stats, baseline, &di);
+			const auto fdinfoAfter =
+				baseline.captureFdinfo ? fdinfo::capture(devPciAddr(di)) : std::vector<fdinfo::ProcessSnapshot>{};
+			computeFromBaseline(sample.stats, baseline, fdinfoAfter, &di);
+			if (!showAll) {
+				cmdPs::dropIdleRuntimeContexts(sample.procs, 0, baseline.fdinfoSnap, fdinfoAfter, selfMemKiB,
+											   processFacts);
+			}
 			return sample;
 		}));
 	}
