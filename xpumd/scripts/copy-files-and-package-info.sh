@@ -7,7 +7,7 @@ set -euxo pipefail
 
 if [ $# -lt 2 ]; then
     cat >&2 << EOF
-Usage: $0 <OUT_DIR> <file> [<file> ...]"
+Usage: [ORIGINS=<FILE>] $0 <OUT_DIR> <file> [<file> ...]"
 
 Purposed to run in the context of a Docker build only.
 EOF
@@ -72,3 +72,14 @@ for pkg in $PKGS; do
     dpkg-query -s "$pkg" >> "$STATUS"
     echo >> "$STATUS"
 done
+
+# Record the origin of the copied packages that were downloaded with download-debs.sh
+# (i.e. not from the distro repos) for fixing up their entries in the image SBOM.
+# $ORIGINS overrides the file location.
+DIR="$(dirname "$(realpath "$0")")"
+ORIGINS="${ORIGINS:-$OUT/usr/share/doc/xpumd/package-origins.spdx.json}"
+"$DIR/package-origins.sh" init "$ORIGINS"
+if [ -e "$DIR/download-origins.json" ]; then
+    # shellcheck disable=SC2086 # one argument per package
+    "$DIR/package-origins.sh" merge "$ORIGINS" "$DIR/download-origins.json" $PKGS
+fi

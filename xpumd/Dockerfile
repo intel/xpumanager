@@ -36,6 +36,7 @@ FROM golang:1.27.3-trixie@sha256:af1bfc2614ebb1dbd31af514b78740fd678850e76498762
 RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.sources && \
     apt-get update && apt-get install -y --no-install-recommends \
     cmake \
+    jq \
     libcyaml-dev \
     libyaml-dev \
     ninja-build \
@@ -46,7 +47,8 @@ RUN sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/debian.s
 
 WORKDIR /debs/
 
-COPY scripts/copy-files-and-package-info.sh .
+COPY scripts/copy-files-and-package-info.sh scripts/download-debs.sh \
+     scripts/package-origins.sh ./
 
 
 # --- Build stage for using local driver DEBs ---
@@ -89,13 +91,14 @@ ARG FILES_DIR=level-zero-go/level-zero
 COPY $FILES_DIR/$CHECKSUMS_LOADER $FILES_DIR/$CHECKSUMS_BACKEND ./
 
 # Download and install Level-Zero and its dependencies.
+# (libigdgmm12 is released with compute-runtime, but is built from gmmlib)
 RUN IGC_CORE_RELEASE=${IGC_CORE_VERSION%%+*} && \
-    curl -fS --fail-early \
-         -LO https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
-         -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb \
-         -LO https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
-         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
-         -LO https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
+    /debs/download-debs.sh /debs/download-origins.json \
+         https://github.com/intel/intel-graphics-compiler/releases/download/v${IGC_CORE_RELEASE}/intel-igc-core-2_${IGC_CORE_VERSION}_amd64.deb \
+         https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libigdgmm12_${LIBIGDGMM12_VERSION}_amd64.deb,purl=pkg:github/intel/gmmlib@intel-gmmlib-${LIBIGDGMM12_VERSION} \
+         https://github.com/intel/compute-runtime/releases/download/${COMPUTE_RUNTIME_RELEASE}/libze-intel-gpu1_${COMPUTE_RUNTIME_RELEASE}-0_amd64.deb \
+         https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze1_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
+         https://github.com/oneapi-src/level-zero/releases/download/v${LEVEL_ZERO_VERSION}/libze-dev_${LEVEL_ZERO_VERSION}+u24.04_amd64.deb \
 	 && \
     if ! sha256sum --check --strict $CHECKSUMS_LOADER $CHECKSUMS_BACKEND ; then \
         echo "--- Expected ($CHECKSUMS_LOADER / $CHECKSUMS_BACKEND): ---"; \
@@ -125,7 +128,8 @@ RUN mkdir /src && \
     ldconfig
 
 # libigsc and libmetee are source-built (not DEB packages):
-# copy manually to output dir and add synthetic dpkg status entries for scanners
+# copy manually to output dir, add synthetic dpkg status entries for scanners
+# and record their origin for the SBOM
 RUN install -D /usr/lib/x86_64-linux-gnu/libigsc.so.1 \
                /out/usr/lib/x86_64-linux-gnu/libigsc.so.1 && \
     install -d /out/var/lib/dpkg/ && \
@@ -143,7 +147,13 @@ Architecture: amd64\n\
 Version: ${METEE_VERSION}\n\
 Homepage: https://github.com/intel/metee\n\
 Description: Intel(R) ME TEE Library (statically linked to libigsc)\n\
-" >> /out/var/lib/dpkg/status
+" >> /out/var/lib/dpkg/status && \
+    /debs/package-origins.sh add /out/usr/share/doc/xpumd/package-origins.spdx.json \
+        libigsc1 \
+        pkg:github/intel/igsc@${IGSC_VERSION} git+https://github.com/intel/igsc.git@${IGSC_COMMIT} && \
+    /debs/package-origins.sh add /out/usr/share/doc/xpumd/package-origins.spdx.json \
+        libmetee0 \
+        pkg:github/intel/metee@${METEE_VERSION} git+https://github.com/intel/metee.git@${METEE_COMMIT}
 
 
 # --- Alias for source build builder stage ---
@@ -230,7 +240,9 @@ RUN sed -i 's/127.0.0.1:/0.0.0.0:/' /out/etc/xpumd/config-example.yaml
 # --- Backend from the released DEB package (BACKEND=deb) ---
 FROM builder AS backend-deb
 
-RUN /debs/copy-files-and-package-info.sh /backend \
+# Package origins go outside of /backend/usr/, see the "out" stage
+RUN ORIGINS=/backend/package-origins.spdx.json \
+    /debs/copy-files-and-package-info.sh /backend \
         /usr/lib/x86_64-linux-gnu/libze_intel_gpu.so.1
 
 
@@ -356,7 +368,10 @@ Version: ${VERSION}+git.${COMPUTE_RUNTIME_COMMIT}\n\
 Homepage: https://github.com/intel/compute-runtime\n\
 Description: Intel(R) Graphics Compute Runtime for oneAPI Level Zero\n\
  Built from the pinned compute-runtime revision, not from the released package.\n\
-" > /backend/var/lib/dpkg/status
+" > /backend/var/lib/dpkg/status && \
+    /debs/package-origins.sh add /backend/package-origins.spdx.json libze-intel-gpu1 \
+        pkg:github/intel/compute-runtime@${COMPUTE_RUNTIME_COMMIT} \
+        git+https://github.com/intel/compute-runtime.git@${COMPUTE_RUNTIME_COMMIT}
 
 
 # --- The backend selected with BACKEND ---
@@ -367,10 +382,14 @@ FROM backend-${BACKEND} AS backend
 FROM builder AS out
 
 # Only the files of the backend: its dpkg status entry is appended to the database
-# of the builder instead of replacing it
+# of the builder instead of replacing it, and its package origins (kept outside of
+# /backend/usr/ so they don't overwrite the builder ones) are merged
 COPY --from=backend /backend/usr/ /out/usr/
-COPY --from=backend /backend/var/lib/dpkg/status /backend-package-info
-RUN cat /backend-package-info >> /out/var/lib/dpkg/status
+COPY --from=backend /backend/var/lib/dpkg/status /backend/package-origins.spdx.json \
+     /backend-package-info/
+RUN cat /backend-package-info/status >> /out/var/lib/dpkg/status && \
+    /debs/package-origins.sh merge /out/usr/share/doc/xpumd/package-origins.spdx.json \
+        /backend-package-info/package-origins.spdx.json
 
 # Build the stub driver & install it to the devel image
 # (only level-zero-go is mounted, so other changes don't invalidate this step)
@@ -388,6 +407,8 @@ RUN if [ -n "$TOOLS" ]; then \
       apt-get update && \
       apt-get install -y --no-install-recommends $TOOLS && \
       install -D /out/var/lib/dpkg/status /out-devel/var/lib/dpkg/status && \
+      install -D /out/usr/share/doc/xpumd/package-origins.spdx.json \
+                 /out-devel/usr/share/doc/xpumd/package-origins.spdx.json && \
       /debs/copy-files-and-package-info.sh /out-devel \
       $(for pkg in $TOOLS; do \
         for bin in $(dpkg -L $pkg | grep bin/); do \
