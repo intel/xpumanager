@@ -210,6 +210,29 @@ void configureFileLogging(const std::string &logFilePath)
 	}
 }
 
+/**
+ * @brief Describe a failure to parse the top-level options by the argument actually at fault.
+ *
+ * An unexpected argument keeps the "was not expected" wording and names the first one CLI11
+ * rejected. When @p rejected starts with the "--" that ended the options, which CLI11 accepts,
+ * the argument after that "--" is named. Any other failure, such as --format without its value,
+ * gets CLI11's own text, which names the option.
+ *
+ * @param [in] error    What CLI::App::parse() threw.
+ * @param [in] rejected The arguments CLI11 did not consume (CLI::App::remaining()), in command-line order,
+ *                      including a "--" that ended the options.
+ * @return The diagnostic, without a trailing newline.
+ */
+[[nodiscard]] std::string describeParseError(const CLI::ParseError &error, const std::vector<std::string> &rejected)
+{
+	if (dynamic_cast<const CLI::ExtrasError *>(&error) == nullptr || rejected.empty()) {
+		return error.what();
+	}
+	// A leading "--" is the one that ended the options, which CLI11 accepts; what it rejected comes next.
+	const std::string &first = (rejected.size() > 1 && rejected.front() == "--") ? rejected[1] : rejected.front();
+	return xpum::compat::format("The following argument was not expected: '{}'.", first);
+}
+
 // Build a QueryFormat from pre-extracted arguments and the --format string.
 QueryFormat buildQueryFormat(const PreArgs &pre, const std::string &formatStr)
 {
@@ -353,11 +376,18 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 	std::string formatStr;
 	topApp.add_flag("-v,--version", versionFlag, "Display version information and exit");
 	topApp.add_flag("--list-gpus", listGpusFlag, "Print a list of GPUs and exit");
-	topApp.add_option("--format", formatStr, "Output format: csv[,noheader][,nounits]");
+	// An empty value ("--format ''") is as missing as in "--format=", so it fails with the same message.
+	topApp.add_option("--format", formatStr, "Output format: csv[,noheader][,nounits]")
+		->check([](const std::string &value) {
+			return value.empty() ? std::string{"1 required TEXT missing"} : std::string{};
+		});
 
 	auto [pre, argvVec] = extractPreArgs(args);
 	configureFileLogging(pre.logFilePath);
 
+	// CLI11 consumes this vector from the back, so hand it over reversed. In typed order,
+	// "--format csv" reaches "csv" before "--format" and fails to parse (XPUM-1626).
+	std::ranges::reverse(argvVec);
 	try {
 		topApp.parse(argvVec);
 	} catch (const CLI::CallForHelp &) {
@@ -367,7 +397,7 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 			printFullHelp(*this, cmdList);
 		}
 		return 0;
-	} catch (const CLI::ParseError &) {
+	} catch (const CLI::ParseError &e) {
 		// If argvVec is not empty, it contains unparsed tokens for a subcommand.
 		if (!argvVec.empty()) {
 			// Rebuild args->argv/argc so subcommand dispatch sees the stripped tokens.
@@ -387,7 +417,7 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 			args->argc = static_cast<int>(ownedArgv_.argv.size());
 			return std::nullopt;
 		}
-		PRINT("The following argument was not expected: '{}'.\n", args->argv[1]);
+		PRINT("{}\n", describeParseError(e, topApp.remaining()));
 		printFullHelp(*this, cmdList);
 		return 1;
 	}
@@ -433,14 +463,15 @@ std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::ve
 		return cmdDump::runQuery(effectiveQuery, pre.deviceSpec, args, buildQueryFormat(pre, formatStr), selector);
 	}
 
+	// Checked before the remaining tokens: a trailing "--" ends the options, but CLI11 hands it
+	// back, so "xpu-smi --format=csv --" would otherwise go on to subcommand dispatch.
+	if (!formatStr.empty()) {
+		ERR("--format is not supported without a subcommand; did you mean 'xpu-smi dump --format {}'?\n", formatStr);
+		return 1;
+	}
 	// If no subcommand tokens remain, run the default smi view (possibly looped).
 	// Otherwise fall through to subcommand dispatch (e.g., xpu-smi -f file.txt dump help).
 	if (argvVec.empty()) {
-		if (!formatStr.empty()) {
-			PRINT("error: --format is not supported without a subcommand; did you mean 'xpu-smi dump --format {}'?\n",
-				  formatStr);
-			return 1;
-		}
 		if (auto rc = requireDriver(args, DriverMode::Full); rc.has_value()) {
 			return rc;
 		}

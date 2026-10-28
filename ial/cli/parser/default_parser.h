@@ -39,8 +39,16 @@ public:
 	// once the two CLIs need different command sets or flags.
 	static std::vector<function_entry> commandTable();
 
-	// Handle top-level args that are not subcommand names.
-	// Returns exit code if consumed; std::nullopt to fall through to dispatch.
+	/**
+	 * @brief Handle top-level args that are not subcommand names.
+	 *
+	 * When the options do not parse, prints one line naming the argument at fault, then the full help.
+	 *
+	 * @param [in,out] args    Command line; its driver is initialized when a command runs here.
+	 * @param [in]     cmdList Commands listed by the full help.
+	 * @return The exit code if consumed (1 when the options do not parse); std::nullopt to fall
+	 *         through to dispatch.
+	 */
 	std::optional<int> handleTopLevel(arg_struct *args, const std::vector<std::unique_ptr<cmds>> &cmdList);
 
 	// Extra option lines appended to the Options section of full help output.
