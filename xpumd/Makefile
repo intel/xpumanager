@@ -52,6 +52,8 @@ XPUMD_VERSION ?= $(shell git describe --tags --dirty --always | tr / -)
 
 OTEL_VERSION ?= 0.163.0
 IMAGE_REPOSITORY ?= registry.local/xpumd
+# Devel image variant, with the stub driver & xpuinfo-cli (used by the integration tests)
+DEVEL_IMAGE_REPOSITORY ?= $(IMAGE_REPOSITORY)-devel
 IMAGE_TAG ?= latest
 IMAGE_PULL_POLICY ?= IfNotPresent
 # Where the image gets the Level-Zero GPU backend from: "deb" or "src" (see Dockerfile)
@@ -113,17 +115,20 @@ race:
 	go -C dist build -race github.com/intel/xpumanager/xpumd/exporter/intelxpuinfo/xpuinfo-cli
 
 .PHONY: docker-build
-# Build the xpumd container image
+# Build the xpumd container images
 docker-build:
 	docker build --build-arg XPUMD_VERSION=$(XPUMD_VERSION) \
 	  --build-arg BACKEND=$(BACKEND) -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
+	docker build --build-arg XPUMD_VERSION=$(XPUMD_VERSION) \
+	  --build-arg BACKEND=$(BACKEND) --target devel \
+	  -t $(DEVEL_IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: docker-build-cover
-# Build image with coverage-instrumented binaries
+# Build devel image with coverage-instrumented binaries
 docker-build-cover:
 	docker build --build-arg XPUMD_VERSION=$(XPUMD_VERSION) \
-	  --build-arg BACKEND=$(BACKEND) --build-arg BUILD_TARGET=build-cover \
-	  -t $(IMAGE_REPOSITORY):$(IMAGE_TAG) .
+	  --build-arg BACKEND=$(BACKEND) --build-arg BUILD_TARGET=build-cover --target devel \
+	  -t $(DEVEL_IMAGE_REPOSITORY):$(IMAGE_TAG) .
 
 .PHONY: generate
 # Run all code generation
@@ -213,7 +218,7 @@ test-config: build-stub
 # Select tests with WHAT=<regexp>
 test-integration-kind: docker-build
 	RUN_REGEX='$(WHAT)' scripts/run-integration-tests.sh \
-		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-repository=$(DEVEL_IMAGE_REPOSITORY) \
 		--image-tag=$(IMAGE_TAG) \
 		--kind-load-image
 
@@ -222,7 +227,7 @@ test-integration-kind: docker-build
 # Select tests with WHAT=<regexp>
 test-integration-existing-cluster:
 	RUN_REGEX='$(WHAT)' scripts/run-integration-tests.sh \
-		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-repository=$(DEVEL_IMAGE_REPOSITORY) \
 		--image-tag=$(IMAGE_TAG) \
 		--use-existing-cluster \
 		--image-pull-policy=$(IMAGE_PULL_POLICY)
@@ -232,7 +237,7 @@ test-integration-existing-cluster:
 coverage-integration-test-kind: docker-build-cover
 	TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
 		$(CURDIR)/$(COVERAGE_DIR)/covdata $(COVERAGE_DIR)/integration-tests.cov \
-		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-repository=$(DEVEL_IMAGE_REPOSITORY) \
 		--image-tag=$(IMAGE_TAG) \
 		--kind-load-image
 
@@ -243,7 +248,7 @@ coverage-integration-test-kind: docker-build-cover
 coverage-integration-test-existing-cluster:
 	TIMEOUT=20m scripts/run-integration-tests-coverage.sh \
 		$(CURDIR)/$(COVERAGE_DIR)/covdata $(COVERAGE_DIR)/integration-tests.cov \
-		--image-repository=$(IMAGE_REPOSITORY) \
+		--image-repository=$(DEVEL_IMAGE_REPOSITORY) \
 		--image-tag=$(IMAGE_TAG) \
 		--use-existing-cluster \
 		--image-pull-policy=$(IMAGE_PULL_POLICY)

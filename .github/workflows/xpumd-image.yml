@@ -27,6 +27,14 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ${{ fromJson(vars.RUNS_ON_BUILD_AND_PUSH || vars.RUNS_ON) }}
+    strategy:
+      matrix:
+        include:
+          - variant: production
+            image: xpumd
+          # With the stub driver & xpuinfo-cli
+          - variant: devel
+            image: xpumd-devel
     permissions:
       contents: read
       packages: write
@@ -39,6 +47,7 @@ jobs:
       uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
     - name: Setup Helm
+      if: matrix.variant == 'production'
       uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
 
     - name: Docker login
@@ -62,7 +71,7 @@ jobs:
           chart_version="0.0.0-${{ github.ref_name }}"
         fi
 
-        echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/xpumd:${tag}" >> $GITHUB_ENV
+        echo "IMAGE_TAG=ghcr.io/${{ github.repository }}/${{ matrix.image }}:${tag}" >> $GITHUB_ENV
         echo "CHART_VERSION=${chart_version}" >> $GITHUB_ENV
         echo "XPUMD_VERSION=${tag}" >> $GITHUB_ENV
 
@@ -85,6 +94,7 @@ jobs:
       with:
         context: ./xpumd
         file: ./xpumd/Dockerfile
+        target: ${{ matrix.variant }}
         push: ${{ github.event_name == 'push' }}
         load: ${{ github.event_name == 'pull_request' }}
         tags: ${{ env.IMAGE_TAG }}
@@ -129,13 +139,13 @@ jobs:
         image-ref: trivy-report.json
         format: template
         template: "@.github/workflows/trivy-csv.tpl"
-        output: trivy-xpumd-image-report.csv
+        output: trivy-${{ matrix.image }}-image-report.csv
 
     - name: Upload Trivy CSV report as artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
-        name: trivy-xpumd-image-report
-        path: trivy-xpumd-image-report.csv
+        name: trivy-${{ matrix.image }}-image-report
+        path: trivy-${{ matrix.image }}-image-report.csv
 
     - name: Generate SBOM
       uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
@@ -143,25 +153,25 @@ jobs:
         version: v0.76.1
         image-ref: ${{ env.IMAGE_TAG }}
         format: spdx-json
-        output: sbom-xpumd-image.spdx.json
+        output: sbom-${{ matrix.image }}-image.spdx.json
 
     - name: Upload SBOM as artifact
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
-        name: sbom-xpumd-image
-        path: sbom-xpumd-image.spdx.json
+        name: sbom-${{ matrix.image }}-image
+        path: sbom-${{ matrix.image }}-image.spdx.json
 
     - name: Helm login
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && matrix.variant == 'production'
       run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
 
     - name: Package Helm chart
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && matrix.variant == 'production'
       run: |
         helm package ./xpumd/charts/xpumd/ --version ${{ env.CHART_VERSION }} --app-version ${{ env.XPUMD_VERSION }}
 
     - name: Push Helm chart
-      if: github.event_name == 'push'
+      if: github.event_name == 'push' && matrix.variant == 'production'
       run: helm push xpumd-*.tgz oci://ghcr.io/${{ github.repository }}/charts/
 
   integration-test:
@@ -185,11 +195,12 @@ jobs:
           "env.https_proxy=${{ vars.HTTPS_PROXY }}"
           "env.no_proxy=${{ vars.NO_PROXY }}"
 
-    - name: Build image
+    - name: Build devel image
       uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
       with:
         context: ./xpumd
         file: ./xpumd/Dockerfile
+        target: devel
         load: true
         tags: xpumd:${{ env.IMAGE_TAG }}
         cache-from: type=gha

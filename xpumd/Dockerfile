@@ -3,7 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-# Use '--build-arg TOOLS="strace"' to build local XPUMD image that includes specified debugging tools
+# Image variants (build target):
+# - "final" (default): production image with only the daemon and its runtime dependencies
+# - "devel": adds the Level-Zero stub driver, xpuinfo-cli and optional debugging TOOLS
+#
+# Use '--target devel --build-arg TOOLS="strace"' to build local XPUMD image that includes specified debugging tools
 # - works only for tools that do not need configs etc, only their libs
 # Then run image with other entrypoint than the default XPUMD one, e.g:
 # - "docker run -it --rm --cap-add SYS_PTRACE --entrypoint strace ... <image> -f /usr/local/bin/xpumd"
@@ -198,21 +202,7 @@ RUN /debs/copy-files-and-package-info.sh /out \
             /lib/x86_64-linux-gnu/libmetee.so.*.*.* \
         ; fi)
 
-# Install debug tool binary & its libs to where they get copied to final image
-ARG TOOLS
-RUN if [ -n "$TOOLS" ]; then \
-      apt-get update && \
-      apt-get install -y --no-install-recommends $TOOLS && \
-      /debs/copy-files-and-package-info.sh /out \
-      $(for pkg in $TOOLS; do \
-        for bin in $(dpkg -L $pkg | grep bin/); do \
-          echo $bin; \
-          ldd $bin | awk '/=>/{lib=$3; if(lib=="not") lib="missing:"$1; print lib}'; \
-        done \
-      done); \
-    fi
-
-# Build xpumd / xpuinfo-cli + stub driver & install them
+# Build xpumd + xpuinfo-cli & install them (xpuinfo-cli only to the devel image)
 # Use '--build-arg BUILD_TARGET=build-cover' to get coverage-instrumented binaries
 ARG BUILD_TARGET=build
 ARG XPUMD_VERSION=latest
@@ -221,14 +211,9 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
     --mount=src=.,target=.,rw \
     mkdir -p /out && \
     make "$BUILD_TARGET" && \
-    make -C level-zero-go/level-zero-stub clean test && \
     install -D dist/xpumd /out/usr/local/bin/xpumd && \
-    install -D dist/xpuinfo-cli /out/usr/local/bin/xpuinfo-cli && \
+    install -D dist/xpuinfo-cli /out-devel/usr/local/bin/xpuinfo-cli && \
     install -D config-example.yaml /out/etc/xpumd/config-example.yaml && \
-    install -D level-zero-go/level-zero-stub/libze_stub.so \
-               /out/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
-    install -D level-zero-go/level-zero-stub/example-config.yaml \
-               /out/etc/xpumd/level-zero-stub/example-config.yaml && \
     go -C dist tool -modfile $(pwd)/tools/go.mod \
         go-licenses save . \
                 --ignore github.com/intel/xpumanager/xpumd \
@@ -384,9 +369,32 @@ COPY --from=backend /backend/usr/ /out/usr/
 COPY --from=backend /backend/var/lib/dpkg/status /backend-package-info
 RUN cat /backend-package-info >> /out/var/lib/dpkg/status
 
+# Build the stub driver & install it to the devel image
+RUN --mount=src=.,target=.,rw \
+    make -C level-zero-go/level-zero-stub clean test && \
+    install -D level-zero-go/level-zero-stub/libze_stub.so \
+               /out-devel/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
+    install -D level-zero-go/level-zero-stub/example-config.yaml \
+               /out-devel/etc/xpumd/level-zero-stub/example-config.yaml
 
-# --- The final image ---
-FROM ${BASE_IMAGE} AS final
+# Install debug tool binary & its libs to where they get copied to devel image.
+ARG TOOLS
+RUN if [ -n "$TOOLS" ]; then \
+      apt-get update && \
+      apt-get install -y --no-install-recommends $TOOLS && \
+      install -D /out/var/lib/dpkg/status /out-devel/var/lib/dpkg/status && \
+      /debs/copy-files-and-package-info.sh /out-devel \
+      $(for pkg in $TOOLS; do \
+        for bin in $(dpkg -L $pkg | grep bin/); do \
+          echo $bin; \
+          ldd $bin | awk '/=>/{lib=$3; if(lib=="not") lib="missing:"$1; print lib}'; \
+        done \
+      done); \
+    fi
+
+
+# --- The production image ---
+FROM ${BASE_IMAGE} AS production
 
 COPY --from=out /out/ /
 
@@ -396,3 +404,13 @@ USER 65534:65534
 ENV XDG_RUNTIME_DIR=/run/xpumd
 
 ENTRYPOINT ["/usr/local/bin/xpumd"]
+
+
+# --- The devel image: production + stub driver, xpuinfo-cli & debug TOOLS ---
+FROM production AS devel
+
+COPY --from=out /out-devel/ /
+
+
+# --- The default build target ---
+FROM production AS final

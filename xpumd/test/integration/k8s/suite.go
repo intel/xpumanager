@@ -22,7 +22,7 @@ const (
 	defaultTimeout          = 3 * time.Minute
 	servicePort             = 8080
 	stubDriverConfigMapName = "level-zero-stub-driver-config"
-	defaultImageRepo        = "registry.local/xpumd"
+	defaultImageRepo        = "registry.local/xpumd-devel"
 	defaultImageTag         = "latest"
 	defaultKindClusterBase  = "xpumd-integration-test-"
 	defaultReleaseName      = "xpumd-integration-test"

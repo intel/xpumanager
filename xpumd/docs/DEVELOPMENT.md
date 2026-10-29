@@ -97,8 +97,19 @@ health:
 
 ## Building container image
 
+Build the production image with:
+
 ```bash
 docker build -t registry.local/xpumd:latest .
+```
+
+It contains only the daemon and its runtime dependencies. The devel variant
+adds the stub Level-Zero driver and `xpuinfo-cli` and optional extra tools
+specified with the `TOOLS` build argument. For example, to build the devel
+image with `strace`:
+
+```bash
+docker build --target devel --build-arg TOOLS="strace" -t registry.local/xpumd-devel:latest .
 ```
 
 By default the image gets the Level-Zero GPU backend from the released
@@ -160,7 +171,7 @@ otherwise contents of host volume mounts are inaccessible.
 
 ### Testing container image with stub driver
 
-The image also includes a stub Level-Zero loader library which can be used to
+The devel image also includes a stub Level-Zero loader library which can be used to
 test the daemon without a real GPU or driver.
 
 Use `LD_LIBRARY_PATH` to load the stub driver and `SYSMAN_STUB_CONFIG` to
@@ -170,7 +181,7 @@ specify the config file:
 docker run -it --rm --user 0 \
   -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
   -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
-  --publish 8080:8080 registry.local/xpumd:latest \
+  --publish 8080:8080 registry.local/xpumd-devel:latest \
   --config /etc/xpumd/config-example.yaml
 ```
 
@@ -182,7 +193,7 @@ docker run -it --rm --user 0 \
   -e LD_LIBRARY_PATH=/usr/local/lib/xpumd/level-zero-stub \
   -e SYSMAN_STUB_CONFIG=/etc/xpumd/level-zero-stub/example-config.yaml \
   --volume $PWD/level-zero-go/level-zero-stub:/etc/xpumd/level-zero-stub:ro \
-  --publish 8080:8080 registry.local/xpumd:latest \
+  --publish 8080:8080 registry.local/xpumd-devel:latest \
   --config /etc/xpumd/config-example.yaml
 ```
 
@@ -297,7 +308,7 @@ Run with:
 make test-integration-kind
 ```
 
-This runs everything locally: builds the container image, creates a disposable
+This runs everything locally: builds the devel container image, creates a disposable
 Kind cluster, deploys xpumd via the Helm chart (with stub driver enabled), and
 runs the tests.
 
@@ -309,8 +320,11 @@ To run the integration tests against an existing cluster:
 make test-integration-existing-cluster IMAGE_REPOSITORY=ghcr.io/intel/xpumanager/xpumd IMAGE_TAG=latest
 ```
 
+The tests use the devel image variant, `<IMAGE_REPOSITORY>-devel`
+(override with `DEVEL_IMAGE_REPOSITORY`).
+
 > [!IMPORTANT]
-> Ensure that the container image is present in/reachable by the cluster.
+> Ensure that the devel container image is present in/reachable by the cluster.
 
 ## Test coverage
 

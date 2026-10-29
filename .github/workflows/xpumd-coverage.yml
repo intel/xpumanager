@@ -79,6 +79,8 @@ jobs:
         with:
           context: ./xpumd
           file: ./xpumd/Dockerfile
+          # The integration tests need the devel image variant
+          target: devel
           load: true
           tags: xpumd:${{ env.IMAGE_TAG }}
           cache-from: type=gha
