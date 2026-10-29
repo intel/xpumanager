@@ -5,6 +5,7 @@
  */
 
 #include "parser/default_parser.h"
+#include <bounded_call.h>
 #include <cmd_amc.h>
 #include <cmd_listpciinfo.h>
 #include <cmd_config.h>
@@ -21,8 +22,10 @@
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
 #include <debug.h>
+#include <process_exit.h>
 #include <version_report.h>
 #include <cctype>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -143,6 +146,24 @@ std::optional<int> requireDriver(arg_struct *arg, DriverMode mode, bool recovera
 using ArgvView = std::span<char *const>;
 
 /**
+ * @brief Flushes the output and ends the process without running static destructors.
+ *
+ * For a process with a Level Zero call still abandoned on a worker thread: tearing the runtime
+ * down under that call is undefined behaviour.
+ *
+ * @param[in] exitCode The process exit status.
+ */
+[[noreturn]] void exitWithoutTeardown(int exitCode) noexcept
+{
+	// The log sinks flush each record as they write it, under their own lock: an abandoned call
+	// may still be logging, so they are not flushed from here.
+	std::cout.flush();
+	std::cerr.flush();
+	std::fflush(nullptr);
+	exitNow(exitCode);
+}
+
+/**
  * @brief Main entry point for the application
  * @param argc Number of command-line arguments
  * @param argv Array of command-line argument strings
@@ -194,5 +215,9 @@ int main(int argc, char *argv[])
 	// but we need a hook to configure the sink after parsing.
 	// For now, we'll configure it in the commands themselves if they need it.
 
-	return runCli(parser, &arg, currentOS);
+	const int exitCode = runCli(parser, &arg, currentOS);
+	if (boundedCallsAbandoned()) {
+		exitWithoutTeardown(exitCode);
+	}
+	return exitCode;
 }

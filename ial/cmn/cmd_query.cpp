@@ -4,6 +4,7 @@
  */
 
 #include "cmd_query.h"
+#include "bounded_call.h"
 #include "cmd_discovery.h"
 #include "debug.h"
 #include "driver_util.h"
@@ -479,6 +480,20 @@ struct BuildContext
 	return result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE ? "Not Supported" : std::string{};
 }
 
+/**
+ * @brief Why a value is missing, printed after N/A in every report, for a getter result whose
+ *        cause is known and worth telling.
+ *
+ * @param[in] result The getter's result.
+ *
+ * @retval "driver did not respond" CALL_ABANDONED: the call did not return in time.
+ * @retval empty                    Anything else.
+ */
+[[nodiscard]] constexpr std::string_view absentReasonOf(ze_result_t result) noexcept
+{
+	return result == CALL_ABANDONED ? "driver did not respond" : std::string_view{};
+}
+
 [[nodiscard]] QueryNode leafOf(std::string_view label, std::string_view key, std::optional<std::string> value,
 							   std::string_view unit = {})
 {
@@ -558,15 +573,19 @@ void buildRows(std::span<const Spec> rows, const BuildContext &ctx, std::vector<
 		if (!node.value && spec.needs != Requirement::None && ctx.notes.missing) {
 			node.absentReason = ctx.notes.missing(spec.needs).value_or(std::string{});
 		}
-		if (!node.value && node.absentReason.empty() && ctx.notes.verbose) {
-			// A getter that succeeded with a value the driver uses for "unknown" has no failure.
-			ze_result_t result = ZE_RESULT_SUCCESS;
-			if (ctx.notes.failures != nullptr) {
-				if (const auto it = ctx.notes.failures->find(spec.source); it != ctx.notes.failures->end()) {
-					result = it->second;
-				}
+		// A getter that succeeded with a value the driver uses for "unknown" has no failure.
+		ze_result_t failure = ZE_RESULT_SUCCESS;
+		if (ctx.notes.failures != nullptr) {
+			if (const auto it = ctx.notes.failures->find(spec.source); it != ctx.notes.failures->end()) {
+				failure = it->second;
 			}
-			node.absentText = absentTextOf(result);
+		}
+		// A row left out when absent stays out: after a failure, whether the device has it is unknown.
+		if (!node.value && node.absentReason.empty() && !node.hideWhenAbsent) {
+			node.absentReason = absentReasonOf(failure);
+		}
+		if (!node.value && node.absentReason.empty() && ctx.notes.verbose) {
+			node.absentText = absentTextOf(failure);
 		}
 		return node;
 	}

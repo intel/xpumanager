@@ -49,7 +49,7 @@ using AccessCheck = std::function<std::optional<std::string>(Requirement)>;
 struct RowNotes
 {
 	AccessCheck missing;					  ///< Names what the caller lacks; empty never does
-	const MetricFailures *failures = nullptr; ///< Why each getter failed, for verbose
+	const MetricFailures *failures = nullptr; ///< Why each getter failed: a known cause follows N/A
 	/// Print every row, and say for each absent value why it is absent ("Not Supported",
 	/// "Not Available", ...) instead of N/A.
 	bool verbose = false;

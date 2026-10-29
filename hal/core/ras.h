@@ -28,12 +28,15 @@ struct ras_state_exp_t
 class LIBXPUM_API ras : public sysman
 {
 private:
-	uint32_t rasCount;
-	zes_ras_handle_t *rasHandles;
+	std::vector<zes_ras_handle_t> rasHandles;
 	// Enumerated on first use: on some runtimes the first enumeration in a process takes more
 	// than a second, and most commands never read RAS.
 	zes_device_handle_t zesDevice = nullptr;
 	bool enumerated = false;
+	/// The enumeration's result, so a device left without error sets by a failure or a timeout
+	/// (CALL_ABANDONED) is not mistaken for one that has none.
+	ze_result_t enumStatus = ZE_RESULT_SUCCESS;
+
 	/// Guards the enumeration state above. A copy gets a mutex of its own, so ras stays copyable
 	/// as its device is; devices are only copied while the driver builds its list, before any
 	/// thread reads RAS.
@@ -46,12 +49,17 @@ private:
 	};
 	EnumLock enumLock;
 
-	void ensureEnumerated();
+	/** The device's error sets as enumerated, copied so they can be read without a lock. */
+	struct ErrorSets
+	{
+		ze_result_t status{};
+		std::vector<zes_ras_handle_t> handles{};
+	};
+	[[nodiscard]] ErrorSets errorSets();
+	// Only errorSets() may call it, holding the lock that guards what it writes.
+	ze_result_t enumRasErrorSets(zes_device_handle_t device);
 
 public:
-	ras() : rasCount(0), rasHandles(nullptr) {}
-	~ras();
-	ze_result_t enumRasErrorSets(zes_device_handle_t device);
 	ze_result_t getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t *properties);
 	ze_result_t getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config);
 	ze_result_t getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state);

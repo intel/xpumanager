@@ -21,6 +21,7 @@
 std::string progName = "test";
 
 #include "cmd_query.h"
+#include "bounded_call.h"
 #include "metrics/clock.h"
 #include "metrics_registry.h"
 #include <algorithm>
@@ -996,4 +997,50 @@ TEST_SUITE("query command line")
 		CHECK_NOTHROW(command.help());
 		CHECK_NOTHROW(command.help(SHORT_HELP));
 	}
+}
+
+TEST_CASE("a read the driver did not answer says so after N/A, without --verbose, and adds no hidden row")
+{
+	MetricValues values;
+	MetricFailures failures;
+	for (const auto name : referencedMetricNames()) {
+		values[name] = std::nullopt;
+		if (std::string_view{name}.starts_with("ecc.") || std::string_view{name}.starts_with("ras.")) {
+			failures[name] = CALL_ABANDONED;
+		}
+	}
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("ECC"), values, {}, {},
+									  RowNotes{.missing = {}, .failures = &failures, .verbose = false});
+	std::string text;
+	for (const auto &child : node.children) {
+		renderNode(child, 1, text);
+	}
+	CHECK(text.find("Correctable                   : N/A (driver did not respond)") != std::string::npos);
+	CHECK(text.find("Uncorrectable                 : N/A (driver did not respond)") != std::string::npos);
+	// The categories a device reports are unknown after the failure, so none is added.
+	CHECK(text.find("Memory Correctable") == std::string::npos);
+	CHECK(text.find("Cache Correctable") == std::string::npos);
+
+	QueryReport report;
+	report.gpus = {node};
+	const auto json = toJson(report);
+	CHECK(json["gpus"][0]["ecc_errors"]["aggregate"]["correctable"].is_null());
+}
+
+TEST_CASE("a getter's own ZE_RESULT_NOT_READY is not reported as a driver that did not respond")
+{
+	MetricValues values;
+	MetricFailures failures;
+	for (const auto name : referencedMetricNames()) {
+		values[name] = std::nullopt;
+		failures[name] = ZE_RESULT_NOT_READY;
+	}
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("PCI,ECC"), values, {}, {},
+									  RowNotes{.missing = {}, .failures = &failures, .verbose = false});
+	std::string text;
+	for (const auto &child : node.children) {
+		renderNode(child, 1, text);
+	}
+	CHECK(text.find(": N/A") != std::string::npos);
+	CHECK(text.find("driver did not respond") == std::string::npos);
 }

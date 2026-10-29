@@ -5,52 +5,223 @@
  */
 
 #include "ras.h"
+#include "bounded_call.h"
+#include <chrono>
+#include <map>
 #include <mutex>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace {
 
-// On CRI, a process that reads the RAS state of two devices at the same time gets a failure for
-// one of them, while each device on its own reads fine. RAS reads take milliseconds, so they are
-// made one at a time across all devices rather than per device.
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-std::mutex rasReadMutex;
-
 /**
  * @brief Logs a failed RAS read.
  *
- * A device or driver without RAS support answers UNSUPPORTED_FEATURE, which callers report
- * as no value; that is logged at debug level, anything else as an error.
+ * A device or driver without RAS support answers UNSUPPORTED_FEATURE, and a read rasCalls() cut
+ * short reads CALL_ABANDONED; callers report both as no value with a reason, so they are logged
+ * at debug level. Anything else is logged as an error.
  *
  * @param[in] what   What could not be read, e.g. "Failed to get RAS state".
  * @param[in] result The Level Zero result.
  */
 void logRasReadFailure(std::string_view what, ze_result_t result)
 {
-	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+	if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE || result == CALL_ABANDONED) {
 		DBG("{}. 0x{:X} ({})\n", what, static_cast<uint32_t>(result), l0_error_to_string(result));
 	} else {
 		ERR("{}. 0x{:X} ({})\n", what, static_cast<uint32_t>(result), l0_error_to_string(result));
 	}
 }
 
-} // namespace
+// How long one RAS call may take. The first enumeration in a process reads the counters of
+// every RAS node in the system, about 1.4 s on a host with 7 CRI cards.
+constexpr auto RAS_CALL_LIMIT = std::chrono::seconds{2};
 
 /**
- * @brief Destructor for the RAS (Reliability, Availability, Serviceability) class
+ * @brief The breaker every RAS call of the process runs through.
  *
- * This destructor performs cleanup operations for the RAS management object,
- * releasing allocated memory for RAS error set handles and ensuring proper
- * resource deallocation when the RAS object is destroyed.
+ * On CRI the runtime reads the counters of every RAS node in the system, for any device, and
+ * caches them only once all have answered. When the driver ends a read with an error, as it does
+ * for a card whose sysctrl mailbox stays busy, the runtime waits for a reply that never comes.
+ * Every later RAS call, for any device, would wait on the same node, so the calls of all devices
+ * form one group.
+ *
+ * Making the calls one at a time also avoids a CRI failure: a process that reads the RAS state of
+ * two devices at the same time gets an error for one of them.
  */
-ras::~ras()
+[[nodiscard]] xpum::CircuitBreaker &rasCalls()
 {
-	if (rasHandles) {
-		delete[] rasHandles;
-		rasHandles = nullptr;
-	}
+	static xpum::CircuitBreaker breaker{"RAS", RAS_CALL_LIMIT, logBoundedCallEvent};
+	return breaker;
 }
+
+/** A device's RAS error sets, as one enumeration. */
+struct EnumeratedSets
+{
+	ze_result_t status{};
+	std::vector<zes_ras_handle_t> handles{};
+};
+
+/**
+ * @brief Lists a device's RAS error sets; made through rasCalls().
+ *
+ * @param[in] device The device.
+ *
+ * @retval {ZE_RESULT_SUCCESS, handles} The device's error sets, possibly none.
+ * @retval {error, empty}                What zesDeviceEnumRasErrorSets() returned.
+ */
+[[nodiscard]] EnumeratedSets enumerateRasSets(zes_device_handle_t device)
+{
+	uint32_t count = 0;
+	ze_result_t status = zesDeviceEnumRasErrorSets(device, &count, nullptr);
+	if (status != ZE_RESULT_SUCCESS || count == 0) {
+		return {.status = status};
+	}
+	std::vector<zes_ras_handle_t> handles(count);
+	status = zesDeviceEnumRasErrorSets(device, &count, handles.data());
+	if (status != ZE_RESULT_SUCCESS) {
+		return {.status = status};
+	}
+	handles.resize(count);
+	return {.status = status, .handles = std::move(handles)};
+}
+
+/** The experimental per-category states of a device's error sets, as one read. */
+struct ExpStates
+{
+	ze_result_t status{};
+	std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> states{};
+};
+
+/**
+ * @brief Clears every category of every error set in @p handles; made through rasCalls().
+ *
+ * See ras::clearErrors(). Stops at the first call that fails.
+ *
+ * @param[in] handles The device's error sets.
+ *
+ * @retval ZE_RESULT_SUCCESS Every category of every error set was cleared, or there was none.
+ * @retval error             What the first failing zesRasGetProperties(), zesRasGetStateExp() or
+ *                           zesRasClearStateExp() returned.
+ */
+[[nodiscard]] ze_result_t clearRasCounters(const std::vector<zes_ras_handle_t> &handles)
+{
+	for (const auto handle : handles) {
+		zes_ras_properties_t properties = {};
+		ze_result_t result = zesRasGetProperties(handle, &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			logRasReadFailure("Failed to get RAS properties", result);
+			return result;
+		}
+		uint32_t categoryCount = 0;
+		result = zesRasGetStateExp(handle, &categoryCount, nullptr);
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get RAS state exp count for handle {}. 0x{:X} ({})\n", properties.type, result,
+				l0_error_to_string(result));
+			return result;
+		}
+
+		if (categoryCount == 0) {
+			continue;
+		}
+
+		std::vector<zes_ras_state_exp_t> states(categoryCount);
+		result = zesRasGetStateExp(handle, &categoryCount, states.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			ERR("Failed to get RAS state exp for handle {}. 0x{:X} ({})\n", properties.type, result,
+				l0_error_to_string(result));
+			return result;
+		}
+		// The second call may report fewer categories than the first.
+		states.resize(categoryCount);
+
+		for (const auto &state : states) {
+			result = zesRasClearStateExp(handle, state.category);
+			if (result != ZE_RESULT_SUCCESS) {
+				ERR("Failed to clear RAS state exp category {} for handle {}. 0x{:X} ({})\n", state.category,
+					properties.type, result, l0_error_to_string(result));
+				return result;
+			}
+		}
+
+		DBG("Cleared {} RAS error categories for handle {}.\n", categoryCount, properties.type);
+	}
+
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Reads the experimental per-category states of every error set in @p handles; made
+ *        through rasCalls().
+ *
+ * See ras::getErrorsPerTileRasExp(). Error sets that are neither correctable nor uncorrectable
+ * are skipped. Stops at the first call that fails.
+ *
+ * @param[in] handles The device's error sets.
+ *
+ * @retval {ZE_RESULT_SUCCESS, states} The states, keyed by error type; empty if no error set
+ *                                     reports a category.
+ * @retval {error, empty}              What the first failing zesRasGetProperties(),
+ *                                     zesRasGetSupportedCategoriesExp() or zesRasGetStateExp2()
+ *                                     returned.
+ */
+[[nodiscard]] ExpStates readExpStates(const std::vector<zes_ras_handle_t> &handles)
+{
+	ExpStates read{.status = ZE_RESULT_SUCCESS};
+	for (const auto handle : handles) {
+		zes_ras_properties_t properties = {};
+		ze_result_t result = zesRasGetProperties(handle, &properties);
+		if (result != ZE_RESULT_SUCCESS) {
+			logRasReadFailure("Failed to get RAS properties", result);
+			return {.status = result};
+		}
+
+		if (properties.type != ZES_RAS_ERROR_TYPE_CORRECTABLE && properties.type != ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
+			continue; // Skip non-correctable/uncorrectable types for now
+		}
+
+		uint32_t categoryCount = 0;
+		result = zesRasGetSupportedCategoriesExp(handle, &categoryCount, nullptr);
+		if (result != ZE_RESULT_SUCCESS) {
+			logRasReadFailure("Failed to get supported RAS categories count", result);
+			return {.status = result};
+		}
+		DBG("RAS handle supports {} categories.\n", categoryCount);
+
+		if (categoryCount == 0) {
+			continue;
+		}
+
+		std::vector<zes_ras_error_category_exp_t> categories(categoryCount);
+		result = zesRasGetSupportedCategoriesExp(handle, &categoryCount, categories.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			logRasReadFailure("Failed to get supported RAS categories", result);
+			return {.status = result};
+		}
+		// The second call may report fewer categories than the first.
+		categories.resize(categoryCount);
+
+		std::vector<zes_ras_state_exp2_t> states(
+			categoryCount, {.stype = ZES_STRUCTURE_TYPE_RAS_STATE_EXP2, .pNext = nullptr, .errorCounter = 0});
+
+		result = zesRasGetStateExp2(handle, categoryCount, categories.data(), states.data());
+		if (result != ZE_RESULT_SUCCESS) {
+			logRasReadFailure("Failed to get RAS state", result);
+			return {.status = result};
+		}
+
+		const uint32_t tileId = properties.onSubdevice ? properties.subdeviceId : 0;
+		auto &typeStates = read.states[properties.type];
+		for (std::size_t j = 0; j < categories.size(); ++j) {
+			typeStates.push_back({.category = categories[j], .errorCount = states[j].errorCounter, .tileId = tileId});
+		}
+	}
+
+	return read;
+}
+
+} // namespace
 
 /**
  * @brief Enumerates available RAS error sets for a device
@@ -64,26 +235,18 @@ ras::~ras()
  */
 ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
 {
-	ze_result_t result = zesDeviceEnumRasErrorSets(device, &rasCount, nullptr);
+	auto [result, handles] = boundedCall(rasCalls(), [device] { return enumerateRasSets(device); });
 	if (result != ZE_RESULT_SUCCESS) {
 		logRasReadFailure("Failed to enumerate RAS error sets", result);
+		rasHandles.clear();
 		return result;
 	}
-	if (rasCount == 0) {
+	rasHandles = std::move(handles);
+	if (rasHandles.empty()) {
 		DBG("The device exposes no RAS error sets.\n");
-		return result;
+	} else {
+		DBG("Found {} RAS domains.\n", rasHandles.size());
 	}
-
-	rasHandles = new zes_ras_handle_t[rasCount];
-	result = zesDeviceEnumRasErrorSets(device, &rasCount, rasHandles);
-	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS error sets. 0x{:X} ({})\n", result, l0_error_to_string(result));
-		delete[] rasHandles;
-		rasHandles = nullptr;
-		return result;
-	}
-
-	DBG("Found {} RAS domains.\n", rasCount);
 	return result;
 }
 
@@ -100,9 +263,9 @@ ze_result_t ras::enumRasErrorSets(zes_device_handle_t device)
  */
 ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t *properties)
 {
-	ze_result_t result = zesRasGetProperties(rasHandle, properties);
+	const ze_result_t result = boundedGet<zesRasGetProperties>(rasCalls(), properties, rasHandle);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		logRasReadFailure("Failed to get RAS properties", result);
 		return result;
 	}
 
@@ -137,9 +300,9 @@ ze_result_t ras::getProperties(zes_ras_handle_t rasHandle, zes_ras_properties_t 
  */
 ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
 {
-	ze_result_t result = zesRasGetConfig(rasHandle, config);
+	const ze_result_t result = boundedGet<zesRasGetConfig>(rasCalls(), config, rasHandle);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to get RAS config. 0x{:X} ({})\n", result, l0_error_to_string(result));
+		logRasReadFailure("Failed to get RAS config", result);
 		return result;
 	}
 
@@ -165,8 +328,8 @@ ze_result_t ras::getConfig(zes_ras_handle_t rasHandle, zes_ras_config_t *config)
  */
 ze_result_t ras::getState(zes_ras_handle_t rasHandle, zes_ras_state_t *state)
 {
-	const std::lock_guard<std::mutex> lock(rasReadMutex);
-	ze_result_t result = zesRasGetState(rasHandle, 0, state);
+	constexpr ze_bool_t keepCounters = 0;
+	const ze_result_t result = boundedGet<zesRasGetState>(rasCalls(), state, rasHandle, keepCounters);
 	if (result != ZE_RESULT_SUCCESS) {
 		logRasReadFailure("Failed to get RAS state", result);
 		return result;
@@ -249,14 +412,17 @@ ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t
 	countersPerTile.clear();
 	*totalCounter = 0;
 
-	ensureEnumerated();
-	for (uint32_t i = 0; i < rasCount; ++i) {
-		result = getProperties(rasHandles[i], &properties);
+	const auto [enumResult, handles] = errorSets();
+	if (enumResult != ZE_RESULT_SUCCESS) {
+		return enumResult;
+	}
+	for (const auto handle : handles) {
+		result = getProperties(handle, &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = getState(rasHandles[i], &states);
+		result = getState(handle, &states);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
@@ -291,52 +457,16 @@ ze_result_t ras::getErrorsPerTile(zes_ras_error_cat_t type, zes_ras_error_type_t
 ze_result_t ras::clearErrors()
 {
 	TRACING();
-	ensureEnumerated();
+	auto [enumResult, handles] = errorSets();
+	if (enumResult != ZE_RESULT_SUCCESS) {
+		return enumResult;
+	}
 
-	if (rasHandles == nullptr || rasCount == 0) {
+	if (handles.empty()) {
 		ERR("No RAS handles available to clear errors.\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
-
-	zes_ras_properties_t properties = {};
-	for (uint32_t i = 0; i < rasCount; ++i) {
-		ze_result_t result = getProperties(rasHandles[i], &properties);
-		if (result != ZE_RESULT_SUCCESS) {
-			return result;
-		}
-		uint32_t categoryCount = 0;
-		result = zesRasGetStateExp(rasHandles[i], &categoryCount, nullptr);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get RAS state exp count for handle {}. 0x{:X} ({})\n", properties.type, result,
-				l0_error_to_string(result));
-			return result;
-		}
-
-		if (categoryCount == 0) {
-			continue;
-		}
-
-		std::vector<zes_ras_state_exp_t> states(categoryCount);
-		result = zesRasGetStateExp(rasHandles[i], &categoryCount, states.data());
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get RAS state exp for handle {}. 0x{:X} ({})\n", properties.type, result,
-				l0_error_to_string(result));
-			return result;
-		}
-
-		for (uint32_t j = 0; j < categoryCount; ++j) {
-			result = zesRasClearStateExp(rasHandles[i], states[j].category);
-			if (result != ZE_RESULT_SUCCESS) {
-				ERR("Failed to clear RAS state exp category {} for handle {}. 0x{:X} ({})\n", states[j].category,
-					properties.type, result, l0_error_to_string(result));
-				return result;
-			}
-		}
-
-		DBG("Cleared {} RAS error categories for handle {}.\n", categoryCount, properties.type);
-	}
-
-	return ZE_RESULT_SUCCESS;
+	return boundedCall(rasCalls(), [sets = std::move(handles)] { return clearRasCounters(sets); });
 }
 
 /**
@@ -356,70 +486,21 @@ ze_result_t ras::clearErrors()
  */
 ze_result_t ras::getErrorsPerTileRasExp(std::map<zes_ras_error_type_t, std::vector<ras_state_exp_t>> &rasErrStates)
 {
-	const std::lock_guard<std::mutex> lock(rasReadMutex);
 	TRACING();
-	ensureEnumerated();
-
 	rasErrStates.clear();
+	auto [enumResult, handles] = errorSets();
+	if (enumResult != ZE_RESULT_SUCCESS) {
+		return enumResult;
+	}
 
-	if (rasHandles == nullptr || rasCount == 0) {
+	if (handles.empty()) {
 		// A device without RAS error sets is normal, not a failure.
 		DBG("No RAS handles available to query experimental RAS state.\n");
 		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 	}
 
-	ze_result_t result = ZE_RESULT_SUCCESS;
-
-	for (uint32_t i = 0; i < rasCount; i++) {
-		zes_ras_properties_t properties = {};
-		result = zesRasGetProperties(rasHandles[i], &properties);
-		if (result != ZE_RESULT_SUCCESS) {
-			ERR("Failed to get RAS properties. 0x{:X} ({})\n", result, l0_error_to_string(result));
-			return result;
-		}
-
-		if (properties.type != ZES_RAS_ERROR_TYPE_CORRECTABLE && properties.type != ZES_RAS_ERROR_TYPE_UNCORRECTABLE) {
-			continue; // Skip non-correctable/uncorrectable types for now
-		}
-
-		uint32_t categoryCount = 0;
-		result = zesRasGetSupportedCategoriesExp(rasHandles[i], &categoryCount, nullptr);
-		if (result != ZE_RESULT_SUCCESS) {
-			logRasReadFailure("Failed to get supported RAS categories count", result);
-			return result;
-		}
-		DBG("RAS handle supports {} categories.\n", categoryCount);
-
-		if (categoryCount == 0) {
-			continue;
-		}
-
-		std::vector<zes_ras_error_category_exp_t> categories(categoryCount);
-		result = zesRasGetSupportedCategoriesExp(rasHandles[i], &categoryCount, categories.data());
-		if (result != ZE_RESULT_SUCCESS) {
-			logRasReadFailure("Failed to get supported RAS categories", result);
-			return result;
-		}
-
-		std::vector<zes_ras_state_exp2_t> states(categoryCount);
-		for (uint32_t j = 0; j < categoryCount; j++) {
-			states[j].stype = ZES_STRUCTURE_TYPE_RAS_STATE_EXP2;
-			states[j].pNext = nullptr;
-			states[j].errorCounter = 0;
-		}
-
-		result = zesRasGetStateExp2(rasHandles[i], categoryCount, categories.data(), states.data());
-		if (result != ZE_RESULT_SUCCESS) {
-			logRasReadFailure("Failed to get RAS state", result);
-			return result;
-		}
-
-		uint32_t tileId = properties.onSubdevice ? properties.subdeviceId : 0;
-		for (uint32_t j = 0; j < categoryCount; j++) {
-			rasErrStates[properties.type].push_back({categories[j], states[j].errorCounter, tileId});
-		}
-	}
-
+	auto [result, states] = boundedCall(rasCalls(), [sets = std::move(handles)] { return readExpStates(sets); });
+	rasErrStates = std::move(states);
 	return result;
 }
 
@@ -441,22 +522,28 @@ ze_result_t ras::init(zes_device_handle_t device)
 }
 
 /**
- * @brief Enumerates the device's RAS error sets the first time they are needed.
+ * @brief The device's RAS error sets, enumerated the first time they are needed.
  *
- * A failed enumeration is logged by enumRasErrorSets() and leaves the device without error
- * sets, as a failure in init() did; it is not retried. So does a device init() never ran on.
+ * A failed enumeration is logged by enumRasErrorSets(), and its result is kept so callers can
+ * tell a failed read from a device without error sets; it is not retried. A device init() never
+ * ran on has none. An enumeration rasCalls() cut short is retried once the breaker has reset,
+ * since the runtime then has what it waited for.
+ *
+ * @retval {ZE_RESULT_SUCCESS, handles} The device's error sets, possibly none.
+ * @retval {CALL_ABANDONED, empty}       The enumeration did not return in time; the device's
+ *                                       error sets are unknown.
+ * @retval {error, empty}                What the enumeration returned, e.g. DEVICE_LOST.
  */
-void ras::ensureEnumerated()
+ras::ErrorSets ras::errorSets()
 {
 	const std::lock_guard lock{enumLock.mutex};
-	if (enumerated) {
-		return;
+	if (!enumerated || (enumStatus == CALL_ABANDONED && !rasCalls().isOpen())) {
+		enumerated = true;
+		// A device object that init() never ran on has no handle to enumerate with.
+		const ze_result_t result = zesDevice != nullptr ? enumRasErrorSets(zesDevice) : ZE_RESULT_SUCCESS;
+		enumStatus = result;
 	}
-	enumerated = true;
-	// A device object that init() never ran on has no handle to enumerate with.
-	if (zesDevice == nullptr || enumRasErrorSets(zesDevice) != ZE_RESULT_SUCCESS) {
-		rasCount = 0;
-	}
+	return {.status = enumStatus, .handles = rasHandles};
 }
 
 /**
@@ -476,19 +563,22 @@ ze_result_t ras::zesRun(UNUSED zes_device_handle_t device)
 	zes_ras_config_t config = {};
 	zes_ras_state_t state = {};
 
-	ensureEnumerated();
-	for (uint32_t i = 0; i < rasCount; ++i) {
-		result = getProperties(rasHandles[i], &properties);
+	const auto [enumResult, handles] = errorSets();
+	if (enumResult != ZE_RESULT_SUCCESS) {
+		return enumResult;
+	}
+	for (const auto handle : handles) {
+		result = getProperties(handle, &properties);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = getConfig(rasHandles[i], &config);
+		result = getConfig(handle, &config);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}
 
-		result = getState(rasHandles[i], &state);
+		result = getState(handle, &state);
 		if (result != ZE_RESULT_SUCCESS) {
 			return result;
 		}

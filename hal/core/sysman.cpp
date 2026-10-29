@@ -5,6 +5,7 @@
  */
 
 #include "sysman.h"
+#include "bounded_call.h"
 
 /**
  * @brief Prints a human-readable list of engine types from engine flags
@@ -41,6 +42,10 @@ LIBXPUM_API const char *l0_error_to_string(ze_result_t retVal)
 #define CASE(ret_val)                                                                                                  \
 	case ret_val:                                                                                                      \
 		return #ret_val;
+	// Not a Level Zero result, so not a case of the switch.
+	if (retVal == CALL_ABANDONED) {
+		return "CALL_ABANDONED (no answer within the time limit)";
+	}
 	switch (retVal) {
 		CASE(ZE_RESULT_SUCCESS)
 		CASE(ZE_RESULT_NOT_READY)

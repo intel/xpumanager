@@ -4,6 +4,7 @@
 # HAL core (Hardware Abstraction Layer Core) build
 
 hal_core_sources = files(
+  'bounded_call.cpp',
   'debug.cpp',
   'device.cpp',
   'driver.cpp',
@@ -60,7 +61,7 @@ libxpum_shared = shared_library(
     include_directories('../../ial/cli'),
   ]
   + extensions_inc_dirs,
-  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep, compat_dep, units_dep]
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, nlohmann_json_dep, compat_dep, units_dep, circuit_breaker_dep]
   + windows_deps,
   version: xpum_version,
   soversion: xpum_version.split('.')[0],
@@ -82,7 +83,7 @@ libxpum_static = static_library(
     include_directories('../../ial/cli'),
   ]
   + extensions_inc_dirs,
-  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep, compat_dep, units_dep]
+  dependencies: [levelzero_dep, igsc_dep, oal_dep, fwupd_dep, amc_dep, nlohmann_json_dep, compat_dep, units_dep, circuit_breaker_dep]
   + windows_deps,
   install: get_option('static_library'),
   install_dir: get_option('libdir'),
@@ -130,6 +131,31 @@ if get_option('with_tests')
     install: false,
   )
   test('temperature_tests', temperature_test)
+
+  bounded_call_test = executable(
+    'bounded_call_test',
+    files('test/bounded_call_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep, circuit_breaker_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('bounded_call_tests', bounded_call_test)
+
+  # Defines the RAS entry points itself, so it runs without a GPU.
+  ras_test = executable(
+    'ras_test',
+    files('test/ras_test.cpp'),
+    include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
+    link_with: libxpum_static,
+    dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep, circuit_breaker_dep],
+    link_args: is_linux ? ['-pie'] : [],
+    build_by_default: true,
+    install: false,
+  )
+  test('ras_tests', ras_test)
   message('Temperature unit tests enabled')
 
   memory_test = executable(
