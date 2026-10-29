@@ -35,6 +35,6 @@ else
         exit 1
     fi
 
-    tar -xzf "$TAR_FILE" -C "$BIN_DIR" --strip-components=2 "doxygen-${DOXYGEN_VERSION}/bin/doxygen"
+    tar -xzf "$TAR_FILE" -C "$BIN_DIR" --no-same-owner --strip-components=2 "doxygen-${DOXYGEN_VERSION}/bin/doxygen"
     rm -f "$TAR_FILE"
 fi
