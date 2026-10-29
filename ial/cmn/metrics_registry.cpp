@@ -15,6 +15,7 @@
 #include "metrics/power.h"
 #include "metrics/identity.h"
 #include "metrics/clock.h"
+#include "debug.h"
 #include "metrics/mode.h"
 #include "device.h"
 #include "zes_api.h"
@@ -96,6 +97,194 @@ EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
 }
 
 /**
+ * Energy consumed between two readings of one counter, in µJ, allowing for one wrap of a
+ * @ref detail::ENERGY_WRAP_UJ counter.
+ *
+ * @param before  Reading taken at the start of the interval.
+ * @param after   Reading taken at the end of the interval, from the same counter.
+ * @return The delta, or @c std::nullopt when the counter went backwards in a way a wrap
+ *         cannot explain.
+ */
+std::optional<uint64_t> energyDeltaUj(const EnergySnapshot &before, const EnergySnapshot &after) noexcept
+{
+	if (after.energy >= before.energy) {
+		return after.energy - before.energy;
+	}
+	if (before.energy < detail::ENERGY_WRAP_UJ) {
+		return after.energy + detail::ENERGY_WRAP_UJ - before.energy;
+	}
+	return std::nullopt;
+}
+
+/**
+ * Whether @p s is a reading that can close a window opened by @p ref.
+ *
+ * A reading is rejected when it has no timestamp, an energy of exactly 0 (an accumulating
+ * counter never reads 0 once running; a zero is a read of the wrong telemetry region), an
+ * energy that is an exact multiple of @ref detail::ENERGY_WRAP_UJ (the same zero read after
+ * Level Zero has extended it, taking the drop to 0 for a wrap), a timestamp delta that disagrees with the host-clock
+ * delta by more than the slack, an energy regression that is not a wrap, a delta implying more than
+ * @ref detail::ENERGY_MAX_PLAUSIBLE_WATTS, or any energy change at an unchanged timestamp.
+ * With no reference (@c ref.ts == 0) only the first two apply; the clock check is skipped
+ * when either side lacks @c hostUs.
+ *
+ * @param ref  The reading that opens the window; zeroed when there is none.
+ * @param s    The candidate reading.
+ * @return     @c true if @p s may be used to close the window.
+ */
+bool isPlausibleEnergySample(const EnergySnapshot &ref, const EnergySnapshot &s) noexcept
+{
+	if (s.ts == 0 || s.energy % detail::ENERGY_WRAP_UJ == 0) {
+		return false;
+	}
+	if (ref.ts == 0) {
+		return true;
+	}
+	if (s.ts < ref.ts) {
+		return false;
+	}
+	const uint64_t devUs = s.ts - ref.ts;
+	if (ref.hostUs != 0 && s.hostUs >= ref.hostUs) {
+		const uint64_t hostUs = s.hostUs - ref.hostUs;
+		const uint64_t drift = devUs > hostUs ? devUs - hostUs : hostUs - devUs;
+		if (drift > detail::ENERGY_CLOCK_SLACK_US + (hostUs / detail::ENERGY_CLOCK_SLACK_DIVISOR)) {
+			return false;
+		}
+	}
+	const auto delta = energyDeltaUj(ref, s);
+	if (!delta) {
+		return false;
+	}
+	// The counter latches energy and timestamp together: no time on the counter, no energy.
+	if (devUs == 0) {
+		return *delta == 0;
+	}
+	return static_cast<double>(*delta) / static_cast<double>(devUs) <= detail::ENERGY_MAX_PLAUSIBLE_WATTS;
+}
+
+/**
+ * Take one reading of an energy domain, re-reading up to @ref detail::ENERGY_READ_ATTEMPTS
+ * times, @p pause apart, while it is implausible against @p ref (see
+ * @ref isPlausibleEnergySample) or the HAL call fails. Re-reads that agree with each other
+ * but not with @p ref give @c REBASELINE only when no remaining read closes the window
+ * against @p ref, so a short burst of corrupt reads cannot discard a good @p ref.
+ *
+ * @param read   Takes one reading, stamped with @c hostUs; @c std::nullopt on HAL failure.
+ * @param ref    The reading that opens the window; zeroed when there is none.
+ * @param pause  How long to wait before each re-read; zero in unit tests.
+ * @return       The outcome and, where @ref EnergySampleStatus allows, the reading to use.
+ */
+EnergySample sampleEnergy(const std::function<std::optional<EnergySnapshot>()> &read, const EnergySnapshot &ref,
+						  std::chrono::microseconds pause)
+{
+	std::optional<EnergySnapshot> previous;
+	// Two re-reads that agree with each other but not with ref say ref is the
+	// corrupt one; keep waiting on it and the window could never close again. A burst of
+	// equally corrupt reads agrees too, though, so spend any reads left on ref first.
+	std::optional<EnergySnapshot> rebaseline;
+	bool anyReading = false;
+	for (unsigned attempt = 0; attempt < detail::ENERGY_READ_ATTEMPTS; ++attempt) {
+		if (attempt > 0 && pause.count() > 0) {
+			std::this_thread::sleep_for(pause);
+		}
+		const auto reading = read();
+		if (!reading) {
+			continue;
+		}
+		anyReading = true;
+		if (isPlausibleEnergySample(ref, *reading)) {
+			return {.status = EnergySampleStatus::ACCEPTED, .reading = *reading};
+		}
+		DBG("Discarding energy reading {} µJ at {} µs (window opened at {} µJ, {} µs)\n", reading->energy, reading->ts,
+			ref.energy, ref.ts);
+		if (previous && isPlausibleEnergySample(*previous, *reading) &&
+			(!rebaseline || isPlausibleEnergySample(*rebaseline, *reading))) {
+			rebaseline = reading;
+		}
+		// A reading with no timestamp or no energy cannot vouch for the next one: compared
+		// against it, any reading would pass as "no reference" and trigger a false rebaseline.
+		if (isPlausibleEnergySample({}, *reading)) {
+			previous = reading;
+		}
+	}
+	if (rebaseline) {
+		return {.status = EnergySampleStatus::REBASELINE, .reading = *rebaseline};
+	}
+	if (!anyReading) {
+		return {.status = EnergySampleStatus::FAILED};
+	}
+	return {.status = EnergySampleStatus::REJECTED, .reading = previous.value_or(EnergySnapshot{})};
+}
+
+namespace {
+
+/**
+ * Make a reader for @ref sampleEnergy that takes one reading of an energy domain and stamps it
+ * with the host steady-clock time.
+ *
+ * @param pw      Power HAL of the device; must not be null and must outlive the reader.
+ * @param forGPU  @c true for the GPU domain, @c false for the card domain.
+ * @return        The reader; it yields @c std::nullopt when power::getEnergy() fails.
+ */
+std::function<std::optional<EnergySnapshot>()> energyReader(::power *pw, bool forGPU)
+{
+	return [pw, forGPU]() -> std::optional<EnergySnapshot> {
+		EnergySnapshot s;
+		if (pw->getEnergy(&s.energy, &s.ts, forGPU) != ZE_RESULT_SUCCESS) {
+			return std::nullopt;
+		}
+		s.hostUs = static_cast<uint64_t>(
+			std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch())
+				.count());
+		return s;
+	};
+}
+
+/**
+ * Take the reading that opens an energy measurement window.
+ *
+ * @param pw      Power HAL of the device; must not be null.
+ * @param forGPU  @c true for the GPU domain, @c false for the card domain.
+ * @return        The reading, or a zeroed snapshot when none is usable.
+ */
+EnergySnapshot openEnergyWindow(::power *pw, bool forGPU)
+{
+	const auto sample = sampleEnergy(energyReader(pw, forGPU), {});
+	return sample.status == EnergySampleStatus::ACCEPTED ? sample.reading : EnergySnapshot{};
+}
+
+/**
+ * Close the window @p before opened. @p after is left zeroed unless the reading is trusted, so
+ * the getters report N/A for it and populateMetricCacheContinuous() keeps @p before as the next
+ * window's opening. @p before is zeroed when the reading shows it to be the corrupt one.
+ *
+ * @param pw      Power HAL of the device; must not be null.
+ * @param forGPU  @c true for the GPU domain, @c false for the card domain.
+ * @param before  In/out. The reading that opened the window.
+ * @param after   Out. The reading that closes it; zeroed unless trusted.
+ * @return Whether [before, after] is a valid measurement window.
+ */
+bool closeEnergyWindow(::power *pw, bool forGPU, EnergySnapshot &before, EnergySnapshot &after)
+{
+	const auto sample = sampleEnergy(energyReader(pw, forGPU), before);
+	switch (sample.status) {
+	case EnergySampleStatus::ACCEPTED:
+		after = sample.reading;
+		return true;
+	case EnergySampleStatus::REBASELINE:
+		before = {};
+		after = sample.reading;
+		return false;
+	case EnergySampleStatus::REJECTED:
+	case EnergySampleStatus::FAILED:
+		break;
+	}
+	return false;
+}
+
+} // namespace
+
+/**
  * @brief Reads EU active/stall/idle for one device.
  *
  * Opens an OA metric streamer and blocks for its fixed monitor window. Takes what it needs by
@@ -146,8 +335,8 @@ MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs, const fdi
 		cache.engineSamplesBefore.clear();
 	}
 	if (hasInput(inputs, MetricInput::POWER) && pw != nullptr) {
-		pw->getEnergy(&cache.cardPowerBefore.energy, &cache.cardPowerBefore.ts, false);
-		pw->getEnergy(&cache.gpuPowerBefore.energy, &cache.gpuPowerBefore.ts, true);
+		cache.cardPowerBefore = openEnergyWindow(pw, false);
+		cache.gpuPowerBefore = openEnergyWindow(pw, true);
 	}
 	if (hasInput(inputs, MetricInput::PCIE)) {
 		zes_pci_stats_t ps{};
@@ -201,9 +390,8 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache, const fdinfo::Devi
 	cache.cardPowerAfter = {};
 	cache.gpuPowerAfter = {};
 	if (hasInput(inputs, MetricInput::POWER) && pw != nullptr) {
-		cardPowerAfterOk =
-			(pw->getEnergy(&cache.cardPowerAfter.energy, &cache.cardPowerAfter.ts, false) == ZE_RESULT_SUCCESS);
-		pw->getEnergy(&cache.gpuPowerAfter.energy, &cache.gpuPowerAfter.ts, true);
+		cardPowerAfterOk = closeEnergyWindow(pw, false, cache.cardPowerBefore, cache.cardPowerAfter);
+		closeEnergyWindow(pw, true, cache.gpuPowerBefore, cache.gpuPowerAfter);
 	}
 	if (hasInput(inputs, MetricInput::PCIE)) {
 		zes_pci_stats_t ps{};
@@ -235,9 +423,9 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache, const fdinfo::Devi
 		cache.memAvail = ok && (cache.memBefore.ts != 0) && (cache.memAfter.ts > cache.memBefore.ts);
 	}
 	cache.engineAvail = !cache.engineSamplesBefore.empty() && !cache.engineSamplesAfter.empty();
-	// Mirror pcieAvail/memAvail: require a successful HAL call in both Begin and End, plus
-	// advancing timestamps. cardPowerBefore.ts == 0 when the Begin call failed or Begin was
-	// never called, which correctly prevents powerAvail from being set.
+	// Mirror pcieAvail/memAvail: require a plausible reading in both Begin and End, plus
+	// advancing timestamps. cardPowerBefore.ts == 0 when the Begin reading was unusable or Begin
+	// was never called, which correctly prevents powerAvail from being set.
 	cache.powerAvail =
 		cardPowerAfterOk && (cache.cardPowerBefore.ts != 0) && (cache.cardPowerAfter.ts > cache.cardPowerBefore.ts);
 
@@ -321,8 +509,10 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev,
 	// The engine figures are derived rather than carried over: what a new window needs is the
 	// raw counters prev ended on, not the percentages they produced.
 	curr.engineSamplesBefore = prev.engineSamplesAfter;
-	curr.cardPowerBefore = prev.cardPowerAfter;
-	curr.gpuPowerBefore = prev.gpuPowerAfter;
+	// A reading populateMetricCacheEnd() discarded leaves the after-snapshot zeroed; hold the
+	// last trusted one instead, so a corrupt read costs this tick's row and not the next one too.
+	curr.cardPowerBefore = (prev.cardPowerAfter.ts != 0) ? prev.cardPowerAfter : prev.cardPowerBefore;
+	curr.gpuPowerBefore = (prev.gpuPowerAfter.ts != 0) ? prev.gpuPowerAfter : prev.gpuPowerBefore;
 	curr.pcieBefore = prev.pcieAfter;
 	// Derive before-validity from whether prev.pcieAfter actually holds a snapshot,
 	// not from prev.pcieAvail (which reflects the previous *delta*, not the snapshot).

@@ -159,6 +159,8 @@ template <> inline constexpr bool IS_BITMASK_ENUM<MetricInput> = true;
 struct EnergySnapshot
 {
 	uint64_t energy = 0, ts = 0;
+	/** Host steady-clock time of the read, in µs; 0 when not recorded (e.g. synthetic snapshots). */
+	uint64_t hostUs = 0;
 };
 
 /** PCIe byte counters and timestamp at a single point in time. */
@@ -297,6 +299,67 @@ struct MetricCache
  */
 [[nodiscard]] EngineCache deriveEngineUtil(const std::vector<EngineActivitySample> &before,
 										   const std::vector<EngineActivitySample> &after);
+
+// ── Energy sample validation ───────────────────────────────────────────────────
+//
+// On BMG the energy counter, its crystal tick count and the crystal frequency index are
+// separate PMT telemetry reads behind a shared SoC remapper window. A concurrent tool that
+// moves that window yields a reading of the wrong region — energy 0, or a timestamp scaled
+// by the wrong crystal frequency — and Level Zero still reports success. That is a known
+// hardware limitation that will not be fixed below us, so each reading is checked before it
+// enters a measurement window.
+
+namespace detail {
+
+/**
+ * Span of a 32-bit U18.14 energy accumulator (BMG PMT), in µJ: 2^18 J. A counter that drops
+ * from below this value is taken to have wrapped; one that drops from above it cannot be a
+ * wrap of such a counter and is a regression.
+ */
+inline constexpr uint64_t ENERGY_WRAP_UJ = (uint64_t{1} << 18) * 1'000'000ULL;
+
+/** Readings of one domain taken per snapshot before giving up on an implausible one. */
+inline constexpr unsigned ENERGY_READ_ATTEMPTS = 3;
+
+/** Pause before each re-read, so it does not land in the access that spoiled the last read. */
+inline constexpr auto ENERGY_RETRY_PAUSE = std::chrono::milliseconds{10};
+
+/** How far the counter's own timestamp may drift from host time across a window. */
+inline constexpr uint64_t ENERGY_CLOCK_SLACK_US = 50'000;
+inline constexpr uint64_t ENERGY_CLOCK_SLACK_DIVISOR = 4; /**< plus 1/4 of the host interval */
+
+/** Power above which a delta is a corrupt read rather than a measurement, in W. */
+inline constexpr double ENERGY_MAX_PLAUSIBLE_WATTS = 10'000.0;
+
+} // namespace detail
+
+[[nodiscard]] std::optional<uint64_t> energyDeltaUj(const EnergySnapshot &before, const EnergySnapshot &after) noexcept;
+
+[[nodiscard]] bool isPlausibleEnergySample(const EnergySnapshot &ref, const EnergySnapshot &s) noexcept;
+
+/** Outcome of @ref sampleEnergy. */
+enum class EnergySampleStatus
+{
+	ACCEPTED,	/**< plausible against the reference; the window [ref, reading] is valid */
+	REBASELINE, /**< the re-reads agree with each other but not with the reference, so the
+					 reference is the bad one: the reading is trusted, the window is not */
+	REJECTED,	/**< no plausible reading; the reading must not be used */
+	FAILED,		/**< the HAL call failed on every attempt */
+};
+
+/** One snapshot from @ref sampleEnergy and how far it can be trusted. */
+struct EnergySample
+{
+	EnergySampleStatus status = EnergySampleStatus::FAILED;
+	/** The reading for @c ACCEPTED and @c REBASELINE; for @c REJECTED the last discarded
+	 *  reading that had both a timestamp and an energy (zeroed if none), which must not be
+	 *  used; zeroed for @c FAILED. */
+	EnergySnapshot reading{};
+};
+
+[[nodiscard]] EnergySample sampleEnergy(const std::function<std::optional<EnergySnapshot>()> &read,
+										const EnergySnapshot &ref,
+										std::chrono::microseconds pause = detail::ENERGY_RETRY_PAUSE);
 
 /**
  * Convenience one-shot wrapper: takes before-samples, sleeps @ref detail::SAMPLE_WINDOW, then takes

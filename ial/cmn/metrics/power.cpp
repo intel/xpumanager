@@ -40,27 +40,31 @@ namespace metrics::power {
 namespace {
 
 /**
- * @brief Computes instantaneous power draw in watts from a pair of energy snapshots.
+ * @brief Renders the average power draw over [before, after] in watts.
  *
- * Calculates the average power delivered over the interval [before, after] by dividing
- * the energy delta (µJ) by the time delta (µs), yielding a dimensionless ratio in watts.
+ * Divides the energy delta (µJ) by the time delta (µs), which yields watts directly. A counter
+ * that wrapped within the window is accounted for by @ref energyDeltaUj.
  *
- * @param[in] before Energy snapshot taken at the start of the sampling interval.
- * @param[in] after  Energy snapshot taken at the end of the sampling interval.
+ * @param[in]  before Energy snapshot taken at the start of the sampling interval.
+ * @param[in]  after  Energy snapshot taken at the end of the sampling interval.
+ * @param[out] out    The draw formatted as @c "%.2f", or @c "N/A" when time did not advance or
+ *                    the counter went backwards in a way a wrap cannot explain.
  *
- * @return Power draw in watts as a @c double.
- *
- * @pre @p after.ts > @p before.ts — time must have advanced; callers are responsible
- *      for verifying this before calling to avoid division by zero.
- * @pre @p after.energy >= @p before.energy — the energy counter must not have
- *      regressed; callers must verify this to avoid unsigned underflow in the subtraction.
- *
- * @note This function is @c constexpr and @c noexcept; it performs no memory allocation
- *       and cannot throw exceptions.
+ * @retval ZE_RESULT_SUCCESS                    @p out was written.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  @p before holds no reading, or time ran backwards.
  */
-[[nodiscard]] constexpr double powerDrawWatts(const EnergySnapshot &before, const EnergySnapshot &after) noexcept
+ze_result_t powerDraw(const EnergySnapshot &before, const EnergySnapshot &after, MetricValue &out)
 {
-	return static_cast<double>(after.energy - before.energy) / static_cast<double>(after.ts - before.ts);
+	if (before.ts == 0 || after.ts < before.ts) {
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+	const auto delta = energyDeltaUj(before, after);
+	if (after.ts == before.ts || !delta) {
+		out = "N/A";
+		return ZE_RESULT_SUCCESS;
+	}
+	out = xpum::compat::format("{:.2f}", static_cast<double>(*delta) / static_cast<double>(after.ts - before.ts));
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -254,19 +258,7 @@ constexpr auto CARD_DRAW =
 				.groups = MetricGroup::POWER,
 				.inputs = MetricInput::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (cache.cardPowerBefore.ts == 0 || cache.cardPowerAfter.ts < cache.cardPowerBefore.ts) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					if (cache.cardPowerAfter.ts == cache.cardPowerBefore.ts) {
-						out = "N/A";
-						return ZE_RESULT_SUCCESS;
-					}
-					if (cache.cardPowerAfter.energy < cache.cardPowerBefore.energy) {
-						out = "N/A";
-						return ZE_RESULT_SUCCESS;
-					}
-					out = xpum::compat::format("{:.2f}", powerDrawWatts(cache.cardPowerBefore, cache.cardPowerAfter));
-					return ZE_RESULT_SUCCESS;
+					return powerDraw(cache.cardPowerBefore, cache.cardPowerAfter, out);
 				}};
 
 constexpr auto CARD_DRAW_GPU =
@@ -280,19 +272,7 @@ constexpr auto CARD_DRAW_GPU =
 				.groups = MetricGroup::POWER,
 				.inputs = MetricInput::POWER,
 				.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-					if (cache.gpuPowerBefore.ts == 0 || cache.gpuPowerAfter.ts < cache.gpuPowerBefore.ts) {
-						return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
-					}
-					if (cache.gpuPowerAfter.ts == cache.gpuPowerBefore.ts) {
-						out = "N/A";
-						return ZE_RESULT_SUCCESS;
-					}
-					if (cache.gpuPowerAfter.energy < cache.gpuPowerBefore.energy) {
-						out = "N/A";
-						return ZE_RESULT_SUCCESS;
-					}
-					out = xpum::compat::format("{:.2f}", powerDrawWatts(cache.gpuPowerBefore, cache.gpuPowerAfter));
-					return ZE_RESULT_SUCCESS;
+					return powerDraw(cache.gpuPowerBefore, cache.gpuPowerAfter, out);
 				}};
 
 constexpr auto ENERGY_CONSUMED =
