@@ -29,7 +29,10 @@
 #include <bit>
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <optional>
 #include <ranges>
 #include <span>
@@ -1071,12 +1074,24 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: N/A when timestamps are
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: N/A when energy counter regresses")
 {
+	// Above the 2^18 J span, so the drop cannot be a wrap of a U18.14 counter.
 	MetricValue out;
 	MetricCache c;
-	c.cardPowerBefore = {.energy = 500, .ts = 100};
-	c.cardPowerAfter = {.energy = 400, .ts = 200};
+	c.cardPowerBefore = {.energy = metrics::detail::ENERGY_WRAP_UJ + 500, .ts = 100};
+	c.cardPowerAfter = {.energy = metrics::detail::ENERGY_WRAP_UJ + 400, .ts = 200};
 	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "N/A");
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: accounts for a 2^18 J counter wrap")
+{
+	// 100 J before the wrap plus 100 J after it, over one second.
+	MetricValue out;
+	MetricCache c;
+	c.cardPowerBefore = {.energy = metrics::detail::ENERGY_WRAP_UJ - 100'000'000, .ts = 1};
+	c.cardPowerAfter = {.energy = 100'000'000, .ts = 1'000'001};
+	CHECK(findMetric("power.draw").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "200.00");
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "power.draw getter: computes watts (delta 2 000 000 µJ / 2 000 000 µs == 1.00 W)")
@@ -1179,6 +1194,319 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 	CHECK(findMetric("energy.consumed").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "128706.06");
 	CHECK(findMetric("energy.consumed.gpu").value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+}
+
+// ── Energy sample validation ─────────────────────────────────────────────────
+// Readings modelled on two BMG cards at ~200 W sampled every 500 ms while another
+// tool contends for the PMT telemetry window.
+
+namespace {
+
+constexpr uint64_t HOST0 = 1'000'000'000;
+constexpr EnergySnapshot GOOD_REF{.energy = 236'762'000'000, .ts = 26'433'136'373, .hostUs = HOST0};
+/** 100 J over 500 ms on both clocks: the reading that should follow GOOD_REF. */
+constexpr EnergySnapshot GOOD_NEXT{.energy = 236'862'000'000, .ts = 26'433'636'373, .hostUs = HOST0 + 500'000};
+
+/** No pause between attempts, so the suite does not sleep on every re-read. */
+constexpr std::chrono::microseconds NO_PAUSE{0};
+
+/** A reader that replays @p readings in order, then fails; a @c std::nullopt entry is a HAL failure. */
+struct ScriptedReader
+{
+	std::vector<std::optional<EnergySnapshot>> readings;
+	std::size_t calls = 0;
+	std::optional<EnergySnapshot> operator()()
+	{
+		const std::size_t i = calls++;
+		return i < readings.size() ? readings[i] : std::nullopt;
+	}
+};
+
+/** Bind @p r by reference so the test can inspect how many reads it served. */
+std::function<std::optional<EnergySnapshot>()> bind(ScriptedReader &r)
+{
+	return [&r] { return r(); };
+}
+
+} // namespace
+
+TEST_CASE("energyDeltaUj: plain increase, wrap, and regression")
+{
+	CHECK(energyDeltaUj({.energy = 100}, {.energy = 250}) == 150);
+	CHECK(energyDeltaUj({.energy = metrics::detail::ENERGY_WRAP_UJ - 10}, {.energy = 5}) == 15);
+	CHECK_FALSE(energyDeltaUj({.energy = metrics::detail::ENERGY_WRAP_UJ + 10}, {.energy = 5}).has_value());
+}
+
+TEST_CASE("isPlausibleEnergySample accepts a consistent reading")
+{
+	CHECK(isPlausibleEnergySample(GOOD_REF, GOOD_NEXT));
+	CHECK(isPlausibleEnergySample({}, GOOD_NEXT)); // no reference: only the standalone checks
+}
+
+TEST_CASE("isPlausibleEnergySample rejects a zero energy reading")
+{
+	// Row 118 of the report: the energy dword of the wrong telemetry region.
+	EnergySnapshot s = GOOD_NEXT;
+	s.energy = 0;
+	CHECK_FALSE(isPlausibleEnergySample(GOOD_REF, s));
+	CHECK_FALSE(isPlausibleEnergySample({}, s));
+}
+
+TEST_CASE("isPlausibleEnergySample rejects a zero read after Level Zero extended it")
+{
+	// A 10-minute BMG dump: the counter read 0 under contention, Level Zero took the drop
+	// for a wrap and reported exactly 5 * 2^18 J, which showed as a 4573.60 W spike.
+	const EnergySnapshot ref{.energy = 1'308'431'420'000, .ts = 1'000'000, .hostUs = HOST0};
+	const EnergySnapshot s{.energy = 5 * metrics::detail::ENERGY_WRAP_UJ, .ts = 1'500'000, .hostUs = HOST0 + 500'000};
+	CHECK_FALSE(isPlausibleEnergySample(ref, s));
+	CHECK_FALSE(isPlausibleEnergySample({}, s));
+	EnergySnapshot near = s;
+	near.energy += 1;
+	CHECK(isPlausibleEnergySample(ref, near)); // only the exact multiple is the zero read
+}
+
+TEST_CASE("isPlausibleEnergySample rejects a timestamp scaled by the wrong crystal frequency")
+{
+	// Row 55 of the report: XTAL_COUNT divided by 24 MHz instead of 38.4 MHz.
+	EnergySnapshot s = GOOD_NEXT;
+	s.ts = 42'293'818'817;
+	CHECK_FALSE(isPlausibleEnergySample(GOOD_REF, s));
+}
+
+TEST_CASE("isPlausibleEnergySample rejects a timestamp that disagrees with host time")
+{
+	EnergySnapshot s = GOOD_NEXT;
+	s.ts = GOOD_REF.ts + 100'000; // 100 ms on the counter, 500 ms on the host
+	CHECK_FALSE(isPlausibleEnergySample(GOOD_REF, s));
+	s.ts = GOOD_REF.ts + 480'000; // within slack
+	CHECK(isPlausibleEnergySample(GOOD_REF, s));
+}
+
+TEST_CASE("isPlausibleEnergySample skips the clock check without host timestamps")
+{
+	EnergySnapshot ref = GOOD_REF;
+	EnergySnapshot s = GOOD_NEXT;
+	ref.hostUs = 0;
+	s.ts = GOOD_REF.ts + 100'000;
+	CHECK(isPlausibleEnergySample(ref, s));
+}
+
+TEST_CASE("isPlausibleEnergySample rejects an implausible power")
+{
+	// A wrong-region energy read that happens to land above the reference.
+	EnergySnapshot s = GOOD_NEXT;
+	s.energy = GOOD_REF.energy + 63'000'000'000;
+	CHECK_FALSE(isPlausibleEnergySample(GOOD_REF, s));
+}
+
+TEST_CASE("isPlausibleEnergySample accepts a counter wrap")
+{
+	const EnergySnapshot ref{.energy = metrics::detail::ENERGY_WRAP_UJ - 50'000'000, .ts = 1'000'000, .hostUs = HOST0};
+	const EnergySnapshot s{.energy = 50'000'000, .ts = 1'500'000, .hostUs = HOST0 + 500'000};
+	CHECK(isPlausibleEnergySample(ref, s));
+}
+
+TEST_CASE("isPlausibleEnergySample rejects an energy change at an unchanged timestamp")
+{
+	EnergySnapshot s = GOOD_REF;
+	s.hostUs += 1'000;
+	CHECK(isPlausibleEnergySample(GOOD_REF, s)); // same latch read twice
+	s.energy += 1;
+	CHECK_FALSE(isPlausibleEnergySample(GOOD_REF, s));
+}
+
+TEST_CASE("sampleEnergy accepts the first plausible reading without re-reading")
+{
+	ScriptedReader r{.readings = {GOOD_NEXT}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::ACCEPTED);
+	CHECK(sample.reading.energy == GOOD_NEXT.energy);
+	CHECK(r.calls == 1);
+}
+
+TEST_CASE("sampleEnergy re-reads past a transient corrupt reading")
+{
+	EnergySnapshot bad = GOOD_NEXT;
+	bad.energy = 0;
+	EnergySnapshot good = GOOD_NEXT;
+	good.hostUs += 100;
+	good.ts += 100;
+	ScriptedReader r{.readings = {bad, good}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::ACCEPTED);
+	CHECK(sample.reading.ts == good.ts);
+	CHECK(r.calls == 2);
+}
+
+TEST_CASE("sampleEnergy rebaselines past an extended zero read instead of reporting a spike")
+{
+	// After the zero read Level Zero keeps the extra 2^18 J, so the re-reads agree with
+	// each other but not with ref: the window is dropped and the next one starts from them.
+	const EnergySnapshot ref{.energy = 1'308'431'420'000, .ts = 1'000'000, .hostUs = HOST0};
+	const EnergySnapshot zero{
+		.energy = 5 * metrics::detail::ENERGY_WRAP_UJ, .ts = 1'500'000, .hostUs = HOST0 + 500'000};
+	const EnergySnapshot second{.energy = 1'570'778'770'000, .ts = 1'510'000, .hostUs = HOST0 + 510'000};
+	const EnergySnapshot third{.energy = 1'570'780'770'000, .ts = 1'520'000, .hostUs = HOST0 + 520'000};
+	ScriptedReader r{.readings = {zero, second, third}};
+	const auto sample = sampleEnergy(bind(r), ref, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::REBASELINE);
+	CHECK(sample.reading.ts == third.ts);
+	CHECK(r.calls == metrics::detail::ENERGY_READ_ATTEMPTS);
+}
+
+TEST_CASE("sampleEnergy rejects when every reading is corrupt")
+{
+	EnergySnapshot bad = GOOD_NEXT;
+	bad.energy = 0;
+	ScriptedReader r{.readings = {bad, bad, bad, GOOD_NEXT}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::REJECTED);
+	CHECK(r.calls == metrics::detail::ENERGY_READ_ATTEMPTS);
+}
+
+TEST_CASE("sampleEnergy rebaselines when the reference is the corrupt reading")
+{
+	// The window was opened by a glitched timestamp; fresh reads agree with each other.
+	EnergySnapshot badRef = GOOD_REF;
+	badRef.ts = 42'293'818'817;
+	EnergySnapshot second = GOOD_NEXT;
+	second.ts += 100;
+	second.hostUs += 100;
+	second.energy += 20'000;
+	EnergySnapshot third = second;
+	third.ts += 100;
+	third.hostUs += 100;
+	third.energy += 20'000;
+	ScriptedReader r{.readings = {GOOD_NEXT, second, third}};
+	const auto sample = sampleEnergy(bind(r), badRef, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::REBASELINE);
+	CHECK(sample.reading.ts == third.ts);
+	CHECK(r.calls == metrics::detail::ENERGY_READ_ATTEMPTS);
+}
+
+TEST_CASE("sampleEnergy does not rebaseline on a reading that follows a zero-timestamp reading")
+{
+	// A zero-timestamp read followed by one with a far-ahead timestamp must not be taken as two
+	// agreeing reads: the good reference is kept and the third read closes the window.
+	EnergySnapshot zeroTs = GOOD_NEXT;
+	zeroTs.ts = 0;
+	EnergySnapshot farAhead = GOOD_NEXT;
+	farAhead.ts = 43'066'531'008;
+	EnergySnapshot good = GOOD_NEXT;
+	good.ts += 200;
+	good.hostUs += 200;
+	ScriptedReader r{.readings = {zeroTs, farAhead, good}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::ACCEPTED);
+	CHECK(sample.reading.ts == good.ts);
+	CHECK(r.calls == 3);
+}
+
+TEST_CASE("sampleEnergy does not rebaseline on corrupt re-reads that share a timestamp")
+{
+	// Two corrupt reads with the same timestamp but different energies do not agree with each
+	// other, so the good reference is kept and the third read closes the window.
+	EnergySnapshot bad1 = GOOD_NEXT;
+	bad1.energy = GOOD_REF.energy + 63'000'000'000;
+	EnergySnapshot bad2 = bad1;
+	bad2.energy += 1'000'000'000;
+	bad2.hostUs += 100;
+	EnergySnapshot good = GOOD_NEXT;
+	good.ts += 200;
+	good.hostUs += 200;
+	ScriptedReader r{.readings = {bad1, bad2, good}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::ACCEPTED);
+	CHECK(sample.reading.ts == good.ts);
+	CHECK(r.calls == 3);
+}
+
+TEST_CASE("sampleEnergy keeps a good reference past two agreeing wrong-frequency reads")
+{
+	// Two reads 100 µs apart on the host, both scaled by 24 MHz instead of 38.4 MHz: 160 µs
+	// apart on the counter, so they agree with each other. The third read is good again.
+	EnergySnapshot wrong1 = GOOD_NEXT;
+	wrong1.ts = 42'293'818'817;
+	EnergySnapshot wrong2 = wrong1;
+	wrong2.ts += 160;
+	wrong2.hostUs += 100;
+	wrong2.energy += 20'000;
+	EnergySnapshot good = GOOD_NEXT;
+	good.ts += 200;
+	good.hostUs += 200;
+	good.energy += 40'000;
+	ScriptedReader r{.readings = {wrong1, wrong2, good}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::ACCEPTED);
+	CHECK(sample.reading.ts == good.ts);
+	CHECK(r.calls == 3);
+}
+
+TEST_CASE("sampleEnergy rebaselines on an agreeing pair when the last read fails")
+{
+	EnergySnapshot badRef = GOOD_REF;
+	badRef.ts = 42'293'818'817;
+	EnergySnapshot second = GOOD_NEXT;
+	second.ts += 100;
+	second.hostUs += 100;
+	second.energy += 20'000;
+	ScriptedReader r{.readings = {GOOD_NEXT, second}}; // third read hits a HAL failure
+	const auto sample = sampleEnergy(bind(r), badRef, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::REBASELINE);
+	CHECK(sample.reading.ts == second.ts);
+}
+
+TEST_CASE("sampleEnergy reports a HAL failure")
+{
+	ScriptedReader r;
+	CHECK(sampleEnergy(bind(r), GOOD_REF, NO_PAUSE).status == EnergySampleStatus::FAILED);
+	CHECK(r.calls == metrics::detail::ENERGY_READ_ATTEMPTS);
+}
+
+TEST_CASE("sampleEnergy re-reads past a transient HAL failure")
+{
+	EnergySnapshot good = GOOD_NEXT;
+	good.hostUs += 100;
+	good.ts += 100;
+	ScriptedReader r{.readings = {std::nullopt, good}};
+	const auto sample = sampleEnergy(bind(r), GOOD_REF, NO_PAUSE);
+	CHECK(sample.status == EnergySampleStatus::ACCEPTED);
+	CHECK(sample.reading.ts == good.ts);
+	CHECK(r.calls == 2);
+}
+
+TEST_CASE("sampleEnergy pauses between attempts")
+{
+	using clock = std::chrono::steady_clock;
+	constexpr std::chrono::microseconds pause{std::chrono::milliseconds{5}};
+	std::vector<clock::time_point> at;
+	const auto sample = sampleEnergy(
+		[&]() -> std::optional<EnergySnapshot> {
+			at.push_back(clock::now());
+			return std::nullopt;
+		},
+		GOOD_REF, pause);
+	CHECK(sample.status == EnergySampleStatus::FAILED);
+	REQUIRE(at.size() == metrics::detail::ENERGY_READ_ATTEMPTS);
+	for (std::size_t i = 1; i < at.size(); ++i) {
+		CHECK(at[i] - at[i - 1] >= pause);
+	}
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "populateMetricCacheContinuous holds the last trusted power reading")
+{
+	// prev's End discarded its reading, so its after-snapshots are zeroed: the next window must
+	// open from prev's before-snapshots rather than from nothing.
+	MetricCache prev;
+	prev.cardPowerBefore = GOOD_REF;
+	prev.gpuPowerBefore = GOOD_REF;
+	prev.populated = true;
+
+	const MetricCache curr = populateMetricCacheContinuous(di, prev, MetricInput::NONE);
+
+	CHECK(curr.cardPowerBefore.ts == GOOD_REF.ts);
+	CHECK(curr.cardPowerBefore.energy == GOOD_REF.energy);
+	CHECK(curr.gpuPowerBefore.ts == GOOD_REF.ts);
 }
 
 TEST_CASE("MetricCache default values are zero and all flags false")
