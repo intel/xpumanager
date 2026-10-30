@@ -52,7 +52,7 @@ XPUMD_VERSION ?= $(shell git describe --tags --dirty --always | tr / -)
 
 OTEL_VERSION ?= 0.163.0
 IMAGE_REPOSITORY ?= registry.local/xpumd
-# Devel image variant, with the stub driver & xpuinfo-cli (used by the integration tests)
+# Devel image variant, with the stub driver, xpuinfo-cli and level-zero-go examples
 DEVEL_IMAGE_REPOSITORY ?= $(IMAGE_REPOSITORY)-devel
 IMAGE_TAG ?= latest
 IMAGE_PULL_POLICY ?= IfNotPresent

@@ -64,6 +64,7 @@ Contents:
   * OS packages are from Ubuntu 24.04 instead of Debian (matching the driver stack packages), base image digests pinned
   * The `xpumd` image now only contains the daemon, the stub Level-Zero driver and `xpuinfo-cli`
     moved to the new `xpumd-devel` image variant
+  * The `xpumd-devel` image now includes also the `list-sysman` and `events-sysman` example apps from the level-zero-go bindings
 * Go dependencies: OTel collector update to v0.163.0 + other version updates
 
 

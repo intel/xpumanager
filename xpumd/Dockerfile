@@ -5,7 +5,8 @@
 
 # Image variants (build target):
 # - "final" (default): production image with only the daemon and its runtime dependencies
-# - "devel": adds the Level-Zero stub driver, xpuinfo-cli and optional debugging TOOLS
+# - "devel": adds the Level-Zero stub driver, xpuinfo-cli, level-zero-go example apps
+#   and optional debugging TOOLS
 #
 # Use '--target devel --build-arg TOOLS="strace"' to build local XPUMD image that includes specified debugging tools
 # - works only for tools that do not need configs etc, only their libs
@@ -219,6 +220,19 @@ RUN --mount=type=cache,target=/go/pkg/mod/ \
                 --ignore github.com/intel/xpumanager/xpumd \
                 --save_path /out/usr/share/doc/xpumd/licenses
 
+# Build the stable Sysman Go bindings examples & install them to the devel image
+# (for checking what Sysman reports on given HW, e.g. for the stub driver configs)
+RUN --mount=type=cache,target=/go/pkg/mod/ \
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=src=level-zero-go,target=/src/level-zero-go,ro \
+    --mount=src=tools,target=/src/tools,ro \
+    EXAMPLES=/src/level-zero-go/examples && \
+    make -C $EXAMPLES build-list-sysman build-events-sysman BIN_DIR=/out-devel/usr/local/bin && \
+    go -C $EXAMPLES tool -modfile /src/tools/go.mod \
+        go-licenses save ./list-sysman ./events-sysman \
+                --ignore github.com/intel/level-zero-go/examples \
+                --save_path /out-devel/usr/share/doc/level-zero-go-examples/licenses
+
 # Endpoints cannot be limited to localhost in a container,
 # as then accessing them would require using host networking
 RUN sed -i 's/127.0.0.1:/0.0.0.0:/' /out/etc/xpumd/config-example.yaml
@@ -408,7 +422,7 @@ ENV XDG_RUNTIME_DIR=/run/xpumd
 ENTRYPOINT ["/usr/local/bin/xpumd"]
 
 
-# --- The devel image: production + stub driver, xpuinfo-cli & debug TOOLS ---
+# --- The devel image: production + stub driver, xpuinfo-cli, level-zero-go examples & debug TOOLS ---
 FROM production AS devel
 
 COPY --from=out /out-devel/ /

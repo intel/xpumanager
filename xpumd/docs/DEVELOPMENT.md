@@ -104,9 +104,9 @@ docker build -t registry.local/xpumd:latest .
 ```
 
 It contains only the daemon and its runtime dependencies. The devel variant
-adds the stub Level-Zero driver and `xpuinfo-cli` and optional extra tools
-specified with the `TOOLS` build argument. For example, to build the devel
-image with `strace`:
+adds the stub Level-Zero driver, `xpuinfo-cli`, the `list-sysman` and
+`events-sysman` level-zero-go examples and optional extra tools specified with the
+`TOOLS` build argument. For example, to build the devel image with `strace`:
 
 ```bash
 docker build --target devel --build-arg TOOLS="strace" -t registry.local/xpumd-devel:latest .
