@@ -370,11 +370,13 @@ COPY --from=backend /backend/var/lib/dpkg/status /backend-package-info
 RUN cat /backend-package-info >> /out/var/lib/dpkg/status
 
 # Build the stub driver & install it to the devel image
-RUN --mount=src=.,target=.,rw \
-    make -C level-zero-go/level-zero-stub clean test && \
-    install -D level-zero-go/level-zero-stub/libze_stub.so \
+# (only level-zero-go is mounted, so other changes don't invalidate this step)
+RUN --mount=src=level-zero-go,target=/src/level-zero-go,rw \
+    STUB=/src/level-zero-go/level-zero-stub && \
+    make -C $STUB clean test && \
+    install -D $STUB/libze_stub.so \
                /out-devel/usr/local/lib/xpumd/level-zero-stub/libze_loader.so.1 && \
-    install -D level-zero-go/level-zero-stub/example-config.yaml \
+    install -D $STUB/example-config.yaml \
                /out-devel/etc/xpumd/level-zero-stub/example-config.yaml
 
 # Install debug tool binary & its libs to where they get copied to devel image.
