@@ -9,6 +9,7 @@
   <title>Dump &mdash; Intel XPU Manager 2.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=11882e01" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -19,7 +20,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Health" href="health.html" />
+    <link rel="next" title="Query" href="query.html" />
     <link rel="prev" title="Stats" href="stats.html" />
  
 <style>
@@ -116,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="query.html">Query</a></li>
 <li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="updatefw.html">UpdateFW</a></li>
@@ -190,7 +192,7 @@ Multiple IDs can be separated by a comma.</p>
 <dd><p>Metrics to collect. Accepts any of the following forms, or a comma-separated mix:</p>
 <ul class="simple">
 <li><p><strong>Legacy numeric IDs</strong>: <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">0,1,2</span></code> (see Metrics Reference below)</p></li>
-<li><p><strong>Group names</strong>: <code class="docutils literal notranslate"><span class="pre">POWER</span></code>, <code class="docutils literal notranslate"><span class="pre">UTILIZATION</span></code>, <code class="docutils literal notranslate"><span class="pre">TEMPERATURE</span></code>, <code class="docutils literal notranslate"><span class="pre">MEMORY</span></code>, <code class="docutils literal notranslate"><span class="pre">CLOCK</span></code>, <code class="docutils literal notranslate"><span class="pre">PCI</span></code>, <code class="docutils literal notranslate"><span class="pre">ECC</span></code>, <code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code>, <code class="docutils literal notranslate"><span class="pre">FAN</span></code>, <code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></li>
+<li><p><strong>Group names</strong>: <code class="docutils literal notranslate"><span class="pre">POWER</span></code>, <code class="docutils literal notranslate"><span class="pre">UTILIZATION</span></code>, <code class="docutils literal notranslate"><span class="pre">TEMPERATURE</span></code>, <code class="docutils literal notranslate"><span class="pre">MEMORY</span></code>, <code class="docutils literal notranslate"><span class="pre">CLOCK</span></code>, <code class="docutils literal notranslate"><span class="pre">PCI</span></code>, <code class="docutils literal notranslate"><span class="pre">ECC</span></code>, <code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code>, <code class="docutils literal notranslate"><span class="pre">FAN</span></code>, <code class="docutils literal notranslate"><span class="pre">COMPUTE</span></code>, <code class="docutils literal notranslate"><span class="pre">PERFORMANCE</span></code>, <code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code>, <code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></li>
 <li><p><strong>Single-char shortcuts</strong>: <code class="docutils literal notranslate"><span class="pre">p</span></code> (Power + Temperature), <code class="docutils literal notranslate"><span class="pre">u</span></code> (Utilization), <code class="docutils literal notranslate"><span class="pre">m</span></code> (Memory), <code class="docutils literal notranslate"><span class="pre">c</span></code> (Clock), <code class="docutils literal notranslate"><span class="pre">t</span></code> (PCI), <code class="docutils literal notranslate"><span class="pre">e</span></code> (ECC), <code class="docutils literal notranslate"><span class="pre">x</span></code> (EU_ARRAY), <code class="docutils literal notranslate"><span class="pre">f</span></code> (Fan)</p></li>
 <li><p><strong>Multi-char combos</strong>: <code class="docutils literal notranslate"><span class="pre">pu</span></code> (Power + Temperature + Utilization), <code class="docutils literal notranslate"><span class="pre">pum</span></code> (Power + Temperature + Utilization + Memory)</p></li>
 </ul>
@@ -445,7 +447,7 @@ need not come from the card domain — it names the domain it did read in its la
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="stats.html" class="btn btn-neutral float-left" title="Stats" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="health.html" class="btn btn-neutral float-right" title="Health" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="query.html" class="btn btn-neutral float-right" title="Query" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

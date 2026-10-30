@@ -13,6 +13,7 @@ It provides a command-line interface (``xpu-smi``) for local GPU management.
    xpu-smi/topology
    xpu-smi/stats
    xpu-smi/dump
+   xpu-smi/query
    xpu-smi/health
    xpu-smi/config
    xpu-smi/updatefw

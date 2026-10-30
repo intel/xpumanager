@@ -1,0 +1,27 @@
+/*
+ * Copyright (C) 2026 Intel Corporation
+ * SPDX-License-Identifier: MIT
+ */
+
+/* The theme keeps table cells on one line and caps the page at 800px, so a reference table
+   with several columns scrolls sideways and hides its last columns. Let cells wrap, break long
+   code values such as dotted field names, and give the content more room on wide screens. */
+.wy-nav-content {
+	max-width: 1200px;
+}
+
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+	white-space: normal;
+	vertical-align: top;
+}
+
+/* Short values such as N/A move to the next line whole; only a value too long for a line of its
+   own, such as a dotted JSON key in the first column, is broken. */
+.wy-table-responsive table td code {
+	overflow-wrap: break-word;
+}
+
+.wy-table-responsive table td:first-child code {
+	overflow-wrap: anywhere;
+}

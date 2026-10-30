@@ -9,6 +9,7 @@
   <title>UpdateFW &mdash; Intel XPU Manager 2.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=11882e01" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -109,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="query.html">Query</a></li>
 <li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">UpdateFW</a><ul>
@@ -232,6 +234,34 @@ firmware image is applied to all compatible devices.</p>
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Before a <code class="docutils literal notranslate"><span class="pre">GFX_DATA</span></code> image is flashed, its version is compared with the
+GFX data firmware installed on the device, by the version rules of the IGSC
+library, and an image the device would refuse is not flashed. The main
+rule concerns the OEM manufacturing data version: an image in version
+format 1 must have a higher one than the installed firmware, and an image
+in format 2 a different one, so the installed <code class="docutils literal notranslate"><span class="pre">GFX_DATA</span></code> version cannot
+be flashed again. If the device records an unfinished <code class="docutils literal notranslate"><span class="pre">GFX_DATA</span></code>
+update, the image is compared with that update instead. The error message
+names the version that blocked the update; <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">discovery</span></code> shows the
+installed one as <em>GFX Data Firmware Version</em>. If either version cannot be
+read, the image is flashed and the device decides. <code class="docutils literal notranslate"><span class="pre">--force</span></code> does not
+override these rules.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">GFX</span></code>, <code class="docutils literal notranslate"><span class="pre">GFX_DATA</span></code>, <code class="docutils literal notranslate"><span class="pre">OP_CODE</span></code> and <code class="docutils literal notranslate"><span class="pre">OP_DATA</span></code> images are flashed
+through Level Zero Sysman, which reaches the firmware through the shared
+<code class="docutils literal notranslate"><span class="pre">igsc</span></code> library (igsc 1.1.0 or newer). Without a usable <code class="docutils literal notranslate"><span class="pre">igsc</span></code>, Sysman
+exposes none of this firmware and <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">discovery</span></code> shows an empty
+<em>GFX Firmware Version</em>. An update of one of these types then stops before
+anything is flashed, with an error that names the type and the device,
+for example <code class="docutils literal notranslate"><span class="pre">Level</span> <span class="pre">Zero</span> <span class="pre">Sysman</span> <span class="pre">exposes</span> <span class="pre">no</span> <span class="pre">GFX</span> <span class="pre">firmware</span> <span class="pre">on</span> <span class="pre">device</span> <span class="pre">0.</span></code>,
+followed by a reminder to install <code class="docutils literal notranslate"><span class="pre">igsc</span></code>. A <code class="docutils literal notranslate"><span class="pre">COMPOSITE</span></code> update skips
+the package’s <code class="docutils literal notranslate"><span class="pre">GFX_CODE</span></code> and <code class="docutils literal notranslate"><span class="pre">GFX_DATA</span></code> components on such a device;
+run it with <code class="docutils literal notranslate"><span class="pre">XPU_SMI_LOG_LEVEL=DBG</span></code> to see why each one was skipped.</p>
+</div>
 </dd></dl>
 
 <dl class="std option">

@@ -9,6 +9,7 @@
   <title>Overview &mdash; Intel XPU Manager 2.0</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=11882e01" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
@@ -118,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l1"><a class="reference internal" href="topology.html">Topology</a></li>
 <li class="toctree-l1"><a class="reference internal" href="stats.html">Stats</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dump.html">Dump</a></li>
+<li class="toctree-l1"><a class="reference internal" href="query.html">Query</a></li>
 <li class="toctree-l1"><a class="reference internal" href="health.html">Health</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">Config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="updatefw.html">UpdateFW</a></li>
@@ -240,6 +242,14 @@ xpu-smi &lt;command&gt; [command-options]
 <h2>Default Output<a class="headerlink" href="#default-output" title="Link to this heading"></a></h2>
 <p>Running <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> with no arguments displays a GPU status summary of all detected devices,
 followed by the processes using them.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Name</span></code> is the device name the driver reports, without the words that every Intel device
+name shares: the trademark signs, a leading <code class="docutils literal notranslate"><span class="pre">Intel</span></code> (kept when only <code class="docutils literal notranslate"><span class="pre">Graphics</span></code> or <code class="docutils literal notranslate"><span class="pre">GPU</span></code>
+would be left), a <code class="docutils literal notranslate"><span class="pre">Data</span> <span class="pre">Center</span> <span class="pre">GPU</span></code> prefix and a trailing <code class="docutils literal notranslate"><span class="pre">Graphics</span></code> or <code class="docutils literal notranslate"><span class="pre">GPU</span></code> after the
+model number. So <code class="docutils literal notranslate"><span class="pre">Intel(R)</span> <span class="pre">Arc(TM)</span> <span class="pre">Pro</span> <span class="pre">B60</span> <span class="pre">Graphics</span></code> shows as <code class="docutils literal notranslate"><span class="pre">Arc</span> <span class="pre">Pro</span> <span class="pre">B60</span></code>, and a name
+still too long for the column wraps at a space. A driver
+that has no product name for a device reports <code class="docutils literal notranslate"><span class="pre">Intel(R)</span> <span class="pre">Graphics</span> <span class="pre">[0x&lt;PCI</span> <span class="pre">device</span> <span class="pre">ID&gt;]</span></code>, shown as
+<code class="docutils literal notranslate"><span class="pre">Graphics</span> <span class="pre">[0x&lt;PCI</span> <span class="pre">device</span> <span class="pre">ID&gt;]</span></code>; a newer driver may name it. <a class="reference internal" href="discovery.html"><span class="doc">Discovery</span></a> and
+<code class="docutils literal notranslate"><span class="pre">--query-gpu=name</span></code> show the full name.</p>
 <p><code class="docutils literal notranslate"><span class="pre">GPU-Util</span></code> is the utilization of the busiest engine on the device: the fraction of the
 sample window during which that engine was executing work. It is not the average across
 all engines — a workload that saturates the compute engine while leaving the media and
@@ -396,7 +406,7 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TEMPERATURE</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
-<td><p>GPU core and memory temperatures. Shortcut <code class="docutils literal notranslate"><span class="pre">p</span></code> also enables POWER.</p></td>
+<td><p>GPU core, memory and composite temperatures, configured throttle/shutdown thresholds. Shortcut <code class="docutils literal notranslate"><span class="pre">p</span></code> also enables POWER.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POWER</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">p</span></code></p></td>
@@ -422,7 +432,19 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 <td><p><code class="docutils literal notranslate"><span class="pre">f</span></code></p></td>
 <td><p>Fan speed (%)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">COMPUTE</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Scheduler mode</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PERFORMANCE</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Whether each clock throttle reason is active</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code></p></td>
+<td><p>—</p></td>
+<td><p>GPU clocks the frequency range can be set to</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
 <td><p>—</p></td>
 <td><p>All metrics from all groups</p></td>
 </tr>
@@ -475,15 +497,31 @@ driver declares no version</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vbios_version</span></code></p></td>
 <td><p>—</p></td>
-<td><p>VBIOS version string</p></td>
+<td><p>GFX firmware version (shown as GFX Firmware Version in the query report)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.bus_id</span></code></p></td>
 <td><p>—</p></td>
 <td><p>PCI BDF address</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.device_id</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ip_version</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Graphics IP version, in hex; identifies the architecture and stepping</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.device_id</span></code></p></td>
 <td><p>—</p></td>
 <td><p>PCI device ID</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.base_class</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCI base class code, in hex: <code class="docutils literal notranslate"><span class="pre">0x03</span></code> display controller, <code class="docutils literal notranslate"><span class="pre">0x12</span></code> processing accelerator</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.sub_class</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCI subclass code, in hex</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">recovery_action</span></code></p></td>
+<td><p>—</p></td>
+<td><p>What the device needs to keep working: <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">Reset</span></code>, or <code class="docutils literal notranslate"><span class="pre">Reset</span> <span class="pre">to</span> <span class="pre">repair</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.sub_device_id</span></code></p></td>
 <td><p>—</p></td>
@@ -497,60 +535,127 @@ driver declares no version</p></td>
 <td><p>C</p></td>
 <td><p>Memory temperature</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.composite</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Composite temperature</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.gpu.threshold.throttle</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Configured GPU core temperature at which the clock is throttled</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.gpu.threshold.shutdown</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Configured GPU core temperature at which the device shuts down</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.gpu.max</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Highest temperature the driver says the GPU sensor can operate at</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.memory.max</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Highest temperature the driver says the memory sensor can operate at</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.memory.threshold.throttle</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Configured memory temperature at which the clock is throttled</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">temperature.memory.threshold.shutdown</span></code></p></td>
+<td><p>C</p></td>
+<td><p>Configured memory temperature at which the device shuts down</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
 <td><p>W</p></td>
 <td><p>Card-domain power draw, averaged over the sampling interval</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code></p></td>
 <td><p>W</p></td>
 <td><p>GPU-domain power draw, averaged over the sampling interval: compute engines only,
 excluding memory and other card subsystems. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on devices that expose no GPU
 power domain</p></td>
 </tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.instant</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Card-domain power draw at this moment, as the driver reports it; needs a runtime and loader
+that support it, and root on CRI</p></td>
+</tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit</span></code></p></td>
 <td><p>W</p></td>
 <td><p>Current power limit</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.max_limit</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit.default</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Default power limit from device properties</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit.min</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Lowest power limit that can be set, from device properties</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.draw.memory.instant</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Memory-domain power draw at this moment, on devices with a memory power domain</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit.burst</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Burst power limit (PL2), on devices that report one</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">power.limit.peak</span></code></p></td>
+<td><p>W</p></td>
+<td><p>Peak power limit (PL4), on devices that report one</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">power.max_limit</span></code></p></td>
 <td><p>W</p></td>
 <td><p>Maximum power limit</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed</span></code></p></td>
 <td><p>J</p></td>
 <td><p>Cumulative card-domain energy counter; the energy counterpart of <code class="docutils literal notranslate"><span class="pre">power.draw</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed.gpu</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">energy.consumed.gpu</span></code></p></td>
 <td><p>J</p></td>
 <td><p>Cumulative GPU-domain energy counter; the energy counterpart of <code class="docutils literal notranslate"><span class="pre">power.draw.gpu</span></code>.
 <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on devices that expose no GPU power domain</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.gpu</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.gpu</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Overall GPU utilization: the busiest engine on the device</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.compute</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.compute</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Compute engine utilization</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.render</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.render</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Render engine utilization</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.media</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.media</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Media engine utilization</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.copy</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.video</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Busiest video decode/encode engine; one engine class does both on Linux, so they are not
+reported apart</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.video_enhancement</span></code></p></td>
+<td><p>%</p></td>
+<td><p>Busiest video enhancement engine (scaling, color conversion)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.copy</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Copy engine utilization</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.memory</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">utilization.memory</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Memory bandwidth utilization</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.total</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.total</span></code></p></td>
 <td><p>MiB</p></td>
 <td><p>Total memory</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.reserved</span></code></p></td>
+<td><p>MiB</p></td>
+<td><p>Memory the driver keeps back: installed size minus <code class="docutils literal notranslate"><span class="pre">memory.total</span></code>; included in
+<code class="docutils literal notranslate"><span class="pre">memory.used</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.used</span></code></p></td>
 <td><p>MiB</p></td>
@@ -572,25 +677,54 @@ power domain</p></td>
 <td><p>%</p></td>
 <td><p>Memory bandwidth utilization</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.current.graphics</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.current.sm</span></code>)</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.throttle_time</span></code></p></td>
+<td><p>us</p></td>
+<td><p>Time the GPU clock has been held back by any throttle reason; the Linux runtime does not count it</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">performance.factor.compute</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Performance factor (0-100) of the compute engines; 50 is balanced</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">performance.factor.media</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Performance factor (0-100) of the media engines; 50 is balanced</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.current.graphics</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.current.sm</span></code>)</p></td>
 <td><p>MHz</p></td>
 <td><p>Current graphics/SM clock</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.current.media</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.current.video</span></code>)</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.current.media</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.current.video</span></code>)</p></td>
 <td><p>MHz</p></td>
 <td><p>Current media/video clock</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.max.graphics</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.max.sm</span></code>)</p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.max.graphics</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.max.sm</span></code>)</p></td>
 <td><p>MHz</p></td>
 <td><p>Max graphics clock</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.max.media</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.max.video</span></code>)</p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.max.media</span></code> (alias: <code class="docutils literal notranslate"><span class="pre">clocks.max.video</span></code>)</p></td>
 <td><p>MHz</p></td>
 <td><p>Max media clock</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.throttle.reason</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.supported.graphics</span></code></p></td>
+<td><p>MHz</p></td>
+<td><p>GPU core clocks the minimum and maximum of <code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">--frequencyrange</span></code> can be set
+to: <code class="docutils literal notranslate"><span class="pre">low-high</span> <span class="pre">step</span> <span class="pre">N</span></code> when evenly spaced, otherwise a <code class="docutils literal notranslate"><span class="pre">;</span></code> separated list. The GPU
+cannot be pinned to one of them, and there is no list for the memory clock, which
+cannot be set</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.requested.graphics</span></code></p></td>
+<td><p>MHz</p></td>
+<td><p>GPU core clock the driver last requested from the hardware</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.throttle.reason</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Active clock throttle reason flags</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clocks.event_reasons.&lt;reason&gt;</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Whether one throttle reason is active (<code class="docutils literal notranslate"><span class="pre">Active</span></code> or <code class="docutils literal notranslate"><span class="pre">Not</span> <span class="pre">Active</span></code>). One field per
+reason: <code class="docutils literal notranslate"><span class="pre">thermal_limit</span></code>, <code class="docutils literal notranslate"><span class="pre">average_power_cap</span></code>, <code class="docutils literal notranslate"><span class="pre">burst_power_cap</span></code>, <code class="docutils literal notranslate"><span class="pre">current_limit</span></code>,
+<code class="docutils literal notranslate"><span class="pre">psu_alert</span></code>, <code class="docutils literal notranslate"><span class="pre">sw_range</span></code>, <code class="docutils literal notranslate"><span class="pre">hw_range</span></code>, <code class="docutils literal notranslate"><span class="pre">voltage</span></code>, <code class="docutils literal notranslate"><span class="pre">thermal_alert</span></code>, <code class="docutils literal notranslate"><span class="pre">power_alert</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.gen.max</span></code></p></td>
 <td><p>—</p></td>
@@ -608,89 +742,203 @@ power domain</p></td>
 <td><p>—</p></td>
 <td><p>Current PCIe link width</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.tx.throughput</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pci.bar.memory.size</span></code></p></td>
+<td><p>MiB</p></td>
+<td><p>Size of the device’s largest memory BAR, the window through which the host reaches its local memory</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pci.bar.resizable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Resizable BAR on that BAR: <code class="docutils literal notranslate"><span class="pre">Enabled</span></code> or <code class="docutils literal notranslate"><span class="pre">Disabled</span></code>; reading it needs <code class="docutils literal notranslate"><span class="pre">CAP_SYS_ADMIN</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.gen.host_max</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Maximum PCIe generation of the root port the device is under (Linux); a switch in between can limit the link further</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.link.width.host_max</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Maximum PCIe link width of the root port the device is under (Linux)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe correctable errors since the device was enumerated (AER, Linux)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.errors.non_fatal</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe uncorrectable non-fatal errors since enumeration (AER, Linux)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.errors.fatal</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe uncorrectable fatal errors since enumeration (AER, Linux)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.errors.replay_rollovers</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe REPLAY_NUM rollovers since enumeration (AER, Linux)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.errors.replay_timeouts</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe replay timer timeouts since enumeration (AER, Linux)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.atomic.completer</span></code></p></td>
+<td><p>—</p></td>
+<td><p>PCIe AtomicOp requests the device completes, e.g. <code class="docutils literal notranslate"><span class="pre">FETCHADD_32</span> <span class="pre">SWAP_32</span> <span class="pre">CAS_32</span></code>; needs root on Linux</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.atomic.requests</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Whether the device may send PCIe AtomicOp requests: <code class="docutils literal notranslate"><span class="pre">Enabled</span></code> or <code class="docutils literal notranslate"><span class="pre">Disabled</span></code>; needs root on Linux</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.tx.throughput</span></code></p></td>
 <td><p>MB/s</p></td>
 <td><p>PCIe transmit throughput</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.rx.throughput</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.rx.throughput</span></code></p></td>
 <td><p>MB/s</p></td>
 <td><p>PCIe receive throughput</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.tx.throughput.kbs</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.tx.throughput.kbs</span></code></p></td>
 <td><p>kB/s</p></td>
 <td><p>PCIe transmit throughput (kB/s)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.rx.throughput.kbs</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.rx.throughput.kbs</span></code></p></td>
 <td><p>kB/s</p></td>
 <td><p>PCIe receive throughput (kB/s)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.replay.counter</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pcie.replay.counter</span></code></p></td>
 <td><p>—</p></td>
 <td><p>PCIe replay error counter</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.mode.current</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.mode.current</span></code></p></td>
 <td><p>—</p></td>
 <td><p>ECC mode (enabled/disabled)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.corrected.aggregate.total</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.corrected.aggregate.total</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Total corrected ECC errors</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.uncorrected.aggregate.total</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.uncorrected.aggregate.total</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Total uncorrected ECC errors</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.aggregate.total</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.aggregate.total</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Total ECC errors (corrected + uncorrected)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.reset</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vf.enabled</span></code></p></td>
+<td><p>—</p></td>
+<td><p>SR-IOV virtual functions enabled on the physical function</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.mode.pending</span></code></p></td>
+<td><p>—</p></td>
+<td><p>ECC state after the next reset: <code class="docutils literal notranslate"><span class="pre">Enabled</span></code> or <code class="docutils literal notranslate"><span class="pre">Disabled</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.offline_pages</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Device memory pages the driver has taken offline after errors (retired pages); <code class="docutils literal notranslate"><span class="pre">N/A</span></code>
+where the driver has no page-offline support</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.repair_status</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Whether the device has had a repair performed, such as remapping faulty memory:
+<code class="docutils literal notranslate"><span class="pre">Performed</span></code> or <code class="docutils literal notranslate"><span class="pre">Not</span> <span class="pre">Performed</span></code>; <code class="docutils literal notranslate"><span class="pre">N/A</span></code> where the driver does not track repairs</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.reset</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS reset error counter</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.programming.errors</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.programming.errors</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS programming error counter</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.driver.errors</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.driver.errors</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS driver error counter</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.correctable</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.correctable</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS correctable cache error counter</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.uncorrectable</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.uncorrectable</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS uncorrectable cache error counter</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.correctable</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.correctable</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS correctable non-compute error counter</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.uncorrectable</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.uncorrectable</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS uncorrectable non-compute error counter</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.total</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.total</span></code></p></td>
 <td><p>—</p></td>
 <td><p>RAS non-compute error counter (correctable + uncorrectable)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.active</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.memory.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable device memory error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.memory.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable device memory error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.pcie.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable PCIe subsystem error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.pcie.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable PCIe subsystem error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.soc_internal.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable SoC internal error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.soc_internal.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable SoC internal error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.compute.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable compute engine error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.compute.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable compute engine error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.fabric.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable fabric interconnect error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.fabric.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable fabric interconnect error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.scale.errors.correctable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS correctable scale fabric error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.scale.errors.uncorrectable</span></code></p></td>
+<td><p>—</p></td>
+<td><p>RAS uncorrectable scale fabric error counter (xe netlink RAS category)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.active</span></code></p></td>
 <td><p>%</p></td>
 <td><p>EU array active percentage (Intel Xe only)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.stall</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.stall</span></code></p></td>
 <td><p>%</p></td>
 <td><p>EU array stall percentage (Intel Xe only)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.idle</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.idle</span></code></p></td>
 <td><p>%</p></td>
 <td><p>EU array idle percentage (Intel Xe only)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fan.speed</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fan.speed</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Fan speed percentage</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scheduler.mode</span></code></p></td>
+<td><p>—</p></td>
+<td><p>Scheduler mode: timeout, timeslice or exclusive</p></td>
 </tr>
 </tbody>
 </table>
