@@ -1024,26 +1024,35 @@ TEST_CASE("a read the driver did not answer says so after N/A, without --verbose
 	MetricFailures failures;
 	for (const auto name : referencedMetricNames()) {
 		values[name] = std::nullopt;
-		if (std::string_view{name}.starts_with("ecc.") || std::string_view{name}.starts_with("ras.")) {
+		if (std::string_view{name}.starts_with("power.")) {
 			failures[name] = CALL_ABANDONED;
 		}
 	}
-	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("ECC"), values, {}, {},
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("POWER"), values, {}, {},
 									  RowNotes{.missing = {}, .failures = &failures, .verbose = false});
 	std::string text;
 	for (const auto &child : node.children) {
 		renderNode(child, 1, text);
 	}
-	CHECK(text.find("Correctable                   : N/A (driver did not respond)") != std::string::npos);
-	CHECK(text.find("Uncorrectable                 : N/A (driver did not respond)") != std::string::npos);
-	// The categories a device reports are unknown after the failure, so none is added.
-	CHECK(text.find("Memory Correctable") == std::string::npos);
-	CHECK(text.find("Cache Correctable") == std::string::npos);
+	const auto valueOf = [&text](std::string_view label) {
+		for (const auto &line : linesOf(text)) {
+			if (const auto at = line.find(label);
+				at != std::string::npos && line.find(" : ", at) != std::string::npos) {
+				return line.substr(line.find(" : ", at) + 3);
+			}
+		}
+		return std::string{"<missing>"};
+	};
+	CHECK(valueOf("Average Power Draw") == "N/A (driver did not respond)");
+	CHECK(valueOf("Current Power Limit") == "N/A (driver did not respond)");
+	// Whether the device has the optional rows is unknown after the failure, so none is added.
+	CHECK(text.find("Burst Power Limit") == std::string::npos);
+	CHECK(text.find("Instantaneous Power Draw") == std::string::npos);
 
 	QueryReport report;
 	report.gpus = {node};
 	const auto json = toJson(report);
-	CHECK(json["gpus"][0]["ecc_errors"]["aggregate"]["correctable"].is_null());
+	CHECK(json["gpus"][0]["gpu_power_readings"]["average_power_draw"].is_null());
 }
 
 TEST_CASE("a getter's own ZE_RESULT_NOT_READY is not reported as a driver that did not respond")
@@ -1054,7 +1063,7 @@ TEST_CASE("a getter's own ZE_RESULT_NOT_READY is not reported as a driver that d
 		values[name] = std::nullopt;
 		failures[name] = ZE_RESULT_NOT_READY;
 	}
-	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("PCI,ECC"), values, {}, {},
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("PCI,POWER"), values, {}, {},
 									  RowNotes{.missing = {}, .failures = &failures, .verbose = false});
 	std::string text;
 	for (const auto &child : node.children) {
