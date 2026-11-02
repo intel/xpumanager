@@ -255,7 +255,8 @@ constexpr std::string_view BUS_ID_FIELD = "pci.bus_id";
 
 // Identity first, then one section per subsystem. Values that need extra GSC or AMC round trips
 // per device are left out, as are rows that no current device, driver and kernel gives useful
-// values for (PCIe replays, power limit range, pending ECC state, offline pages, fan speed).
+// values for (PCIe replays, power limit range, fan speed). ECC is left out until its RAS reads
+// are reliable: a RAS call the driver never answers would stall the whole report.
 // clang-format off
 constexpr auto LAYOUT_HEAD = std::to_array<Spec>({
 	fieldOf(0, "Product Name", "product_name", "name"),
@@ -343,36 +344,6 @@ constexpr auto LAYOUT_TAIL = std::to_array<Spec>({
 		optionalFieldOf(1, "Video", "video", "utilization.video").needing(Requirement::Perfmon),
 		optionalFieldOf(1, "Video Enhancement", "video_enhancement", "utilization.video_enhancement").needing(Requirement::Perfmon),
 		fieldOf(1, "Copy", "copy", "utilization.copy").needing(Requirement::Perfmon),
-	sectionOf(0, "ECC Mode", "ecc_mode"),
-		fieldOf(1, "Current", "current", "ecc.mode.current"),
-		optionalFieldOf(1, "Pending", "pending", "ecc.mode.pending"),
-	sectionOf(0, "ECC Errors", "ecc_errors"),
-		sectionOf(1, "Aggregate", "aggregate"),
-			fieldOf(2, "Correctable", "correctable", "ecc.errors.corrected.aggregate.total"),
-			fieldOf(2, "Uncorrectable", "uncorrectable", "ecc.errors.uncorrected.aggregate.total"),
-			// Each driver reports its own set of categories (the netlink ones on xe, the others on
-			// i915), so only those the device reports are printed.
-			optionalFieldOf(2, "Memory Correctable", "memory_correctable", "ras.memory.errors.correctable"),
-			optionalFieldOf(2, "Memory Uncorrectable", "memory_uncorrectable", "ras.memory.errors.uncorrectable"),
-			optionalFieldOf(2, "PCIe Correctable", "pcie_correctable", "ras.pcie.errors.correctable"),
-			optionalFieldOf(2, "PCIe Uncorrectable", "pcie_uncorrectable", "ras.pcie.errors.uncorrectable"),
-			optionalFieldOf(2, "SoC Internal Correctable", "soc_internal_correctable", "ras.soc_internal.errors.correctable"),
-			optionalFieldOf(2, "SoC Internal Uncorrectable", "soc_internal_uncorrectable", "ras.soc_internal.errors.uncorrectable"),
-			optionalFieldOf(2, "Compute Correctable", "compute_correctable", "ras.compute.errors.correctable"),
-			optionalFieldOf(2, "Compute Uncorrectable", "compute_uncorrectable", "ras.compute.errors.uncorrectable"),
-			optionalFieldOf(2, "Fabric Correctable", "fabric_correctable", "ras.fabric.errors.correctable"),
-			optionalFieldOf(2, "Fabric Uncorrectable", "fabric_uncorrectable", "ras.fabric.errors.uncorrectable"),
-			optionalFieldOf(2, "Scale Correctable", "scale_correctable", "ras.scale.errors.correctable"),
-			optionalFieldOf(2, "Scale Uncorrectable", "scale_uncorrectable", "ras.scale.errors.uncorrectable"),
-			optionalFieldOf(2, "Cache Correctable", "cache_correctable", "ras.cache.errors.correctable"),
-			optionalFieldOf(2, "Cache Uncorrectable", "cache_uncorrectable", "ras.cache.errors.uncorrectable"),
-			optionalFieldOf(2, "Non-Compute Correctable", "non_compute_correctable", "ras.non_compute.errors.correctable"),
-			optionalFieldOf(2, "Non-Compute Uncorrectable", "non_compute_uncorrectable", "ras.non_compute.errors.uncorrectable"),
-			optionalFieldOf(2, "Resets", "resets", "ras.reset"),
-			optionalFieldOf(2, "Programming Errors", "programming_errors", "ras.programming.errors"),
-			optionalFieldOf(2, "Driver Errors", "driver_errors", "ras.driver.errors"),
-		optionalFieldOf(1, "Offline Pages", "offline_pages", "memory.offline_pages"),
-		optionalFieldOf(1, "Memory Repair", "memory_repair", "memory.repair_status"),
 	sectionOf(0, "Temperature", "temperature"),
 		fieldOf(1, "GPU Current Temp", "gpu_current_temp", "temperature.gpu"),
 		fieldOf(1, "GPU Shutdown Temp", "gpu_shutdown_temp", "temperature.gpu.threshold.shutdown"),
@@ -1414,7 +1385,7 @@ void cmdQuery::help(HELP helpType)
 	helpList.emplace_back(TITLE, "Print a report of the main attributes of each GPU");
 	helpList.emplace_back(BLANK);
 	helpList.emplace_back(TITLE, "Usage: %s query [Options]", progName.c_str());
-	helpList.emplace_back(HEADING, "%s query --display MEMORY,ECC --id 0", progName.c_str());
+	helpList.emplace_back(HEADING, "%s query --display MEMORY,POWER --id 0", progName.c_str());
 	helpList.emplace_back(HEADING, "%s query --json", progName.c_str());
 	helpList.emplace_back(HEADING, "%s query --loop 5 --count 3 --file report.txt", progName.c_str());
 	helpList.emplace_back(BLANK);

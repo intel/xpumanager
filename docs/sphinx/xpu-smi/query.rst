@@ -2,7 +2,7 @@ Query
 =====
 
 Print a report of the main attributes of each GPU, as an indented ``Key : Value`` listing:
-identity, PCI link, clock throttle reasons, memory, utilization, ECC, temperatures, power and
+identity, PCI link, clock throttle reasons, memory, utilization, temperatures, power and
 clocks, and the processes using the device. Use :doc:`discovery`
 for static detail such as compute resources and firmware components, and ``--query-gpu``
 or :doc:`dump` for any single metric. The report can be restricted to chosen sections, written as JSON,
@@ -107,10 +107,6 @@ PCI part of the report, and memory utilization appears under both ``MEMORY`` and
    * - ``PCI``
      - PCI address fields, class code and IDs, the physical slot, link generation and width
        (maximum and current), and throughput
-   * - ``ECC``
-     - ECC mode and aggregate error counts, in total and by RAS category: memory, PCIe, SoC
-       internal, compute, fabric and scale errors (xe), or cache and non-compute errors, resets,
-       programming errors and driver errors (i915)
    * - ``EU_ARRAY``
      - Nothing in this report. Use ``--query-gpu eu.active,eu.stall,eu.idle`` for the EU array
        figures
@@ -219,12 +215,6 @@ From an Intel Arc B580 run by a non-root user.
            Video                             : 0.00 %
            Video Enhancement                 : 0.00 %
            Copy                              : 0.00 %
-       ECC Mode
-           Current                           : Disabled
-       ECC Errors
-           Aggregate
-               Correctable                   : N/A
-               Uncorrectable                 : N/A
        Temperature
            GPU Current Temp                  : 30.00 C
            GPU Shutdown Temp                 : 130 C
@@ -925,194 +915,6 @@ Measured over the sampling window. Engine utilization needs ``CAP_PERFMON``; wit
        Source: ``utilization.copy``
      - Busiest copy engine.
 
-ECC
-~~~
-
-Error counts come from the driver's RAS counters and need root. A category the device does not report is left out, of the text and the JSON alike; ``--verbose`` prints it.
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 25 45
-
-   * - Row
-     - Details
-     - Meaning
-   * - ECC Mode > Current
-
-       ``ecc_mode.current``
-     - Section: ``ECC``
-
-       Source: ``ecc.mode.current``
-     - ``Enabled`` or ``Disabled``.
-   * - ECC Mode > Pending
-
-       ``ecc_mode.pending``
-     - Section: ``ECC``
-
-       Source: ``ecc.mode.pending``
-     - ECC state after the next reset: ``Enabled`` or ``Disabled``. Printed where the driver supplies it; ``--verbose`` prints ``Not Supported`` where it says the device does not. CRI's ECC is not configurable.
-   * - ECC Errors > Aggregate > Correctable
-
-       ``ecc_errors.aggregate.correctable``
-     - Section: ``ECC``
-
-       Source: ``ecc.errors.corrected.aggregate.total``
-     - Correctable errors across every hardware RAS category.
-   * - ECC Errors > Aggregate > Uncorrectable
-
-       ``ecc_errors.aggregate.uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ecc.errors.uncorrected.aggregate.total``
-     - Uncorrectable errors across every hardware RAS category.
-   * - ECC Errors > Aggregate > Memory Correctable
-
-       ``ecc_errors.aggregate.memory_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.memory.errors.correctable``
-     - Correctable device memory errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Memory Uncorrectable
-
-       ``ecc_errors.aggregate.memory_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.memory.errors.uncorrectable``
-     - Uncorrectable device memory errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > PCIe Correctable
-
-       ``ecc_errors.aggregate.pcie_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.pcie.errors.correctable``
-     - Correctable PCIe subsystem errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > PCIe Uncorrectable
-
-       ``ecc_errors.aggregate.pcie_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.pcie.errors.uncorrectable``
-     - Uncorrectable PCIe subsystem errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > SoC Internal Correctable
-
-       ``ecc_errors.aggregate.soc_internal_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.soc_internal.errors.correctable``
-     - Correctable SoC internal errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > SoC Internal Uncorrectable
-
-       ``ecc_errors.aggregate.soc_internal_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.soc_internal.errors.uncorrectable``
-     - Uncorrectable SoC internal errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Compute Correctable
-
-       ``ecc_errors.aggregate.compute_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.compute.errors.correctable``
-     - Correctable compute engine errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Compute Uncorrectable
-
-       ``ecc_errors.aggregate.compute_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.compute.errors.uncorrectable``
-     - Uncorrectable compute engine errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Fabric Correctable
-
-       ``ecc_errors.aggregate.fabric_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.fabric.errors.correctable``
-     - Correctable fabric interconnect errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Fabric Uncorrectable
-
-       ``ecc_errors.aggregate.fabric_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.fabric.errors.uncorrectable``
-     - Uncorrectable fabric interconnect errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Scale Correctable
-
-       ``ecc_errors.aggregate.scale_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.scale.errors.correctable``
-     - Correctable scale fabric errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Scale Uncorrectable
-
-       ``ecc_errors.aggregate.scale_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.scale.errors.uncorrectable``
-     - Uncorrectable scale fabric errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.
-   * - ECC Errors > Aggregate > Cache Correctable
-
-       ``ecc_errors.aggregate.cache_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.cache.errors.correctable``
-     - Correctable cache errors.
-   * - ECC Errors > Aggregate > Cache Uncorrectable
-
-       ``ecc_errors.aggregate.cache_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.cache.errors.uncorrectable``
-     - Uncorrectable cache errors.
-   * - ECC Errors > Aggregate > Non-Compute Correctable
-
-       ``ecc_errors.aggregate.non_compute_correctable``
-     - Section: ``ECC``
-
-       Source: ``ras.non_compute.errors.correctable``
-     - Correctable errors outside the compute engines.
-   * - ECC Errors > Aggregate > Non-Compute Uncorrectable
-
-       ``ecc_errors.aggregate.non_compute_uncorrectable``
-     - Section: ``ECC``
-
-       Source: ``ras.non_compute.errors.uncorrectable``
-     - Uncorrectable errors outside the compute engines.
-   * - ECC Errors > Aggregate > Resets
-
-       ``ecc_errors.aggregate.resets``
-     - Section: ``ECC``
-
-       Source: ``ras.reset``
-     - Device resets.
-   * - ECC Errors > Aggregate > Programming Errors
-
-       ``ecc_errors.aggregate.programming_errors``
-     - Section: ``ECC``
-
-       Source: ``ras.programming.errors``
-     - Errors caused by the work submitted, such as an invalid instruction.
-   * - ECC Errors > Aggregate > Driver Errors
-
-       ``ecc_errors.aggregate.driver_errors``
-     - Section: ``ECC``
-
-       Source: ``ras.driver.errors``
-     - Errors the driver detected in itself.
-   * - ECC Errors > Offline Pages
-
-       ``ecc_errors.offline_pages``
-     - Section: ``ECC``
-
-       Source: ``memory.offline_pages``
-     - Device memory pages the driver has retired after errors. Left out where the driver has no page-offline support.
-   * - ECC Errors > Memory Repair
-
-       ``ecc_errors.memory_repair``
-     - Section: ``ECC``
-
-       Source: ``memory.repair_status``
-     - Whether the device has had a repair performed, such as remapping faulty memory: ``Performed`` or ``Not Performed``. Left out where the driver does not track repairs.
-
 Temperature
 ~~~~~~~~~~~
 
@@ -1413,7 +1215,7 @@ Reading the Report
   ``N/A (requires CAP_SYS_ADMIN)``: ``CAP_SYS_ADMIN`` for the PCIe link generation and width,
   the atomic capabilities and Resizable BAR, which come from PCI configuration space;
   ``CAP_PERFMON`` for engine utilization; read-write access to the device's ``/dev/mei*`` node
-  for the GFX firmware version. The ECC error counts also read ``N/A`` as a non-root user. The
+  for the GFX firmware version. The
   report prints no diagnostic for such a value; set ``XPU_SMI_LOG_LEVEL=DBG`` to see why one is
   missing.
 - Measured values (power draw, utilization, throughput, bandwidth) are averaged over a
@@ -1422,16 +1224,16 @@ Reading the Report
 - Values with a unit are shown to two decimals. JSON keeps the full precision.
 - GPU IP Version is the graphics IP version the driver reports, in hex. It identifies the
   architecture: newer devices have higher values.
-- Offline Pages counts the device memory pages the driver has retired after errors, on drivers
-  with page-offline support. Memory Repair says whether the device has had a repair performed,
-  such as remapping faulty memory. It is left out where the driver does not track repairs.
+- The report has no ECC section for now: ECC mode, the ECC and RAS error counts, Offline Pages
+  and Memory Repair are left out until reading the driver's RAS counters is reliable. Use
+  ``--query-gpu`` (for example ``--query-gpu ecc.errors.aggregate.total``) or ``stats -r`` for
+  them meanwhile.
 - PCI: Host Max is the link capability of the root port the device is under, the CPU end of the
   path; a switch in between can limit the link further. PCIe Errors are the device's AER
   counters since it was enumerated, and Atomic Caps Inbound and Atomic Requests come from its
   PCI Express capability, which needs root. All of these are Linux only, and left out where the
   device or OS does not report them.
-- Fan Speed, the Performance Factors, Throttled Time, PCIe Replays Since Reset, ECC Mode >
-  Pending, the default, minimum and maximum power limits and Memory Power Draw come from Level
+- Fan Speed, the Performance Factors, Throttled Time, PCIe Replays Since Reset, the default, minimum and maximum power limits and Memory Power Draw come from Level
   Zero calls that many drivers do not implement; CRI's driver supplies none of them. They are
   printed where the driver supplies a value, and with ``--verbose`` otherwise.
 - GPU Power Readings: Average Power Draw is the card's draw over the window, Instantaneous Power
@@ -1465,7 +1267,7 @@ Reading the Report
   sensor, as on CRI (125 C). The max operating temperatures are what the driver reports for each
   sensor, on devices that report one.
 - On Windows the kernel-mode driver version reads ``N/A``.
-- Rows only some devices or drivers supply, such as the RAS categories under ECC Errors, are
+- Rows only some devices or drivers supply, such as the burst and peak power limits, are
   left out on a device without them, so it does not fill with ``N/A``; the JSON output leaves
   out the same rows. ``--verbose`` prints them all, and ``Not Supported``
   for a value the driver or OS says the device does not support; a value missing for another or
@@ -1515,11 +1317,11 @@ Report on every device:
 
    xpu-smi query
 
-Report only memory and ECC for device 0:
+Report only memory and power for device 0:
 
 .. code-block:: text
 
-   xpu-smi query --device 0 --display MEMORY,ECC
+   xpu-smi query --device 0 --display MEMORY,POWER
 
 Save a report to a file:
 

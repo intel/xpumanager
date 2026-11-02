@@ -177,9 +177,17 @@ TEST_SUITE("query selection")
 
 	TEST_CASE("names are case-insensitive and blanks around them are ignored")
 	{
-		const auto selection = parseSelection("memory, Ecc");
+		const auto selection = parseSelection("memory, Power");
 		REQUIRE(selection.has_value());
-		CHECK(selection->groups == (metrics::MetricGroup::MEMORY | metrics::MetricGroup::ECC));
+		CHECK(selection->groups == (metrics::MetricGroup::MEMORY | metrics::MetricGroup::POWER));
+	}
+
+	TEST_CASE("ECC is not a section of the report")
+	{
+		CHECK_FALSE(parseSelection("ECC").has_value());
+		CHECK_FALSE(parseSelection("MEMORY,ECC").has_value());
+		const auto names = sectionNames();
+		CHECK(std::ranges::find(names, "ECC") == names.end());
 	}
 
 	TEST_CASE("PIDS selects the process list alone")
@@ -506,8 +514,6 @@ TEST_SUITE("query layout")
 												"Scheduler Mode",
 												"Compute Resources",
 												"Utilization",
-												"ECC Mode",
-												"ECC Errors",
 												"Temperature",
 												"GPU Power Readings",
 												"Clocks",
@@ -764,9 +770,8 @@ TEST_CASE("--verbose puts the rows a device does not report back into the text a
 	CHECK(terseNulls == terseRows);
 	CHECK(verboseNulls == verboseRows);
 	CHECK(verboseRows > terseRows);
-	// The ECC categories CRI does not report are the case that prompted this.
-	CHECK_FALSE(jsonOf(terse)["ecc_errors"]["aggregate"].contains("cache_correctable"));
-	CHECK(jsonOf(verbose)["ecc_errors"]["aggregate"].contains("cache_correctable"));
+	CHECK_FALSE(jsonOf(terse)["gpu_power_readings"].contains("burst_power_limit"));
+	CHECK(jsonOf(verbose)["gpu_power_readings"].contains("burst_power_limit"));
 }
 
 TEST_CASE("a value the caller lacks the access for says what is missing, even on a row otherwise left out")
@@ -802,47 +807,61 @@ TEST_CASE("a verbose report prints every row, and Not Supported only where the d
 	for (const auto name : referencedMetricNames()) {
 		values[name] = std::nullopt;
 	}
-	const MetricFailures failures{{"ras.memory.errors.correctable", ZE_RESULT_ERROR_UNSUPPORTED_FEATURE},
-								  {"ras.memory.errors.uncorrectable", ZE_RESULT_ERROR_NOT_AVAILABLE}};
-	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("ECC"), values, {}, {},
+	const MetricFailures failures{{"power.draw.instant", ZE_RESULT_ERROR_UNSUPPORTED_FEATURE},
+								  {"power.draw.gpu", ZE_RESULT_ERROR_NOT_AVAILABLE}};
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("POWER"), values, {}, {},
 									  RowNotes{.missing = {}, .failures = &failures, .verbose = true});
 	std::string text;
 	for (const auto &child : node.children) {
 		renderNode(child, 1, text);
 	}
-	CHECK(text.find("Memory Correctable            : Not Supported") != std::string::npos);
+	const auto valueOf = [&text](std::string_view label) {
+		for (const auto &line : linesOf(text)) {
+			if (const auto at = line.find(label);
+				at != std::string::npos && line.find(" : ", at) != std::string::npos) {
+				return line.substr(line.find(" : ", at) + 3);
+			}
+		}
+		return std::string{"<missing>"};
+	};
+	CHECK(valueOf("Instantaneous Power Draw") == "Not Supported");
 	// Not available, or no failure recorded: the cause is not known, so it stays N/A.
-	CHECK(text.find("Memory Uncorrectable          : N/A") != std::string::npos);
+	CHECK(valueOf("GPU Domain Power Draw") == "N/A");
 	// A row hidden without --verbose is printed.
-	CHECK(text.find("Cache Correctable             : N/A") != std::string::npos);
+	CHECK(valueOf("Burst Power Limit") == "N/A");
 }
 
-TEST_CASE("a category row the device does not report is left out of the text and the JSON alike")
+TEST_CASE("an optional row the device does not report is left out of the text and the JSON alike")
 {
 	MetricValues values;
 	for (const auto name : referencedMetricNames()) {
 		values[name] = std::nullopt;
 	}
-	values["ras.memory.errors.uncorrectable"] = "62";
-	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("ECC"), values, {}, {});
+	values["power.limit.peak"] = "62.00 W";
+	const auto node = buildDeviceNode("0000:00:00.0", *parseSelection("POWER"), values, {}, {});
 	std::string text;
 	for (const auto &child : node.children) {
 		renderNode(child, 1, text);
 	}
-	CHECK(text.find("Memory Uncorrectable") != std::string::npos);
-	CHECK(text.find("Memory Correctable") == std::string::npos);
-	CHECK(text.find("Cache Correctable") == std::string::npos);
-	// The totals are always printed.
-	CHECK(text.find("Correctable                   : N/A") != std::string::npos);
+	CHECK(text.find("Peak Power Limit") != std::string::npos);
+	CHECK(text.find("Burst Power Limit") == std::string::npos);
 
 	QueryReport report;
 	report.gpus = {node};
 	const auto json = toJson(report);
-	const auto &aggregate = json["gpus"][0]["ecc_errors"]["aggregate"];
-	CHECK(aggregate["memory_uncorrectable"] == "62");
-	CHECK_FALSE(aggregate.contains("memory_correctable"));
-	CHECK_FALSE(aggregate.contains("cache_correctable"));
-	CHECK(aggregate["correctable"].is_null());
+	const auto &power = json["gpus"][0]["gpu_power_readings"];
+	CHECK(power["peak_power_limit"] == "62.00 W");
+	CHECK_FALSE(power.contains("burst_power_limit"));
+}
+
+TEST_CASE("the report reads no ECC or RAS field, whatever is selected")
+{
+	for (const auto *field : selectedMetrics(*parseSelection("ALL"))) {
+		CAPTURE(field->name);
+		CHECK((field->groups & metrics::MetricGroup::ECC) == metrics::MetricGroup::NONE);
+		CHECK_FALSE(field->name.starts_with("ras."));
+		CHECK_FALSE(field->name.starts_with("ecc."));
+	}
 }
 
 TEST_CASE("selecting nothing but processes reads no registry field")
@@ -902,9 +921,9 @@ TEST_SUITE("query command line")
 
 	TEST_CASE("every option is read")
 	{
-		const auto opts = parsedOptions({"xpu-smi", "query", "--display", "MEMORY,ECC", "--id", "0,1", "--json",
+		const auto opts = parsedOptions({"xpu-smi", "query", "--display", "MEMORY,POWER", "--id", "0,1", "--json",
 										 "--loop", "2", "--count", "3", "-f", "/tmp/report.txt"});
-		CHECK(opts.selection.groups == (metrics::MetricGroup::MEMORY | metrics::MetricGroup::ECC));
+		CHECK(opts.selection.groups == (metrics::MetricGroup::MEMORY | metrics::MetricGroup::POWER));
 		CHECK_FALSE(opts.selection.processes);
 		CHECK(opts.deviceSpec == "0,1");
 		CHECK(opts.json);

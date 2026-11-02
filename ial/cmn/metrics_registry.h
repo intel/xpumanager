@@ -93,7 +93,7 @@ enum class MetricGroup : uint32_t
 	POWER = 1U << 4,			 /**< power.draw, energy.consumed */
 	CLOCK = 1U << 5,			 /**< clocks.current.graphics/memory */
 	PCI = 1U << 6,				 /**< pci.*, pcie.link.*, pcie.tx/rx.throughput, pcie.replay */
-	ECC = 1U << 7,				 /**< ecc.mode.current, ecc.errors.corrected/uncorrected */
+	ECC = 1U << 7,				 /**< ecc.mode.current, ecc.errors.corrected/uncorrected; not in the registry */
 	EU_ARRAY = 1U << 8,			 /**< eu.active/stall/idle (Intel Xe-only) */
 	FAN = 1U << 9,				 /**< fan.speed */
 	PERFORMANCE = 1U << 10,		 /**< clocks.event_reasons.*: why the GPU clock is held back */
@@ -477,7 +477,6 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
 	{"POWER", "p", MetricGroup::POWER},				/**< "p" shared with TEMPERATURE */
 	{"CLOCK", "c", MetricGroup::CLOCK},
 	{"PCI", "t", MetricGroup::PCI},
-	{"ECC", "e", MetricGroup::ECC},
 	{"EU_ARRAY", "x", MetricGroup::EU_ARRAY},
 	{"FAN", "f", MetricGroup::FAN},
 	{"COMPUTE", "", MetricGroup::COMPUTE},
@@ -501,7 +500,7 @@ inline constexpr auto GROUP_TABLE = std::to_array<MetricGroupEntry>({
  *
  * @note The shortcut @c "p" matches both @c POWER and @c TEMPERATURE in one token.
  *
- * @param sv  Comma-separated token list, e.g. @c "MEMORY,u" or @c "power, ECC".
+ * @param sv  Comma-separated token list, e.g. @c "MEMORY,u" or @c "power, FAN".
  * @return    Bitmask of all matched MetricGroup values, or @c MetricGroup::NONE if
  *            no token matched.
  */

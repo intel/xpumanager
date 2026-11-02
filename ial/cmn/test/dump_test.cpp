@@ -380,12 +380,22 @@ TEST_SUITE("cmdDump::run – resolveMetricsArg: unrecognised metric names")
 		cmdDump cmd;
 		CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
 	}
+
+	TEST_CASE("ECC is not a metric group")
+	{
+		for (const auto *group : {"ECC", "ecc", "e"}) {
+			CAPTURE(group);
+			FakeArgs fa{"xpu-smi", "dump", "--metrics", group};
+			cmdDump cmd;
+			CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+		}
+	}
 }
 
 // ─── cmdDump::run – translateMetricQuery: unsupported legacy IDs ──────────────
 //
 // translateMetricQuery docstring:
-//   "Unsupported legacy IDs (21, 27, 28) are absent from the map and produce
+//   "Unsupported legacy IDs (12-16, 21, 27-30) are absent from the map and produce
 //    an error log entry in translateMetricQuery().  When all tokens are dropped
 //    the translated string is empty, which causes resolveQuery() to return an
 //    empty span and resolveMetricsArg() to return {}."
@@ -411,6 +421,16 @@ TEST_SUITE("cmdDump::run – translateMetricQuery: unsupported legacy IDs")
 		FakeArgs fa{"xpu-smi", "dump", "--metrics", "28"};
 		cmdDump cmd;
 		CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+	}
+
+	TEST_CASE("the legacy RAS IDs (12-16, 29, 30) are unsupported -> error")
+	{
+		for (const auto *id : {"12", "13", "14", "15", "16", "29", "30"}) {
+			CAPTURE(id);
+			FakeArgs fa{"xpu-smi", "dump", "--metrics", id};
+			cmdDump cmd;
+			CHECK(cmd.run(&fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+		}
 	}
 
 	TEST_CASE("all-unsupported IDs together (21,27,28) produce empty result → error")
@@ -606,6 +626,16 @@ TEST_SUITE("cmdDump::runQuery – validation")
 		FakeArgs fa{"xpu-smi"};
 		CHECK(cmdDump::runQuery("nonexistent.field.xyz", "", &fa.args) ==
 			  static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+	}
+
+	TEST_CASE("ECC and RAS fields and the ECC group are not accepted")
+	{
+		for (const auto *query : {"ECC", "e", "ecc.mode.current", "ecc.errors.aggregate.total", "ras.reset",
+								  "ras.memory.errors.correctable", "memory.offline_pages", "ras.*", "ecc.*"}) {
+			CAPTURE(query);
+			FakeArgs fa{"xpu-smi"};
+			CHECK(cmdDump::runQuery(query, "", &fa.args) == static_cast<int>(ZE_RESULT_ERROR_INVALID_ARGUMENT));
+		}
 	}
 
 	TEST_CASE("QueryFormat loopMs==0 (default) means no loop mode entered")

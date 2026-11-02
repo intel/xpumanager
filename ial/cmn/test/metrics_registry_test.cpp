@@ -55,7 +55,6 @@ TEST_CASE("parseGroupMask parses single-letter aliases")
 	CHECK(hasGroup(parseGroupMask("m"), MetricGroup::MEMORY));
 	CHECK(hasGroup(parseGroupMask("u"), MetricGroup::UTILIZATION));
 	CHECK(hasGroup(parseGroupMask("c"), MetricGroup::CLOCK));
-	CHECK(hasGroup(parseGroupMask("e"), MetricGroup::ECC));
 	CHECK(hasGroup(parseGroupMask("f"), MetricGroup::FAN));
 	CHECK(hasGroup(parseGroupMask("t"), MetricGroup::PCI));
 	CHECK(hasGroup(parseGroupMask("x"), MetricGroup::EU_ARRAY));
@@ -86,7 +85,6 @@ TEST_CASE("parseGroupMask expands multi-character alias shorthands")
 	CHECK(hasGroup(mask, MetricGroup::UTILIZATION));
 	// Groups not named by 'p' or 'u' must be absent.
 	CHECK_FALSE(hasGroup(mask, MetricGroup::CLOCK));
-	CHECK_FALSE(hasGroup(mask, MetricGroup::ECC));
 	CHECK_FALSE(hasGroup(mask, MetricGroup::FAN));
 	CHECK_FALSE(hasGroup(mask, MetricGroup::MEMORY));
 	CHECK_FALSE(hasGroup(mask, MetricGroup::PCI));
@@ -565,26 +563,46 @@ TEST_CASE("findMetric resolves Memory metric names")
 	CHECK(findMetric("memory.bandwidth.utilization").has_value());
 }
 
-TEST_CASE("findMetric resolves ECC metric names")
+namespace {
+
+/** @brief An ECC field by name; they are kept out of the registry, so findMetric cannot reach them */
+const QueryMetric &eccMetric(std::string_view name)
 {
-	CHECK(findMetric("ecc.mode.current").has_value());
-	CHECK(findMetric("ecc.errors.corrected.aggregate.total").has_value());
-	CHECK(findMetric("ecc.errors.uncorrected.aggregate.total").has_value());
-	CHECK(findMetric("ecc.errors.aggregate.total").has_value());
-	CHECK(findMetric("ras.reset").has_value());
-	CHECK(findMetric("ras.programming.errors").has_value());
-	CHECK(findMetric("ras.driver.errors").has_value());
-	CHECK(findMetric("ras.cache.errors.correctable").has_value());
-	CHECK(findMetric("ras.cache.errors.uncorrectable").has_value());
-	CHECK(findMetric("ras.non_compute.errors.correctable").has_value());
-	CHECK(findMetric("ras.non_compute.errors.uncorrectable").has_value());
-	CHECK(findMetric("ras.non_compute.errors.total").has_value());
+	const auto fields = metrics::ecc::getEccMetrics();
+	const auto it = std::ranges::find(fields, name, &QueryMetric::name);
+	REQUIRE_MESSAGE(it != fields.end(), name);
+	return *it;
 }
 
-TEST_CASE("ECC group size matches getEccMetrics")
+} // namespace
+
+TEST_CASE("no ECC or RAS field can be selected")
 {
-	const auto byEcc = getMetricsByGroup(MetricGroup::ECC);
-	CHECK(byEcc.size() == metrics::ecc::getEccMetrics().size());
+	CHECK(getMetricsByGroup(MetricGroup::ECC).empty());
+	CHECK(parseGroupMask("ECC") == MetricGroup::NONE);
+	CHECK(parseGroupMask("e") == MetricGroup::NONE);
+	CHECK(std::ranges::find(sectionNames(), "ECC") == sectionNames().end());
+	for (const auto &field : metrics::ecc::getEccMetrics()) {
+		CAPTURE(field.name);
+		CHECK_FALSE(findMetric(field.name).has_value());
+		CHECK(resolveQuery(field.name).empty());
+	}
+	CHECK(resolveQuery("ras.*").empty());
+	CHECK(resolveQuery("ecc.*").empty());
+	for (const auto *field : resolveQuery("ALL")) {
+		CHECK_MESSAGE(!hasGroup(field->groups, MetricGroup::ECC), field->name);
+	}
+}
+
+TEST_CASE("the ECC fields are still defined")
+{
+	for (const auto name : std::to_array<std::string_view>(
+			 {"ecc.mode.current", "ecc.errors.corrected.aggregate.total", "ecc.errors.uncorrected.aggregate.total",
+			  "ecc.errors.aggregate.total", "ras.reset", "ras.programming.errors", "ras.driver.errors",
+			  "ras.cache.errors.correctable", "ras.cache.errors.uncorrectable", "ras.non_compute.errors.correctable",
+			  "ras.non_compute.errors.uncorrectable", "ras.non_compute.errors.total"})) {
+		CHECK(eccMetric(name).groups == MetricGroup::ECC);
+	}
 }
 
 TEST_CASE_FIXTURE(ZeroDeviceFixture,
@@ -599,7 +617,7 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture,
 			  "ras.non_compute.errors.uncorrectable", "ras.non_compute.errors.total"})) {
 		CAPTURE(name);
 		MetricValue out;
-		CHECK(findMetric(name).value().getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+		CHECK(eccMetric(name).getter(di, out, c) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
 		CHECK(out.empty());
 	}
 }
@@ -694,13 +712,13 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "ECC fields reuse the RAS states already re
 						 {ZES_RAS_ERROR_TYPE_UNCORRECTABLE, {{ZES_RAS_ERROR_CATEGORY_EXP_CACHE_ERRORS, 3, 0}}}}};
 	// The device has no RAS HAL, so a value can only come from the states in the cache.
 	MetricValue out;
-	REQUIRE(findMetric("ecc.errors.aggregate.total").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	REQUIRE(eccMetric("ecc.errors.aggregate.total").getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "5");
-	REQUIRE(findMetric("ras.cache.errors.uncorrectable").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	REQUIRE(eccMetric("ras.cache.errors.uncorrectable").getter(di, out, c) == ZE_RESULT_SUCCESS);
 	CHECK(out == "3");
 
 	c.rasRead = RasRead{ZE_RESULT_ERROR_NOT_AVAILABLE, {}};
-	CHECK(findMetric("ras.reset").value().getter(di, out, c) == ZE_RESULT_ERROR_NOT_AVAILABLE);
+	CHECK(eccMetric("ras.reset").getter(di, out, c) == ZE_RESULT_ERROR_NOT_AVAILABLE);
 }
 
 TEST_CASE("eccModeName: the Sysman state wins over the device ECC flag")
@@ -743,8 +761,6 @@ TEST_CASE("no metric is tagged with mutually exclusive groups simultaneously")
 	};
 	for (const auto [a, b, desc] : std::to_array<ExclusivePair>({
 			 {MetricGroup::POWER, MetricGroup::TEMPERATURE, "POWER|TEMPERATURE"},
-			 {MetricGroup::ECC, MetricGroup::CLOCK, "ECC|CLOCK"},
-			 {MetricGroup::ECC, MetricGroup::FAN, "ECC|FAN"},
 			 {MetricGroup::FAN, MetricGroup::POWER, "FAN|POWER"},
 			 {MetricGroup::FAN, MetricGroup::TEMPERATURE, "FAN|TEMPERATURE"},
 		 })) {
@@ -779,7 +795,6 @@ TEST_CASE("resolveQuery matches getMetricsByGroup for each canonical group name"
 	check("FAN", MetricGroup::FAN);
 	check("MEMORY", MetricGroup::MEMORY);
 	check("POWER", MetricGroup::POWER);
-	check("ECC", MetricGroup::ECC);
 	check("CLOCK", MetricGroup::CLOCK);
 }
 
@@ -794,7 +809,6 @@ TEST_CASE("resolveQuery single-letter aliases match their canonical groups")
 			 {"m", MetricGroup::MEMORY},
 			 {"u", MetricGroup::UTILIZATION},
 			 {"c", MetricGroup::CLOCK},
-			 {"e", MetricGroup::ECC},
 			 {"f", MetricGroup::FAN},
 			 {"t", MetricGroup::PCI},
 			 {"x", MetricGroup::EU_ARRAY},
@@ -1629,8 +1643,8 @@ TEST_CASE("the SUPPORTED_CLOCKS section parses and selects its fields")
 
 TEST_CASE("fields no current device reports are not in the registry")
 {
-	// memory.offline_pages, power.limit.default, power.limit.min and ecc.mode.pending are back: the
-	// query report leaves them out where the driver lacks them, and --verbose says Not Supported.
+	// power.limit.default and power.limit.min are back: the query report leaves them out where the
+	// driver lacks them, and --verbose says Not Supported.
 	for (const std::string_view name : {"retired_pages.count"}) {
 		CHECK_FALSE_MESSAGE(findMetric(name).has_value(), name);
 	}

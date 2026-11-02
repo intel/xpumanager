@@ -13,7 +13,6 @@
 #include "metrics/fan.h"
 #include "metrics/memory.h"
 #include "metrics/power.h"
-#include "metrics/ecc.h"
 #include "metrics/identity.h"
 #include "metrics/clock.h"
 #include "metrics/mode.h"
@@ -347,7 +346,9 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev,
 //
 //  Registry API implementations
 
-// Each metrics/X.h owns one group and exposes getXMetrics() returning a span.
+// Each metrics/X.h owns one group and exposes getXMetrics() returning a span. The ECC group
+// (metrics/ecc.h) is left out until its RAS reads are reliable: a RAS call the driver never
+// answers stalls every command that samples it.
 
 std::span<const QueryMetric> getQueryMetrics() noexcept
 {
@@ -360,13 +361,12 @@ std::span<const QueryMetric> getQueryMetrics() noexcept
 		const auto fan = fan::getFanMetrics();
 		const auto memory = memory::getMemoryMetrics();
 		const auto power = power::getPowerMetrics();
-		const auto ecc = ecc::getEccMetrics();
 		const auto clock = clock::getClockMetrics();
 		const auto mode = mode::getModeMetrics();
 
 		std::vector<QueryMetric> metricVec;
 		for (const std::span<const QueryMetric> s :
-			 {identity, temperature, utilization, pci, euArray, fan, memory, power, ecc, clock, mode}) {
+			 {identity, temperature, utilization, pci, euArray, fan, memory, power, clock, mode}) {
 			metricVec.insert(metricVec.end(), s.begin(), s.end());
 		}
 		return metricVec;
