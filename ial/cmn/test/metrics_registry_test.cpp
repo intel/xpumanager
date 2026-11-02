@@ -749,6 +749,33 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory.bandwidth.utilization getter: round
 	CHECK(out == "0.07");
 }
 
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory bandwidth getters: report N/A when counters reset backwards")
+{
+	constexpr uint64_t initialBytes = 1024;
+	constexpr uint64_t startUs = 1000;
+	constexpr uint64_t endUs = 2000;
+	constexpr uint64_t peakBw = 1048576;
+	MetricValue out;
+	MetricCache c;
+	c.memAvail = true;
+	c.memBefore = {.read = initialBytes, .write = initialBytes, .ts = startUs};
+	c.memAfter = {.read = 0, .write = 0, .ts = endUs};
+	c.memMaxBandwidth = peakBw;
+
+	const auto rd = findMetric("memory.read.bandwidth");
+	const auto wr = findMetric("memory.write.bandwidth");
+	const auto util = findMetric("memory.bandwidth.utilization");
+	REQUIRE(rd.has_value());
+	REQUIRE(wr.has_value());
+	REQUIRE(util.has_value());
+	CHECK(rd->getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+	CHECK(wr->getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+	CHECK(util->getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "N/A");
+}
+
 TEST_CASE("no metric is tagged with mutually exclusive groups simultaneously")
 {
 	// These pairs must never co-occur on a single metric — a cross-tag would cause
