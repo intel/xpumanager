@@ -934,7 +934,7 @@ void driver::findSurvDevice(const char *bdf, std::vector<devInfo> *survDevList)
 /**
  * @brief findDevice() for recovery: a BDF that Level Zero does not report still resolves.
  *
- * When the driver found no usable GPU, or not the one named, an Intel display
+ * When the driver found no usable GPU, or not the one named, an Intel GPU
  * device at that BDF on the PCI bus resolves to a device that has no Level Zero
  * handles (see device::pciOnlyInit()); PCI reset and cold reset work on it.
  * Works whether or not init() succeeded, including when it failed partway. A
@@ -1008,7 +1008,7 @@ ze_result_t driver::findDeviceForRecovery(const char *bdf, std::vector<devInfo> 
  *
  * @param[in] bdf  Canonical lower-case BDF.
  *
- * @retval device   An Intel display device sits at @p bdf.
+ * @retval device   An Intel GPU (see isIntelGpu()) sits at @p bdf.
  * @retval nullptr  Nothing, or something else, sits there.
  */
 device *driver::pciOnlyDevice(const std::string &bdf)
@@ -1020,7 +1020,7 @@ device *driver::pciOnlyDevice(const std::string &bdf)
 		}
 	}
 	const auto address = addressOf(bdf);
-	if (!address || !isIntelDisplayDevice(bdf)) {
+	if (!address || !isIntelGpu(bdf)) {
 		return nullptr;
 	}
 	auto &dev = pciOnlyDevs.emplace_back(std::make_unique<device>());

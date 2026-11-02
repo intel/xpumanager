@@ -31,18 +31,25 @@
 getPciSubsystemDeviceId(std::string_view bdf, const std::filesystem::path &pciDevRoot = "/sys/bus/pci/devices");
 
 /**
- * @brief Whether @p bdf is an Intel display-class PCI device, from sysfs alone
+ * @brief Whether @p bdf is an Intel GPU, from sysfs and the kernel's module aliases alone
  *
- * Needs no driver, so it identifies a GPU even when its kernel or Level Zero
- * driver failed to initialize it.
+ * PCI class alone does not tell: data center GPUs such as CRI report "processing
+ * accelerator" (0x12), the same class as the NPU. An Intel device is a GPU when it is
+ * display class (0x03), or a GPU kernel driver (xe, i915) is bound to it or claims it
+ * through modules.alias - the table udev and modprobe match a device's modalias
+ * against. Needs no working driver, so it identifies a GPU whose driver failed to
+ * initialize it or declared it wedged, and it follows the installed kernel's device
+ * support instead of a list kept here.
  *
- * @param [in] bdf        PCI BDF address of the device, in canonical DDDD:BB:DD.F form
- * @param [in] pciDevRoot sysfs PCI device directory (defaults to live sysfs; override in tests)
- * @retval true   vendor is 0x8086 and the class code's base class is 0x03 (display controller)
+ * @param [in] bdf          PCI BDF address of the device, in canonical DDDD:BB:DD.F form
+ * @param [in] pciDevRoot   sysfs PCI device directory (defaults to live sysfs; override in tests)
+ * @param [in] modulesAlias modules.alias to match against; empty means the running kernel's,
+ *                          /lib/modules/<release>/modules.alias
+ * @retval true   vendor is 0x8086, and the device is display class or xe/i915 is bound to or claims it
  * @retval false  otherwise, including a malformed @p bdf or unreadable attributes
  */
-[[nodiscard]] bool isIntelDisplayDevice(std::string_view bdf,
-										const std::filesystem::path &pciDevRoot = "/sys/bus/pci/devices");
+[[nodiscard]] bool isIntelGpu(std::string_view bdf, const std::filesystem::path &pciDevRoot = "/sys/bus/pci/devices",
+							  const std::filesystem::path &modulesAlias = {});
 
 /**
  * @brief The Device/Port Type field of the PCI Express capability in @p config

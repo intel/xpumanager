@@ -2,7 +2,7 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for getPciSubsystemDeviceId(), isIntelDisplayDevice(), isRootComplexIntegrated(),
+ * Unit tests for getPciSubsystemDeviceId(), isIntelGpu(), isRootComplexIntegrated(),
  * resetPciFunction() and getPciClassCode(). Each test builds a fake sysfs PCI device tree under a scratch directory, so
  * no GPU is required.
  */
@@ -149,28 +149,99 @@ TEST_CASE("getPciSubsystemDeviceId: a malformed BDF cannot reach files outside i
 	}
 }
 
-TEST_CASE("isIntelDisplayDevice: an Intel display-class device")
+namespace {
+
+// The CRI card, the Arrow Lake NPU beside it, and their modalias, as on a CRI host.
+constexpr const char *CRI_MODALIAS = "pci:v00008086d0000674Csv00008086sd00001000bc12sc00i00";
+constexpr const char *NPU_BDF = "0000:00:0b.0";
+constexpr const char *NPU_MODALIAS = "pci:v00008086d0000AD1Dsv00008086sd00007270bc12sc00i00";
+
+/// A modules.alias with the CRI card claimed by xe and the NPU by intel_vpu, as depmod writes it.
+[[nodiscard]] fs::path writeModulesAlias(const FakePciDevices &sysfs)
 {
-	const FakePciDevices sysfs("gpu");
-	sysfs.setAttribute(BDF, "vendor", "0x8086\n");
-	sysfs.setAttribute(BDF, "class", "0x030000\n");
-	CHECK(isIntelDisplayDevice(BDF, sysfs.root));
-	sysfs.setAttribute(BDF, "class", "0x038000\n"); // display controller, "other" subclass
-	CHECK(isIntelDisplayDevice(BDF, sysfs.root));
+	const fs::path aliases = sysfs.root / "modules.alias";
+	std::ofstream(aliases) << "# Aliases extracted from modules themselves.\n"
+						   << "alias pci:v00008086d0000AD1Dsv*sd*bc*sc*i* intel_vpu\n"
+						   << "alias pci:v00008086d0000674Csv*sd*bc*sc*i* xe\n"
+						   << "alias pci:v00008086d00007D67sv*sd*bc03sc*i* i915\n";
+	return aliases;
 }
 
-TEST_CASE("isIntelDisplayDevice: another vendor, another class, or missing attributes")
+/// An Intel device of PCI @p classCode, bound to @p driver unless it is empty.
+void addIntelDevice(const FakePciDevices &sysfs, const std::string &bdf, const std::string &classCode,
+					const std::string &modalias, const std::string &driver)
+{
+	sysfs.setAttribute(bdf, "vendor", "0x8086\n");
+	sysfs.setAttribute(bdf, "class", classCode + "\n");
+	sysfs.setAttribute(bdf, "modalias", modalias + "\n");
+	if (!driver.empty()) {
+		fs::create_directories(sysfs.root / "drivers" / driver);
+		fs::create_directory_symlink(fs::path{"../drivers"} / driver, sysfs.root / bdf / "driver");
+	}
+}
+
+} // namespace
+
+TEST_CASE("isIntelGpu: a display-class Intel device is a GPU")
+{
+	const FakePciDevices sysfs("gpu");
+	const fs::path aliases = writeModulesAlias(sysfs);
+	sysfs.setAttribute(BDF, "vendor", "0x8086\n");
+	sysfs.setAttribute(BDF, "class", "0x030000\n");
+	CHECK(isIntelGpu(BDF, sysfs.root, aliases));
+	sysfs.setAttribute(BDF, "class", "0x038000\n"); // display controller, "other" subclass
+	CHECK(isIntelGpu(BDF, sysfs.root, aliases));
+}
+
+TEST_CASE("isIntelGpu: a processing accelerator is a GPU when xe or i915 is bound to it or claims it")
+{
+	const FakePciDevices sysfs("accelerator");
+	const fs::path aliases = writeModulesAlias(sysfs);
+
+	SUBCASE("bound to xe")
+	{
+		addIntelDevice(sysfs, BDF, "0x120000", CRI_MODALIAS, "xe");
+		CHECK(isIntelGpu(BDF, sysfs.root, aliases));
+	}
+	SUBCASE("no driver bound, claimed by xe in modules.alias")
+	{
+		addIntelDevice(sysfs, BDF, "0x120000", CRI_MODALIAS, "");
+		CHECK(isIntelGpu(BDF, sysfs.root, aliases));
+	}
+	SUBCASE("no driver bound and no modules.alias to match")
+	{
+		addIntelDevice(sysfs, BDF, "0x120000", CRI_MODALIAS, "");
+		CHECK_FALSE(isIntelGpu(BDF, sysfs.root, sysfs.root / "no-such-modules.alias"));
+	}
+}
+
+TEST_CASE("isIntelGpu: the NPU shares the accelerator class but is not a GPU")
+{
+	const FakePciDevices sysfs("npu");
+	const fs::path aliases = writeModulesAlias(sysfs);
+	addIntelDevice(sysfs, NPU_BDF, "0x120000", NPU_MODALIAS, "intel_vpu");
+	CHECK_FALSE(isIntelGpu(NPU_BDF, sysfs.root, aliases));
+
+	const FakePciDevices unbound("npu-unbound");
+	addIntelDevice(unbound, NPU_BDF, "0x120000", NPU_MODALIAS, "");
+	CHECK_FALSE(isIntelGpu(NPU_BDF, unbound.root, writeModulesAlias(unbound)));
+}
+
+TEST_CASE("isIntelGpu: another vendor, another class, or missing attributes")
 {
 	const FakePciDevices sysfs("notgpu");
-	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root));
+	const fs::path aliases = writeModulesAlias(sysfs);
+	CHECK_FALSE(isIntelGpu(BDF, sysfs.root, aliases));
 	sysfs.setAttribute(BDF, "vendor", "0x8086\n");
-	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root)); // no class
-	sysfs.setAttribute(BDF, "class", "0x020000\n");		// network controller
-	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root));
+	CHECK_FALSE(isIntelGpu(BDF, sysfs.root, aliases)); // no class, no modalias
+	sysfs.setAttribute(BDF, "class", "0x020000\n");	   // network controller
+	CHECK_FALSE(isIntelGpu(BDF, sysfs.root, aliases));
+	// Another vendor's device is never an Intel GPU, whatever its class or alias.
 	sysfs.setAttribute(BDF, "vendor", "0x10de\n");
 	sysfs.setAttribute(BDF, "class", "0x030000\n");
-	CHECK_FALSE(isIntelDisplayDevice(BDF, sysfs.root));
-	CHECK_FALSE(isIntelDisplayDevice("../" + std::string{BDF}, sysfs.root));
+	sysfs.setAttribute(BDF, "modalias", std::string{CRI_MODALIAS} + "\n");
+	CHECK_FALSE(isIntelGpu(BDF, sysfs.root, aliases));
+	CHECK_FALSE(isIntelGpu("../" + std::string{BDF}, sysfs.root, aliases));
 }
 
 namespace {

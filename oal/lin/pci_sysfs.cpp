@@ -14,12 +14,15 @@
 #include <fstream>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <span>
 #include <string>
 #include <string_view>
 #include <system_error>
 
 #include <fcntl.h>
+#include <fnmatch.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 
 namespace {
@@ -62,16 +65,71 @@ std::optional<uint16_t> getPciSubsystemDeviceId(std::string_view bdf, const std:
 	return static_cast<uint16_t>(*id);
 }
 
-bool isIntelDisplayDevice(std::string_view bdf, const std::filesystem::path &pciDevRoot)
+namespace {
+
+// Kernel drivers for Intel GPUs. Other Intel devices of the same PCI class (the NPU's
+// intel_vpu, for one) must not match, or a reset would unbind them.
+constexpr std::array<std::string_view, 2> GPU_KERNEL_DRIVERS{"xe", "i915"};
+
+[[nodiscard]] bool isGpuKernelDriver(std::string_view module)
+{
+	return std::ranges::find(GPU_KERNEL_DRIVERS, module) != GPU_KERNEL_DRIVERS.end();
+}
+
+/// /lib/modules/<release>/modules.alias of the running kernel, as depmod writes it.
+[[nodiscard]] std::filesystem::path runningKernelModulesAlias()
+{
+	utsname host{};
+	if (::uname(&host) != 0) {
+		return {};
+	}
+	return std::filesystem::path{"/lib/modules"} / host.release / "modules.alias";
+}
+
+/// Whether an "alias <pattern> <module>" line of @p modulesAlias maps @p modalias to a GPU driver.
+[[nodiscard]] bool claimedByGpuDriver(const std::string &modalias, const std::filesystem::path &modulesAlias)
+{
+	std::ifstream aliases(modulesAlias);
+	for (std::string line; std::getline(aliases, line);) {
+		std::istringstream fields(line);
+		std::string keyword;
+		std::string pattern;
+		std::string module;
+		if (fields >> keyword >> pattern >> module && keyword == "alias" && isGpuKernelDriver(module) &&
+			::fnmatch(pattern.c_str(), modalias.c_str(), 0) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+} // namespace
+
+bool isIntelGpu(std::string_view bdf, const std::filesystem::path &pciDevRoot,
+				const std::filesystem::path &modulesAlias)
 {
 	constexpr uint32_t intelVendor = 0x8086;
 	constexpr uint32_t displayBaseClass = 0x03; // PCI base class "display controller"
 	if (!isValidBdf(bdf)) {
 		return false;
 	}
-	const auto vendor = readHexAttribute(pciDevRoot / bdf / "vendor");
-	const auto classCode = readHexAttribute(pciDevRoot / bdf / "class");
-	return vendor == intelVendor && classCode && (*classCode >> 16) == displayBaseClass;
+	const std::filesystem::path device = pciDevRoot / bdf;
+	if (readHexAttribute(device / "vendor") != intelVendor) {
+		return false;
+	}
+	if (const auto classCode = readHexAttribute(device / "class");
+		classCode && (*classCode >> 16) == displayBaseClass) {
+		return true;
+	}
+	std::error_code ec;
+	if (const auto bound = std::filesystem::read_symlink(device / "driver", ec);
+		!ec && isGpuKernelDriver(bound.filename().string())) {
+		return true;
+	}
+	std::string modalias;
+	std::getline(std::ifstream(device / "modalias"), modalias);
+	return !modalias.empty() &&
+		   claimedByGpuDriver(modalias, modulesAlias.empty() ? runningKernelModulesAlias() : modulesAlias);
 }
 
 namespace {
