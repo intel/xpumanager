@@ -46,6 +46,7 @@ public:
 	ze_result_t getAmcSerialNumber(const char *bdfStr, char *serialNum, uint32_t size);
 	ze_result_t getAmcPartNumber(const char *bdfStr, char *partNum, uint32_t size);
 	ze_result_t getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSize);
+	ze_result_t getAmcTdpWatts(const char *bdfStr, uint32_t *watts);
 	int getAmcIndex(std::string gpuBdfStr);
 	bool hasAmcFirmware();
 

@@ -16,6 +16,8 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <functional>
+#include <future>
+#include <mutex>
 
 #define POWER_MONITOR_INTERNAL_PERIOD 80
 #define DEFAULT_THROTTLE_POWER 300
@@ -40,6 +42,17 @@ class PowerThresholds
 {
 private:
 	std::map<uint32_t, uint64_t> healthDeviceToTdps;
+	/** Guards the one-time config file load. std::once_flag and std::mutex can be neither copied
+	 *  nor moved, so they live here behind power's unique_ptr rather than in power itself. */
+	std::once_flag configFlag;
+	/** Serialises AMC TDP reads and guards amcTdp and amcSettled. */
+	std::mutex amcMutex;
+	/** TDP in watts read from the AMC FRU, 0 until a read returns one. */
+	uint64_t amcTdp = 0;
+	/** Set once the AMC read gave a final answer, so it is not asked again. */
+	bool amcSettled = false;
+	/** The background AMC read started by power::preloadThrottlePower(), if any. */
+	std::future<void> preload;
 
 public:
 	PowerThresholds() = default;
@@ -50,6 +63,35 @@ public:
 
 	// Setter for loading configuration
 	void setThrottlePower(uint32_t deviceId, uint64_t value);
+
+	// Runs load exactly once; concurrent callers wait until it has finished
+	void loadConfigOnce(const std::function<void()> &load) { std::call_once(configFlag, load); }
+
+	/**
+	 * Returns the AMC TDP, calling read first unless an earlier call already settled it. read
+	 * stores the TDP it got, if any, and returns true when its answer is final; false (AMC busy or
+	 * not responding) leaves the TDP to be read again on the next call. Concurrent callers wait.
+	 */
+	/// Runs task on its own thread unless one is already running. Returns false if no thread could
+	/// be started.
+	bool startPreload(const std::function<void()> &task);
+
+	/// Waits for the thread started by startPreload(), if any.
+	void waitPreload()
+	{
+		if (preload.valid()) {
+			preload.wait();
+		}
+	}
+
+	uint64_t amcThrottlePower(const std::function<bool(uint64_t &)> &read)
+	{
+		std::lock_guard<std::mutex> lock(amcMutex);
+		if (!amcSettled) {
+			amcSettled = read(amcTdp);
+		}
+		return amcTdp;
+	}
 };
 
 class LIBXPUM_API power : public sysman
@@ -59,7 +101,7 @@ private:
 	zes_pwr_handle_t *powerHandles;
 	zes_device_handle_t zeDeviceHandle;
 	device *deviceHandle;
-	PowerThresholds *thresholds;
+	std::unique_ptr<PowerThresholds> thresholds;
 	uint64_t defaultThrottlePower;
 	/** One flag per getEnergy() domain — index 0 card, index 1 GPU — set once its
 	 *  "domain not exposed" notice has been logged, so a dump loop reports it once. */
@@ -67,9 +109,25 @@ private:
 	/** Same, for the getEnergyPerTile() notice, which a stats run repeats per sample. */
 	bool perTileEnergyDomainMissingLogged;
 
+	// Threshold loading. Private because they write the threshold state without the locks:
+	// only getThrottlePower() and preloadThrottlePower() call them, under PowerThresholds'
+	// mutex and once_flag, so a direct call could race the preload thread.
+	void ensureThrottlePowerLoaded();
+	bool readAmcThrottlePower(uint64_t &watts);
+	void loadConfigThresholds();
+	void loadThresholdSection(const nlohmann::json &thresholdsJson, const std::string &key,
+							  std::function<void(uint32_t, uint64_t)> setter);
+	static uint32_t parseDeviceId(const std::string &hexKey);
+
 public:
 	power();
 	~power();
+	// power owns powerHandles and thresholds; a member-wise copy or move would leave two objects
+	// releasing the same memory.
+	power(const power &) = delete;
+	power &operator=(const power &) = delete;
+	power(power &&) = delete;
+	power &operator=(power &&) = delete;
 	ze_result_t enumPowerDomains(zes_device_handle_t device);
 	ze_result_t getProperties(zes_pwr_handle_t powerHandle, zes_power_properties_t *properties,
 							  zes_power_ext_properties_t *extProps);
@@ -103,14 +161,10 @@ public:
 
 	uint32_t getPowerCount() { return powerCount; }
 	uint64_t getThrottlePower(uint32_t pciDeviceId);
+	void preloadThrottlePower();
 	zes_pwr_handle_t *getPowerHandles() { return powerHandles; }
-	void loadPowerThresholds();
-	void loadThresholdSection(const nlohmann::json &thresholdsJson, const std::string &key,
-							  std::function<void(uint32_t, uint64_t)> setter);
 	ze_result_t setPowerLimit(double powerLimit);
 
-	// Helper functions for JSON threshold loading
-	static uint32_t parseDeviceId(const std::string &hexKey);
 	ze_result_t init(zes_device_handle_t zeDevice) override;
 	ze_result_t init(zes_device_handle_t zeDevice, class device *device);
 	ze_result_t zesRun(zes_device_handle_t device) override;

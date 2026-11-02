@@ -6,6 +6,8 @@
 
 #include "firmware.h"
 #include <amcupd.h>
+#include <charconv>
+#include <cstring>
 #include <gscupd.h>
 #include <pldmextraction.h>
 #include <sysmanupd.h>
@@ -465,6 +467,45 @@ ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSiz
 		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
 
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Retrieve the Thermal Design Power (TDP) in watts for the GPU identified by bdfStr.
+ *
+ * The FRU OTHER_INFORMATION field holds the TDP as a hexadecimal string; this parses it.
+ *
+ * @param[in]  bdfStr PCI BDF string of the GPU whose TDP is requested.
+ * @param[out] watts  TDP in watts.
+ * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNINITIALIZED when no AMC is available,
+ *         ZE_RESULT_ERROR_NOT_AVAILABLE when TDP is missing from FRU data or is not valid hexadecimal.
+ */
+ze_result_t firmware::getAmcTdpWatts(const char *bdfStr, uint32_t *watts)
+{
+	TRACING();
+
+	if (!watts) {
+		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	char tdpBuf[MAX_PATH] = {};
+	size_t bufferSize = sizeof(tdpBuf);
+	ze_result_t result = getAmcTdp(bdfStr, tdpBuf, &bufferSize);
+	if (result != ZE_RESULT_SUCCESS) {
+		return result;
+	}
+	if (tdpBuf[0] == '\0') {
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	uint32_t value = 0;
+	const auto [ptr, ec] = std::from_chars(tdpBuf, tdpBuf + strlen(tdpBuf), value, 16);
+	if (ec != std::errc{} || *ptr != '\0') {
+		DBG("Invalid hexadecimal TDP '{}' from AMC FRU\n", tdpBuf);
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	*watts = value;
 	return ZE_RESULT_SUCCESS;
 }
 

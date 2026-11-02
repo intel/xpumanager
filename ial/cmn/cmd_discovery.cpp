@@ -2586,20 +2586,12 @@ ze_result_t cmdDiscovery::queryTdpFromAMC(devInfo *d, std::string *tdpString)
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
-	char tdpBuf[MAX_PATH] = {};
-	size_t bufferSize = sizeof(tdpBuf);
-	ze_result_t result = fw->getAmcTdp(d->dev->getPCI()->getBDFStr().c_str(), tdpBuf, &bufferSize);
-	if (result != ZE_RESULT_SUCCESS || tdpBuf[0] == '\0') {
+	uint32_t tdpWatts = 0;
+	ze_result_t result = fw->getAmcTdpWatts(d->dev->getPCI()->getBDFStr().c_str(), &tdpWatts);
+	if (result != ZE_RESULT_SUCCESS) {
 		DBG("TDP not available from AMC for device {} (result: 0x{:X})\n", d->dev->getPCI()->getBDFStr().c_str(),
 			result);
 		return (result == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) ? result : ZE_RESULT_ERROR_NOT_AVAILABLE;
-	}
-
-	uint32_t tdpWatts = 0;
-	const auto [ptr, ec] = std::from_chars(tdpBuf, tdpBuf + strlen(tdpBuf), tdpWatts, 16);
-	if (ec != std::errc{} || *ptr != '\0') {
-		DBG("Invalid hexadecimal TDP '{}' from AMC FRU\n", tdpBuf);
-		return ZE_RESULT_ERROR_NOT_AVAILABLE;
 	}
 
 	*tdpString = std::to_string(tdpWatts) + " W";

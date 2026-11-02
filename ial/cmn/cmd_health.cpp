@@ -289,6 +289,31 @@ ze_result_t cmdHealth::allComponentsAllDevices(std::vector<devInfo> *devList, nl
 }
 
 /**
+ * @brief Starts reading the power threshold of every device, when the power check will run
+ *
+ * gpuPower() then waits for the read of its device instead of starting one. See
+ * power::preloadThrottlePower().
+ *
+ * @param devList Pointer to vector of device information structures
+ */
+void cmdHealth::preloadPowerThresholds(std::vector<devInfo> *devList)
+{
+	TRACING();
+
+	// Only worth it when the power check will run
+	if (healthCmds[healthCmdType::HEALTH_COMPONENT].enabled &&
+		healthCmds[healthCmdType::HEALTH_COMPONENT].val != std::to_string(healthSubCmdType::HEALTH_POWER)) {
+		return;
+	}
+
+	for (auto &d : *devList) {
+		if (power *pwr = d.dev->getPower()) {
+			pwr->preloadThrottlePower();
+		}
+	}
+}
+
+/**
  * @brief Performs health checks on all components for a single device
  *
  * This function iterates through all available component health tests and
@@ -534,6 +559,7 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 	if (powerDomainCount > 0 && powerHandles != nullptr) {
 		uint64_t currentDeviceMaxDomainValue = 0;
 		uint64_t currentSubDeviceValueSum = 0;
+		bool sampled = false;
 		for (uint32_t i = 0; i < powerDomainCount; ++i) {
 			zes_power_properties_t props = {};
 			zes_power_ext_properties_t extProps = {};
@@ -550,6 +576,7 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 				res = pwr->getEnergyCounter(powerHandles[i], &snap2);
 				if (res == ZE_RESULT_SUCCESS && snap2.timestamp != snap1.timestamp) {
 					uint64_t value = (snap2.energy - snap1.energy) / (snap2.timestamp - snap1.timestamp);
+					sampled = true;
 					if (props.onSubdevice) {
 						currentSubDeviceValueSum += value;
 					} else if (value > currentDeviceMaxDomainValue) {
@@ -560,15 +587,18 @@ ze_result_t cmdHealth::gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj)
 		}
 		DBG("health: current device max domain power value: {}", currentDeviceMaxDomainValue);
 		DBG("health: current sum of sub-device power values: {}", currentSubDeviceValueSum);
-		auto powerVal = std::max(currentDeviceMaxDomainValue, currentSubDeviceValueSum);
-		if (powerVal < powerThreshold && status < xpumHealthStatus::XPUM_HEALTH_STATUS_OK) {
-			status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
-			description = "Values for all the power domains are healthy.";
-		}
-		if (powerVal >= powerThreshold && status < xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING) {
-			status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
-			description = "Unhealthy power domain value, " + std::to_string(powerVal) +
-						  " >= " + std::to_string(powerThreshold) + " (threshold)";
+		if (sampled) {
+			auto powerVal = std::max(currentDeviceMaxDomainValue, currentSubDeviceValueSum);
+			if (powerVal < powerThreshold) {
+				status = xpumHealthStatus::XPUM_HEALTH_STATUS_OK;
+				description = "Values for all the power domains are healthy.";
+			} else {
+				status = xpumHealthStatus::XPUM_HEALTH_STATUS_WARNING;
+				description = "Unhealthy power domain value, " + std::to_string(powerVal) +
+							  " >= " + std::to_string(powerThreshold) + " (threshold)";
+			}
+		} else {
+			ERR("No power domain could be sampled\n");
 		}
 	}
 
@@ -847,6 +877,8 @@ int cmdHealth::run(arg_struct *args)
 		printer->print(jsonObj.get());
 		return result;
 	}
+
+	preloadPowerThresholds(&deviceList);
 
 	if (healthCmds[healthCmdType::HEALTH_LIST].enabled) {
 		// List all devices
