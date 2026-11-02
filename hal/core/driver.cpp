@@ -322,7 +322,7 @@ ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cogniti
 
 			// Resize vectors for zeDevices and dev
 			localDevs[i].zeDevices.resize(localDevs[i].totalDevicesCount);
-			localDevs[i].dev.resize(localDevs[i].totalDevicesCount);
+			localDevs[i].dev = std::vector<device>(localDevs[i].totalDevicesCount);
 
 			// Retrieve zeDevices for the driver
 			result = zeDeviceGet(zeDrivers[i], &localDevs[i].totalDevicesCount, localDevs[i].zeDevices.data());
@@ -454,7 +454,7 @@ ze_result_t driver::smOnlyEnumerate()
 	driverCount = 1;
 	std::vector<devGroup> localDevs(driverCount);
 	localDevs[0].totalDevicesCount = totalZesDevicesCount;
-	localDevs[0].dev.resize(totalZesDevicesCount);
+	localDevs[0].dev = std::vector<device>(totalZesDevicesCount);
 	localDevs[0].zeDevices.assign(totalZesDevicesCount, nullptr);
 
 	for (uint32_t j = 0; j < totalZesDevicesCount; j++) {

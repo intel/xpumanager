@@ -10,6 +10,7 @@
 #include "cmds.h"
 #include "printer.h"
 #include <os.h>
+#include <vector>
 
 class temperature;
 
@@ -81,6 +82,7 @@ public:
 	xpumHealthStatus getHealthStatus(zes_mem_health_t health);
 	std::string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 	bool getFrequencyState(const zes_device_handle_t &device, std::string &freqThrottleMessage);
+	void preloadPowerThresholds(std::vector<devInfo> *devList);
 	int run(arg_struct *args);
 
 protected:

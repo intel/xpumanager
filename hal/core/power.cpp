@@ -8,8 +8,12 @@
 #include "device.h"
 #include "dynload.h"
 #include <bit>
+#include "firmware.h"
 #include <map>
 #include <memory>
+#include <chrono>
+#include <system_error>
+#include <tuple>
 
 /**
  * @brief Maps a Level Zero power domain to its spelled-out name.
@@ -72,25 +76,57 @@ void power::loadThresholdSection(const nlohmann::json &thresholdsJson, const std
 /**
  * @brief Constructor for the power class
  *
- * Initializes the power management object with default values and
- * loads power thresholds from configuration.
+ * Initializes the power management object with default values. Power thresholds are loaded on
+ * the first getThrottlePower() or ensureThrottlePowerLoaded() call, as reading the TDP from the
+ * AMC needs the device context.
  */
 power::power()
 	: powerCount(0), powerHandles(nullptr), zeDeviceHandle(nullptr), deviceHandle(nullptr),
-	  thresholds(new PowerThresholds()), defaultThrottlePower(DEFAULT_THROTTLE_POWER),
+	  thresholds(std::make_unique<PowerThresholds>()), defaultThrottlePower(DEFAULT_THROTTLE_POWER),
 	  energyDomainMissingLogged({false, false}), perTileEnergyDomainMissingLogged(false)
+{}
+
+/**
+ * @brief Reads the Thermal Design Power (TDP) from the AMC FRU data
+ *
+ * Reading the AMC initializes it, so this runs from the first getThrottlePower() or
+ * ensureThrottlePowerLoaded() call rather than from init(), keeping that cost off commands that
+ * never ask for the threshold.
+ *
+ * A failed read is not final. The AMC reports a card whose bus another process holds (a firmware
+ * update, a discovery run) the same way as a FRU without a TDP, so the read is tried again on the
+ * next call instead of leaving this process on the config value.
+ *
+ * @param [out] watts TDP in watts, set only when the AMC returned one.
+ * @return bool true when the answer is final: the TDP was read, or the device has no AMC to ask.
+ */
+bool power::readAmcThrottlePower(uint64_t &watts)
 {
-	loadPowerThresholds();
+	if (!deviceHandle || !deviceHandle->hasAmc()) {
+		return true;
+	}
+	firmware *fw = deviceHandle->getFirmware();
+	if (!fw) {
+		return true;
+	}
+	const std::string bdf = deviceHandle->getPCI()->getBDFStr();
+	uint32_t tdpWatts = 0;
+	if (fw->getAmcTdpWatts(bdf.c_str(), &tdpWatts) == ZE_RESULT_SUCCESS && tdpWatts > 0) {
+		DBG("Power threshold for device {} from AMC TDP: {} W\n", bdf.c_str(), tdpWatts);
+		watts = tdpWatts;
+		return true;
+	}
+	DBG("TDP not available from AMC for device {}, using config thresholds for now\n", bdf.c_str());
+	return false;
 }
 
 /**
- * @brief Loads power thresholds from configuration file
+ * @brief Loads the power thresholds from device_thresholds.json
  *
- * This function reads power thresholds from the configuration file
- * device_thresholds.json and populates the device-specific TDP maps.
- * If the file cannot be read or parsed, default values are used.
+ * Supplies the threshold when the AMC does not: the device-specific "tdps" entry, else the
+ * "power_tdp" default, else DEFAULT_THROTTLE_POWER. See getThrottlePower() for the full order.
  */
-void power::loadPowerThresholds()
+void power::loadConfigThresholds()
 {
 	try {
 		std::ifstream configFile(std::string(XPUM_CONFIG_DIR) + std::string("device_thresholds.json"));
@@ -128,12 +164,12 @@ void power::loadPowerThresholds()
  */
 power::~power()
 {
+	// A preload thread uses this object, so it has to finish first
+	thresholds->waitPreload();
 	if (powerHandles) {
 		delete[] powerHandles;
 		powerHandles = nullptr;
 	}
-	delete thresholds;
-	thresholds = nullptr;
 }
 
 /**
@@ -155,15 +191,73 @@ void PowerThresholds::setThrottlePower(uint32_t deviceId, uint64_t value) { heal
  *
  * This function retrieves the device-specific power throttle threshold that
  * determines when power-based throttling should begin for thermal and power
- * management. Returns a device-specific value if configured, otherwise returns
- * the default throttle power of 300 watts.
+ * management. The threshold is taken from the first of these that provides one:
+ * 1. The Thermal Design Power (TDP) in the AMC FRU data, when the device has an AMC.
+ * 2. The device-specific "tdps" entry in device_thresholds.json.
+ * 3. The "power_tdp" default in device_thresholds.json.
+ * 4. DEFAULT_THROTTLE_POWER.
  *
  * @param pciDeviceId PCI device ID to lookup device-specific threshold
  * @return uint64_t Throttle power limit in watts
  */
 uint64_t power::getThrottlePower(uint32_t pciDeviceId)
 {
+	const uint64_t amcWatts =
+		thresholds->amcThrottlePower([this](uint64_t &watts) { return readAmcThrottlePower(watts); });
+	if (amcWatts > 0) {
+		return amcWatts;
+	}
+	thresholds->loadConfigOnce([this]() { loadConfigThresholds(); });
 	return thresholds->getThrottlePower(pciDeviceId, defaultThrottlePower);
+}
+
+/**
+ * @brief PowerThresholds preload starter
+ */
+bool PowerThresholds::startPreload(const std::function<void()> &task)
+{
+	if (preload.valid() && preload.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+		return true;
+	}
+	try {
+		preload = std::async(std::launch::async, task);
+	} catch (const std::system_error &e) {
+		DBG("Could not start power threshold preload: {}\n", e.what());
+		return false;
+	}
+	return true;
+}
+
+/**
+ * @brief Starts reading the AMC TDP on a worker thread
+ *
+ * The first read from an AMC sets up the card over I2C, which is slow. Each card has its own lock,
+ * so a command that will ask several devices for their threshold can call this on each of them
+ * first: the cards are then set up in parallel, and the setup overlaps whatever the command does
+ * before it calls getThrottlePower(), which waits for a read that is still running. Devices that
+ * have no AMC to read are skipped. Not being able to start the thread is not an error, as
+ * getThrottlePower() reads the AMC itself.
+ */
+void power::preloadThrottlePower()
+{
+	if (!deviceHandle || deviceHandle->isIGPU() || !deviceHandle->hasAmc()) {
+		return;
+	}
+	std::ignore = thresholds->startPreload([this]() { ensureThrottlePowerLoaded(); });
+}
+
+/**
+ * @brief Reads the AMC TDP if no earlier read has settled it
+ *
+ * Once a read gives a final answer, later calls return without asking the AMC again; until
+ * then each call tries again. A call made while a read is running waits for it to finish.
+ * getThrottlePower() does the same read, so callers that only need the value never call this
+ * directly. A caller may run it on a worker thread ahead of getThrottlePower() so that the AMC
+ * read overlaps other work.
+ */
+void power::ensureThrottlePowerLoaded()
+{
+	thresholds->amcThrottlePower([this](uint64_t &watts) { return readAmcThrottlePower(watts); });
 }
 
 /**
