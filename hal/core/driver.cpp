@@ -22,6 +22,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 #include <ze_api.h>
 #include "utility/compat/format.h"
@@ -222,6 +223,15 @@ ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cogniti
 	// Set ZE_ENABLE_PCI_ID_DEVICE_ORDER to ensure consistent device ordering
 	SETENV("ZE_ENABLE_PCI_ID_DEVICE_ORDER", "1");
 
+	// A management tool sees every device, whatever mask was set for applications.
+	// ZE_AFFINITY_MASK hides devices from zeDeviceGet but not from zesDeviceGet, so a
+	// masked-out healthy GPU would otherwise be taken for one in survivability mode,
+	// and device indices would no longer match those amc derives from sysfs.
+	if (hasEnv("ZE_AFFINITY_MASK")) {
+		DBG("Ignoring ZE_AFFINITY_MASK; xpu-smi reports all devices.\n");
+		UNSETENV("ZE_AFFINITY_MASK");
+	}
+
 	ze_result_t result;
 	// Temporary container to store zes devices which are not in survivability mode.
 	std::set<std::string> devBdfs{};
@@ -348,18 +358,33 @@ ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cogniti
 		uint32_t survDevCount = static_cast<uint32_t>(totalZesDevicesCount - devBdfs.size());
 		svZesDevs.survDevices = new device[survDevCount];
 		svZesDevs.survDevCount = survDevCount;
-		uint32_t devIndex = 0;
+		// zesDeviceGet ignores ZE_ENABLE_PCI_ID_DEVICE_ORDER, so sort these by PCI address
+		// too: their device indices then follow PCI order like the others, which is also
+		// the order getLevelZeroGpuOrder() predicts without Level Zero.
+		struct SurvDevice
+		{
+			std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> address;
+			zes_device_handle_t handle;
+		};
+		std::vector<SurvDevice> survDevices;
 		for (uint32_t k = 0; k < totalZesDevicesCount; k++) {
 			zes_pci_properties_t pciProps{};
 			result = zesDevicePciGetProperties(totalZesDevices[k], &pciProps);
 			char bdfStr[BDF_STR_LEN];
 			snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus,
 					 pciProps.address.device, pciProps.address.function);
-			if (!devBdfs.contains(bdfStr) && (devIndex < survDevCount)) {
-				svZesDevs.survDevices[devIndex].smDevInit(zesDrivers[0], totalZesDevices[k]);
-				svZesDevs.survDevices[devIndex].setSurvivabilityMode(true);
-				devIndex++;
+			if (!devBdfs.contains(bdfStr) && (survDevices.size() < survDevCount)) {
+				survDevices.push_back({{pciProps.address.domain, pciProps.address.bus, pciProps.address.device,
+										pciProps.address.function},
+									   totalZesDevices[k]});
 			}
+		}
+		std::ranges::sort(survDevices, {}, &SurvDevice::address);
+		// Bounded by survDevCount too, the size of the array written: the push_back guard above
+		// keeps survDevices within it, but the static analyzer cannot see that.
+		for (uint32_t devIndex = 0; devIndex < survDevCount && devIndex < survDevices.size(); devIndex++) {
+			svZesDevs.survDevices[devIndex].smDevInit(zesDrivers[0], survDevices[devIndex].handle);
+			svZesDevs.survDevices[devIndex].setSurvivabilityMode(true);
 		}
 	}
 
@@ -375,6 +400,8 @@ ze_result_t driver::init(bool skipZeInit) // NOLINT(readability-function-cogniti
  * so its BDF, PCI, and VF instances are usable. Because the Level Zero compute
  * runtime is never initialised, the ze* handles remain null and the device is
  * driven purely through sysman — which is all that resetDevice() needs.
+ * Devices are numbered as init() numbers them (healthy first, then survivability,
+ * each in PCI order), so a device ID means the same GPU on both paths and in amc.
  *
  * zesInitialize() must have already populated totalZesDevices /
  * totalZesDevicesCount before this is called.
@@ -390,6 +417,37 @@ ze_result_t driver::smOnlyEnumerate()
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
+	// zesDeviceGet ignores ZE_ENABLE_PCI_ID_DEVICE_ORDER, so put the devices in the order
+	// init() numbers them: healthy GPUs first, then survivability ones, each in PCI order.
+	// The compute runtime that tells those apart in init() is not loaded here, so use the
+	// order predicted from the OS, the same one amc uses. Devices it does not list (or every
+	// device, where the OS layer cannot predict the order) follow in PCI order.
+	std::vector<std::string> predicted;
+	std::ignore = getLevelZeroGpuOrder(&predicted);
+	struct OrderedDevice
+	{
+		size_t rank; // position in the predicted order, or predicted.size() if absent
+		std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> address;
+		zes_device_handle_t handle;
+	};
+	std::vector<OrderedDevice> ordered;
+	ordered.reserve(totalZesDevicesCount);
+	for (uint32_t k = 0; k < totalZesDevicesCount; k++) {
+		zes_pci_properties_t pciProps{};
+		std::ignore = zesDevicePciGetProperties(totalZesDevices[k], &pciProps);
+		char bdfStr[BDF_STR_LEN];
+		snprintf(bdfStr, sizeof(bdfStr), "%04x:%02x:%02x.%01x", pciProps.address.domain, pciProps.address.bus,
+				 pciProps.address.device, pciProps.address.function);
+		const auto found = std::ranges::find(predicted, std::string_view{bdfStr});
+		ordered.push_back(
+			{static_cast<size_t>(found - predicted.begin()),
+			 {pciProps.address.domain, pciProps.address.bus, pciProps.address.device, pciProps.address.function},
+			 totalZesDevices[k]});
+	}
+	std::ranges::sort(ordered, [](const OrderedDevice &a, const OrderedDevice &b) {
+		return std::tie(a.rank, a.address) < std::tie(b.rank, b.address);
+	});
+
 	// A single synthetic driver group holds all sysman devices. findOneToken()
 	// walks devs[0..driverCount) and indexes devices sequentially, which is the
 	// same ordering the compute-runtime path produces for a single driver.
@@ -400,12 +458,13 @@ ze_result_t driver::smOnlyEnumerate()
 	localDevs[0].zeDevices.assign(totalZesDevicesCount, nullptr);
 
 	for (uint32_t j = 0; j < totalZesDevicesCount; j++) {
-		ze_result_t result = localDevs[0].dev[j].smDevInit(zesDrivers[0], totalZesDevices[j]);
+		ze_result_t result = localDevs[0].dev[j].smDevInit(zesDrivers[0], ordered[j].handle);
 		if (result != ZE_RESULT_SUCCESS) {
 			ERR("Failed to sysman-initialize device {} on reset path: 0x{:X} ({})\n", j, result,
 				l0_error_to_string(result));
 			return result;
 		}
+		DBG("Sysman-only device {}: {}\n", j, localDevs[0].dev[j].getBDFStr());
 	}
 
 	// Copy from local vector to raw array for DLL boundary (matches init()).

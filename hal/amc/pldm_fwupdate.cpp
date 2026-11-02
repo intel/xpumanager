@@ -66,8 +66,8 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd)
 	bool responded = false;
 	for (int attempt = 0; attempt <= PLDM_PN1_RETRIES && !responded; attempt++) {
 		if (attempt > 0) {
-			DBG("FWU : Card {:02}: no response to cmd 0x{:02x} within {} ms, retrying ({}/{})\n", mCardNum, cmd,
-				PLDM_PT2_MS, attempt, PLDM_PN1_RETRIES);
+			DBG("FWU : GPU {}: no response to cmd 0x{:02x} within {} ms, retrying ({}/{})\n", mGpuBdf, cmd, PLDM_PT2_MS,
+				attempt, PLDM_PN1_RETRIES);
 		}
 		if (mctpSendMessage(reqInfo, request) != MCTP_SUCCESS) {
 			ERR("FWU : Failed to send command 0x{:02x}\n", cmd);
@@ -124,7 +124,7 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd)
 	}
 
 	if (!responded) {
-		DBG("FWU : Card {:02}: no response to cmd 0x{:02x} after {} tries\n", mCardNum, cmd, PLDM_PN1_RETRIES + 1);
+		DBG("FWU : GPU {}: no response to cmd 0x{:02x} after {} tries\n", mGpuBdf, cmd, PLDM_PN1_RETRIES + 1);
 		return PLDM_ERROR;
 	}
 
@@ -329,7 +329,7 @@ uint8_t pldm::fwUpdCancel()
 		return PLDM_SUCCESS;
 	}
 
-	ERR("FWU : CancelUpdate failed on card {}; the AMC may stay in update mode until it times out\n", mCardNum);
+	ERR("FWU : CancelUpdate failed on GPU {}; the AMC may stay in update mode until it times out\n", mGpuBdf);
 	return PLDM_ERROR;
 }
 
@@ -352,8 +352,7 @@ uint8_t pldm::fwUpdCancelComponent()
 		return PLDM_SUCCESS;
 	}
 
-	ERR("FWU : CancelUpdateComponent failed on card {:02} (completion code 0x{:02x})\n", mCardNum,
-		mLastFwuCompletionCode);
+	ERR("FWU : CancelUpdateComponent failed on GPU {} (completion code 0x{:02x})\n", mGpuBdf, mLastFwuCompletionCode);
 	return PLDM_ERROR;
 }
 
@@ -428,8 +427,8 @@ uint8_t pldm::fwUpdWaitForReadyXfer()
 			return PLDM_SUCCESS;
 		}
 		if (std::chrono::steady_clock::now() > deadline) {
-			ERR("Card {:02}: firmware device still in state {} {} ms after ApplyComplete, expected READY XFER\n",
-				mCardNum, mFwuCurrentState, PLDM_PT3_MAX_MS);
+			ERR("GPU {}: firmware device still in state {} {} ms after ApplyComplete, expected READY XFER\n", mGpuBdf,
+				mFwuCurrentState, PLDM_PT3_MAX_MS);
 			return PLDM_ERROR;
 		}
 		MSLEEP(kPollIntervalMs);
@@ -470,7 +469,7 @@ uint8_t pldm::fwUpdComponent(uint8_t comp)
 			return fwUpdWaitForReadyXfer();
 		}
 		if (xfer == fwuTransferResult::RestartRequired) {
-			ERR("AMC on card {:02} asks for the update to be cancelled and run again\n", mCardNum);
+			ERR("AMC of GPU {} asks for the update to be cancelled and run again\n", mGpuBdf);
 			return PLDM_ERROR;
 		}
 		if (xfer == fwuTransferResult::Failed || AmcUpdateInterruptGuard::cancelRequested()) {
@@ -483,10 +482,10 @@ uint8_t pldm::fwUpdComponent(uint8_t comp)
 			return PLDM_ERROR;
 		}
 		if (attempt >= FWU_COMPONENT_TRANSFER_ATTEMPTS) {
-			ERR("Card {:02}: component {} failed {} times, giving up\n", mCardNum, comp + 1, attempt);
+			ERR("GPU {}: component {} failed {} times, giving up\n", mGpuBdf, comp + 1, attempt);
 			return PLDM_ERROR;
 		}
-		ERR("Card {:02}: resending component {} after CancelUpdateComponent (attempt {}/{})\n", mCardNum, comp + 1,
+		ERR("GPU {}: resending component {} after CancelUpdateComponent (attempt {}/{})\n", mGpuBdf, comp + 1,
 			attempt + 1, FWU_COMPONENT_TRANSFER_ATTEMPTS);
 	}
 }
@@ -539,7 +538,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	auto cleanupAndReturn = [&](uint8_t status) -> uint8_t {
 		finalStatus = status;
 		if (status != PLDM_SUCCESS && AmcUpdateInterruptGuard::cancelRequested()) {
-			ERR("Firmware update of card {:02} interrupted{}\n", mCardNum,
+			ERR("Firmware update of GPU {} interrupted{}\n", mGpuBdf,
 				updateStarted ? ", cancelling the update on the AMC" : "");
 		}
 		if (updateStarted && status != PLDM_SUCCESS && mLastFwuCompletionCode != NOT_IN_UPDATE_MODE) {
@@ -566,7 +565,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 	} else {
 		DBG("Firmware package info parsed successfully from file: {}\n", pkgFilePath);
 	}
-	DBG("Firmware package info parsed successfully from AMC img file for card : {:02}\n", mCardNum);
+	DBG("Firmware package info parsed successfully from AMC img file for GPU {}\n", mGpuBdf);
 
 	// A filtered update has nothing to do when the package does not carry the requested component.
 	// Report it rather than sending RequestUpdate with a component count of zero.
@@ -585,9 +584,9 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 				continue;
 			}
 			if (!pkg->compImagesInfo.compImages[i].compOptions.bits.bit0) {
-				ERR("Force update requested for card {:02} but firmware image '{}' is not "
+				ERR("Force update requested for GPU {} but firmware image '{}' is not "
 					"downgradable: ForceUpdate bit is not set in ComponentOptions for component {}.\n",
-					mCardNum, pkgFilePath, i);
+					mGpuBdf, pkgFilePath, i);
 				return cleanupAndReturn(PLDM_ERROR);
 			}
 		}
@@ -712,7 +711,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 		return cleanupAndReturn(PLDM_ERROR);
 	}
 	DBG("<<< ActivateFirmware Success...\n");
-	DBG("Firmware Update and Activation completed successfully for card : {:02}\n", mCardNum);
+	DBG("Firmware Update and Activation completed successfully for GPU {}\n", mGpuBdf);
 
 	// ActivateFirmware succeeded (or the device already self-activated) - the
 	// update session is finished so no CancelUpdate is required.
@@ -745,11 +744,11 @@ uint8_t pldm::getFirmwareParameters()
 	mFwParamsInitialized = false;
 	mFwParamActiveVersion.clear();
 
-	DBG("\n========= GetFirmwareParameters CARD {} =========\n", mCardNum);
+	DBG("\n========= GetFirmwareParameters GPU {} =========\n", mGpuBdf);
 	DBG(">>> Send GetFirmwareParameters\n");
 
 	if (fwUpdCmd(GET_FIRMWARE_PARAMETERS) != PLDM_SUCCESS) {
-		ERR("FWU: GET_FIRMWARE_PARAMETERS command failed on card {}\n", mCardNum);
+		ERR("FWU: GET_FIRMWARE_PARAMETERS command failed on GPU {}\n", mGpuBdf);
 		return PLDM_ERROR;
 	}
 

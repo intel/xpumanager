@@ -76,9 +76,9 @@ uint8_t pldm::fwUpdateResp(uint8_t cmd, uint8_t id)
 				bitmap |= static_cast<uint64_t>(mFwuRxPayload[BYTE_2 + i]) << (8 * i);
 			}
 			// Bit n is the nth component passed in PassComponentTable
-			ERR("AMC on card {:02} reports component(s) that will not be functional after the next activation "
+			ERR("AMC of GPU {} reports component(s) that will not be functional after the next activation "
 				"(NonFunctioningComponentBitmap 0x{:016x})\n",
-				mCardNum, bitmap);
+				mGpuBdf, bitmap);
 		}
 		break;
 
@@ -296,9 +296,9 @@ uint8_t pldm::fwUpdUpdateComponentResp()
 	const uint8_t compatibility = mFwuRxPayload[BYTE_1];
 	const uint8_t reason = mFwuRxPayload[BYTE_2];
 	if (compatibility != 0) {
-		ERR("AMC on card {:02} will not update component 0x{:04x}: {} (ComponentCompatibilityResponseCode "
+		ERR("AMC of GPU {} will not update component 0x{:04x}: {} (ComponentCompatibilityResponseCode "
 			"0x{:02x})\n",
-			mCardNum, mUpdComp.id, componentCompatibilityReason(reason), reason);
+			mGpuBdf, mUpdComp.id, componentCompatibilityReason(reason), reason);
 		return PLDM_ERROR;
 	}
 

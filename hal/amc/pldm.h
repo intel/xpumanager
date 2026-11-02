@@ -157,7 +157,7 @@ private:
 	std::mutex *progMutex;
 
 	uint8_t instanceID;
-	int mCardNum;
+	std::string mGpuBdf; ///< BDF of the GPU this AMC belongs to, used to name it in log messages
 
 	// pldm Firmware Update datastructures
 	struct fwuRequestUpdate mReqUpdate = {};
@@ -368,9 +368,9 @@ private:
 	const PdrRecord *getFilePdrById(uint16_t filePdrId);
 
 public:
-	pldm(const std::string &devpath, int cardnum)
+	pldm(const std::string &devpath, const std::string &gpuBdf)
 		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
-		  mCardNum(cardnum), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS), mCompIdFilter(0),
+		  mGpuBdf(gpuBdf), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS), mCompIdFilter(0),
 		  mFruTableInitialized(false), mFwParamsInitialized(false)
 	{
 		pldminit();

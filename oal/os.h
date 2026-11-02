@@ -56,6 +56,9 @@ uint32_t getCurrentProcessId();
 std::string timestamp();
 int amcCardDiscovery(void *amcDeviceList);
 int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList);
+// GPU BDFs in xpu-smi device-index order, found without Level Zero. Returns the count, or -1
+// where the OS layer cannot predict the order.
+int getLevelZeroGpuOrder(std::vector<std::string> *bdfList);
 void setProgress(int devIndex, int lineNum, int totalThreads, uint32_t progress, const char *label = nullptr);
 void progressBegin(int lines);
 void progressEnd();

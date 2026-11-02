@@ -216,7 +216,7 @@ int cmdAmc::run(arg_struct *args)
 		amcCmds[AMC_OP_FILENAME].enabled = true;
 	});
 	sub.add_option("-d,--device,--id", amcCmds[AMC_DEVICE].val,
-				   "AMC device index or PCI BDF address (single device only)")
+				   "Device ID, as other commands number devices, or PCI BDF address (single device only)")
 		->each([&](const std::string &) { amcCmds[AMC_DEVICE].enabled = true; });
 	sub.add_flag("-y,--yes", amcCmds[AMC_YES].enabled, "Assume yes to all questions");
 
@@ -278,62 +278,83 @@ int cmdAmc::run(arg_struct *args)
 }
 
 /**
- * @brief Get the index of an AMC card associated with the specified GPU BDF
+ * @brief Resolve a --device value to the index of its AMC card
  *
- * Searches the discovered AMC devices for a card associated with the given
- * GPU BDF (Bus:Device.Function) string and returns its index.
+ * A device index means the same GPU as in every other xpu-smi command. amc runs
+ * without Level Zero, so the index is looked up in the device order predicted from
+ * the OS (getLevelZeroGpuOrder()), and the AMC card is then found by that GPU's BDF.
+ * Where the OS layer cannot predict the order, the index counts AMC cards in
+ * discovery order instead. Any other value is taken as a GPU BDF.
  *
- * @param gpuBDF GPU BDF string to identify the AMC card
+ * @param[in]  amc         Initialized AMC library instance
+ * @param[in]  val         Device index or GPU BDF, as given on the command line
+ * @param[in]  numCards    Number of discovered AMC cards
+ * @param[out] deviceIndex Index of the AMC card, or -1 on failure
  *
- * @return Card index if found, or -1 if not found
- * @retval >=0 Index of the found AMC card
- * @retval -1 No matching card found
- *
- * @note The function searches through the discovered AMC devices
- *       and retrieves information for the first matching GPU BDF.
- * @note The function returns -1 if no devices have been enumerated.
+ * @retval ZE_RESULT_SUCCESS                @p deviceIndex names the AMC card of that GPU
+ * @retval ZE_RESULT_ERROR_INVALID_ARGUMENT No such device, or the device has no AMC card
  */
 ze_result_t cmdAmc::getDeviceIndex(amclib *amc, const std::string &val, int numCards, int &deviceIndex)
 {
 	deviceIndex = -1;
-	if (val.empty())
+	if (val.empty() || amc == nullptr)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 
+	std::string bdf = val;
 	try {
 		size_t pos = 0;
 		int parsed = std::stoi(val, &pos);
 		if (pos == val.size()) {
-			if (parsed < 0 || parsed >= numCards) {
-				ERR("Device index {} is out of range. Valid range is 0 to {}.\n", parsed, numCards - 1);
+			std::vector<std::string> gpus;
+			if (getLevelZeroGpuOrder(&gpus) < 0) {
+				if (parsed < 0 || parsed >= numCards) {
+					ERR("Device index {} is out of range. Valid range is 0 to {}.\n", parsed, numCards - 1);
+					return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+				}
+				deviceIndex = parsed;
+				DBG("Device {} is AMC card {} ({}) in discovery order, GPU {}\n", val.c_str(), deviceIndex,
+					amc->amcGetDevicePath(static_cast<uint32_t>(deviceIndex)).c_str(),
+					amc->amcGetGpuBdf(static_cast<uint32_t>(deviceIndex)).c_str());
+				return ZE_RESULT_SUCCESS;
+			}
+			if (gpus.empty()) {
+				ERR("No GPU devices found for device index {}. Specify the device by PCI BDF address.\n", parsed);
 				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 			}
-			deviceIndex = parsed;
-			return ZE_RESULT_SUCCESS;
+			if (parsed < 0 || static_cast<size_t>(parsed) >= gpus.size()) {
+				ERR("Device index {} is out of range. Valid range is 0 to {}.\n", parsed, gpus.size() - 1);
+				return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+			}
+			bdf = gpus[parsed];
 		}
 	} catch (const std::exception &) {
 		// Not a pure integer, treat as PCI BDF
 	}
 
-	if (amc == nullptr)
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
-
-	deviceIndex = amc->amcGetIndex(val);
+	deviceIndex = amc->amcGetIndex(bdf);
 	if (deviceIndex < 0 || deviceIndex >= numCards) {
-		ERR("No AMC card found for GPU BDF: {}\n", val.c_str());
+		if (bdf != val) {
+			ERR("Device {} ({}) has no AMC card.\n", val.c_str(), bdf.c_str());
+		} else {
+			ERR("No AMC card found for GPU BDF: {}\n", val.c_str());
+		}
+		deviceIndex = -1;
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+	DBG("Device {} is GPU {}, AMC card {} ({})\n", val.c_str(), bdf.c_str(), deviceIndex,
+		amc->amcGetDevicePath(static_cast<uint32_t>(deviceIndex)).c_str());
 	return ZE_RESULT_SUCCESS;
 }
 
-/// Prompt the user to confirm a reset. Returns true if confirmed, false if cancelled.
-static bool confirmReset(int deviceId)
+/// Prompt the user to confirm a reset of the GPU at BDF @p device (empty for all). Returns true if confirmed.
+static bool confirmReset(const std::string &device)
 {
 	// Waiting for the user is not a hang.
 	const auto prompt = xpum::watchdog::suspend("confirmation prompt");
-	if (deviceId < 0) {
+	if (device.empty()) {
 		PRINT("\nWARNING: This operation will reset ALL GPU devices via AMC\n");
 	} else {
-		PRINT("\nWARNING: This operation will reset the GPU device {} via AMC\n", deviceId);
+		PRINT("\nWARNING: This operation will reset GPU {} via AMC\n", device.c_str());
 	}
 	PRINT("Do you want to continue? (yes/no): ");
 	std::string response;
@@ -365,7 +386,15 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		}
 	}
 
-	if (!amcCmds[AMC_YES].enabled && !confirmReset(deviceId)) {
+	// Name the GPU by BDF; empty means all. Fall back to the -d value if the BDF is unknown.
+	std::string target;
+	if (deviceId >= 0) {
+		target = amc->amcGetGpuBdf(static_cast<uint32_t>(deviceId));
+		if (target.empty()) {
+			target = amcCmds[AMC_DEVICE].val;
+		}
+	}
+	if (!amcCmds[AMC_YES].enabled && !confirmReset(target)) {
 		PRINT("Operation cancelled!\n");
 		return ZE_RESULT_SUCCESS;
 	}
@@ -391,11 +420,13 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 	for (int id : targets) {
 		DBG("Executing GPU reset via AMC for device {}...\n", id);
 		workers.emplace_back([amc, id, &failureCount, &successCount]() {
+			// Name the GPU by BDF: id indexes AMC cards, not xpu-smi devices.
+			const std::string gpu = amc->amcGetGpuBdf(static_cast<uint32_t>(id));
 			if (amc->amcGpuReset(id) != AMC_SUCCESS) {
-				ERR("Failed to reset GPU device {} via AMC\n", id);
+				ERR("Failed to reset GPU {} via AMC\n", gpu.c_str());
 				failureCount.fetch_add(1, std::memory_order_relaxed);
 			} else {
-				DBG("Successfully reset GPU device {} via AMC\n", id);
+				DBG("Successfully reset GPU {} via AMC\n", gpu.c_str());
 				successCount.fetch_add(1, std::memory_order_relaxed);
 			}
 		});
@@ -469,8 +500,8 @@ ze_result_t cmdAmc::readSensor(amclib *amc, int numCards)
 		std::vector<amcSensorInfo> sensorInfo;
 		int ret = amc->amcGetSensorInfoBySensorId(deviceIndex, static_cast<uint16_t>(sensorId), sensorInfo);
 		if (ret != AMC_SUCCESS) {
-			ERR("Failed to get AMC sensor info for sensor ID {} on device {}.\n", sensorId,
-				amcCmds[AMC_DEVICE].val.c_str());
+			ERR("Failed to get AMC sensor info for sensor ID {} on GPU {}.\n", sensorId,
+				amc->amcGetGpuBdf(static_cast<uint32_t>(deviceIndex)).c_str());
 			return ZE_RESULT_ERROR_UNINITIALIZED;
 		}
 
@@ -554,10 +585,12 @@ ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
 
+	// Messages name the GPU by BDF: the same device whether it was selected by ID or BDF.
+	const std::string gpu = amc->amcGetGpuBdf(static_cast<uint32_t>(deviceIndex));
 	std::vector<uint8_t> fileData;
 	int ret = amc->amcReadFile(deviceIndex, filePdrId, fileData);
 	if (ret != AMC_SUCCESS) {
-		ERR("Failed to read AMC file of type {} on device {}.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
+		ERR("Failed to read AMC file of type {} on GPU {}.\n", filePdrId, gpu.c_str());
 		return ZE_RESULT_ERROR_UNINITIALIZED;
 	}
 
@@ -573,10 +606,10 @@ ze_result_t cmdAmc::readFile(amclib *amc, int numCards)
 			return ZE_RESULT_ERROR_UNKNOWN;
 		}
 		outFile.close();
-		PRINT("Successfully read AMC file of type {} on device {} and saved to {}\n", filePdrId,
-			  amcCmds[AMC_DEVICE].val.c_str(), opFilename.c_str());
+		PRINT("Successfully read AMC file of type {} on GPU {} and saved to {}\n", filePdrId, gpu.c_str(),
+			  opFilename.c_str());
 	} else {
-		ERR("AMC file of type {} on device {} is empty.\n", filePdrId, amcCmds[AMC_DEVICE].val.c_str());
+		ERR("AMC file of type {} on GPU {} is empty.\n", filePdrId, gpu.c_str());
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 	return ZE_RESULT_SUCCESS;

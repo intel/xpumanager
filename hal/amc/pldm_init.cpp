@@ -121,7 +121,7 @@ int pldm::initialize()
 		return PLDM_ERROR;
 	}
 
-	DBG("mctp - pldm initialization completed successfully for card : {:02}\n", mCardNum);
+	DBG("mctp - pldm initialization completed successfully for GPU {}\n", mGpuBdf);
 	return PLDM_SUCCESS;
 }
 

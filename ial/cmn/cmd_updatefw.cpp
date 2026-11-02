@@ -129,9 +129,7 @@ struct deviceUpdateResult
 {
 	uint32_t deviceIndex;
 	std::string bdf;
-	int amcIndex;	  // -1 when the device has no AMC
 	const char *what; // what the pass flashed, as shown in the summary
-	bool showAmcCard; // the pass went through the AMC, so its card number is worth showing
 	bool success;
 };
 
@@ -139,8 +137,8 @@ struct deviceUpdateResult
  * @brief Print which devices were updated and which were not
  *
  * Several devices are updated in parallel and their errors interleave on the console, so the
- * outcome is listed per device once every update has finished. The AMC card number matches the
- * "card N" used by the AMC error messages.
+ * outcome is listed per device once every update has finished. Devices are named by ID and BDF,
+ * which is also how the AMC error messages name them.
  *
  * @param results One entry per device and update pass
  */
@@ -155,11 +153,7 @@ static void printUpdateSummary(const std::vector<deviceUpdateResult> &results)
 
 	PRINT("Firmware update summary: {} of {} succeeded\n", results.size() - failed, results.size());
 	for (const auto &r : results) {
-		std::string amcCard;
-		if (r.showAmcCard && r.amcIndex >= 0) {
-			amcCard = ", AMC card " + std::to_string(r.amcIndex);
-		}
-		PRINT("  Device {} ({}{}) {}: {}\n", r.deviceIndex, r.bdf, amcCard, r.what, r.success ? "Success" : "Failed");
+		PRINT("  Device {} ({}) {}: {}\n", r.deviceIndex, r.bdf, r.what, r.success ? "Success" : "Failed");
 	}
 }
 
@@ -369,7 +363,6 @@ int cmdUpdateFW::run(arg_struct *args)
 
 	// Count the total number of threads as this will come in handy later, and lay out the result of every
 	// update before any worker starts, so the vector is never resized while the workers write to it.
-	const bool isAmcType = STRCASECMP(fwInfo.firmwareType.c_str(), "amc") == 0;
 	const std::string passName = isComposite ? "GPU components" : fwInfo.firmwareType;
 	std::vector<devInfo *> workerDevices;
 	for (auto &device : deviceList) {
@@ -377,8 +370,7 @@ int cmdUpdateFW::run(arg_struct *args)
 			STRCASECMP(fwInfo.firmwareType.c_str(), "amc") != 0) {
 			totalThreads++;
 			workerDevices.push_back(&device);
-			results.push_back({device.index, device.dev->getPCI()->getBDFStr(), device.dev->getAmcIndex(),
-							   passName.c_str(), isAmcType, false});
+			results.push_back({device.index, device.dev->getPCI()->getBDFStr(), passName.c_str(), false});
 		}
 	}
 
@@ -470,16 +462,16 @@ int cmdUpdateFW::run(arg_struct *args)
 
 			firmware *fw = amcDevices[i]->dev->getFirmware();
 			if (fw == nullptr) {
-				results.push_back({amcDevices[i]->index, amcDevices[i]->dev->getPCI()->getBDFStr(),
-								   amcDevices[i]->dev->getAmcIndex(), "AMC components", true, false});
+				results.push_back(
+					{amcDevices[i]->index, amcDevices[i]->dev->getPCI()->getBDFStr(), "AMC components", false});
 				ERR("Error: Firmware pointer not found (device {}).\n", amcDevices[i]->index);
 				ze_result_t expected = ZE_RESULT_SUCCESS;
 				firstError.compare_exchange_strong(expected, ZE_RESULT_ERROR_UNKNOWN);
 				continue;
 			}
 			const bool success = fw->updateFW(&localInfo) == ZE_RESULT_SUCCESS;
-			results.push_back({amcDevices[i]->index, amcDevices[i]->dev->getPCI()->getBDFStr(),
-							   amcDevices[i]->dev->getAmcIndex(), "AMC components", true, success});
+			results.push_back(
+				{amcDevices[i]->index, amcDevices[i]->dev->getPCI()->getBDFStr(), "AMC components", success});
 			if (!success) {
 				ERR("Error: Failed to update AMC firmware for device {}.\n", amcDevices[i]->index);
 				ze_result_t expected = ZE_RESULT_SUCCESS;

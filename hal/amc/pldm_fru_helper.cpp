@@ -90,7 +90,7 @@ uint8_t pldm::parseFruTable(const uint8_t *fruData, size_t dataLength)
 	// Clear existing parsed data
 	clearFruTableData();
 
-	DBG("\n=====================FRU TABLE PARSER CARD {}===============================\n", mCardNum);
+	DBG("\n=====================FRU TABLE PARSER GPU {}===============================\n", mGpuBdf);
 	DBG("Parsing FRU table data: {} bytes\n", dataLength);
 
 	size_t offset = 0;

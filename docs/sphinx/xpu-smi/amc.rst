@@ -36,7 +36,12 @@ Options
 
 .. option:: -d <deviceId>, --device <deviceId>, --id <deviceId>
 
-   Specify the device ID or PCI BDF address.
+   Specify the device ID or PCI BDF address. A device ID names the same GPU as
+   in the other commands, such as ``discovery`` and ``updatefw``. The ``amc``
+   command does not use Level Zero, so on Linux it works the device IDs out from
+   sysfs. On Windows, a device ID counts AMC devices in the order they are
+   discovered, which can differ from the other commands. The PCI BDF address
+   always names the same device.
 
    .. note::
 

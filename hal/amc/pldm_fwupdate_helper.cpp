@@ -363,7 +363,7 @@ fwuTransferResult pldm::readFromFD()
 	// capped so a faulty FD cannot hold the update for hours.
 	const uint16_t estSec = std::min<uint16_t>(mFwuEstTimeBeforeReqFwDataSec, FWU_MAX_EST_TIME_BEFORE_REQ_FW_DATA_SEC);
 	if (estSec < mFwuEstTimeBeforeReqFwDataSec) {
-		DBG("FWU : Card {:02}: EstimatedTimeBeforeSendingRequestFirmwareData {} s capped at {} s\n", mCardNum,
+		DBG("FWU : GPU {}: EstimatedTimeBeforeSendingRequestFirmwareData {} s capped at {} s\n", mGpuBdf,
 			mFwuEstTimeBeforeReqFwDataSec, estSec);
 	}
 	st.lastMsgTime = fwuClock::now() + std::chrono::seconds(estSec);
@@ -398,7 +398,7 @@ fwuTransferResult pldm::readFromFD()
 			continue;
 		}
 		if (rxStatus != MCTP_SUCCESS) {
-			ERR("FWU : Card {:02}: failed to receive from the firmware device\n", mCardNum);
+			ERR("FWU : GPU {}: failed to receive from the firmware device\n", mGpuBdf);
 			return fwuTransferResult::Failed;
 		}
 
@@ -419,13 +419,13 @@ fwuTransferResult pldm::readFromFD()
 void pldm::fwUpdReportStageTimeout(const fwuStageState &st)
 {
 	if (st.current == fwuStageState::stage::Download) {
-		ERR("FWU : Card {:02}: no command from the firmware device for {} ms during the transfer (UA_T2)\n", mCardNum,
+		ERR("FWU : GPU {}: no command from the firmware device for {} ms during the transfer (UA_T2)\n", mGpuBdf,
 			FWU_UA_T2_MS);
 	} else if (st.progressReported) {
-		ERR("FWU : Card {:02}: ProgressPercent stuck at {}% for {} ms in {} (UA_T3)\n", mCardNum, st.lastProgress,
+		ERR("FWU : GPU {}: ProgressPercent stuck at {}% for {} ms in {} (UA_T3)\n", mGpuBdf, st.lastProgress,
 			FWU_UA_T3_MS, st.stageName());
 	} else {
-		ERR("FWU : Card {:02}: no command from the firmware device for {} ms in {} (UA_T6)\n", mCardNum, FWU_UA_T6_MS,
+		ERR("FWU : GPU {}: no command from the firmware device for {} ms in {} (UA_T6)\n", mGpuBdf, FWU_UA_T6_MS,
 			st.stageName());
 	}
 }
@@ -446,7 +446,7 @@ bool pldm::fwUpdSendGetStatus(fwuStageState &st)
 						PLDM_REQUEST);
 	st.statusSentAt = fwuClock::now();
 	if (mctpSendMessage(mctpRequestInfo(), pldmBuildMessage(hdr, nullptr, 0)) != MCTP_SUCCESS) {
-		ERR("FWU : Card {:02}: failed to send GetStatus\n", mCardNum);
+		ERR("FWU : GPU {}: failed to send GetStatus\n", mGpuBdf);
 		return false;
 	}
 	return true;
@@ -530,7 +530,7 @@ std::optional<fwuTransferResult> pldm::fwUpdHandleStatusResponse(fwuStageState &
 	const uint8_t fdState = mFwuRxPayload[BYTE_1];
 	mFwuCurrentState = fdState;
 	if (fdState == GETSTATUS_IDLE) {
-		ERR("FWU : Card {:02}: firmware device left update mode during {} (ReasonCode {})\n", mCardNum, st.stageName(),
+		ERR("FWU : GPU {}: firmware device left update mode during {} (ReasonCode {})\n", mGpuBdf, st.stageName(),
 			mFwuRxPayload[BYTE_6]);
 		return fwuTransferResult::Failed;
 	}
@@ -626,7 +626,7 @@ std::optional<fwuTransferResult> pldm::fwUpdServeFirmwareData()
 		bytesToInt(mFwuRxPayload[BYTE_7], mFwuRxPayload[BYTE_6], mFwuRxPayload[BYTE_5], mFwuRxPayload[BYTE_4]);
 
 	mProgPercent = (int)(((uint64_t)offset * 100) / compSize);
-	DBG("Card - {:02} :: offset = {}, length = {}, mProgPercent = {}\n", mCardNum, offset, length, mProgPercent.load());
+	DBG("GPU {} :: offset = {}, length = {}, mProgPercent = {}\n", mGpuBdf, offset, length, mProgPercent.load());
 
 	uint8_t cc = PLDM_SUCCESS;
 	if (length < PLDM_FWU_BASELINE_TRANSFER_SIZE || length > PLDM_MCTP_MAX_TRANSFER_SIZE) {
@@ -701,7 +701,7 @@ std::optional<fwuTransferResult> pldm::fwUpdHandleStageResult(fwuStageState &st,
 		return fwuTransferResult::Applied;
 	}
 
-	ERR("AMC on card {:02} reported {} 0x{:02x} for component 0x{:04x}\n", mCardNum, fdResultName(cmd), result,
+	ERR("AMC of GPU {} reported {} 0x{:02x} for component 0x{:04x}\n", mGpuBdf, fdResultName(cmd), result,
 		pkg->compImagesInfo.compImages[mCurComp].id);
 	// ApplyResult 0x0B: "the FD/FDP is requesting the UA to use the CancelUpdate command and restart the
 	// transfer" (Table 37)

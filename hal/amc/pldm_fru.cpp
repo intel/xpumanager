@@ -147,7 +147,7 @@ uint8_t pldm::getFruRecordTableMetadata()
 {
 	TRACING();
 
-	DBG("\n=====================PLDM FRU TABLE METADATA CARD {}===============================\n", mCardNum);
+	DBG("\n=====================PLDM FRU TABLE METADATA GPU {}===============================\n", mGpuBdf);
 	DBG(">>> Send GetFRURecordTableMetadata\n");
 
 	if (pldmFruCommand(PLDM_GET_FRU_RECORD_TABLE_METADATA, PLDM_GETFRUTABLEMETADATA_SIZE) != PLDM_SUCCESS) {
@@ -189,7 +189,7 @@ uint8_t pldm::getFruRecordTable(uint32_t dataXferHandle, uint8_t xferOpFlag)
 {
 	TRACING();
 
-	DBG("\n=====================PLDM FRU RECORD TABLE CARD {} PACKET {}===============================\n", mCardNum,
+	DBG("\n=====================PLDM FRU RECORD TABLE GPU {} PACKET {}===============================\n", mGpuBdf,
 		dataXferHandle + 1);
 	DBG(">>> Send GetFRURecordTable (Handle: 0x{:08X}, Flag: 0x{:02X})\n", dataXferHandle, xferOpFlag);
 
@@ -233,7 +233,7 @@ uint8_t pldm::pldmFruInitialize()
 {
 	TRACING();
 
-	DBG("\n===================PLDM FRU INIT CARD {}=======================\n", mCardNum);
+	DBG("\n===================PLDM FRU INIT GPU {}=======================\n", mGpuBdf);
 
 	// Step 1: Get FRU Record Table Metadata
 	if (getFruRecordTableMetadata() != PLDM_SUCCESS) {
@@ -496,7 +496,7 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 	// Not cached: the bus is locked per operation, so another process may have updated the
 	// firmware since the last call.
 	if (getFirmwareParameters() != PLDM_SUCCESS) {
-		ERR("FWU: GET_FIRMWARE_PARAMETERS failed on card {}\n", mCardNum);
+		ERR("FWU: GET_FIRMWARE_PARAMETERS failed on GPU {}\n", mGpuBdf);
 		return PLDM_ERROR;
 	}
 
@@ -522,6 +522,6 @@ uint8_t pldm::getAmcVersion(char *version, size_t *bufferSize)
 
 	STRNCPY_S(version, mFwParamActiveVersion.c_str(), *bufferSize);
 	version[*bufferSize - 1] = '\0';
-	DBG("FWU: AMC version (card {:02}) = \"{}\"\n", mCardNum, version);
+	DBG("FWU: AMC version (GPU {}) = \"{}\"\n", mGpuBdf, version);
 	return PLDM_SUCCESS;
 }

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  *
  * Unit tests for getPciSubsystemDeviceId(), isIntelGpu(), isRootComplexIntegrated(),
- * resetPciFunction() and getPciClassCode(). Each test builds a fake sysfs PCI device tree under a scratch directory, so
- * no GPU is required.
+ * resetPciFunction(), getPciClassCode() and listLevelZeroGpus(). Each test builds a fake sysfs PCI device tree under a
+ * scratch directory, so no GPU is required.
  */
 
 // Empty in clang-tidy passes run without -Dwith_tests, where doctest is not on the include path.
@@ -508,6 +508,112 @@ TEST_CASE("getPcieAtomicOps: decodes Device Capabilities 2 and Control 2, nullop
 	std::ofstream(bus / BDF / "config", std::ios::binary | std::ios::trunc)
 		.write(reinterpret_cast<const char *>(config.data()), 64); // NOLINT: byte buffer
 	CHECK_FALSE(getPcieAtomicOps(BDF, bus).has_value());
+}
+
+namespace {
+
+/**
+ * @brief Lays out a GPU under @p sysfs the way listLevelZeroGpus() reads it
+ *
+ * @param [in] sysfs         Fake PCI device tree
+ * @param [in] bdf           Device directory name
+ * @param [in] driver        Name of the bound driver, or nullptr for an unbound device
+ * @param [in] renderNode    Whether the device has a DRM render node (drm/renderD128)
+ * @param [in] survivability Whether the device carries xe's survivability_mode attribute
+ */
+void addGpu(const FakePciDevices &sysfs, const std::string &bdf, const char *driver, bool renderNode,
+			bool survivability = false)
+{
+	const fs::path device = sysfs.root / bdf;
+	fs::create_directories(device);
+	if (driver != nullptr) {
+		fs::create_directory_symlink(fs::path("../../../bus/pci/drivers") / driver, device / "driver");
+	}
+	if (renderNode) {
+		fs::create_directories(device / "drm" / "renderD128");
+		fs::create_directories(device / "drm" / "card0");
+	}
+	if (survivability) {
+		std::ofstream(device / "survivability_mode") << "Survivability mode type: Boot\n";
+	}
+}
+
+} // namespace
+
+TEST_CASE("listLevelZeroGpus: GPUs come out in PCI address order, not directory order")
+{
+	const FakePciDevices sysfs("l0order");
+	for (const char *bdf : {"0000:4e:00.0", "0000:cd:00.0", "0000:18:00.0", "0000:ab:00.0", "0000:3c:00.0",
+							"0000:9a:00.0", "0000:bc:00.0", "0000:2a:00.0"}) {
+		addGpu(sysfs, bdf, "xe", true);
+	}
+	CHECK(listLevelZeroGpus(sysfs.root) == std::vector<std::string>{"0000:18:00.0", "0000:2a:00.0", "0000:3c:00.0",
+																	"0000:4e:00.0", "0000:9a:00.0", "0000:ab:00.0",
+																	"0000:bc:00.0", "0000:cd:00.0"});
+}
+
+TEST_CASE("listLevelZeroGpus: survivability GPUs follow the others, each group in PCI address order")
+{
+	const FakePciDevices sysfs("l0surv");
+	addGpu(sysfs, "0000:9a:00.0", "xe", true);
+	addGpu(sysfs, "0000:2a:00.0", "xe", false, true);
+	addGpu(sysfs, "0000:18:00.0", "xe", true);
+	addGpu(sysfs, "0000:05:00.0", "xe", true, true); // a render node does not make it healthy
+	CHECK(listLevelZeroGpus(sysfs.root) ==
+		  std::vector<std::string>{"0000:18:00.0", "0000:9a:00.0", "0000:05:00.0", "0000:2a:00.0"});
+}
+
+TEST_CASE("listLevelZeroGpus: only GPUs Level Zero can reach are listed")
+{
+	const FakePciDevices sysfs("l0filter");
+	addGpu(sysfs, "0000:00:02.0", "i915", true);		  // i915 with a render node: listed
+	addGpu(sysfs, "0000:03:00.0", "xe", true);			  // listed
+	addGpu(sysfs, "0000:04:00.0", nullptr, false);		  // no driver bound
+	addGpu(sysfs, "0000:05:00.0", "vfio-pci", false);	  // passed through to a VM
+	addGpu(sysfs, "0000:06:00.0", "xe", false);			  // xe without a render node or survivability
+	addGpu(sysfs, "0000:07:00.0", "i915", false, true);	  // survivability is an xe attribute
+	addGpu(sysfs, "0000:08:00.0", "snd_hda_intel", true); // not a GPU driver
+	fs::create_directories(sysfs.root / "not-a-bdf" / "drm" / "renderD129");
+	CHECK(listLevelZeroGpus(sysfs.root) == std::vector<std::string>{"0000:00:02.0", "0000:03:00.0"});
+}
+
+TEST_CASE("listLevelZeroGpus: discrete GPUs come before integrated ones, as Level Zero returns them")
+{
+	// The order xpu-smi discovery showed on a machine with an iGPU and a dGPU with one VF:
+	// the iGPU has the lowest address but comes last.
+	const FakePciDevices sysfs("l0igpu");
+	addDevice(sysfs, "pci0000:00", "0000:00:02.0", configWithPcieType(PCIE_RC_INTEGRATED_ENDPOINT));
+	addDevice(sysfs, "pci0000:00/0000:00:01.0", "0000:03:00.0", configWithPcieType(PCIE_ENDPOINT));
+	addDevice(sysfs, "pci0000:00/0000:00:01.0", "0000:03:00.1", configWithPcieType(PCIE_ENDPOINT));
+	const fs::path bus = sysfs.root / "bus";
+	for (const char *bdf : {"0000:00:02.0", "0000:03:00.0", "0000:03:00.1"}) {
+		fs::create_directory_symlink("../../../bus/pci/drivers/xe", bus / bdf / "driver");
+		fs::create_directories(bus / bdf / "drm" / "renderD128");
+	}
+	CHECK(listLevelZeroGpus(bus) == std::vector<std::string>{"0000:03:00.0", "0000:03:00.1", "0000:00:02.0"});
+
+	// A survivability GPU still comes after the integrated one.
+	addDevice(sysfs, "pci0000:00/0000:00:1c.0", "0000:01:00.0", configWithPcieType(PCIE_ENDPOINT));
+	fs::create_directory_symlink("../../../bus/pci/drivers/xe", bus / "0000:01:00.0" / "driver");
+	std::ofstream(bus / "0000:01:00.0" / "survivability_mode") << "Survivability mode type: Boot\n";
+	CHECK(listLevelZeroGpus(bus) ==
+		  std::vector<std::string>{"0000:03:00.0", "0000:03:00.1", "0000:00:02.0", "0000:01:00.0"});
+}
+
+TEST_CASE("listLevelZeroGpus: domains wider than four digits sort by value")
+{
+	const FakePciDevices sysfs("l0domain");
+	addGpu(sysfs, "10000:01:00.0", "xe", true); // behind VMD
+	addGpu(sysfs, "a000:01:00.0", "xe", true);
+	addGpu(sysfs, "0000:ff:00.0", "xe", true);
+	CHECK(listLevelZeroGpus(sysfs.root) == std::vector<std::string>{"0000:ff:00.0", "a000:01:00.0", "10000:01:00.0"});
+}
+
+TEST_CASE("listLevelZeroGpus: empty when the tree is missing or has no GPUs")
+{
+	const FakePciDevices sysfs("l0empty");
+	CHECK(listLevelZeroGpus(sysfs.root).empty());
+	CHECK(listLevelZeroGpus(sysfs.root / "missing").empty());
 }
 
 #endif // __has_include(<doctest/doctest.h>)

@@ -86,6 +86,7 @@ private:
 
 	[[nodiscard]] CardLease acquireCard(uint32_t cardNum);
 	[[nodiscard]] bool lockBus(uint32_t cardNum, pldm *card);
+	[[nodiscard]] std::string cardLabel(uint32_t cardNum) const;
 
 public:
 	amclib();
@@ -96,6 +97,8 @@ public:
 						 bool forceUpdate = false);
 	int amcFirmwareProgress(uint32_t cardNum);
 	int amcGetIndex(const std::string &gpuBDF);
+	std::string amcGetGpuBdf(uint32_t cardNum) const;
+	std::string amcGetDevicePath(uint32_t cardNum) const;
 	int amcGetCardInfo(std::string gpuBDF, std::string &serialNumStr, std::string &versionStr);
 	int amcGetSensorInfoBySensorId(int deviceIndex, uint16_t sensorId, std::vector<amcSensorInfo> &sensorInfo);
 	int oemVrsync(uint8_t cmd);

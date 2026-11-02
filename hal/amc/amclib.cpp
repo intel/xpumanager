@@ -176,9 +176,9 @@ amclib::CardLease amclib::acquireCard(uint32_t cardNum)
 
 	if (pldmobj[cardNum] == nullptr) {
 		DBG("############ CARD : {:02} ############\n", cardNum);
-		auto card = std::make_unique<pldm>(amcDeviceList->at(cardNum).amcDevicePath, cardNum);
+		auto card = std::make_unique<pldm>(amcDeviceList->at(cardNum).amcDevicePath, cardLabel(cardNum));
 		if (!card->isI2cOpen()) {
-			ERR("Failed to open the I2C device for AMC card {}\n", cardNum);
+			ERR("Failed to open the I2C device for the AMC of GPU {}\n", cardLabel(cardNum));
 			cardState[cardNum].store(CARD_FAILED, std::memory_order_relaxed);
 			return {};
 		}
@@ -193,7 +193,7 @@ amclib::CardLease amclib::acquireCard(uint32_t cardNum)
 
 	if (cardState[cardNum].load(std::memory_order_relaxed) == CARD_UNINIT) {
 		if (card->initialize() != PLDM_SUCCESS) {
-			ERR("Failed to initialize pldm Object for card: {}\n", cardNum);
+			ERR("Failed to initialize the AMC of GPU {}\n", cardLabel(cardNum));
 			cardState[cardNum].store(CARD_FAILED, std::memory_order_relaxed);
 			return {};
 		}
@@ -326,6 +326,57 @@ int amclib::amcGetIndex(const std::string &gpuBDF)
 }
 
 /**
+ * @brief Get the BDF of the GPU an AMC card belongs to
+ *
+ * @param cardNum Index of the AMC card, as amcGetIndex() returns it
+ *
+ * @return GPU BDF string, or an empty string if @p cardNum is out of range or the
+ *         GPU could not be resolved during discovery
+ */
+std::string amclib::amcGetGpuBdf(uint32_t cardNum) const
+{
+	if (amcDeviceList == nullptr || cardNum >= amcDeviceList->size()) {
+		return {};
+	}
+	return (*amcDeviceList)[cardNum].gpuParentPath;
+}
+
+/**
+ * @brief Get the OS device path an AMC card is reached through
+ *
+ * @param cardNum Index of the AMC card, as amcGetIndex() returns it
+ *
+ * @return Device path (e.g. "/dev/i2c-12"), or an empty string if @p cardNum is out of range
+ */
+std::string amclib::amcGetDevicePath(uint32_t cardNum) const
+{
+	if (amcDeviceList == nullptr || cardNum >= amcDeviceList->size()) {
+		return {};
+	}
+	return (*amcDeviceList)[cardNum].amcDevicePath;
+}
+
+/**
+ * @brief Name an AMC card for log messages by the GPU it belongs to
+ *
+ * Users select a device by its xpu-smi device ID or BDF; the card index is internal
+ * (AMC discovery order), so messages name the GPU's BDF instead.
+ *
+ * @param cardNum Index of the AMC card
+ *
+ * @return GPU BDF, or the AMC's device path when the GPU could not be resolved
+ */
+std::string amclib::cardLabel(uint32_t cardNum) const
+{
+	const std::string bdf = amcGetGpuBdf(cardNum);
+	if (!bdf.empty()) {
+		return bdf;
+	}
+	const std::string path = amcGetDevicePath(cardNum);
+	return path.empty() ? "card " + std::to_string(cardNum) : path;
+}
+
+/**
  * @brief Get AMC card information by GPU BDF
  *
  * Retrieves the serial number and AMC version for the AMC card associated
@@ -403,7 +454,8 @@ int amclib::amcGetSensorInfoBySensorId(int cardIndex, uint16_t sensorId, std::ve
 
 	uint8_t ret = card->getSensorInfoById(sensorId);
 	if (ret != PLDM_SUCCESS) {
-		ERR("Failed to get sensor info for sensor ID {} on card index {}\n", sensorId, cardIndex);
+		ERR("Failed to get sensor info for sensor ID {} from the AMC of GPU {}\n", sensorId,
+			cardLabel(static_cast<uint32_t>(cardIndex)));
 		return AMC_ERROR;
 	}
 	std::vector<pldmSensorInfo> &sensorInfoList = card->getSensorInfoList();
@@ -439,7 +491,7 @@ int amclib::oemVrsync(uint8_t cmd)
 	for (int i = 0; i < numCards; i++) {
 		const CardLease card = acquireCard(static_cast<uint32_t>(i));
 		if (!card || card->oemVrsyncCmd(cmd) != PLDM_SUCCESS) {
-			ERR("Failed to perform VRSync for card : {}\n", i);
+			ERR("Failed to perform VRSync on the AMC of GPU {}\n", cardLabel(static_cast<uint32_t>(i)));
 			return AMC_ERROR;
 		}
 	}
@@ -481,7 +533,7 @@ int amclib::amcGetSerialNumber(uint8_t cardNum, char *serialNum, size_t *bufferS
 
 	// Call the underlying PLDM function directly
 	if (card->getFruSerialNum(serialNum, *bufferSize) != PLDM_SUCCESS) {
-		ERR("Failed to get serial number for card {}\n", cardNum);
+		ERR("Failed to get serial number from the AMC of GPU {}\n", cardLabel(cardNum));
 		return AMC_ERROR;
 	}
 
@@ -522,7 +574,7 @@ int amclib::amcGetPartNumber(uint8_t cardNum, char *partNum, size_t *bufferSize)
 	}
 
 	if (card->getFruPartNum(partNum, *bufferSize) != PLDM_SUCCESS) {
-		ERR("Failed to get part number for card {}\n", cardNum);
+		ERR("Failed to get part number from the AMC of GPU {}\n", cardLabel(cardNum));
 		return AMC_ERROR;
 	}
 
@@ -563,7 +615,7 @@ int amclib::amcGetVersion(uint8_t cardNum, char *amcVersion, size_t *bufferSize)
 
 	// Call the underlying PLDM function directly
 	if (card->getAmcVersion(amcVersion, bufferSize) != PLDM_SUCCESS) {
-		ERR("Failed to get version for card {}\n", cardNum);
+		ERR("Failed to get version from the AMC of GPU {}\n", cardLabel(cardNum));
 		return AMC_ERROR;
 	}
 
@@ -649,7 +701,7 @@ int amclib::amcGpuReset(uint32_t cardNum)
 
 	const std::string gpuBdf = amcDeviceList->at(cardNum).gpuParentPath;
 	if (gpuBdf.empty()) {
-		ERR("No GPU BDF known for card {}; cannot sequence the reset\n", cardNum);
+		ERR("No GPU BDF known for the AMC at {}; cannot sequence the reset\n", cardLabel(cardNum));
 		return AMC_ERROR;
 	}
 
@@ -675,7 +727,7 @@ int amclib::amcGpuReset(uint32_t cardNum)
 
 	// Execute the AMC reset command
 	if (card->amcGpuReset() != PLDM_SUCCESS) {
-		ERR("Failed to reset AMC for card {}\n", cardNum);
+		ERR("Failed to reset GPU {} through its AMC\n", gpuBdf);
 		ret = AMC_ERROR;
 	}
 
@@ -683,7 +735,7 @@ int amclib::amcGpuReset(uint32_t cardNum)
 	// the GPU, so it disappears along with it, and the reset command above is the last thing
 	// this card's PLDM object can do until the card is enumerated again.
 	if (ret == AMC_SUCCESS && !pldmobj[cardNum]->closeAmcInterface()) {
-		ERR("Failed to close the AMC I2C handle for card {} before removing GPU {}\n", cardNum, gpuBdf);
+		ERR("Failed to close the AMC I2C handle of GPU {} before removing it\n", gpuBdf);
 		ret = AMC_ERROR;
 	}
 
@@ -696,7 +748,7 @@ int amclib::amcGpuReset(uint32_t cardNum)
 		MSLEEP(GPU_RESET_SETTLE_MS);
 
 		if (rescanPCIeDevice(gpuBdf, "") != 0) {
-			ERR("GPU {} did not come back after the AMC reset of card {}\n", gpuBdf, cardNum);
+			ERR("GPU {} did not come back after its AMC reset\n", gpuBdf);
 			ret = AMC_ERROR;
 		}
 	}

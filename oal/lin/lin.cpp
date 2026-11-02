@@ -36,6 +36,7 @@
 #include "lin.h"
 #include "terminal.h"
 #include "pci_database.h"
+#include "pci_sysfs.h"
 #include "dmi_reader.h"
 #include "bdf.h"
 
@@ -1373,6 +1374,23 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 	}
 
 	return 0;
+}
+
+/**
+ * @brief List GPU BDFs in xpu-smi device-index order, without Level Zero
+ *
+ * See listLevelZeroGpus() for how the order is derived from sysfs.
+ *
+ * @param bdfList [out] Receives the BDFs; bdfList[i] is the GPU xpu-smi numbers as device i.
+ * @return int  Number of GPUs found (0 when none are)
+ */
+int getLevelZeroGpuOrder(std::vector<std::string> *bdfList)
+{
+	*bdfList = listLevelZeroGpus();
+	for (size_t i = 0; i < bdfList->size(); ++i) {
+		DBG("Device {}: {}\n", i, (*bdfList)[i].c_str());
+	}
+	return static_cast<int>(bdfList->size());
 }
 
 // Offset of Slot Capabilities register within the PCIe Capability structure

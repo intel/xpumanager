@@ -369,9 +369,9 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 		flashCompleted.store(true);
 
 		if (result != AMC_SUCCESS) {
-			ERR("Failed to flash firmware for card {}\n", amcIndex);
+			ERR("Failed to flash AMC firmware of GPU {}\n", amc->amcGetGpuBdf(amcIndex));
 		} else {
-			DBG("Firmware flash for card {} completed successfully\n", amcIndex);
+			DBG("AMC firmware flash of GPU {} completed successfully\n", amc->amcGetGpuBdf(amcIndex));
 		}
 	});
 	// Create a thread to monitor firmware flash progress
@@ -383,7 +383,7 @@ ze_result_t amcupd::updateAMC(firmwareInfo *fwInfo)
 			int progress = amc->amcFirmwareProgress(amcIndex);
 
 			if (progress < 0) {
-				ERR("Failed to get firmware progress for card {}\n", amcIndex);
+				ERR("Failed to get AMC firmware update progress of GPU {}\n", amc->amcGetGpuBdf(amcIndex));
 				break;
 			}
 

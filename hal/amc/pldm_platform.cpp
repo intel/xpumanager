@@ -586,28 +586,28 @@ bool pldm::isFirmwareUpdateEnabled()
 
 	if (pfGetStateEffecterStates(kFwuEffecterId) != PLDM_SUCCESS) {
 		if (mStateEffecterResp.completionCode == PLDM_PLATFORM_INVALID_EFFECTER_ID) {
-			DBG("FWU: Effector ID {} not present on card {}; skipping enable check\n", kFwuEffecterId, mCardNum);
+			DBG("FWU: Effector ID {} not present on GPU {}; skipping enable check\n", kFwuEffecterId, mGpuBdf);
 			return true;
 		}
-		ERR("FWU: GetStateEffecterStates effector ID {} failed on card {}\n", kFwuEffecterId, mCardNum);
+		ERR("FWU: GetStateEffecterStates effector ID {} failed on GPU {}\n", kFwuEffecterId, mGpuBdf);
 		return false;
 	}
 
-	DBG("FWU: Firmware update enable effector ID {} presentValue={} effectorOpState={} on card {}\n", kFwuEffecterId,
-		mStateEffecterResp.presentValue, mStateEffecterResp.effecterOpState, mCardNum);
+	DBG("FWU: Firmware update enable effector ID {} presentValue={} effectorOpState={} on GPU {}\n", kFwuEffecterId,
+		mStateEffecterResp.presentValue, mStateEffecterResp.effecterOpState, mGpuBdf);
 
 	if (mStateEffecterResp.effecterOpState == PLDM_EFFECTER_ENABLED_UPDATEPENDING ||
 		mStateEffecterResp.effecterOpState == PLDM_EFFECTER_ENABLED_NOUPDATEPENDING) {
 		const uint8_t fwDisable = mStateEffecterResp.presentValue;
 		if (fwDisable == PLDM_EFFECTER_OPERATIONAL_VALUE_ENABLED) {
-			ERR("FWU: Firmware update is disabled (effector ID {} presentValue={}) on card {:02}; aborting\n",
-				kFwuEffecterId, fwDisable, mCardNum);
+			ERR("FWU: Firmware update is disabled (effector ID {} presentValue={}) on GPU {}; aborting\n",
+				kFwuEffecterId, fwDisable, mGpuBdf);
 			return false;
 		}
 	} else {
 		DBG("FWU: Effector state  is not valid. Ignoring effector present value for effector ID {} effecterOpState={} "
-			"on card {:02}\n",
-			kFwuEffecterId, mStateEffecterResp.effecterOpState, mCardNum);
+			"on GPU {}\n",
+			kFwuEffecterId, mStateEffecterResp.effecterOpState, mGpuBdf);
 	}
 	return true;
 }

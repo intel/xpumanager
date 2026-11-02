@@ -44,6 +44,7 @@
 #define PRIVILEGECHECK() privilegeCheck()
 #define ZERO_MEM(mem, size) memset(mem, 0, size)
 #define SETENV(name, value) setenv(name, value, 1)
+#define UNSETENV(name) unsetenv(name)
 #define MSLEEP(ms) usleep(ms * 1000) // Convert milliseconds to microseconds
 #define GETCH getch
 #define RESTORE_TERMINAL() restoreTerminal()

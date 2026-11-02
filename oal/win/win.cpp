@@ -456,3 +456,11 @@ int getXeDevPciProps(std::vector<xeDevPciInfo> *pciPropsList)
 	ERR("getXeDevPciProps is not supported on Windows.\n");
 	return -1;
 }
+
+int getLevelZeroGpuOrder(std::vector<std::string> *bdfList)
+{
+	// Not implemented on Windows yet; callers keep their own device order.
+	UNUSED_VAR(bdfList);
+	DBG("getLevelZeroGpuOrder is not supported on Windows.\n");
+	return -1;
+}

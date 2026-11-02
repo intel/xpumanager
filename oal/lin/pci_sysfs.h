@@ -11,8 +11,10 @@
 #include <filesystem>
 #include <optional>
 #include <span>
+#include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 /**
  * @brief Reads the PCI subsystem device ID of a device from sysfs
@@ -98,6 +100,26 @@ getPciSubsystemDeviceId(std::string_view bdf, const std::filesystem::path &pciDe
  */
 [[nodiscard]] std::error_code resetPciFunction(std::string_view bdf,
 											   const std::filesystem::path &pciBusRoot = "/sys/bus/pci");
+
+/**
+ * @brief The GPUs Level Zero reports, in the order xpu-smi numbers them, from sysfs alone
+ *
+ * Predicts xpu-smi's device indices without initializing Level Zero, so a command that
+ * runs without the driver (amc) can number devices the same way the others do:
+ *  - First the GPUs the compute runtime opens: bound to xe or i915 and with a DRM render
+ *    node, the device files it discovers GPUs through. The Level Zero loader returns
+ *    discrete GPUs before integrated ones (isRootComplexIntegrated()), and xpu-smi sets
+ *    ZE_ENABLE_PCI_ID_DEVICE_ORDER, so each of those two groups is in PCI address order.
+ *  - Then the GPUs in survivability mode: bound to xe and carrying its survivability_mode
+ *    attribute. Only sysman reports them, and xpu-smi numbers them after the others, also
+ *    in PCI address order.
+ *
+ * @param [in] pciDevRoot sysfs PCI device directory (defaults to live sysfs; override in tests)
+ * @return The BDFs, spelled as sysfs names the devices; empty when none are found or
+ *         @p pciDevRoot cannot be read
+ */
+[[nodiscard]] std::vector<std::string>
+listLevelZeroGpus(const std::filesystem::path &pciDevRoot = "/sys/bus/pci/devices");
 
 /**
  * @brief Reads the PCI class code of a device from sysfs

@@ -5,6 +5,7 @@
 
 #include "pci_sysfs.h"
 #include "bdf.h"
+#include "pci_address.h"
 #include <algorithm>
 #include <array>
 #include <cerrno>
@@ -19,6 +20,9 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -245,6 +249,72 @@ std::error_code resetPciFunction(std::string_view bdf, const std::filesystem::pa
 		}
 	}
 	return reset;
+}
+
+namespace {
+
+/// Whether the device directory has a DRM render node (drm/renderD<N>), the device file
+/// the compute runtime opens a GPU through.
+[[nodiscard]] bool hasRenderNode(const std::filesystem::path &device)
+{
+	std::error_code ec;
+	std::filesystem::directory_iterator it(device / "drm", ec);
+	for (; !ec && it != std::filesystem::directory_iterator{}; it.increment(ec)) {
+		if (it->path().filename().string().starts_with("renderD")) {
+			return true;
+		}
+	}
+	return false;
+}
+
+} // namespace
+
+std::vector<std::string> listLevelZeroGpus(const std::filesystem::path &pciDevRoot)
+{
+	struct Gpu
+	{
+		bool survivability;
+		bool integrated;
+		PciAddress address;
+		std::string bdf;
+	};
+	std::vector<Gpu> gpus;
+
+	std::error_code ec;
+	std::filesystem::directory_iterator it(pciDevRoot, ec);
+	for (; !ec && it != std::filesystem::directory_iterator{}; it.increment(ec)) {
+		std::string bdf = it->path().filename().string();
+		// Parsing the name also keeps anything but a device directory out of the paths below.
+		const std::optional<PciAddress> address = PciAddress::parse(bdf);
+		if (!address) {
+			continue;
+		}
+		std::error_code linkEc;
+		const std::string driver = std::filesystem::read_symlink(it->path() / "driver", linkEc).filename().string();
+		if (linkEc) {
+			continue; // no driver bound: neither Level Zero nor sysman can reach it
+		}
+		std::error_code attrEc;
+		const bool survivability = std::filesystem::exists(it->path() / "survivability_mode", attrEc);
+		const bool reported = survivability ? driver == "xe" : isGpuKernelDriver(driver) && hasRenderNode(it->path());
+		if (reported) {
+			const bool integrated = isRootComplexIntegrated(bdf, pciDevRoot);
+			gpus.push_back({survivability, integrated, *address, std::move(bdf)});
+		}
+	}
+
+	// Discrete GPUs first, then integrated ones, then survivability ones, each group in PCI address
+	// order: the Level Zero loader returns discrete GPUs before integrated ones, and xpu-smi
+	// numbers survivability devices after all the others.
+	std::ranges::sort(gpus, [](const Gpu &a, const Gpu &b) {
+		return std::tie(a.survivability, a.integrated, a.address) < std::tie(b.survivability, b.integrated, b.address);
+	});
+	std::vector<std::string> bdfs;
+	bdfs.reserve(gpus.size());
+	for (Gpu &gpu : gpus) {
+		bdfs.push_back(std::move(gpu.bdf));
+	}
+	return bdfs;
 }
 
 std::optional<PciClassCode> getPciClassCode(std::string_view bdf, const std::filesystem::path &pciDevRoot)

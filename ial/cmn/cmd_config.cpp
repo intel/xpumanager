@@ -1919,7 +1919,11 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 {
 	TRACING();
 
-	PRINT("It may take one minute to reset GPU {}. Please wait ...\n", d->index);
+	// Name the GPU by BDF: a device ID depends on how the devices are numbered, and the BDF
+	// shows which GPU is actually reset.
+	pci *pciHandle = d->dev->getPCI();
+	const std::string bdf = pciHandle->getBDFStr();
+	PRINT("It may take one minute to reset GPU {}. Please wait ...\n", bdf);
 
 	// An SBR takes about a minute with no progress to report, and exiting between assert and
 	// deassert leaves the root port in reset and the GPU off the bus.
@@ -1929,19 +1933,18 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 	// If the device does not support SR-IOV, listVFs() returns an error and
 	// we skip VF removal entirely.
 	vf *vfHandle = d->dev->getVF();
-	pci *pciHandle = d->dev->getPCI();
 	DeviceSriovInfo deviceInfo = {};
-	deviceInfo.bdfAddress = pciHandle->getBDFStr();
+	deviceInfo.bdfAddress = bdf;
 	deviceInfo.drmPath = d->dev->getDrmDevPath();
 
 	// listVFs() always places the PF at index 0 followed by VF1..n (see linListVFs).
 	// So size() > 1 means at least one VF is active, and size() - 1 is the VF count.
 	std::vector<DeviceSriovInfo> vfList;
 	if (vfHandle->listVFs(&deviceInfo, vfList) == ZE_RESULT_SUCCESS && vfList.size() > 1) {
-		DBG("Removing {} active VF(s) on GPU {} before reset\n", vfList.size() - 1, d->index);
+		DBG("Removing {} active VF(s) on GPU {} before reset\n", vfList.size() - 1, bdf);
 		ze_result_t removeResult = vfHandle->removeVFs(&deviceInfo);
 		if (removeResult != ZE_RESULT_SUCCESS) {
-			ERR("Failed to remove VFs before reset on GPU {}: 0x{:X} ({})\n", d->index, removeResult,
+			ERR("Failed to remove VFs before reset on GPU {}: 0x{:X} ({})\n", bdf, removeResult,
 				l0_error_to_string(removeResult));
 			return removeResult;
 		}
@@ -1949,11 +1952,11 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
-		ERR("Failed to reset device: 0x{:X} ({})\n", result, l0_error_to_string(result));
+		ERR("Failed to reset GPU {}: 0x{:X} ({})\n", bdf, result, l0_error_to_string(result));
 		return result;
 	}
 
-	PRINT("Succeed to reset the GPU {}\n", d->index);
+	PRINT("Succeed to reset the GPU {}\n", bdf);
 	std::_Exit(0);
 	return ZE_RESULT_SUCCESS;
 }

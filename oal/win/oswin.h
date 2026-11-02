@@ -111,6 +111,7 @@ struct option
 #define GETPCHPRODSTATE(meiPath) (UNUSED_VAR(meiPath), std::string{})
 #define PRIVILEGECHECK() true
 #define SETENV(name, value) _putenv_s(name, value)
+#define UNSETENV(name) _putenv_s(name, "")
 #define MSLEEP(ms) Sleep(ms)
 #define GETCH (char)_getch
 #define RESTORE_TERMINAL()
