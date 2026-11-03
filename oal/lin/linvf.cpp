@@ -451,9 +451,6 @@ static uint64_t getFreeLmemSize(const std::string &path)
  */
 static bool provisionVfsSysfs(const std::string &sriovAdminPath, uint32_t numVfs, uint64_t lmem, bool isIGPU)
 {
-	if (writeFile(sriovAdminPath + "/pf/profile/sched_priority", "normal") != 0) {
-		return false;
-	}
 	if (isIGPU) {
 		return true;
 	}
