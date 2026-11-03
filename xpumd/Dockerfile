@@ -30,7 +30,7 @@ FROM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27
 # NOTE: The final image gets its runtime libraries (libc, libstdc++, libudev...) from here,
 # match distro with what the driver stack packages are built for.
 # (buildpack-deps is Ubuntu with common build tools: compilers, make, git, curl...)
-FROM buildpack-deps:24.04@sha256:27bdb6ab1ca0df6acfe341752ee4d9c08a341d80e3ee75ccc3b34b79af0dfaf1 AS builder-base
+FROM buildpack-deps:24.04@sha256:19a04a89ed67f2c52c255e17bdd6d6962b7eb3aaae4d62da6b1b8797142bca90 AS builder-base
 
 COPY --from=go /usr/local/go/ /usr/local/go/
 ENV GOPATH=/go \
