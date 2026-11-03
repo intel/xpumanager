@@ -1,3 +1,3 @@
 [codespell]
-ignore-words-list = renderD,som,capTable,childRes,AER,aer,pevent,pEvent,FPT,optIn,pEvents,NotIn
+ignore-words-list = renderD,som,capTable,childRes,AER,aer,pevent,pEvent,FPT,optIn,pEvents,NotIn,onlyOnce
 skip = *.db,*.exe,*.gz,*.pdf,*.xlsx,pci.ids,third_party,html,go.mod,go.sum,*/level-zero-go/level-zero/*,*/level-zero-go/sysman/*,*/level-zero-go/level-zero-stub/*,*THIRD_PARTY_LICENSES/*,*venv/*
