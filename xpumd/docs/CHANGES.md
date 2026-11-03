@@ -27,12 +27,28 @@ Contents:
   * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
 * Metric workarounds:
   * Report also disabled power limits (part of [#184](https://github.com/intel/xpumanager/issues/184) fix)
+  * SR-IOV virtual functions are skipped, as they provide duplicate or bogus metrics of their PF
+  * OEM serial ID is used as `hw.gpu.info` serial number fallback (like `xpu-smi` does)
 * Metric updates:
   * Fan metrics support
   * Log output includes all relevant metric (differentiation) attributes
+  * New internal telemetry metrics: `otelcol_sysman_sampler_missed_deadlines`,
+    `otelcol_sysman_sampler_interval_usage` and `otelcol_crashlogs_dropped`
+* Metric output fixes:
+  * `intel_xpu_info` exporter reported an empty subdevice ID, and aggregated
+    memory modules of the same type on different subdevices
+  * `intel_xpu_info` exporter event `message` was empty for non-string log record bodies
+  * `intel_xpu_status` processor and `intel_xpu_info` exporter attribute filters did not match non-string attributes
 * Config updates:
-  * Metrics aggregation support for `intel_xpu_status` processor rules
-  * Temperature and power warning threshold rules synced with `xpu-smi`
+  * `intel_xpu` receiver:
+    * `subsystems` option, to disable scraping of whole metric subsystems
+  * `intel_crashlog` receiver:
+    * `min_file_size` (default 1 byte, i.e. skip empty files) and `max_file_size` (default 1 MiB) options
+  * `intel_xpu_status` processor:
+    * Metrics aggregation (`aggregate`) support for rules
+    * `operator` (`In` / `NotIn`) support for attribute filters
+  * `intel_xpu_info` exporter:
+    * `operator` (`In` / `NotIn`) support for attribute filters
 * New extensions included:
   * `health_check` extension, enabled by default in the example config and in the Helm chart,
      for checking the collector status over HTTP (port 13133)
@@ -40,6 +56,12 @@ Contents:
 * Helm chart:
   * Readiness probe for the xpumd container (`readinessProbe`), using the `health_check` extension
   * Liveness probe (`livenessProbe`), disabled by default
+  * `intel_xpu_status` temperature and power warning threshold rules synced with `xpu-smi`
+    (also in the example config), including new `critical` states for the core and memory
+    temperatures (memory temperature `warning` state replaced by `critical` one)
+* XPUMD binary reports the actual XPUMD version (instead of `0.0.0`)
+* XPUMD image: OS packages are from Ubuntu 24.04 instead of Debian (matching the driver stack packages), base image digests pinned
+* Go dependencies: OTel collector update to v0.163.0 + other version updates
 
 
 ## XPUM 2.3.0
