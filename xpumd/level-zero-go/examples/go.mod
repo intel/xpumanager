@@ -6,5 +6,5 @@ replace github.com/intel/level-zero-go => ../
 
 require (
 	github.com/intel/level-zero-go v0.0.0-00010101000000-000000000000
-	go.yaml.in/yaml/v4 v4.0.0-rc.6
+	go.yaml.in/yaml/v4 v4.0.0-rc.7
 )
