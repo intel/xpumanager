@@ -822,30 +822,42 @@ int linListVFs(DeviceSriovInfo *di, std::vector<DeviceSriovInfo> &result)
 	 *  Put PF info into index 0, and VF1..n into index 1..n respectively
 	 */
 	for (int functionIndex = 0; functionIndex <= numVfs; functionIndex++) {
-		std::string lmemString, lmemPath, ueventPath;
+		std::string lmemString, ueventPath;
+		std::vector<std::string> lmemPaths;
 		DeviceSriovInfo info = {};
 
+		// The sriov_admin directory may exist without per-VF vram_quota entries, so
+		// fall back to the debugfs quota when the sysfs one cannot be read.
 		if (functionIndex == 0) {
-			lmemPath = debugfsPath + "/gt" + gtNum + "/pf/" + "lmem_spare";
-		} else if (!sriovAdminPath.empty()) {
-			lmemPath = sriovAdminPath + "/vf" + std::to_string(functionIndex) + "/profile/vram_quota";
+			lmemPaths.push_back(debugfsPath + "/gt" + gtNum + "/pf/" + "lmem_spare");
 		} else {
-			lmemPath = debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(functionIndex) + "/lmem_quota";
+			if (!sriovAdminPath.empty()) {
+				lmemPaths.push_back(sriovAdminPath + "/vf" + std::to_string(functionIndex) + "/profile/vram_quota");
+			}
+			lmemPaths.push_back(debugfsPath + "/gt" + gtNum + "/vf" + std::to_string(functionIndex) + "/lmem_quota");
 		}
 
 		// iGPU platforms may not expose LMEM quota. Default to 0 unless a value is readable.
 		lmemString = "0";
-		{
+		bool lmemRead = false;
+		for (const auto &lmemPath : lmemPaths) {
 			std::ifstream lmemFile(lmemPath);
-			if (lmemFile.is_open()) {
-				std::string tmp;
-				if (std::getline(lmemFile, tmp) && !tmp.empty()) {
-					lmemString = tmp;
-				}
-			} else if (!di->isIGPU) {
-				ERR("Failed to read LMEM quota for function {}: {}\n", functionIndex, lmemPath.c_str());
-				return -1;
+			if (!lmemFile.is_open()) {
+				DBG("Unable to open LMEM quota {}\n", lmemPath.c_str());
+				continue;
 			}
+			std::string tmp;
+			if (!std::getline(lmemFile, tmp) || tmp.empty()) {
+				DBG("Unable to read LMEM quota {}\n", lmemPath.c_str());
+				continue;
+			}
+			lmemString = tmp;
+			lmemRead = true;
+			break;
+		}
+		if (!lmemRead && !di->isIGPU) {
+			ERR("Failed to read LMEM quota for function {}: {}\n", functionIndex, lmemPaths.back().c_str());
+			return -1;
 		}
 		info.functionType = (functionIndex == 0) ? DEVICE_FUNCTION_TYPE_PHYSICAL : DEVICE_FUNCTION_TYPE_VIRTUAL;
 		info.vGpuNumber = static_cast<uint32_t>(functionIndex);
