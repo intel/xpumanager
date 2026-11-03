@@ -81,9 +81,9 @@ RUN dpkg -i ./*.deb  &&  ls -l /usr/lib/x86_64-linux-gnu/libig*.so.*
 FROM builder-base AS builder-deb
 
 # driver stack DEB package versions
-ARG IGC_CORE_VERSION=2.41.5+22716
-ARG COMPUTE_RUNTIME_RELEASE=26.35.39758.10
-ARG LIBIGDGMM12_VERSION=22.10.0
+ARG IGC_CORE_VERSION=2.42.6+23070
+ARG COMPUTE_RUNTIME_RELEASE=26.40.40196.8
+ARG LIBIGDGMM12_VERSION=22.10.2
 ARG LEVEL_ZERO_VERSION=1.34.0
 
 # Git repo tags & commit hashes to match against them for IGSC source build
