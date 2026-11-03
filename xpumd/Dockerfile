@@ -23,7 +23,7 @@ ARG BACKEND=deb
 # NOTE: The base images are pinned by digest for reproducible builds (Dependabot updates them).
 
 # --- Go toolchain (self-contained, so it can be copied to the builder image) ---
-FROM golang:1.27.3-trixie@sha256:290a54a1f70d617560f843301bcb32b339f1687e8e0bff49ebc043903aeb19d8 AS go
+FROM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27e8a3c0f3be17cc385 AS go
 
 # --- Base build stage with necessary distro setup / packages ---
 #
