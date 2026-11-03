@@ -59,9 +59,11 @@ processors:
         parent_ref_attribute: "hw.id"
         parent_filters:
           - key: "pci.vendor_id"
+            operator: "In"  # "In" (default if omitted) or "NotIn"
             values: ["8086"]
         component_filters:
           - key: "hw.sensor_location"
+            operator: "In"  # "In" (default if omitted) or "NotIn"
             values: ["gpu"]
         copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
         add_attributes:
@@ -76,6 +78,7 @@ processors:
               - value: 100
                 parent_filters:
                   - key: "pci.device_id"
+                    operator: "In"  # "In" (default if omitted) or "NotIn"
                     values: ["56c0", "56c2"]
               - value: 95
                 parent_filters:
@@ -88,6 +91,7 @@ processors:
               - value: 125
                 parent_filters:
                   - key: "pci.device_id"
+                    operator: "In"  # "In" (default if omitted) or "NotIn"
                     values: ["56c0", "56c1", "56c2"]
               # Default core temperature critical threshold for other device IDs
               - value: 130
@@ -97,9 +101,11 @@ processors:
         parent_ref_attribute: "hw.id"
         parent_filters:
           - key: "pci.vendor_id"
+            operator: "In"  # "In" (default if omitted) or "NotIn"
             values: ["8086"]
         component_filters:
           - key: "hw.sensor_location"
+            operator: "In"  # "In" (default if omitted) or "NotIn"
             values: ["memory"]
         copy_attributes: ["hw.id", "hw.name", "pci.bdf", "hw.sensor_location", "com.intel.subdevice_id"]
         add_attributes:
@@ -114,6 +120,7 @@ processors:
               - value: 105
                 parent_filters:
                   - key: "pci.device_id"
+                    operator: "In"  # "In" (default if omitted) or "NotIn"
                     values: ["56c0", "56c1", "56c2"]
               # Default memory temperature critical threshold for other device IDs
               - value: 100
@@ -123,6 +130,7 @@ processors:
         parent_ref_attribute: "hw.id"
         parent_filters:
           - key: "pci.vendor_id"
+            operator: "In"  # "In" (default if omitted) or "NotIn"
             values: ["8086"]
         aggregate:
           function: "Max"
@@ -140,6 +148,7 @@ processors:
               - value: 600
                 parent_filters:
                   - key: "pci.device_id"
+                    operator: "In"  # "In" (default if omitted) or "NotIn"
                     values: ["0bd0", "0bd4", "0bd5", "0bd6", "0be5"]
               - value: 450
                 parent_filters:
@@ -189,6 +198,7 @@ exporters:
       - health_domain: "memory"
         filters:
           - key: hw.type
+            operator: In  # "In" (default if omitted) or "NotIn"
             values: [memory]
         state_mapping:
           unknown:
@@ -208,6 +218,7 @@ exporters:
       - health_domain: "gpu"
         filters:
           - key: hw.type
+            operator: In  # "In" (default if omitted) or "NotIn"
             values: [gpu]
         state_mapping:
           ok:
