@@ -221,7 +221,7 @@ void HealthTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 			} else if (subitem.value().is_number_integer() && subitem.value().get<int64_t>() == -1) {
 				value = "N/A";
 			} else {
-				value = subitem.value().dump();
+				value = jsonText(subitem.value());
 			}
 			table.addRow(subitem.key(), value);
 		}

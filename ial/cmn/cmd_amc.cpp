@@ -86,7 +86,7 @@ void AmcTextPrinter::printDeviceInfo(nlohmann::ordered_json *jsonObj)
 		} else if (item.value().is_number_integer() && item.value().get<int64_t>() == -1) {
 			value = "N/A";
 		} else {
-			value = item.value().dump();
+			value = jsonText(item.value());
 		}
 		table.addRow(item.key(), value);
 	}

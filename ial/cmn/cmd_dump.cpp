@@ -5,6 +5,7 @@
  */
 
 #include "cmd_dump.h"
+#include "printer.h"
 #include "cmds.h"
 #include "utility/logger/logger.h"
 #include "device.h"
@@ -633,7 +634,7 @@ struct DumpOutput
 			if (hasEnvelope) {
 				obj["metrics"] = std::move(metricsHolder);
 			}
-			emit(obj.dump());
+			emit(jsonText(obj));
 			return;
 		}
 

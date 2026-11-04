@@ -273,7 +273,7 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		if (val.is_number_integer() && val.get<int64_t>() == -1) {
 			return "N/A";
 		}
-		return val.dump();
+		return jsonText(val);
 	};
 	auto buildCsvLine = [&](const nlohmann::ordered_json &cells) -> std::string {
 		std::string line;

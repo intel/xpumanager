@@ -5,6 +5,7 @@
  */
 
 #include "cmd_raslog.h"
+#include "printer.h"
 #include "debug.h"
 #include "table_builder.h"
 #include <hal.h>
@@ -147,7 +148,7 @@ void reportCperSuccess(bool jsonOutput, bool partial, bool peek, size_t byteCoun
 		recs.push_back(std::move(rec));
 	}
 	obj["cper_records"] = std::move(recs);
-	PRINT("{}\n", obj.dump(4));
+	PRINT("{}\n", jsonText(obj, 4));
 }
 
 /**
@@ -165,7 +166,7 @@ ze_result_t reportFileError(bool jsonOutput, std::string_view message, const std
 		obj["ze_result"] = static_cast<int>(ZE_RESULT_ERROR_UNKNOWN);
 		obj["error"] = message;
 		obj["file"] = fileName;
-		PRINT("{}\n", obj.dump(4));
+		PRINT("{}\n", jsonText(obj, 4));
 	} else {
 		ERR("{}: {}\n", message, fileName);
 	}
@@ -276,7 +277,7 @@ ze_result_t runCper(arg_struct *args, const std::string &fileName, bool jsonOutp
 			nlohmann::ordered_json obj;
 			obj["ze_result"] = static_cast<int>(result);
 			obj["error"] = errorMsg;
-			PRINT("{}\n", obj.dump(4));
+			PRINT("{}\n", jsonText(obj, 4));
 		} else {
 			ERR("{}: 0x{:X} ({})\n", errorMsg, result, hal::resultToString(result));
 		}

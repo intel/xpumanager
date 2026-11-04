@@ -11,6 +11,9 @@
 #endif
 
 #include "gfx_firmware_status.h"
+#include "printer.h"
+
+#include <string>
 
 TEST_CASE("normal GFX firmware status requires a readable version")
 {
@@ -31,4 +34,15 @@ TEST_CASE("empty GFX firmware status is unknown")
 {
 	CHECK(discovery::resolveGfxFirmwareStatus("", "") == "unknown");
 	CHECK(discovery::resolveGfxFirmwareStatus("DG02_1.2.3", "") == "unknown");
+}
+
+TEST_CASE("JSON output replaces bytes that are not UTF-8 instead of failing")
+{
+	// The AMC version string of a damaged reply: "1.2.7" and an MCTP header byte
+	nlohmann::ordered_json json;
+	json["amc_firmware_version"] = std::string("1.2.7\x81");
+	std::string text;
+	CHECK_NOTHROW(text = jsonText(json, 4));
+	CHECK(text.find("1.2.7\xEF\xBF\xBD") != std::string::npos); // U+FFFD
+	CHECK(jsonText(nlohmann::ordered_json{{"version", "1.2.7.0"}}) == R"({"version":"1.2.7.0"})");
 }
