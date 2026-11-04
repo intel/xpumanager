@@ -66,6 +66,7 @@ func (e *xpuInfoExporter) start(ctx context.Context, host component.Host) error 
 	e.telemetry = tb
 
 	if err := e.startGrpcServer(ctx); err != nil {
+		tb.Shutdown()
 		return fmt.Errorf("failed to start gRPC server: %w", err)
 	}
 
@@ -85,6 +86,7 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 	e.started = false
 
 	e.logger.Info("Shutting down XPU Info exporter")
+	defer e.telemetry.Shutdown()
 
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
