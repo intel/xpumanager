@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"sync"
@@ -37,6 +38,7 @@ type xpuInfoExporter struct {
 	settings   exporter.Settings
 	grpcServer *grpc.Server
 	infoServer *deviceInfoServer
+	lis        net.Listener
 
 	started bool
 }
@@ -87,6 +89,8 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 
 	e.logger.Info("Shutting down XPU Info exporter")
 	defer e.telemetry.Shutdown()
+	// GracefulStop only closes listeners that Serve has already picked up.
+	defer func() { _ = e.lis.Close() }()
 
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
@@ -196,9 +200,11 @@ func (e *xpuInfoExporter) startGrpcServer(ctx context.Context) error {
 	e.logger.Infow("gRPC server listening", "endpoint", e.cfg.NetAddr.Endpoint)
 	e.grpcServer = grpcServer
 	e.infoServer = infoServer
+	e.lis = lis
 
 	go func() {
-		if err := grpcServer.Serve(lis); err != nil {
+		// Serve returns ErrServerStopped if shutdown happened before it got to run.
+		if err := grpcServer.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
 			e.logger.Errorw("gRPC server failed", "error", err)
 		}
 	}()
