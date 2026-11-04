@@ -1925,10 +1925,6 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 	const std::string bdf = pciHandle->getBDFStr();
 	PRINT("It may take one minute to reset GPU {}. Please wait ...\n", bdf);
 
-	// An SBR takes about a minute with no progress to report, and exiting between assert and
-	// deassert leaves the root port in reset and the GPU off the bus.
-	const auto resetting = xpum::watchdog::suspend("GPU reset");
-
 	// Remove active VFs before the SBR to prevent a host crash/hang.
 	// If the device does not support SR-IOV, listVFs() returns an error and
 	// we skip VF removal entirely.
@@ -1950,6 +1946,10 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 		}
 	}
 
+	// Not suspended earlier: VF removal is plain sysfs writes, safe to abort and worth reporting if
+	// it hangs. An SBR takes about a minute with no progress to report, and exiting between assert
+	// and deassert leaves the root port in reset and the GPU off the bus.
+	const auto resetting = xpum::watchdog::suspend("GPU reset");
 	ze_result_t result = d->dev->resetDevice(d->zesDeviceHdl);
 	if (result != ZE_RESULT_SUCCESS) {
 		ERR("Failed to reset GPU {}: 0x{:X} ({})\n", bdf, result, l0_error_to_string(result));
