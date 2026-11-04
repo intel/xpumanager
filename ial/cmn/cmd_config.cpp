@@ -5,6 +5,7 @@
  */
 
 #include "cmd_config.h"
+#include "printer.h"
 #include "debug.h"
 #include <CLI/CLI.hpp>
 #include "table_builder.h"
@@ -553,7 +554,7 @@ static std::string buildDeviceConfigJson(devInfo *d, size_t indent)
 
 	deviceJson["tile_config_data"] = tileConfigArray;
 
-	std::string jsonOut = deviceJson.dump(4);
+	std::string jsonOut = jsonText(deviceJson, 4);
 	if (indent == 0) {
 		return jsonOut;
 	}

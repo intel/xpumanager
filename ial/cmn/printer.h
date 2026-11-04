@@ -8,6 +8,23 @@
 #define _PRINT_H
 
 #include <nlohmann/json.hpp>
+#include <string>
+
+/**
+ * @brief Serialises JSON for output, replacing any byte that is not valid UTF-8
+ *
+ * Strings filled from devices and firmware are not guaranteed to be UTF-8, and the default
+ * serialiser throws on them, which would end the whole command.
+ *
+ * @param[in] json   The JSON value
+ * @param[in] indent Spaces per level; -1 for a single line
+ *
+ * @retval The serialised JSON, with U+FFFD in place of each invalid byte sequence
+ */
+template <typename Json> [[nodiscard]] std::string jsonText(const Json &json, int indent = -1)
+{
+	return json.dump(indent, ' ', false, Json::error_handler_t::replace);
+}
 
 /**
  * @brief Base Print class that accumulates key-value pairs and delegates to child classes

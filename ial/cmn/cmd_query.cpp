@@ -4,6 +4,7 @@
  */
 
 #include "cmd_query.h"
+#include "printer.h"
 #include "bounded_call.h"
 #include "cmd_discovery.h"
 #include "debug.h"
@@ -1228,7 +1229,7 @@ RenderedFrame QuerySession::renderFrame()
 	report.kmdVersion = headerValue("kernel_driver_version");
 	report.levelZeroVersion = presentOrNull(args->sm.getLoaderVersion());
 
-	return RenderedFrame{ZE_RESULT_SUCCESS, options.json ? toJson(report).dump(4) + "\n" : renderText(report)};
+	return RenderedFrame{ZE_RESULT_SUCCESS, options.json ? jsonText(toJson(report), 4) + "\n" : renderText(report)};
 }
 
 } // namespace

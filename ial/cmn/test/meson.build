@@ -83,7 +83,7 @@ discovery_test = executable(
     global_inc,
     ial_cmn_inc,
   ],
-  dependencies: [doctest_dep],
+  dependencies: [doctest_dep, nlohmann_json_dep],
   link_args: is_linux ? ['-pie'] : [],
   build_by_default: true,
   install: false,
