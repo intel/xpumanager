@@ -50,10 +50,15 @@ std::vector<uint8_t> makeFruTable(const std::string &serial, const std::string &
 	std::vector<uint8_t> t = {0x01, 0x00, FRU_RECORD_TYPE_GENERAL, 2, FRU_RECORD_ENCODING_TYPE_ASCII};
 	t.push_back(FRU_GENERAL_FIELD_TYPE_SERIAL_NUMBER);
 	t.push_back(static_cast<uint8_t>(serial.size()));
-	t.insert(t.end(), serial.begin(), serial.end());
+	// Byte by byte: GCC 13 at -O3 reports a false -Wstringop-overflow for a ranged insert here.
+	for (const char c : serial) {
+		t.push_back(static_cast<uint8_t>(c));
+	}
 	t.push_back(FRU_GENERAL_FIELD_TYPE_DESCRIPTION);
 	t.push_back(static_cast<uint8_t>(description.size()));
-	t.insert(t.end(), description.begin(), description.end());
+	for (const char c : description) {
+		t.push_back(static_cast<uint8_t>(c));
+	}
 	return t;
 }
 
@@ -215,6 +220,70 @@ TEST_CASE("A reply without a completion code is not taken as the response")
 		REQUIRE(c.card.initialize() == PLDM_SUCCESS);
 		CHECK(c.amc->count(MCTP_CONTROL, MCTP_GET_VERSION) == 2);
 	}
+}
+
+// A damaged packet that is not a read cut off by the AMC gives no header the host can believe, so the rest of the
+// message is waited out (MCTP_ASSEMBLY_GAP_TIMEOUT_MS) before the request is sent again: not MT2/PT2 per retry.
+TEST_CASE("A reply that fails its PEC is not taken, and the request is sent again with the same Instance ID")
+{
+	SUBCASE("MCTP control")
+	{
+		Card c;
+		c.amc->damageNext(MCTP_CONTROL, MCTP_GET_VERSION, 1);
+		REQUIRE(c.card.initialize() == PLDM_SUCCESS);
+		REQUIRE(c.amc->count(MCTP_CONTROL, MCTP_GET_VERSION) == 2);
+		CHECK(c.amc->requests()[0].hdr == c.amc->requests()[1].hdr);
+		CHECK(msBetweenFirstTwo(*c.amc, MCTP_CONTROL, MCTP_GET_VERSION) < MCTP_ASSEMBLY_GAP_TIMEOUT_MS + 500);
+	}
+	SUBCASE("PLDM")
+	{
+		Card c;
+		c.amc->setFruTable(makeFruTable("SN-1", "x"));
+		c.amc->damageNext(PLDM_OVER_MCTP, PLDM_GET_FRU_RECORD_TABLE_METADATA, 1);
+		char serial[16] = {};
+		size_t len = sizeof(serial);
+		REQUIRE(c.card.getFruSerialNum(serial, len) == PLDM_SUCCESS);
+		CHECK(std::string(serial) == "SN-1");
+		REQUIRE(c.amc->count(PLDM_OVER_MCTP, PLDM_GET_FRU_RECORD_TABLE_METADATA) == 2);
+		CHECK(c.amc->requests()[0].hdr == c.amc->requests()[1].hdr);
+		CHECK(msBetweenFirstTwo(*c.amc, PLDM_OVER_MCTP, PLDM_GET_FRU_RECORD_TABLE_METADATA) < PLDM_PT2_MS);
+		CHECK(msBetweenFirstTwo(*c.amc, PLDM_OVER_MCTP, PLDM_GET_FRU_RECORD_TABLE_METADATA) <
+			  MCTP_ASSEMBLY_GAP_TIMEOUT_MS + 500);
+	}
+	SUBCASE("PLDM, the damaged packet the last of three")
+	{
+		Card c;
+		c.amc->setFruTable(makeFruTable("SN-XPUM-0003", std::string(150, 'd')));
+		c.amc->damageNext(PLDM_OVER_MCTP, PLDM_GET_FRU_RECORD_TABLE, 1);
+		char serial[64] = {};
+		size_t len = sizeof(serial);
+		REQUIRE(c.card.getFruSerialNum(serial, len) == PLDM_SUCCESS);
+		CHECK(std::string(serial) == "SN-XPUM-0003");
+		CHECK(c.amc->count(PLDM_OVER_MCTP, PLDM_GET_FRU_RECORD_TABLE) == 2);
+	}
+}
+
+TEST_CASE("A request whose replies keep failing their PEC gives up, every try within PT3 of the first")
+{
+	Card c;
+	c.amc->damageNext(PLDM_OVER_MCTP, PLDM_OEM_VR_SYNC_PAUSE, 100);
+	CHECK(c.card.oemVrsyncCmd(PLDM_OEM_VR_SYNC_PAUSE) == PLDM_ERROR);
+	const auto &r = c.amc->requests();
+	REQUIRE(r.size() > 1 + PLDM_PN1_RETRIES); // more tries than PN1 alone would give: the losses have their own budget
+	CHECK(r.size() <= 1 + PLDM_LOST_RESPONSE_RETRIES);
+	for (const auto &req : r) {
+		CHECK(req.hdr == r.front().hdr); // one request, so one Instance ID
+	}
+	// DSP0240 Table 6: all retries within PT3 of the initial request, so the responder still sees retries
+	CHECK(std::chrono::duration_cast<std::chrono::milliseconds>(r.back().at - r.front().at).count() < PLDM_PT3_MAX_MS);
+}
+
+TEST_CASE("A GPU reset whose reply fails its PEC is reported, not resent")
+{
+	Card c;
+	c.amc->damageNext(PLDM_OVER_MCTP, PLDM_SET_STATE_EFFECTER_STATES, 1);
+	CHECK(c.card.amcGpuReset() == PLDM_ERROR);
+	CHECK(c.amc->requests().size() == 1);
 }
 
 TEST_CASE("A failed read is reported at once as a failure, not resent as if it had timed out")

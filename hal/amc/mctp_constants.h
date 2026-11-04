@@ -11,6 +11,8 @@
 #define MCTP_FAILURE 0x01
 #define MCTP_CANCELLED 0x02 // local status: a receive was abandoned at the caller's request
 #define MCTP_TIMEOUT 0x03	// local status: no message began to arrive within the time given
+// local status: a message began to arrive but was lost (DSP0236 drops an incomplete message)
+#define MCTP_DROPPED 0x04
 #define MCTP_HEADER_VERSION 0x01
 #define MCTP_HEADER_SIZE 0x09
 #define MCTP_HEADER_PEC_SIZE 0x01
@@ -70,6 +72,12 @@
 #define MCTP_MT2_MS 1000
 // MN1, request retries: at least 2, and every try within MT4 (3 tries x MT2 = 3 s < 5 s)
 #define MCTP_MN1_RETRIES 2
+// MT4 min, the instance ID expiration interval: every try of a request goes out within it
+#define MCTP_MT4_MS 5000
+// Times a request is sent again when its response began to arrive but was lost (a damaged or cut-off
+// packet), on top of the MN1/PN1 retries and within MT4/PT3. Each costs one exchange, not an MT2 wait;
+// a local value, not a protocol one.
+#define MCTP_LOST_RESPONSE_RETRIES 8
 
 enum mctpControlCode
 {

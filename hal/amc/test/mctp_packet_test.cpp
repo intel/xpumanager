@@ -8,6 +8,7 @@
 #include <doctest/doctest.h>
 
 #include "mctp_packet.h"
+#include <algorithm>
 #include <cstdint>
 #include <numeric>
 #include <vector>
@@ -69,6 +70,34 @@ std::vector<std::vector<uint8_t>> packetize(const mctpMsgInfo &info, const std::
 	std::vector<std::vector<uint8_t>> packets;
 	REQUIRE(mctpPacketize({kAmcAddr, kHostAddr}, info, msg.data(), msg.size(), packets));
 	return packets;
+}
+
+/**
+ * @brief Split a message into the packets the test AMC sends the host, failing the test if it cannot be
+ *
+ * @param info Transport header fields of the message
+ * @param msg Message body
+ *
+ * @return std::vector<std::vector<uint8_t>> The packets, each from the destination address byte through the PEC
+ */
+std::vector<std::vector<uint8_t>> fromAmc(const mctpMsgInfo &info, const std::vector<uint8_t> &msg)
+{
+	std::vector<std::vector<uint8_t>> packets;
+	REQUIRE(mctpPacketize({kHostAddr, kAmcAddr}, info, msg.data(), msg.size(), packets));
+	return packets;
+}
+
+/**
+ * @brief Give a packet that a test changed a valid PEC again, so only the change itself is checked
+ *
+ * @param pkt Packet from the destination address byte through the PEC
+ *
+ * @return std::vector<uint8_t> The packet with its last byte set to the PEC of the bytes before it
+ */
+std::vector<uint8_t> reseal(std::vector<uint8_t> pkt)
+{
+	pkt.back() = referencePec(pkt.data(), pkt.size() - 1);
+	return pkt;
 }
 
 /**
@@ -182,7 +211,7 @@ TEST_CASE("Packets reassemble into the original message and header fields")
 	for (size_t len : {1u, 64u, 65u, 69u, 128u, 300u}) {
 		CAPTURE(len);
 		const std::vector<uint8_t> msg = makeMessage(len);
-		const auto packets = packetize(kFromAmc, msg);
+		const auto packets = fromAmc(kFromAmc, msg);
 
 		MctpAssembler assembler(kHostEid);
 		for (size_t i = 0; i < packets.size(); i++) {
@@ -200,10 +229,11 @@ TEST_CASE("Packets reassemble into the original message and header fields")
 
 TEST_CASE("The sequence may start at any value")
 {
-	auto packets = packetize(kFromAmc, makeMessage(130));
+	auto packets = fromAmc(kFromAmc, makeMessage(130));
 	for (auto &pkt : packets) {
 		const uint8_t seq = static_cast<uint8_t>((((pkt[7] >> 4) & 0x03) + 2) & 0x03);
 		pkt[7] = static_cast<uint8_t>((pkt[7] & ~0x30) | (seq << 4));
+		pkt = reseal(pkt);
 	}
 
 	MctpAssembler assembler(kHostEid);
@@ -214,7 +244,7 @@ TEST_CASE("The sequence may start at any value")
 
 TEST_CASE("An out-of-sequence packet drops the message")
 {
-	const auto packets = packetize(kFromAmc, makeMessage(200)); // 4 packets
+	const auto packets = fromAmc(kFromAmc, makeMessage(200)); // 4 packets
 	MctpAssembler assembler(kHostEid);
 
 	CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
@@ -226,7 +256,7 @@ TEST_CASE("An out-of-sequence packet drops the message")
 
 TEST_CASE("Middle and end packets without a SOM are dropped")
 {
-	const auto packets = packetize(kFromAmc, makeMessage(130));
+	const auto packets = fromAmc(kFromAmc, makeMessage(130));
 	MctpAssembler assembler(kHostEid);
 	CHECK(feed(assembler, packets[1]) == MctpAssembler::result::Dropped);
 	CHECK(feed(assembler, packets[2]) == MctpAssembler::result::Dropped);
@@ -234,9 +264,9 @@ TEST_CASE("Middle and end packets without a SOM are dropped")
 
 TEST_CASE("A SOM during assembly starts a new message")
 {
-	const auto first = packetize(kFromAmc, makeMessage(130));
+	const auto first = fromAmc(kFromAmc, makeMessage(130));
 	const std::vector<uint8_t> secondMsg = makeMessage(10);
-	const auto second = packetize(kFromAmc, secondMsg);
+	const auto second = fromAmc(kFromAmc, secondMsg);
 
 	MctpAssembler assembler(kHostEid);
 	CHECK(feed(assembler, first[0]) == MctpAssembler::result::InProgress);
@@ -249,10 +279,10 @@ TEST_CASE("A SOM during assembly starts a new message")
 TEST_CASE("A packet from another message does not disturb the one being assembled")
 {
 	const std::vector<uint8_t> msg = makeMessage(130);
-	const auto packets = packetize(kFromAmc, msg);
+	const auto packets = fromAmc(kFromAmc, msg);
 	mctpMsgInfo otherTag = kFromAmc;
 	otherTag.msgTag = 0x06;
-	const auto other = packetize(otherTag, makeMessage(130));
+	const auto other = fromAmc(otherTag, makeMessage(130));
 
 	MctpAssembler assembler(kHostEid);
 	CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
@@ -267,72 +297,72 @@ TEST_CASE("Non-final packets must carry a full transmission unit")
 	MctpAssembler assembler(kHostEid);
 
 	// A SOM-only packet with a 10-byte payload: shorten a single-packet message and clear EOM
-	auto shortSom = packetize(kFromAmc, makeMessage(10))[0];
+	auto shortSom = fromAmc(kFromAmc, makeMessage(10))[0];
 	shortSom[7] = static_cast<uint8_t>(shortSom[7] & ~0x40);
-	CHECK(feed(assembler, shortSom) == MctpAssembler::result::Dropped);
+	CHECK(feed(assembler, reseal(shortSom)) == MctpAssembler::result::Dropped);
 
 	// A short middle packet: drop the last 10 payload bytes of packet 1 of a 3-packet message
-	auto packets = packetize(kFromAmc, makeMessage(130));
+	auto packets = fromAmc(kFromAmc, makeMessage(130));
 	packets[1].erase(packets[1].end() - 11, packets[1].end() - 1);
 	packets[1][2] = static_cast<uint8_t>(packets[1][2] - 10);
 	CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
-	CHECK(feed(assembler, packets[1]) == MctpAssembler::result::Dropped);
+	CHECK(feed(assembler, reseal(packets[1])) == MctpAssembler::result::Dropped);
 	CHECK(feed(assembler, packets[2]) == MctpAssembler::result::Dropped);
 }
 
 TEST_CASE("Packets violating the SMBus binding or addressing are dropped")
 {
-	const auto good = packetize(kFromAmc, makeMessage(10))[0];
+	const auto good = fromAmc(kFromAmc, makeMessage(10))[0];
 	MctpAssembler assembler(kHostEid);
 
 	SUBCASE("wrong command code")
 	{
 		auto pkt = good;
 		pkt[1] = 0x0E;
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Dropped);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Dropped);
 	}
 	SUBCASE("byte count does not match the frame")
 	{
 		auto pkt = good;
 		pkt[2] = static_cast<uint8_t>(pkt[2] + 1);
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Dropped);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Dropped);
 	}
 	SUBCASE("payload larger than the transmission unit")
 	{
-		auto pkt = packetize(kFromAmc, makeMessage(MCTP_BASELINE_TRANSMISSION_UNIT))[0];
+		auto pkt = fromAmc(kFromAmc, makeMessage(MCTP_BASELINE_TRANSMISSION_UNIT))[0];
 		pkt.insert(pkt.end() - 1, 0xAA);
 		pkt[2] = static_cast<uint8_t>(pkt[2] + 1);
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Dropped);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Dropped);
 	}
 	SUBCASE("source slave address bit 0 clear")
 	{
 		auto pkt = good;
 		pkt[3] = static_cast<uint8_t>(pkt[3] & ~0x01);
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Dropped);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Dropped);
 	}
 	SUBCASE("unsupported header version")
 	{
 		auto pkt = good;
 		pkt[4] = 0x02;
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Dropped);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Dropped);
 	}
 	SUBCASE("addressed to another EID")
 	{
 		auto pkt = good;
 		pkt[5] = 0x20;
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Dropped);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Dropped);
 	}
 	SUBCASE("null destination EID is accepted")
 	{
 		auto pkt = good;
 		pkt[5] = MCTP_NULL_EID;
-		CHECK(feed(assembler, pkt) == MctpAssembler::result::Complete);
+		CHECK(feed(assembler, reseal(pkt)) == MctpAssembler::result::Complete);
 	}
 }
 
 TEST_CASE("A message over the reassembly limit is dropped")
 {
-	const auto packets = packetize(kFromAmc, makeMessage(130));
+	const auto packets = fromAmc(kFromAmc, makeMessage(130));
 	MctpAssembler assembler(kHostEid, 100);
 	CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
 	CHECK(feed(assembler, packets[1]) == MctpAssembler::result::Dropped);
@@ -340,7 +370,7 @@ TEST_CASE("A message over the reassembly limit is dropped")
 
 TEST_CASE("Frames are found anywhere in the read and across reads")
 {
-	const auto pkt = packetize(kFromAmc, makeMessage(10))[0];
+	const auto pkt = fromAmc(kFromAmc, makeMessage(10))[0];
 	const std::vector<uint8_t> frame = asReceived(pkt);
 	std::vector<uint8_t> out;
 
@@ -379,4 +409,90 @@ TEST_CASE("Frames are found anywhere in the read and across reads")
 		CHECK(mctpExtractFrame(stream, out) == mctpFrameStatus::NotFound);
 		CHECK(stream.empty());
 	}
+}
+
+TEST_CASE("A packet whose PEC does not match is dropped, and with it the message")
+{
+	const auto packets = fromAmc(kFromAmc, makeMessage(130)); // 3 packets
+	MctpAssembler assembler(kHostEid);
+
+	SUBCASE("a packet that is whole and valid is accepted")
+	{
+		CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
+		CHECK_FALSE(assembler.lostMessage());
+	}
+	SUBCASE("a flipped payload bit")
+	{
+		CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
+		auto damaged = packets[1];
+		damaged[20] ^= 0x01;
+		CHECK(feed(assembler, damaged) == MctpAssembler::result::Dropped);
+		CHECK(assembler.lostMessage());
+		CHECK_FALSE(assembler.inProgress());
+		CHECK(feed(assembler, packets[2]) == MctpAssembler::result::Dropped);
+	}
+	SUBCASE("a packet cut off by the end of a read and padded with an idle read")
+	{
+		// What the field AMC does: the rest of the cut packet is lost, and the next read is the AMC's
+		// address byte followed by zeros, which take the place of the missing bytes.
+		CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
+		auto cut = packets[1];
+		const size_t cutAt = 10;
+		cut[cutAt] = (kAmcAddr << 1) | 1;
+		std::fill(cut.begin() + cutAt + 1, cut.end(), 0x00);
+		CHECK(feed(assembler, cut) == MctpAssembler::result::Dropped);
+		CHECK(assembler.lostMessage());
+		// Cut after the transport header, so its flags arrived as sent
+		CHECK(assembler.lastHeaderValid());
+	}
+	SUBCASE("a packet cut off inside its transport header")
+	{
+		CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
+		auto cut = packets[1];
+		const size_t cutAt = 6; // the source EID; the flags byte after it is the next read's
+		cut[cutAt] = (kAmcAddr << 1) | 1;
+		std::fill(cut.begin() + cutAt + 1, cut.end(), 0x00);
+		CHECK(feed(assembler, cut) == MctpAssembler::result::Dropped);
+		CHECK(assembler.lostMessage());
+		CHECK_FALSE(assembler.lastHeaderValid());
+	}
+	SUBCASE("a PEC computed over another receiver's address")
+	{
+		// Addressed to the AMC rather than the host, so the PEC covers the AMC's address byte
+		const auto toAmc = packetize(kFromAmc, makeMessage(10))[0];
+		CHECK(feed(assembler, toAmc) == MctpAssembler::result::Dropped);
+	}
+}
+
+TEST_CASE("A message that is not being assembled is not lost by a stray packet")
+{
+	const auto packets = fromAmc(kFromAmc, makeMessage(130));
+	MctpAssembler assembler(kHostEid);
+	CHECK(feed(assembler, packets[2]) == MctpAssembler::result::Dropped);
+	CHECK_FALSE(assembler.lostMessage());
+	// Dropped for having no SOM, but intact: its EOM flag can be believed
+	CHECK(assembler.lastHeaderValid());
+}
+
+TEST_CASE("A packet that fails its PEC is not intact, so its header is not believed")
+{
+	const auto packets = fromAmc(kFromAmc, makeMessage(130));
+	MctpAssembler assembler(kHostEid);
+	CHECK(feed(assembler, packets[0]) == MctpAssembler::result::InProgress);
+	CHECK(assembler.lastHeaderValid());
+	// A middle packet whose EOM bit was flipped on the way
+	auto flipped = packets[1];
+	flipped[7] = static_cast<uint8_t>(flipped[7] | 0x40);
+	CHECK(feed(assembler, flipped) == MctpAssembler::result::Dropped);
+	CHECK(assembler.lostMessage());
+	CHECK_FALSE(assembler.lastHeaderValid());
+}
+
+TEST_CASE("The EOM flag of a received frame is read from its transport header")
+{
+	const auto packets = fromAmc(kFromAmc, makeMessage(130));
+	CHECK_FALSE(mctpFrameIsEom(asReceived(packets[0])));
+	CHECK_FALSE(mctpFrameIsEom(asReceived(packets[1])));
+	CHECK(mctpFrameIsEom(asReceived(packets[2])));
+	CHECK_FALSE(mctpFrameIsEom(std::vector<uint8_t>{0x0F, 0x45}));
 }

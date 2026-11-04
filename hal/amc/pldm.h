@@ -24,8 +24,9 @@
 #include <string>
 #include <vector>
 
-// DSP0240 Table 6, PLDM requests: PT2 per try, PN1 retries
-inline constexpr MctpRetryTiming PLDM_TIMING{std::chrono::milliseconds(PLDM_PT2_MS), PLDM_PN1_RETRIES};
+// DSP0240 Table 6, PLDM requests: PT2 per try, PN1 retries, every try within PT3
+inline constexpr MctpRetryTiming PLDM_TIMING{std::chrono::milliseconds(PLDM_PT2_MS), PLDM_PN1_RETRIES,
+											 PLDM_LOST_RESPONSE_RETRIES, std::chrono::milliseconds(PLDM_PT3_MAX_MS)};
 
 // Transfer Operation Flags
 enum pldmTransferOpFlag

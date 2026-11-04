@@ -86,12 +86,16 @@ typedef struct i2cMctpData
  */
 struct MctpRetryTiming
 {
-	std::chrono::milliseconds waitPerTry;
-	int retries;
+	std::chrono::milliseconds waitPerTry; // wait for a response before trying again (MT2, PT2)
+	int retries;						  // tries after the first that got no response (MN1, PN1)
+	int lostResponseRetries;			  // tries after one whose response arrived damaged or cut off
+	std::chrono::milliseconds window;	  // every try goes out within this of the first (MT4, PT3)
 };
 
-// DSP0237 Table 9, MCTP control messages: MT2 per try, MN1 retries
-inline constexpr MctpRetryTiming MCTP_CONTROL_TIMING{std::chrono::milliseconds(MCTP_MT2_MS), MCTP_MN1_RETRIES};
+// DSP0237 Table 9, MCTP control messages: MT2 per try, MN1 retries, every try within MT4
+inline constexpr MctpRetryTiming MCTP_CONTROL_TIMING{std::chrono::milliseconds(MCTP_MT2_MS), MCTP_MN1_RETRIES,
+													 MCTP_LOST_RESPONSE_RETRIES,
+													 std::chrono::milliseconds(MCTP_MT4_MS)};
 
 // Decides about one received message: whether it is the awaited response, or, for a request from the AMC,
 // whether it was answered
