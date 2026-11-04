@@ -13,177 +13,6 @@
 #include <limits>
 
 /**
- * @brief Receive multi-part data over I2C for PLDM file transfer.
- *
- * This function reads multi-part data from the I2C interface and assembles it into a single frame and payload.
- *
- * @return PLDM_ERROR on failure, otherwise PLDM_SUCCESS.
- */
-uint8_t pldm::receivePldmMessage()
-{
-	if (i2cobj == nullptr || mI2cPldmRead == nullptr) {
-		return PLDM_ERROR;
-	}
-
-	constexpr uint8_t seqMask = 0x03;
-	constexpr size_t mctpFirstPacketExtraBytes = 3;
-	constexpr size_t mctpContinuationHeaderBytes = 8;
-	constexpr size_t mctpContinuationTailAdjust = 5;
-	constexpr size_t maxAssembledFrameBytes = 8192;
-
-	mRxAssembledFrame.clear();
-	mRxAssembledPayload.clear();
-
-	uint8_t expectedSeq = 0;
-	bool gotSomPacket = false;
-
-	while (true) {
-		i2cdataPldmInfo frame = {};
-		int retry{};
-		for (retry = 0; retry < MAX_NUM_RETRIES; retry++) {
-			if (i2cobj->readAmc(reinterpret_cast<uint8_t *>(&frame) + 1, PLDM_MAX_RESPONSE_SIZE) == true) {
-				DBG("PLDM RX  :: ");
-				hexdump(reinterpret_cast<uint8_t *>(&frame), PLDM_MAX_RESPONSE_SIZE);
-				break;
-			}
-			ERR("PLDM: Retry read I2C MCTP response ({}/{})\n", retry + 1, MAX_NUM_RETRIES);
-		}
-
-		if (retry == MAX_NUM_RETRIES) {
-			ERR("PLDM: Failed to read I2C MCTP response\n");
-			return PLDM_ERROR;
-		}
-
-		if (frame.mctpSmbusHdr.cmdCode != MCTP_CMD_CODE) {
-			ERR("PLDM: Invalid I2C MCTP command code 0x{:02x}\n", frame.mctpSmbusHdr.cmdCode);
-			return PLDM_ERROR;
-		}
-
-		const bool som = (frame.mctpSmbusHdr.som == PLDM_SOM_BIT_ON); // start of message
-		const bool eom = (frame.mctpSmbusHdr.eom == PLDM_EOM_BIT_ON); // end of message
-		const uint8_t seq = static_cast<uint8_t>(frame.mctpSmbusHdr.packSeq & seqMask);
-
-		if (som && eom) {
-			DBG("PLDM: Received single-packet MCTP message\n");
-			const size_t frameBytes = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
-			if (frameBytes > sizeof(frame)) {
-				ERR("PLDM File Transfer: Single frame too large ({} bytes, frame buf {})\n", frameBytes, sizeof(frame));
-				return PLDM_ERROR;
-			}
-
-			mRxAssembledFrame.assign(reinterpret_cast<uint8_t *>(&frame),
-									 reinterpret_cast<uint8_t *>(&frame) + frameBytes);
-			memcpy(mI2cPldmRead, &frame, sizeof(i2cdataPldmInfo));
-			break;
-		}
-
-		if (som) {
-			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) + mctpFirstPacketExtraBytes;
-			if (fragmentLen == 0 || fragmentLen > sizeof(frame)) {
-				ERR("PLDM File Transfer: Invalid SOM fragment length {}\n", fragmentLen);
-				return PLDM_ERROR;
-			}
-
-			mRxAssembledFrame.assign(reinterpret_cast<uint8_t *>(&frame),
-									 reinterpret_cast<uint8_t *>(&frame) + fragmentLen);
-			gotSomPacket = true;
-			expectedSeq = static_cast<uint8_t>((seq + 1) & seqMask);
-		} else if (!som && !eom) {
-			if (!gotSomPacket) {
-				ERR("PLDM File Transfer: Missing SOM packet before middle packet\n");
-				return PLDM_ERROR;
-			}
-			if (seq != expectedSeq) {
-				ERR("PLDM File Transfer: Unexpected MCTP sequence (got {} expected {})\n", seq, expectedSeq);
-				return PLDM_ERROR;
-			}
-			if (frame.mctpSmbusHdr.byteCount < mctpContinuationTailAdjust) {
-				ERR("PLDM File Transfer: Invalid middle packet byteCount {}\n", frame.mctpSmbusHdr.byteCount);
-				return PLDM_ERROR;
-			}
-
-			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
-			if (mctpContinuationHeaderBytes + fragmentLen > sizeof(frame) ||
-				mRxAssembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Fragment too large (assembled {} + {} bytes, frame buf {}, max assembled "
-					"{})\n",
-					mRxAssembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
-				return PLDM_ERROR;
-			}
-
-			expectedSeq = static_cast<uint8_t>((expectedSeq + 1) & seqMask);
-			const uint8_t *fragmentPtr = reinterpret_cast<uint8_t *>(&frame) + mctpContinuationHeaderBytes;
-			mRxAssembledFrame.insert(mRxAssembledFrame.end(), fragmentPtr, fragmentPtr + fragmentLen);
-		} else if (eom) {
-			if (!gotSomPacket) {
-				ERR("PLDM File Transfer: Missing SOM packet before EOM packet\n");
-				return PLDM_ERROR;
-			}
-			if (seq != expectedSeq) {
-				ERR("PLDM File Transfer: Unexpected MCTP sequence in EOM packet (got {} expected {})\n", seq,
-					expectedSeq);
-				return PLDM_ERROR;
-			}
-			if (frame.mctpSmbusHdr.byteCount < mctpContinuationTailAdjust) {
-				ERR("PLDM File Transfer: Invalid EOM packet byteCount {}\n", frame.mctpSmbusHdr.byteCount);
-				return PLDM_ERROR;
-			}
-
-			const size_t fragmentLen = static_cast<size_t>(frame.mctpSmbusHdr.byteCount) - mctpContinuationTailAdjust;
-			if (mctpContinuationHeaderBytes + fragmentLen > sizeof(frame) ||
-				mRxAssembledFrame.size() + fragmentLen > maxAssembledFrameBytes) {
-				ERR("PLDM File Transfer: Fragment too large (assembled {} + {} bytes, frame buf {}, max assembled "
-					"{})\n",
-					mRxAssembledFrame.size(), fragmentLen, sizeof(frame), maxAssembledFrameBytes);
-				return PLDM_ERROR;
-			}
-
-			const uint8_t *fragmentPtr = reinterpret_cast<uint8_t *>(&frame) + mctpContinuationHeaderBytes;
-			mRxAssembledFrame.insert(mRxAssembledFrame.end(), fragmentPtr, fragmentPtr + fragmentLen);
-			break;
-		}
-
-		// I2C_EVENT_WAIT_PERIOD_MS of sleep is not enough sometimes for the next packet to be ready, especially for
-		// larger payloads, so increasing the wait time here to reduce the chance of hitting a read timeout on the next
-		// packet
-		MSLEEP(I2C_EVENT_WAIT_PERIOD_MS * 2);
-	}
-
-	if (mRxAssembledFrame.empty()) {
-		ERR("PLDM File Transfer: Empty assembled response\n");
-		return PLDM_ERROR;
-	}
-
-	const size_t payloadStart = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr);
-	if (mRxAssembledFrame.size() < payloadStart + 1) {
-		ERR("PLDM: Assembled response too short ({})\n", mRxAssembledFrame.size());
-		return PLDM_ERROR;
-	}
-
-	mRxAssembledPayload.assign(mRxAssembledFrame.begin() + payloadStart, mRxAssembledFrame.end());
-
-	memset(mI2cPldmRead, 0, sizeof(i2cdataPldmInfo));
-	const size_t copyBytes = std::min(mRxAssembledFrame.size(), sizeof(i2cdataPldmInfo));
-	memcpy(mI2cPldmRead, mRxAssembledFrame.data(), copyBytes);
-
-	mI2cPldmRead->mctpSmbusHdr.destSlaveAddr = MCTP_SRC_SLAVE_ADDR;
-	mI2cPldmRead->mctpSmbusHdr.destSlaveAddrB0 = MCTP_SRC_SLAVE_ADDR_B0;
-	mI2cPldmRead->mctpSmbusHdr.som = PLDM_SOM_BIT_ON;
-	mI2cPldmRead->mctpSmbusHdr.eom = PLDM_EOM_BIT_ON;
-	mI2cPldmRead->mctpSmbusHdr.packSeq = 0;
-
-	const size_t byteCount = (mRxAssembledFrame.size() > mctpFirstPacketExtraBytes)
-								 ? (mRxAssembledFrame.size() - mctpFirstPacketExtraBytes)
-								 : 0;
-	mI2cPldmRead->mctpSmbusHdr.byteCount =
-		static_cast<uint8_t>(std::min(byteCount, sizeof(i2cdataPldmInfo) - mctpFirstPacketExtraBytes));
-
-	DBG("PLDM: Assembled frame={} bytes, payload={} bytes\n", mRxAssembledFrame.size(), mRxAssembledPayload.size());
-
-	return PLDM_SUCCESS;
-}
-
-/**
  * @brief Fills the payload for PLDM file transfer commands
  *
  * Constructs the payload for various PLDM file transfer commands based on the command code.
@@ -313,28 +142,10 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 	}
 
 	uint8_t ret = PLDM_SUCCESS;
-	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
-
-	if (commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (size - 3),
-							MCTP_INTEGRITY_CHECK) != MCTP_SUCCESS) {
-		ERR("PLDM File Transfer: Command construction failed\n");
-		return PLDM_ERROR;
-	}
-	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
-
-	if (instanceID == PLDM_INSTANCE_ID_MAX) {
-		instanceID = 1;
-	}
 
 	// MultipartReceive (DfRead) and NegotiateTransferParameters are PLDM base (type 0) commands
 	auto cmdType = (cmd == PLDM_MULTIPART_RECEIVE || cmd == PLDM_NEGOTIATE_TRANSFER_PARAMETERS) ? PLDM_MESSAGE_DISCOVERY
 																								: PLDM_FILE_TRANSFER;
-	ret = pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, static_cast<uint8_t>(cmdType), cmd,
-							  PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
-	if (ret != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: PLDM header construction failed\n");
-		return ret;
-	}
 
 	ret = PldmFillFileTxPayload(cmd, size);
 	if (ret != PLDM_SUCCESS) {
@@ -342,29 +153,18 @@ uint8_t pldm::pldmFileTransferCmd(uint8_t cmd, uint8_t size)
 		return ret;
 	}
 
-	DBG("PLDM File Transfer TX for command:: 0x{:02x}", cmd);
-	hexdump((uint8_t *)mI2cPldmWrite, size);
-
-	if (i2cobj->writeAmc(wptr + 1, size) != true) {
-		ERR("PLDM File Transfer: I2C write failed\n");
-		return PLDM_ERROR;
-	}
-
-	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS * 2);
-
-	ret = receivePldmMessage();
+	uint8_t id = 0;
+	ret = pldmRequest(static_cast<uint8_t>(cmdType), cmd, size - PLDM_REQUEST_FRAME_HDR_SIZE, id);
 	if (ret != PLDM_SUCCESS) {
-		ERR("PLDM File Transfer: I2C read/assemble failed\n");
+		ERR("PLDM File Transfer: No response to command 0x{:02x}\n", cmd);
 		return ret;
 	}
 
-	ret = pldmFileTransferResp(cmd, instanceID);
+	ret = pldmFileTransferResp(cmd, id);
 	if (ret != PLDM_SUCCESS) {
 		ERR("PLDM File Transfer: Response handling failed for command 0x{:02x}\n", cmd);
 		return ret;
 	}
-
-	instanceID++;
 
 	return PLDM_SUCCESS;
 }
@@ -663,7 +463,7 @@ uint8_t pldm::pldmFileTransferRespPayload(const uint8_t *respPayload, const size
 				id);
 		}
 	} else {
-		hexdump((uint8_t *)mI2cPldmRead, totalSize + 14);
+		hexdump((uint8_t *)mI2cPldmRead, std::min<unsigned int>(totalSize, sizeof(*mI2cPldmRead)));
 	}
 	if (respPayloadLen == 0) {
 		ERR("PLDM File Transfer: Empty response payload\n");

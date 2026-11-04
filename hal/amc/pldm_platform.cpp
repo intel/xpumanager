@@ -85,49 +85,26 @@ uint8_t pldm::pfMonCtrlCmd(uint8_t cmd, uint8_t size)
 	TRACING();
 
 	uint8_t ret = PLDM_SUCCESS;
-	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
-
-	// Exclude first 3 bytes of MCTP header while calculating byte count
-	// sizeof(destSlaveAddr) + sizeof(cmdCode) + sizeof(byteCount) = 3 bytes
-	uint8_t byteCount = size - 3;
-	ret = commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, byteCount,
-							  MCTP_INTEGRITY_CHECK);
-	if (ret != PLDM_SUCCESS) {
-		ERR("PFMonCtrl : MCTP command construction failed\n");
+	if (size < PLDM_REQUEST_FRAME_HDR_SIZE) {
+		ERR("PFMonCtrl : Invalid request size {} for command 0x{:02x}\n", size, cmd);
 		return PLDM_ERROR;
 	}
-	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
+
 	bool infLoop = (cmd == PLDM_GET_PDR) ? true : false;
 	do {
-		if (instanceID == PLDM_INSTANCE_ID_MAX) {
-			instanceID = 1;
-		}
-		ret = pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_PLATFORM_MONITORING, cmd,
-								  PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
-		if (ret != PLDM_SUCCESS) {
-			ERR("PFMonCtrl : PLDM header construction failed\n");
-			return PLDM_ERROR;
-		}
 		ret = pfFillPayload(cmd, size);
 		if (ret != PLDM_SUCCESS) {
 			ERR("PFMonCtrl : Payload fill failed\n");
 			return PLDM_ERROR;
 		}
-		if (i2cobj->writeAmc(wptr + 1, size) != true) {
-			ERR("PFMonCtrl : I2C Write failure\n");
+		uint8_t id = 0;
+		if (pldmRequest(PLDM_PLATFORM_MONITORING, cmd, size - PLDM_REQUEST_FRAME_HDR_SIZE, id) != PLDM_SUCCESS) {
+			ERR("PFMonCtrl : No response to command 0x{:02x}\n", cmd);
 			return PLDM_ERROR;
 		}
-		DBG("PFMonCtrl TX  :: ");
-		hexdump(wptr, size);
-		MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
-		if (receivePldmMessage() != PLDM_SUCCESS) {
-			ERR("PFMonCtrl : I2C read/assemble failure\n");
+		if (processPlatformResponse(cmd, id) != PLDM_SUCCESS) {
 			return PLDM_ERROR;
 		}
-		if (processPlatformResponse(cmd, instanceID) != PLDM_SUCCESS) {
-			return PLDM_ERROR;
-		}
-		instanceID++;
 		if (cmd == PLDM_GET_PDR) {
 			pfPdrReq.recordHandle = pfPdrResp.nextRecordHandle;
 			pfPdrReq.dataTransferHandle = pfPdrResp.nextDataTransferHandle;

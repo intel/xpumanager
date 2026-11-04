@@ -11,7 +11,8 @@
 
 #define PLDM_FWU_COMP_VER_STR_SIZE_MAX 256
 #define PLDM_FWU_BASELINE_TRANSFER_SIZE 32 // DSP0267 section 7.8
-#define PLDM_MCTP_MAX_TRANSFER_SIZE 4096
+// MaximumTransferSize offered in RequestUpdate (DSP0267 Table 27): a RequestFirmwareData reply is 9 MCTP packets
+#define PLDM_MCTP_MAX_TRANSFER_SIZE 512
 #define FWU_MAXIMUM_OUTSTANDING_TRANSFER_REQ 1
 #define FWU_PACKAGE_DATALENGTH 0
 #define FWU_FORCEUPDATE 1

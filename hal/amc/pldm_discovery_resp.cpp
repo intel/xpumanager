@@ -139,14 +139,12 @@ uint8_t pldm::discoveryResponsePayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
 
-	unsigned int totalSize = 0;
-
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddr = MCTP_SRC_SLAVE_ADDR;
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddrB0 = MCTP_SRC_SLAVE_ADDR_B0;
-	totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
 
+	// The whole message as received; the frame buffer holds only the start of a long one
 	DBG("pldm RX  :: ");
-	hexdump((uint8_t *)mI2cPldmRead, totalSize);
+	hexdump(mRxAssembledFrame.data(), static_cast<unsigned int>(mRxAssembledFrame.size()));
 
 	if (!isResponseTo(PLDM_MESSAGE_DISCOVERY, cmd, id)) {
 		return PLDM_ERROR;

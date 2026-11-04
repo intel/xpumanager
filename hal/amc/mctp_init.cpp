@@ -8,39 +8,29 @@
 
 /**
  * @brief Constructor for mctp class
- * @param devpath Wide character string path to the device to initialize mctp communication with
+ * @param devpath The AMC's I2C device, such as /dev/i2c-3
+ *
+ * Opens the AMC's I2C device (makeI2cAmcBus()) and initializes mctp on it; see mctp(std::unique_ptr<AmcBus>).
+ */
+mctp::mctp(const std::string &devpath) : mctp(makeI2cAmcBus(devpath)) {}
+
+/**
+ * @brief Constructor for mctp class on a given bus
+ * @param bus Bus to the AMC; a test passes a simulated AMC here
  *
  * Initializes an mctp (Management Component Transport Protocol) instance by calling mctpinit().
  * Sets the init flag based on the success of the initialization process.
  */
-mctp::mctp(const std::string &devpath)
+mctp::mctp(std::unique_ptr<AmcBus> bus) : mBus(std::move(bus))
 {
 	TRACING();
 	mI2cMctpRead = NULL;
 	mI2cMctpWrite = NULL;
-	i2cobj = NULL;
-	instanceID = 0;
 	mDestEid = 0;
 	mDestNewEid = 0;
-
-	if (devpath.empty()) {
-		ERR("Device path is empty\n");
-		init = false;
-	} else {
-		if (!mctpinit(devpath)) {
-			init = true;
-		} else {
-			init = false;
-		}
-	}
+	init = (mctpinit() == MCTP_SUCCESS);
 }
 
-/**
- * @brief Destructor for mctp class
- *
- * Cleans up all allocated resources by calling cleanup() to ensure proper cleanup
- * of memory and I2C interface objects.
- */
 mctp::~mctp()
 {
 	TRACING();
@@ -67,34 +57,27 @@ void mctp::cleanup()
 		mI2cMctpWrite = NULL;
 	}
 
-	if (i2cobj) {
-		delete i2cobj;
-		i2cobj = NULL;
-	}
+	mBus.reset();
 	DBG("mctp Cleanup Success!!\n");
 }
 
 /**
- * @brief Initializes mctp communication interface
- * @param devpath Wide character string path to the I2C device
+ * @brief Initializes mctp communication interface on mBus
  * @return int Status of initialization
  * @retval MCTP_SUCCESS Initialization successful
  * @retval MCTP_FAILURE Memory allocation failed or initialization error
  *
  * Sets up mctp instance ID and destination EID, allocates memory buffers for read/write operations,
- * creates and initializes the I2C interface object. Performs cleanup on any initialization failures.
+ * and checks that the bus to the AMC is open.
  */
-int mctp::mctpinit(const std::string &devpath)
+int mctp::mctpinit()
 {
 	TRACING();
 
-	if (devpath.empty()) {
-		ERR("Device path is empty\n");
+	if (mBus == nullptr) {
+		ERR("No bus to the AMC\n");
 		return MCTP_FAILURE;
 	}
-
-	// Initialize instanceID to "1"
-	instanceID = 1;
 
 	// Initialize Dest EID to "0"
 	mDestEid = 0;
@@ -113,13 +96,7 @@ int mctp::mctpinit(const std::string &devpath)
 		return MCTP_FAILURE;
 	}
 
-	i2cobj = new I2CInterface(devpath);
-	if (i2cobj == NULL) {
-		ERR("Failed to allocate I2C interface\n");
-		return MCTP_FAILURE;
-	}
-
-	if (!i2cobj->isInit()) {
+	if (!mBus->isOpen()) {
 		ERR("Failed to initialize I2C interface\n");
 		return MCTP_FAILURE;
 	}

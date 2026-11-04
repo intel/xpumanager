@@ -70,49 +70,36 @@ uint8_t pldm::pldmFruResponse(uint8_t cmd, uint8_t id)
 			// Payload format: completionCode(1) + nextDataXferHandle(4) + xferFlag(1) +
 			// fruTableData(variable)
 
-			// Calculate actual data length from total message size
-			/**
-			 * Calculate the total message size for MCTP transmission.
-			 * The total size includes the MCTP byte count plus 3 additional bytes:
-			 * - 1 byte for MCTP Destination Slave Address
-			 * - 1 byte for MCTP Command Code
-			 * - 1 byte for MCTP Byte Count
-			 */
-			unsigned int totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
-			unsigned int headerSize = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr) +
-									  sizeof(mFruTableResponse.completionCode) +
-									  sizeof(mFruTableResponse.nextDataXferHandle) + sizeof(mFruTableResponse.xferFlag);
+			// The reply can span several MCTP packets, so it is read from the whole reassembled payload
+			// (pldmStoreRxMessage()) rather than from the frame buffer, which holds only its start.
+			const std::vector<uint8_t> &payload = mRxAssembledPayload;
+			const size_t fruDataOffset = sizeof(mFruTableResponse.completionCode) +
+										 sizeof(mFruTableResponse.nextDataXferHandle) +
+										 sizeof(mFruTableResponse.xferFlag);
 
-			// Reject short/truncated frames before parsing fields, so we never read stale payload
-			// bytes (and the subtraction below can't underflow).
-			if (totalSize < headerSize) {
-				ERR("PLDM FRU response too small (byteCount=0x{:02x})\n", mI2cPldmRead->mctpSmbusHdr.byteCount);
+			// Reject a truncated reply before parsing fields (and so the subtraction below can't underflow)
+			if (payload.size() < fruDataOffset) {
+				ERR("PLDM FRU response too small ({} bytes)\n", payload.size());
 				ret = PLDM_ERROR;
 				break;
 			}
 
-			mFruTableResponse.completionCode = mI2cPldmRead->respPayload[0];
+			mFruTableResponse.completionCode = payload[0];
 
-			mFruTableResponse.nextDataXferHandle =
-				(uint32_t)mI2cPldmRead->respPayload[1] | ((uint32_t)mI2cPldmRead->respPayload[2] << 8) |
-				((uint32_t)mI2cPldmRead->respPayload[3] << 16) | ((uint32_t)mI2cPldmRead->respPayload[4] << 24);
+			mFruTableResponse.nextDataXferHandle = (uint32_t)payload[1] | ((uint32_t)payload[2] << 8) |
+												   ((uint32_t)payload[3] << 16) | ((uint32_t)payload[4] << 24);
 
-			mFruTableResponse.xferFlag = mI2cPldmRead->respPayload[5];
+			mFruTableResponse.xferFlag = payload[5];
 
-			unsigned int dataLength = totalSize - headerSize;
-			const unsigned int fruDataOffset = sizeof(mFruTableResponse.completionCode) +
-											   sizeof(mFruTableResponse.nextDataXferHandle) +
-											   sizeof(mFruTableResponse.xferFlag);
-			const unsigned int maxSrc = sizeof(mI2cPldmRead->respPayload) - fruDataOffset;
-			const unsigned int maxDst = sizeof(mFruTableResponse.fruTableData);
-			if (dataLength > maxSrc || dataLength > maxDst) {
+			const size_t dataLength = payload.size() - fruDataOffset;
+			if (dataLength > sizeof(mFruTableResponse.fruTableData)) {
 				ERR("PLDM FRU data length out of range ({} bytes)\n", dataLength);
 				ret = PLDM_ERROR;
 				break;
 			}
 			mFruCurrentDataLength = static_cast<uint16_t>(dataLength);
 
-			memcpy(mFruTableResponse.fruTableData, &mI2cPldmRead->respPayload[fruDataOffset], mFruCurrentDataLength);
+			memcpy(mFruTableResponse.fruTableData, payload.data() + fruDataOffset, mFruCurrentDataLength);
 
 			DBG("FRU Table Data received: {} bytes\n", mFruCurrentDataLength);
 			DBG("Transfer flag: 0x{:02X} ", mFruTableResponse.xferFlag);
@@ -159,14 +146,12 @@ uint8_t pldm::pldmFruResponsePayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
 
-	unsigned int totalSize = 0;
-
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddr = MCTP_SRC_SLAVE_ADDR;
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddrB0 = MCTP_SRC_SLAVE_ADDR_B0;
-	totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
 
+	// The whole message as received; the frame buffer holds only the start of a long one
 	DBG("PLDM RX  :: ");
-	hexdump((uint8_t *)mI2cPldmRead, totalSize);
+	hexdump(mRxAssembledFrame.data(), static_cast<unsigned int>(mRxAssembledFrame.size()));
 
 	if (!isResponseTo(PLDM_FRU, cmd, id)) {
 		return PLDM_ERROR;

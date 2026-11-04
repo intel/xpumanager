@@ -23,53 +23,21 @@
  * @retval Non-zero Error occurred during command execution
  *
  * @note Uses pldm protocol over mctp for communication
- * @note Manages pldm instance ID automatically, wrapping at maximum value
  */
 uint8_t pldm::oemVrsyncCmd(uint8_t cmd)
 {
 	TRACING();
-	uint8_t oemCmdLen = OEM_COMMAND_BASE_SIZE;
-	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
-	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
-
-	if (instanceID == PLDM_INSTANCE_ID_MAX) {
-		instanceID = 1;
-	}
-
-	// UA will calculate this PAK_SEQ for multi packet messages, currently we are not using multi packet messages
-	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (OEM_COMMAND_BASE_SIZE - 3),
-						MCTP_INTEGRITY_CHECK);
-	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
-
-	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_OEM_SPECIFIC, cmd, PLDM_ASYNC_REQUEST_NOTIFY,
-						PLDM_REQUEST);
-
-	// Initialize payload buffer and fill CRC Byte
-	memset(mI2cPldmWrite->respPayload, 0, oemCmdLen);
-	// CRC is calculated over the payload excluding the CRC byte itself
-	mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, oemCmdLen - 1);
-
-	DBG("pldm TX  :: ");
-	hexdump((uint8_t *)mI2cPldmWrite, oemCmdLen);
-
-	if (i2cobj->writeAmc(wptr + 1, oemCmdLen) != true) {
-		ERR("pldm Discovery : I2C Write failure\n");
+	// VR sync pause and resume carry no request data
+	uint8_t id = 0;
+	if (pldmRequest(PLDM_OEM_SPECIFIC, cmd, OEM_COMMAND_BASE_SIZE - PLDM_REQUEST_FRAME_HDR_SIZE, id) != PLDM_SUCCESS) {
+		ERR("pldm OEM VRSync : No response to command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
-	// Wait for I2C event
-	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
-
-	if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
-		ERR("pldm Discovery : I2C Read failure\n");
+	if (oemVrsyncResp(cmd, id) != PLDM_SUCCESS) {
 		return PLDM_ERROR;
 	}
 
-	if (oemVrsyncResp(cmd, instanceID) != PLDM_SUCCESS) {
-		return PLDM_ERROR;
-	}
-
-	instanceID++;
 	return PLDM_SUCCESS;
 }
 
@@ -131,14 +99,12 @@ uint8_t pldm::oemVrsyncResp(uint8_t cmd, uint8_t id)
 uint8_t pldm::oemVrsyncRespPayload(uint8_t cmd, uint8_t id)
 {
 	TRACING();
-	unsigned int totalSize = 0;
-
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddr = MCTP_SRC_SLAVE_ADDR;
 	mI2cPldmRead->mctpSmbusHdr.destSlaveAddrB0 = MCTP_SRC_SLAVE_ADDR_B0;
-	totalSize = mI2cPldmRead->mctpSmbusHdr.byteCount + 3;
 
+	// The whole message as received; the frame buffer holds only the start of a long one
 	DBG("pldm RX  :: ");
-	hexdump((uint8_t *)mI2cPldmRead, totalSize);
+	hexdump(mRxAssembledFrame.data(), static_cast<unsigned int>(mRxAssembledFrame.size()));
 
 	if (!isResponseTo(PLDM_OEM_SPECIFIC, cmd, id)) {
 		return PLDM_ERROR;

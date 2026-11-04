@@ -23,7 +23,6 @@
  * @retval PLDM_ERROR Communication failure or invalid response
  *
  * @note Used during initialization to discover device pldm capabilities
- * @note Manages pldm instance ID automatically with wraparound
  */
 uint8_t pldm::discoveryCmd(uint8_t cmd, uint8_t size, uint8_t pldmVersionType)
 {
@@ -35,19 +34,10 @@ uint8_t pldm::discoveryCmd(uint8_t cmd, uint8_t size, uint8_t pldmVersionType)
 	}
 
 	uint8_t pldmCmdLen = size;
-	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
-	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
-
-	if (instanceID == PLDM_INSTANCE_ID_MAX) {
-		instanceID = 1;
+	if (size < PLDM_REQUEST_FRAME_HDR_SIZE) {
+		ERR("pldm Discovery : Invalid request size {} for command 0x{:02x}\n", size, cmd);
+		return PLDM_ERROR;
 	}
-
-	// UA will calculate this PAK_SEQ for multi packet messages, currently we are not using multi packet messages
-	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (pldmCmdLen - 3),
-						MCTP_INTEGRITY_CHECK);
-	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
-	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_MESSAGE_DISCOVERY, cmd, PLDM_ASYNC_REQUEST_NOTIFY,
-						PLDM_REQUEST);
 
 	if (cmd == PLDM_GETVERSION) {
 		pldmDiscoveryGetVersionPayload(pldmVersionType, pldmCmdLen);
@@ -60,27 +50,16 @@ uint8_t pldm::discoveryCmd(uint8_t cmd, uint8_t size, uint8_t pldmVersionType)
 		}
 	}
 
-	DBG("pldm TX  :: ");
-	hexdump((uint8_t *)mI2cPldmWrite, pldmCmdLen);
-
-	if (i2cobj->writeAmc(wptr + 1, pldmCmdLen) != true) {
-		ERR("pldm Discovery : I2C Write failure\n");
+	uint8_t id = 0;
+	if (pldmRequest(PLDM_MESSAGE_DISCOVERY, cmd, size - PLDM_REQUEST_FRAME_HDR_SIZE, id) != PLDM_SUCCESS) {
+		ERR("pldm Discovery : No response to command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
-	// Wait for I2C event
-	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
-
-	if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
-		ERR("pldm Discovery : I2C Read failure\n");
+	if (discoveryResponse(cmd, id, pldmVersionType) != PLDM_SUCCESS) {
 		return PLDM_ERROR;
 	}
 
-	if (discoveryResponse(cmd, instanceID, pldmVersionType) != PLDM_SUCCESS) {
-		return PLDM_ERROR;
-	}
-
-	instanceID++;
 	return PLDM_SUCCESS;
 }
 

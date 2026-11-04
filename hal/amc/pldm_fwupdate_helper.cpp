@@ -480,7 +480,7 @@ bool pldm::fwUpdPollStatus(fwuStageState &st, fwuClock::time_point now)
 		}
 	}
 	if (!st.statusOutstanding && now >= st.nextPollAt) {
-		st.statusInstanceId = fwUpdNextInstanceId();
+		st.statusInstanceId = mPldmIds.next();
 		st.statusOutstanding = true;
 		st.statusTries = 1;
 		if (!fwUpdSendGetStatus(st)) {
