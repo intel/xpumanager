@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstring>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -826,8 +827,16 @@ uint8_t pldm::parseFwParamResponse()
 		// Match AMC firmware component by classification
 		if (classification == COMP_CLASS_FIRMWARE) {
 			if (activeCompVerStrLen > 0) {
-				mFwParamActiveVersion =
-					std::string(reinterpret_cast<const char *>(entry + kCompParamEntryFixedLen), activeCompVerStrLen);
+				const std::span<const uint8_t> version{entry + kCompParamEntryFixedLen, activeCompVerStrLen};
+				// DSP0267 Table 19 ActiveComponentVersionString: the AMC reports it as an ASCII string, so
+				// anything that is not printable ASCII is a damaged reply, which must not reach the output
+				// (a JSON writer rejects bytes that are not UTF-8).
+				if (!std::ranges::all_of(version, [](uint8_t c) { return c >= 0x20 && c <= 0x7E; })) {
+					ERR("FWU: AMC version string on GPU {} is not printable ASCII\n", mGpuBdf);
+					hexdump(version.data(), static_cast<unsigned int>(version.size()));
+					return PLDM_ERROR;
+				}
+				mFwParamActiveVersion = std::string(version.begin(), version.end());
 				mFwParamsInitialized = true;
 				DBG("FWU: AMC ActiveComponentVersionString (class=0x{:04x}) = \"{}\"\n", classification,
 					mFwParamActiveVersion.c_str());
