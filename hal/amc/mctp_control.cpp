@@ -7,63 +7,75 @@
 #include "common.h"
 #include "mctp.h"
 #include "os.h"
+#include <algorithm>
+#include <chrono>
 #include <cstring>
+#include <vector>
 
 /**
  * @brief Execute mctp control command
  *
- * Sends an mctp (Management Component Transport Protocol) control command
- * to the target device. Manages instance ID, constructs command packet,
- * and handles the communication protocol.
+ * Sends an MCTP control request (DSP0236 section 12) and waits for its response with mctpTransact(), on
+ * DSP0237 Table 9 timing: a request without a response within MT2 is sent again with the same Instance
+ * ID, MN1 times. The response is the one carrying the request's command code and Instance ID with Rq
+ * cleared; it is handed to controlResponse() in mI2cMctpRead.
  *
  * @param cmd mctp control command code to execute
- * @param size Size of the command payload in bytes
+ * @param size Length of the request as a single SMBus frame, from the command code through the PEC
+ *             byte (the MCTP_*_SIZE constants); fillPayload() fills the request data for it
  *
  * @return uint8_t Status of the command execution
- * @retval MCTP_SUCCESS Command executed successfully
- * @retval MCTP_ERROR_* Various error conditions
- *
- * @note Automatically manages mctp instance ID wrapping at maximum value
+ * @retval MCTP_SUCCESS The response was received and controlResponse() accepted it
+ * @retval MCTP_FAILURE No matching response after MN1 retries, an I2C error, or a failed response
  */
 uint8_t mctp::command(uint8_t cmd, uint8_t size)
 {
 	TRACING();
-	uint8_t mctpCmdLen = size;
-	uint8_t *rptr = (uint8_t *)mI2cMctpRead;
-	uint8_t *wptr = (uint8_t *)mI2cMctpWrite;
-
-	if (instanceID == m_mctp_instance_id_MAX) {
-		instanceID = 1;
+	// The request data follows the frame header and control header; the size's last byte is the PEC
+	constexpr size_t kRequestHdrLen = sizeof(struct mctpSmbusI2cHdr) + sizeof(struct mctpControlHdr);
+	if (size < kRequestHdrLen) {
+		ERR("mctp Control : Invalid request size {} for cmd 0x{:02x}\n", size, cmd);
+		return MCTP_FAILURE;
 	}
-
-	// UA will calculate this PAK_SEQ for multi packet messages, currently we are not using multi packet messages
-	commandConstruction(&mI2cMctpWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (size - 3),
-						MCTP_INTEGRITY_CHECK);
-	headerConstruction(&mI2cMctpWrite->mctpCtrlHdr, instanceID, cmd);
-	fillPayload(cmd, mctpCmdLen);
-
-	DBG("mctp TX  :: ");
-	hexdump((uint8_t *)mI2cMctpWrite, mctpCmdLen);
-
-	if (i2cobj->writeAmc(wptr + 1, mctpCmdLen) != true) {
-		ERR("mctp Control : I2C Write failure\n");
+	const size_t dataLen = size - kRequestHdrLen;
+	if (fillPayload(cmd, size) != MCTP_SUCCESS) {
 		return MCTP_FAILURE;
 	}
 
-	// Wait for I2C event
-	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
+	const uint8_t id = mControlIds.next();
+	struct mctpControlHdr ctrlHdr = {};
+	headerConstruction(&ctrlHdr, id, cmd);
+	// DSP0236 Table 12: message type (IC = 0), then the control header and the request data
+	std::vector<uint8_t> request(1 + sizeof(ctrlHdr) + dataLen);
+	request[0] = MCTP_CONTROL;
+	std::memcpy(request.data() + 1, &ctrlHdr, sizeof(ctrlHdr));
+	std::memcpy(request.data() + 1 + sizeof(ctrlHdr), mI2cMctpWrite->respPayload, dataLen);
 
-	if (i2cobj->readAmc(rptr + 1, MCTP_MAX_RESPONSE_SIZE) != true) {
-		ERR("mctp Control : I2C Read failure\n");
+	// DSP0236: a control response carries the request's command code and Instance ID with Rq cleared, and
+	// starts its data with a completion code (Table 13)
+	const auto isResponse = [cmd, id](const std::vector<uint8_t> &msg, const mctpMsgInfo &) {
+		struct mctpControlHdr hdr = {};
+		if (msg.size() < 1 + sizeof(hdr) + 1 || (msg[0] & 0x7F) != MCTP_CONTROL) {
+			return false;
+		}
+		std::memcpy(&hdr, msg.data() + 1, sizeof(hdr));
+		return hdr.request == MCTP_RESPONSE && hdr.cmdCode == cmd && hdr.instanceID == id;
+	};
+
+	std::vector<uint8_t> msg;
+	mctpMsgInfo info = {};
+	if (mctpTransact(request, MCTP_CONTROL_TIMING, isResponse, msg, info) != MCTP_SUCCESS) {
+		ERR("mctp Control : No response to cmd 0x{:02x} after {} tries\n", cmd, MCTP_CONTROL_TIMING.retries + 1);
 		return MCTP_FAILURE;
 	}
 
-	if (controlResponse(cmd, instanceID) != MCTP_SUCCESS) {
-		return MCTP_FAILURE;
-	}
-
-	instanceID++;
-	return MCTP_SUCCESS;
+	// controlResponse() reads the response from a frame buffer
+	memset(mI2cMctpRead, 0, sizeof(*mI2cMctpRead));
+	mctpFillRxHeader(mI2cMctpRead->mctpSmbusHdr, info, msg[0], msg.size());
+	std::memcpy(&mI2cMctpRead->mctpCtrlHdr, msg.data() + 1, sizeof(mI2cMctpRead->mctpCtrlHdr));
+	std::memcpy(mI2cMctpRead->respPayload, msg.data() + 1 + sizeof(ctrlHdr),
+				std::min(msg.size() - 1 - sizeof(ctrlHdr), sizeof(mI2cMctpRead->respPayload)));
+	return controlResponse(cmd, id);
 }
 
 /**

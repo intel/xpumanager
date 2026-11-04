@@ -5,7 +5,12 @@
  */
 
 #include "pldm.h"
+#include <algorithm>
+#include <chrono>
 #include <cstring>
+
+static_assert(PLDM_REQUEST_FRAME_HDR_SIZE == sizeof(struct mctpSmbusI2cHdr) + sizeof(struct pldmHdr),
+			  "PLDM_REQUEST_FRAME_HDR_SIZE must match the frame header the request sizes are counted from");
 
 /**
  * @brief Construct pldm message header
@@ -110,4 +115,101 @@ std::vector<uint8_t> pldm::pldmBuildMessage(const struct pldmHdr &hdr, const uin
 		std::memcpy(msg.data() + 1 + sizeof(hdr), payload, len);
 	}
 	return msg;
+}
+
+/**
+ * @brief Hand a received PLDM message to the response parsers
+ *
+ * The parsers read a reply from mI2cPldmRead, laid out as one SMBus frame, or, for replies longer than
+ * mI2cPldmRead->respPayload, from mRxAssembledFrame and mRxAssembledPayload. This fills all three from a
+ * message received with mctpReceiveMessage(), whether it came in one packet or several.
+ *
+ * @param msg MCTP message body, starting with the message type byte; at least 1 + sizeof(pldmHdr) bytes
+ * @param info Transport header fields of the message
+ */
+void pldm::pldmStoreRxMessage(const std::vector<uint8_t> &msg, const mctpMsgInfo &info)
+{
+	memset(mI2cPldmRead, 0, sizeof(*mI2cPldmRead));
+	mctpFillRxHeader(mI2cPldmRead->mctpSmbusHdr, info, msg[0], msg.size());
+	memcpy(&mI2cPldmRead->pldmHdr, msg.data() + 1, sizeof(struct pldmHdr));
+
+	mRxAssembledPayload.assign(msg.begin() + 1 + sizeof(struct pldmHdr), msg.end());
+	memcpy(mI2cPldmRead->respPayload, mRxAssembledPayload.data(),
+		   std::min(mRxAssembledPayload.size(), sizeof(mI2cPldmRead->respPayload)));
+
+	// The frame header (through the message type byte), then the rest of the message
+	const auto *hdrBytes = reinterpret_cast<const uint8_t *>(&mI2cPldmRead->mctpSmbusHdr);
+	mRxAssembledFrame.assign(hdrBytes, hdrBytes + sizeof(struct mctpSmbusI2cHdr));
+	mRxAssembledFrame.insert(mRxAssembledFrame.end(), msg.begin() + 1, msg.end());
+}
+
+/**
+ * @brief Whether a message is the response to a PLDM request (DSP0240)
+ *
+ * @param msg MCTP message body, starting with the message type byte
+ * @param pldmType PLDM Type of the request
+ * @param cmd PLDM Command Code of the request
+ * @param instanceId Instance ID of the request
+ *
+ * @return bool True for a PLDM message with Rq cleared, the request's Type, Command Code and Instance ID, and
+ *              the completion code every PLDM response starts with
+ */
+bool pldm::pldmAnswers(const std::vector<uint8_t> &msg, uint8_t pldmType, uint8_t cmd, uint8_t instanceId)
+{
+	struct pldmHdr hdr = {};
+	if (msg.size() < 1 + sizeof(hdr) + PLDM_CMD_RESP_PAYLOAD_SIZE || msg[0] != PLDM_OVER_MCTP) {
+		return false;
+	}
+	memcpy(&hdr, msg.data() + 1, sizeof(hdr));
+	return hdr.request == PLDM_RESPONSE && hdr.cmdType == pldmType && hdr.cmdCode == cmd &&
+		   hdr.instanceID == instanceId;
+}
+
+/**
+ * @brief Send a PLDM request and wait for its response (DSP0240)
+ *
+ * Takes a new Instance ID for the request and sends it with mctpTransact(): a request without a response
+ * within PT2 is sent again, unchanged and with the same Instance ID, PN1 times; the response is the one
+ * pldmAnswers() accepts. It is left for the caller's parser in mI2cPldmRead, mRxAssembledFrame and
+ * mRxAssembledPayload (pldmStoreRxMessage()).
+ *
+ * @param pldmType PLDM Type of the command
+ * @param cmd PLDM Command Code
+ * @param payloadLen Length of the request data, which the caller has filled into mI2cPldmWrite->respPayload
+ * @param instanceId Output: the Instance ID the request was sent with, for the caller's parser
+ * @param timing PLDM_TIMING, or fewer retries where resending could repeat an action the AMC might not
+ *               recognize as a retry
+ *
+ * @return uint8_t PLDM_SUCCESS once a matching response is held, PLDM_ERROR otherwise
+ */
+uint8_t pldm::pldmRequest(uint8_t pldmType, uint8_t cmd, size_t payloadLen, uint8_t &instanceId,
+						  const MctpRetryTiming &timing)
+{
+	TRACING();
+	if (mI2cPldmRead == nullptr || mI2cPldmWrite == nullptr || payloadLen > sizeof(mI2cPldmWrite->respPayload)) {
+		ERR("PLDM : Cannot send type 0x{:02x} cmd 0x{:02x} with {} bytes of request data\n", pldmType, cmd, payloadLen);
+		return PLDM_ERROR;
+	}
+
+	const uint8_t id = mPldmIds.next();
+	instanceId = id;
+	struct pldmHdr hdr = {};
+	if (pldmHdrConstruction(&hdr, id, pldmType, cmd, PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST) != PLDM_SUCCESS) {
+		ERR("PLDM : Header construction failed for type 0x{:02x} cmd 0x{:02x}\n", pldmType, cmd);
+		return PLDM_ERROR;
+	}
+	const std::vector<uint8_t> request = pldmBuildMessage(hdr, mI2cPldmWrite->respPayload, payloadLen);
+
+	std::vector<uint8_t> msg;
+	mctpMsgInfo info = {};
+	const auto isResponse = [&](const std::vector<uint8_t> &m, const mctpMsgInfo &) {
+		return pldmAnswers(m, pldmType, cmd, id);
+	};
+	if (mctpTransact(request, timing, isResponse, msg, info) != MCTP_SUCCESS) {
+		ERR("PLDM : No response to type 0x{:02x} cmd 0x{:02x} after {} tries\n", pldmType, cmd, timing.retries + 1);
+		return PLDM_ERROR;
+	}
+
+	pldmStoreRxMessage(msg, info);
+	return PLDM_SUCCESS;
 }

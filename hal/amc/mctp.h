@@ -7,12 +7,15 @@
 #ifndef __MCTP_H
 #define __MCTP_H
 
+#include "amc_bus.h"
 #include "common.h"
 #include "i2c_interface.h"
+#include "instance_id.h"
 #include "mctp_constants.h"
 #include "mctp_packet.h"
 #include <chrono>
 #include <functional>
+#include <memory>
 #include <vector>
 
 #pragma pack(push, 1)
@@ -78,17 +81,33 @@ typedef struct i2cMctpData
 } i2cdata_mctpinfo;
 #pragma pack(pop)
 
+/**
+ * @brief How long a requester waits for a response before sending the request again, and how many times
+ */
+struct MctpRetryTiming
+{
+	std::chrono::milliseconds waitPerTry;
+	int retries;
+};
+
+// DSP0237 Table 9, MCTP control messages: MT2 per try, MN1 retries
+inline constexpr MctpRetryTiming MCTP_CONTROL_TIMING{std::chrono::milliseconds(MCTP_MT2_MS), MCTP_MN1_RETRIES};
+
+// Decides about one received message: whether it is the awaited response, or, for a request from the AMC,
+// whether it was answered
+using MctpMessageFilter = std::function<bool(const std::vector<uint8_t> &msg, const mctpMsgInfo &info)>;
+
 class mctp
 {
 
 private:
 	// mctp command construction member variables
 	i2cdata_mctpinfo *mI2cMctpRead, *mI2cMctpWrite;
-	uint8_t instanceID;
+	InstanceIdPool mControlIds; // MCTP control requests (DSP0236)
 	bool init;
 
 	// mctp Base API's
-	int mctpinit(const std::string &devpath);
+	int mctpinit();
 	void cleanup();
 	uint8_t headerConstruction(mctpControlHdr *mctpCtrl, uint8_t instanceID, uint8_t cmd);
 	uint8_t command(uint8_t cmd, uint8_t size);
@@ -102,9 +121,10 @@ private:
 protected:
 	uint8_t mDestEid;
 	uint8_t mDestNewEid;
-	I2CInterface *i2cobj;
+	std::unique_ptr<AmcBus> mBus;
 
 	mctp(const std::string &devpath);
+	explicit mctp(std::unique_ptr<AmcBus> bus);
 	~mctp();
 	int initialize();
 
@@ -119,5 +139,9 @@ protected:
 	uint8_t mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, std::chrono::milliseconds timeout,
 							   unsigned int pollIntervalMs = I2C_EVENT_WAIT_PERIOD_MS,
 							   const std::function<bool()> &abortRequested = nullptr);
+	static void mctpFillRxHeader(mctpSmbusI2cHdr &hdr, const mctpMsgInfo &info, uint8_t msgTypeByte, size_t msgLen);
+	uint8_t mctpTransact(const std::vector<uint8_t> &request, const MctpRetryTiming &timing,
+						 const MctpMessageFilter &isResponse, std::vector<uint8_t> &response, mctpMsgInfo &responseInfo,
+						 const MctpMessageFilter &onRequest = nullptr);
 };
 #endif // __MCTP_H

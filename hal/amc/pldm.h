@@ -24,6 +24,9 @@
 #include <string>
 #include <vector>
 
+// DSP0240 Table 6, PLDM requests: PT2 per try, PN1 retries
+inline constexpr MctpRetryTiming PLDM_TIMING{std::chrono::milliseconds(PLDM_PT2_MS), PLDM_PN1_RETRIES};
+
 // Transfer Operation Flags
 enum pldmTransferOpFlag
 {
@@ -156,8 +159,8 @@ private:
 	i2cdataPldmInfo *mI2cPldmRead, *mI2cPldmWrite;
 	std::mutex *progMutex;
 
-	uint8_t instanceID;
-	std::string mGpuBdf; ///< BDF of the GPU this AMC belongs to, used to name it in log messages
+	InstanceIdPool mPldmIds; // PLDM requests, every PLDM Type (DSP0240)
+	std::string mGpuBdf;	 ///< BDF of the GPU this AMC belongs to, used to name it in log messages
 
 	// pldm Firmware Update datastructures
 	struct fwuRequestUpdate mReqUpdate = {};
@@ -225,7 +228,10 @@ private:
 	// pldm Base APIs
 	int pldminit();
 	void cleanup();
-	uint8_t receivePldmMessage();
+	uint8_t pldmRequest(uint8_t pldmType, uint8_t cmd, size_t payloadLen, uint8_t &instanceId,
+						const MctpRetryTiming &timing = PLDM_TIMING);
+	static bool pldmAnswers(const std::vector<uint8_t> &msg, uint8_t pldmType, uint8_t cmd, uint8_t instanceId);
+	void pldmStoreRxMessage(const std::vector<uint8_t> &msg, const mctpMsgInfo &info);
 	uint8_t pldmHdrConstruction(struct pldmHdr *pldmHdr, uint8_t instanceID, uint8_t cmdType, uint8_t cmd,
 								uint8_t async, uint8_t reqresp);
 	[[nodiscard]] bool isResponseTo(uint8_t cmdType, uint8_t cmd, uint8_t id) const;
@@ -259,7 +265,6 @@ private:
 	bool fwUpdSkipComp(uint8_t comp) const;
 	uint16_t fwUpdCompCount() const;
 	uint8_t fwUpdCmd(uint8_t cmd);
-	uint8_t fwUpdNextInstanceId();
 	uint8_t pldmFwUpdFillPayload(uint8_t cmd);
 	uint8_t fwUpdStoreRxMessage(const std::vector<uint8_t> &msg, const mctpMsgInfo &info);
 	uint8_t fwUpdSendResponse(uint8_t completionCode, const std::vector<uint8_t> &data);
@@ -270,7 +275,7 @@ private:
 	uint8_t fwUpdCancel();
 	uint8_t fwUpdCancelComponent();
 	uint8_t fwUpdComponent(uint8_t comp);
-	uint8_t fwUpdWaitForReadyXfer();
+	fwuTransferResult fwUpdWaitForReadyXfer();
 	uint8_t fwUpdUpdateComponentResp();
 
 	// pldm FwUpdate Command Helper
@@ -312,7 +317,7 @@ private:
 	// PLDM FRU Command
 	uint8_t pldmFruInitialize();
 	uint8_t pldmFruCommand(uint8_t cmd, uint8_t size);
-	uint8_t pldmFruFillPayload(uint8_t cmd, uint8_t size);
+	uint8_t pldmFruFillPayload(uint8_t cmd);
 	uint8_t getFruRecordTableMetadata();
 	uint8_t getFruRecordTable(uint32_t dataTransferHandle, uint8_t transferOperationFlag);
 
@@ -368,10 +373,12 @@ private:
 	const PdrRecord *getFilePdrById(uint16_t filePdrId);
 
 public:
-	pldm(const std::string &devpath, const std::string &gpuBdf)
-		: mctp(devpath), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), instanceID(1),
-		  mGpuBdf(gpuBdf), mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS), mCompIdFilter(0),
-		  mFruTableInitialized(false), mFwParamsInitialized(false)
+	pldm(const std::string &devpath, const std::string &gpuBdf) : pldm(makeI2cAmcBus(devpath), gpuBdf) {}
+	// A card on a given bus; tests pass a simulated AMC (hal/amc/test/amc_simulator.h)
+	pldm(std::unique_ptr<AmcBus> bus, const std::string &gpuBdf)
+		: mctp(std::move(bus)), mI2cPldmRead(nullptr), mI2cPldmWrite(nullptr), progMutex(nullptr), mGpuBdf(gpuBdf),
+		  mForceUpdate(false), mLastFwuCompletionCode(PLDM_SUCCESS), mCompIdFilter(0), mFruTableInitialized(false),
+		  mFwParamsInitialized(false)
 	{
 		pldminit();
 	}
@@ -392,16 +399,16 @@ public:
 	[[nodiscard]] int fwupdProgress() const { return mProgPercent.load(); }
 	// The AMC bus is locked only for the duration of one amclib operation, so a long-running
 	// process does not keep every other process away from the card.
-	[[nodiscard]] bool isI2cOpen() const { return i2cobj != nullptr && i2cobj->isInit(); }
-	[[nodiscard]] bool tryLockBus() { return i2cobj != nullptr && i2cobj->tryLock(); }
+	[[nodiscard]] bool isI2cOpen() const { return mBus != nullptr && mBus->isOpen(); }
+	[[nodiscard]] bool tryLockBus() { return mBus != nullptr && mBus->tryLock(); }
 	void unlockBus()
 	{
-		if (i2cobj != nullptr) {
-			i2cobj->unlock();
+		if (mBus != nullptr) {
+			mBus->unlock();
 		}
 	}
 	// True when the last tryLockBus() failed because the AMC's I2C device is held by another process
-	bool isI2cBusy() { return i2cobj != nullptr && i2cobj->isBusy(); }
+	bool isI2cBusy() { return mBus != nullptr && mBus->isBusy(); }
 	// Set while a wait for the bus has timed out and the bus has not been acquired since, so
 	// later calls fail fast instead of each waiting again
 	bool mBusWaitExpired = false;
@@ -415,7 +422,7 @@ public:
 	// down when the GPU leaves the bus; the handle has to be given up before that happens
 	// rather than left pointing at an adapter the kernel has removed. Safe to call twice.
 	// Nothing can talk to the AMC afterwards until the card is enumerated again.
-	bool closeAmcInterface() { return i2cobj == nullptr ? true : i2cobj->closeAmc(); }
+	bool closeAmcInterface() { return mBus == nullptr ? true : mBus->close(); }
 };
 
 #endif // __PLDM_H

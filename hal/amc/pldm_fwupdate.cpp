@@ -26,7 +26,6 @@
  * @retval PLDM_SUCCESS Command executed successfully
  * @retval PLDM_ERROR_* Various error conditions
  *
- * @note Automatically manages pldm instance ID wrapping at maximum value
  * @note A request without a response within DSP0240 PT2 is retried PN1 times with the same
  *       Instance ID
  */
@@ -44,7 +43,7 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd)
 	}
 
 	// The retries below keep this Instance ID
-	const uint8_t requestId = fwUpdNextInstanceId();
+	const uint8_t requestId = mPldmIds.next();
 
 	struct pldmHdr hdr = {};
 	pldmHdrConstruction(&hdr, requestId, PLDM_FIRMWARE_UPDATE, cmd, PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
@@ -61,70 +60,33 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd)
 		return PLDM_SUCCESS;
 	}
 
+	// A request from the FD that arrives meanwhile: a retry of a stage result whose response it missed, such as
+	// ApplyComplete while this is already the next component's UpdateComponent, is answered again (DSP0240),
+	// and during a cancel any FD request gets its CANCEL_PENDING response (DSP0267).
+	const auto onFdRequest = [&](const std::vector<uint8_t> &msg, const mctpMsgInfo &info) {
+		if (msg[0] != PLDM_OVER_MCTP || fwUpdStoreRxMessage(msg, info) != PLDM_SUCCESS) {
+			return false;
+		}
+		if (fwUpdReplayIfRetry()) {
+			return true;
+		}
+		if (cmd == CANCEL_UPDATE || cmd == CANCEL_UPDATE_COMPONENT) {
+			fwUpdAnswerRequestWhileCancelling();
+			return true;
+		}
+		return false;
+	};
+	const auto isResponse = [&](const std::vector<uint8_t> &msg, const mctpMsgInfo &) {
+		return pldmAnswers(msg, PLDM_FIRMWARE_UPDATE, cmd, requestId);
+	};
+
 	// DSP0240 PN1: a request that gets no response within PT2 is sent again, unchanged and with the
 	// same Instance ID so the responder can tell it is a retry.
-	bool responded = false;
-	for (int attempt = 0; attempt <= PLDM_PN1_RETRIES && !responded; attempt++) {
-		if (attempt > 0) {
-			DBG("FWU : GPU {}: no response to cmd 0x{:02x} within {} ms, retrying ({}/{})\n", mGpuBdf, cmd, PLDM_PT2_MS,
-				attempt, PLDM_PN1_RETRIES);
-		}
-		if (mctpSendMessage(reqInfo, request) != MCTP_SUCCESS) {
-			ERR("FWU : Failed to send command 0x{:02x}\n", cmd);
-			return PLDM_ERROR;
-		}
-
-		const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(PLDM_PT2_MS);
-		while (true) {
-			const auto remaining =
-				std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now());
-			std::vector<uint8_t> msg;
-			mctpMsgInfo info = {};
-			if (remaining.count() <= 0 || mctpReceiveMessage(msg, info, remaining) != MCTP_SUCCESS) {
-				break;
-			}
-
-			if (info.tagOwner && msg[0] == PLDM_OVER_MCTP && fwUpdStoreRxMessage(msg, info) == PLDM_SUCCESS) {
-				// The FD retrying a stage result whose response it missed, such as ApplyComplete while
-				// this is already the next component's UpdateComponent, is answered again (DSP0240).
-				if (fwUpdReplayIfRetry()) {
-					continue;
-				}
-				// A request from the FD that crosses a cancel still gets its response (DSP0267 CANCEL_PENDING).
-				if (cmd == CANCEL_UPDATE || cmd == CANCEL_UPDATE_COMPONENT) {
-					fwUpdAnswerRequestWhileCancelling();
-					continue;
-				}
-			}
-			// DSP0236: the response clears TO and carries the request's message tag. Anything else,
-			// such as a request the FD is still retrying from an earlier session, is not this response.
-			if (info.tagOwner || info.msgTag != reqInfo.msgTag || msg[0] != PLDM_OVER_MCTP) {
-				DBG("FWU : Ignoring MCTP message (type 0x{:02x}, TO {}, tag {}) while waiting for cmd 0x{:02x} "
-					"response\n",
-					msg[0], info.tagOwner, info.msgTag, cmd);
-				continue;
-			}
-
-			if (fwUpdStoreRxMessage(msg, info) != PLDM_SUCCESS) {
-				continue;
-			}
-			// DSP0240: act on a response only when its PLDM Type, Command Code and Instance ID match
-			// the outstanding request.
-			const struct pldmHdr &rsp = mI2cPldmRead->pldmHdr;
-			if (rsp.request != PLDM_RESPONSE || rsp.cmdType != PLDM_FIRMWARE_UPDATE || rsp.cmdCode != cmd ||
-				rsp.instanceID != requestId) {
-				DBG("FWU : Ignoring PLDM message (type 0x{:02x}, cmd 0x{:02x}, instance {}) that does not answer "
-					"cmd 0x{:02x} instance {}\n",
-					rsp.cmdType, rsp.cmdCode, rsp.instanceID, cmd, requestId);
-				continue;
-			}
-			responded = true;
-			break;
-		}
-	}
-
-	if (!responded) {
-		DBG("FWU : GPU {}: no response to cmd 0x{:02x} after {} tries\n", mGpuBdf, cmd, PLDM_PN1_RETRIES + 1);
+	std::vector<uint8_t> rsp;
+	mctpMsgInfo rspInfo = {};
+	if (mctpTransact(request, PLDM_TIMING, isResponse, rsp, rspInfo, onFdRequest) != MCTP_SUCCESS ||
+		fwUpdStoreRxMessage(rsp, rspInfo) != PLDM_SUCCESS) {
+		DBG("FWU : GPU {}: no response to cmd 0x{:02x} after {} tries\n", mGpuBdf, cmd, PLDM_TIMING.retries + 1);
 		return PLDM_ERROR;
 	}
 
@@ -133,22 +95,6 @@ uint8_t pldm::fwUpdCmd(uint8_t cmd)
 	}
 
 	return PLDM_SUCCESS;
-}
-
-/**
- * @brief Take the Instance ID for a new firmware update request
- *
- * Every new request takes a new Instance ID, whatever became of the previous one, and only retries
- * of a request reuse its ID (DSP0240).
- *
- * @return uint8_t Instance ID for the request, 1 to PLDM_INSTANCE_ID_MAX - 1
- */
-uint8_t pldm::fwUpdNextInstanceId()
-{
-	if (instanceID == PLDM_INSTANCE_ID_MAX) {
-		instanceID = 1;
-	}
-	return instanceID++;
 }
 
 /**
@@ -238,14 +184,7 @@ uint8_t pldm::fwUpdStoreRxMessage(const std::vector<uint8_t> &msg, const mctpMsg
 
 	mFwuRxPayload.assign(msg.begin() + 1 + sizeof(struct pldmHdr), msg.end());
 	mFwuRxInfo = info;
-
-	memset(mI2cPldmRead, 0, sizeof(*mI2cPldmRead));
-	// Message type too, so checks on mI2cPldmRead such as isResponseTo() see the message as received
-	mI2cPldmRead->mctpSmbusHdr.ic = static_cast<uint8_t>((msg[0] >> 7) & 0x1);
-	mI2cPldmRead->mctpSmbusHdr.msgType = static_cast<uint8_t>(msg[0] & 0x7F);
-	memcpy(&mI2cPldmRead->pldmHdr, msg.data() + 1, sizeof(struct pldmHdr));
-	memcpy(mI2cPldmRead->respPayload, mFwuRxPayload.data(),
-		   std::min(mFwuRxPayload.size(), sizeof(mI2cPldmRead->respPayload)));
+	pldmStoreRxMessage(msg, info);
 
 	return PLDM_SUCCESS;
 }
@@ -400,39 +339,89 @@ uint16_t pldm::fwUpdCompCount() const
 }
 
 /**
- * @brief Wait for the FD to reach READY XFER after it reported a successful apply
+ * @brief Make sure the FD has the ApplyComplete response and is back in READY XFER
  *
  * The FD moves from APPLY to READY XFER only on receiving a successful response to ApplyComplete
- * (DSP0267 section 7.6 step 4). If that response is lost the FD retries ApplyComplete within PT3 of
- * the first try (DSP0240 Table 6), and until then it rejects UpdateComponent and ActivateFirmware.
- * GetStatus is accepted in APPLY, and while fwUpdCmd() waits for its response it answers such a
- * retry again, so polling it until READY XFER makes sure the FD has the response before the next
- * state changing command.
+ * (DSP0267 section 7.6 step 4). If that response is lost the FD retries ApplyComplete with the same
+ * Instance ID within PT3 of the first try (DSP0240 Table 6), and until it has the response it rejects
+ * UpdateComponent and ActivateFirmware.
  *
- * @return uint8_t PLDM_SUCCESS once GetStatus reports READY XFER, PLDM_ERROR otherwise
+ * A requester may hold its retry back while it is receiving other traffic, so nothing is sent to the
+ * FD until PT3 has passed since the response: a retry that arrives meanwhile is answered again
+ * (fwUpdReplayIfRetry()). One GetStatus then confirms the state. GetStatus is optional for the UA
+ * (DSP0267 section 7.6 step 3); it is sent only once the FD can no longer be waiting to retry.
+ *
+ * @return fwuTransferResult
+ * @retval fwuTransferResult::Applied The FD reports READY XFER
+ * @retval fwuTransferResult::ComponentFailed The FD is still in another update mode state; the caller
+ *         shall send CancelUpdateComponent, which returns it to READY XFER (DSP0267 section 12.13)
+ * @retval fwuTransferResult::Failed No response to GetStatus, the FD has left update mode, or the
+ *         update was interrupted
  */
-uint8_t pldm::fwUpdWaitForReadyXfer()
+fwuTransferResult pldm::fwUpdWaitForReadyXfer()
 {
 	TRACING();
-	// Local pause between GetStatus polls
-	constexpr unsigned int kPollIntervalMs = 500;
-	const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(PLDM_PT3_MAX_MS);
+	// PT3 counts from the response to ApplyComplete, given by fwUpdHandleStageResult()
+	const bool answered = mFwuLastAnswered.valid && mFwuLastAnswered.cmd == APPLY_COMPLETE;
+	const auto listenUntil = (answered ? mFwuLastAnswered.time : std::chrono::steady_clock::now()) +
+							 std::chrono::milliseconds(PLDM_PT3_MAX_MS);
 
+	DBG("FWU : GPU {}: listening for an ApplyComplete retry for up to {} ms before GetStatus\n", mGpuBdf,
+		PLDM_PT3_MAX_MS);
 	while (true) {
-		if (fwUpdCmd(GET_STATUS) != PLDM_SUCCESS) {
-			ERR("FWU : GetStatus Failed!!!\n");
-			return PLDM_ERROR;
+		const auto left =
+			std::chrono::duration_cast<std::chrono::milliseconds>(listenUntil - std::chrono::steady_clock::now());
+		if (left.count() <= 0) {
+			break;
 		}
-		if (mFwuCurrentState == GETSTATUS_READY_XFER) {
-			return PLDM_SUCCESS;
+		std::vector<uint8_t> msg;
+		mctpMsgInfo info = {};
+		const uint8_t rxStatus = mctpReceiveMessage(msg, info, left, MCTP_RESPONSE_DELAY_MS,
+													[] { return AmcUpdateInterruptGuard::cancelRequested(); });
+		if (rxStatus == MCTP_CANCELLED) {
+			return fwuTransferResult::Failed;
 		}
-		if (std::chrono::steady_clock::now() > deadline) {
-			ERR("GPU {}: firmware device still in state {} {} ms after ApplyComplete, expected READY XFER\n", mGpuBdf,
-				mFwuCurrentState, PLDM_PT3_MAX_MS);
-			return PLDM_ERROR;
+		if (rxStatus == MCTP_TIMEOUT) {
+			break;
 		}
-		MSLEEP(kPollIntervalMs);
+		if (rxStatus != MCTP_SUCCESS) {
+			ERR("FWU : GPU {}: failed to receive from the firmware device\n", mGpuBdf);
+			return fwuTransferResult::Failed;
+		}
+		// Only a request of the FD's (TO set) can be waiting; a response here belongs to no request of ours
+		if (!info.tagOwner || msg[0] != PLDM_OVER_MCTP || fwUpdStoreRxMessage(msg, info) != PLDM_SUCCESS ||
+			mI2cPldmRead->pldmHdr.request != PLDM_REQUEST) {
+			DBG("FWU : Ignoring MCTP message that is not a PLDM request from the firmware device\n");
+			continue;
+		}
+		if (fwUpdReplayIfRetry()) {
+			continue;
+		}
+		// DSP0267 COMMAND_NOT_EXPECTED: nothing else is part of the sequence after ApplyComplete
+		DBG("FWU : Command 0x{:02x} after ApplyComplete, respond AMC with COMMAND_NOT_EXPECTED\n",
+			mI2cPldmRead->pldmHdr.cmdCode);
+		if (respondtoamc(COMMAND_NOT_EXPECTED) != PLDM_SUCCESS) {
+			ERR("FWU : Respond to AMC failed...\n");
+			return fwuTransferResult::Failed;
+		}
 	}
+
+	DBG(">>> Send GetStatus\n");
+	if (fwUpdCmd(GET_STATUS) != PLDM_SUCCESS) {
+		ERR("FWU : GPU {}: GetStatus after ApplyComplete failed\n", mGpuBdf);
+		return fwuTransferResult::Failed;
+	}
+	if (mFwuCurrentState == GETSTATUS_READY_XFER) {
+		DBG("<<< GetStatus: READY XFER\n");
+		return fwuTransferResult::Applied;
+	}
+	if (mFwuCurrentState == GETSTATUS_IDLE) {
+		ERR("FWU : GPU {}: firmware device left update mode after ApplyComplete\n", mGpuBdf);
+		return fwuTransferResult::Failed;
+	}
+	ERR("GPU {}: firmware device still in state {} {} ms after ApplyComplete, expected READY XFER\n", mGpuBdf,
+		mFwuCurrentState, PLDM_PT3_MAX_MS);
+	return fwuTransferResult::ComponentFailed;
 }
 
 /**
@@ -440,7 +429,8 @@ uint8_t pldm::fwUpdWaitForReadyXfer()
  *
  * Sends UpdateComponent and serves the FD's requests until it has applied the component. When a
  * stage stalls past its Table 2 timer (UA_T2 for the transfer, UA_T3 or UA_T6 for verify and
- * apply), or the FD reports a failed transfer, verification or apply, the UA sends
+ * apply), the FD reports a failed transfer, verification or apply, or it is not back in READY XFER
+ * after a successful apply (fwUpdWaitForReadyXfer()), the UA sends
  * CancelUpdateComponent (DSP0267 sections 12.7 to 12.9 and 12.12, Table 2) and may resend the same
  * component image (section 12.13), up to FWU_COMPONENT_TRANSFER_ATTEMPTS times in all.
  *
@@ -464,9 +454,12 @@ uint8_t pldm::fwUpdComponent(uint8_t comp)
 		DBG("<<< UpdateComponent Success...\n");
 
 		DBG("\n========= Firmware Update Read from FirmwareDevice(FD) for Component :: {} =========\n", comp + 1);
-		const fwuTransferResult xfer = readFromFD();
+		fwuTransferResult xfer = readFromFD();
 		if (xfer == fwuTransferResult::Applied) {
-			return fwUpdWaitForReadyXfer();
+			xfer = fwUpdWaitForReadyXfer();
+			if (xfer == fwuTransferResult::Applied) {
+				return PLDM_SUCCESS;
+			}
 		}
 		if (xfer == fwuTransferResult::RestartRequired) {
 			ERR("AMC of GPU {} asks for the update to be cancelled and run again\n", mGpuBdf);
@@ -689,16 +682,7 @@ uint8_t pldm::fwUpdInitialize(const char *pkgFilePath)
 		}
 	}
 
-	if (AmcUpdateInterruptGuard::cancelRequested()) {
-		return cleanupAndReturn(PLDM_ERROR);
-	}
-	DBG(">>> Send GetStatus\n");
-	if (fwUpdCmd(GET_STATUS) != PLDM_SUCCESS) {
-		ERR("FWU : GetStatus Failed!!!\n");
-		return cleanupAndReturn(PLDM_ERROR);
-	}
-	DBG("<<< GetStatus Success...\n");
-
+	// fwUpdComponent() has seen the FD back in READY XFER after every component, where ActivateFirmware is accepted
 	DBG("\n========= Activate Firmware for all Components =========\n");
 	// Last point at which the update can be cancelled: once ActivateFirmware is sent the FD
 	// finishes activation even if CancelUpdate follows (DSP0267 section 7.6).

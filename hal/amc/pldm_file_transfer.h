@@ -27,8 +27,6 @@
 // Minimum multipart transfer part size (DSP0240 NegotiateTransferParameters)
 #define PLDM_MIN_PART_SIZE 256
 
-#define MAX_NUM_RETRIES 3
-
 enum pldm_ft_command_code
 {
 	PLDM_FT_CMDCODE_DF_OPEN = 0x01,

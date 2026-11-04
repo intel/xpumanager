@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "mctp.h"
+#include <algorithm>
 
 /**
  * @brief Processes mctp control command responses
@@ -86,7 +87,9 @@ uint8_t mctp::getRespPayload(uint8_t cmd, uint8_t id)
 
 	mI2cMctpRead->mctpSmbusHdr.destSlaveAddr = MCTP_SRC_SLAVE_ADDR;
 	mI2cMctpRead->mctpSmbusHdr.destSlaveAddrB0 = MCTP_SRC_SLAVE_ADDR_B0;
-	totalSize = mI2cMctpRead->mctpSmbusHdr.byteCount + 3;
+	// The byte count is rebuilt from the whole message (mctpFillRxHeader()), which can be longer than the
+	// frame buffer; mctpReceiveMessage() has already logged every packet in full
+	totalSize = std::min<unsigned int>(mI2cMctpRead->mctpSmbusHdr.byteCount + 3, sizeof(*mI2cMctpRead));
 
 	DBG("mctp RX  :: ");
 	hexdump((uint8_t *)mI2cMctpRead, totalSize);

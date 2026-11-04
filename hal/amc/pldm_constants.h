@@ -37,8 +37,12 @@
 #define PLDM_GETCOMMANDS_SIZE 17
 #define PLDM_GETFRUTABLEMETADATA_SIZE 12
 #define PLDM_GETFRUTABLE_SIZE 17
-#define PLDM_MAX_RESPONSE_SIZE 128
 #define PLDM_CMD_RESP_PAYLOAD_SIZE 1
+// The *_SIZE constants above, and the size passed to the PLDM command functions, give a request as the
+// single SMBus frame it used to be sent as: the SMBus/MCTP header through the message type byte
+// (mctpSmbusI2cHdr) and the PLDM header, then the request data. This is the part ahead of the data, so the
+// request data is size - PLDM_REQUEST_FRAME_HDR_SIZE bytes; the byte after it is the old payload PEC, unused.
+#define PLDM_REQUEST_FRAME_HDR_SIZE 12
 
 // DSP0240 Table 6 timing for PLDM requests
 // PT2, wait for the start of a response: PT1max + 2*PT4max (300 ms) to PT3min - 2*PT4max (4.8 s).

@@ -25,7 +25,6 @@
  * @retval PLDM_ERROR Communication failure or invalid response
  *
  * @note Used to retrieve FRU information such as metadata and table data
- * @note Manages PLDM instance ID automatically with wraparound
  */
 uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
 {
@@ -36,46 +35,26 @@ uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
 		return PLDM_ERROR;
 	}
 
-	uint8_t pldmCmdLen = size;
-	uint8_t *wptr = (uint8_t *)mI2cPldmWrite;
-	uint8_t *rptr = (uint8_t *)mI2cPldmRead;
-
-	if (instanceID == PLDM_INSTANCE_ID_MAX) {
-		instanceID = 1;
+	if (size < PLDM_REQUEST_FRAME_HDR_SIZE) {
+		ERR("PLDM FRU : Invalid request size {} for command 0x{:02x}\n", size, cmd);
+		return PLDM_ERROR;
 	}
 
-	// UA will calculate this PAK_SEQ for multi packet messages, currently we are not using multi packet messages
-	commandConstruction(&mI2cPldmWrite->mctpSmbusHdr, MCTP_SOM, MCTP_EOM, MCTP_PAK_SEQ, (pldmCmdLen - 3),
-						MCTP_INTEGRITY_CHECK);
-	mI2cPldmWrite->mctpSmbusHdr.msgType = PLDM_OVER_MCTP;
-	pldmHdrConstruction(&mI2cPldmWrite->pldmHdr, instanceID, PLDM_FRU, cmd, PLDM_ASYNC_REQUEST_NOTIFY, PLDM_REQUEST);
-
-	if (pldmFruFillPayload(cmd, pldmCmdLen) != PLDM_SUCCESS) {
+	if (pldmFruFillPayload(cmd) != PLDM_SUCCESS) {
 		ERR("PLDM FRU : Fill payload failed for command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
-	DBG("PLDM TX  :: ");
-	hexdump((uint8_t *)mI2cPldmWrite, pldmCmdLen);
-
-	if (i2cobj->writeAmc(wptr + 1, pldmCmdLen) != true) {
-		ERR("PLDM FRU : I2C Write failure\n");
+	uint8_t id = 0;
+	if (pldmRequest(PLDM_FRU, cmd, size - PLDM_REQUEST_FRAME_HDR_SIZE, id) != PLDM_SUCCESS) {
+		ERR("PLDM FRU : No response to command 0x{:02x}\n", cmd);
 		return PLDM_ERROR;
 	}
 
-	// Wait for I2C event
-	MSLEEP(I2C_EVENT_WAIT_PERIOD_MS);
-
-	if (i2cobj->readAmc(rptr + 1, PLDM_MAX_RESPONSE_SIZE) != true) {
-		ERR("PLDM FRU : I2C Read failure\n");
+	if (pldmFruResponse(cmd, id) != PLDM_SUCCESS) {
 		return PLDM_ERROR;
 	}
 
-	if (pldmFruResponse(cmd, instanceID) != PLDM_SUCCESS) {
-		return PLDM_ERROR;
-	}
-
-	instanceID++;
 	return PLDM_SUCCESS;
 }
 
@@ -87,25 +66,22 @@ uint8_t pldm::pldmFruCommand(uint8_t cmd, uint8_t size)
  * and table data retrieval.
  *
  * @param cmd PLDM FRU command code that determines payload structure
- * @param pldm_cmd_len Expected length of the command payload in bytes
  *
  * @return uint8_t Status of payload construction
  * @retval PLDM_SUCCESS Payload filled successfully
  * @retval PLDM_ERROR Invalid command or payload construction failure
  *
- * @note Automatically calculates and appends CRC8 checksum to payload
+ * @note Only the request data is filled; the SMBus PEC is added when the request is packetized
+ *       (mctpPacketize())
  */
-uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldmCmdLen)
+uint8_t pldm::pldmFruFillPayload(uint8_t cmd)
 {
 	TRACING();
 	uint8_t ret = PLDM_SUCCESS;
 
 	switch (cmd) {
 	case PLDM_GET_FRU_RECORD_TABLE_METADATA:
-		// Initialize payload buffer to prevent reading uninitialized memory during CRC calculation
-		memset(mI2cPldmWrite->respPayload, 0, pldmCmdLen);
-		// No payload data for metadata request, CRC is calculated over the payload excluding the CRC byte itself
-		mI2cPldmWrite->respPayload[BYTE_0] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
+		// No request data (DSP0257 GetFRURecordTableMetadata)
 		break;
 
 	case PLDM_GET_FRU_RECORD_TABLE:
@@ -115,8 +91,6 @@ uint8_t pldm::pldmFruFillPayload(uint8_t cmd, uint8_t pldmCmdLen)
 		mI2cPldmWrite->respPayload[BYTE_2] = (uint8_t)((mFruTableRequest.dataXferHandle >> 16) & 0xFF);
 		mI2cPldmWrite->respPayload[BYTE_3] = (uint8_t)((mFruTableRequest.dataXferHandle >> 24) & 0xFF);
 		mI2cPldmWrite->respPayload[BYTE_4] = mFruTableRequest.xferOpFlag;
-		// CRC is calculated over the payload excluding the CRC byte itself
-		mI2cPldmWrite->respPayload[BYTE_5] = crc8Smbus(mI2cPldmWrite->respPayload, pldmCmdLen - 1);
 		break;
 
 	default:

@@ -4,6 +4,7 @@
 # HAL amc (add-in-card management controller) build
 
 amc_sources = files(
+  'amc_bus.cpp',
   'common.cpp',
   'mctp_control.cpp',
   'mctp_control_resp.cpp',

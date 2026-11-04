@@ -48,8 +48,6 @@ int pldm::pldminit()
 		return PLDM_ERROR;
 	}
 
-	// Initialize pldm Instance ID to "1"
-	instanceID = 1;
 	mProgPercent = 0;
 	mFruTableInitialized = false;
 
@@ -106,7 +104,7 @@ void pldm::cleanup()
 int pldm::initialize()
 {
 	TRACING();
-	if (!i2cobj->isInit()) {
+	if (!isI2cOpen()) {
 		ERR("Failed to initialize I2C interface\n");
 		return PLDM_ERROR;
 	}
@@ -147,7 +145,7 @@ int pldm::initialize()
 int pldm::fwupd(const char *pkgFilePath, uint16_t compIdFilter, bool forceUpdate)
 {
 	TRACING();
-	if (!i2cobj->isInit()) {
+	if (!isI2cOpen()) {
 		ERR("Failed to initialize I2C interface\n");
 		return PLDM_ERROR;
 	}
