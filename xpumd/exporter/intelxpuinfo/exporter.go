@@ -88,34 +88,24 @@ func (e *xpuInfoExporter) shutdown(ctx context.Context) error {
 	e.started = false
 
 	e.logger.Info("Shutting down XPU Info exporter")
-	defer e.telemetry.Shutdown()
-	// GracefulStop only closes listeners that Serve has already picked up.
-	defer func() { _ = e.lis.Close() }()
 
+	e.infoServer.stop()
+
+	// Force stop if the graceful one takes too long.
 	ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
+	stopForced := context.AfterFunc(ctx, e.grpcServer.Stop)
 
-	done := make(chan struct{})
-	go func() {
-		if e.infoServer != nil {
-			e.infoServer.stop()
-		}
-		if e.grpcServer != nil {
-			e.grpcServer.GracefulStop()
-		}
-		close(done)
-	}()
+	e.grpcServer.GracefulStop()
+	wasForceStopped := !stopForced()
+	// GracefulStop only closes listeners that Serve has already picked up.
+	_ = e.lis.Close()
+	e.telemetry.Shutdown()
 
-	select {
-	case <-done:
-		e.logger.Info("gRPC server stopped gracefully")
-	case <-ctx.Done():
-		// Force stop
-		if e.grpcServer != nil {
-			e.grpcServer.Stop()
-		}
-		return fmt.Errorf("gRPC server shutdown timed out: %v", ctx.Err())
+	if wasForceStopped {
+		return fmt.Errorf("gRPC server shutdown timed out: %w", ctx.Err())
 	}
+	e.logger.Info("gRPC server stopped gracefully")
 	return nil
 }
 
