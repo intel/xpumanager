@@ -7,6 +7,7 @@
 #include "mctp_packet.h"
 #include "common.h"
 #include <algorithm>
+#include <array>
 
 // DSP0237 frame as returned by an I2C read, indexed from the command code
 constexpr size_t kFrameCmdCodeIdx = 0;
@@ -34,6 +35,11 @@ constexpr uint8_t kMsgTagMask = 0x07;
 
 // DSP0237: bit 0 of the source slave address byte is 1 for MCTP, the destination byte carries R/W = 0 (write)
 constexpr uint8_t kSmbusSrcAddrMctpBit = 0x01;
+// The destination address byte of frames sent to this host, which a read does not return but the PEC
+// covers (DSP0237 s6.3)
+constexpr uint8_t RECEIVER_ADDR_BYTE = static_cast<uint8_t>(MCTP_SRC_SLAVE_ADDR << 1);
+// First byte of an AMC read with nothing to send: the AMC's own address byte (0x40, read)
+constexpr uint8_t AMC_IDLE_ADDR_BYTE = 0x81;
 
 bool mctpPacketize(const mctpSmbusAddr &addr, const mctpMsgInfo &info, const uint8_t *msg, size_t msgLen,
 				   std::vector<std::vector<uint8_t>> &packets)
@@ -106,6 +112,36 @@ mctpFrameStatus mctpExtractFrame(std::vector<uint8_t> &stream, std::vector<uint8
 }
 
 /**
+ * @brief Whether a frame that failed its PEC was cut off by the end of a read after its transport header
+ *
+ * The AMC drops the rest of a cut-off packet and the next read is idle: its address byte, then zeros.
+ * Such a frame ends in that address byte followed only by zeros, and when they start after the flags
+ * byte, the header came from the AMC as sent.
+ *
+ * @param frame Frame from the command code through the PEC
+ * @param len Length of frame in bytes
+ *
+ * @return bool True when the frame ends in an idle read that begins after the transport header
+ */
+namespace {
+
+bool cutAfterHeader(const uint8_t *frame, size_t len)
+{
+	size_t start = len;
+	while (start > 0 && frame[start - 1] == 0x00) {
+		--start;
+	}
+	return start > kFrameFlagsIdx + 1 && frame[start - 1] == AMC_IDLE_ADDR_BYTE;
+}
+
+} // namespace
+
+bool mctpFrameIsEom(const std::vector<uint8_t> &frame)
+{
+	return frame.size() > kFrameFlagsIdx && (frame[kFrameFlagsIdx] & kFlagEom) != 0;
+}
+
+/**
  * @brief Drop the packet being added, and the partial message too when the fault is in it
  *
  * @param reason Why the packet was dropped, kept for dropReason()
@@ -116,6 +152,7 @@ mctpFrameStatus mctpExtractFrame(std::vector<uint8_t> &stream, std::vector<uint8
 MctpAssembler::result MctpAssembler::drop(const char *reason, bool endsAssembly)
 {
 	mDropReason = reason;
+	mLostMessage = endsAssembly;
 	if (endsAssembly) {
 		reset();
 	}
@@ -137,6 +174,8 @@ void MctpAssembler::reset()
 MctpAssembler::result MctpAssembler::addPacket(const uint8_t *frame, size_t len)
 {
 	mDropReason = nullptr;
+	mLostMessage = false;
+	mLastHeaderValid = false;
 
 	if (frame == nullptr || len < kFrameOverhead + kMinByteCount) {
 		return drop("frame shorter than the smallest MCTP packet", false);
@@ -152,6 +191,17 @@ MctpAssembler::result MctpAssembler::addPacket(const uint8_t *frame, size_t len)
 	if (byteCount < kMinByteCount || byteCount > MCTP_SMBUS_MAX_BYTE_COUNT) {
 		return drop("packet payload size outside 1..transmission unit", false);
 	}
+	std::array<uint8_t, 1 + MCTP_SMBUS_MAX_BYTE_COUNT + kFrameOverhead> covered{};
+	covered[0] = RECEIVER_ADDR_BYTE;
+	std::copy(frame, frame + len - 1, covered.begin() + 1);
+	if (crc8Smbus(covered.data(), len) != frame[len - 1]) {
+		mLastHeaderValid = cutAfterHeader(frame, len);
+		// DSP0237 s6.3: the receiver checks the PEC. The AMC drops the rest of a packet that a read cuts
+		// off, so the next read's idle bytes stand in for it; nothing of the packet can be trusted, and
+		// its message cannot complete (DSP0236 drops a message missing a packet).
+		return drop("SMBus PEC does not match (packet damaged or cut off by the end of a read)", true);
+	}
+	mLastHeaderValid = true;
 	if ((frame[kFrameSrcAddrIdx] & kSmbusSrcAddrMctpBit) == 0) {
 		return drop("bit 0 of the source slave address is not set (DSP0237)", false);
 	}

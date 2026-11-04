@@ -81,12 +81,23 @@ enum class mctpFrameStatus
 mctpFrameStatus mctpExtractFrame(std::vector<uint8_t> &stream, std::vector<uint8_t> &frame);
 
 /**
+ * @brief Whether a received frame is marked as the last packet of its message
+ *
+ * @param frame Frame from the command code through the PEC, as returned by mctpExtractFrame()
+ *
+ * @retval true  The frame is long enough to hold the transport header and has EOM set
+ * @retval false Otherwise
+ */
+[[nodiscard]] bool mctpFrameIsEom(const std::vector<uint8_t> &frame);
+
+/**
  * @brief Reassembles MCTP messages from received DSP0237 frames (DSP0236 packet assembly)
  *
  * Packets that break the DSP0236/DSP0237 rules are dropped. When the fault is in the message
  * being assembled (bad sequence number, short non-final packet, size limit) the partial message
  * is dropped with it. A SOM packet always starts a new message, discarding any partial one.
- * The SMBus PEC is not validated here.
+ * A packet whose SMBus PEC (DSP0237) does not match is dropped with the partial message: it was
+ * damaged, or cut off by the end of a read and padded with what the next read returned.
  *
  * Only one message is assembled at a time, which is all a single AMC needs: a middle or end packet
  * from any other source EID / TO / tag is dropped without disturbing the message in progress.
@@ -145,12 +156,31 @@ public:
 	 */
 	const char *dropReason() const { return mDropReason; }
 
+	/**
+	 * @brief Whether dropping the last packet lost a message: the one being assembled, or the one
+	 *        a damaged packet belonged to
+	 * @retval true  The message will not complete; the requester has to ask again
+	 * @retval false The last packet was not dropped, or nothing but that packet was lost
+	 */
+	[[nodiscard]] bool lostMessage() const { return mLostMessage; }
+
+	/**
+	 * @brief Whether the transport header of the last packet arrived as sent, so its flags can be
+	 *        believed even if the packet was dropped
+	 * @retval true  The frame passed the PEC, or failed it only because a read cut it off after the
+	 *               transport header (the rest is the next read's idle bytes)
+	 * @retval false The header may be damaged, or the frame was too short or malformed to tell
+	 */
+	[[nodiscard]] bool lastHeaderValid() const { return mLastHeaderValid; }
+
 private:
 	result drop(const char *reason, bool endsAssembly);
 
 	uint8_t mLocalEid;
 	size_t mMaxMsgLen;
 	const char *mDropReason = nullptr;
+	bool mLostMessage = false;
+	bool mLastHeaderValid = false;
 	bool mAssembling = false;
 	uint8_t mExpectedSeq = 0;
 	mctpMsgInfo mInfo = {};

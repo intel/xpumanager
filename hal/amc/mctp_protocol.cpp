@@ -225,8 +225,9 @@ uint8_t mctp::mctpSendMessage(const mctpMsgInfo &info, const std::vector<uint8_t
  *                       received in full, so a request from the AMC is never half read.
  *
  * @return uint8_t MCTP_SUCCESS with msg and info filled in, MCTP_TIMEOUT when no message began
- *                 within timeout, MCTP_CANCELLED when abortRequested ended the wait, MCTP_FAILURE on
- *                 an I2C error
+ *                 within timeout, MCTP_CANCELLED when abortRequested ended the wait, MCTP_DROPPED when a
+ *                 message began but a damaged or cut-off packet lost it (returned once the rest of it
+ *                 has gone by, so the requester can ask again at once), MCTP_FAILURE on an I2C error
  */
 uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, std::chrono::milliseconds timeout,
 								 unsigned int pollIntervalMs, const std::function<bool()> &abortRequested)
@@ -238,6 +239,9 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
 	std::vector<uint8_t> stream;
 	std::vector<uint8_t> frame;
 	auto lastPacketTime = std::chrono::steady_clock::now();
+	// Set while the rest of a lost message may still arrive; it is read and dropped first, so a
+	// request sent again does not cross it.
+	bool lost = false;
 	// Set when the next bytes are expected right away: the rest of a partial frame, or the packet
 	// after one that left a message in progress.
 	bool readNow = false;
@@ -245,11 +249,12 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
 	unsigned int frameReads = 0;
 
 	while (true) {
-		if (!readNow && !assembler.inProgress() && abortRequested && abortRequested()) {
+		// The rest of a lost message is read first, so a cancel sent afterwards does not cross it.
+		if (!readNow && !assembler.inProgress() && !lost && abortRequested && abortRequested()) {
 			return MCTP_CANCELLED;
 		}
 		if (!readNow) {
-			MSLEEP(assembler.inProgress() ? MCTP_ASSEMBLY_POLL_MS : pollIntervalMs);
+			MSLEEP((assembler.inProgress() || lost) ? MCTP_ASSEMBLY_POLL_MS : pollIntervalMs);
 		}
 
 		if (!mBus->read(rawRead)) {
@@ -270,6 +275,9 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
 			hexdump(frame.data(), (unsigned int)frame.size());
 
 			MctpAssembler::result result = assembler.addPacket(frame.data(), frame.size());
+			if (result != MctpAssembler::result::Dropped) {
+				lost = false;
+			}
 			if (result == MctpAssembler::result::Complete) {
 				msg = assembler.message();
 				info = assembler.info();
@@ -280,6 +288,18 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
 				lastPacketTime = std::chrono::steady_clock::now();
 			} else if (result == MctpAssembler::result::Dropped) {
 				DBG("MCTP: Dropped received packet: {}\n", assembler.dropReason());
+				if (assembler.lostMessage()) {
+					lost = true;
+				}
+				if (lost) {
+					// Only a header that arrived as sent is believed; otherwise the gap timeout ends the wait.
+					if (assembler.lastHeaderValid() && mctpFrameIsEom(frame)) {
+						DBG("MCTP: The message being received was lost\n");
+						return MCTP_DROPPED;
+					}
+					readNow = true;
+					lastPacketTime = std::chrono::steady_clock::now();
+				}
 			}
 		}
 		if (status != mctpFrameStatus::NeedMore) {
@@ -287,7 +307,12 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
 		}
 
 		const auto now = std::chrono::steady_clock::now();
-		if (assembler.inProgress()) {
+		if (lost) {
+			if (now - lastPacketTime > std::chrono::milliseconds(MCTP_ASSEMBLY_GAP_TIMEOUT_MS)) {
+				DBG("MCTP: The message being received was lost\n");
+				return MCTP_DROPPED;
+			}
+		} else if (assembler.inProgress()) {
 			if (now - lastPacketTime > std::chrono::milliseconds(MCTP_ASSEMBLY_GAP_TIMEOUT_MS)) {
 				// Dropped like any incomplete message (DSP0236); the requester's retry recovers it.
 				DBG("MCTP: Dropped a message whose next packet did not arrive within {} ms\n",
@@ -304,7 +329,7 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
 }
 
 /**
- * @brief Send a request to the AMC and wait for its response, sending it again on a timeout
+ * @brief Send a request to the AMC and wait for its response, sending it again on a timeout or a lost response
  *
  * The one request/response loop of the AMC transport, for MCTP control and PLDM alike. The request goes
  * out with mctpRequestInfo(): TO set and the fixed message tag, which is enough because a card only ever
@@ -314,18 +339,26 @@ uint8_t mctp::mctpReceiveMessage(std::vector<uint8_t> &msg, mctpMsgInfo &info, s
  *   an earlier request, is skipped.
  * - a message with TO set is a request from the AMC. onRequest() may answer it; it is skipped otherwise.
  *
- * A request without a response within timing.waitPerTry is sent again, unchanged (so with the same
- * Instance ID), timing.retries times (DSP0237 MN1, DSP0240 PN1).
+ * The request is sent again, unchanged (so with the same Instance ID):
+ * - when no response began within timing.waitPerTry, timing.retries times (DSP0237 MN1, DSP0240 PN1);
+ * - at once when a response began but was lost on the way (MCTP_DROPPED: a packet failed its PEC or was cut
+ *   off), timing.lostResponseRetries times. The AMC loses the rest of a packet a read cuts off, and waiting
+ *   out a whole MT2/PT2 for each would only delay the retry that recovers it.
+ * Every try goes out within timing.window of the first (DSP0237 MT4, DSP0240 PT3), so the responder can
+ * still tell it is a retry.
  *
  * @param request Message body, starting with the message type byte
- * @param timing Wait per try and number of retries
+ * @param timing Wait per try, retries after a timeout and after a lost response, and the window for them all
  * @param isResponse Whether a response candidate answers this request
  * @param response Output: the response message body
  * @param responseInfo Output: the response's transport header fields
  * @param onRequest Optional; offered every request from the AMC that arrives while waiting
  *
- * @return uint8_t MCTP_SUCCESS with response filled in, MCTP_TIMEOUT when no try was answered,
- *                 MCTP_FAILURE when the request could not be sent or a read from the AMC failed
+ * @return uint8_t
+ * @retval MCTP_SUCCESS response and responseInfo hold the response
+ * @retval MCTP_TIMEOUT no try was answered, or the window ran out
+ * @retval MCTP_DROPPED the last response was lost on the way and no further try was allowed
+ * @retval MCTP_FAILURE the request could not be sent, or a read from the AMC failed
  */
 uint8_t mctp::mctpTransact(const std::vector<uint8_t> &request, const MctpRetryTiming &timing,
 						   const MctpMessageFilter &isResponse, std::vector<uint8_t> &response,
@@ -333,16 +366,16 @@ uint8_t mctp::mctpTransact(const std::vector<uint8_t> &request, const MctpRetryT
 {
 	TRACING();
 	const mctpMsgInfo reqInfo = mctpRequestInfo();
+	const auto expiry = std::chrono::steady_clock::now() + timing.window;
+	int timeouts = 0;
+	int losses = 0;
 
-	for (int attempt = 0; attempt <= timing.retries; attempt++) {
-		if (attempt > 0) {
-			DBG("MCTP: no response to message type 0x{:02x} within {} ms, retrying ({}/{})\n", request[0],
-				timing.waitPerTry.count(), attempt, timing.retries);
-		}
+	while (true) {
 		if (mctpSendMessage(reqInfo, request) != MCTP_SUCCESS) {
 			return MCTP_FAILURE;
 		}
 
+		bool lost = false;
 		const auto deadline = std::chrono::steady_clock::now() + timing.waitPerTry;
 		while (true) {
 			const auto remaining =
@@ -354,6 +387,10 @@ uint8_t mctp::mctpTransact(const std::vector<uint8_t> &request, const MctpRetryT
 			mctpMsgInfo info = {};
 			const uint8_t rxStatus = mctpReceiveMessage(msg, info, remaining);
 			if (rxStatus == MCTP_TIMEOUT) {
+				break;
+			}
+			if (rxStatus == MCTP_DROPPED) {
+				lost = true;
 				break;
 			}
 			// A failed read is a bus error: report it rather than resending early and calling it a timeout
@@ -378,7 +415,25 @@ uint8_t mctp::mctpTransact(const std::vector<uint8_t> &request, const MctpRetryT
 			responseInfo = info;
 			return MCTP_SUCCESS;
 		}
-	}
 
-	return MCTP_TIMEOUT;
+		if (lost && ++losses > timing.lostResponseRetries) {
+			DBG("MCTP: the response to message type 0x{:02x} was lost {} times\n", request[0], losses);
+			return MCTP_DROPPED;
+		}
+		if (!lost && ++timeouts > timing.retries) {
+			return MCTP_TIMEOUT;
+		}
+		if (std::chrono::steady_clock::now() >= expiry) {
+			DBG("MCTP: no response to message type 0x{:02x} within {} ms of the first try\n", request[0],
+				timing.window.count());
+			return MCTP_TIMEOUT;
+		}
+		if (lost) {
+			DBG("MCTP: the response to message type 0x{:02x} was lost, asking again ({}/{})\n", request[0], losses,
+				timing.lostResponseRetries);
+		} else {
+			DBG("MCTP: no response to message type 0x{:02x} within {} ms, retrying ({}/{})\n", request[0],
+				timing.waitPerTry.count(), timeouts, timing.retries);
+		}
+	}
 }

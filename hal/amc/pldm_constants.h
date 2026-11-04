@@ -50,6 +50,10 @@
 #define PLDM_PT2_MS 2500
 // PN1, retries a requester is obligated to make: at least 2 (three tries in total)
 #define PLDM_PN1_RETRIES 2
+// Times a request is sent again when its response began to arrive but was lost (a damaged or cut-off
+// packet), on top of the DSP0240 PN1 retries and within PT3. Each costs one exchange, not a PT2 wait;
+// a local value, not a protocol one.
+#define PLDM_LOST_RESPONSE_RETRIES 8
 // PT3 max, instance ID expiration: all retries of a request happen within this time of the first try
 #define PLDM_PT3_MAX_MS 6000
 

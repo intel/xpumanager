@@ -33,9 +33,10 @@ uint8_t pldm::amcGpuReset()
 
 	memcpy(mI2cPldmWrite->respPayload, &payload, sizeof(payload));
 
-	// Not resent: if the AMC acted on the first try and only its response was lost, a resend could
-	// restart the GPU a second time. A missing response is reported instead.
-	constexpr MctpRetryTiming noResend{std::chrono::milliseconds(PLDM_PT2_MS), 0};
+	// Not resent: if the AMC acted on the first try and only its response was lost or damaged, a resend
+	// could restart the GPU a second time. A missing or damaged response is reported instead.
+	constexpr MctpRetryTiming noResend{std::chrono::milliseconds(PLDM_PT2_MS), 0, 0,
+									   std::chrono::milliseconds(PLDM_PT2_MS)};
 	uint8_t id = 0;
 	if (pldmRequest(PLDM_PLATFORM_MONITORING, PLDM_SET_STATE_EFFECTER_STATES, sizeof(payload), id, noResend) !=
 		PLDM_SUCCESS) {

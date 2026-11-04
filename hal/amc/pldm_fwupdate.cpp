@@ -384,6 +384,10 @@ fwuTransferResult pldm::fwUpdWaitForReadyXfer()
 		if (rxStatus == MCTP_TIMEOUT) {
 			break;
 		}
+		// A message lost on the way is nothing received; a request the FD sent is retried by the FD (DSP0240 PN1)
+		if (rxStatus == MCTP_DROPPED) {
+			continue;
+		}
 		if (rxStatus != MCTP_SUCCESS) {
 			ERR("FWU : GPU {}: failed to receive from the firmware device\n", mGpuBdf);
 			return fwuTransferResult::Failed;

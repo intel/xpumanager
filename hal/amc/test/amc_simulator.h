@@ -68,6 +68,10 @@ public:
 	// Make the next count reads fail, as a bus error would
 	void failReads(int count) { mFailReads = count; }
 
+	// Answer the next count requests with this message type and command with a reply whose last packet fails
+	// its PEC, as a packet damaged on the bus, or one the AMC cut off and the host completed from idle bytes, would
+	void damageNext(uint8_t msgType, uint8_t cmd, int count) { mDamage[key(msgType, cmd)] = count; }
+
 	// Make every packet after the first of a reply readable only this long after the one before it,
 	// as an AMC still staging the next packet would
 	void packetGap(std::chrono::milliseconds gap) { mPacketGap = gap; }
@@ -142,6 +146,7 @@ private:
 	std::map<uint16_t, bool> mStale;
 	std::map<uint16_t, bool> mAmcRequest;
 	std::map<uint16_t, int> mTruncate;
+	std::map<uint16_t, int> mDamage;
 	int mFailReads = 0;
 	std::vector<uint8_t> mFruTable;
 	bool mClosed = false;
@@ -230,6 +235,12 @@ private:
 			// PlatformEventMessage request (DSP0248), Rq set, the AMC's own tag
 			stage({PLDM_OVER_MCTP, 0x80, PLDM_PLATFORM_MONITORING, 0x0A, 0x01, 0x00}, 5, true);
 		}
+		int &damage = mDamage[key(r.msgType, r.cmd)];
+		if (damage > 0) {
+			damage--;
+			stage(reply(r), r.tag, false, true);
+			return;
+		}
 		int &truncate = mTruncate[key(r.msgType, r.cmd)];
 		if (truncate > 0) {
 			truncate--;
@@ -290,7 +301,7 @@ private:
 	}
 
 	// Split a message into DSP0237 packets addressed to the host and stage them for reads
-	void stage(const std::vector<uint8_t> &msg, uint8_t tag, bool tagOwner = false)
+	void stage(const std::vector<uint8_t> &msg, uint8_t tag, bool tagOwner = false, bool damageLast = false)
 	{
 		uint8_t seq = 0;
 		for (size_t off = 0; off < msg.size(); off += MCTP_BASELINE_TRANSMISSION_UNIT) {
@@ -310,6 +321,9 @@ private:
 			std::vector<uint8_t> covered = {static_cast<uint8_t>(kHostAddr << 1)};
 			covered.insert(covered.end(), f.begin(), f.end());
 			f.push_back(pec(covered));
+			if (damageLast && off + len == msg.size()) {
+				f.back() ^= 0x5A; // the last packet's PEC no longer matches
+			}
 			// Packets after the first become readable mPacketGap after the one before them is read
 			const bool later = off > 0 && mPacketGap.count() > 0;
 			mOut.push_back({std::move(f), later ? std::chrono::steady_clock::time_point::max()

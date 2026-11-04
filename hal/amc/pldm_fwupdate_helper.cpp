@@ -389,6 +389,11 @@ fwuTransferResult pldm::readFromFD()
 		if (rxStatus == MCTP_CANCELLED) {
 			return fwuTransferResult::Failed;
 		}
+		if (rxStatus == MCTP_DROPPED) {
+			// A message from the FD was lost on the way; the FD sends a request it got no answer to again
+			// (DSP0240 PN1).
+			continue;
+		}
 		if (rxStatus == MCTP_TIMEOUT) {
 			// Nothing pending: send the poll that is due. Otherwise a timer or a poll is due, which the top of
 			// the loop takes care of.
