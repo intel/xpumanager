@@ -162,7 +162,8 @@ It is built on top of the Intel Level-Zero driver stack and provides local GPU
 management for Intel(R) Arc Pro Series GPUs.</p>
 <section id="global-options">
 <h2>Global Options<a class="headerlink" href="#global-options" title="Link to this heading"></a></h2>
-<p>These options are available at the top level (without a subcommand):</p>
+<p>These options are available at the top level (without a subcommand), except
+<code class="docutils literal notranslate"><span class="pre">--timeout</span></code>, which applies to every command and may appear anywhere on the command line:</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-h">
 <span id="cmdoption-help"></span><span class="sig-name descname"><span class="pre">-h</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--help</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-h" title="Link to this definition"></a></dt>
@@ -179,6 +180,13 @@ management for Intel(R) Arc Pro Series GPUs.</p>
 <dt class="sig sig-object std" id="cmdoption-list-gpus">
 <span class="sig-name descname"><span class="pre">--list-gpus</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-list-gpus" title="Link to this definition"></a></dt>
 <dd><p>Print one line per GPU (index, name, UUID) and exit.</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-all">
+<span class="sig-name descname"><span class="pre">--all</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-all" title="Link to this definition"></a></dt>
+<dd><p>In the default output, also list the idle runtime contexts a multi-GPU process holds
+on GPUs it is not using, as <code class="docutils literal notranslate"><span class="pre">xpu-smi</span> <span class="pre">ps</span> <span class="pre">--all</span></code> does. Can be combined with <code class="docutils literal notranslate"><span class="pre">--loop</span></code>.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -226,15 +234,33 @@ no fields to list all available field names.</p>
 
 </dd></dl>
 
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-timeout">
+<span id="cmdoption-timeout"></span><span class="sig-name descname"><span class="pre">--timeout</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;sec&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--timeout</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;sec&gt;</span></span><a class="headerlink" href="#cmdoption-timeout" title="Link to this definition"></a></dt>
+<dd><p>Abort if <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> makes no progress for <code class="docutils literal notranslate"><span class="pre">&lt;sec&gt;</span></code> seconds (default: <code class="docutils literal notranslate"><span class="pre">30</span></code>), for
+example because a driver call does not return. <code class="docutils literal notranslate"><span class="pre">0</span></code> turns the timeout off; the maximum
+is <code class="docutils literal notranslate"><span class="pre">86400</span></code>. Time spent waiting between samples (<code class="docutils literal notranslate"><span class="pre">--loop</span></code>, <code class="docutils literal notranslate"><span class="pre">dump</span> <span class="pre">-i</span></code>, <code class="docutils literal notranslate"><span class="pre">stats</span></code>)
+does not count, so long-running loops are not affected.</p>
+<p>After half the timeout without progress, a warning on stderr names the phase that is
+stuck (for example <code class="docutils literal notranslate"><span class="pre">driver</span> <span class="pre">init</span></code>) and how many seconds remain. On timeout, <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code>
+restores the terminal, prints the phase and one line per thread to stderr, and exits
+with code <code class="docutils literal notranslate"><span class="pre">124</span></code>.</p>
+<p>The timeout is suspended while firmware is being written (<code class="docutils literal notranslate"><span class="pre">updatefw</span></code>): a flash can take
+several minutes, and interrupting one can leave the card unusable. It starts again,
+with the full timeout, once flashing ends.</p>
+</dd></dl>
+
 </section>
 <section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi [Options]
+xpu-smi [--all] [--loop[=&lt;sec&gt;]|--loop-ms=&lt;ms&gt;] [--count=&lt;n&gt;]
 xpu-smi -v
 xpu-smi -h
 xpu-smi --list-gpus
 xpu-smi --query-gpu=&lt;fields&gt; [--id &lt;n&gt;] [--loop[=&lt;sec&gt;]|--loop-ms=&lt;ms&gt;] [--count=&lt;n&gt;] [--format=csv[,...]]
 xpu-smi &lt;command&gt; [command-options]
+xpu-smi [--timeout=&lt;sec&gt;] ...
 </pre></div>
 </div>
 </section>
@@ -420,31 +446,27 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 <td><p><code class="docutils literal notranslate"><span class="pre">t</span></code></p></td>
 <td><p>PCIe link gen/width (max and current), TX/RX throughput, replay counter</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ECC</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">e</span></code></p></td>
-<td><p>ECC mode, corrected/uncorrected error counts, RAS error categories</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">x</span></code></p></td>
 <td><p>EU active/stall/idle percentages (Intel Xe only)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FAN</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FAN</span></code></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">f</span></code></p></td>
 <td><p>Fan speed (%)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">COMPUTE</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">COMPUTE</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Scheduler mode</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PERFORMANCE</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PERFORMANCE</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Whether each clock throttle reason is active</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code></p></td>
 <td><p>—</p></td>
 <td><p>GPU clocks the frequency range can be set to</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
 <td><p>—</p></td>
 <td><p>All metrics from all groups</p></td>
 </tr>
@@ -806,146 +828,32 @@ reason: <code class="docutils literal notranslate"><span class="pre">thermal_lim
 <td><p>—</p></td>
 <td><p>PCIe replay error counter</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.mode.current</span></code></p></td>
-<td><p>—</p></td>
-<td><p>ECC mode (enabled/disabled)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.corrected.aggregate.total</span></code></p></td>
-<td><p>—</p></td>
-<td><p>Total corrected ECC errors</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.uncorrected.aggregate.total</span></code></p></td>
-<td><p>—</p></td>
-<td><p>Total uncorrected ECC errors</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.errors.aggregate.total</span></code></p></td>
-<td><p>—</p></td>
-<td><p>Total ECC errors (corrected + uncorrected)</p></td>
-</tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">vf.enabled</span></code></p></td>
 <td><p>—</p></td>
 <td><p>SR-IOV virtual functions enabled on the physical function</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ecc.mode.pending</span></code></p></td>
-<td><p>—</p></td>
-<td><p>ECC state after the next reset: <code class="docutils literal notranslate"><span class="pre">Enabled</span></code> or <code class="docutils literal notranslate"><span class="pre">Disabled</span></code></p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">memory.offline_pages</span></code></p></td>
-<td><p>—</p></td>
-<td><p>Device memory pages the driver has taken offline after errors (retired pages); <code class="docutils literal notranslate"><span class="pre">N/A</span></code>
-where the driver has no page-offline support</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">memory.repair_status</span></code></p></td>
-<td><p>—</p></td>
-<td><p>Whether the device has had a repair performed, such as remapping faulty memory:
-<code class="docutils literal notranslate"><span class="pre">Performed</span></code> or <code class="docutils literal notranslate"><span class="pre">Not</span> <span class="pre">Performed</span></code>; <code class="docutils literal notranslate"><span class="pre">N/A</span></code> where the driver does not track repairs</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.reset</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS reset error counter</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.programming.errors</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS programming error counter</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.driver.errors</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS driver error counter</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable cache error counter</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.cache.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable cache error counter</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable non-compute error counter</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable non-compute error counter</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.total</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS non-compute error counter (correctable + uncorrectable)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.memory.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable device memory error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.memory.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable device memory error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.pcie.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable PCIe subsystem error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.pcie.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable PCIe subsystem error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.soc_internal.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable SoC internal error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.soc_internal.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable SoC internal error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.compute.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable compute engine error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.compute.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable compute engine error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.fabric.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable fabric interconnect error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.fabric.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable fabric interconnect error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ras.scale.errors.correctable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS correctable scale fabric error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ras.scale.errors.uncorrectable</span></code></p></td>
-<td><p>—</p></td>
-<td><p>RAS uncorrectable scale fabric error counter (xe netlink RAS category)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.active</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.active</span></code></p></td>
 <td><p>%</p></td>
 <td><p>EU array active percentage (Intel Xe only)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.stall</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.stall</span></code></p></td>
 <td><p>%</p></td>
 <td><p>EU array stall percentage (Intel Xe only)</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">eu.idle</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">eu.idle</span></code></p></td>
 <td><p>%</p></td>
 <td><p>EU array idle percentage (Intel Xe only)</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fan.speed</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fan.speed</span></code></p></td>
 <td><p>%</p></td>
 <td><p>Fan speed percentage</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">scheduler.mode</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">scheduler.mode</span></code></p></td>
 <td><p>—</p></td>
 <td><p>Scheduler mode: timeout, timeslice or exclusive</p></td>
 </tr>
 </tbody>
 </table>
-<p>The <code class="docutils literal notranslate"><span class="pre">ecc.errors.*</span></code> and <code class="docutils literal notranslate"><span class="pre">ras.*</span></code> error counters read the same RAS categories as <code class="docutils literal notranslate"><span class="pre">stats</span> <span class="pre">-r</span></code>;
-the <code class="docutils literal notranslate"><span class="pre">ecc.errors.*</span></code> totals add up every hardware category, i.e. all but resets, programming and
-driver errors. A counter shows <code class="docutils literal notranslate"><span class="pre">N/A</span></code> when the device reports none of the categories it counts, as
-opposed to <code class="docutils literal notranslate"><span class="pre">0</span></code>, which means no errors were counted.</p>
 </section>
 </section>
 

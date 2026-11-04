@@ -34,8 +34,8 @@ Options
    Metrics to collect. Accepts any of the following forms, or a comma-separated mix:
 
    - **Legacy numeric IDs**: ``0``, ``1``, ``0,1,2`` (see Metrics Reference below)
-   - **Group names**: ``POWER``, ``UTILIZATION``, ``TEMPERATURE``, ``MEMORY``, ``CLOCK``, ``PCI``, ``ECC``, ``EU_ARRAY``, ``FAN``, ``COMPUTE``, ``PERFORMANCE``, ``SUPPORTED_CLOCKS``, ``ALL``
-   - **Single-char shortcuts**: ``p`` (Power + Temperature), ``u`` (Utilization), ``m`` (Memory), ``c`` (Clock), ``t`` (PCI), ``e`` (ECC), ``x`` (EU_ARRAY), ``f`` (Fan)
+   - **Group names**: ``POWER``, ``UTILIZATION``, ``TEMPERATURE``, ``MEMORY``, ``CLOCK``, ``PCI``, ``EU_ARRAY``, ``FAN``, ``COMPUTE``, ``PERFORMANCE``, ``SUPPORTED_CLOCKS``, ``ALL``
+   - **Single-char shortcuts**: ``p`` (Power + Temperature), ``u`` (Utilization), ``m`` (Memory), ``c`` (Clock), ``t`` (PCI), ``x`` (EU_ARRAY), ``f`` (Fan)
    - **Multi-char combos**: ``pu`` (Power + Temperature + Utilization), ``pum`` (Power + Temperature + Utilization + Memory)
 
    .. note::
@@ -119,15 +119,15 @@ Metrics Reference
    * - 11
      - GPU EU Array Idle (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.
    * - 12
-     - Reset Counter
+     - Unsupported
    * - 13
-     - Programming Errors
+     - Unsupported
    * - 14
-     - Driver Errors
+     - Unsupported
    * - 15
-     - Cache Errors Correctable
+     - Unsupported
    * - 16
-     - Cache Errors Uncorrectable
+     - Unsupported
    * - 17
      - GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.
    * - 18
@@ -153,9 +153,9 @@ Metrics Reference
    * - 28
      - Unsupported
    * - 29
-     - GPU Memory Errors Correctable. Device-level is the sum value of tiles for multi-tile devices.
+     - Unsupported
    * - 30
-     - GPU Memory Errors Uncorrectable. Device-level is the sum value of tiles for multi-tile devices.
+     - Unsupported
    * - 31
      - Compute Engine Group Utilization (%), per tile
    * - 32

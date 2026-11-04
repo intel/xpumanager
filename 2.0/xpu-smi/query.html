@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <li class="toctree-l3"><a class="reference internal" href="#pci">PCI</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#memory-and-compute">Memory and compute</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#utilization">Utilization</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#ecc">ECC</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#temperature">Temperature</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#power-and-clocks">Power and clocks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#processes">Processes</a></li>
@@ -172,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <section id="query">
 <h1>Query<a class="headerlink" href="#query" title="Link to this heading"></a></h1>
 <p>Print a report of the main attributes of each GPU, as an indented <code class="docutils literal notranslate"><span class="pre">Key</span> <span class="pre">:</span> <span class="pre">Value</span></code> listing:
-identity, PCI link, clock throttle reasons, memory, utilization, ECC, temperatures, power and
+identity, PCI link, clock throttle reasons, memory, utilization, temperatures, power and
 clocks, and the processes using the device. Use <a class="reference internal" href="discovery.html"><span class="doc">Discovery</span></a>
 for static detail such as compute resources and firmware components, and <code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code>
 or <a class="reference internal" href="dump.html"><span class="doc">Dump</span></a> for any single metric. The report can be restricted to chosen sections, written as JSON,
@@ -303,34 +302,29 @@ temperatures</p></td>
 <td><p>PCI address fields, class code and IDs, the physical slot, link generation and width
 (maximum and current), and throughput</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ECC</span></code></p></td>
-<td><p>ECC mode and aggregate error counts, in total and by RAS category: memory, PCIe, SoC
-internal, compute, fabric and scale errors (xe), or cache and non-compute errors, resets,
-programming errors and driver errors (i915)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">EU_ARRAY</span></code></p></td>
 <td><p>Nothing in this report. Use <code class="docutils literal notranslate"><span class="pre">--query-gpu</span> <span class="pre">eu.active,eu.stall,eu.idle</span></code> for the EU array
 figures</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FAN</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FAN</span></code></p></td>
 <td><p>The fan speed, on devices with fans</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">COMPUTE</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">COMPUTE</span></code></p></td>
 <td><p>Scheduler mode, and the number of tiles, slices, sub-slices per slice and EUs</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PERFORMANCE</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PERFORMANCE</span></code></p></td>
 <td><p>Whether each clock throttle reason is active, the time throttled, and the performance
 factors, where the driver reports them</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code></p></td>
 <td><p>The GPU core clocks the minimum and maximum of <code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">--frequencyrange</span></code> can be set
 to, summarised as <code class="docutils literal notranslate"><span class="pre">low-high</span> <span class="pre">step</span> <span class="pre">N</span></code> when evenly spaced. The memory clock cannot be
 set, so it has no list. Printed only when named</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PIDS</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">PIDS</span></code></p></td>
 <td><p>Processes using the device</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ALL</span></code></p></td>
 <td><p>Everything above, including <code class="docutils literal notranslate"><span class="pre">SUPPORTED_CLOCKS</span></code></p></td>
 </tr>
 </tbody>
@@ -421,12 +415,6 @@ GPU 0000:03:00.0
         Video                             : 0.00 %
         Video Enhancement                 : 0.00 %
         Copy                              : 0.00 %
-    ECC Mode
-        Current                           : Disabled
-    ECC Errors
-        Aggregate
-            Correctable                   : N/A
-            Uncorrectable                 : N/A
     Temperature
         GPU Current Temp                  : 30.00 C
         GPU Shutdown Temp                 : 130 C
@@ -1228,225 +1216,6 @@ expected.</p>
 </tbody>
 </table>
 </section>
-<section id="ecc">
-<h3>ECC<a class="headerlink" href="#ecc" title="Link to this heading"></a></h3>
-<p>Error counts come from the driver’s RAS counters and need root. A category the device does not report is left out, of the text and the JSON alike; <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> prints it.</p>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 30.0%" />
-<col style="width: 25.0%" />
-<col style="width: 45.0%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Row</p></th>
-<th class="head"><p>Details</p></th>
-<th class="head"><p>Meaning</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p>ECC Mode &gt; Current</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_mode.current</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ecc.mode.current</span></code></p>
-</td>
-<td><p><code class="docutils literal notranslate"><span class="pre">Enabled</span></code> or <code class="docutils literal notranslate"><span class="pre">Disabled</span></code>.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Mode &gt; Pending</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_mode.pending</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ecc.mode.pending</span></code></p>
-</td>
-<td><p>ECC state after the next reset: <code class="docutils literal notranslate"><span class="pre">Enabled</span></code> or <code class="docutils literal notranslate"><span class="pre">Disabled</span></code>. Printed where the driver supplies it; <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> prints <code class="docutils literal notranslate"><span class="pre">Not</span> <span class="pre">Supported</span></code> where it says the device does not. CRI’s ECC is not configurable.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ecc.errors.corrected.aggregate.total</span></code></p>
-</td>
-<td><p>Correctable errors across every hardware RAS category.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ecc.errors.uncorrected.aggregate.total</span></code></p>
-</td>
-<td><p>Uncorrectable errors across every hardware RAS category.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Memory Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.memory_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.memory.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable device memory errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Memory Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.memory_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.memory.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable device memory errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; PCIe Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.pcie_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.pcie.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable PCIe subsystem errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; PCIe Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.pcie_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.pcie.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable PCIe subsystem errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; SoC Internal Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.soc_internal_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.soc_internal.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable SoC internal errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; SoC Internal Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.soc_internal_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.soc_internal.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable SoC internal errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Compute Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.compute_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.compute.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable compute engine errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Compute Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.compute_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.compute.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable compute engine errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Fabric Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.fabric_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.fabric.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable fabric interconnect errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Fabric Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.fabric_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.fabric.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable fabric interconnect errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Scale Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.scale_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.scale.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable scale fabric errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Scale Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.scale_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.scale.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable scale fabric errors. Left out where the device does not report the category; xe reports these netlink RAS categories, i915 the cache, non-compute, reset, programming and driver ones.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Cache Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.cache_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.cache.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable cache errors.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Cache Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.cache_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.cache.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable cache errors.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Non-Compute Correctable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.non_compute_correctable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.correctable</span></code></p>
-</td>
-<td><p>Correctable errors outside the compute engines.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Non-Compute Uncorrectable</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.non_compute_uncorrectable</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.non_compute.errors.uncorrectable</span></code></p>
-</td>
-<td><p>Uncorrectable errors outside the compute engines.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Resets</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.resets</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.reset</span></code></p>
-</td>
-<td><p>Device resets.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Aggregate &gt; Programming Errors</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.programming_errors</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.programming.errors</span></code></p>
-</td>
-<td><p>Errors caused by the work submitted, such as an invalid instruction.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Aggregate &gt; Driver Errors</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.aggregate.driver_errors</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">ras.driver.errors</span></code></p>
-</td>
-<td><p>Errors the driver detected in itself.</p></td>
-</tr>
-<tr class="row-odd"><td><p>ECC Errors &gt; Offline Pages</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.offline_pages</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">memory.offline_pages</span></code></p>
-</td>
-<td><p>Device memory pages the driver has retired after errors. Left out where the driver has no page-offline support.</p></td>
-</tr>
-<tr class="row-even"><td><p>ECC Errors &gt; Memory Repair</p>
-<p><code class="docutils literal notranslate"><span class="pre">ecc_errors.memory_repair</span></code></p>
-</td>
-<td><p>Section: <code class="docutils literal notranslate"><span class="pre">ECC</span></code></p>
-<p>Source: <code class="docutils literal notranslate"><span class="pre">memory.repair_status</span></code></p>
-</td>
-<td><p>Whether the device has had a repair performed, such as remapping faulty memory: <code class="docutils literal notranslate"><span class="pre">Performed</span></code> or <code class="docutils literal notranslate"><span class="pre">Not</span> <span class="pre">Performed</span></code>. Left out where the driver does not track repairs.</p></td>
-</tr>
-</tbody>
-</table>
-</section>
 <section id="temperature">
 <h3>Temperature<a class="headerlink" href="#temperature" title="Link to this heading"></a></h3>
 <p>The shutdown and slowdown rows are configured thresholds, the ones the <code class="docutils literal notranslate"><span class="pre">health</span></code> command compares against, not sensor readings.</p>
@@ -1770,7 +1539,7 @@ something the caller lacks, the text report says what, for example
 <code class="docutils literal notranslate"><span class="pre">N/A</span> <span class="pre">(requires</span> <span class="pre">CAP_SYS_ADMIN)</span></code>: <code class="docutils literal notranslate"><span class="pre">CAP_SYS_ADMIN</span></code> for the PCIe link generation and width,
 the atomic capabilities and Resizable BAR, which come from PCI configuration space;
 <code class="docutils literal notranslate"><span class="pre">CAP_PERFMON</span></code> for engine utilization; read-write access to the device’s <code class="docutils literal notranslate"><span class="pre">/dev/mei*</span></code> node
-for the GFX firmware version. The ECC error counts also read <code class="docutils literal notranslate"><span class="pre">N/A</span></code> as a non-root user. The
+for the GFX firmware version. The
 report prints no diagnostic for such a value; set <code class="docutils literal notranslate"><span class="pre">XPU_SMI_LOG_LEVEL=DBG</span></code> to see why one is
 missing.</p></li>
 <li><p>Measured values (power draw, utilization, throughput, bandwidth) are averaged over a
@@ -1779,16 +1548,16 @@ the time since the previous one.</p></li>
 <li><p>Values with a unit are shown to two decimals. JSON keeps the full precision.</p></li>
 <li><p>GPU IP Version is the graphics IP version the driver reports, in hex. It identifies the
 architecture: newer devices have higher values.</p></li>
-<li><p>Offline Pages counts the device memory pages the driver has retired after errors, on drivers
-with page-offline support. Memory Repair says whether the device has had a repair performed,
-such as remapping faulty memory. It is left out where the driver does not track repairs.</p></li>
+<li><p>The report has no ECC section for now: ECC mode, the ECC and RAS error counts, Offline Pages
+and Memory Repair are left out until reading the driver’s RAS counters is reliable. Use
+<code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code> (for example <code class="docutils literal notranslate"><span class="pre">--query-gpu</span> <span class="pre">ecc.errors.aggregate.total</span></code>) or <code class="docutils literal notranslate"><span class="pre">stats</span> <span class="pre">-r</span></code> for
+them meanwhile.</p></li>
 <li><p>PCI: Host Max is the link capability of the root port the device is under, the CPU end of the
 path; a switch in between can limit the link further. PCIe Errors are the device’s AER
 counters since it was enumerated, and Atomic Caps Inbound and Atomic Requests come from its
 PCI Express capability, which needs root. All of these are Linux only, and left out where the
 device or OS does not report them.</p></li>
-<li><p>Fan Speed, the Performance Factors, Throttled Time, PCIe Replays Since Reset, ECC Mode &gt;
-Pending, the default, minimum and maximum power limits and Memory Power Draw come from Level
+<li><p>Fan Speed, the Performance Factors, Throttled Time, PCIe Replays Since Reset, the default, minimum and maximum power limits and Memory Power Draw come from Level
 Zero calls that many drivers do not implement; CRI’s driver supplies none of them. They are
 printed where the driver supplies a value, and with <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> otherwise.</p></li>
 <li><p>GPU Power Readings: Average Power Draw is the card’s draw over the window, Instantaneous Power
@@ -1822,7 +1591,7 @@ for the device, the default shutdown temperature is lowered to the driver’s ma
 sensor, as on CRI (125 C). The max operating temperatures are what the driver reports for each
 sensor, on devices that report one.</p></li>
 <li><p>On Windows the kernel-mode driver version reads <code class="docutils literal notranslate"><span class="pre">N/A</span></code>.</p></li>
-<li><p>Rows only some devices or drivers supply, such as the RAS categories under ECC Errors, are
+<li><p>Rows only some devices or drivers supply, such as the burst and peak power limits, are
 left out on a device without them, so it does not fill with <code class="docutils literal notranslate"><span class="pre">N/A</span></code>; the JSON output leaves
 out the same rows. <code class="docutils literal notranslate"><span class="pre">--verbose</span></code> prints them all, and <code class="docutils literal notranslate"><span class="pre">Not</span> <span class="pre">Supported</span></code>
 for a value the driver or OS says the device does not support; a value missing for another or
@@ -1867,8 +1636,8 @@ is an array.</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi query
 </pre></div>
 </div>
-<p>Report only memory and ECC for device 0:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi query --device 0 --display MEMORY,ECC
+<p>Report only memory and power for device 0:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi query --device 0 --display MEMORY,POWER
 </pre></div>
 </div>
 <p>Save a report to a file:</p>
