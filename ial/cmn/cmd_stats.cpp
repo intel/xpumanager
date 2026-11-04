@@ -677,6 +677,11 @@ cmdStats::collectMemoryMetricsPerTile(memory *memoryHandler, bool isIGPU, TileMe
 						}
 						memoryBandwidthPercentPerTile[tileId].push_back(bandwidthPercent);
 						DBG("Tile {} memory bandwidth: {:.2f}%\n", tileId, bandwidthPercent);
+					} else {
+						// The driver may report maxBandwidth == 0; with no peak to divide by,
+						// report 0% rather than N/A.
+						memoryBandwidthPercentPerTile[tileId].push_back(0.0);
+						DBG("Tile {} memory bandwidth: maxBandwidth is 0, reporting 0%\n", tileId);
 					}
 				}
 			}
@@ -1557,8 +1562,7 @@ ze_result_t cmdStats::collectDeviceStats(devInfo *device, size_t sampleCount, st
 			if (metrics.memoryWriteKBpsPerTile[tileId].empty()) {
 				metrics.memoryWriteKBpsPerTile[tileId].push_back(0.0);
 			}
-			if (metrics.memoryBandwidthPercentPerTile[tileId].empty() && memoryBaseline.maxBandwidth.count(tileId) &&
-				memoryBaseline.maxBandwidth.at(tileId) > 0) {
+			if (metrics.memoryBandwidthPercentPerTile[tileId].empty()) {
 				metrics.memoryBandwidthPercentPerTile[tileId].push_back(0.0);
 			}
 		}

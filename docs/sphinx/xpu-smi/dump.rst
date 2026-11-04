@@ -129,7 +129,7 @@ Metrics Reference
    * - 16
      - Unsupported
    * - 17
-     - GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.
+     - GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices. Reported as 0 when the driver does not provide peak memory bandwidth; this is a placeholder, not a measurement.
    * - 18
      - GPU Memory Used (MiB), per tile or device
    * - 19

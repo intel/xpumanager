@@ -749,6 +749,19 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory.bandwidth.utilization getter: round
 	CHECK(out == "0.07");
 }
 
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory.bandwidth.utilization getter: reports 0 when peak bandwidth is 0")
+{
+	MetricValue out;
+	MetricCache c;
+	c.memAvail = true;
+	c.memBefore = {.read = 0, .write = 0, .ts = 1'000'000};
+	c.memAfter = {.read = 500, .write = 242, .ts = 2'000'000};
+	// The driver may report maxBandwidth == 0: show 0% rather than N/A.
+	c.memMaxBandwidth = 0;
+	CHECK(findMetric("memory.bandwidth.utilization").value().getter(di, out, c) == ZE_RESULT_SUCCESS);
+	CHECK(out == "0.00");
+}
+
 TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory bandwidth getters: report N/A when counters reset backwards")
 {
 	constexpr uint64_t initialBytes = 1024;

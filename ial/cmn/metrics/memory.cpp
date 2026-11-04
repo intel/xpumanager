@@ -156,9 +156,15 @@ constexpr auto BANDWIDTH_UTILIZATION = QueryMetric{
 	.groups = MetricGroup::MEMORY,
 	.inputs = MetricInput::MEMBW,
 	.getter = [](devInfo & /*d*/, MetricValue &out, const MetricCache &cache) -> ze_result_t {
-		if (!cache.memAvail || cache.memAfter.ts <= cache.memBefore.ts || cache.memMaxBandwidth == 0 ||
-			cache.memAfter.read < cache.memBefore.read || cache.memAfter.write < cache.memBefore.write) {
+		if (!cache.memAvail || cache.memAfter.ts <= cache.memBefore.ts || cache.memAfter.read < cache.memBefore.read ||
+			cache.memAfter.write < cache.memBefore.write) {
 			out = "N/A";
+			return ZE_RESULT_SUCCESS;
+		}
+		// The driver may report maxBandwidth == 0; with no peak to divide by,
+		// report 0% rather than N/A.
+		if (cache.memMaxBandwidth == 0) {
+			out = xpum::compat::format("{:.2f}", 0.0);
 			return ZE_RESULT_SUCCESS;
 		}
 		const auto dt = static_cast<double>(cache.memAfter.ts - cache.memBefore.ts);
