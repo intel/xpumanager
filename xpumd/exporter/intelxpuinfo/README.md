@@ -18,6 +18,12 @@ The exporter consumes three metrics:
 Connected clients receive a stream of health, identification and configuration
 information for all known XPU devices.
 
+> [!NOTE]
+> Each metrics batch received by the exporter must be a complete snapshot of
+> all devices. The exporter does not merge batches and every batch completely
+> replaces the previously published health data. In other words, a device that
+> is missing from a batch is no longer reported.
+
 ### Logs pipeline
 
 The exporter also consumes events (log records) produced by the
