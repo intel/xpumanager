@@ -380,6 +380,9 @@ ze_result_t cmdAmc::gpuReset(amclib *amc, int numCards)
 		targets.push_back(deviceId);
 	}
 
+	// Each reset masks Surprise Link Down, removes the GPU and rescans it; exiting part way
+	// leaves the GPU off the bus or Surprise Link Down masked. Held until every worker joins.
+	const auto resetting = xpum::watchdog::suspend("GPU reset via AMC");
 	std::atomic<int> failureCount{0};
 	std::atomic<int> successCount{0};
 	std::vector<std::thread> workers;

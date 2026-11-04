@@ -72,9 +72,11 @@ These options are available at the top level (without a subcommand), except
    restores the terminal, prints the phase and one line per thread to stderr, and exits
    with code ``124``.
 
-   The timeout is suspended while firmware is being written (``updatefw``): a flash can take
-   several minutes, and interrupting one can leave the card unusable. It starts again,
-   with the full timeout, once flashing ends.
+   The timeout is suspended while firmware is being written (``updatefw``) and while a GPU
+   is being reset (``config --reset``, ``config --coldreset``, ``amc --gpureset``): a flash
+   can take several minutes and a reset about one, and interrupting either can leave the
+   card unusable or off the PCI bus. It starts again, with the full timeout, once the
+   operation ends.
 
 Synopsis
 --------

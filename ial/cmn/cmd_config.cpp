@@ -18,6 +18,7 @@
 #include <vf.h>
 #include <charconv>
 #include "utility/compat/format.h"
+#include "utility/watchdog/watchdog.h"
 #include <frequency.h>
 #include <nlohmann/json.hpp>
 #include <power.h>
@@ -1920,6 +1921,10 @@ ze_result_t cmdConfig::resetDevice(devInfo *d)
 
 	PRINT("It may take one minute to reset GPU {}. Please wait ...\n", d->index);
 
+	// An SBR takes about a minute with no progress to report, and exiting between assert and
+	// deassert leaves the root port in reset and the GPU off the bus.
+	const auto resetting = xpum::watchdog::suspend("GPU reset");
+
 	// Remove active VFs before the SBR to prevent a host crash/hang.
 	// If the device does not support SR-IOV, listVFs() returns an error and
 	// we skip VF removal entirely.
@@ -2340,6 +2345,9 @@ ze_result_t cmdConfig::coldResetDevice(devInfo *d)
 	}
 
 	PRINT("Performing cold reset on GPU {} ({}). Please wait ...\n", d->index, bdfStr);
+
+	// Exiting between slot power off and re-enumeration leaves the GPU off the bus.
+	const auto resetting = xpum::watchdog::suspend("GPU cold reset");
 
 	ze_result_t result = d->dev->coldResetDevice();
 	if (result != ZE_RESULT_SUCCESS) {
