@@ -10,7 +10,7 @@ require (
 	github.com/prometheus/common v0.73.1
 	github.com/stretchr/testify v1.12.1
 	go.opentelemetry.io/collector/pdata v1.69.0
-	go.yaml.in/yaml/v4 v4.0.0-rc.7
+	go.yaml.in/yaml/v4 v4.0.0-rc.9
 	google.golang.org/protobuf v1.36.12
 	helm.sh/helm/v4 v4.3.1
 	k8s.io/api v0.37.2
