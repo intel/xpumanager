@@ -89,6 +89,22 @@ TEST_SUITE("cmds::requiredDriver")
 		CHECK(cmdTopology{}.requiredDriver(Argv{"-m"}.view()) == DriverMode::Full);
 	}
 
+	TEST_CASE("health reports argument errors without the driver")
+	{
+		const cmdHealth health;
+		CHECK(health.requiredDriver(Argv{"-d", "0", "-c", "6", "-j"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "-c", "abc"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "-c", "0"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "-c", "04"}.view()) == DriverMode::Full);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "-c", "+4"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "--component=5"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-j"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "--bogus"}.view()) == DriverMode::None);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "-c", "1", "-j"}.view()) == DriverMode::Full);
+		CHECK(health.requiredDriver(Argv{"-d", "0", "--component=4"}.view()) == DriverMode::Full);
+		CHECK(health.requiredDriver(Argv{"-l", "-j"}.view()) == DriverMode::Full);
+	}
+
 	TEST_CASE("commands that never touch Level Zero need no driver")
 	{
 		const Argv args{"-d", "0", "-j"};
