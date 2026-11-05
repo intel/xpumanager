@@ -325,7 +325,7 @@ RUN SRC=/src/gmmlib && BUILD=$SRC/build && \
     git -C $SRC checkout ${LIBIGDGMM12_COMMIT} && \
     cmake -G Ninja -Wno-dev -LH -S $SRC -B $BUILD \
           -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_INSTALL_PREFIX=/usr/local && \
+          -DCMAKE_INSTALL_PREFIX=/usr && \
     ninja -C $BUILD && \
     ninja -C $BUILD install && \
     ldconfig
