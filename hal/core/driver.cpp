@@ -804,7 +804,7 @@ ze_result_t driver::crashlogDecode(UNUSED const std::string &inputFile, UNUSED c
 /**
  * @brief Reads a snapshot of the driver-scoped CPER (Common Platform Error Record) info log buffer.
  *
- * The CPER records are exposed through the Level Zero sysman experimental info log extension and
+ * The CPER records are exposed through the standard Level Zero info log API and
  * are shared across all devices of the driver (single ring buffer). This reads whatever is
  * currently buffered into @p cperBlob.
  *
@@ -841,7 +841,7 @@ ze_result_t driver::getCperLog(std::vector<uint8_t> &cperBlob, std::optional<std
  * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE extension unavailable
  */
 ze_result_t driver::getCperLogWithMetadata(std::vector<uint8_t> &cperBlob,
-										   std::vector<zes_intel_info_log_metadata_exp> &metadata,
+										   std::vector<zes_info_log_metadata_ext_t> &metadata,
 										   std::optional<std::string_view> instanceName, CperBufferSizeKb bufferSizeKb,
 										   bool peek)
 {
