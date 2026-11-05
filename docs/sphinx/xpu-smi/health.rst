@@ -2,7 +2,7 @@ Health
 ======
 
 Check GPU hardware component health. Reports the status of key GPU subsystems
-(temperature, power, memory, frequency) and indicates whether they are operating
+(temperature, power, frequency) and indicates whether they are operating
 within normal parameters.
 
 .. note::
@@ -67,9 +67,25 @@ Options
       * - 3
         - GPU Power
       * - 4
-        - GPU Memory
-      * - 6
         - GPU Frequency
+
+   Any other value is rejected as an invalid component ID, including:
+
+   * other numbers, such as ``0``, ``5``, ``6``, ``999`` or ``-1``
+   * letters, such as ``abc``
+   * mixed letters and digits, such as ``4x`` or ``a4``
+   * decimals, such as ``4.0``
+   * an empty value
+
+   .. note::
+
+      GPU Frequency was component ID 6 in earlier releases; it is now ID 4.
+      Use ``-c 4`` for GPU Frequency health. ``-c 6`` is now rejected as
+      invalid.
+
+      ID 4 was GPU Memory in earlier releases. GPU Memory health is no longer
+      available: the driver reports memory health only for HBM memory, which
+      the supported devices do not have.
 
 Examples
 --------
@@ -98,7 +114,7 @@ Show only GPU Core Temperature health for device 0:
 
    xpu-smi health --device 0 -c 1
 
-Show memory health for device addressed by PCI BDF:
+Show GPU frequency health for device addressed by PCI BDF:
 
 .. code-block:: shell
 

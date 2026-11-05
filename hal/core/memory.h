@@ -130,7 +130,6 @@ public:
 	ze_result_t getBandwidth(zes_mem_handle_t memhandle, zes_mem_bandwidth_t *bandwidth);
 	ze_result_t getMemorySize(uint64_t *size);
 	[[nodiscard]] ze_result_t getMemoryReserved(uint64_t *reserved);
-	ze_result_t getMemoryHealth(zes_mem_health_t *health);
 	ze_result_t getMemoryChannels(int32_t *channels);
 	ze_result_t getMemoryBusWidth(int32_t *busWidth);
 	ze_result_t getMemoryVendor(MemoryVendorData *vendor);

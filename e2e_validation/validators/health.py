@@ -158,14 +158,12 @@ class HealthSmiCrossCheckValidator(BaseValidator):
         "core_temperature": "temperature",
         "memory_temperature": "temperature",
         "power_health": "power",
-        "memory_health": "memory",
         "frequency_health": "frequency",
     }
 
     # Non-domain metadata keys in xpu-smi JSON.
     _SMI_IGNORE_KEYS = {
         "device_id",
-        "unsupported_item_health",
     }
 
     def __init__(

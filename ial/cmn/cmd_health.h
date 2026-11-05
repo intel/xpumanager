@@ -41,15 +41,15 @@ typedef enum xpum_health_status_enum
 	XPUM_HEALTH_STATUS_CRITICAL = 3,
 } xpumHealthStatus;
 
+// Component IDs are part of the CLI (-c). GPU Memory health was removed: Sysman reports
+// memory health only on HBM devices, which this tool does not support. GPU Frequency,
+// previously ID 6, was renumbered to 4 so the IDs stay contiguous.
 enum healthSubCmdType
 {
 	HEALTH_CORETEMPERATURE = 1,
-	HEALTH_MEMORYTEMPERATURE,
-	HEALTH_POWER,
-	HEALTH_MEMORY,
-	HEALTH_UNSUPPORTED0,
-	HEALTH_FREQUENCY,
-	TOTAL_HEALTH_SUBCMD
+	HEALTH_MEMORYTEMPERATURE = 2,
+	HEALTH_POWER = 3,
+	HEALTH_FREQUENCY = 4,
 };
 
 struct healthCmdStruct;
@@ -69,16 +69,12 @@ public:
 	ze_result_t coreTemperature(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t memoryTemperature(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t gpuPower(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
-	ze_result_t healthMemory(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	std::string getHealthStatusString(xpumHealthStatus status);
-	ze_result_t unsupported(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t frequency(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 
 	ze_result_t component(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t allComponents(devInfo *d, nlohmann::ordered_json *jsonObj = nullptr);
 	ze_result_t allComponentsAllDevices(std::vector<devInfo> *devList, nlohmann::ordered_json *jsonObj = nullptr);
-	std::string getHealthStatusDescription(zes_mem_health_t val);
-	xpumHealthStatus getHealthStatus(zes_mem_health_t health);
 	std::string getFreqThrottleString(zes_freq_throttle_reason_flags_t flags);
 	bool getFrequencyState(const zes_device_handle_t &device, std::string &freqThrottleMessage);
 	int run(arg_struct *args);
