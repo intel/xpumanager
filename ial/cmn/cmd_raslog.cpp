@@ -61,16 +61,16 @@ std::string formatUuid(const zes_uuid_t &u)
 		u.id[13], u.id[14], u.id[15]);
 }
 
-std::string_view recordTypeToString(zes_intel_info_log_record_type_exp_t t)
+std::string_view recordTypeToString(zes_info_log_record_type_ext_t t)
 {
 	switch (t) {
-	case ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_INFORMATIONAL:
+	case ZES_INFO_LOG_RECORD_TYPE_EXT_INFORMATIONAL:
 		return "INFORMATIONAL";
-	case ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_CORRECTED:
+	case ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_CORRECTED:
 		return "ERROR_CORRECTED";
-	case ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_RECOVERABLE:
+	case ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_RECOVERABLE:
 		return "ERROR_RECOVERABLE";
-	case ZES_INTEL_INFO_LOG_RECORD_TYPE_EXP_ERROR_FATAL:
+	case ZES_INFO_LOG_RECORD_TYPE_EXT_ERROR_FATAL:
 		return "ERROR_FATAL";
 	default:
 		return "UNKNOWN";
@@ -117,7 +117,7 @@ void reportCperSuccessText(bool partial, bool peek, size_t byteCount, size_t rec
  * @brief Formats and prints the result of a successful (or partial) CPER collection.
  */
 void reportCperSuccess(bool jsonOutput, bool partial, bool peek, size_t byteCount, size_t recordCount,
-					   const std::vector<zes_intel_info_log_metadata_exp> &metadata, const std::string &fileName)
+					   const std::vector<zes_info_log_metadata_ext_t> &metadata, const std::string &fileName)
 {
 	if (!jsonOutput) {
 		reportCperSuccessText(partial, peek, byteCount, recordCount, fileName);
@@ -254,7 +254,7 @@ ze_result_t runCper(arg_struct *args, const std::string &fileName, bool jsonOutp
 	}
 
 	std::vector<uint8_t> cperBlob;
-	std::vector<zes_intel_info_log_metadata_exp> metadata;
+	std::vector<zes_info_log_metadata_ext_t> metadata;
 	ze_result_t result = args->sm.getCperLogWithMetadata(
 		cperBlob, metadata, instance.empty() ? std::nullopt : std::optional<std::string_view>{instance}, bufferSizeKb,
 		peek);

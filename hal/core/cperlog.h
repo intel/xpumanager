@@ -22,10 +22,8 @@ using CperBufferSizeKb = std::optional<uint32_t>;
 /**
  * @brief Reads (or peeks) the driver-scoped CPER (Common Platform Error Record) info log buffer.
  *
- * CPER records are exposed by the Level Zero sysman experimental "info log" extension
- * (ZES_intel_experimental_driver_info_logs v2.0). The buffer is driver-scoped.
- *
- * In non-extension builds this returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
+ * CPER records are exposed by the standard Level Zero info log API
+ * (ZES_extension_info_logs). The buffer is driver-scoped.
  *
  * @param [in]  driver   Handle to the ZES driver.
  * @param [out] cperBlob Receives the raw CPER buffer bytes.
@@ -34,7 +32,7 @@ using CperBufferSizeKb = std::optional<uint32_t>;
  * @param [in]  peek     If true, records are not consumed (requires isPeekSupported).
  * @retval ZE_RESULT_SUCCESS
  * @retval ZE_RESULT_WARNING_DROPPED_DATA some records were dropped due to buffer overflow
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE extension or CPER log unavailable
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE info log API or CPER log unavailable
  */
 [[nodiscard("ZE_RESULT_WARNING_DROPPED_DATA signals partial data; callers must not treat it as success")]]
 ze_result_t collectCperLog(zes_driver_handle_t driver, std::vector<uint8_t> &cperBlob,
@@ -44,8 +42,6 @@ ze_result_t collectCperLog(zes_driver_handle_t driver, std::vector<uint8_t> &cpe
 /**
  * @brief Reads (or peeks) the driver-scoped CPER info log buffer with per-record metadata.
  *
- * In non-extension builds this returns ZE_RESULT_ERROR_UNSUPPORTED_FEATURE.
- *
  * @param [in]  driver        Handle to the ZES driver.
  * @param [out] cperBlob      Receives the raw CPER buffer bytes.
  * @param [out] metadata      Receives one descriptor per CPER record.
@@ -54,18 +50,17 @@ ze_result_t collectCperLog(zes_driver_handle_t driver, std::vector<uint8_t> &cpe
  * @param [in]  peek          If true, records are not consumed (requires isPeekSupported).
  * @retval ZE_RESULT_SUCCESS
  * @retval ZE_RESULT_WARNING_DROPPED_DATA some records were dropped due to buffer overflow
- * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE extension or CPER log unavailable
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE info log API or CPER log unavailable
  */
 [[nodiscard("ZE_RESULT_WARNING_DROPPED_DATA signals partial data; callers must not treat it as success")]]
 ze_result_t collectCperLogWithMetadata(zes_driver_handle_t driver, std::vector<uint8_t> &cperBlob,
-									   std::vector<zes_intel_info_log_metadata_exp> &metadata,
+									   std::vector<zes_info_log_metadata_ext_t> &metadata,
 									   std::optional<std::string_view> instanceName = std::nullopt,
 									   CperBufferSizeKb bufferSizeKb = std::nullopt, bool peek = false);
 
 /**
  * @brief Contracts for the collectCperLog / collectCperLogWithMetadata implementations.
- * Both the stub (non-extension) and real (extension) translation units must satisfy
- * these concepts. The static_asserts in each .cpp enforce them at compile time.
+ * The static_asserts in cperlog.cpp enforce them at compile time.
  */
 template <typename F>
 concept CperLogReader = requires(F fn, zes_driver_handle_t drv, std::vector<uint8_t> &buf,
@@ -74,10 +69,10 @@ concept CperLogReader = requires(F fn, zes_driver_handle_t drv, std::vector<uint
 };
 
 template <typename F>
-concept CperLogMetadataReader = requires(F fn, zes_driver_handle_t drv, std::vector<uint8_t> &buf,
-										 std::vector<zes_intel_info_log_metadata_exp> &meta,
-										 std::optional<std::string_view> name, CperBufferSizeKb kb, bool peek) {
-	{ fn(drv, buf, meta, name, kb, peek) } -> std::same_as<ze_result_t>;
-};
+concept CperLogMetadataReader =
+	requires(F fn, zes_driver_handle_t drv, std::vector<uint8_t> &buf, std::vector<zes_info_log_metadata_ext_t> &meta,
+			 std::optional<std::string_view> name, CperBufferSizeKb kb, bool peek) {
+		{ fn(drv, buf, meta, name, kb, peek) } -> std::same_as<ze_result_t>;
+	};
 
 #endif // CPERLOG_H
