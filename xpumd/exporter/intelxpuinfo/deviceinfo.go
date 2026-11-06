@@ -25,6 +25,9 @@ const eventQueueSize = 1024
 // miss before it is considered stalled.
 const healthMaxSkipped = 10
 
+// maxClients is the maximum number of concurrent watch streams
+const maxClients = 64
+
 // healthClient represents one DeviceHealth subscriber.
 type healthClient struct {
 	// latest holds the latest health snapshot not yet sent to the client
@@ -51,6 +54,9 @@ type deviceInfoServer struct {
 
 	stopChan chan struct{}
 
+	// activeClients is a semaphore bounding the number of concurrent watch clients
+	activeClients chan struct{}
+
 	// healthLock protects the cached health data and the health clients
 	healthLock sync.Mutex
 	// Cached health data
@@ -70,12 +76,29 @@ func newDeviceInfoServer(logger *zap.SugaredLogger, tb *metadata.TelemetryBuilde
 		telemetry:     tb,
 		cfg:           cfg,
 		stopChan:      make(chan struct{}),
+		activeClients: make(chan struct{}, maxClients),
 		healthClients: make(map[*healthClient]struct{}),
 		eventClients:  make(map[*eventClient]struct{}),
 	}
 }
 
+func (s *deviceInfoServer) admitClient() (func(), error) {
+	select {
+	case s.activeClients <- struct{}{}:
+		return func() { <-s.activeClients }, nil
+	default:
+		s.logger.Warn("too many clients, rejecting watch request")
+		return nil, status.Errorf(codes.ResourceExhausted, "too many clients (max %d)", maxClients)
+	}
+}
+
 func (s *deviceInfoServer) WatchDeviceHealth(req *pb.WatchDeviceHealthRequest, stream pb.DeviceInfo_WatchDeviceHealthServer) error {
+	release, err := s.admitClient()
+	if err != nil {
+		return err
+	}
+	defer release()
+
 	s.logger.Info("new DeviceHealth client connected")
 
 	c := &healthClient{
@@ -156,6 +179,12 @@ func (s *deviceInfoServer) stop() {
 }
 
 func (s *deviceInfoServer) WatchDeviceEvents(req *pb.WatchDeviceEventsRequest, stream pb.DeviceInfo_WatchDeviceEventsServer) error {
+	release, err := s.admitClient()
+	if err != nil {
+		return err
+	}
+	defer release()
+
 	s.logger.Info("new DeviceEvents client connected")
 
 	c := &eventClient{
