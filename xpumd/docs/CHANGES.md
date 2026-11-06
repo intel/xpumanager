@@ -62,7 +62,7 @@ Contents:
     temperatures (memory temperature `warning` state replaced by `critical` one)
 * XPUMD binary reports the actual XPUMD version (instead of `0.0.0`)
 * XPUMD image:
-  * OS packages are from Ubuntu 24.04 instead of Debian (matching the driver stack packages), base image digests pinned
+  * Base image digest pinned
   * The `xpumd` image now only contains the daemon, the stub Level-Zero driver and `xpuinfo-cli`
     moved to the new `xpumd-devel` image variant
   * The `xpumd-devel` image now includes also the `list-sysman` and `events-sysman` example apps from the level-zero-go bindings
