@@ -72,7 +72,7 @@ func (s *sysmanMetricsScraper) shutdown(ctx context.Context) error {
 	}
 	s.wg.Wait()
 	s.telemetry.Shutdown()
-	return s.logger.Sync()
+	return nil
 }
 
 // runSampler samples the aggregated device metrics.
