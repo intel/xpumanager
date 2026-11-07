@@ -303,7 +303,10 @@ ze_result_t cmdHealth::component(devInfo *d, nlohmann::ordered_json *jsonObj)
  * @param getTempFunc Function pointer to retrieve temperature value
  * @param thresholdErrorMsg Error message for threshold retrieval failure
  * @param tempErrorMsg Error message for temperature retrieval failure
- * @return ze_result_t ZE_RESULT_SUCCESS on success, error code otherwise
+ * @return ze_result_t ZE_RESULT_SUCCESS once the result is recorded, also when the temperature cannot be
+ *         read; an error code when there is no temperature object or the thresholds cannot be read
+ * @note A device without the sensor is reported as an error with @p tempErrorMsg. A sensor that
+ *       exists but cannot be read leaves the status unknown and is logged only at debug level.
  */
 ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *jsonObj, const std::string &jsonKey,
 											ze_result_t (temperature::*getThresholdFunc)(zes_device_handle_t,
@@ -334,7 +337,10 @@ ze_result_t cmdHealth::getTemperatureHealth(devInfo *d, nlohmann::ordered_json *
 	double tempVal = 0;
 	std::string description = "Health cannot be determined for temperature sensors.";
 	result = (t->*getTempFunc)(&tempVal);
-	if (result != ZE_RESULT_SUCCESS) {
+	if (result != ZE_RESULT_SUCCESS && result != ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		// The sensor exists but could not be read, as happens without root: health stays undetermined.
+		DBG("{}: 0x{:X} ({})\n", tempErrorMsg.c_str(), result, l0_error_to_string(result));
+	} else if (result != ZE_RESULT_SUCCESS) {
 		ERR("{}: 0x{:X} ({})\n", tempErrorMsg.c_str(), result, l0_error_to_string(result));
 		description = tempErrorMsg + ": " + l0_error_to_string(result);
 	}

@@ -367,12 +367,18 @@ ze_result_t temperature::getState(zes_temp_handle_t temperatureHandle, double *t
  * @brief Gets temperature for a specific sensor type
  *
  * This function searches for temperature sensors matching the specified type
- * and retrieves the current temperature reading, providing targeted thermal
- * monitoring for specific device components.
+ * and returns the reading of the first one that can be read.
  *
- * @param type The specific temperature sensor type to query
- * @param coreTemp Pointer to store the temperature value in Celsius
- * @return ze_result_t ZE_RESULT_SUCCESS if temperature retrieved successfully, error code otherwise
+ * @param [in]  type The specific temperature sensor type to query
+ * @param [out] temp Receives the sensor's reading, in Celsius except for an LPDDR5 memory sensor's raw
+ *                   MR4 code; 0.0 when no sensor of @p type could be read
+ *
+ * @retval ZE_RESULT_SUCCESS                    A sensor of @p type was read.
+ * @retval ZE_RESULT_ERROR_INVALID_NULL_POINTER @p temp is null.
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE  The device has no sensor of @p type.
+ * @retval other                                Sensors of @p type exist but none could be read, for
+ *                                              example without root: the driver's error for the last one,
+ *                                              ZE_RESULT_ERROR_NOT_AVAILABLE where that was UNSUPPORTED_FEATURE.
  */
 ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 {
@@ -382,9 +388,10 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 		return ZE_RESULT_ERROR_INVALID_NULL_POINTER;
 	}
 	ze_result_t result = ZE_RESULT_SUCCESS;
-	zes_temp_properties_t properties;
+	zes_temp_properties_t properties = {};
 	*temp = 0.0; // Default value if no temperature found
-	bool sensorFound = false;
+	// Stays UNSUPPORTED_FEATURE until a sensor of the type is found.
+	ze_result_t readResult = ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
 
 	for (uint32_t i = 0; i < temperatureCount; ++i) {
 		result = getProperties(temperatureHandles[i], &properties);
@@ -395,18 +402,20 @@ ze_result_t temperature::getTemp(zes_temp_sensors_t type, double *temp)
 		}
 
 		if (properties.type == type) {
-			sensorFound = true;
 			result = getState(temperatureHandles[i], temp);
 			if (result == ZE_RESULT_SUCCESS) {
 				return result;
 			} else {
 				DBG("Failed to get state for temperature sensor {} (type {}): 0x{:X} ({})\n", i, type, result,
 					l0_error_to_string(result));
+				// UNSUPPORTED_FEATURE is kept for a device without a sensor of the type; this one exists.
+				readResult = result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE ? ZE_RESULT_ERROR_NOT_AVAILABLE : result;
+				*temp = 0.0; // A failed read is not a reading, whatever the driver left there.
 			}
 		}
 	}
 
-	return sensorFound ? ZE_RESULT_SUCCESS : ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	return readResult;
 }
 
 /**
@@ -507,8 +516,9 @@ ze_result_t temperature::getTempPerTile(zes_temp_sensors_t type, std::map<uint32
  * temperature sensor, providing essential thermal monitoring for GPU performance
  * and safety management.
  *
- * @param coreTemp Pointer to store the GPU core temperature in Celsius
- * @return ze_result_t ZE_RESULT_SUCCESS if core temperature retrieved successfully, error code otherwise
+ * @param [out] coreTemp Receives the GPU core temperature in Celsius
+ * @return ze_result_t As temperature::getTemp() for ZES_TEMP_SENSORS_GPU: an error code also when
+ *         the sensor exists but could not be read
  */
 ze_result_t temperature::getCoreTemp(double *coreTemp)
 {
@@ -522,8 +532,9 @@ ze_result_t temperature::getCoreTemp(double *coreTemp)
  * This function retrieves the current temperature reading from the composite
  * temperature sensor, which reports an overall thermal reading for the device.
  *
- * @param compositeTemp Pointer to store the composite temperature in Celsius
- * @return ze_result_t ZE_RESULT_SUCCESS if composite temperature retrieved successfully, error code otherwise
+ * @param [out] compositeTemp Receives the composite temperature in Celsius
+ * @return ze_result_t As temperature::getTemp() for ZES_TEMP_SENSORS_COMPOSITE: an error code also
+ *         when the sensor exists but could not be read
  */
 ze_result_t temperature::getCompositeTemp(double *compositeTemp)
 {
@@ -538,8 +549,9 @@ ze_result_t temperature::getCompositeTemp(double *compositeTemp)
  * temperature sensor, providing thermal monitoring capabilities for memory
  * subsystem safety and performance optimization.
  *
- * @param memTemp Pointer to store the memory temperature in Celsius
- * @return ze_result_t ZE_RESULT_SUCCESS if memory temperature retrieved successfully, error code otherwise
+ * @param [out] memTemp Receives the memory temperature in Celsius
+ * @return ze_result_t As temperature::getTemp() for ZES_TEMP_SENSORS_MEMORY: an error code also when
+ *         the sensor exists but could not be read
  */
 ze_result_t temperature::getMemoryTemp(double *memTemp)
 {

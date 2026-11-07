@@ -120,9 +120,11 @@ endif
 
 if get_option('with_tests')
   doctest_dep = dependency('doctest', required: true)
+  # Fake Level Zero temperature calls, shared with the health tests in ial/cmn/test.
+  fake_temperature_sysman_src = files('test/fake_temperature_sysman.cpp')
   temperature_test = executable(
     'temperature_test',
-    files('test/temperature_test.cpp'),
+    files('test/temperature_test.cpp') + fake_temperature_sysman_src,
     include_directories: [global_inc, hal_core_inc, oal_inc_dirs],
     link_with: libxpum_static,
     dependencies: [doctest_dep, levelzero_dep, igsc_dep, nlohmann_json_dep],

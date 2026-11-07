@@ -12,8 +12,94 @@
 #include "temperature.h"
 #include "temperature_ext.h"
 
+#include "fake_temperature_sysman.h"
+
 #include <cmath>
 #include <limits>
+#include <vector>
+
+namespace {
+
+/**
+ * @brief Initializes @p temp on the fake device with @p sensors.
+ *
+ * @param [in]  sensors The sensors the fake device reports.
+ * @param [out] temp    The object to initialize.
+ */
+void initWith(const std::vector<fake_sysman::TemperatureSensor> &sensors, temperature &temp)
+{
+	fake_sysman::setTemperatureSensors(sensors);
+	REQUIRE(temp.init(fake_sysman::device()) == ZE_RESULT_SUCCESS);
+}
+
+} // namespace
+
+TEST_CASE("a temperature sensor that cannot be read reports the driver's error, not a reading of 0")
+{
+	temperature temp;
+	initWith({{ZES_TEMP_SENSORS_GLOBAL, ZE_RESULT_SUCCESS, 50.0},
+			  {ZES_TEMP_SENSORS_GPU, ZE_RESULT_ERROR_NOT_AVAILABLE, 99.0},
+			  {ZES_TEMP_SENSORS_MEMORY, ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS, 99.0},
+			  {ZES_TEMP_SENSORS_COMPOSITE, ZE_RESULT_ERROR_NOT_AVAILABLE, 99.0}},
+			 temp);
+	double value = -1.0;
+	CHECK(temp.getCoreTemp(&value) == ZE_RESULT_ERROR_NOT_AVAILABLE);
+	CHECK(value == doctest::Approx(0.0));
+	value = -1.0;
+	CHECK(temp.getMemoryTemp(&value) == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS);
+	CHECK(value == doctest::Approx(0.0));
+	value = -1.0;
+	CHECK(temp.getCompositeTemp(&value) == ZE_RESULT_ERROR_NOT_AVAILABLE);
+	CHECK(value == doctest::Approx(0.0));
+}
+
+TEST_CASE("a sensor the driver cannot read reports NOT_AVAILABLE, not that the device has no sensor")
+{
+	temperature temp;
+	initWith({{ZES_TEMP_SENSORS_GPU, ZE_RESULT_ERROR_UNSUPPORTED_FEATURE, 99.0}}, temp);
+	double value = -1.0;
+	CHECK(temp.getCoreTemp(&value) == ZE_RESULT_ERROR_NOT_AVAILABLE);
+	CHECK(value == doctest::Approx(0.0));
+}
+
+TEST_CASE("when no temperature sensor of the type can be read, the last one's error is reported")
+{
+	temperature temp;
+	initWith({{ZES_TEMP_SENSORS_GPU, ZE_RESULT_ERROR_NOT_AVAILABLE, 99.0},
+			  {ZES_TEMP_SENSORS_GPU, ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS, 99.0}},
+			 temp);
+	double value = -1.0;
+	CHECK(temp.getCoreTemp(&value) == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS);
+	CHECK(value == doctest::Approx(0.0));
+}
+
+TEST_CASE("a device without a temperature sensor of the type reports UNSUPPORTED_FEATURE")
+{
+	temperature temp;
+	initWith({{ZES_TEMP_SENSORS_GLOBAL, ZE_RESULT_SUCCESS, 50.0}}, temp);
+	double value = -1.0;
+	CHECK(temp.getCoreTemp(&value) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(value == doctest::Approx(0.0));
+	value = -1.0;
+	CHECK(temp.getMemoryTemp(&value) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(value == doctest::Approx(0.0));
+
+	temperature none;
+	initWith({}, none);
+	CHECK(none.getCoreTemp(&value) == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+}
+
+TEST_CASE("the first temperature sensor of the type that can be read gives the reading")
+{
+	temperature temp;
+	initWith({{ZES_TEMP_SENSORS_GPU, ZE_RESULT_ERROR_NOT_AVAILABLE, 99.0},
+			  {ZES_TEMP_SENSORS_GPU, ZE_RESULT_SUCCESS, 47.5},
+			  {ZES_TEMP_SENSORS_GPU, ZE_RESULT_SUCCESS, 60.0}},
+			 temp);
+	double value = -1.0;
+	CHECK(temp.getCoreTemp(&value) == ZE_RESULT_SUCCESS);
+	CHECK(value == doctest::Approx(47.5));
+}
 
 TEST_CASE("composite temperature sensor uses the Level Zero value")
 {

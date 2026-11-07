@@ -185,7 +185,9 @@ readings. The usual causes are:
   naming the domains the device did enumerate, e.g. ``Device exposes no GPU power domain
   (enumerated: Card, Package)``.
 - **The counter needs privileges the process does not have.** Engine busyness needs
-  ``CAP_PERFMON``; without it utilization reads ``N/A`` rather than ``0``.
+  ``CAP_PERFMON``; without it utilization reads ``N/A`` rather than ``0``. On some devices
+  the driver reads the temperature sensors only for root, so ``temperature.gpu`` and
+  ``temperature.memory`` read ``N/A`` for other users.
 - **The sampling window produced no usable delta.** Rate metrics (utilization, power draw,
   throughput) are computed from two readings, so a ``--loop-ms`` interval shorter than the
   counter's own update period yields ``N/A`` for the rows where the counter did not advance.
