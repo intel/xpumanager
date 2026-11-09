@@ -5,6 +5,7 @@
  */
 
 #include "firmware.h"
+#include "extension_utils.h"
 #include <amcupd.h>
 #include <charconv>
 #include <cstring>
@@ -414,6 +415,15 @@ ze_result_t firmware::runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fw
 		return ZE_RESULT_ERROR_UNKNOWN;
 	}
 
+	// The flash override image only goes to a device that is in flash override mode. This covers
+	// both -t FDO and the IFWI component of -t COMPOSITE --fdo, which is flashed through this row.
+	if (fwInfo->fwType == fwType::FDO) {
+		result = checkFlashOverride(fwInfo);
+		if (result != ZE_RESULT_SUCCESS) {
+			return result;
+		}
+	}
+
 	// Call the corresponding pre-update, firmware update and post-update functions in the hal
 	result = (fw->*cmd.preUpdateFunc)(fwInfo);
 	if (result != ZE_RESULT_SUCCESS) {
@@ -431,6 +441,66 @@ ze_result_t firmware::runUpdateSequence(updateFWCmdStruct &cmd, firmwareInfo *fw
 	}
 
 	return (fw->*cmd.postUpdateFunc)(fwInfo);
+}
+
+/**
+ * @brief Confirms the device is in flash override (FDO) mode before the FDO image is flashed
+ *
+ * Reads the device state through zesDeviceGetState() with zes_device_ext_state_t chained on pNext
+ * and requires ZES_DEVICE_STATE_EXT_FLAG_FLASH_OVERRIDE. Some older drivers do not ignore an unknown
+ * pNext as the spec requires and crash on it, so the extension is only attached when the driver
+ * advertises ZES_DEVICE_EXT_STATE_NAME. When the mode cannot be confirmed the update is refused.
+ *
+ * @param [in] fwInfo Firmware information of the update, for the device index in messages
+ * @retval ZE_RESULT_SUCCESS                   The device is in flash override mode
+ * @retval ZE_RESULT_ERROR_UNSUPPORTED_FEATURE The driver does not report the extended device state
+ * @retval ZE_RESULT_ERROR_NOT_AVAILABLE       The device is not in flash override mode
+ * @retval Other                               The error from reading the device state
+ */
+ze_result_t firmware::checkFlashOverride(const firmwareInfo *fwInfo)
+{
+	TRACING();
+
+	if (zesDriver == nullptr || zesDevice == nullptr) {
+		ERR("Cannot confirm that device {} is in flash override mode: it has no Level Zero Sysman handle.\n",
+			fwInfo->deviceIndex);
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
+
+	const auto lookup = zes_ext::findExtensionVersion(zesDriver, ZES_DEVICE_EXT_STATE_NAME);
+	if (lookup.queryError != ZE_RESULT_SUCCESS) {
+		ERR("Cannot confirm that device {} is in flash override mode: failed to read the driver extensions. 0x{:X} "
+			"({})\n",
+			fwInfo->deviceIndex, static_cast<uint32_t>(lookup.queryError), l0_error_to_string(lookup.queryError));
+		return lookup.queryError;
+	}
+	if (!lookup.version.has_value()) {
+		ERR("Cannot confirm that device {} is in flash override mode: the Level Zero driver does not support {}.\n",
+			fwInfo->deviceIndex, ZES_DEVICE_EXT_STATE_NAME);
+		return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+	}
+
+	zes_device_ext_state_t extState{};
+	extState.stype = ZES_STRUCTURE_TYPE_DEVICE_EXT_STATE;
+	zes_device_state_t state{};
+	state.stype = ZES_STRUCTURE_TYPE_DEVICE_STATE;
+	state.pNext = &extState;
+	const ze_result_t result = zesDeviceGetState(zesDevice, &state);
+	if (result != ZE_RESULT_SUCCESS) {
+		ERR("Cannot confirm that device {} is in flash override mode: failed to get the device state. 0x{:X} ({})\n",
+			fwInfo->deviceIndex, static_cast<uint32_t>(result), l0_error_to_string(result));
+		return result;
+	}
+
+	DBG("Device {} extended state flags: 0x{:X}\n", fwInfo->deviceIndex, extState.flags);
+	if ((extState.flags & ZES_DEVICE_STATE_EXT_FLAG_FLASH_OVERRIDE) == 0) {
+		ERR("Device {} is not in flash override mode (device state flags 0x{:X}). An FDO image can only be flashed "
+			"to a device in flash override mode.\n",
+			fwInfo->deviceIndex, extState.flags);
+		return ZE_RESULT_ERROR_NOT_AVAILABLE;
+	}
+
+	return ZE_RESULT_SUCCESS;
 }
 
 /**

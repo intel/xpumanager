@@ -239,6 +239,8 @@ if get_option('with_tests')
         '-Wl,--wrap=zesFirmwareGetProperties',
         '-Wl,--wrap=zesFirmwareFlash',
         '-Wl,--wrap=zesDevicePciGetProperties',
+        '-Wl,--wrap=zesDriverGetExtensionProperties',
+        '-Wl,--wrap=zesDeviceGetState',
         '-Wl,--wrap=igsc_device_iterator_create',
         '-Wl,--wrap=igsc_device_iterator_next',
         '-Wl,--wrap=igsc_device_iterator_destroy',

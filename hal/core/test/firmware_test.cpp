@@ -34,14 +34,18 @@ constexpr char IGSC_HINT[] =
 /** @brief What the mocked Level Zero Sysman and IGSC report about the device */
 struct MockState
 {
-	ze_result_t enumResult = ZE_RESULT_SUCCESS; // result of zesDeviceEnumFirmwares
-	std::vector<std::string> names;				// firmware names Sysman lists, in enumeration order
-	std::string meiPath = MEI_DEVICE_PATH;		// GSC MEI node that IGSC finds for the GPU, empty for none
-	bool meiListed = false;						// the IGSC iterator has returned meiPath
-	int meiListings = 0;						// IGSC device iterations started
-	int gscVersionResult = IGSC_SUCCESS;		// result of IGSC's GFX firmware version query over meiPath
-	int gscQueries = 0;							// IGSC sessions opened to query the GSC
-	int flashCalls = 0;							// calls of zesFirmwareFlash
+	ze_result_t enumResult = ZE_RESULT_SUCCESS;	 // result of zesDeviceEnumFirmwares
+	std::vector<std::string> names;				 // firmware names Sysman lists, in enumeration order
+	std::string meiPath = MEI_DEVICE_PATH;		 // GSC MEI node that IGSC finds for the GPU, empty for none
+	bool meiListed = false;						 // the IGSC iterator has returned meiPath
+	int meiListings = 0;						 // IGSC device iterations started
+	int gscVersionResult = IGSC_SUCCESS;		 // result of IGSC's GFX firmware version query over meiPath
+	int gscQueries = 0;							 // IGSC sessions opened to query the GSC
+	int flashCalls = 0;							 // calls of zesFirmwareFlash
+	bool deviceStateExtension = true;			 // the driver advertises ZES_DEVICE_EXT_STATE_NAME
+	ze_result_t stateResult = ZE_RESULT_SUCCESS; // result of zesDeviceGetState
+	zes_device_state_ext_flags_t stateFlags = 0; // extended device state flags zesDeviceGetState reports
+	int stateQueries = 0;						 // calls of zesDeviceGetState
 };
 
 MockState mock;
@@ -51,6 +55,7 @@ std::array<char, 8> handleStorage{};
 char deviceStorage = 0;
 char iteratorStorage = 0;
 char contextStorage = 0;
+char driverStorage = 0;
 
 /** @brief Log sink that keeps every message, so a test can check what the user is shown */
 class CaptureSink final : public Sink
@@ -99,6 +104,7 @@ ze_result_t updateType(const char *type, std::string &errors)
 	firmware fw;
 	// init() also looks for AMC cards, which may log; only the update's own messages are captured.
 	REQUIRE(fw.init(deviceHandle) == ZE_RESULT_SUCCESS);
+	fw.setZesDriver(reinterpret_cast<zes_driver_handle_t>(&driverStorage));
 
 	auto sink = std::make_shared<CaptureSink>();
 	Logger::instance().setSink(sink);
@@ -170,6 +176,46 @@ extern "C" ze_result_t __wrap_zesFirmwareFlash(zes_firmware_handle_t, void *, ui
 {
 	++mock.flashCalls;
 	return ZE_RESULT_ERROR_UNSUPPORTED_FEATURE;
+}
+
+/**
+ * @brief Mock: Level Zero driver extensions, listing the device state extension when the mock has it
+ *
+ * @param [in,out] pCount Number of entries pExtensionProperties has room for; set to the number listed
+ * @param [out] pExtensionProperties The listed extensions, or nullptr to only count them
+ * @return ze_result_t Always ZE_RESULT_SUCCESS
+ */
+extern "C" ze_result_t __wrap_zesDriverGetExtensionProperties(zes_driver_handle_t, uint32_t *pCount,
+															  zes_driver_extension_properties_t *pExtensionProperties)
+{
+	const uint32_t listed = mock.deviceStateExtension ? 1 : 0;
+	if (pExtensionProperties != nullptr && *pCount > 0 && listed > 0) {
+		pExtensionProperties[0] = {};
+		std::string_view(ZES_DEVICE_EXT_STATE_NAME)
+			.copy(pExtensionProperties[0].name, sizeof(pExtensionProperties[0].name) - 1);
+		pExtensionProperties[0].version = ZES_DEVICE_EXT_STATE_VERSION_1_0;
+	}
+	*pCount = listed;
+	return ZE_RESULT_SUCCESS;
+}
+
+/**
+ * @brief Mock: Level Zero device state, reporting the mock's extended state flags through pNext
+ *
+ * @param [in,out] pState Device state; its pNext must be the extended state when the driver advertises it
+ * @return ze_result_t mock.stateResult
+ */
+extern "C" ze_result_t __wrap_zesDeviceGetState(zes_device_handle_t, zes_device_state_t *pState)
+{
+	++mock.stateQueries;
+	if (mock.stateResult != ZE_RESULT_SUCCESS) {
+		return mock.stateResult;
+	}
+	auto *ext = static_cast<zes_device_ext_state_t *>(const_cast<void *>(pState->pNext));
+	if (ext != nullptr && ext->stype == ZES_STRUCTURE_TYPE_DEVICE_EXT_STATE) {
+		ext->flags = mock.stateFlags;
+	}
+	return ZE_RESULT_SUCCESS;
 }
 
 /**
@@ -373,6 +419,85 @@ TEST_CASE("An update of firmware the device exposes still goes on to read the im
 	CHECK(errors == std::string("[Error] Firmware image '") + MISSING_IMAGE + "' is empty or unreadable.\n");
 	CHECK(mock.flashCalls == 0);
 	CHECK(mock.gscQueries == 0);
+}
+
+TEST_CASE("An FDO update of a device in flash override mode goes on to read the image")
+{
+	mock = {};
+	mock.names = {"Flash_Override"};
+	mock.stateFlags = ZES_DEVICE_STATE_EXT_FLAG_SURVIVABILITY | ZES_DEVICE_STATE_EXT_FLAG_FLASH_OVERRIDE;
+	std::string errors;
+
+	const ze_result_t result = updateType("FDO", errors);
+	CHECK(result == ZE_RESULT_ERROR_INVALID_SIZE);
+	CHECK(errors == std::string("[Error] Firmware image '") + MISSING_IMAGE + "' is empty or unreadable.\n");
+	CHECK(mock.stateQueries == 1);
+	CHECK(mock.flashCalls == 0);
+}
+
+TEST_CASE("An FDO update of a device that is not in flash override mode is refused")
+{
+	struct Case
+	{
+		zes_device_state_ext_flags_t flags;
+		const char *shown; // how the error message shows the flags
+	};
+	for (const Case c : {Case{0, "0x0"}, Case{ZES_DEVICE_STATE_EXT_FLAG_NORMAL, "0x1"},
+						 Case{ZES_DEVICE_STATE_EXT_FLAG_SURVIVABILITY, "0x4"}}) {
+		mock = {};
+		mock.names = {"Flash_Override"};
+		mock.stateFlags = c.flags;
+		std::string errors;
+
+		const ze_result_t result = updateType("FDO", errors);
+		CHECK_MESSAGE(result == ZE_RESULT_ERROR_NOT_AVAILABLE, c.shown);
+		CHECK_MESSAGE(errors == std::string("[Error] Device 3 is not in flash override mode (device state flags ") +
+									c.shown +
+									"). An FDO image can only be flashed to a device in flash override mode.\n",
+					  c.shown);
+		CHECK_MESSAGE(mock.flashCalls == 0, c.shown);
+	}
+}
+
+TEST_CASE("An FDO update is refused when the driver does not report the extended device state")
+{
+	mock = {};
+	mock.names = {"Flash_Override"};
+	mock.deviceStateExtension = false;
+	std::string errors;
+
+	const ze_result_t result = updateType("FDO", errors);
+	CHECK(result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE);
+	CHECK(errors == std::string("[Error] Cannot confirm that device 3 is in flash override mode: the Level Zero "
+								"driver does not support ") +
+						ZES_DEVICE_EXT_STATE_NAME + ".\n");
+	// The extension is not attached to a driver that does not advertise it
+	CHECK(mock.stateQueries == 0);
+	CHECK(mock.flashCalls == 0);
+}
+
+TEST_CASE("An FDO update is refused when the device state cannot be read")
+{
+	mock = {};
+	mock.names = {"Flash_Override"};
+	mock.stateResult = ZE_RESULT_ERROR_DEVICE_LOST;
+	std::string errors;
+
+	const ze_result_t result = updateType("FDO", errors);
+	CHECK(result == ZE_RESULT_ERROR_DEVICE_LOST);
+	CHECK(errors == "[Error] Cannot confirm that device 3 is in flash override mode: failed to get the device "
+					"state. 0x70000001 (ZE_RESULT_ERROR_DEVICE_LOST)\n");
+	CHECK(mock.flashCalls == 0);
+}
+
+TEST_CASE("Updates other than FDO do not check for flash override mode")
+{
+	mock = {};
+	mock.names = {"GFX"};
+	std::string errors;
+
+	CHECK(updateType("GFX", errors) == ZE_RESULT_ERROR_INVALID_SIZE);
+	CHECK(mock.stateQueries == 0);
 }
 
 TEST_CASE("pci::init calls inside a MeiDeviceListScope share one MEI device listing")

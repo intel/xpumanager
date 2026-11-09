@@ -1077,6 +1077,9 @@ ze_result_t device::smDevInit(zes_driver_handle_t zesDri, zes_device_handle_t ze
 	std::string drmPath;
 	zesDriver = zesDri;
 	zesDevice = zesDev;
+	// The firmware class checks for the device state extension before an FDO update. Set here, as
+	// both init() and the survivability-mode path come through this function.
+	firmwareInstance->setZesDriver(zesDriver);
 
 	// Determine integrated vs. discrete from sysman. The full init() path also sets
 	// this later from zeDeviceProperties (see init()), but on the config --reset path
