@@ -1239,7 +1239,8 @@ expected.</p>
 <p>Unit: C</p>
 <p>Source: <code class="docutils literal notranslate"><span class="pre">temperature.gpu</span></code></p>
 </td>
-<td><p>GPU core temperature. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on a device that exposes no temperature sensor.</p></td>
+<td><p>GPU core temperature. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on a device that exposes no temperature sensor, or when the
+driver cannot read the sensor, which on some devices needs root.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Temperature &gt; GPU Shutdown Temp</p>
 <p><code class="docutils literal notranslate"><span class="pre">temperature.gpu_shutdown_temp</span></code></p>
@@ -1275,7 +1276,8 @@ expected.</p>
 <p>Unit: C</p>
 <p>Source: <code class="docutils literal notranslate"><span class="pre">temperature.memory</span></code></p>
 </td>
-<td><p>Memory temperature. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on a device that exposes no memory sensor.</p></td>
+<td><p>Memory temperature. <code class="docutils literal notranslate"><span class="pre">N/A</span></code> on a device that exposes no memory sensor, or when the driver
+cannot read the sensor, which on some devices needs root.</p></td>
 </tr>
 <tr class="row-odd"><td><p>Temperature &gt; Memory Shutdown Temp</p>
 <p><code class="docutils literal notranslate"><span class="pre">temperature.memory_shutdown_temp</span></code></p>

@@ -325,7 +325,7 @@ as the power measurement window may be too short for accurate readings.</p>
 <td><p>Unsupported</p></td>
 </tr>
 <tr class="row-odd"><td><p>17</p></td>
-<td><p>GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices.</p></td>
+<td><p>GPU Memory Bandwidth Utilization (%), per tile or device. Device-level is the average value of tiles for multi-tile devices. Reported as 0 when the driver does not provide peak memory bandwidth; this is a placeholder, not a measurement.</p></td>
 </tr>
 <tr class="row-even"><td><p>18</p></td>
 <td><p>GPU Memory Used (MiB), per tile or device</p></td>
@@ -402,7 +402,9 @@ and <code class="docutils literal notranslate"><span class="pre">energy.consumed
 naming the domains the device did enumerate, e.g. <code class="docutils literal notranslate"><span class="pre">Device</span> <span class="pre">exposes</span> <span class="pre">no</span> <span class="pre">GPU</span> <span class="pre">power</span> <span class="pre">domain</span>
 <span class="pre">(enumerated:</span> <span class="pre">Card,</span> <span class="pre">Package)</span></code>.</p></li>
 <li><p><strong>The counter needs privileges the process does not have.</strong> Engine busyness needs
-<code class="docutils literal notranslate"><span class="pre">CAP_PERFMON</span></code>; without it utilization reads <code class="docutils literal notranslate"><span class="pre">N/A</span></code> rather than <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p></li>
+<code class="docutils literal notranslate"><span class="pre">CAP_PERFMON</span></code>; without it utilization reads <code class="docutils literal notranslate"><span class="pre">N/A</span></code> rather than <code class="docutils literal notranslate"><span class="pre">0</span></code>. On some devices
+the driver reads the temperature sensors only for root, so <code class="docutils literal notranslate"><span class="pre">temperature.gpu</span></code> and
+<code class="docutils literal notranslate"><span class="pre">temperature.memory</span></code> read <code class="docutils literal notranslate"><span class="pre">N/A</span></code> for other users.</p></li>
 <li><p><strong>The sampling window produced no usable delta.</strong> Rate metrics (utilization, power draw,
 throughput) are computed from two readings, so a <code class="docutils literal notranslate"><span class="pre">--loop-ms</span></code> interval shorter than the
 counter’s own update period yields <code class="docutils literal notranslate"><span class="pre">N/A</span></code> for the rows where the counter did not advance.

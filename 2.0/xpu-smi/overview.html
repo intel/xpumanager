@@ -245,9 +245,11 @@ does not count, so long-running loops are not affected.</p>
 stuck (for example <code class="docutils literal notranslate"><span class="pre">driver</span> <span class="pre">init</span></code>) and how many seconds remain. On timeout, <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code>
 restores the terminal, prints the phase and one line per thread to stderr, and exits
 with code <code class="docutils literal notranslate"><span class="pre">124</span></code>.</p>
-<p>The timeout is suspended while firmware is being written (<code class="docutils literal notranslate"><span class="pre">updatefw</span></code>): a flash can take
-several minutes, and interrupting one can leave the card unusable. It starts again,
-with the full timeout, once flashing ends.</p>
+<p>The timeout is suspended while firmware is being written (<code class="docutils literal notranslate"><span class="pre">updatefw</span></code>) and while a GPU
+is being reset (<code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">--reset</span></code>, <code class="docutils literal notranslate"><span class="pre">config</span> <span class="pre">--coldreset</span></code>, <code class="docutils literal notranslate"><span class="pre">amc</span> <span class="pre">--gpureset</span></code>): a flash
+can take several minutes and a reset about one, and interrupting either can leave the
+card unusable or off the PCI bus. It starts again, with the full timeout, once the
+operation ends.</p>
 </dd></dl>
 
 </section>

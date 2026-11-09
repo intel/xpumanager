@@ -935,7 +935,8 @@ The shutdown and slowdown rows are configured thresholds, the ones the ``health`
        Unit: C
 
        Source: ``temperature.gpu``
-     - GPU core temperature. ``N/A`` on a device that exposes no temperature sensor.
+     - GPU core temperature. ``N/A`` on a device that exposes no temperature sensor, or when the
+       driver cannot read the sensor, which on some devices needs root.
    * - Temperature > GPU Shutdown Temp
 
        ``temperature.gpu_shutdown_temp``
@@ -971,7 +972,8 @@ The shutdown and slowdown rows are configured thresholds, the ones the ``health`
        Unit: C
 
        Source: ``temperature.memory``
-     - Memory temperature. ``N/A`` on a device that exposes no memory sensor.
+     - Memory temperature. ``N/A`` on a device that exposes no memory sensor, or when the driver
+       cannot read the sensor, which on some devices needs root.
    * - Temperature > Memory Shutdown Temp
 
        ``temperature.memory_shutdown_temp``

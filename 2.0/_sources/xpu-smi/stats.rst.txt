@@ -101,7 +101,7 @@ The following metrics are reported per device and per tile where applicable:
    * - GPU Memory Read / Write (kB/s)
      - Per tile
    * - GPU Memory Bandwidth (%)
-     - Per tile
+     - Per tile. Reported as 0 when the driver does not provide peak memory bandwidth; this is a placeholder, not a measurement.
    * - GPU Memory Used (MiB)
      - Per tile
    * - PCIe Read / Write (kB/s)
