@@ -25,6 +25,15 @@ CMD="$1"
 FILE="$2"
 shift 2
 
+# Set the documentNamespace of <file> unique to its packages content
+finalize() {
+    local hash
+    hash=$(jq -c .packages "$1" | sha256sum | cut -d' ' -f1)
+    jq --arg ns "https://github.com/intel/xpumanager/xpumd/package-origins-$hash" \
+        '.documentNamespace = $ns' "$1" > "$1.tmp"
+    mv "$1.tmp" "$1"
+}
+
 # Create FILE without any packages, if it does not exist
 init() {
     [ ! -e "$FILE" ] || return 0
@@ -34,10 +43,11 @@ init() {
         dataLicense: "CC0-1.0",
         SPDXID: "SPDXRef-DOCUMENT",
         name: "xpumd-package-origins",
-        documentNamespace: "https://github.com/intel/xpumanager/xpumd/package-origins",
+        documentNamespace: null,
         creationInfo: {created: $created, creators: ["Tool: package-origins.sh"]},
         packages: []
     }' > "$FILE"
+    finalize "$FILE"
 }
 
 case "$CMD" in
@@ -78,3 +88,4 @@ jq --argjson new "$new" '
     .packages |= map(select(.name | IN($new[].name) | not)) + $new
 ' "$FILE" > "$FILE.tmp"
 mv "$FILE.tmp" "$FILE"
+finalize "$FILE"
