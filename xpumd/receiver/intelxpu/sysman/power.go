@@ -22,7 +22,14 @@ const (
 )
 
 func init() {
-	registerSubsystem("power", enumPower)
+	registerSubsystem("power", enumPower,
+		onScrape((*power).scrapeEnergy, func(c *metadata.MetricsConfig) bool {
+			return c.HwEnergy.Enabled || c.HwPower.Enabled
+		}).withInit((*power).initEnergy),
+		onScrape((*power).scrapeLimits, func(c *metadata.MetricsConfig) bool {
+			return c.HwPowerLimit.Enabled
+		}).withInit((*power).initLimits),
+	)
 }
 
 type power struct {
@@ -34,7 +41,7 @@ type power struct {
 
 // powerState holds the dynamic runtime state of the power instance.
 type powerState struct {
-	limits  int // -1 before known, 0 disables (further) queries
+	limits  int // number of reported limits, -1 before known
 	counter *l0sysman.PowerEnergyCounter
 }
 
@@ -46,13 +53,13 @@ type powerAttributes struct {
 	SubdeviceID      string `json:"com.intel.subdevice_id"`
 }
 
-func enumPower(d *device) []instanceScraper {
+func enumPower(d *device) []*power {
 	items, err := d.EnumPowerDomains()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate power domains", zap.Error(err))
 		return nil
 	}
-	scrapers := make([]instanceScraper, 0, len(items))
+	instances := make([]*power, 0, len(items))
 	for i, item := range items {
 		name := fmt.Sprintf("power-%d", i+1)
 		p, err := newPower(name, item, d)
@@ -60,11 +67,11 @@ func enumPower(d *device) []instanceScraper {
 			d.logger.Errorw("Failed to create Sysman power domain", "index", i+1, zap.Error(err))
 			continue
 		}
-		scrapers = append(scrapers, p)
+		instances = append(instances, p)
 	}
 
-	d.logger.Infow("Sysman power domains", "created", len(scrapers), "enumerated", len(items))
-	return scrapers
+	d.logger.Infow("Sysman power domains", "created", len(instances), "enumerated", len(items))
+	return instances
 }
 
 func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) {
@@ -80,13 +87,7 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 		location = "GPU"
 	}
 
-	// initial / previous counter value + check for counter working
-	counter, err := pwr.GetEnergyCounter()
-	if err != nil {
-		return nil, fmt.Errorf("power GetEnergyCounter() failed, power metrics not available: %w", err)
-	}
-
-	p := &power{
+	return &power{
 		Power:  pwr,
 		logger: device.logger,
 		attributes: powerAttributes{
@@ -97,34 +98,40 @@ func newPower(name string, pwr *l0sysman.Power, device *device) (*power, error) 
 			SubdeviceID:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 		state: powerState{
-			limits:  -1,
-			counter: &counter,
+			limits: -1,
 		},
-	}
-
-	if _, err = pwr.GetLimitsExt(); err != nil {
-		device.logger.Infow("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "attributes", p.attributes)
-		p.state.limits = 0
-	}
-
-	return p, nil
+	}, nil
 }
 
-// scrape converts energy counter value to OTel metric:
+// initEnergy reads the initial / previous counter value, checking that the counter works.
+func (power *power) initEnergy() bool {
+	counter, err := power.GetEnergyCounter()
+	if err != nil {
+		power.logger.Infow("Power GetEnergyCounter() failed: power metrics not available", zap.Error(err), "attributes", power.attributes)
+		return false
+	}
+	power.state.counter = &counter
+	return true
+}
+
+func (power *power) initLimits() bool {
+	if _, err := power.GetLimitsExt(); err != nil {
+		power.logger.Infow("Power GetLimitsExt() failed: power limits not available", zap.Error(err), "attributes", power.attributes)
+		return false
+	}
+	return true
+}
+
+// scrapeEnergy converts energy counter value to OTel metric:
 //   - OTel timestamps are in nanoseconds and values are in base units (Joules)
 //     https://github.com/open-telemetry/opentelemetry-collector/tree/main/pdata#singular-fields
 //   - Sysman timestamps are in microseconds & counter values are in microjoules
 //     https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-power-energy-counter-t
-func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if power.state.counter == nil {
-		return
-	}
-
+func (power *power) scrapeEnergy(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	counter, err := power.GetEnergyCounter()
 	if err != nil {
 		power.logger.Errorw("Power GetEnergyCounter() failed: power metrics disabled", zap.Error(err), "attributes", power.attributes)
-		power.state.counter = nil
-		return
+		return false
 	}
 
 	// TODO: check from visualization that energy counter change
@@ -146,7 +153,7 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	ediff := u64CounterDiff(power.state.counter.Energy, counter.Energy)
 	power.state.counter = &counter
 	if tdiff == 0 {
-		return
+		return true
 	}
 
 	watts := float64(ediff) / float64(tdiff)
@@ -168,18 +175,15 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		power.logger.Warnw("Invalid power value skipped", "watts", watts,
 			"intervalSeconds", float64(tdiff)/1e6, "attributes", power.attributes)
 	}
+	return true
+}
 
-	// nothing further to report
-	if power.state.limits == 0 {
-		return
-	}
-
+func (power *power) scrapeLimits(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/latest/sysman/api/extensions/power.html
 	limits, err := power.GetLimitsExt()
 	if err != nil {
 		power.logger.Errorw("Power GetLimitsExt() failed: power limit metrics disabled", zap.Error(err), "attributes", power.attributes)
-		power.state.limits = 0
-		return
+		return false
 	}
 
 	count := 0
@@ -220,6 +224,5 @@ func (power *power) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		power.logger.Infow(msg, "all", len(limits), "reported", count,
 			"disabled", disabled, "wrongUnit", wrongUnit, "attributes", power.attributes)
 	}
+	return true
 }
-
-func (m *power) pollAggregatedMetrics() {}

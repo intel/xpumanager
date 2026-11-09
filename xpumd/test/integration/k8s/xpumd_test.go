@@ -283,7 +283,7 @@ func TestSysmanErrors(t *testing.T) {
 			// gpu-2: the previously healthy engine group fails
 			"Engine GetActivity() failed: engine metrics disabled",
 			// gpu-2: the aggregated frequency metrics depend on the sampling timing
-			"Frequency GetState() failed: aggregated metrics polling stopped",
+			"Frequency GetState() failed: aggregated metrics sampling stopped",
 			// gpu-2: The energy counter of one power domain jumps to ~3 MW, thus filtered out as bogus.
 			// The only limit of another one is disabled and the limits of a third one fail
 			"Invalid power value skipped",

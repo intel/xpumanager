@@ -17,7 +17,16 @@ import (
 )
 
 func init() {
-	registerSubsystem("memory", enumMemory)
+	registerSubsystem("memory", enumMemory,
+		onScrape((*memory).scrapeState, func(c *metadata.MetricsConfig) bool {
+			return c.HwMemorySize.Enabled || c.HwMemoryUsage.Enabled || c.HwMemoryUtilization.Enabled ||
+				c.HwMemoryFree.Enabled || c.HwStatus.Enabled
+		}).withInit((*memory).initState),
+		onScrape((*memory).scrapeBW, func(c *metadata.MetricsConfig) bool {
+			return c.HwMemoryIo.Enabled || c.HwMemoryIoRate.Enabled ||
+				c.HwMemoryBandwidthLimit.Enabled || c.HwMemoryBandwidthUtilization.Enabled
+		}).withInit((*memory).initBW),
+	)
 }
 
 type memory struct {
@@ -30,7 +39,6 @@ type memory struct {
 
 // memoryState holds the dynamic runtime state of the memory instance.
 type memoryState struct {
-	disabled         bool
 	counter          *l0sysman.MemBandwidth
 	healthStatesSeen map[l0sysman.MemHealth]bool
 }
@@ -50,13 +58,13 @@ type memoryAttributes struct {
 	SubdeviceID      string                   `json:"com.intel.subdevice_id"`
 }
 
-func enumMemory(d *device) []instanceScraper {
+func enumMemory(d *device) []*memory {
 	mems, err := d.EnumMemoryModules()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate memory modules", zap.Error(err))
 		return nil
 	}
-	scrapers := make([]instanceScraper, 0, len(mems))
+	instances := make([]*memory, 0, len(mems))
 	for i, mem := range mems {
 		name := fmt.Sprintf("mem-%d", i+1)
 		m, err := newMemory(name, mem, d)
@@ -64,21 +72,17 @@ func enumMemory(d *device) []instanceScraper {
 			d.logger.Errorw("Failed to create Sysman memory module", "index", i+1, zap.Error(err))
 			continue
 		}
-		scrapers = append(scrapers, m)
+		instances = append(instances, m)
 	}
 
-	d.logger.Infow("Sysman memory modules", "created", len(scrapers), "enumerated", len(mems))
-	return scrapers
+	d.logger.Infow("Sysman memory modules", "created", len(instances), "enumerated", len(mems))
+	return instances
 }
 
 func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, error) {
 	props, err := mem.GetProperties()
 	if err != nil {
 		return nil, fmt.Errorf("memory GetProperties() failed: %w", err)
-	}
-	state, err := mem.GetState()
-	if err != nil {
-		return nil, fmt.Errorf("memory GetState() failed: %w", err)
 	}
 
 	m := &memory{
@@ -98,33 +102,40 @@ func newMemory(name string, mem *l0sysman.Memory, device *device) (*memory, erro
 			SubdeviceID:      subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
 	}
-
-	if props.PhysicalSize == 0 {
-		if state.Size > 0 {
-			device.logger.Infow("Memory size unavailable => allocatable size used as fallback", "attributes", m.attributes)
-		}
-	}
-
-	// initial / previous counter value
-	if counter, err := mem.GetBandwidth(); err != nil {
-		device.logger.Infow("Memory GetBandwidth() failed: no BW metrics available", zap.Error(err), "attributes", m.attributes)
-	} else {
-		m.state.counter = &counter
-	}
 	return m, nil
 }
 
-func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if m.state.disabled {
-		return
+func (m *memory) initState() bool {
+	state, err := m.GetState()
+	if err != nil {
+		m.logger.Infow("Memory GetState() failed: mem metrics not available", zap.Error(err), "attributes", m.attributes)
+		return false
 	}
+	if m.constMetrics.physicalSize == 0 {
+		if state.Size > 0 {
+			m.logger.Infow("Memory size unavailable => allocatable size used as fallback", "attributes", m.attributes)
+		}
+	}
+	return true
+}
 
+// initBW reads the initial / previous counter value.
+func (m *memory) initBW() bool {
+	counter, err := m.GetBandwidth()
+	if err != nil {
+		m.logger.Infow("Memory GetBandwidth() failed: no BW metrics available", zap.Error(err), "attributes", m.attributes)
+		return false
+	}
+	m.state.counter = &counter
+	return true
+}
+
+func (m *memory) scrapeState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-mem-state-t
 	state, err := m.GetState()
 	if err != nil {
 		m.logger.Errorw("Memory GetState() failed: mem metrics disabled", zap.Error(err), "attributes", m.attributes)
-		m.state.disabled = true
-		return
+		return false
 	}
 
 	size := m.constMetrics.physicalSize
@@ -190,21 +201,14 @@ func (m *memory) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			m.attributes.HwType,
 		)
 	}
-
-	m.scrapeBW(mb, ts)
+	return true
 }
 
-func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if m.state.counter == nil {
-		// uninitialized/invalid previous value => skip BW metrics
-		return
-	}
-
+func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	counter, err := m.GetBandwidth()
 	if err != nil {
 		m.logger.Errorw("Memory GetBandwidth() failed: BW metrics disabled", zap.Error(err), "attributes", m.attributes)
-		m.state.counter = nil
-		return
+		return false
 	}
 
 	// TODO: check from visualization that rate of mem BW counter
@@ -247,7 +251,7 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	txDiff := u64CounterDiff(m.state.counter.WriteCounter, counter.WriteCounter)
 	m.state.counter = &counter
 	if timeDiff == 0 {
-		return
+		return true
 	}
 
 	// total BW rate, b/us -> b/s
@@ -293,6 +297,5 @@ func (m *memory) scrapeBW(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			m.attributes.HwMemoryType,
 		)
 	}
+	return true
 }
-
-func (m *memory) pollAggregatedMetrics() {}

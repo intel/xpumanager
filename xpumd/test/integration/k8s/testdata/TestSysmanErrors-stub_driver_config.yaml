@@ -171,7 +171,7 @@ Drivers:
               Min: 300
               Max: 1600
           # No range, thus no limit metrics. Negative actual frequency means
-          # "not known" and stops the aggregated metrics polling.
+          # "not known" and stops the aggregated metrics sampling.
           - Properties:
               Type: 0  # ZES_FREQ_DOMAIN_GPU
               OnSubdevice: false

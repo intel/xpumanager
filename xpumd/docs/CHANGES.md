@@ -35,6 +35,8 @@ Contents:
   * Log output includes all relevant metric (differentiation) attributes
   * New internal telemetry metrics: `otelcol_sysman_sampler_missed_deadlines`,
     `otelcol_sysman_sampler_interval_usage` and `otelcol_crashlogs_dropped`
+  * Disabling metrics skips also the GPU driver queries needed only by them,
+    and the frequency sampling when no enabled metric needs it
 * Metric output fixes:
   * `intel_xpu_info` exporter reported an empty subdevice ID, and aggregated
     memory modules of the same type on different subdevices

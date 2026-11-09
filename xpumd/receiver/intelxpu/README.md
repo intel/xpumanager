@@ -56,6 +56,8 @@ large number of frequency metrics related to its value aggregation and
 states, and the whole set of them is typically of less interest than
 the other metrics.
 
+Disabling a metric causes the GPU driver queries specific to it to be skipped.
+
 ## Configuration
 
 ### Example Configuration

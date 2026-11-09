@@ -18,12 +18,35 @@ import (
 )
 
 func init() {
-	registerSubsystem("frequency", enumFrequency)
+	registerSubsystem("frequency", enumFrequency,
+		onScrape((*frequency).scrapeRange, func(c *metadata.MetricsConfig) bool {
+			return c.HwFrequencyLimit.Enabled
+		}).withInit((*frequency).initRange),
+		onScrape((*frequency).scrapeState, func(c *metadata.MetricsConfig) bool {
+			return c.HwFrequencyRequest.Enabled || needThrottleReasons(c)
+		}),
+		onScrape((*frequency).scrapeSamples, needFreqSamples).withInit((*frequency).initSamples),
+		onSampling((*frequency).sampleAggregatedMetrics, func(c *metadata.MetricsConfig) bool {
+			return needFreqSamples(c) || needThrottleReasons(c)
+		}),
+	)
+}
+
+func needFreqSamples(c *metadata.MetricsConfig) bool {
+	return c.HwFrequency.Enabled || c.HwFrequencySamples.Enabled
+}
+
+func needThrottleReasons(c *metadata.MetricsConfig) bool {
+	return c.HwFrequencyThrottleStatus.Enabled || c.HwStatus.Enabled
 }
 
 type frequency struct {
 	*l0sysman.Frequency
-	logger *zap.SugaredLogger
+	logger            *zap.SugaredLogger
+	samplesBufferSize int
+
+	// needThrottleReasons is a cached value of needThrottleReasons()
+	needThrottleReasons bool
 
 	state      frequencyState
 	attributes frequencyAttributes
@@ -40,21 +63,19 @@ type frequencyAttributes struct {
 
 // frequencyState holds the dynamic runtime state.
 type frequencyState struct {
-	disabled bool
-	hasRange bool
 	sync.Mutex
 	// updated (also) in aggregation thread => access needs locking
 	actual              *aggregatedMetric[float64]
 	throttleReasonsSeen l0sysman.FreqThrottleReasonFlags
 }
 
-func enumFrequency(d *device) []instanceScraper {
+func enumFrequency(d *device) []*frequency {
 	freqs, err := d.EnumFrequencyDomains()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate frequency domains", zap.Error(err))
 		return nil
 	}
-	scrapers := make([]instanceScraper, 0, len(freqs))
+	instances := make([]*frequency, 0, len(freqs))
 	for i, freq := range freqs {
 		name := fmt.Sprintf("freq-%d", i+1)
 		f, err := newFrequency(name, freq, d)
@@ -62,11 +83,11 @@ func enumFrequency(d *device) []instanceScraper {
 			d.logger.Errorw("Failed to create Sysman frequency domain", "index", i+1, zap.Error(err))
 			continue
 		}
-		scrapers = append(scrapers, f)
+		instances = append(instances, f)
 	}
 
-	d.logger.Infow("Sysman frequency domains", "created", len(scrapers), "enumerated", len(freqs))
-	return scrapers
+	d.logger.Infow("Sysman frequency domains", "created", len(instances), "enumerated", len(freqs))
+	return instances
 }
 
 func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequency, error) {
@@ -75,13 +96,11 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 		return nil, fmt.Errorf("frequency GetProperties() failed: %w", err)
 	}
 
-	if _, err := freq.GetState(); err != nil {
-		return nil, fmt.Errorf("frequency GetState() failed: %w", err)
-	}
-
-	f := &frequency{
-		Frequency: freq,
-		logger:    device.logger,
+	return &frequency{
+		Frequency:           freq,
+		logger:              device.logger,
+		samplesBufferSize:   device.aggregatedMetricsBufferSize,
+		needThrottleReasons: needThrottleReasons(device.metrics),
 		attributes: frequencyAttributes{
 			HwID:              device.attributes.HwID,
 			HwType:            metadata.AttributeHwTypeFrequency,
@@ -90,126 +109,122 @@ func newFrequency(name string, freq *l0sysman.Frequency, device *device) (*frequ
 			HwFrequencyDomain: strings.ToLower(props.Type.String()),
 			SubdeviceID:       subDeviceIdString(props.OnSubdevice, props.SubdeviceId),
 		},
-		state: frequencyState{
-			hasRange: true,
-			// Aggregated metrics
-			actual: newAggregatedMetric[float64](device.aggregatedMetricsBufferSize, maxAggregatedMetricsReaders),
-		},
-	}
-
-	if _, err := freq.GetRange(); err != nil {
-		device.logger.Infow("Frequency GetRange() failed: limit metrics not available", zap.Error(err), "name", name, "attributes", f.attributes)
-		f.state.hasRange = false
-	}
-
-	return f, nil
+	}, nil
 }
 
-// scrape handles instantaneous metrics.
-func (f *frequency) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if f.state.disabled {
-		return
+func (f *frequency) initRange() bool {
+	if _, err := f.GetRange(); err != nil {
+		f.logger.Infow("Frequency GetRange() failed: limit metrics not available", zap.Error(err), "attributes", f.attributes)
+		return false
 	}
+	return true
+}
 
-	if f.state.hasRange {
-		if rang, err := f.GetRange(); err != nil {
-			f.logger.Errorw("Frequency GetRange() failed: limit metric disabled", zap.Error(err), "attributes", f.attributes)
-			f.state.hasRange = false
-		} else {
-			if rang.Min >= 0 {
-				mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
-					f.attributes.HwID,
-					f.attributes.HwName,
-					f.attributes.PciBDF,
-					f.attributes.SubdeviceID,
-					f.attributes.HwFrequencyDomain,
-					"min")
-			}
-			if rang.Max >= 0 {
-				mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
-					f.attributes.HwID,
-					f.attributes.HwName,
-					f.attributes.PciBDF,
-					f.attributes.SubdeviceID,
-					f.attributes.HwFrequencyDomain,
-					"max")
-			}
-		}
+// initSamples allocates the aggregated metrics.
+func (f *frequency) initSamples() bool {
+	f.state.actual = newAggregatedMetric[float64](f.samplesBufferSize, maxAggregatedMetricsReaders)
+	return true
+}
+
+// scrapeRange handles frequency limits.
+func (f *frequency) scrapeRange(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
+	rang, err := f.GetRange()
+	if err != nil {
+		f.logger.Errorw("Frequency GetRange() failed: limit metric disabled", zap.Error(err), "attributes", f.attributes)
+		return false
 	}
-
-	f.scrapeState(mb, ts)
-	f.scrapeSamples(mb, ts)
+	if rang.Min >= 0 {
+		mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Min*1e6),
+			f.attributes.HwID,
+			f.attributes.HwName,
+			f.attributes.PciBDF,
+			f.attributes.SubdeviceID,
+			f.attributes.HwFrequencyDomain,
+			"min")
+	}
+	if rang.Max >= 0 {
+		mb.RecordHwFrequencyLimitDataPoint(ts, int64(rang.Max*1e6),
+			f.attributes.HwID,
+			f.attributes.HwName,
+			f.attributes.PciBDF,
+			f.attributes.SubdeviceID,
+			f.attributes.HwFrequencyDomain,
+			"max")
+	}
+	return true
 }
 
 // scrapeState handles frequency and its throttling reasons.
-func (f *frequency) scrapeState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (f *frequency) scrapeState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	f.state.Lock()
 	defer f.state.Unlock()
 
-	if state, err := f.GetState(); err != nil {
+	state, err := f.GetState()
+	if err != nil {
 		f.logger.Errorw("Frequency GetState() failed: freq metrics disabled", zap.Error(err), "attributes", f.attributes)
-		f.state.disabled = true
-	} else {
-		if state.Request >= 0 {
-			mb.RecordHwFrequencyRequestDataPoint(ts, int64(state.Request*1e6),
-				f.attributes.HwID,
-				f.attributes.HwName,
-				f.attributes.PciBDF,
-				f.attributes.SubdeviceID,
-				f.attributes.HwFrequencyDomain)
-		}
-
-		// Flags may be unset because driver stack lacks support for specific
-		// throttle reasons (does not know their status). API has large number
-		// of these flags, so emit their metrics only after they first become
-		// active (= flag is known to be supported).
-		f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
-
-		states := map[string]int64{}
-		if state.ThrottleReasons == 0 {
-			states["ok"] = 1
-			// Report throttling issue state only after it has been first seen.
-			if f.state.throttleReasonsSeen != 0 {
-				states["throttled"] = 0
-			}
-		} else {
-			states["ok"] = 0
-			states["throttled"] = 1
-		}
-
-		for state, value := range states {
-			mb.RecordHwStatusDataPoint(ts, value,
-				f.attributes.HwID,
-				f.attributes.HwName,
-				f.attributes.PciBDF,
-				f.attributes.SubdeviceID,
-				state,
-				f.attributes.HwType)
-		}
-
-		for _, reason := range f.state.throttleReasonsSeen.Bits() {
-			value := int64(0)
-			if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
-				value = 1
-			}
-			mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
-				f.attributes.HwID,
-				f.attributes.HwName,
-				f.attributes.PciBDF,
-				f.attributes.SubdeviceID,
-				f.attributes.HwFrequencyDomain,
-				strings.ToLower(reason.String()))
-		}
+		return false
 	}
+	if state.Request >= 0 {
+		mb.RecordHwFrequencyRequestDataPoint(ts, int64(state.Request*1e6),
+			f.attributes.HwID,
+			f.attributes.HwName,
+			f.attributes.PciBDF,
+			f.attributes.SubdeviceID,
+			f.attributes.HwFrequencyDomain)
+	}
+
+	// Flags may be unset because driver stack lacks support for specific
+	// throttle reasons (does not know their status). API has large number
+	// of these flags, so emit their metrics only after they first become
+	// active (= flag is known to be supported).
+	f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
+
+	states := map[string]int64{}
+	if state.ThrottleReasons == 0 {
+		states["ok"] = 1
+		// Report throttling issue state only after it has been first seen.
+		if f.state.throttleReasonsSeen != 0 {
+			states["throttled"] = 0
+		}
+	} else {
+		states["ok"] = 0
+		states["throttled"] = 1
+	}
+
+	for state, value := range states {
+		mb.RecordHwStatusDataPoint(ts, value,
+			f.attributes.HwID,
+			f.attributes.HwName,
+			f.attributes.PciBDF,
+			f.attributes.SubdeviceID,
+			state,
+			f.attributes.HwType)
+	}
+
+	for _, reason := range f.state.throttleReasonsSeen.Bits() {
+		value := int64(0)
+		if l0sysman.FreqThrottleReasonFlag(state.ThrottleReasons)&reason != 0 {
+			value = 1
+		}
+		mb.RecordHwFrequencyThrottleStatusDataPoint(ts, value,
+			f.attributes.HwID,
+			f.attributes.HwName,
+			f.attributes.PciBDF,
+			f.attributes.SubdeviceID,
+			f.attributes.HwFrequencyDomain,
+			strings.ToLower(reason.String()))
+	}
+	return true
 }
 
 // scrapeSamples handles aggregated metrics.
-func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	f.state.Lock()
 	defer f.state.Unlock()
 
 	if f.state.actual == nil {
-		return
+		// sampling stopped
+		return false
 	}
 
 	actualStats := f.state.actual.collect(0)
@@ -260,31 +275,35 @@ func (f *frequency) scrapeSamples(mb *metadata.MetricsBuilder, ts pcommon.Timest
 	if actualStats.lostSamples > 0 {
 		f.logger.Debugw("Lost samples of actual frequency", "count", actualStats.lostSamples, "attributes", f.attributes)
 	}
+	return true
 }
 
-// pollAggregatedMetrics collects active frequency samples and updates seen throttling reasons bitmask (asynchronously).
-func (f *frequency) pollAggregatedMetrics() {
+// sampleAggregatedMetrics collects active frequency samples and updates seen throttling reasons bitmask (asynchronously).
+func (f *frequency) sampleAggregatedMetrics() bool {
 	f.state.Lock()
 	defer f.state.Unlock()
-
-	if f.state.actual == nil {
-		return
-	}
 
 	state, err := f.GetState()
 
 	if err != nil {
-		f.logger.Errorw("Frequency GetState() failed: aggregated metrics polling stopped", zap.Error(err), "attributes", f.attributes)
+		f.logger.Errorw("Frequency GetState() failed: aggregated metrics sampling stopped", zap.Error(err), "attributes", f.attributes)
 		f.state.actual = nil
-		return
+		return false
 	}
 
 	f.state.throttleReasonsSeen |= l0sysman.FreqThrottleReasonFlags(state.ThrottleReasons)
 	if state.Actual < 0 {
-		// A negative value indicates "not known", stop polling also in this case:
+		// A negative value indicates "not known", stop collecting the samples in this case:
 		// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-freq-state-t
-		f.state.actual = nil
-	} else {
+		if f.state.actual != nil {
+			f.logger.Infow("Frequency GetState() returned unknown actual frequency: sample metrics disabled", "attributes", f.attributes)
+			f.state.actual = nil
+		}
+		// Keep sampling if needed for the throttle reasons
+		return f.needThrottleReasons
+	}
+	if f.state.actual != nil {
 		f.state.actual.add(state.Actual)
 	}
+	return true
 }

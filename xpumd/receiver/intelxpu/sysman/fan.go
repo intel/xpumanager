@@ -16,7 +16,11 @@ import (
 )
 
 func init() {
-	registerSubsystem("fan", enumFan)
+	registerSubsystem("fan", enumFan,
+		onScrape((*deviceFan).scrape, func(c *metadata.MetricsConfig) bool {
+			return c.HwFanSpeed.Enabled || c.HwFanSpeedLimit.Enabled || c.HwFanSpeedRatio.Enabled
+		}),
+	)
 }
 
 type deviceFan struct {
@@ -24,12 +28,6 @@ type deviceFan struct {
 	logger       *zap.SugaredLogger
 	attributes   fanAttributes
 	constMetrics fanConstMetrics
-	state        fanState
-}
-
-// fanState holds the dynamic runtime state of the fan instance.
-type fanState struct {
-	disabled bool
 }
 
 // fanConstMetrics holds fan metric values that are determined once and do not change afterwards.
@@ -46,13 +44,13 @@ type fanAttributes struct {
 	HwLimitType      string `json:"hw.limit_type"`
 }
 
-func enumFan(d *device) []instanceScraper {
+func enumFan(d *device) []*deviceFan {
 	fans, err := d.EnumFans()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate device fans", zap.Error(err))
 		return nil
 	}
-	scrapers := make([]instanceScraper, 0, len(fans))
+	instances := make([]*deviceFan, 0, len(fans))
 	for i, fan := range fans {
 		name := fmt.Sprintf("fan-%d", i+1)
 		t, err := newFan(name, fan, d)
@@ -60,11 +58,11 @@ func enumFan(d *device) []instanceScraper {
 			d.logger.Errorw("Failed to create Sysman device fan", "index", i+1, zap.Error(err))
 			continue
 		}
-		scrapers = append(scrapers, t)
+		instances = append(instances, t)
 	}
 
-	d.logger.Infow("Sysman device fans", "created", len(scrapers), "enumerated", len(fans))
-	return scrapers
+	d.logger.Infow("Sysman device fans", "created", len(instances), "enumerated", len(fans))
+	return instances
 }
 
 func newFan(name string, fan *l0sysman.Fan, device *device) (*deviceFan, error) {
@@ -105,16 +103,11 @@ func newFan(name string, fan *l0sysman.Fan, device *device) (*deviceFan, error) 
 	}, nil
 }
 
-func (f *deviceFan) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if f.state.disabled {
-		return
-	}
-
+func (f *deviceFan) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	speed, err := f.GetState(l0sysman.FAN_SPEED_UNITS_RPM)
 	if err != nil || speed < 0 {
 		f.logger.Errorw("Fan GetState(RPM) failed or speed unavailable as RPMs: fan metric disabled", zap.Error(err), "attributes", f.attributes)
-		f.state.disabled = true
-		return
+		return false
 	}
 
 	// TODO: query also fan config, and report speed mode (fixed / table) in case it has changed:
@@ -149,6 +142,5 @@ func (f *deviceFan) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			f.attributes.HwSensorLocation,
 		)
 	}
+	return true
 }
-
-func (f *deviceFan) pollAggregatedMetrics() {}

@@ -16,7 +16,9 @@ import (
 )
 
 func init() {
-	registerSubsystem("engine", enumEngine)
+	registerSubsystem("engine", enumEngine,
+		onScrape((*engine).scrape, func(c *metadata.MetricsConfig) bool { return c.HwGpuUtilization.Enabled }),
+	)
 }
 
 type engine struct {
@@ -38,24 +40,24 @@ type engineAttributes struct {
 	HwGpuTask   string `json:"hw.gpu.task"`
 }
 
-func enumEngine(d *device) []instanceScraper {
+func enumEngine(d *device) []*engine {
 	engines, err := d.EnumEngineGroups()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate Sysman engine groups", zap.Error(err))
 		return nil
 	}
-	scrapers := make([]instanceScraper, 0, len(engines))
+	instances := make([]*engine, 0, len(engines))
 	for i, engine := range engines {
 		m, err := newEngine(i+1, engine, d)
 		if err != nil {
 			d.logger.Errorw("Failed to create Sysman engine group", "index", i+1, zap.Error(err))
 			continue
 		}
-		scrapers = append(scrapers, m)
+		instances = append(instances, m)
 	}
 
-	d.logger.Infow("Sysman engine groups", "created", len(scrapers), "enumerated", len(engines))
-	return scrapers
+	d.logger.Infow("Sysman engine groups", "created", len(instances), "enumerated", len(engines))
+	return instances
 }
 
 func newEngine(i int, metric *l0sysman.Engine, device *device) (*engine, error) {
@@ -91,16 +93,11 @@ func newEngine(i int, metric *l0sysman.Engine, device *device) (*engine, error) 
 
 // scrape provides only engine activity ratio because L0 spec does not specify unit for the counter values:
 // https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-engine-stats-t
-func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if e.state.counter == nil {
-		// previous value failed => skip activity metrics
-		return
-	}
+func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	counter, err := e.GetActivity()
 	if err != nil {
 		e.logger.Errorw("Engine GetActivity() failed: engine metrics disabled", zap.Error(err), "attributes", e.attributes)
-		e.state.counter = nil
-		return
+		return false
 	}
 
 	// TODO: L0 spec does not provide activity counter / timestamp width info:
@@ -112,7 +109,7 @@ func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 
 	// nothing to report
 	if timeDiff == 0 {
-		return
+		return true
 	}
 
 	// engine activity ratio
@@ -125,6 +122,5 @@ func (e *engine) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		e.attributes.SubdeviceID,
 		e.attributes.HwGpuTask,
 	)
+	return true
 }
-
-func (e *engine) pollAggregatedMetrics() {}

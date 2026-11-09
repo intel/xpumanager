@@ -23,8 +23,21 @@ import (
 )
 
 func init() {
-	registerSubsystem("device", enumDeviceMetrics)
+	registerSubsystem("device", func(d *device) []*device { return []*device{d} },
+		onScrape((*device).scrapeEccState, func(c *metadata.MetricsConfig) bool { return c.HwGpuEccState.Enabled }),
+		onScrape((*device).scrapeDevState, needDevStatus).withInit((*device).initDevState),
+		onScrape((*device).scrapeHealthStatus, needDevStatus).withInit((*device).initHealthStatus),
+		// after the above, aggregating their states
+		onScrape((*device).recordHwStatusGpuOk, needDevStatus),
+		onScrape((*device).scrapePciState, needDevStatus).withInit((*device).initPciState),
+		onScrape((*device).scrapePciStats, func(c *metadata.MetricsConfig) bool {
+			return c.HwGpuIo.Enabled || c.HwGpuIoRate.Enabled ||
+				c.HwGpuBandwidthLimit.Enabled || c.HwGpuBandwidthUtilization.Enabled
+		}).withInit((*device).initPciStats),
+	)
 }
+
+func needDevStatus(c *metadata.MetricsConfig) bool { return c.HwStatus.Enabled }
 
 type deviceRegistry struct {
 	drivers []*driver
@@ -44,11 +57,12 @@ type driver struct {
 type device struct {
 	sync.RWMutex
 	*l0sysman.Device
-	logger       *zap.SugaredLogger
-	attributes   deviceAttributes
-	constMetrics pciConstMetrics
-	state        deviceState
-	scrapers     []instanceScraper
+	logger        *zap.SugaredLogger
+	attributes    deviceAttributes
+	constMetrics  pciConstMetrics
+	state         deviceState
+	scrapeFuncs   []func(*metadata.MetricsBuilder, pcommon.Timestamp)
+	samplingFuncs []func()
 
 	deviceConfig
 }
@@ -57,12 +71,13 @@ type device struct {
 type deviceConfig struct {
 	// subsystems are the configuration-enabled subsystems to enumerate.
 	subsystems []subsystem
+	// metrics is the metrics configuration, for adding only the needed hooks.
+	metrics *metadata.MetricsConfig
 	// aggregatedMetricsBufferSize is the size of the buffer for aggregated metrics.
 	aggregatedMetricsBufferSize int
 }
 
 type pciState struct {
-	stateDisabled bool
 	statesSeen    map[l0sysman.PciLinkStatus]bool
 	qualitySeen   l0sysman.PciLinkQualIssueFlags
 	stabilitySeen l0sysman.PciLinkStabIssueFlags
@@ -84,18 +99,18 @@ type eccState struct {
 
 // healthState is the state of the (optional) device health extension.
 type healthState struct {
-	disabled   bool
 	statusSeen map[l0sysman.DeviceHealthStatusExt]bool
 }
 
 // deviceState has values that can change after enumeration.
 type deviceState struct {
-	initialized      bool
-	devStateDisabled bool
-	pci              pciState
-	ecc              *eccState
-	health           healthState
-	stateExtSeen     l0sysman.DeviceStateExtFlags
+	initialized  bool
+	pci          pciState
+	ecc          *eccState
+	health       healthState
+	stateExtSeen l0sysman.DeviceStateExtFlags
+	// status aggregates the device and health states of a scrape
+	status stateAggregator
 }
 
 // deviceAttributes fields for numeric items that are always reported,
@@ -154,6 +169,7 @@ func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry,
 // newDeviceConfig resolves the device configuration from the receiver configuration.
 func newDeviceConfig(logger *zap.SugaredLogger, cfg *Config) deviceConfig {
 	devCfg := deviceConfig{
+		metrics:                     &cfg.Metrics,
 		aggregatedMetricsBufferSize: cfg.aggregatedMetricsBufferSize,
 	}
 	// Sorted for a deterministic scrape order
@@ -173,9 +189,9 @@ func (r *deviceRegistry) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	}
 }
 
-func (r *deviceRegistry) pollAggregatedMetrics() {
+func (r *deviceRegistry) sampleAggregatedMetrics() {
 	for dev := range r.devices() {
-		dev.pollAggregatedMetrics()
+		dev.sampleAggregatedMetrics()
 	}
 }
 
@@ -231,7 +247,7 @@ func newDevice(name string, dev *l0sysman.Device, logger *zap.SugaredLogger, cfg
 	return d
 }
 
-// init scans and initializes the device attributes, state and scrapers. May be
+// init scans and initializes the device attributes, state and metric functions. May be
 // called multiple times for re-scanning. Transactional: on error the device is not altered.
 // Must be called with device lock held.
 func (d *device) init() error {
@@ -274,13 +290,17 @@ func (d *device) init() error {
 			statusSeen: map[l0sysman.DeviceHealthStatusExt]bool{},
 		},
 	}
-	d.scrapers = nil
+	d.scrapeFuncs = nil
+	d.samplingFuncs = nil
 
-	_ = d.updateEccState()
-	if d.state.ecc.configurable {
-		d.attributes.HwGpuEccSupport = metadata.AttributeHwGpuEccSupportConfigurable
-	} else {
-		d.attributes.HwGpuEccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
+	// ECC state is needed only for the info (support attribute) and ECC state metrics
+	if d.metrics.HwGpuInfo.Enabled || d.metrics.HwGpuEccState.Enabled {
+		_ = d.updateEccState()
+		if d.state.ecc.configurable {
+			d.attributes.HwGpuEccSupport = metadata.AttributeHwGpuEccSupportConfigurable
+		} else {
+			d.attributes.HwGpuEccSupport = metadata.MapAttributeHwGpuEccSupport[d.state.ecc.current]
+		}
 	}
 
 	d.logger.Debugw("Device init() props + ECC done", "name", d.attributes.HwName)
@@ -320,9 +340,9 @@ func (d *device) init() error {
 	}
 	d.attributes.HwFirmwareVersion = strings.Join(fwInfos, ",")
 
-	// Enumerate the device metrics of the enabled subsystems
+	// Enumerate the device metrics of the enabled and needed subsystems
 	for _, s := range d.subsystems {
-		d.scrapers = append(d.scrapers, s.enumDevice(d)...)
+		s.setup(d)
 	}
 
 	d.logger.Debugw("Device init() done", "name", d.attributes.HwName, "BDF", d.attributes.PciBDF)
@@ -396,6 +416,16 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		return
 	}
 	// reported also with the device subsystem disabled
+	if d.metrics.HwGpuInfo.Enabled {
+		d.scrapeInfo(mb, ts)
+	}
+	for _, scrape := range d.scrapeFuncs {
+		scrape(mb, ts)
+	}
+}
+
+// scrapeInfo reports the device attributes.
+func (d *device) scrapeInfo(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 	mb.RecordHwGpuInfoDataPoint(ts, 1,
 		d.attributes.HwID,
 		d.attributes.HwName,
@@ -413,65 +443,11 @@ func (d *device) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 		d.attributes.HwMemoryDemandPaging,
 		d.attributes.HwGpuEccSupport,
 	)
-
-	for _, s := range d.scrapers {
-		s.scrape(mb, ts)
-	}
 }
-
-// deviceMetrics is the scraper of the device-level metrics.
-type deviceMetrics struct {
-	dev *device
-}
-
-// enumDeviceMetrics checks the availability of the device-level metrics.
-func enumDeviceMetrics(d *device) []instanceScraper {
-	if d.constMetrics.haveBandwidthCounters {
-		if stats, err := d.PciGetStats(); err == nil {
-			d.state.pci.stats = &stats
-		} else {
-			d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
-		}
-	}
-
-	// Check device + PCI state availability
-	if _, err := d.GetState(); err != nil {
-		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "attributes", d.attributes)
-		d.state.devStateDisabled = true
-	}
-	if _, err := d.PciGetState(); err != nil {
-		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "attributes", d.attributes)
-		d.state.pci.stateDisabled = true
-	}
-
-	// Check availability of the (optional) device health extension
-	if _, err := d.GetHealthStatusExt(); err != nil {
-		d.logger.Infow("Device GetHealthStatusExt() failed: complete device health status not available", zap.Error(err), "attributes", d.attributes)
-		d.state.health.disabled = true
-	}
-
-	return []instanceScraper{&deviceMetrics{dev: d}}
-}
-
-func (m *deviceMetrics) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	d := m.dev
-	d.scrapeEccState(mb, ts)
-
-	status := &stateAggregator{}
-	d.scrapeDevState(mb, ts, status)
-	d.scrapeHealthStatus(mb, ts, status)
-
-	d.recordHwStatusGpuOk(mb, ts, status)
-
-	d.scrapePciState(mb, ts)
-	d.scrapePciStats(mb, ts)
-}
-
-func (m *deviceMetrics) pollAggregatedMetrics() {}
 
 // scrapeEccState reports the device memory ECC state(s). States are reported
 // only if the ECC state is configurable, or if it has changed.
-func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
+func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	if d.state.ecc.configurable {
 		err := d.updateEccState()
 		if !d.state.ecc.configurable {
@@ -480,7 +456,8 @@ func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	}
 
 	if !d.state.ecc.configurable && len(d.state.ecc.states) < 2 {
-		return
+		// state is not queried (any more), so there will never be changes to report
+		return false
 	}
 
 	for state := range d.state.ecc.states {
@@ -496,12 +473,16 @@ func (d *device) scrapeEccState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			state,
 		)
 	}
+	return true
 }
 
-// recordHwStatusGpuOk reports the aggregated hw.status{hw.type="gpu"} "ok" state.
-func (d *device) recordHwStatusGpuOk(mb *metadata.MetricsBuilder, ts pcommon.Timestamp, status *stateAggregator) {
+// recordHwStatusGpuOk reports the aggregated hw.status{hw.type="gpu"} "ok" state,
+// and resets it for the next scrape.
+func (d *device) recordHwStatusGpuOk(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
+	status := d.state.status
+	d.state.status = stateAggregator{}
 	if !status.isValid {
-		return
+		return true
 	}
 
 	value := int64(0)
@@ -517,25 +498,29 @@ func (d *device) recordHwStatusGpuOk(mb *metadata.MetricsBuilder, ts pcommon.Tim
 		"ok",
 		metadata.AttributeHwTypeGpu,
 	)
+	return true
+}
+
+func (d *device) initDevState() bool {
+	if _, err := d.GetState(); err != nil {
+		d.logger.Infow("Device GetState() failed: device state not available", zap.Error(err), "attributes", d.attributes)
+		return false
+	}
+	return true
 }
 
 // scrapeDevState reports device (reset) state
-func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp, status *stateAggregator) {
-	if d.state.devStateDisabled {
-		return
-	}
-
+func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-device-state-t
 	state, err := d.GetState()
 	if err != nil {
 		d.logger.Errorw("Device GetState() failed: device reset state metric disabled", zap.Error(err), "attributes", d.attributes)
-		d.state.devStateDisabled = true
-		return
+		return false
 	}
 
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-reset-reason-flags-t
 	resetNeeded := state.Reset != 0
-	status.addSource(resetNeeded)
+	d.state.status.addSource(resetNeeded)
 
 	reset := int64(0)
 	if resetNeeded {
@@ -557,7 +542,7 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 		d.state.stateExtSeen |= state.ExtendedState.Flags
 		// "normal" is the absence of an issue, all the other flags mark a problem
 		issues := state.ExtendedState.Flags & ^l0sysman.DeviceStateExtFlags(l0sysman.DEVICE_STATE_EXT_FLAG_NORMAL)
-		status.addSource(issues != 0)
+		d.state.status.addSource(issues != 0)
 
 		// report status of currently active & previously seen extended states
 		for _, bit := range d.state.stateExtSeen.Bits() {
@@ -579,20 +564,25 @@ func (d *device) scrapeDevState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			)
 		}
 	}
+	return true
+}
+
+// initHealthStatus checks the availability of the (optional) device health extension.
+func (d *device) initHealthStatus() bool {
+	if _, err := d.GetHealthStatusExt(); err != nil {
+		d.logger.Infow("Device GetHealthStatusExt() failed: complete device health status not available", zap.Error(err), "attributes", d.attributes)
+		return false
+	}
+	return true
 }
 
 // scrapeHealthStatus reports device health status from the (optional) device health extension.
-func (d *device) scrapeHealthStatus(mb *metadata.MetricsBuilder, ts pcommon.Timestamp, status *stateAggregator) {
-	if d.state.health.disabled {
-		return
-	}
-
+func (d *device) scrapeHealthStatus(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-device-health-status-ext-t
 	health, err := d.GetHealthStatusExt()
 	if err != nil {
 		d.logger.Errorw("Device GetHealthStatusExt() failed: device health status metric disabled", zap.Error(err), "attributes", d.attributes)
-		d.state.health.disabled = true
-		return
+		return false
 	}
 
 	switch health {
@@ -609,7 +599,7 @@ func (d *device) scrapeHealthStatus(mb *metadata.MetricsBuilder, ts pcommon.Time
 	}
 	d.state.health.statusSeen[health] = true
 
-	status.addSource(health != l0sysman.DEVICE_HEALTH_STATUS_EXT_OK)
+	d.state.status.addSource(health != l0sysman.DEVICE_HEALTH_STATUS_EXT_OK)
 
 	// report currently active & previously seen health statuses, with a prefix
 	// separating them from the other hw.status{hw.type=gpu} states
@@ -631,26 +621,32 @@ func (d *device) scrapeHealthStatus(mb *metadata.MetricsBuilder, ts pcommon.Time
 			metadata.AttributeHwTypeGpu,
 		)
 	}
+	return true
+}
+
+// initPciState checks the availability of the device PCI link state.
+func (d *device) initPciState() bool {
+	if _, err := d.PciGetState(); err != nil {
+		d.logger.Infow("Device PciGetState() failed: PCI state not available", zap.Error(err), "attributes", d.attributes)
+		return false
+	}
+	return true
 }
 
 // scrapePciState reports device PCI link state(s)
-func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if d.state.pci.stateDisabled {
-		return
-	}
+func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-pci-state-t
 	pci, err := d.PciGetState()
 	if err != nil {
 		d.logger.Errorw("Device PciGetState() failed: PCI link state metrics disabled", zap.Error(err), "attributes", d.attributes)
-		d.state.pci.stateDisabled = true
-		return
+		return false
 	}
 
 	if d.state.pci.statesSeen == nil {
 		// skip unknown PCI state reporting until state has been known
 		if pci.Status == l0sysman.PCI_LINK_STATUS_UNKNOWN {
-			return
+			return true
 		}
 		d.state.pci.statesSeen = map[l0sysman.PciLinkStatus]bool{}
 	}
@@ -713,18 +709,28 @@ func (d *device) scrapePciState(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			metadata.AttributeHwTypePciLink,
 		)
 	}
+	return true
 }
 
-func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if d.state.pci.stats == nil {
-		return
+// initPciStats reads the initial / previous PCI counter values.
+func (d *device) initPciStats() bool {
+	if !d.constMetrics.haveBandwidthCounters {
+		return false // logged already in init()
 	}
+	stats, err := d.PciGetStats()
+	if err != nil {
+		d.logger.Infow("Device PciGetStats() failed: PCI BW not available", zap.Error(err), "attributes", d.attributes)
+		return false
+	}
+	d.state.pci.stats = &stats
+	return true
+}
 
+func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	stats, err := d.PciGetStats()
 	if err != nil {
 		d.logger.Errorw("Device PciGetStats() failed: PCI BW metrics disabled", zap.Error(err), "attributes", d.attributes)
-		d.state.pci.stats = nil
-		return
+		return false
 	}
 
 	// TODO: check from visualization that change rate for
@@ -755,7 +761,7 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 	d.state.pci.stats = &stats
 
 	if timeDiff == 0 {
-		return
+		return true
 	}
 
 	// total BW rate, b/us -> b/s
@@ -791,12 +797,13 @@ func (d *device) scrapePciStats(mb *metadata.MetricsBuilder, ts pcommon.Timestam
 			d.attributes.PciBDF,
 		)
 	}
+	return true
 }
 
-func (d *device) pollAggregatedMetrics() {
+func (d *device) sampleAggregatedMetrics() {
 	d.RLock()
 	defer d.RUnlock()
-	for _, s := range d.scrapers {
-		s.pollAggregatedMetrics()
+	for _, sampleFn := range d.samplingFuncs {
+		sampleFn()
 	}
 }

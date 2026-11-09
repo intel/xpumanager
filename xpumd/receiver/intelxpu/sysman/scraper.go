@@ -61,7 +61,11 @@ func (s *sysmanMetricsScraper) start(_ context.Context, _ component.Host) error 
 	ctx, stop := context.WithCancel(context.Background())
 	s.stop = stop
 
-	s.wg.Go(func() { s.runSampler(ctx) })
+	if needSampling(s.cfg) {
+		s.wg.Go(func() { s.runSampler(ctx) })
+	} else {
+		s.logger.Debug("sampler not started (all metrics requiring more frequent sampling are disabled)")
+	}
 
 	return nil
 }
@@ -89,7 +93,7 @@ func (s *sysmanMetricsScraper) runSampler(ctx context.Context) {
 			}
 			last = t
 
-			s.devices.pollAggregatedMetrics()
+			s.devices.sampleAggregatedMetrics()
 			s.telemetry.SysmanSamplerIntervalUsage.Record(ctx, float64(time.Since(t))/float64(si))
 		case <-ctx.Done():
 			return

@@ -19,7 +19,9 @@ import (
 )
 
 func init() {
-	registerSubsystem("ras", enumErrorSets)
+	registerSubsystem("ras", enumErrorSets,
+		onScrape((*errorSet).scrape, func(c *metadata.MetricsConfig) bool { return c.HwErrors.Enabled }),
+	)
 }
 
 type errorSet struct {
@@ -27,11 +29,6 @@ type errorSet struct {
 	*l0sysmanexp.Ras
 	logger     *zap.SugaredLogger
 	attributes errorSetAttributes
-	state      errorSetState
-}
-
-type errorSetState struct {
-	disabled bool
 }
 
 type errorSetAttributes struct {
@@ -42,13 +39,13 @@ type errorSetAttributes struct {
 	ErrorType   metadata.AttributeErrorType `json:"error.type"`
 }
 
-func enumErrorSets(d *device) []instanceScraper {
+func enumErrorSets(d *device) []*errorSet {
 	items, err := d.EnumRasErrorSets()
 	if err != nil {
 		d.logger.Errorw("Failed to enumerate RAS error sets", zap.Error(err))
 		return nil
 	}
-	scrapers := make([]instanceScraper, 0, len(items))
+	instances := make([]*errorSet, 0, len(items))
 	for i, item := range items {
 		name := fmt.Sprintf("errorset-%d", i+1)
 		p, err := newErrorSet(name, item, d)
@@ -56,11 +53,11 @@ func enumErrorSets(d *device) []instanceScraper {
 			d.logger.Errorw("Sysman RAS error set metrics not available", "index", i+1, zap.Error(err))
 			continue
 		}
-		scrapers = append(scrapers, p)
+		instances = append(instances, p)
 	}
 
-	d.logger.Infow("Sysman RAS error sets", "created", len(scrapers), "enumerated", len(items))
-	return scrapers
+	d.logger.Infow("Sysman RAS error sets", "created", len(instances), "enumerated", len(items))
+	return instances
 }
 
 func newErrorSet(name string, sysRas *l0sysman.Ras, device *device) (*errorSet, error) {
@@ -102,16 +99,11 @@ func newErrorSet(name string, sysRas *l0sysman.Ras, device *device) (*errorSet, 
 	return p, nil
 }
 
-func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
-	if es.state.disabled {
-		return
-	}
-
+func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) bool {
 	states, err := es.GetStateExp()
 	if err != nil {
 		es.logger.Errorw("RAS GetStateExp() failed: error metrics disabled", zap.Error(err), "attributes", es.attributes)
-		es.state.disabled = true
-		return
+		return false
 	}
 
 	// https://oneapi-src.github.io/level-zero-spec/level-zero/1.17.24/sysman/api.html#zes-ras-error-category-exp-t
@@ -132,6 +124,5 @@ func (es *errorSet) scrape(mb *metadata.MetricsBuilder, ts pcommon.Timestamp) {
 			strings.ToLower(state.Category.String()),
 		)
 	}
+	return true
 }
-
-func (es *errorSet) pollAggregatedMetrics() {}
