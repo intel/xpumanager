@@ -2,6 +2,7 @@
 
 Contents:
 
+* [XPUM 2.4.0](#xpum-240)
 * [XPUM 2.3.0](#xpum-230)
 * [XPUM 2.2.0](#xpum-220)
 * [XPUM 2.1.0](#xpum-210)
@@ -13,7 +14,7 @@ Contents:
     * [XPUM 1.x](#xpum-1x)
 
 
-## XPUM 2.x.x
+## XPUM 2.4.0
 
 * Breaking changes (for the XPUMD config):
   * `intel_crashlog` receiver `glob` option replaced by `globs` list, to support multiple filename patterns
@@ -25,7 +26,7 @@ Contents:
   * Proto package renamed from `deviceinfo` to `deviceinfo.v1alpha2`
   * `SeverityLevel` enum values of `SEVERITY_LEVEL_OK` and `SEVERITY_LEVEL_UNKNOWN` swapped (`OK=0`, `UNKNOWN=1`), so that the numeric value increases with severity
   * **Action required:** gRPC clients need to be regenerated from the updated `deviceinfo.proto`
-* Metric workarounds:
+* Workarounds (for L0 Sysman metrics functionality):
   * Report also disabled power limits (part of [#184](https://github.com/intel/xpumanager/issues/184) fix)
   * SR-IOV virtual functions are skipped, as they provide duplicate or bogus metrics of their PF
   * OEM serial ID is used as `hw.gpu.info` serial number fallback (like `xpu-smi` does)
