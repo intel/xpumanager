@@ -1048,8 +1048,7 @@ ze_device_memory_ext_type_t memory::collectCoreMemoryType(ze_device_handle_t cor
  *
  * Resolves the memory form/type from the sysman per-module properties (already
  * enumerated by init()) and from the core device memory properties with their
- * pNext extension, so the type is reported whenever either source knows it. The
- * identification fields no interface exposes are left as MEMORY_SPEC_UNKNOWN.
+ * pNext extension, so the type is reported whenever either source knows it.
  *
  * The core query is issued here rather than reusing the cached
  * device::getMemProps() array because an extension struct chained on pNext
@@ -1059,8 +1058,8 @@ ze_device_memory_ext_type_t memory::collectCoreMemoryType(ze_device_handle_t cor
  * @param[in] coreDevice Core (non-sysman) Level Zero device handle; may be null
  *                       on a device in survivability mode, in which case only
  *                       the sysman type is collected
- * @param[out] spec Memory specification to populate; left at its defaults
- *                  (everything MEMORY_SPEC_UNKNOWN) when no source answers
+ * @param[out] spec Memory specification to populate; left at its default
+ *                  (MEMORY_SPEC_UNKNOWN) when no source answers
  * @return ze_result_t ZE_RESULT_SUCCESS when at least one source answered, the
  *         last error encountered when every source failed, or
  *         ZE_RESULT_ERROR_UNSUPPORTED_FEATURE when there was nothing to query

@@ -44,8 +44,8 @@ inline constexpr auto MEMORY_INTEL_TYPE_LPDDR5X = static_cast<zes_mem_type_t>(50
  *
  * Holds the memory specification a device reports about its own video memory.
  * Capacity, bus width and channel count already have their own accessors
- * (getMemorySize(), getMemoryBusWidth(), getMemoryChannels()), so what this adds
- * is the memory form/type plus the identification fields the ticket asks for.
+ * (getMemorySize(), getMemoryBusWidth(), getMemoryChannels()) and the vendor is
+ * read by getMemoryVendor(), so what this adds is the memory form/type.
  *
  * The form/type is resolved from two independent Level Zero sources because
  * neither is complete on its own:
@@ -57,21 +57,10 @@ inline constexpr auto MEMORY_INTEL_TYPE_LPDDR5X = static_cast<zes_mem_type_t>(50
  *     memory generations that the sysman enum cannot express at all: zes_mem_type_t
  *     has a single ZES_MEM_TYPE_HBM value, while the core enum separates
  *     HBM2/HBM2E/HBM3/HBM3E/HBM4.
- *
- * @note vendor, dateCode and dieInfo have no source in the current software
- *       stack: no Level Zero interface (core, sysman, or the Intel sysman
- *       extensions), no kernel-mode driver interface (sysfs or debugfs), and no
- *       igsc entry point exposes memory manufacturer, date code or IC/die data.
- *       They are carried here so that the collection path and the CLI fields
- *       already exist once a driver or firmware interface does expose them, and
- *       until then they report MEMORY_SPEC_UNKNOWN -- they are never guessed.
  */
 struct MemorySpecData
 {
 	std::string typeName{MEMORY_SPEC_UNKNOWN}; // resolved form/type, e.g. "LPDDR5X", "HBM3"
-	std::string vendor{MEMORY_SPEC_UNKNOWN};   // no platform source yet, see note above
-	std::string dateCode{MEMORY_SPEC_UNKNOWN}; // no platform source yet, see note above
-	std::string dieInfo{MEMORY_SPEC_UNKNOWN};  // no platform source yet, see note above
 };
 
 /**
