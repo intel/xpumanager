@@ -166,10 +166,8 @@ static const std::array<discoveryDumpStruct, TOTAL_DISC_DUMPS> DISC_DUMP_CMDS{{
 	{&cmdDiscovery::partNumber, "Part Number"},										 // 49
 	{&cmdDiscovery::memoryType, "Memory Type"},										 // 50
 	{&cmdDiscovery::memoryVendor, "Memory Vendor"},									 // 51
-	{&cmdDiscovery::memoryDateCode, "Memory Date Code"},							 // 52
-	{&cmdDiscovery::memoryIcDieInfo, "Memory IC/Die Info"},							 // 53
-	{&cmdDiscovery::kernelDriverVersion, "KMD Version"},							 // 54
-	{&cmdDiscovery::tdp, "Thermal Design Power"},									 // 55
+	{&cmdDiscovery::kernelDriverVersion, "KMD Version"},							 // 52
+	{&cmdDiscovery::tdp, "Thermal Design Power"},									 // 53
 }};
 /**
  * @brief Helper function to convert internal JSON keys to user-friendly display names
@@ -207,8 +205,6 @@ std::string getDisplayName(const std::string &key)
 		{"memory_bus_width", "Memory Bus Width"},
 		{"memory_type", "Memory Type"},
 		{"memory_vendor", "Memory Vendor"},
-		{"memory_date_code", "Memory Date Code"},
-		{"memory_ic_die_info", "Memory IC/Die Info"},
 		{"number_of_eus", "Number of EUs"},
 		{"number_of_media_engines", "Number of Media Engines"},
 		{"number_of_media_enh_engines", "Number of Media Enhancement Engines"},
@@ -397,8 +393,6 @@ void DiscoveryTextPrinter::print(nlohmann::ordered_json *jsonObj)
 		addField("memory_type", "Memory Type");
 		addField("memory_physical_size", "Memory Physical Size");
 		addField("memory_vendor", "Memory Vendor");
-		addField("memory_date_code", "Memory Date Code");
-		addField("memory_ic_die_info", "Memory IC/Die Info");
 		if (jsonObj->contains("max_mem_alloc_size_byte")) {
 			uint64_t maxAllocBytes = 0;
 			std::string bytesStr = valueToString((*jsonObj)["max_mem_alloc_size_byte"]);
@@ -881,19 +875,16 @@ ze_result_t cmdDiscovery::gatherDeviceProperties(devInfo *d, DeviceProperties &p
 	props["memory_physical_size"] = xpum::compat::format("{:.2f} MiB", physicalSizeMiB);
 	props["memory_physical_size_byte"] = std::to_string(physicalSize);
 
-	// Fine-grained video memory specification, collected in one call. The keys are
-	// written even when collection fails: a device that reports no memory source
-	// still has these properties, they are just unknown, and dropping the keys
-	// would make the JSON shape depend on the device.
+	// Fine-grained video memory specification. The key is written even when
+	// collection fails: a device that reports no memory source still has the
+	// property, it is just unknown, and dropping the key would make the JSON
+	// shape depend on the device.
 	MemorySpecData memSpec;
 	if (const auto specResult = m->getMemorySpec(d->deviceHdl, memSpec); specResult != ZE_RESULT_SUCCESS) {
 		DBG("Memory specification unavailable: 0x{:X} ({})\n", specResult, l0_error_to_string(specResult));
 	}
 	props["memory_type"] = memSpec.typeName;
-	// memory_vendor is set from the real vendor-ID sysman extension above (memoryVendor()),
-	// not from memSpec.vendor which has no platform source and is always "unknown".
-	props["memory_date_code"] = memSpec.dateCode;
-	props["memory_ic_die_info"] = memSpec.dieInfo;
+	// memory_vendor is set above by memoryVendor() from the memory vendor sysman extension.
 
 	pciVendorID(d, &outputLine);
 	props["pci_vendor_id"] = outputLine;
@@ -1523,46 +1514,6 @@ ze_result_t cmdDiscovery::memoryVendor(devInfo *d, std::string *outputLine)
 }
 
 /**
- * @brief Prints the memory date code for a device when user runs discovery --dump 52.
- *
- * No interface in the software stack exposes the memory date code, so this is
- * "unknown" on every platform today; see MemorySpecData in hal/core/memory.h.
- *
- * @param[in] d Pointer to the device info structure (unused)
- * @param[out] outputLine Pointer to the output line string
- *
- * @retval ZE_RESULT_SUCCESS Always succeeds
- */
-// Bound as a pointer-to-member in DISC_DUMP_CMDS, so it cannot be static.
-// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-ze_result_t cmdDiscovery::memoryDateCode(UNUSED devInfo *d, std::string *outputLine)
-{
-	TRACING(); // NOLINT(misc-const-correctness)
-	*outputLine = MEMORY_SPEC_UNKNOWN;
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
- * @brief Prints the memory IC/die information when user runs discovery --dump 53.
- *
- * No interface in the software stack exposes memory IC/die data, so this is
- * "unknown" on every platform today; see MemorySpecData in hal/core/memory.h.
- *
- * @param[in] d Pointer to the device info structure (unused)
- * @param[out] outputLine Pointer to the output line string
- *
- * @retval ZE_RESULT_SUCCESS Always succeeds
- */
-// Bound as a pointer-to-member in DISC_DUMP_CMDS, so it cannot be static.
-// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
-ze_result_t cmdDiscovery::memoryIcDieInfo(UNUSED devInfo *d, std::string *outputLine)
-{
-	TRACING(); // NOLINT(misc-const-correctness)
-	*outputLine = MEMORY_SPEC_UNKNOWN;
-	return ZE_RESULT_SUCCESS;
-}
-
-/**
  * @brief Prints the EUs for a device when user runs discovery --dump 19.
  *
  * @param[in] d Pointer to the device info structure
@@ -2095,7 +2046,7 @@ ze_result_t cmdDiscovery::kernelVersion(UNUSED devInfo *d, std::string *outputLi
 }
 
 /**
- * @brief Prints the kernel-mode driver version for a device when user runs discovery --dump 54.
+ * @brief Prints the kernel-mode driver version for a device when user runs discovery --dump 52.
  *
  * Complements UMD Version (dump 8), which reports the Level Zero user-mode
  * driver. This is the KMD's release version -- the `version` field of
@@ -2423,7 +2374,7 @@ ze_result_t cmdDiscovery::opromDataFirmwareVersion(devInfo *d, std::string *outp
 }
 
 /**
- * @brief Prints Thermal Design Power (TDP) for a device when user runs discovery --dump 55
+ * @brief Prints Thermal Design Power (TDP) for a device when user runs discovery --dump 53.
  *
  * TDP is read from the AMC FRU OTHER_INFORMATION field per DSP0257.
  *

@@ -154,11 +154,9 @@ Options
       * - 51
         - Memory Vendor
       * - 52
-        - Memory Date Code
-      * - 53
-        - Memory IC/Die Info
-      * - 54
         - KMD Version
+      * - 53
+        - Thermal Design Power
 
 .. option:: --listamcversions
 
@@ -188,10 +186,9 @@ grouped and ordered as follows:
      - PCI BDF Address, PCI Slot, PCIe Generation, PCIe Max Link Width,
        PCIe Max Bandwidth
    * - Memory Information
-     - Memory Type, Memory Physical Size, Memory Vendor, Memory Date Code,
-       Memory IC/Die Info, Max Mem Alloc Size, ECC State,
-       Number of Memory Channels, Memory Bus Width, Max Hardware Contexts,
-       Max Command Queue Priority
+     - Memory Type, Memory Physical Size, Memory Vendor, Max Mem Alloc Size,
+       ECC State, Number of Memory Channels, Memory Bus Width,
+       Max Hardware Contexts, Max Command Queue Priority
    * - EU and Architecture Information
      - Number of EUs, Number of Tiles, Number of Slices,
        Number of Sub Slices per Slice, Number of Threads per EU,
@@ -230,7 +227,7 @@ are omitted.
 
    Windows exposes no KMD version. KMD Version is then omitted from the text
    output, the JSON key ``kernel_driver_version`` is left out, and the dashboard
-   banner drops the field. ``--dump 54`` asks for the column explicitly, so it
+   banner drops the field. ``--dump 52`` asks for the column explicitly, so it
    is spelled ``N/A`` there instead of disappearing.
 
    **Memory Type** is resolved from two Level Zero sources, because neither is
@@ -243,13 +240,9 @@ are omitted.
    sysman layer reports no type at all. It reads ``unknown`` when neither source
    names a type.
 
-   **Memory Vendor**, **Memory Date Code** and **Memory IC/Die Info** report
-   ``unknown`` on all currently supported platforms: no Level Zero interface
-   (core, sysman, or the Intel sysman extensions), no kernel-mode driver
-   interface (sysfs or debugfs) and no ``igsc`` entry point exposes memory
-   manufacturer, date-code or IC/die data. Populating them requires a new driver
-   or firmware interface; the properties are present so that no CLI change is
-   needed once such an interface exists.
+   **Memory Vendor** is read from the Level Zero sysman memory vendor
+   extension and is shown with its vendor ID, for example ``Hynix (0x8600)``.
+   It reads ``N/A`` when the driver does not expose the vendor.
 
 Examples
 --------
