@@ -28,7 +28,7 @@ ARG BACKEND=deb
 # NOTE: The base image is pinned by digest for reproducible builds (Dependabot updates it).
 
 # --- Base build stage with necessary distro setup / packages ---
-FROM golang:1.27.3-trixie@sha256:c65ecfe613b539ac74c62a4c3b2c27e8f8a6076384c8f27e8a3c0f3be17cc385 AS builder-base
+FROM golang:1.27.3-trixie@sha256:af1bfc2614ebb1dbd31af514b78740fd678850e76498762b425ecee4c5c6ea80 AS builder-base
 
 # Enable source packages, install IGSC build dependencies and extra Sysman dependencies
 # (Sysman does not link the latter but loads them at runtime: netlink for RAS and
