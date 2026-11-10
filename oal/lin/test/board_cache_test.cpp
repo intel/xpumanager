@@ -2,15 +2,15 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * Unit tests for the board serial number cache (loadCachedBoardSerial,
- * storeCachedBoardSerial). Each test points SerialCachePaths at a scratch tree
+ * Unit tests for the board value cache (loadCachedBoardSerial, storeCachedBoardSerial,
+ * loadCachedBoardValue, storeCachedBoardValue). Each test points BoardCachePaths at a scratch tree
  * with a fake boot ID and sysfs device directory, so no GPU or root access is required.
  */
 
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
-#include "serial_cache_lin.h"
+#include "board_cache_lin.h"
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -26,6 +26,7 @@ namespace {
 
 constexpr const char *BDF = "0000:03:00.0";
 constexpr const char *SERIAL = "LQAC52500123";
+constexpr const char *TDP_WATTS = "300";
 
 // A scratch tree that is removed when the test case ends.
 class FakeSystem
@@ -33,11 +34,11 @@ class FakeSystem
 	fs::path root;
 
 public:
-	SerialCachePaths paths;
+	BoardCachePaths paths;
 
 	explicit FakeSystem(const std::string &tag)
 	{
-		root = fs::temp_directory_path() / ("xpum_serial_cache_" + tag + "_" + std::to_string(::getpid()));
+		root = fs::temp_directory_path() / ("xpum_board_cache_" + tag + "_" + std::to_string(::getpid()));
 		std::error_code ec;
 		fs::remove_all(root, ec);
 		fs::create_directories(root / "sys" / BDF);
@@ -80,11 +81,25 @@ public:
 	 */
 	[[nodiscard]] bool store(std::string_view serial, std::string_view bdf = BDF) const
 	{
-		const auto key = currentSerialCacheKey(bdf, paths);
+		const auto key = currentBoardCacheKey(bdf, paths);
 		return key && storeCachedBoardSerial(bdf, serial, *key, paths);
 	}
 
+	/**
+	 * @brief Stores a TDP as read from the device now at BDF
+	 *
+	 * @param[in] watts TDP to store, in decimal watts
+	 *
+	 * @retval The result of storeCachedBoardValue(), or false if the device has no cache key
+	 */
+	[[nodiscard]] bool storeTdp(std::string_view watts) const
+	{
+		const auto key = currentBoardCacheKey(BDF, paths);
+		return key && storeCachedBoardValue(BoardValue::TdpWatts, BDF, watts, *key, paths);
+	}
+
 	[[nodiscard]] fs::path entry() const { return paths.cacheDir / (std::string("board_serial_") + BDF); }
+	[[nodiscard]] fs::path tdpEntry() const { return paths.cacheDir / (std::string("board_tdp_") + BDF); }
 
 	/**
 	 * @brief Writes an entry by hand, bypassing storeCachedBoardSerial()
@@ -149,7 +164,7 @@ TEST_CASE("an entry for another card at the same address is ignored")
 TEST_CASE("a serial number read from a card replaced before it is stored is not cached")
 {
 	const FakeSystem sys("swapduringread");
-	const auto readFrom = currentSerialCacheKey(BDF, sys.paths);
+	const auto readFrom = currentBoardCacheKey(BDF, sys.paths);
 	REQUIRE(readFrom.has_value());
 	sys.replaceDevice();
 	CHECK_FALSE(storeCachedBoardSerial(BDF, SERIAL, *readFrom, sys.paths));
@@ -160,7 +175,7 @@ TEST_CASE("a serial number read from a card replaced before it is stored is not 
 TEST_CASE("a serial number read in an earlier boot is not cached")
 {
 	const FakeSystem sys("rebootduringread");
-	const auto readFrom = currentSerialCacheKey(BDF, sys.paths);
+	const auto readFrom = currentBoardCacheKey(BDF, sys.paths);
 	REQUIRE(readFrom.has_value());
 	sys.setBootId("00000000-0000-0000-0000-000000000000");
 	CHECK_FALSE(storeCachedBoardSerial(BDF, SERIAL, *readFrom, sys.paths));
@@ -171,10 +186,10 @@ TEST_CASE("without a sysfs directory for the device nothing is cached")
 {
 	const FakeSystem sys("nodevice");
 	REQUIRE(sys.store(SERIAL));
-	const auto readFrom = currentSerialCacheKey(BDF, sys.paths);
+	const auto readFrom = currentBoardCacheKey(BDF, sys.paths);
 	REQUIRE(readFrom.has_value());
 	sys.removeDevice();
-	CHECK_FALSE(currentSerialCacheKey(BDF, sys.paths).has_value());
+	CHECK_FALSE(currentBoardCacheKey(BDF, sys.paths).has_value());
 	CHECK_FALSE(loadCachedBoardSerial(BDF, sys.paths).has_value());
 	CHECK_FALSE(storeCachedBoardSerial(BDF, SERIAL, *readFrom, sys.paths));
 }
@@ -190,8 +205,8 @@ TEST_CASE("without a boot ID nothing is cached")
 TEST_CASE("a malformed BDF is rejected before it reaches a path")
 {
 	const FakeSystem sys("badbdf");
-	CHECK_FALSE(currentSerialCacheKey("../../etc/x", sys.paths).has_value());
-	const auto key = currentSerialCacheKey(BDF, sys.paths);
+	CHECK_FALSE(currentBoardCacheKey("../../etc/x", sys.paths).has_value());
+	const auto key = currentBoardCacheKey(BDF, sys.paths);
 	REQUIRE(key.has_value());
 	CHECK_FALSE(storeCachedBoardSerial("../../etc/x", SERIAL, *key, sys.paths));
 	CHECK_FALSE(loadCachedBoardSerial("../../etc/x", sys.paths).has_value());
@@ -290,4 +305,50 @@ TEST_CASE("malformed entries are ignored")
 
 	sys.writeEntry(good + std::string(2048, '#'));
 	CHECK_FALSE(loadCachedBoardSerial(BDF, sys.paths).has_value());
+}
+
+TEST_CASE("a stored TDP is loaded back")
+{
+	const FakeSystem sys("tdp");
+	REQUIRE(sys.storeTdp(TDP_WATTS));
+	CHECK(loadCachedBoardValue(BoardValue::TdpWatts, BDF, sys.paths) == TDP_WATTS);
+	CHECK(fs::is_regular_file(sys.tdpEntry()));
+	CHECK(permsOf(sys.tdpEntry()) == (fs::perms::owner_read | fs::perms::owner_write));
+	CHECK_FALSE(fs::exists(sys.entry()));
+	CHECK_FALSE(loadCachedBoardSerial(BDF, sys.paths).has_value());
+}
+
+TEST_CASE("serial number and TDP entries do not overwrite each other")
+{
+	const FakeSystem sys("bothkinds");
+	REQUIRE(sys.store(SERIAL));
+	REQUIRE(sys.storeTdp(TDP_WATTS));
+	CHECK(loadCachedBoardSerial(BDF, sys.paths) == SERIAL);
+	CHECK(loadCachedBoardValue(BoardValue::SerialNumber, BDF, sys.paths) == SERIAL);
+	CHECK(loadCachedBoardValue(BoardValue::TdpWatts, BDF, sys.paths) == TDP_WATTS);
+	CHECK(std::distance(fs::directory_iterator(sys.paths.cacheDir), fs::directory_iterator{}) == 2);
+}
+
+TEST_CASE("a TDP entry for another card or from another boot is ignored")
+{
+	const FakeSystem sys("tdpswap");
+	REQUIRE(sys.storeTdp(TDP_WATTS));
+	sys.replaceDevice();
+	CHECK_FALSE(loadCachedBoardValue(BoardValue::TdpWatts, BDF, sys.paths).has_value());
+
+	REQUIRE(sys.storeTdp("450"));
+	REQUIRE(loadCachedBoardValue(BoardValue::TdpWatts, BDF, sys.paths) == "450");
+	sys.setBootId("00000000-0000-0000-0000-000000000000");
+	CHECK_FALSE(loadCachedBoardValue(BoardValue::TdpWatts, BDF, sys.paths).has_value());
+}
+
+TEST_CASE("a TDP read from a card replaced before it is stored is not cached")
+{
+	const FakeSystem sys("tdpswapduringread");
+	const auto readFrom = currentBoardCacheKey(BDF, sys.paths);
+	REQUIRE(readFrom.has_value());
+	sys.replaceDevice();
+	CHECK_FALSE(storeCachedBoardValue(BoardValue::TdpWatts, BDF, TDP_WATTS, *readFrom, sys.paths));
+	CHECK_FALSE(fs::exists(sys.tdpEntry()));
+	CHECK_FALSE(loadCachedBoardValue(BoardValue::TdpWatts, BDF, sys.paths).has_value());
 }

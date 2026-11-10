@@ -10,6 +10,8 @@
 #include <cstring>
 #include <gscupd.h>
 #include <pldmextraction.h>
+#include <board_cache.h>
+#include <string>
 #include <sysmanupd.h>
 #include <tuple>
 #include <ze_api.h>
@@ -475,19 +477,42 @@ ze_result_t firmware::getAmcTdp(const char *bdfStr, char *tdp, size_t *bufferSiz
  *
  * The FRU OTHER_INFORMATION field holds the TDP as a hexadecimal string; this parses it.
  *
+ * A TDP cached earlier in this boot for the same device instance is used without asking the AMC:
+ * the TDP of a card does not change, and an AMC in use by another process can take many seconds
+ * to answer, or not answer at all. A non-zero TDP read live from the AMC is cached for the rest of
+ * the boot. Nothing is cached on failure, so a busy AMC is asked again next time.
+ *
  * @param[in]  bdfStr PCI BDF string of the GPU whose TDP is requested.
  * @param[out] watts  TDP in watts.
  * @return ZE_RESULT_SUCCESS on success, ZE_RESULT_ERROR_UNINITIALIZED when no AMC is available,
- *         ZE_RESULT_ERROR_NOT_AVAILABLE when TDP is missing from FRU data or is not valid hexadecimal.
+ *         ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS when the caller cannot access the AMC and
+ *         nothing is cached, ZE_RESULT_ERROR_NOT_AVAILABLE when TDP is missing from FRU data or
+ *         is not valid hexadecimal.
  */
 ze_result_t firmware::getAmcTdpWatts(const char *bdfStr, uint32_t *watts)
 {
 	TRACING();
 
-	if (!watts) {
+	if (!bdfStr || !watts) {
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
 	}
+	if (!fwupdArray || !fwupdArray[FWUPD_PREFERENCE_AMC]) {
+		return ZE_RESULT_ERROR_UNINITIALIZED;
+	}
 
+	if (const auto cached = loadCachedBoardValue(BoardValue::TdpWatts, bdfStr)) {
+		uint32_t value = 0;
+		const auto [ptr, ec] = std::from_chars(cached->data(), cached->data() + cached->size(), value);
+		if (ec == std::errc{} && ptr == cached->data() + cached->size() && value > 0) {
+			DBG("TDP of {} is from the cache: it was read from the AMC earlier in this boot\n", bdfStr);
+			*watts = value;
+			return ZE_RESULT_SUCCESS;
+		}
+		DBG("Ignoring invalid cached TDP '{}' for {}\n", *cached, bdfStr);
+	}
+
+	// Taken before the read, so a card replaced during it does not get this TDP cached
+	const auto cacheKey = currentBoardCacheKey(bdfStr);
 	char tdpBuf[MAX_PATH] = {};
 	size_t bufferSize = sizeof(tdpBuf);
 	ze_result_t result = getAmcTdp(bdfStr, tdpBuf, &bufferSize);
@@ -506,6 +531,10 @@ ze_result_t firmware::getAmcTdpWatts(const char *bdfStr, uint32_t *watts)
 	}
 
 	*watts = value;
+	DBG("TDP of {} read live from the AMC\n", bdfStr);
+	if (cacheKey && value > 0) {
+		storeCachedBoardValue(BoardValue::TdpWatts, bdfStr, std::to_string(value), *cacheKey);
+	}
 	return ZE_RESULT_SUCCESS;
 }
 

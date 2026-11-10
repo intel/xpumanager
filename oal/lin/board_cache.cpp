@@ -2,11 +2,16 @@
  * Copyright (C) 2026 Intel Corporation
  * SPDX-License-Identifier: MIT
  *
- * An entry is a small text file, <cacheDir>/board_serial_<BDF>:
+ * Each kind of board value has its own entry, a small text file of three lines. A serial
+ * number is kept in <cacheDir>/board_serial_<BDF>:
  *
  *     boot_id=<kernel boot ID>
  *     device_ino=<inode of the device's sysfs directory>
  *     serial=<board serial number>
+ *
+ * and the TDP in <cacheDir>/board_tdp_<BDF>, the same but for the last line:
+ *
+ *     tdp_watts=<TDP in decimal watts>
  *
  * The boot ID makes an entry worthless after a reboot even if the directory survives it.
  * Within a boot, a different card at the same address can only appear by removing the
@@ -14,8 +19,8 @@
  * never reuses an inode number within a boot, so device_ino tells the two apart.
  */
 
-#include "serial_cache.h"
-#include "serial_cache_lin.h"
+#include "board_cache.h"
+#include "board_cache_lin.h"
 #include "scoped_fd.h"
 #include "bdf.h"
 #include "utility/logger/logger.h"
@@ -38,20 +43,36 @@ namespace {
 constexpr mode_t CACHE_DIR_MODE = 0700;
 constexpr mode_t CACHE_FILE_MODE = 0600;
 
-constexpr std::string_view ENTRY_PREFIX = "board_serial_";
 // An entry is three short lines; a larger file was not written by us.
 constexpr size_t MAX_ENTRY_BYTES = 1024;
-constexpr size_t MAX_SERIAL_LENGTH = 255;
+constexpr size_t MAX_VALUE_LENGTH = 255;
 constexpr size_t MAX_ID_LENGTH = 64;
+
+struct EntryFormat
+{
+	std::string_view prefix; ///< File name before the BDF
+	std::string_view field;	 ///< Start of the value line
+};
+
+[[nodiscard]] constexpr EntryFormat entryFormat(BoardValue kind) noexcept
+{
+	switch (kind) {
+	case BoardValue::TdpWatts:
+		return {"board_tdp_", "tdp_watts="};
+	case BoardValue::SerialNumber:
+		break;
+	}
+	return {"board_serial_", "serial="};
+}
 
 [[nodiscard]] bool isPrintable(std::string_view s) noexcept
 {
 	return std::ranges::all_of(s, [](unsigned char c) { return c >= 0x20 && c <= 0x7E; });
 }
 
-[[nodiscard]] bool isValidSerial(std::string_view serial) noexcept
+[[nodiscard]] bool isValidValue(std::string_view value) noexcept
 {
-	return !serial.empty() && serial.size() <= MAX_SERIAL_LENGTH && isPrintable(serial);
+	return !value.empty() && value.size() <= MAX_VALUE_LENGTH && isPrintable(value);
 }
 
 // First line of a procfs attribute, if it is a short printable value.
@@ -65,11 +86,11 @@ constexpr size_t MAX_ID_LENGTH = 64;
 	return line;
 }
 
-[[nodiscard]] std::optional<SerialCacheKey> currentKey(std::string_view bdf, const SerialCachePaths &paths)
+[[nodiscard]] std::optional<BoardCacheKey> currentKey(std::string_view bdf, const BoardCachePaths &paths)
 {
 	auto bootId = readIdFile(paths.bootIdFile);
 	if (!bootId) {
-		DBG("serial cache: cannot read the boot ID from {}\n", paths.bootIdFile.string());
+		DBG("board cache: cannot read the boot ID from {}\n", paths.bootIdFile.string());
 		return std::nullopt;
 	}
 	if (!isValidBdf(bdf)) {
@@ -79,22 +100,26 @@ constexpr size_t MAX_ID_LENGTH = 64;
 	const std::filesystem::path deviceDir = paths.pciDevRoot / std::string(bdf);
 	struct stat st = {};
 	if (stat(deviceDir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
-		DBG("serial cache: no sysfs directory for {}\n", bdf);
+		DBG("board cache: no sysfs directory for {}\n", bdf);
 		return std::nullopt;
 	}
-	return SerialCacheKey{std::move(*bootId), std::to_string(static_cast<uint64_t>(st.st_ino))};
+	return BoardCacheKey{std::move(*bootId), std::to_string(static_cast<uint64_t>(st.st_ino))};
 }
 
-[[nodiscard]] std::string entryName(std::string_view bdf) { return std::string(ENTRY_PREFIX) + std::string(bdf); }
-
-[[nodiscard]] std::string formatEntry(const SerialCacheKey &key, std::string_view serial)
+[[nodiscard]] std::string entryName(BoardValue kind, std::string_view bdf)
 {
-	return "boot_id=" + key.bootId + "\ndevice_ino=" + key.deviceIno + "\nserial=" + std::string(serial) + "\n";
+	return std::string(entryFormat(kind).prefix) + std::string(bdf);
 }
 
-[[nodiscard]] std::optional<std::string> parseEntry(std::string_view text, const SerialCacheKey &key)
+[[nodiscard]] std::string formatEntry(BoardValue kind, const BoardCacheKey &key, std::string_view value)
 {
-	constexpr std::array<std::string_view, 3> fields{"boot_id=", "device_ino=", "serial="};
+	return "boot_id=" + key.bootId + "\ndevice_ino=" + key.deviceIno + "\n" + std::string(entryFormat(kind).field) +
+		   std::string(value) + "\n";
+}
+
+[[nodiscard]] std::optional<std::string> parseEntry(BoardValue kind, std::string_view text, const BoardCacheKey &key)
+{
+	const std::array<std::string_view, 3> fields{"boot_id=", "device_ino=", entryFormat(kind).field};
 	std::array<std::string_view, 3> values{};
 	for (size_t i = 0; i < fields.size(); ++i) {
 		const size_t eol = text.find('\n');
@@ -104,7 +129,7 @@ constexpr size_t MAX_ID_LENGTH = 64;
 		values[i] = text.substr(fields[i].size(), eol - fields[i].size());
 		text.remove_prefix(eol + 1);
 	}
-	if (!text.empty() || values[0] != key.bootId || values[1] != key.deviceIno || !isValidSerial(values[2])) {
+	if (!text.empty() || values[0] != key.bootId || values[1] != key.deviceIno || !isValidValue(values[2])) {
 		return std::nullopt;
 	}
 	return std::string(values[2]);
@@ -115,19 +140,19 @@ constexpr size_t MAX_ID_LENGTH = 64;
 [[nodiscard]] ScopedFd openCacheDir(const std::filesystem::path &dir, bool create)
 {
 	if (create && mkdir(dir.c_str(), CACHE_DIR_MODE) != 0 && errno != EEXIST) {
-		DBG("serial cache: cannot create {}: {}\n", dir.string(), errnoText(errno));
+		DBG("board cache: cannot create {}: {}\n", dir.string(), errnoText(errno));
 		return {};
 	}
 	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) - open() is variadic by POSIX
 	ScopedFd fd{open(dir.c_str(), O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)};
 	if (!fd.valid()) {
 		if (errno != ENOENT) {
-			DBG("serial cache: cannot open {}: {}\n", dir.string(), errnoText(errno));
+			DBG("board cache: cannot open {}: {}\n", dir.string(), errnoText(errno));
 		}
 		return {};
 	}
 	if (!isPrivateTo(fd.get(), S_IFDIR, geteuid())) {
-		DBG("serial cache: {} is not a private directory; not using it\n", dir.string());
+		DBG("board cache: {} is not a private directory; not using it\n", dir.string());
 		return {};
 	}
 	return fd;
@@ -190,21 +215,22 @@ constexpr size_t MAX_ID_LENGTH = 64;
  * @retval key     The current boot and device instance
  * @retval nullopt @p bdf is malformed or has no sysfs directory, or the boot ID cannot be read
  */
-std::optional<SerialCacheKey> currentSerialCacheKey(std::string_view bdf, const SerialCachePaths &paths)
+std::optional<BoardCacheKey> currentBoardCacheKey(std::string_view bdf, const BoardCachePaths &paths)
 {
 	return currentKey(bdf, paths);
 }
 
 /**
- * @brief Loads the board serial number cached for a GPU during this boot
+ * @brief Loads a board value cached for a GPU during this boot
  *
+ * @param[in] kind  Which board value to load
  * @param[in] bdf   PCI BDF address of the GPU, in canonical DDDD:BB:DD.F form
  * @param[in] paths Cache, boot ID and sysfs paths
  *
- * @retval serial  The cached board serial number
+ * @retval value   The cached board value
  * @retval nullopt No entry, an entry from another boot or device, or an entry that fails validation
  */
-std::optional<std::string> loadCachedBoardSerial(std::string_view bdf, const SerialCachePaths &paths)
+std::optional<std::string> loadCachedBoardValue(BoardValue kind, std::string_view bdf, const BoardCachePaths &paths)
 {
 	if (!isValidBdf(bdf)) {
 		return std::nullopt;
@@ -217,33 +243,34 @@ std::optional<std::string> loadCachedBoardSerial(std::string_view bdf, const Ser
 	if (!dir.valid()) {
 		return std::nullopt;
 	}
-	const auto text = readEntry(dir.get(), entryName(bdf));
+	const auto text = readEntry(dir.get(), entryName(kind, bdf));
 	if (!text) {
 		return std::nullopt;
 	}
-	return parseEntry(*text, *key);
+	return parseEntry(kind, *text, *key);
 }
 
 /**
- * @brief Caches the board serial number of a GPU for the rest of this boot
+ * @brief Caches a board value of a GPU for the rest of this boot
  *
  * Writes a temporary file and renames it over the entry, so a reader sees either the old
  * entry or the new one, never a partial one.
  *
+ * @param[in] kind     Which board value @p value is
  * @param[in] bdf      PCI BDF address of the GPU, in canonical DDDD:BB:DD.F form
- * @param[in] serial   Board serial number; printable ASCII only
- * @param[in] readFrom currentSerialCacheKey() taken before the serial number was read
+ * @param[in] value    Board value; printable ASCII only
+ * @param[in] readFrom currentBoardCacheKey() taken before the value was read
  * @param[in] paths    Cache, boot ID and sysfs paths
  *
- * @retval true  The entry holds @p serial
+ * @retval true  The entry holds @p value
  * @retval false Invalid input, the boot or device changed since @p readFrom was taken, or the
  *               cache directory or file could not be used
  */
-bool storeCachedBoardSerial(std::string_view bdf, std::string_view serial, const SerialCacheKey &readFrom,
-							const SerialCachePaths &paths)
+bool storeCachedBoardValue(BoardValue kind, std::string_view bdf, std::string_view value, const BoardCacheKey &readFrom,
+						   const BoardCachePaths &paths)
 {
-	if (!isValidBdf(bdf) || !isValidSerial(serial)) {
-		DBG("serial cache: not caching an invalid BDF or serial number\n");
+	if (!isValidBdf(bdf) || !isValidValue(value)) {
+		DBG("board cache: not caching an invalid BDF or board value\n");
 		return false;
 	}
 	const auto key = currentKey(bdf, paths);
@@ -251,15 +278,15 @@ bool storeCachedBoardSerial(std::string_view bdf, std::string_view serial, const
 		return false;
 	}
 	if (*key != readFrom) {
-		DBG("serial cache: the device at {} changed while its serial number was read; not caching it\n", bdf);
+		DBG("board cache: the device at {} changed while its board value was read; not caching it\n", bdf);
 		return false;
 	}
 	const ScopedFd dir = openCacheDir(paths.cacheDir, true);
 	if (!dir.valid()) {
 		return false;
 	}
-	const std::string name = entryName(bdf);
-	if (const auto text = readEntry(dir.get(), name); text && parseEntry(*text, *key) == serial) {
+	const std::string name = entryName(kind, bdf);
+	if (const auto text = readEntry(dir.get(), name); text && parseEntry(kind, *text, *key) == value) {
 		return true;
 	}
 
@@ -271,30 +298,72 @@ bool storeCachedBoardSerial(std::string_view bdf, std::string_view serial, const
 	ScopedFd tmp{
 		openat(dir.get(), tmpName.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, CACHE_FILE_MODE)};
 	if (!tmp.valid()) {
-		DBG("serial cache: cannot create {}: {}\n", tmpName, errnoText(errno));
+		DBG("board cache: cannot create {}: {}\n", tmpName, errnoText(errno));
 		return false;
 	}
-	const bool written = fchmod(tmp.get(), CACHE_FILE_MODE) == 0 && writeAll(tmp.get(), formatEntry(*key, serial)) &&
-						 close(tmp.release()) == 0;
+	const bool written = fchmod(tmp.get(), CACHE_FILE_MODE) == 0 &&
+						 writeAll(tmp.get(), formatEntry(kind, *key, value)) && close(tmp.release()) == 0;
 	if (!written || renameat(dir.get(), tmpName.c_str(), dir.get(), name.c_str()) != 0) {
-		DBG("serial cache: cannot write {}: {}\n", name, errnoText(errno));
+		DBG("board cache: cannot write {}: {}\n", name, errnoText(errno));
 		unlinkat(dir.get(), tmpName.c_str(), 0);
 		return false;
 	}
 	return true;
 }
 
-std::optional<SerialCacheKey> currentSerialCacheKey(std::string_view bdf)
+/**
+ * @brief Loads the board serial number cached for a GPU during this boot
+ *
+ * @param[in] bdf   PCI BDF address of the GPU, in canonical DDDD:BB:DD.F form
+ * @param[in] paths Cache, boot ID and sysfs paths
+ *
+ * @retval serial  The cached board serial number
+ * @retval nullopt No entry, an entry from another boot or device, or an entry that fails validation
+ */
+std::optional<std::string> loadCachedBoardSerial(std::string_view bdf, const BoardCachePaths &paths)
 {
-	return currentSerialCacheKey(bdf, SerialCachePaths{});
+	return loadCachedBoardValue(BoardValue::SerialNumber, bdf, paths);
+}
+
+/**
+ * @brief Caches the board serial number of a GPU for the rest of this boot
+ *
+ * @param[in] bdf      PCI BDF address of the GPU, in canonical DDDD:BB:DD.F form
+ * @param[in] serial   Board serial number; printable ASCII only
+ * @param[in] readFrom currentBoardCacheKey() taken before the serial number was read
+ * @param[in] paths    Cache, boot ID and sysfs paths
+ *
+ * @retval true  The entry holds @p serial
+ * @retval false Invalid input, the boot or device changed since @p readFrom was taken, or the
+ *               cache directory or file could not be used
+ */
+bool storeCachedBoardSerial(std::string_view bdf, std::string_view serial, const BoardCacheKey &readFrom,
+							const BoardCachePaths &paths)
+{
+	return storeCachedBoardValue(BoardValue::SerialNumber, bdf, serial, readFrom, paths);
+}
+
+std::optional<BoardCacheKey> currentBoardCacheKey(std::string_view bdf)
+{
+	return currentBoardCacheKey(bdf, BoardCachePaths{});
 }
 
 std::optional<std::string> loadCachedBoardSerial(std::string_view bdf)
 {
-	return loadCachedBoardSerial(bdf, SerialCachePaths{});
+	return loadCachedBoardSerial(bdf, BoardCachePaths{});
 }
 
-void storeCachedBoardSerial(std::string_view bdf, std::string_view serial, const SerialCacheKey &readFrom)
+void storeCachedBoardSerial(std::string_view bdf, std::string_view serial, const BoardCacheKey &readFrom)
 {
-	std::ignore = storeCachedBoardSerial(bdf, serial, readFrom, SerialCachePaths{});
+	std::ignore = storeCachedBoardSerial(bdf, serial, readFrom, BoardCachePaths{});
+}
+
+std::optional<std::string> loadCachedBoardValue(BoardValue kind, std::string_view bdf)
+{
+	return loadCachedBoardValue(kind, bdf, BoardCachePaths{});
+}
+
+void storeCachedBoardValue(BoardValue kind, std::string_view bdf, std::string_view value, const BoardCacheKey &readFrom)
+{
+	std::ignore = storeCachedBoardValue(kind, bdf, value, readFrom, BoardCachePaths{});
 }

@@ -10,7 +10,7 @@
 #include <device.h>
 #include <firmware.h>
 #include <pci.h>
-#include <serial_cache.h>
+#include <board_cache.h>
 #include "zes_api.h"
 
 #ifdef __GNUC__
@@ -81,7 +81,7 @@ bool querySerialNumberFromAMC(devInfo &d, std::string &serialNumber, bool &permi
 
 	std::array<char, 256> serialNum{};
 	// Taken before the read, so a card replaced during it does not get this serial number cached
-	const auto cacheKey = currentSerialCacheKey(bdf);
+	const auto cacheKey = currentBoardCacheKey(bdf);
 	const ze_result_t result =
 		fw->getAmcSerialNumber(bdf.c_str(), serialNum.data(), static_cast<uint32_t>(serialNum.size()));
 	if (result == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {
