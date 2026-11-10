@@ -78,7 +78,7 @@ Watchdog::Watchdog(std::chrono::milliseconds timeoutValue, ExpiryHandler handler
 	: deadline(Clock::now() + timeoutValue), timeout(timeoutValue), pretimeoutAt(pretimeoutAfter(timeoutValue)),
 	  onExpiry(handler)
 {
-	if (timeout <= std::chrono::milliseconds::zero()) {
+	if (timeoutValue <= std::chrono::milliseconds::zero()) {
 		return;
 	}
 	// Started in the body, not the initializer list, so every member exists whatever the
@@ -124,6 +124,27 @@ void Watchdog::extendTo(Clock::time_point when) noexcept
 }
 
 /**
+ * @brief Raises the timeout to @p longer, unless it is already as long or the instance is idle.
+ *
+ * The deadline moves first, and both happen under the mutex run() holds while it reads them:
+ * run() pairing the old deadline with the new timeout would put the pretimeout in the past
+ * and warn at once.
+ *
+ * @param[in] longer  The new timeout.
+ */
+void Watchdog::lengthenTimeout(std::chrono::milliseconds longer) noexcept
+{
+	// Not joinable: disabled (no thread was started) or inert (its thread was joined at once).
+	if (!thread.joinable() || longer <= timeout.load()) {
+		return;
+	}
+	const std::scoped_lock lock{mutex};
+	extendTo(Clock::now() + longer);
+	timeout.store(longer);
+	pretimeoutAt.store(pretimeoutAfter(longer));
+}
+
+/**
  * @brief Calls the expiry handler for the current phase.
  *
  * @param[in] kind       What happened.
@@ -135,7 +156,7 @@ void Watchdog::report(ExpiryKind kind, std::chrono::milliseconds elapsed, std::c
 	onExpiry(Expiry{
 		.kind = kind,
 		.phase = phase.load(),
-		.timeout = timeout,
+		.timeout = timeout.load(),
 		.elapsed = elapsed,
 		.remaining = remaining,
 	});
@@ -163,26 +184,28 @@ void Watchdog::run(const std::stop_token &stop)
 	while (!stop.stop_requested()) {
 		const Clock::time_point now = Clock::now();
 		const Clock::time_point due = deadline.load(std::memory_order_relaxed);
+		const std::chrono::milliseconds limit = timeout.load();
+		const std::chrono::milliseconds warnAfter = pretimeoutAt.load();
 		const bool suspended = suspendState.load() != 0;
 
 		if (now >= due) {
 			std::uint32_t idle = 0;
 			if (suspended || !suspendState.compare_exchange_strong(idle, FIRING)) {
-				extendTo(now + timeout);
+				extendTo(now + limit);
 				continue;
 			}
 			// In production the handler ends the process; a test handler returns, and the
 			// thread must then stop rather than report the same timeout again.
-			report(ExpiryKind::Timeout, timeout, std::chrono::milliseconds::zero());
+			report(ExpiryKind::Timeout, limit, std::chrono::milliseconds::zero());
 			suspendState.fetch_and(~FIRING);
 			suspendState.notify_all();
 			return;
 		}
 
-		const Clock::time_point warnAt = due - timeout + pretimeoutAt;
+		const Clock::time_point warnAt = due - limit + warnAfter;
 		const bool warnPending = !suspended && warnedFor != due;
 		if (warnPending && now >= warnAt) {
-			report(ExpiryKind::Pretimeout, pretimeoutAt, timeout - pretimeoutAt);
+			report(ExpiryKind::Pretimeout, warnAfter, limit - warnAfter);
 			warnedFor = due;
 			continue;
 		}
@@ -216,7 +239,7 @@ Phase::Phase(Watchdog *armed, PhaseName phaseName, bool suspendsWatchdog) noexce
 		}
 	}
 	previous = owner->phase.exchange(name);
-	owner->extendTo(Clock::now() + owner->timeout);
+	owner->extendTo(Clock::now() + owner->timeout.load());
 }
 
 /**
@@ -233,7 +256,7 @@ Phase::~Phase()
 	if (suspends) {
 		owner->suspendState.fetch_sub(1);
 	}
-	owner->extendTo(Clock::now() + owner->timeout);
+	owner->extendTo(Clock::now() + owner->timeout.load());
 }
 
 /**
@@ -242,7 +265,7 @@ Phase::~Phase()
 void keepalive() noexcept
 {
 	if (Watchdog *dog = active.load(); dog != nullptr) {
-		dog->extendTo(Clock::now() + dog->timeout);
+		dog->extendTo(Clock::now() + dog->timeout.load());
 	}
 }
 
@@ -254,7 +277,7 @@ void keepalive() noexcept
 void sleepFor(Clock::duration duration)
 {
 	if (Watchdog *dog = active.load(); dog != nullptr) {
-		dog->extendTo(Clock::now() + duration + dog->timeout);
+		dog->extendTo(Clock::now() + duration + dog->timeout.load());
 	}
 	std::this_thread::sleep_for(duration);
 }
@@ -267,7 +290,7 @@ void sleepFor(Clock::duration duration)
 void sleepUntil(Clock::time_point when)
 {
 	if (Watchdog *dog = active.load(); dog != nullptr) {
-		dog->extendTo(std::max(when, Clock::now()) + dog->timeout);
+		dog->extendTo(std::max(when, Clock::now()) + dog->timeout.load());
 	}
 	std::this_thread::sleep_until(when);
 }

@@ -23,6 +23,7 @@
 #include <string>
 #include <system_error>
 #include <vector>
+#include <sys/stat.h>
 #include <unistd.h>
 
 namespace fs = std::filesystem;
@@ -614,6 +615,33 @@ TEST_CASE("listLevelZeroGpus: empty when the tree is missing or has no GPUs")
 	const FakePciDevices sysfs("l0empty");
 	CHECK(listLevelZeroGpus(sysfs.root).empty());
 	CHECK(listLevelZeroGpus(sysfs.root / "missing").empty());
+}
+
+TEST_CASE("countLevelZeroGpus: counts what listLevelZeroGpus lists")
+{
+	const FakePciDevices sysfs("l0count");
+	CHECK(countLevelZeroGpus(sysfs.root) == 0);
+	CHECK(countLevelZeroGpus(sysfs.root / "missing") == 0);
+	addGpu(sysfs, "0000:00:02.0", "i915", true);
+	addGpu(sysfs, "0000:03:00.0", "xe", true);
+	addGpu(sysfs, "0000:04:00.0", nullptr, false);
+	addGpu(sysfs, "0000:05:00.0", "vfio-pci", false);
+	addGpu(sysfs, "0000:06:00.0", "xe", false);
+	addGpu(sysfs, "0000:07:00.0", "i915", false, true);
+	addGpu(sysfs, "0000:2a:00.0", "xe", false, true);
+	fs::create_directories(sysfs.root / "not-a-bdf" / "drm" / "renderD129");
+	CHECK(countLevelZeroGpus(sysfs.root) == 3);
+	CHECK(countLevelZeroGpus(sysfs.root) == listLevelZeroGpus(sysfs.root).size());
+}
+
+TEST_CASE("countLevelZeroGpus: never reads config space")
+{
+	// A FIFO without a writer blocks any read, as config space does on a device that does not
+	// resume; the count must return without touching it.
+	const FakePciDevices sysfs("l0countcfg");
+	addGpu(sysfs, "0000:03:00.0", "xe", true);
+	REQUIRE(::mkfifo((sysfs.root / "0000:03:00.0" / "config").c_str(), 0600) == 0);
+	CHECK(countLevelZeroGpus(sysfs.root) == 1);
 }
 
 #endif // __has_include(<doctest/doctest.h>)

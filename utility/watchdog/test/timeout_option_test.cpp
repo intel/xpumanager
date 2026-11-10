@@ -8,8 +8,14 @@
 
 #include "timeout_option.h"
 
+#include <atomic>
+#include <chrono>
+#include <cstddef>
 #include <initializer_list>
+#include <semaphore>
 #include <string>
+#include <string_view>
+#include <thread>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -41,11 +47,11 @@ struct Argv
 
 } // namespace
 
-TEST_CASE("absent: default timeout, arguments untouched")
+TEST_CASE("absent: no timeout given, arguments untouched")
 {
 	const auto opt = parse({"xpu-smi", "stats", "-d", "0"});
 	CHECK_FALSE(opt.error);
-	CHECK(opt.timeout == xpum::watchdog::DEFAULT_TIMEOUT);
+	CHECK(opt.timeout == std::nullopt);
 	CHECK(opt.remaining == std::vector<std::string>{"xpu-smi", "stats", "-d", "0"});
 }
 
@@ -83,7 +89,7 @@ TEST_CASE("argv[0] is never treated as the option")
 {
 	const auto opt = parse({"--timeout=5"});
 	CHECK_FALSE(opt.error);
-	CHECK(opt.timeout == xpum::watchdog::DEFAULT_TIMEOUT);
+	CHECK(opt.timeout == std::nullopt);
 	CHECK(opt.remaining == std::vector<std::string>{"--timeout=5"});
 }
 
@@ -111,4 +117,77 @@ TEST_CASE("missing value is an error")
 	const auto opt = parse({"xpu-smi", "discovery", "--timeout"});
 	REQUIRE(opt.error);
 	CHECK(opt.error->find("--timeout") != std::string::npos);
+}
+
+TEST_CASE("initialTimeout: the given --timeout, else the base")
+{
+	CHECK(xpum::watchdog::initialTimeout(parse({"xpu-smi", "discovery"})) == xpum::watchdog::BASE_TIMEOUT);
+	CHECK(xpum::watchdog::initialTimeout(parse({"xpu-smi", "--timeout=5", "discovery"})) == 5s);
+	CHECK(xpum::watchdog::initialTimeout(parse({"xpu-smi", "--timeout=0", "discovery"})) == 0s);
+}
+
+namespace {
+
+constexpr auto ARMED_TIMEOUT = std::chrono::milliseconds{100};
+// Generous: CI machines can stall a thread for far longer than the timeout.
+constexpr auto EXPIRY_WAIT = std::chrono::seconds{5};
+
+std::atomic<int> expiries{0};				  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+std::atomic<const char *> lastPhase{nullptr}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+std::binary_semaphore timedOut{0};			  // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+void recordExpiry(const xpum::watchdog::Expiry &expiry) noexcept
+{
+	expiries.fetch_add(1);
+	lastPhase.store(expiry.phase);
+	if (expiry.kind == xpum::watchdog::ExpiryKind::Timeout) {
+		timedOut.release();
+	}
+}
+
+void resetExpiries()
+{
+	expiries.store(0);
+	lastPhase.store(nullptr);
+	while (timedOut.try_acquire()) {
+	}
+}
+
+} // namespace
+
+TEST_CASE("applyDefaultTimeout: a given --timeout is kept and the GPUs are not counted")
+{
+	const auto opt = parse({"xpu-smi", "--timeout=5", "discovery"});
+	xpum::watchdog::Watchdog dog{xpum::watchdog::initialTimeout(opt), recordExpiry};
+	bool counted = false;
+	xpum::watchdog::applyDefaultTimeout(dog, opt, [&counted] {
+		counted = true;
+		return std::size_t{8};
+	});
+	CHECK_FALSE(counted);
+}
+
+TEST_CASE("applyDefaultTimeout: a count that blocks ends in a timeout naming the phase")
+{
+	resetExpiries();
+	const auto opt = parse({"xpu-smi", "discovery"});
+	xpum::watchdog::Watchdog dog{ARMED_TIMEOUT, recordExpiry};
+	xpum::watchdog::applyDefaultTimeout(dog, opt, [] {
+		// Returns once the watchdog has fired, standing in for a sysfs read that never returns.
+		const bool fired = timedOut.try_acquire_for(EXPIRY_WAIT);
+		CHECK(fired);
+		return std::size_t{8};
+	});
+	REQUIRE(lastPhase.load() != nullptr);
+	CHECK(std::string_view{lastPhase.load()} == "counting GPUs");
+}
+
+TEST_CASE("applyDefaultTimeout: after the count, a stall longer than the armed timeout does not fire")
+{
+	resetExpiries();
+	const auto opt = parse({"xpu-smi", "discovery"});
+	xpum::watchdog::Watchdog dog{ARMED_TIMEOUT, recordExpiry};
+	xpum::watchdog::applyDefaultTimeout(dog, opt, [] { return std::size_t{0}; });
+	std::this_thread::sleep_for(3 * ARMED_TIMEOUT);
+	CHECK(expiries.load() == 0);
 }

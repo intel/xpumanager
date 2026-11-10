@@ -38,9 +38,29 @@ namespace xpum::watchdog {
 
 using Clock = std::chrono::steady_clock;
 
-inline constexpr auto DEFAULT_TIMEOUT = std::chrono::seconds{30};
+// Without --timeout: BASE_TIMEOUT plus TIMEOUT_PER_DEVICE for each GPU. Some steps query one GPU
+// after another (driver init, the firmware fields of --query-gpu and dump), so the longest
+// stretch without progress grows with the GPU count.
+inline constexpr auto BASE_TIMEOUT = std::chrono::seconds{60};
+inline constexpr auto TIMEOUT_PER_DEVICE = std::chrono::seconds{5};
 inline constexpr auto MAX_TIMEOUT = std::chrono::seconds{86400};
 inline constexpr int TIMEOUT_EXIT_CODE = 124; // same as coreutils timeout(1)
+
+/**
+ * @brief The timeout used when --timeout is not given.
+ *
+ * @param[in] devices  How many GPUs the host has.
+ *
+ * @retval timeout  BASE_TIMEOUT + TIMEOUT_PER_DEVICE per device, at most MAX_TIMEOUT.
+ */
+[[nodiscard]] constexpr std::chrono::seconds defaultTimeout(std::size_t devices) noexcept
+{
+	const auto perDeviceBudget = static_cast<std::size_t>((MAX_TIMEOUT - BASE_TIMEOUT) / TIMEOUT_PER_DEVICE);
+	if (devices >= perDeviceBudget) {
+		return MAX_TIMEOUT;
+	}
+	return BASE_TIMEOUT + TIMEOUT_PER_DEVICE * static_cast<std::chrono::seconds::rep>(devices);
+}
 
 // Share of the timeout without progress after which the user is told an abort is coming
 // (the pretimeout of the Linux watchdog API).
@@ -164,6 +184,17 @@ public:
 	Watchdog(Watchdog &&) = delete; // the thread holds `this`
 	Watchdog &operator=(Watchdog &&) = delete;
 
+	/**
+	 * @brief Raises the timeout to @p longer, for the time without progress from now on.
+	 *
+	 * For a timeout that is only known after work that must itself be covered, such as
+	 * counting the GPUs. Does nothing when @p longer is not longer, or when this instance
+	 * is disabled or inert.
+	 *
+	 * @param[in] longer  The new timeout.
+	 */
+	void lengthenTimeout(std::chrono::milliseconds longer) noexcept;
+
 private:
 	friend class Phase;
 	friend void keepalive() noexcept;
@@ -179,14 +210,17 @@ private:
 	// Count of open suspend() phases, plus FIRING while a Timeout is being reported. suspend()
 	// waits for FIRING to clear, so flashing never starts once the abort is committed.
 	std::atomic<std::uint32_t> suspendState{0};
-	std::chrono::milliseconds timeout;
-	std::chrono::milliseconds pretimeoutAt; // since the last progress
+	// Atomic only so that lengthenTimeout() can raise them; written under `mutex`, which run()
+	// holds while it reads them.
+	std::atomic<std::chrono::milliseconds> timeout;
+	std::atomic<std::chrono::milliseconds> pretimeoutAt; // since the last progress
 	ExpiryHandler onExpiry;
 	std::mutex mutex;
 	std::condition_variable_any wake;
 	std::jthread thread;
 };
 static_assert(std::atomic<Clock::time_point>::is_always_lock_free);
+static_assert(std::atomic<std::chrono::milliseconds>::is_always_lock_free);
 
 /**
  * @brief Records progress: pushes the deadline to now + timeout. Safe from any thread.

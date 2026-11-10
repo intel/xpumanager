@@ -267,6 +267,28 @@ namespace {
 	return false;
 }
 
+enum class LevelZeroGpu : std::uint8_t
+{
+	Healthy,
+	Survivability,
+};
+
+/// Whether Level Zero reports the device, from its driver link and sysfs attributes alone: none
+/// of them reads config space, which resumes a suspended device and can block on a stuck one.
+[[nodiscard]] std::optional<LevelZeroGpu> levelZeroGpuKind(const std::filesystem::path &device)
+{
+	std::error_code linkEc;
+	const std::string driver = std::filesystem::read_symlink(device / "driver", linkEc).filename().string();
+	if (linkEc) {
+		return std::nullopt; // no driver bound: neither Level Zero nor sysman can reach it
+	}
+	std::error_code attrEc;
+	if (std::filesystem::exists(device / "survivability_mode", attrEc)) {
+		return driver == "xe" ? std::optional{LevelZeroGpu::Survivability} : std::nullopt;
+	}
+	return isGpuKernelDriver(driver) && hasRenderNode(device) ? std::optional{LevelZeroGpu::Healthy} : std::nullopt;
+}
+
 } // namespace
 
 std::vector<std::string> listLevelZeroGpus(const std::filesystem::path &pciDevRoot)
@@ -289,17 +311,9 @@ std::vector<std::string> listLevelZeroGpus(const std::filesystem::path &pciDevRo
 		if (!address) {
 			continue;
 		}
-		std::error_code linkEc;
-		const std::string driver = std::filesystem::read_symlink(it->path() / "driver", linkEc).filename().string();
-		if (linkEc) {
-			continue; // no driver bound: neither Level Zero nor sysman can reach it
-		}
-		std::error_code attrEc;
-		const bool survivability = std::filesystem::exists(it->path() / "survivability_mode", attrEc);
-		const bool reported = survivability ? driver == "xe" : isGpuKernelDriver(driver) && hasRenderNode(it->path());
-		if (reported) {
+		if (const auto kind = levelZeroGpuKind(it->path())) {
 			const bool integrated = isRootComplexIntegrated(bdf, pciDevRoot);
-			gpus.push_back({survivability, integrated, *address, std::move(bdf)});
+			gpus.push_back({*kind == LevelZeroGpu::Survivability, integrated, *address, std::move(bdf)});
 		}
 	}
 
@@ -315,6 +329,19 @@ std::vector<std::string> listLevelZeroGpus(const std::filesystem::path &pciDevRo
 		bdfs.push_back(std::move(gpu.bdf));
 	}
 	return bdfs;
+}
+
+std::size_t countLevelZeroGpus(const std::filesystem::path &pciDevRoot)
+{
+	std::size_t count = 0;
+	std::error_code ec;
+	std::filesystem::directory_iterator it(pciDevRoot, ec);
+	for (; !ec && it != std::filesystem::directory_iterator{}; it.increment(ec)) {
+		if (PciAddress::parse(it->path().filename().string()) && levelZeroGpuKind(it->path())) {
+			++count;
+		}
+	}
+	return count;
 }
 
 std::optional<PciClassCode> getPciClassCode(std::string_view bdf, const std::filesystem::path &pciDevRoot)

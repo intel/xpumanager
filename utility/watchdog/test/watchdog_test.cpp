@@ -11,6 +11,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <mutex>
 #include <semaphore>
 #include <string>
@@ -26,7 +27,11 @@ using xpum::watchdog::Watchdog;
 
 static_assert(!std::is_constructible_v<xpum::watchdog::PhaseName, const char *>);
 static_assert(std::is_constructible_v<xpum::watchdog::PhaseName, const char (&)[5]>);
-static_assert(xpum::watchdog::DEFAULT_TIMEOUT == 30s);
+static_assert(xpum::watchdog::defaultTimeout(0) == 60s);
+static_assert(xpum::watchdog::defaultTimeout(8) == 100s);
+static_assert(xpum::watchdog::defaultTimeout(17267) == 86395s);
+static_assert(xpum::watchdog::defaultTimeout(17268) == xpum::watchdog::MAX_TIMEOUT);
+static_assert(xpum::watchdog::defaultTimeout(SIZE_MAX) == xpum::watchdog::MAX_TIMEOUT);
 static_assert(xpum::watchdog::pretimeoutAfter(30s) == 15s);
 static_assert(xpum::watchdog::pretimeoutAfter(31s) == 15s);
 static_assert(xpum::watchdog::pretimeoutAfter(1s) == 500ms);
@@ -240,9 +245,31 @@ TEST_CASE_FIXTURE(Fixture, "phases on two threads never leave a name that was no
 	CHECK((name == "startup" || name == "worker"));
 }
 
+TEST_CASE_FIXTURE(Fixture, "lengthenTimeout: a stall past the old timeout does not fire, nor warn at once")
+{
+	Watchdog dog{TIMEOUT, record};
+	// Close to the old pretimeout, where pairing the old deadline with the new timeout would
+	// put the warning in the past.
+	std::this_thread::sleep_for(xpum::watchdog::pretimeoutAfter(TIMEOUT) * 3 / 4);
+	dog.lengthenTimeout(WAIT);
+	std::this_thread::sleep_for(3 * TIMEOUT);
+	CHECK(rec.snapshot().empty());
+}
+
+TEST_CASE_FIXTURE(Fixture, "lengthenTimeout: a shorter timeout is ignored")
+{
+	Watchdog dog{TIMEOUT, record};
+	dog.lengthenTimeout(TIMEOUT / 2);
+	REQUIRE(rec.timeout.try_acquire_for(WAIT));
+	const auto events = rec.snapshot();
+	REQUIRE_FALSE(events.empty());
+	CHECK(events.back().elapsed == TIMEOUT);
+}
+
 TEST_CASE_FIXTURE(Fixture, "a zero timeout disables the watchdog")
 {
 	Watchdog dog{std::chrono::milliseconds::zero(), record};
+	dog.lengthenTimeout(TIMEOUT); // stays off: --timeout 0 is never overridden
 	xpum::watchdog::keepalive();
 	const auto phase = xpum::watchdog::enter("command");
 	xpum::watchdog::sleepFor(3 * TIMEOUT);

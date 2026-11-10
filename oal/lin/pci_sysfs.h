@@ -7,6 +7,7 @@
 
 #include "pci_class.h"
 #include "pci_link.h"
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -120,6 +121,18 @@ getPciSubsystemDeviceId(std::string_view bdf, const std::filesystem::path &pciDe
  */
 [[nodiscard]] std::vector<std::string>
 listLevelZeroGpus(const std::filesystem::path &pciDevRoot = "/sys/bus/pci/devices");
+
+/**
+ * @brief Counts the GPUs listLevelZeroGpus() lists, without ordering them
+ *
+ * Reads only driver links and sysfs attributes, never config space: reading config space
+ * resumes a runtime-suspended device and can block on one that does not respond, and this
+ * runs before the watchdog is armed.
+ *
+ * @param [in] pciDevRoot sysfs PCI device directory (defaults to live sysfs; override in tests)
+ * @return The number of GPUs; 0 when none are found or @p pciDevRoot cannot be read
+ */
+[[nodiscard]] std::size_t countLevelZeroGpus(const std::filesystem::path &pciDevRoot = "/sys/bus/pci/devices");
 
 /**
  * @brief Reads the PCI class code of a device from sysfs

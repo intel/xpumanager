@@ -354,7 +354,8 @@ void DefaultParser::printExtraOptions()
 	PRINT("  -f,--file=<path>            Log output to file instead of stdout\n");
 	PRINT("  -v,--version                Build provenance and runtime versions\n");
 	PRINT("  --timeout=<sec>             Abort with exit code 124 after <sec> seconds without progress\n");
-	PRINT("                              (default: 30, 0 = off; any command, any position)\n");
+	PRINT("                              (default: 60, plus 5 per GPU on Linux; 0 = off;\n");
+	PRINT("                              any command, any position)\n");
 }
 
 std::optional<int> DefaultParser::handleTopLevel(arg_struct *args, const std::vector<std::unique_ptr<cmds>> &cmdList)
