@@ -9,18 +9,21 @@
 #include "watchdog.h"
 
 #include <chrono>
+#include <cstddef>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace xpum::watchdog {
 
 struct TimeoutOption
 {
-	std::chrono::seconds timeout{DEFAULT_TIMEOUT};
-	std::vector<std::string> remaining; // argv without any --timeout occurrence; [0] kept
-	std::optional<std::string> error;	// set on a malformed value; timeout is then unspecified
+	std::optional<std::chrono::seconds> timeout; // nullopt: not given, use defaultTimeout()
+	std::vector<std::string> remaining;			 // argv without any --timeout occurrence; [0] kept
+	std::optional<std::string> error;			 // set on a malformed value; timeout is then unspecified
 };
 
 /**
@@ -31,10 +34,43 @@ struct TimeoutOption
  *
  * @param[in] argv  Program arguments, argv[0] included.
  *
- * @retval TimeoutOption  The timeout (DEFAULT_TIMEOUT when absent) and the remaining arguments,
+ * @retval TimeoutOption  The timeout (nullopt when absent) and the remaining arguments,
  *                        or `error` set when a value is missing or invalid.
  */
 [[nodiscard]] TimeoutOption extractTimeoutOption(std::span<char *const> argv);
+
+/**
+ * @brief The timeout to arm the watchdog with, before the GPUs are counted.
+ *
+ * @param[in] option  Parsed --timeout option, without an error.
+ *
+ * @retval timeout  The given value (0 = watchdog off), else BASE_TIMEOUT.
+ */
+[[nodiscard]] constexpr std::chrono::seconds initialTimeout(const TimeoutOption &option) noexcept
+{
+	return option.timeout.value_or(BASE_TIMEOUT);
+}
+
+/**
+ * @brief Lengthens @p dog to defaultTimeout() for the host's GPUs when no --timeout was given.
+ *
+ * The GPUs are counted while @p dog is armed with initialTimeout(), so a count that blocks
+ * still ends in a timeout.
+ *
+ * @param[in,out] dog        The process watchdog, armed with initialTimeout(@p option).
+ * @param[in]     option     Parsed --timeout option, without an error.
+ * @param[in]     countGpus  Returns the host's GPU count; called only when no --timeout was given.
+ */
+template <typename CountGpus>
+	requires std::is_invocable_r_v<std::size_t, CountGpus &>
+void applyDefaultTimeout(Watchdog &dog, const TimeoutOption &option, CountGpus &&countGpus)
+{
+	if (option.timeout) {
+		return;
+	}
+	const auto counting = enter("counting GPUs");
+	dog.lengthenTimeout(defaultTimeout(std::invoke(countGpus)));
+}
 
 } // namespace xpum::watchdog
 

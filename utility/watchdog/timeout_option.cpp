@@ -59,7 +59,7 @@ constexpr std::string_view OPTION = "--timeout";
  *
  * @param[in] argv  Program arguments, argv[0] included.
  *
- * @retval TimeoutOption  The timeout (DEFAULT_TIMEOUT when absent) and the remaining arguments,
+ * @retval TimeoutOption  The timeout (nullopt when absent) and the remaining arguments,
  *                        or `error` set when a value is missing or invalid.
  */
 TimeoutOption extractTimeoutOption(std::span<char *const> argv)

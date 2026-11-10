@@ -22,6 +22,7 @@
 #include <cmd_updatefw.h>
 #include <cmd_vgpu.h>
 #include <debug.h>
+#include <gpu_count.h>
 #include <terminal.h>
 #include <process_exit.h>
 #include <watchdog_os.h>
@@ -246,7 +247,8 @@ int main(int argc, char *argv[])
 	argc = static_cast<int>(timeoutOption.remaining.size());
 	argv = argvStorage.data();
 	setCommandLabel(argc > 1 ? std::string_view{argv[1]} : std::string_view{"default view"});
-	const xpum::watchdog::Watchdog watchdog{timeoutOption.timeout, onWatchdogExpiry};
+	xpum::watchdog::Watchdog watchdog{xpum::watchdog::initialTimeout(timeoutOption), onWatchdogExpiry};
+	xpum::watchdog::applyDefaultTimeout(watchdog, timeoutOption, hostGpuCount);
 
 	const ArgvView args{argv, static_cast<std::size_t>(argc)};
 	arg_struct arg;
