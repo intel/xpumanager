@@ -36,6 +36,8 @@ type deviceRegistry struct {
 type driver struct {
 	*l0intel.Driver
 	devices []*device
+	// infoLogAPI is the API that the info logs are collected with.
+	infoLogAPI infoLogAPI
 	// infoLogs are the info logs of the driver whose records can be collected,
 	// empty when it has none or when their collection is disabled.
 	infoLogs []*infoLogSource
@@ -142,7 +144,7 @@ func newDeviceRegistry(logger *zap.SugaredLogger, cfg *Config) (*deviceRegistry,
 		// We only enumerate info logs if collection is enabled
 		// TODO: consider simplifying (always enumerate) when the extension is stable
 		if cfg.InfoLogs.Enabled {
-			d.infoLogs = enumInfoLogs(d, i, cfg.InfoLogs, logger)
+			d.infoLogAPI, d.infoLogs = enumInfoLogs(d, i, cfg.InfoLogs, logger)
 		}
 
 		reg.drivers = append(reg.drivers, d)

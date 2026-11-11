@@ -20,7 +20,6 @@ import (
 
 	"github.com/intel/level-zero-go/core"
 	l0sysman "github.com/intel/level-zero-go/sysman"
-	l0intel "github.com/intel/level-zero-go/sysman/exp/intel"
 	"github.com/intel/xpumanager/xpumd/common"
 	"github.com/intel/xpumanager/xpumd/receiver/intelxpu/sysman/internal/metadata"
 )
@@ -207,6 +206,11 @@ func (l *driverEventListener) run(ctx context.Context) {
 		hasDeviceEvents, deviceEvents, driverEvents, err := l.listen()
 		// TODO: revisit error handling, bail out on all errors except perhaps
 		// RESULT_ERROR_DEVICE_LOST, rescan drivers and devices on some others(?)
+		//
+		// NOTE/TODO: listen may fail (RESULT_ERROR_DEPENDENCY_UNAVAILABLE)
+		// with insufficient capabilities (e.g. no NET_ADMIN on RAS events).
+		// Consider a fallback that polls what works and re-registers only that
+		// (might go to bindings).
 		if err != nil {
 			l.logger.Warnw("Event listening failed", zap.Error(err))
 			// Brief back-off to avoid flooding on persistent errors.
@@ -227,7 +231,7 @@ func (l *driverEventListener) run(ctx context.Context) {
 
 		infoLogRecords := 0
 		// Check for infoLogsEnabled too, just in case a sporadic driver event is received
-		if driverEvents&cperDataAvailableEvent != 0 && l.infoLogsEnabled {
+		if driverEvents&l.drv.cperDataAvailableEvent() != 0 && l.infoLogsEnabled {
 			infoLogRecords = l.readInfoLogs(ctx)
 		}
 
@@ -258,10 +262,17 @@ func (l *driverEventListener) registerDeviceEvents() {
 		"enumerated", len(l.drv.devices), "driverIndex", l.drvIdx)
 }
 
+// TODO: return deviceCount instead of hasDeviceEvents once the experimental API is dropped
 func (l *driverEventListener) listen() (hasDeviceEvents bool, deviceEvents []l0sysman.EventTypeFlags,
 	driverEvents l0sysman.EventTypeFlags, err error) {
 	if l.infoLogsEnabled {
-		return l.drv.EventListenExp(listenTimeout, l.l0Devices)
+		switch l.drv.infoLogAPI {
+		case infoLogAPIStable:
+			deviceCount, deviceEvents, driverEvents, err := l.drv.EventListenExt(listenTimeout, l.l0Devices)
+			return deviceCount != 0, deviceEvents, driverEvents, err
+		case infoLogAPIIntelExp:
+			return l.drv.EventListenExp(listenTimeout, l.l0Devices)
+		}
 	}
 	deviceCount, deviceEvents, err := l.drv.EventListenEx(listenTimeout, l.l0Devices)
 	return deviceCount != 0, deviceEvents, 0, err
@@ -367,9 +378,10 @@ func (l *driverEventListener) startInfoLogCollection() error {
 		return nil
 	}
 
-	if err := l.drv.EventRegister(cperDataAvailableEvent); err != nil {
+	if err := l.drv.registerCPERDataAvailableEvent(); err != nil {
 		// Records can't be collected if the event triggering the reads is not available
-		l.logger.Errorw("Driver EventRegister() failed: info log records not collected", zap.Error(err))
+		l.logger.Errorw("Driver EventRegister() failed: info log records not collected", zap.Error(err),
+			"infoLogAPI", l.drv.infoLogAPI)
 		l.infoLogsEnabled = false
 		return nil
 	}
@@ -428,7 +440,7 @@ func (l *driverEventListener) readInfoLogs(ctx context.Context) int {
 	for _, src := range l.drv.infoLogs {
 		records, dropped := src.read()
 		if dropped > 0 {
-			l.telemetry.ReceiverDroppedInfoLogRecords.Add(ctx, int64(dropped))
+			l.telemetry.ReceiverDroppedInfoLogRecords.Add(ctx, dropped)
 		}
 		if len(records) > 0 {
 			l.emitInfoLogs(ctx, records)
@@ -445,7 +457,7 @@ func (l *driverEventListener) readInfoLogs(ctx context.Context) int {
 }
 
 // emitInfoLogs emits the given info log records of the driver as logs.
-func (l *driverEventListener) emitInfoLogs(ctx context.Context, records []l0intel.InfoLogRecord) {
+func (l *driverEventListener) emitInfoLogs(ctx context.Context, records []infoLogRecord) {
 	ld := plog.NewLogs()
 	rl := ld.ResourceLogs().AppendEmpty()
 	sl := rl.ScopeLogs().AppendEmpty()
@@ -455,7 +467,7 @@ func (l *driverEventListener) emitInfoLogs(ctx context.Context, records []l0inte
 	devices := deviceAttributesByBDF(l.drv)
 
 	for _, rec := range records {
-		bdf := pciBDF(rec.Metadata.Address)
+		bdf := pciBDF(rec.address)
 		appendInfoLogRecord(sl, rec, bdf, devices[bdf], observed)
 	}
 
@@ -478,7 +490,7 @@ func deviceAttributesByBDF(drv *driver) map[string]*deviceAttributes {
 }
 
 // appendInfoLogRecord appends one info log record to scope logs.
-func appendInfoLogRecord(sl plog.ScopeLogs, rec l0intel.InfoLogRecord, bdf string,
+func appendInfoLogRecord(sl plog.ScopeLogs, rec infoLogRecord, bdf string,
 	dev *deviceAttributes, observed pcommon.Timestamp) {
 	lr := sl.LogRecords().AppendEmpty()
 
@@ -488,17 +500,17 @@ func appendInfoLogRecord(sl plog.ScopeLogs, rec l0intel.InfoLogRecord, bdf strin
 	// timestamp is added as an attribute and the observation time is used as the
 	// timestamp of the record.
 	lr.SetTimestamp(observed)
-	sev := infoLogSeverity(rec.Metadata.RecordType)
+	sev := infoLogSeverity(rec.recordType)
 	lr.SetSeverityNumber(sev)
 	lr.SetSeverityText(sev.String())
 	lr.SetEventName(infoLogEventName)
 	// The record is passed on as-is
-	lr.Body().SetEmptyBytes().FromRaw(rec.Data)
+	lr.Body().SetEmptyBytes().FromRaw(rec.data)
 
 	attrs := lr.Attributes()
-	attrs.PutInt("cper.timestamp_ns", int64(rec.Metadata.Timestamp))
-	attrs.PutStr("cper.fru_id", rec.Metadata.Uuid.Id.String())
-	attrs.PutStr("cper.record_type", rec.Metadata.RecordType.String())
+	attrs.PutInt("cper.timestamp_ns", int64(rec.timestamp))
+	attrs.PutStr("cper.fru_id", rec.fruID)
+	attrs.PutStr("cper.record_type", rec.recordType.String())
 	attrs.PutStr("pci.bdf", bdf)
 
 	if dev != nil {

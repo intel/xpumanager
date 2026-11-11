@@ -162,8 +162,7 @@ through the Sysman API. Currently the only supported format is
 by the GPU. The records are emitted as opaque binary blobs. Tooling for
 decoding the CPER sections is separate from XPUMD.
 
-Collection is event driven. The records are read on the
-`ZES_INTEL_CPER_DATA_AVAILABLE` Sysman event.
+Collection is event driven.
 
 Collecting requires elevated privileges: the CPER records need read/write access
 to the kernel tracing filesystem (`/sys/kernel/tracing`).
@@ -172,8 +171,8 @@ Records reported by the driver as dropped (lost due to its collection
 buffer overflow), are counted in the
 `otelcol_receiver_dropped_info_log_records` internal metric, see the
 [internal telemetry](sysman/documentation.md#internal-telemetry) of the receiver.
-Dropped records that the driver cannot count at the time of a read are counted
-on a later read.
+If the driver doesn't report the number of dropped records, the counter is
+incremented by one, the lower bound.
 
 ### Log Record Format
 
@@ -204,10 +203,7 @@ on a later read.
    Records that are already pending when the daemon starts are emitted only when
    the next record arrives. The records still pending at shutdown are lost when
    the collection instance (e.g. CPER event tracefs buffer) is deleted.
-3. The triggering event of 2. is part of a separate Sysman extension, so the
-   records are collected only if the driver implements both the info log and
-   the driver scoped event extensions.
-4. Collection is started once at startup. If starting it fails or a read fails
+3. Collection is started once at startup. If starting it fails or a read fails
    later on, the records of that info log are not collected for the lifetime of
    daemon. The only fatal failure is the collection instance name being already
    in use (see `instance_name` above).
