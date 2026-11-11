@@ -894,6 +894,7 @@ ze_result_t runOutputLoop(DumpOutput out, std::span<const metrics::QueryMetric *
 	for (std::size_t i = 0; i < numDevices; ++i) {
 		metrics::populateMetricCacheEnd(deviceList[i], caches[i], &fdAfter);
 	}
+	metrics::discardMemBandwidthSpike(std::span<devInfo>(deviceList), std::span<metrics::MetricCache>(caches));
 
 	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>{fields}, std::span<devInfo>(deviceList),
 								  std::span<const metrics::MetricCache>{caches});
@@ -1129,6 +1130,7 @@ int cmdDump::runQuery(const std::string &metrics, const std::string &deviceSpec,
 		for (std::size_t i = 0; i < numDevices; ++i) {
 			metrics::populateMetricCacheEnd(deviceList[i], caches[i], &fdAfter);
 		}
+		metrics::discardMemBandwidthSpike(std::span<devInfo>(deviceList), std::span<metrics::MetricCache>(caches));
 	}
 	metrics::runMetricsWithCaches(out, std::span<const metrics::QueryMetric *>(fields), std::span<devInfo>(deviceList),
 								  std::span<const metrics::MetricCache>(caches));

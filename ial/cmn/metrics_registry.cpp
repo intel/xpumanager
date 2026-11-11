@@ -41,6 +41,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 #include "utility/watchdog/watchdog.h"
 
@@ -539,6 +540,59 @@ MetricCache populateMetricCacheContinuous(devInfo &dev, const MetricCache &prev,
 
 	populateMetricCacheEnd(dev, curr, fdinfoNow);
 	return curr;
+}
+
+namespace {
+
+// Read and write bandwidth of one cache window, in bytes per timestamp unit; nullopt when the
+// window is unusable (mirrors the N/A conditions of the memory bandwidth getters).
+std::optional<std::pair<double, double>> memBandwidthRates(const MetricCache &c) noexcept
+{
+	if (!c.memAvail || c.memAfter.ts <= c.memBefore.ts || c.memAfter.read < c.memBefore.read ||
+		c.memAfter.write < c.memBefore.write) {
+		return std::nullopt;
+	}
+	const auto dt = static_cast<double>(c.memAfter.ts - c.memBefore.ts);
+	return std::pair{static_cast<double>(c.memAfter.read - c.memBefore.read) / dt,
+					 static_cast<double>(c.memAfter.write - c.memBefore.write) / dt};
+}
+
+} // namespace
+
+bool isMemBandwidthSpike(const MetricCache &first, const MetricCache &second) noexcept
+{
+	const auto r1 = memBandwidthRates(first);
+	const auto r2 = memBandwidthRates(second);
+	if (!r1 || !r2) {
+		return false;
+	}
+	return r1->first > detail::MEM_BANDWIDTH_SPIKE_RATIO * r2->first ||
+		   r1->second > detail::MEM_BANDWIDTH_SPIKE_RATIO * r2->second;
+}
+
+void discardMemBandwidthSpike(std::span<devInfo> devices, std::span<MetricCache> caches)
+{
+	const std::size_t numDevices = devices.size();
+	const bool anyMemBw = std::ranges::any_of(
+		caches.first(numDevices), [](const MetricCache &c) { return hasInput(c.inputs, MetricInput::MEMBW); });
+	if (!anyMemBw) {
+		return;
+	}
+
+	std::this_thread::sleep_for(detail::SAMPLE_WINDOW);
+	for (std::size_t i = 0; i < numDevices; ++i) {
+		if (!hasInput(caches[i].inputs, MetricInput::MEMBW)) {
+			continue;
+		}
+		MetricCache second = populateMetricCacheContinuous(devices[i], caches[i], caches[i].inputs);
+		// The first window's read/write bandwidth might be inflated by the driver's
+		// initialization: discard it and consider the second window as the first.
+		if (isMemBandwidthSpike(caches[i], second)) {
+			DBG("Discarding first memory bandwidth sample: more than {}x the next sample.\n",
+				detail::MEM_BANDWIDTH_SPIKE_RATIO);
+			caches[i] = std::move(second);
+		}
+	}
 }
 
 //  Metric registry — assembled from per-group metric headers

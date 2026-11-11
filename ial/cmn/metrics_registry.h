@@ -37,6 +37,9 @@ namespace detail {
 /** Duration of the measurement window used by populateMetricCache() and runMetrics(). */
 inline constexpr auto SAMPLE_WINDOW = std::chrono::milliseconds{200};
 
+/** A first memory bandwidth sample more than this many times the next one is discarded. */
+inline constexpr double MEM_BANDWIDTH_SPIKE_RATIO = 100.0;
+
 /** Generic underlying-type cast — equivalent to C++23 std::to_underlying. */
 template <typename Enum> [[nodiscard]] constexpr auto toUnderlying(Enum e) noexcept
 {
@@ -451,6 +454,32 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache, const fdinfo::Devi
  * @retval empty      it does not, so /proc is not walked
  */
 [[nodiscard]] fdinfo::DeviceSnapshots captureFdinfo(MetricInput inputs);
+
+/**
+ * Whether the memory read or write bandwidth of @p first is more than
+ * @ref detail::MEM_BANDWIDTH_SPIKE_RATIO times that of @p second.
+ *
+ * @return  False unless both caches hold a usable memory bandwidth window
+ *          (memAvail, advancing timestamps, counters not going backwards).
+ */
+[[nodiscard]] bool isMemBandwidthSpike(const MetricCache &first, const MetricCache &second) noexcept;
+
+/**
+ * Replace a first memory bandwidth sample that is a spike with the sample that follows it.
+ *
+ * The first read/write counter window after start-up might be inflated by the driver's
+ * initialization. When any cache samples @ref MetricInput::MEMBW, this waits one
+ * @ref detail::SAMPLE_WINDOW, takes a second sample per device via
+ * @ref populateMetricCacheContinuous, and for each device whose first sample is a spike
+ * (see @ref isMemBandwidthSpike) discards the first sample and keeps the second as the first.
+ * Does nothing, and does not sleep, when no cache samples MEMBW.
+ *
+ * @param devices  Devices the caches were sampled from.
+ * @param caches   In/out. First samples, one per device, already completed by
+ *                 @ref populateMetricCacheEnd.
+ * @pre   @c caches.size() >= @c devices.size().
+ */
+void discardMemBandwidthSpike(std::span<devInfo> devices, std::span<MetricCache> caches);
 
 // ── MetricValue ───────────────────────────────────────────────────────────────
 

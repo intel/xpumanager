@@ -835,6 +835,37 @@ TEST_CASE_FIXTURE(ZeroDeviceFixture, "memory bandwidth getters: a counter that g
 	CHECK(out == "N/A");
 }
 
+TEST_CASE("isMemBandwidthSpike: first window more than 100x the second")
+{
+	// Builds a one-second window that moved `read` and `write` bytes.
+	const auto window = [](uint64_t read, uint64_t write) {
+		MetricCache c;
+		c.memAvail = true;
+		c.memBefore = {.read = 1'000, .write = 1'000, .ts = 1'000'000};
+		c.memAfter = {.read = 1'000 + read, .write = 1'000 + write, .ts = 2'000'000};
+		return c;
+	};
+
+	// Read spike, write spike, and just under 100x (kept).
+	CHECK(isMemBandwidthSpike(window(100'001, 100), window(1'000, 100)));
+	CHECK(isMemBandwidthSpike(window(100, 100'001), window(100, 1'000)));
+	CHECK_FALSE(isMemBandwidthSpike(window(99'999, 99'999), window(1'000, 1'000)));
+	// 10x, well short of a spike, is kept.
+	CHECK_FALSE(isMemBandwidthSpike(window(10'001, 10'001), window(1'000, 1'000)));
+	// An idle second window makes any traffic in the first a spike.
+	CHECK(isMemBandwidthSpike(window(1, 0), window(0, 0)));
+	CHECK_FALSE(isMemBandwidthSpike(window(0, 0), window(0, 0)));
+
+	// An unusable window on either side never counts as a spike.
+	auto unavailable = window(1'000, 1'000);
+	unavailable.memAvail = false;
+	CHECK_FALSE(isMemBandwidthSpike(window(1'000'000, 0), unavailable));
+	CHECK_FALSE(isMemBandwidthSpike(unavailable, window(0, 0)));
+	auto backwards = window(0, 0);
+	backwards.memAfter.read = 0;
+	CHECK_FALSE(isMemBandwidthSpike(window(1'000'000, 0), backwards));
+}
+
 TEST_CASE("no metric is tagged with mutually exclusive groups simultaneously")
 {
 	// These pairs must never co-occur on a single metric — a cross-tag would cause
