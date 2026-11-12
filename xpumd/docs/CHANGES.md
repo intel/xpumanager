@@ -2,6 +2,7 @@
 
 Contents:
 
+* [XPUM 2.x.x](#xpum-2xx)
 * [XPUM 2.4.0](#xpum-240)
 * [XPUM 2.3.0](#xpum-230)
 * [XPUM 2.2.0](#xpum-220)
@@ -12,6 +13,15 @@ Contents:
     * [XPUM 2.x rewrite](#xpum-2x-rewrite)
       * [Missing metrics](#missing-metrics)
     * [XPUM 1.x](#xpum-1x)
+
+
+## XPUM 2.x.x
+
+* XPUMD privileges: NET_ADMIN capability is required by an upcoming GPU driver
+  release for the RAS error events, and is added to the Helm chart
+* Sysman Go bindings: Update to L0 API spec v1.19.12 (in loader 1.34.0), adding
+  new extensions for driver properties, driver-scoped events and info logs
+* XPUMD image: L0 driver stack update to 26.40.40196.8 + loader 1.34.0
 
 
 ## XPUM 2.4.0
