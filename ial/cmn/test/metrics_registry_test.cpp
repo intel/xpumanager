@@ -24,11 +24,13 @@
 #include "metrics/mode.h"
 #include "metrics/pci.h"
 #include "metrics/power.h"
+#include "utility/watchdog/watchdog.h"
 #include "ze_api.h"
 #include "zes_api.h"
 #include <bit>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -39,6 +41,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using namespace metrics; // NOLINT(google-build-using-namespace)
@@ -2274,4 +2277,81 @@ TEST_CASE("recoveryActionOf: none, a repair, or any other reset reason")
 	REQUIRE(field.has_value());
 	CHECK(field->groups == MetricGroup::IDENTITY);
 	CHECK(field->source == MetricSource::Live);
+}
+
+// ── Watchdog progress ─────────────────────────────────────────────────────────
+
+namespace {
+
+constexpr auto SLOW_GETTER_DELAY = std::chrono::milliseconds{50};
+constexpr std::size_t SLOW_FIELD_COUNT = 10;
+// The fields together take twice the timeout, while each one finishes well inside it.
+constexpr auto SLOW_WATCHDOG_TIMEOUT = std::chrono::milliseconds{250};
+// Three of these add up to more than the timeout; one alone is half of it.
+constexpr auto SAMPLE_STEP_TIMEOUT = std::chrono::milliseconds{300};
+constexpr auto SAMPLE_STEP_GAP = std::chrono::milliseconds{150};
+
+std::atomic<int> watchdogTimeouts{0}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+void countTimeout(const xpum::watchdog::Expiry &expiry) noexcept
+{
+	if (expiry.kind == xpum::watchdog::ExpiryKind::Timeout) {
+		watchdogTimeouts.fetch_add(1);
+	}
+}
+
+ze_result_t slowGetter(devInfo & /*d*/, MetricValue &out, const MetricCache & /*cache*/)
+{
+	std::this_thread::sleep_for(SLOW_GETTER_DELAY);
+	out = "1";
+	return ZE_RESULT_SUCCESS;
+}
+
+struct CountingOutput
+{
+	std::size_t emitted{0};
+	void onBegin(std::span<const QueryMetric *> /*fields*/) {}
+	void onBeginDevice(devInfo & /*dev*/) {}
+	void onMetric(const QueryMetric & /*f*/, const std::string & /*val*/) { ++emitted; }
+	void onEndDevice(devInfo & /*dev*/) {}
+	void onEnd() {}
+};
+
+} // namespace
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "emitting rows of slow fields keeps the watchdog from firing")
+{
+	const QueryMetric slow{.name = "test.slow",
+						   .unit = "",
+						   .description = "",
+						   .source = MetricSource::Static,
+						   .groups = MetricGroup::NONE,
+						   .getter = slowGetter};
+	std::vector<const QueryMetric *> fields(SLOW_FIELD_COUNT, &slow);
+	std::vector<MetricCache> caches(1);
+	CountingOutput out;
+
+	watchdogTimeouts.store(0);
+	{
+		const xpum::watchdog::Watchdog dog{SLOW_WATCHDOG_TIMEOUT, countTimeout};
+		runMetricsWithCaches(out, std::span<const QueryMetric *>{fields}, std::span<devInfo>{&di, 1},
+							 std::span<const MetricCache>{caches});
+	}
+
+	CHECK(out.emitted == SLOW_FIELD_COUNT);
+	CHECK(watchdogTimeouts.load() == 0);
+}
+
+TEST_CASE_FIXTURE(ZeroDeviceFixture, "each device sampled keeps the watchdog from firing")
+{
+	watchdogTimeouts.store(0);
+	{
+		const xpum::watchdog::Watchdog dog{SAMPLE_STEP_TIMEOUT, countTimeout};
+		std::this_thread::sleep_for(SAMPLE_STEP_GAP);
+		MetricCache cache = populateMetricCacheBegin(di, MetricInput::NONE);
+		std::this_thread::sleep_for(SAMPLE_STEP_GAP);
+		populateMetricCacheEnd(di, cache);
+		std::this_thread::sleep_for(SAMPLE_STEP_GAP);
+	}
+	CHECK(watchdogTimeouts.load() == 0);
 }

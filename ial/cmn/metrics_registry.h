@@ -806,6 +806,9 @@ void emitMetrics(Output &output, std::span<const QueryMetric *> fields, std::spa
 			if (f->getter(devices[i], val, caches[i]) != ZE_RESULT_SUCCESS) {
 				val = "N/A";
 			}
+			// Identity getters query firmware per device and take seconds each on some cards,
+			// so a full row set can outlast the watchdog timeout without any single call hanging.
+			xpum::watchdog::keepalive();
 			output.onMetric(*f, val);
 		}
 		output.onEndDevice(devices[i]);

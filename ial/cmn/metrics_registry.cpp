@@ -367,6 +367,8 @@ MetricCache populateMetricCacheBegin(devInfo &dev, MetricInput inputs, const fdi
 			std::async(std::launch::async, sampleEu, dev.dev->getMetric(), dev.deviceHdl, dev.dev->getDriverHandle())
 				.share();
 	}
+	// Callers sample every device in turn; each finished device is progress for the watchdog.
+	xpum::watchdog::keepalive();
 	return cache;
 }
 
@@ -466,6 +468,7 @@ void populateMetricCacheEnd(devInfo &dev, MetricCache &cache, const fdinfo::Devi
 		cache.fdinfoCopy = devUtil.copy;
 	}
 	cache.populated = true;
+	xpum::watchdog::keepalive();
 }
 
 MetricCache populateMetricCache(devInfo &dev, std::chrono::milliseconds window, MetricInput inputs)
