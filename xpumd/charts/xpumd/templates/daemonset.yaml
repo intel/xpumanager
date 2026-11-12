@@ -76,6 +76,8 @@ spec:
             add:
               # required for engine utilization (old systems may require SYS_ADMIN capability instead)
               - PERFMON
+              # required for the RAS error events (via DRM netlink)
+              - NET_ADMIN
           {{- end }}
           {{- end }}
         ports:

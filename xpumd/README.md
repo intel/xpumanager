@@ -114,7 +114,7 @@ graph TB
 Run XPUM daemon with its example config (with `$TAG` being the desired release tag):
 
 ```bash
-docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON \
+docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON --cap-add NET_ADMIN \
   --device /dev/dri --publish 8080:8080 ghcr.io/intel/xpumanager/xpumd:$TAG \
   --config /etc/xpumd/config-example.yaml
 ```
@@ -173,6 +173,10 @@ metrics:
 * PERFMON (or SYS_ADMIN) capability:
   - Docker options: `--cap-add PERFMON`
   - Adds PMU metrics: GPU engine utilization
+* NET_ADMIN capability:
+  - Docker options: `--cap-add NET_ADMIN`
+  - Adds GPU events: RAS errors which the driver gets over DRM netlink
+  - Without it, event listening fails and all events are lost
 * Access to MEI devices:
   - Docker options: `$(for dev in /dev/mei[0-9]*; do [ -e "$dev" ] && echo "--device $dev"; done)`
   - Required for information on subset of the firmware types
