@@ -61,12 +61,17 @@ Contents:
     (also in the example config), including new `critical` states for the core and memory
     temperatures (memory temperature `warning` state replaced by `critical` one)
 * XPUMD binary reports the actual XPUMD version (instead of `0.0.0`)
+* XPUMD privileges: NET_ADMIN capability is required by an upcoming GPU driver
+  release for the RAS error events, and is added to the Helm chart
 * XPUMD image:
   * Base image digest pinned
   * The `xpumd` image now only contains the daemon, the stub Level-Zero driver and `xpuinfo-cli`
     moved to the new `xpumd-devel` image variant
   * The `xpumd-devel` image now includes also the `list-sysman` and `events-sysman` example apps from the level-zero-go bindings
+  * L0 driver stack update to 26.40.40196.8 + loader 1.34.0
 * Go dependencies: OTel collector update to v0.163.0 + other version updates
+* Sysman Go bindings: Update to L0 API spec v1.19.12 (in loader 1.34.0), adding
+  new extensions for driver properties, driver-scoped events and info logs
 
 
 ## XPUM 2.3.0
