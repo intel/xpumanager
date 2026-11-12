@@ -32,7 +32,6 @@
 #include <power.h>
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <chrono>
 #include <iterator>
 #include <numeric>
@@ -43,18 +42,10 @@
 #include <thread>
 #include <utility>
 #include <vector>
+#include "utility/text.h"
 #include "utility/watchdog/watchdog.h"
 
-namespace {
-
-bool iequal(std::string_view a, std::string_view b) noexcept
-{
-	return std::ranges::equal(
-		a, b, {}, [](char c) noexcept { return std::tolower(static_cast<unsigned char>(c)); },
-		[](char c) noexcept { return std::tolower(static_cast<unsigned char>(c)); });
-}
-
-} // namespace
+using xpum::text::iequal;
 
 namespace metrics {
 

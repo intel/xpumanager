@@ -895,7 +895,9 @@ ze_result_t device::getDeviceHealth(zes_device_health_status_ext_t *pHealth)
 /**
  * @brief Sets the device health status.
  *
- * This API is consumed by the CLI config setter path (`xpu-smi config --set`).
+ * This API is consumed by the CLI config setter path (`xpu-smi config --set-health-status`). A device or driver
+ * without the feature (ZE_RESULT_ERROR_UNSUPPORTED_FEATURE or ZE_RESULT_ERROR_NOT_AVAILABLE) is only noted in the
+ * debug log and left for the caller to report; any other failure is logged as an error.
  *
  * @param[in] health Health status to set.
  * @return ZE_RESULT_SUCCESS on success; otherwise an initialization or driver error.
@@ -908,7 +910,7 @@ ze_result_t device::setDeviceHealth(zes_device_health_status_ext_t health)
 
 	ze_result_t result = zesDeviceSetHealthStatusExt(zesDevice, health);
 	if (result != ZE_RESULT_SUCCESS) {
-		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE) {
+		if (result == ZE_RESULT_ERROR_UNSUPPORTED_FEATURE || result == ZE_RESULT_ERROR_NOT_AVAILABLE) {
 			DBG("Setting device health status unsupported by driver. 0x{:X} ({})\n", result,
 				l0_error_to_string(result));
 		} else if (result == ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS) {

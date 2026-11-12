@@ -9,6 +9,7 @@
 
 #include "cmds.h"
 #include <os.h>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -100,6 +101,12 @@ constexpr std::string_view configCmdName(configCmdType t) noexcept
 	}
 	return "";
 }
+
+// Maps a --set-health-status value to the Sysman health status; documented at its definition in cmd_config.cpp.
+[[nodiscard]] std::optional<zes_device_health_status_ext_t> parseHealthStatus(std::string_view status);
+
+// Prints why setting the health status of a GPU failed; documented at its definition in cmd_config.cpp.
+void reportHealthStatusFailure(uint32_t gpu, ze_result_t result);
 
 struct configCmdStruct;
 

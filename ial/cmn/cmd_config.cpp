@@ -19,6 +19,7 @@
 #include <vf.h>
 #include <charconv>
 #include "utility/compat/format.h"
+#include "utility/text.h"
 #include "utility/watchdog/watchdog.h"
 #include <frequency.h>
 #include <nlohmann/json.hpp>
@@ -49,6 +50,59 @@ constexpr int32_t FAN_CURVE_RPM_MAX = 20000;
 // Scheduler time limits in microseconds
 constexpr uint64_t SCHEDULER_TIME_MIN = 5000;
 constexpr uint64_t SCHEDULER_TIME_MAX = 100000000;
+
+namespace {
+
+/** @brief A value that `--set-health-status` accepts, and the health status it sets. */
+struct SettableHealthStatus
+{
+	std::string_view name;				   /**< Value as the help text lists it. */
+	zes_device_health_status_ext_t status; /**< Health status passed to the driver. */
+};
+
+/**
+ * @brief The values `--set-health-status` accepts, in help-text order.
+ *
+ * The Level Zero enum also has a failed state, but the Xe kernel driver documents only ok, warning and critical for
+ * its gpu_health file and rejects "failed".
+ */
+constexpr std::array<SettableHealthStatus, 3> SETTABLE_HEALTH_STATUSES{{
+	{"ok", ZES_DEVICE_HEALTH_STATUS_EXT_OK},
+	{"warning", ZES_DEVICE_HEALTH_STATUS_EXT_WARNING},
+	{"critical", ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL},
+}};
+
+/**
+ * @brief Lists the values `--set-health-status` accepts.
+ *
+ * @param[in] separator Text to put between two values, e.g. "|" or ", ".
+ * @return The names in SETTABLE_HEALTH_STATUSES, in order, e.g. "ok|warning|critical".
+ */
+std::string settableHealthStatusList(std::string_view separator)
+{
+	std::string list;
+	for (const SettableHealthStatus &entry : SETTABLE_HEALTH_STATUSES) {
+		if (!list.empty()) {
+			list += separator;
+		}
+		list += entry.name;
+	}
+	return list;
+}
+
+/**
+ * @brief Reports a value that `--set-health-status` does not accept.
+ *
+ * @param[in] value The value that was given.
+ * @return ZE_RESULT_ERROR_INVALID_ARGUMENT, for the caller to return.
+ */
+ze_result_t rejectHealthStatus(std::string_view value)
+{
+	ERR("Invalid health status '{}'. Valid values are: {}.\n", value, settableHealthStatusList(", "));
+	return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+}
+
+} // namespace
 
 static std::unordered_map<configCmdType, configCmdStruct> configCmds = {
 	{configCmdType::CONFIGHELP, {}},
@@ -654,8 +708,8 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(TITLE, "Usage: %s config [Options]", progName.c_str()));
 	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId]", progName.c_str()));
-	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --set-health-status ok|warning|critical|failed",
-							   progName.c_str()));
+	helpList.push_back(helpCmd(HEADING, "%s config --device [deviceId] --set-health-status %s", progName.c_str(),
+							   settableHealthStatusList("|").c_str()));
 	helpList.push_back(
 		helpCmd(HEADING, "%s config --device [deviceId] [--tile tileId] --frequencyrange [minFrequency,maxFrequency]",
 				progName.c_str()));
@@ -690,8 +744,8 @@ void cmdConfig::help(HELP helpType)
 	helpList.push_back(helpCmd(HEADING, "-j,--json                   Print result in JSON format"));
 	helpList.push_back(helpCmd(BLANK));
 	helpList.push_back(helpCmd(HEADING, "--device,--id               The device ID or PCI BDF address to query"));
-	helpList.push_back(
-		helpCmd(HEADING, "--set-health-status         Set device health status (ok|warning|critical|failed)"));
+	helpList.push_back(helpCmd(HEADING, "--set-health-status         Set device health status (%s)",
+							   settableHealthStatusList("|").c_str()));
 	helpList.push_back(helpCmd(HEADING, "-t,--tile                   The tile ID"));
 	helpList.push_back(helpCmd(
 		HEADING,
@@ -1189,10 +1243,84 @@ ze_result_t cmdConfig::setFrequencyRange(devInfo *d)
 }
 
 /**
+ * @brief Maps a `--set-health-status` value to the Sysman device health status.
+ *
+ * Accepts the values in SETTABLE_HEALTH_STATUSES (ok, warning and critical), in any letter case.
+ *
+ * @param[in] status Value given to `--set-health-status`.
+ * @return The matching health status, or std::nullopt if @p status is not one of those values.
+ */
+std::optional<zes_device_health_status_ext_t> parseHealthStatus(std::string_view status)
+{
+	const auto match = std::ranges::find_if(SETTABLE_HEALTH_STATUSES, [status](const SettableHealthStatus &entry) {
+		return xpum::text::iequal(entry.name, status);
+	});
+	if (match == SETTABLE_HEALTH_STATUSES.end()) {
+		return std::nullopt;
+	}
+	return match->status;
+}
+
+/**
+ * @brief Prints why setting the health status of a GPU failed.
+ *
+ * @param[in] gpu    Index of the GPU, as shown to the user.
+ * @param[in] result What device::setDeviceHealth() returned; anything but ZE_RESULT_SUCCESS.
+ */
+void reportHealthStatusFailure(uint32_t gpu, ze_result_t result)
+{
+	switch (result) {
+	case ZE_RESULT_ERROR_UNINITIALIZED:
+		ERR("Unable to set health status on GPU {} because the device management driver is not initialized. "
+			"Restart xpu-smi after the driver is ready.\n",
+			gpu);
+		break;
+	case ZE_RESULT_ERROR_DEVICE_LOST:
+		ERR("Unable to set health status on GPU {} because the device was lost or reset. Wait for it to "
+			"re-enumerate, then retry.\n",
+			gpu);
+		break;
+	case ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY:
+		ERR("Unable to set health status on GPU {} because the host is out of memory. Free system memory and retry.\n",
+			gpu);
+		break;
+	case ZE_RESULT_ERROR_OUT_OF_DEVICE_MEMORY:
+		ERR("Unable to set health status on GPU {} because the device has insufficient resources. Retry after "
+			"reducing GPU workload.\n",
+			gpu);
+		break;
+	case ZE_RESULT_ERROR_UNSUPPORTED_FEATURE:
+		ERR("Setting health status is not supported on GPU {} by the installed Level Zero loader or GPU driver. "
+			"Update them or use a supported device.\n",
+			gpu);
+		break;
+	case ZE_RESULT_ERROR_NOT_AVAILABLE:
+		// Sysman returns this when the kernel driver has no gpu_health file for the device.
+		ERR("Setting health status is not supported on GPU {}: the device or its kernel driver has no GPU health "
+			"indicator.\n",
+			gpu);
+		break;
+	case ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS:
+		ERR("Insufficient permissions to set health status on GPU {}. Root privileges are required.\n", gpu);
+		break;
+	case ZE_RESULT_ERROR_UNKNOWN:
+		// The value itself is valid by now, so this is the device or its firmware refusing the request.
+		ERR("Setting health status failed on GPU {}: the driver reported an unknown error. The device or its "
+			"firmware may not support it; check the GPU firmware version and the driver log. 0x{:X} ({})\n",
+			gpu, result, l0_error_to_string(result));
+		break;
+	default:
+		ERR("Failed to set health status on GPU {}. 0x{:X} ({})\n", gpu, result, l0_error_to_string(result));
+		break;
+	}
+}
+
+/**
  * @brief Sets the device health status via the standard Sysman device health API.
  *
- * Parses the requested status string (ok, warning, critical, or failed), invokes
- * zesDeviceSetHealthStatusExt, and prints the outcome.
+ * Parses the requested status string (ok, warning or critical) with parseHealthStatus(), invokes
+ * zesDeviceSetHealthStatusExt, and prints the outcome. run() already rejects any other value before a device is
+ * looked up; the check here keeps the setter safe when it is called on its own.
  *
  * @param[in] d Pointer to device information structure containing device handles.
  * @return ZE_RESULT_SUCCESS on success, or an argument or driver error otherwise.
@@ -1202,69 +1330,19 @@ ze_result_t cmdConfig::setHealthStatus(devInfo *d)
 	TRACING();
 
 	const std::string &statusStr = configCmds[configCmdType::SET_HEALTH_STATUS].val;
-	std::string status = statusStr;
-	std::transform(status.begin(), status.end(), status.begin(),
-				   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-
-	zes_device_health_status_ext_t targetStatus;
-	if (status == "ok") {
-		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_OK;
-	} else if (status == "warning") {
-		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_WARNING;
-	} else if (status == "critical") {
-		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_CRITICAL;
-	} else if (status == "failed") {
-		targetStatus = ZES_DEVICE_HEALTH_STATUS_EXT_FAILED;
-	} else {
-		ERR("Invalid health status '{}'. Valid values are: ok, warning, critical, failed.\n", statusStr.c_str());
-		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	const std::optional<zes_device_health_status_ext_t> targetStatus = parseHealthStatus(statusStr);
+	if (!targetStatus.has_value()) {
+		return rejectHealthStatus(statusStr);
 	}
 
-	ze_result_t result = d->dev->setDeviceHealth(targetStatus);
+	ze_result_t result = d->dev->setDeviceHealth(*targetStatus);
 	if (result == ZE_RESULT_SUCCESS) {
-		PRINT("Succeeded in setting the health status to {} on GPU {}\n", status.c_str(), d->index);
+		const auto chosen = std::ranges::find(SETTABLE_HEALTH_STATUSES, *targetStatus, &SettableHealthStatus::status);
+		PRINT("Succeeded in setting the health status to {} on GPU {}\n", chosen->name, d->index);
 		return result;
 	}
 
-	switch (result) {
-	case ZE_RESULT_ERROR_UNINITIALIZED:
-		ERR("Unable to set health status on GPU {} because the device management driver is not initialized. "
-			"Restart xpu-smi after the driver is ready.\n",
-			d->index);
-		break;
-	case ZE_RESULT_ERROR_DEVICE_LOST:
-		ERR("Unable to set health status on GPU {} because the device was lost or reset. Wait for it to "
-			"re-enumerate, then retry.\n",
-			d->index);
-		break;
-	case ZE_RESULT_ERROR_OUT_OF_HOST_MEMORY:
-		ERR("Unable to set health status on GPU {} because the host is out of memory. Free system memory and retry.\n",
-			d->index);
-		break;
-	case ZE_RESULT_ERROR_OUT_OF_DEVICE_MEMORY:
-		ERR("Unable to set health status on GPU {} because the device has insufficient resources. Retry after "
-			"reducing GPU workload.\n",
-			d->index);
-		break;
-	case ZE_RESULT_ERROR_UNSUPPORTED_FEATURE:
-		ERR("Setting health status is not supported on GPU {} by the installed driver. Update the driver or use "
-			"a supported device.\n",
-			d->index);
-		break;
-	case ZE_RESULT_ERROR_INSUFFICIENT_PERMISSIONS:
-		ERR("Error: Insufficient permissions to set health status on GPU {}. Root privileges are required.\n",
-			d->index);
-		break;
-	case ZE_RESULT_ERROR_UNKNOWN:
-		ERR("The driver reported an unknown error while setting health status on GPU {}. 0x{:X} ({})\n", d->index,
-			result, l0_error_to_string(result));
-		break;
-	default:
-		ERR("Error: Failed to set health status on GPU {}. 0x{:X} ({})\n", d->index, result,
-			l0_error_to_string(result));
-		break;
-	}
-
+	reportHealthStatusFailure(d->index, result);
 	return result;
 }
 
@@ -2433,7 +2511,7 @@ int cmdConfig::run(arg_struct *args)
 		configCmds[configCmdType::TILE].enabled = true;
 	});
 	sub.add_option("--set-health-status", configCmds[configCmdType::SET_HEALTH_STATUS].val,
-				   "Set device health status (ok|warning|critical|failed), requires root privileges")
+				   "Set device health status (" + settableHealthStatusList("|") + "), requires root privileges")
 		->each([&](const std::string &) {
 			configCmds[configCmdType::SET_HEALTH_STATUS].enabled = true;
 			isQueryMode = false;
@@ -2537,6 +2615,13 @@ int cmdConfig::run(arg_struct *args)
 	if (configCmds[configCmdType::RESETFREQUENCYRANGE].enabled && configCmds[configCmdType::FREQUENCYRANGE].enabled) {
 		ERR("--resetfrequencyrange cannot be combined with --frequencyrange.\n");
 		return ZE_RESULT_ERROR_INVALID_ARGUMENT;
+	}
+
+	// Check the --set-health-status value here, before any device is looked up, so a bad value does not leave the
+	// other settings of the same command applied.
+	if (configCmds[configCmdType::SET_HEALTH_STATUS].enabled &&
+		!parseHealthStatus(configCmds[configCmdType::SET_HEALTH_STATUS].val).has_value()) {
+		return rejectHealthStatus(configCmds[configCmdType::SET_HEALTH_STATUS].val);
 	}
 
 	// Check if the device ID is provided
