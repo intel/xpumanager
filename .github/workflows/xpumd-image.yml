@@ -45,6 +45,9 @@ jobs:
 
     - name: Install cosign
       uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+      with:
+        # Per-job dir; matrix jobs may share $HOME
+        install-dir: ${{ runner.temp }}/cosign
 
     - name: Setup Helm
       if: matrix.variant == 'production'
