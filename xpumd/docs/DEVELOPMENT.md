@@ -135,7 +135,7 @@ describe the backend it actually ships.
 Test the container with example config from the image:
 
 ```bash
-docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON \
+docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON --cap-add NET_ADMIN \
   --device /dev/dri --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config-example.yaml
 ```
@@ -149,7 +149,7 @@ sed -i s/intel_xpu_info,// config-example.yaml
 Map the modified config inside container, and ask daemon to use it:
 
 ```bash
-docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON \
+docker run -it --rm --user 0 --cap-drop ALL --cap-add PERFMON --cap-add NET_ADMIN \
   --volume $PWD/config-example.yaml:/etc/xpumd/config.yaml:ro \
   --device /dev/dri --publish 8080:8080 registry.local/xpumd:latest \
   --config /etc/xpumd/config.yaml
