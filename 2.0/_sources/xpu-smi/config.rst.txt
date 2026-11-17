@@ -11,6 +11,7 @@ Synopsis
 
    xpu-smi config -d [deviceId]
    xpu-smi config --device [deviceId]
+   xpu-smi config --device [deviceId] --set-health-status [ok|warning|critical]
    xpu-smi config --device [deviceId] --frequencyrange [minFrequency,maxFrequency]
    xpu-smi config --device [deviceId] --resetfrequencyrange
    xpu-smi config --device [deviceId] --powerlimit [powerValue]
@@ -44,6 +45,17 @@ Options
 
    The device ID or PCI BDF address to configure. Accepts a comma-separated list
    to apply the configuration to several devices at once (e.g., ``-d 0,1,4``).
+
+.. option:: --set-health-status <status>
+
+   Set the device health status. Valid values, in any letter case: ``ok``,
+   ``warning``, ``critical``. For example, mark a device ``warning`` or
+   ``critical`` after diagnostics, and set it back to ``ok`` once it is fixed.
+   Any other value is rejected before any setting of the same command is applied.
+
+   Requires root privileges, a Level Zero loader 1.33.1 or newer with a GPU driver
+   that implements the device health API, and a device and kernel driver that
+   provide the GPU health indicator. Not all devices do.
 
 .. option:: --frequencyrange <minFreq,maxFreq>
 

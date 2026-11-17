@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <section id="health">
 <h1>Health<a class="headerlink" href="#health" title="Link to this heading"></a></h1>
 <p>Check GPU hardware component health. Reports the status of key GPU subsystems
-(temperature, power, memory, frequency) and indicates whether they are operating
+(temperature, power, frequency) and indicates whether they are operating
 within normal parameters.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -232,13 +232,27 @@ per device.</p>
 <td><p>GPU Power</p></td>
 </tr>
 <tr class="row-odd"><td><p>4</p></td>
-<td><p>GPU Memory</p></td>
-</tr>
-<tr class="row-even"><td><p>6</p></td>
 <td><p>GPU Frequency</p></td>
 </tr>
 </tbody>
 </table>
+<p>Any other value is rejected as an invalid component ID, including:</p>
+<ul class="simple">
+<li><p>other numbers, such as <code class="docutils literal notranslate"><span class="pre">0</span></code>, <code class="docutils literal notranslate"><span class="pre">5</span></code>, <code class="docutils literal notranslate"><span class="pre">6</span></code>, <code class="docutils literal notranslate"><span class="pre">999</span></code> or <code class="docutils literal notranslate"><span class="pre">-1</span></code></p></li>
+<li><p>letters, such as <code class="docutils literal notranslate"><span class="pre">abc</span></code></p></li>
+<li><p>mixed letters and digits, such as <code class="docutils literal notranslate"><span class="pre">4x</span></code> or <code class="docutils literal notranslate"><span class="pre">a4</span></code></p></li>
+<li><p>decimals, such as <code class="docutils literal notranslate"><span class="pre">4.0</span></code></p></li>
+<li><p>an empty value</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>GPU Frequency was component ID 6 in earlier releases; it is now ID 4.
+Use <code class="docutils literal notranslate"><span class="pre">-c</span> <span class="pre">4</span></code> for GPU Frequency health. <code class="docutils literal notranslate"><span class="pre">-c</span> <span class="pre">6</span></code> is now rejected as
+invalid.</p>
+<p>ID 4 was GPU Memory in earlier releases. GPU Memory health is no longer
+available: the driver reports memory health only for HBM memory, which
+the supported devices do not have.</p>
+</div>
 </dd></dl>
 
 </section>
@@ -260,7 +274,7 @@ per device.</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>health<span class="w"> </span>--device<span class="w"> </span><span class="m">0</span><span class="w"> </span>-c<span class="w"> </span><span class="m">1</span>
 </pre></div>
 </div>
-<p>Show memory health for device addressed by PCI BDF:</p>
+<p>Show GPU frequency health for device addressed by PCI BDF:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>xpu-smi<span class="w"> </span>health<span class="w"> </span>--device<span class="w"> </span><span class="m">0000</span>:4d:00.0<span class="w"> </span>-c<span class="w"> </span><span class="m">4</span>
 </pre></div>
 </div>

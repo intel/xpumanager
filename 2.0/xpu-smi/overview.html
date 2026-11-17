@@ -237,9 +237,11 @@ no fields to list all available field names.</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-timeout">
 <span id="cmdoption-timeout"></span><span class="sig-name descname"><span class="pre">--timeout</span></span><span class="sig-prename descclassname"><span class="pre">=&lt;sec&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--timeout</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;sec&gt;</span></span><a class="headerlink" href="#cmdoption-timeout" title="Link to this definition"></a></dt>
-<dd><p>Abort if <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> makes no progress for <code class="docutils literal notranslate"><span class="pre">&lt;sec&gt;</span></code> seconds (default: <code class="docutils literal notranslate"><span class="pre">30</span></code>), for
-example because a driver call does not return. <code class="docutils literal notranslate"><span class="pre">0</span></code> turns the timeout off; the maximum
-is <code class="docutils literal notranslate"><span class="pre">86400</span></code>. Time spent waiting between samples (<code class="docutils literal notranslate"><span class="pre">--loop</span></code>, <code class="docutils literal notranslate"><span class="pre">dump</span> <span class="pre">-i</span></code>, <code class="docutils literal notranslate"><span class="pre">stats</span></code>)
+<dd><p>Abort if <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code> makes no progress for <code class="docutils literal notranslate"><span class="pre">&lt;sec&gt;</span></code> seconds, for example because a driver
+call does not return. Without the option the timeout is <code class="docutils literal notranslate"><span class="pre">60</span></code> seconds, plus <code class="docutils literal notranslate"><span class="pre">5</span></code> for each
+GPU on Linux: driver initialization and the firmware fields of <code class="docutils literal notranslate"><span class="pre">--query-gpu</span></code> and <code class="docutils literal notranslate"><span class="pre">dump</span></code>
+handle one GPU after another, so they take longer on a host with more GPUs. <code class="docutils literal notranslate"><span class="pre">0</span></code> turns the
+timeout off; the maximum is <code class="docutils literal notranslate"><span class="pre">86400</span></code>. Time spent waiting between samples (<code class="docutils literal notranslate"><span class="pre">--loop</span></code>, <code class="docutils literal notranslate"><span class="pre">dump</span> <span class="pre">-i</span></code>, <code class="docutils literal notranslate"><span class="pre">stats</span></code>)
 does not count, so long-running loops are not affected.</p>
 <p>After half the timeout without progress, a warning on stderr names the phase that is
 stuck (for example <code class="docutils literal notranslate"><span class="pre">driver</span> <span class="pre">init</span></code>) and how many seconds remain. On timeout, <code class="docutils literal notranslate"><span class="pre">xpu-smi</span></code>
@@ -515,9 +517,10 @@ metric category. Run <code class="docutils literal notranslate"><span class="pre
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">kernel_driver_version</span></code></p></td>
 <td><p>—</p></td>
-<td><p>Kernel-mode driver release version (<code class="docutils literal notranslate"><span class="pre">modinfo</span></code> <code class="docutils literal notranslate"><span class="pre">version</span></code>), declared only
-by the out-of-tree driver installed via DKMS. The key is omitted when the
-driver declares no version</p></td>
+<td><p>Kernel-mode driver release version (<code class="docutils literal notranslate"><span class="pre">modinfo</span></code> <code class="docutils literal notranslate"><span class="pre">version</span></code>) for the
+out-of-tree driver installed via DKMS, or the kernel version marked as
+in-tree (e.g. <code class="docutils literal notranslate"><span class="pre">6.8.0-45</span> <span class="pre">(in-tree)</span></code>) for the in-tree driver. The key is
+omitted when neither is available, as on Windows</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">vbios_version</span></code></p></td>
 <td><p>—</p></td>

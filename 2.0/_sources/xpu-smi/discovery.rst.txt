@@ -154,11 +154,9 @@ Options
       * - 51
         - Memory Vendor
       * - 52
-        - Memory Date Code
-      * - 53
-        - Memory IC/Die Info
-      * - 54
         - KMD Version
+      * - 53
+        - Thermal Design Power
 
 .. option:: --listamcversions
 
@@ -188,10 +186,9 @@ grouped and ordered as follows:
      - PCI BDF Address, PCI Slot, PCIe Generation, PCIe Max Link Width,
        PCIe Max Bandwidth
    * - Memory Information
-     - Memory Type, Memory Physical Size, Memory Vendor, Memory Date Code,
-       Memory IC/Die Info, Max Mem Alloc Size, ECC State,
-       Number of Memory Channels, Memory Bus Width, Max Hardware Contexts,
-       Max Command Queue Priority
+     - Memory Type, Memory Physical Size, Memory Vendor, Max Mem Alloc Size,
+       ECC State, Number of Memory Channels, Memory Bus Width,
+       Max Hardware Contexts, Max Command Queue Priority
    * - EU and Architecture Information
      - Number of EUs, Number of Tiles, Number of Slices,
        Number of Sub Slices per Slice, Number of Threads per EU,
@@ -218,11 +215,20 @@ are omitted.
    ``backported from (365b81808) using backports xeb_v7.1.4.31_260728.26 for
    7.0.0-14-generic Kernel`` string that ``/sys/module/xe/version`` holds.
 
-   The in-tree driver declares none, as is the case on Windows. KMD Version is
-   then omitted from the text output, the JSON key ``kernel_driver_version`` is
-   left out, and the dashboard banner drops the field, rather than showing a
-   value that names no release. ``--dump 54`` asks for the column explicitly, so
-   it is spelled ``N/A`` there instead of disappearing.
+   The in-tree driver declares none, but it ships with the kernel, so the
+   kernel's version identifies it and is reported instead, marked as in-tree —
+   for example ``6.8.0-45 (in-tree)`` for kernel ``6.8.0-45-generic``. The
+   distro build number (``-45``) is kept because distributions backport driver
+   code without changing the base version: Ubuntu ``6.8.0-45`` and ``6.8.0-90``
+   carry different driver code, and RHEL 9 ``5.14.0-503.40.1.el9_5.x86_64``,
+   reported as ``5.14.0-503.40.1 (in-tree)``, carries a driver backported from
+   6.x. The full release is shown under Kernel Version. On a host that mixes
+   both drivers, the dashboard banner shows the out-of-tree release.
+
+   Windows exposes no KMD version. KMD Version is then omitted from the text
+   output, the JSON key ``kernel_driver_version`` is left out, and the dashboard
+   banner drops the field. ``--dump 52`` asks for the column explicitly, so it
+   is spelled ``N/A`` there instead of disappearing.
 
    **Memory Type** is resolved from two Level Zero sources, because neither is
    complete on its own: the sysman memory type is per memory module and is the
@@ -234,13 +240,9 @@ are omitted.
    sysman layer reports no type at all. It reads ``unknown`` when neither source
    names a type.
 
-   **Memory Vendor**, **Memory Date Code** and **Memory IC/Die Info** report
-   ``unknown`` on all currently supported platforms: no Level Zero interface
-   (core, sysman, or the Intel sysman extensions), no kernel-mode driver
-   interface (sysfs or debugfs) and no ``igsc`` entry point exposes memory
-   manufacturer, date-code or IC/die data. Populating them requires a new driver
-   or firmware interface; the properties are present so that no CLI change is
-   needed once such an interface exists.
+   **Memory Vendor** is read from the Level Zero sysman memory vendor
+   extension and is shown with its vendor ID, for example ``Hynix (0x8600)``.
+   It reads ``N/A`` when the driver does not expose the vendor.
 
 Examples
 --------

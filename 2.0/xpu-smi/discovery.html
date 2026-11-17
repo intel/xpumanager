@@ -371,13 +371,10 @@ of property IDs. Use <code class="docutils literal notranslate"><span class="pre
 <td><p>Memory Vendor</p></td>
 </tr>
 <tr class="row-odd"><td><p>52</p></td>
-<td><p>Memory Date Code</p></td>
+<td><p>KMD Version</p></td>
 </tr>
 <tr class="row-even"><td><p>53</p></td>
-<td><p>Memory IC/Die Info</p></td>
-</tr>
-<tr class="row-odd"><td><p>54</p></td>
-<td><p>KMD Version</p></td>
+<td><p>Thermal Design Power</p></td>
 </tr>
 </tbody>
 </table>
@@ -420,10 +417,9 @@ GFX Data Firmware Version</p></td>
 PCIe Max Bandwidth</p></td>
 </tr>
 <tr class="row-odd"><td><p>Memory Information</p></td>
-<td><p>Memory Type, Memory Physical Size, Memory Vendor, Memory Date Code,
-Memory IC/Die Info, Max Mem Alloc Size, ECC State,
-Number of Memory Channels, Memory Bus Width, Max Hardware Contexts,
-Max Command Queue Priority</p></td>
+<td><p>Memory Type, Memory Physical Size, Memory Vendor, Max Mem Alloc Size,
+ECC State, Number of Memory Channels, Memory Bus Width,
+Max Hardware Contexts, Max Command Queue Priority</p></td>
 </tr>
 <tr class="row-even"><td><p>EU and Architecture Information</p></td>
 <td><p>Number of EUs, Number of Tiles, Number of Slices,
@@ -451,11 +447,19 @@ it names the driver package outright — for example
 <code class="docutils literal notranslate"><span class="pre">xeb_v7.1.4.31_260728.26</span></code>, extracted from the full
 <code class="docutils literal notranslate"><span class="pre">backported</span> <span class="pre">from</span> <span class="pre">(365b81808)</span> <span class="pre">using</span> <span class="pre">backports</span> <span class="pre">xeb_v7.1.4.31_260728.26</span> <span class="pre">for</span>
 <span class="pre">7.0.0-14-generic</span> <span class="pre">Kernel</span></code> string that <code class="docutils literal notranslate"><span class="pre">/sys/module/xe/version</span></code> holds.</p>
-<p>The in-tree driver declares none, as is the case on Windows. KMD Version is
-then omitted from the text output, the JSON key <code class="docutils literal notranslate"><span class="pre">kernel_driver_version</span></code> is
-left out, and the dashboard banner drops the field, rather than showing a
-value that names no release. <code class="docutils literal notranslate"><span class="pre">--dump</span> <span class="pre">54</span></code> asks for the column explicitly, so
-it is spelled <code class="docutils literal notranslate"><span class="pre">N/A</span></code> there instead of disappearing.</p>
+<p>The in-tree driver declares none, but it ships with the kernel, so the
+kernel’s version identifies it and is reported instead, marked as in-tree —
+for example <code class="docutils literal notranslate"><span class="pre">6.8.0-45</span> <span class="pre">(in-tree)</span></code> for kernel <code class="docutils literal notranslate"><span class="pre">6.8.0-45-generic</span></code>. The
+distro build number (<code class="docutils literal notranslate"><span class="pre">-45</span></code>) is kept because distributions backport driver
+code without changing the base version: Ubuntu <code class="docutils literal notranslate"><span class="pre">6.8.0-45</span></code> and <code class="docutils literal notranslate"><span class="pre">6.8.0-90</span></code>
+carry different driver code, and RHEL 9 <code class="docutils literal notranslate"><span class="pre">5.14.0-503.40.1.el9_5.x86_64</span></code>,
+reported as <code class="docutils literal notranslate"><span class="pre">5.14.0-503.40.1</span> <span class="pre">(in-tree)</span></code>, carries a driver backported from
+6.x. The full release is shown under Kernel Version. On a host that mixes
+both drivers, the dashboard banner shows the out-of-tree release.</p>
+<p>Windows exposes no KMD version. KMD Version is then omitted from the text
+output, the JSON key <code class="docutils literal notranslate"><span class="pre">kernel_driver_version</span></code> is left out, and the dashboard
+banner drops the field. <code class="docutils literal notranslate"><span class="pre">--dump</span> <span class="pre">52</span></code> asks for the column explicitly, so it
+is spelled <code class="docutils literal notranslate"><span class="pre">N/A</span></code> there instead of disappearing.</p>
 <p><strong>Memory Type</strong> is resolved from two Level Zero sources, because neither is
 complete on its own: the sysman memory type is per memory module and is the
 only source that names a product-specific type such as <code class="docutils literal notranslate"><span class="pre">LPDDR5X</span></code>, while the
@@ -465,13 +469,9 @@ separates HBM2/HBM2E/HBM3/HBM3E/HBM4). Whichever source names the memory more
 specifically is reported, so the property is populated on platforms whose
 sysman layer reports no type at all. It reads <code class="docutils literal notranslate"><span class="pre">unknown</span></code> when neither source
 names a type.</p>
-<p><strong>Memory Vendor</strong>, <strong>Memory Date Code</strong> and <strong>Memory IC/Die Info</strong> report
-<code class="docutils literal notranslate"><span class="pre">unknown</span></code> on all currently supported platforms: no Level Zero interface
-(core, sysman, or the Intel sysman extensions), no kernel-mode driver
-interface (sysfs or debugfs) and no <code class="docutils literal notranslate"><span class="pre">igsc</span></code> entry point exposes memory
-manufacturer, date-code or IC/die data. Populating them requires a new driver
-or firmware interface; the properties are present so that no CLI change is
-needed once such an interface exists.</p>
+<p><strong>Memory Vendor</strong> is read from the Level Zero sysman memory vendor
+extension and is shown with its vendor ID, for example <code class="docutils literal notranslate"><span class="pre">Hynix</span> <span class="pre">(0x8600)</span></code>.
+It reads <code class="docutils literal notranslate"><span class="pre">N/A</span></code> when the driver does not expose the vendor.</p>
 </div>
 </section>
 <section id="examples">

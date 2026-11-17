@@ -159,6 +159,7 @@ standby mode, scheduler mode, ECC state, fan control, and reset operations.</p>
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Link to this heading"></a></h2>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>xpu-smi config -d [deviceId]
 xpu-smi config --device [deviceId]
+xpu-smi config --device [deviceId] --set-health-status [ok|warning|critical]
 xpu-smi config --device [deviceId] --frequencyrange [minFrequency,maxFrequency]
 xpu-smi config --device [deviceId] --resetfrequencyrange
 xpu-smi config --device [deviceId] --powerlimit [powerValue]
@@ -198,6 +199,18 @@ xpu-smi config --device [deviceId] --clear-ras-errors
 <span id="cmdoption-device"></span><span id="cmdoption-id"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--device</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;deviceId&gt;</span></span><a class="headerlink" href="#cmdoption-d" title="Link to this definition"></a></dt>
 <dd><p>The device ID or PCI BDF address to configure. Accepts a comma-separated list
 to apply the configuration to several devices at once (e.g., <code class="docutils literal notranslate"><span class="pre">-d</span> <span class="pre">0,1,4</span></code>).</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-set-health-status">
+<span class="sig-name descname"><span class="pre">--set-health-status</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;status&gt;</span></span><a class="headerlink" href="#cmdoption-set-health-status" title="Link to this definition"></a></dt>
+<dd><p>Set the device health status. Valid values, in any letter case: <code class="docutils literal notranslate"><span class="pre">ok</span></code>,
+<code class="docutils literal notranslate"><span class="pre">warning</span></code>, <code class="docutils literal notranslate"><span class="pre">critical</span></code>. For example, mark a device <code class="docutils literal notranslate"><span class="pre">warning</span></code> or
+<code class="docutils literal notranslate"><span class="pre">critical</span></code> after diagnostics, and set it back to <code class="docutils literal notranslate"><span class="pre">ok</span></code> once it is fixed.
+Any other value is rejected before any setting of the same command is applied.</p>
+<p>Requires root privileges, a Level Zero loader 1.33.1 or newer with a GPU driver
+that implements the device health API, and a device and kernel driver that
+provide the GPU health indicator. Not all devices do.</p>
 </dd></dl>
 
 <dl class="std option">
